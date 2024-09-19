@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ func (ns *NopSink) Provision(ctx api.StreamContext, configs map[string]any) erro
 	return nil
 }
 
-func (ns *NopSink) Connect(ctx api.StreamContext) error {
+func (ns *NopSink) Connect(ctx api.StreamContext, _ api.StatusChangeHandler) error {
 	return nil
 }
 

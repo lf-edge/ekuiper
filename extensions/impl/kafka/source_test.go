@@ -1,10 +1,10 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//	http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -68,7 +68,9 @@ func TestKafkaSource(t *testing.T) {
 		"brokers":    "localhost:9092",
 	}
 	require.NoError(t, ks.Provision(ctx, configs))
-	require.NoError(t, ks.Connect(ctx))
+	require.NoError(t, ks.Connect(ctx, func(status string, message string) {
+		// do nothing
+	}))
 	require.NoError(t, ks.Close(ctx))
 
 	for i := mockErrStart + 1; i < mockErrEnd; i++ {

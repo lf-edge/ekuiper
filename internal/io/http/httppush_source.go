@@ -68,11 +68,12 @@ func (h *HttpPushSource) Provision(ctx api.StreamContext, configs map[string]any
 
 func (h *HttpPushSource) Close(ctx api.StreamContext) error {
 	pubsub.CloseSourceConsumerChannel(h.topic, h.sourceID)
-	return connection.DetachConnection(ctx, h.conf.DataSource, h.props)
+	// TODO if supports to be resource, this should change to the unique conn id
+	return connection.DetachConnection(ctx, h.conf.DataSource)
 }
 
-func (h *HttpPushSource) Connect(ctx api.StreamContext) error {
-	cw, err := connection.FetchConnection(ctx, h.conf.DataSource, "httppush", h.props)
+func (h *HttpPushSource) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) error {
+	cw, err := connection.FetchConnection(ctx, h.conf.DataSource, "httppush", h.props, sch)
 	if err != nil {
 		return err
 	}
@@ -86,6 +87,7 @@ func (h *HttpPushSource) Connect(ctx api.StreamContext) error {
 	}
 	h.sourceID = fmt.Sprintf("%s_%s_%v", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId())
 	h.topic = hc.GetTopic()
+	sch(api.ConnectionConnected, "")
 	return nil
 }
 

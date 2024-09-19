@@ -35,8 +35,14 @@ import (
 type Connection struct {
 	pahoMqtt.Client
 	selId     string
+	id        string
 	logger    api.Logger
 	connected atomic.Bool
+	status    atomic.Value
+	scHandler api.StatusChangeHandler
+	conf      *ConnectionConfig
+	// key is the topic. Each topic will have only one connector
+	subscriptions map[string]*subscriptionInfo
 }
 
 type ConnectionConfig struct {
@@ -49,46 +55,110 @@ type ConnectionConfig struct {
 	tls      *tls.Config
 }
 
-type SubscriptionInfo struct {
-	Qos        byte
-	Handler    pahoMqtt.MessageHandler
-	ErrHandler func(error)
+type subscriptionInfo struct {
+	Qos     byte
+	Handler pahoMqtt.MessageHandler
 }
 
-func (conn *Connection) Publish(topic string, qos byte, retained bool, payload any) error {
-	if conn == nil || !conn.connected.Load() {
-		return errorx.NewIOErr("mqtt client is not connected")
+func CreateConnection(_ api.StreamContext) modules.Connection {
+	return &Connection{
+		subscriptions: make(map[string]*subscriptionInfo),
 	}
-	token := conn.Client.Publish(topic, qos, retained, payload)
-	return handleToken(token)
+}
+
+func (conn *Connection) Provision(ctx api.StreamContext, conId string, props map[string]any) error {
+	c, err := ValidateConfig(props)
+	if err != nil {
+		return err
+	}
+	opts := pahoMqtt.NewClientOptions().AddBroker(c.Server).SetProtocolVersion(c.pversion).SetAutoReconnect(true).SetMaxReconnectInterval(connection.DefaultMaxInterval)
+
+	opts = opts.SetTLSConfig(c.tls)
+
+	if c.Uname != "" {
+		opts = opts.SetUsername(c.Uname)
+	}
+	if c.Password != "" {
+		opts = opts.SetPassword(c.Password)
+	}
+
+	conn.status.Store(modules.ConnectionStatus{Status: api.ConnectionConnecting})
+	opts.OnConnect = conn.onConnect
+	opts.OnConnectionLost = conn.onConnectLost
+	opts.OnReconnecting = conn.onReconnecting
+
+	cli := pahoMqtt.NewClient(opts)
+	conn.logger = ctx.GetLogger()
+	conn.selId = c.ClientId
+	conn.Client = cli
+	conn.conf = c
+	conn.id = conId
+	return nil
+}
+
+func (conn *Connection) GetId(ctx api.StreamContext) string {
+	return conn.id
+}
+
+func (conn *Connection) Dial(ctx api.StreamContext) error {
+	token := conn.Client.Connect()
+	err := handleToken(token)
+	if err != nil {
+		return errorx.NewIOErr(fmt.Sprintf("found error when connecting for %s: %s", conn.conf.Server, err))
+	}
+	// store connected status immediately to avoid publish error due to onConnect is called slower
+	conn.connected.Store(true)
+	ctx.GetLogger().Infof("new mqtt client created")
+	return nil
+}
+
+func (conn *Connection) Status(_ api.StreamContext) modules.ConnectionStatus {
+	return conn.status.Load().(modules.ConnectionStatus)
+}
+
+func (conn *Connection) SetStatusChangeHandler(ctx api.StreamContext, sch api.StatusChangeHandler) {
+	conn.scHandler = sch
 }
 
 func (conn *Connection) onConnect(_ pahoMqtt.Client) {
 	conn.connected.Store(true)
+	conn.status.Store(modules.ConnectionStatus{Status: api.ConnectionConnected})
+	if conn.scHandler != nil {
+		conn.scHandler(api.ConnectionConnected, "")
+	}
 	conn.logger.Infof("The connection to mqtt broker is established")
+	for topic, info := range conn.subscriptions {
+		err := conn.Subscribe(topic, info.Qos, info.Handler)
+		if err != nil { // should never happen. If happens because of connection, it will retry later
+			conn.logger.Errorf("Failed to subscribe topic %s: %v", topic, err)
+		}
+	}
 }
 
 func (conn *Connection) onConnectLost(_ pahoMqtt.Client, err error) {
 	conn.connected.Store(false)
+	conn.status.Store(modules.ConnectionStatus{Status: api.ConnectionDisconnected, ErrMsg: err.Error()})
+	if conn.scHandler != nil {
+		conn.scHandler(api.ConnectionDisconnected, err.Error())
+	}
 	conn.logger.Infof("%v", err)
 }
 
 func (conn *Connection) onReconnecting(_ pahoMqtt.Client, _ *pahoMqtt.ClientOptions) {
-	conn.logger.Infof("Reconnecting to mqtt broker")
+	conn.status.Store(modules.ConnectionStatus{Status: api.ConnectionConnecting})
+	if conn.scHandler != nil {
+		conn.scHandler(api.ConnectionConnecting, "")
+	}
+	conn.logger.Debugf("Reconnecting to mqtt broker")
 }
 
-// Do not call this directly. Call connection pool Detach method to release the connection
 func (conn *Connection) DetachSub(ctx api.StreamContext, props map[string]any) {
 	topic, err := getTopicFromProps(props)
 	if err != nil {
 		return
 	}
+	delete(conn.subscriptions, topic)
 	conn.Client.Unsubscribe(topic)
-}
-
-func (conn *Connection) Subscribe(topic string, info *SubscriptionInfo) error {
-	token := conn.Client.Subscribe(topic, info.Qos, info.Handler)
-	return handleToken(token)
 }
 
 func (conn *Connection) Close(ctx api.StreamContext) error {
@@ -106,50 +176,24 @@ func (conn *Connection) Ping(ctx api.StreamContext) error {
 	return errors.New("failed to connect to broker")
 }
 
-func CreateConnection(ctx api.StreamContext, props map[string]any) (modules.Connection, error) {
-	return CreateClient(ctx, props)
+// MQTT features
+
+func (conn *Connection) Publish(topic string, qos byte, retained bool, payload any) error {
+	// Need to return error immediately so that we can enable cache immediately
+	if conn == nil || !conn.connected.Load() {
+		return errorx.NewIOErr("mqtt client is not connected")
+	}
+	token := conn.Client.Publish(topic, qos, retained, payload)
+	return handleToken(token)
 }
 
-// CreateClient creates a new mqtt client. It is anonymous and does not require a name.
-func CreateClient(ctx api.StreamContext, props map[string]any) (*Connection, error) {
-	c, err := ValidateConfig(props)
-	if err != nil {
-		return nil, err
+func (conn *Connection) Subscribe(topic string, qos byte, callback pahoMqtt.MessageHandler) error {
+	conn.subscriptions[topic] = &subscriptionInfo{
+		Qos:     qos,
+		Handler: callback,
 	}
-	opts := pahoMqtt.NewClientOptions().AddBroker(c.Server).SetProtocolVersion(c.pversion).SetAutoReconnect(true).SetMaxReconnectInterval(time.Minute)
-
-	opts = opts.SetTLSConfig(c.tls)
-
-	if c.Uname != "" {
-		opts = opts.SetUsername(c.Uname)
-	}
-	if c.Password != "" {
-		opts = opts.SetPassword(c.Password)
-	}
-	opts = opts.SetClientID(c.ClientId)
-	opts = opts.SetAutoReconnect(true)
-
-	con := &Connection{
-		logger: ctx.GetLogger(),
-		selId:  c.ClientId,
-	}
-	opts.OnConnect = con.onConnect
-	opts.OnConnectionLost = con.onConnectLost
-	opts.OnReconnecting = con.onReconnecting
-	opts.ConnectRetry = true
-	opts.ResumeSubs = true
-	opts.ConnectRetryInterval = connection.DefaultInitialInterval
-	opts.MaxReconnectInterval = connection.DefaultMaxInterval
-
-	cli := pahoMqtt.NewClient(opts)
-	token := cli.Connect()
-	err = handleToken(token)
-	if err != nil {
-		return nil, errorx.NewIOErr(fmt.Sprintf("found error when connecting for %s: %s", c.Server, err))
-	}
-	ctx.GetLogger().Infof("new mqtt client created")
-	con.Client = cli
-	return con, nil
+	token := conn.Client.Subscribe(topic, qos, callback)
+	return handleToken(token)
 }
 
 func handleToken(token pahoMqtt.Token) error {
@@ -192,14 +236,6 @@ func ValidateConfig(props map[string]any) (*ConnectionConfig, error) {
 	return c, nil
 }
 
-func CreateAnonymousConnection(ctx api.StreamContext, props map[string]any) (*Connection, error) {
-	cli, err := CreateClient(ctx, props)
-	if err != nil {
-		return nil, err
-	}
-	return cli, nil
-}
-
 const (
 	dataSourceProp = "datasource"
 )
@@ -211,3 +247,5 @@ func getTopicFromProps(props map[string]any) (string, error) {
 	}
 	return "", fmt.Errorf("topic or datasource not defined")
 }
+
+var _ modules.StatefulDialer = &Connection{}

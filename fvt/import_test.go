@@ -52,4 +52,16 @@ func (s *ImportTestSuite) TestImportError() {
 
 		s.Require().Equal(exp, result)
 	})
+
+	s.Run("full import wrong json", func() {
+		wrongContent := `{"content":"{\"streams\": {\"demo\": \"CREATE STwREAM demo () WITH (DATASOURCE=\\\"users\\\", CONF_KEY=\\\"td\\\",TYPE=\\\"none\\\", FORMAT=\\\"JSO"}`
+		resp, err := client.Post("data/import", wrongContent)
+		s.Require().NoError(err)
+		s.Require().Equal(400, resp.StatusCode)
+		result, err := GetResponseText(resp)
+		s.Require().NoError(err)
+		exp := "{\"error\":1000,\"message\":\"configuration unmarshal with error unexpected end of JSON input\"}\n"
+
+		s.Require().Equal(exp, result)
+	})
 }

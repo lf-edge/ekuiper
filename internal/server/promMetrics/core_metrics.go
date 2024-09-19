@@ -23,3 +23,5 @@ func SetRuleStatusCountGauge(isRunning bool, count int) {}
 func SetRuleStatus(ruleID string, value int) {}
 
 func RemoveRuleStatus(ruleID string) {}
+
+func SetRuleCPUUsageGauge(ruleID string, value int) {}

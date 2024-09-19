@@ -275,7 +275,7 @@ func (m *MockSourceConnector) Provision(ctx api.StreamContext, configs map[strin
 	return nil
 }
 
-func (m *MockSourceConnector) Connect(ctx api.StreamContext) error {
+func (m *MockSourceConnector) Connect(ctx api.StreamContext, _ api.StatusChangeHandler) error {
 	if m.data == nil {
 		return fmt.Errorf("data is nil")
 	}
@@ -322,7 +322,7 @@ func (m *MockPullSource) Close(ctx api.StreamContext) error {
 	return nil
 }
 
-func (m *MockPullSource) Connect(ctx api.StreamContext) error {
+func (m *MockPullSource) Connect(ctx api.StreamContext, _ api.StatusChangeHandler) error {
 	return nil
 }
 
@@ -390,7 +390,7 @@ func (m *MockRewindSource) Close(ctx api.StreamContext) error {
 	return nil
 }
 
-func (m *MockRewindSource) Connect(ctx api.StreamContext) error {
+func (m *MockRewindSource) Connect(ctx api.StreamContext, _ api.StatusChangeHandler) error {
 	return nil
 }
 

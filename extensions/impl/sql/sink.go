@@ -113,11 +113,11 @@ func (s *SQLSinkConnector) Provision(ctx api.StreamContext, configs map[string]a
 	return nil
 }
 
-func (s *SQLSinkConnector) Connect(ctx api.StreamContext) error {
+func (s *SQLSinkConnector) Connect(ctx api.StreamContext, sc api.StatusChangeHandler) error {
 	ctx.GetLogger().Infof("Connecting to sql server")
 	var err error
 	id := s.config.DBUrl
-	cw, err := connection.FetchConnection(ctx, id, "sql", s.props)
+	cw, err := connection.FetchConnection(ctx, id, "sql", s.props, sc)
 	if err != nil {
 		return err
 	}
@@ -132,8 +132,9 @@ func (s *SQLSinkConnector) Connect(ctx api.StreamContext) error {
 
 func (s *SQLSinkConnector) Close(ctx api.StreamContext) error {
 	ctx.GetLogger().Infof("Closing sql sink connector url:%v", s.config.DBUrl)
-	id := s.config.DBUrl
-	connection.DetachConnection(ctx, id, s.props)
+	if s.conn != nil {
+		return connection.DetachConnection(ctx, s.conn.GetId(ctx))
+	}
 	return nil
 }
 

@@ -59,9 +59,9 @@ func TestReadMetaData(t *testing.T) {
 	dataDir, err := conf.GetDataLoc()
 	require.NoError(t, err)
 	require.NoError(t, store.SetupDefault(dataDir))
-	require.NoError(t, conf.SaveCfgKeyToKVInTest("sources.mqtt.conf1", map[string]interface{}{"a": 1}))
-	require.NoError(t, conf.SaveCfgKeyToKVInTest("sinks.mqtt.conf1", map[string]interface{}{"a": 1}))
-	require.NoError(t, conf.SaveCfgKeyToKVInTest("connections.mqtt.conf1", map[string]interface{}{"a": 1}))
+	require.NoError(t, conf.SaveCfgKeyToKV("sources.mqtt.conf1", map[string]interface{}{"a": 1}))
+	require.NoError(t, conf.SaveCfgKeyToKV("sinks.mqtt.conf1", map[string]interface{}{"a": 1}))
+	require.NoError(t, conf.SaveCfgKeyToKV("connections.mqtt.conf1", map[string]interface{}{"a": 1}))
 	require.NoError(t, ReadSourceMetaData())
 	require.NoError(t, ReadSinkMetaData())
 

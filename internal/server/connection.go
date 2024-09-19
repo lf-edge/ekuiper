@@ -93,7 +93,6 @@ func connectionHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		res := getConnectionRespByMeta(meta)
-		w.WriteHeader(http.StatusOK)
 		jsonResponse(res, w, logger)
 	case http.MethodDelete:
 		if err := connection.DropNameConnection(context.Background(), id); err != nil {
@@ -105,7 +104,7 @@ func connectionHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func getConnectionRespByMeta(meta *connection.ConnectionMeta) *ConnectionResponse {
+func getConnectionRespByMeta(meta *connection.Meta) *ConnectionResponse {
 	err := connection.PingConnection(context.Background(), meta.ID)
 	r := &ConnectionResponse{
 		Typ:      meta.Typ,

@@ -1244,9 +1244,8 @@ func TestSingleSQL(t *testing.T) {
 	HandleStream(true, streamList, t)
 	options := []*def.RuleOption{
 		{
-			BufferLength:     100,
-			SendError:        true,
-			EnableRuleTracer: true,
+			BufferLength: 100,
+			SendError:    true,
 		},
 		{
 			BufferLength:       100,

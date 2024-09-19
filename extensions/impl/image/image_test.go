@@ -203,7 +203,9 @@ func TestCollect(t *testing.T) {
 	assert.NoError(t, err)
 	b, err := os.ReadFile("../../../docs/en_US/wechat.png")
 	assert.NoError(t, err)
-	err = s.Connect(ctx)
+	err = s.Connect(ctx, func(status string, message string) {
+		// do nothing
+	})
 	assert.NoError(t, err)
 	defer s.Close(ctx)
 	tests := []struct {

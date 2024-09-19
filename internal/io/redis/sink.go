@@ -39,14 +39,14 @@ type config struct {
 	// key of field
 	Field string `json:"field,omitempty"`
 	// key define
-	Key          string        `json:"key,omitempty"`
-	KeyType      string        `json:"keyType,omitempty"`
-	DataType     string        `json:"dataType,omitempty"`
-	Expiration   time.Duration `json:"expiration,omitempty"`
-	RowkindField string        `json:"rowkindField"`
-	DataTemplate string        `json:"dataTemplate"`
-	Fields       []string      `json:"fields"`
-	DataField    string        `json:"dataField"`
+	Key          string            `json:"key,omitempty"`
+	KeyType      string            `json:"keyType,omitempty"`
+	DataType     string            `json:"dataType,omitempty"`
+	Expiration   cast.DurationConf `json:"expiration,omitempty"`
+	RowkindField string            `json:"rowkindField"`
+	DataTemplate string            `json:"dataTemplate"`
+	Fields       []string          `json:"fields"`
+	DataField    string            `json:"dataField"`
 }
 
 type RedisSink struct {
@@ -58,7 +58,7 @@ func (r *RedisSink) Provision(_ api.StreamContext, props map[string]any) error {
 	return r.Validate(props)
 }
 
-func (r *RedisSink) Connect(ctx api.StreamContext) error {
+func (r *RedisSink) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) error {
 	logger := ctx.GetLogger()
 	logger.Debug("Opening redis sink")
 
@@ -69,7 +69,12 @@ func (r *RedisSink) Connect(ctx api.StreamContext) error {
 		DB:       r.c.Db, // use default DB
 	})
 	_, err := r.cli.Ping(ctx).Result()
-	return err
+	if err != nil {
+		sch(api.ConnectionDisconnected, err.Error())
+		return err
+	}
+	sch(api.ConnectionConnected, "")
+	return nil
 }
 
 func (r *RedisSink) Validate(props map[string]any) error {
@@ -187,7 +192,7 @@ func (r *RedisSink) save(ctx api.StreamContext, data map[string]any) error {
 				}
 				logger.Debugf("push redis list success, key:%s data: %v", key, val)
 			} else {
-				err = r.cli.Set(ctx, key, val, r.c.Expiration*time.Second).Err()
+				err = r.cli.Set(ctx, key, val, time.Duration(r.c.Expiration)).Err()
 				if err != nil {
 					return fmt.Errorf("set %s:%s error, %v", key, val, err)
 				}

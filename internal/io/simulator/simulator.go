@@ -42,11 +42,12 @@ func (s *SimulatorSource) Provision(ctx api.StreamContext, configs map[string]an
 	return nil
 }
 
-func (s SimulatorSource) Close(ctx api.StreamContext) error {
+func (s *SimulatorSource) Close(ctx api.StreamContext) error {
 	return nil
 }
 
-func (s *SimulatorSource) Connect(ctx api.StreamContext) error {
+func (s *SimulatorSource) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) error {
+	sch(api.ConnectionConnected, "")
 	return nil
 }
 

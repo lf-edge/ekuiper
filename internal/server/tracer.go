@@ -15,7 +15,10 @@
 package server
 
 import (
+	"encoding/json"
+	"io"
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/mux"
 
@@ -25,9 +28,59 @@ import (
 func getTraceByID(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
-	root := tracer.GetSpanByTraceID(id)
+	root, err := tracer.GetSpanByTraceID(id)
+	if err != nil {
+		handleError(w, err, "", logger)
+		return
+	}
 	if root == nil {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		return
+	}
+	jsonResponse(root, w, logger)
+}
+
+func tracerHandler(w http.ResponseWriter, r *http.Request) {
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		handleError(w, err, "Invalid body", logger)
+		return
+	}
+	req := &SetTracerRequest{}
+	if err := json.Unmarshal(body, req); err != nil {
+		handleError(w, err, "Invalid body", logger)
+		return
+	}
+	enableRemoteCollector := req.Action == "start"
+	if err := tracer.SetTracer(&tracer.TracerConfig{EnableRemoteCollector: enableRemoteCollector, ServiceName: req.ServiceName, RemoteEndpoint: req.CollectorUrl}); err != nil {
+		handleError(w, err, "", logger)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("success"))
+}
+
+type SetTracerRequest struct {
+	ServiceName  string `json:"service_name"`
+	Action       string `json:"action"`
+	CollectorUrl string `json:"collector_url"`
+}
+
+func getTraceIDByRuleID(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["ruleID"]
+	l := r.URL.Query().Get("limit")
+	limit, err := strconv.ParseInt(l, 10, 64)
+	if err != nil {
+		limit = 0
+	}
+	root, err := tracer.GetTraceIDListByRuleID(id, int(limit))
+	if err != nil {
+		handleError(w, err, "", logger)
+		return
+	}
+	if root == nil {
+		handleError(w, err, "", logger)
 		return
 	}
 	jsonResponse(root, w, logger)

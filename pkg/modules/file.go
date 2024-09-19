@@ -63,8 +63,37 @@ func RegisterFileStreamReader(name string, provider FileStreamReaderProvider) {
 	fileStreamReaders[name] = provider
 }
 
+func RegisterFileStreamReaderAlias(alias string, ref string) {
+	fileStreamReaders[alias] = fileStreamReaders[ref]
+}
+
 func GetFileStreamReader(ctx api.StreamContext, name string) (FileStreamReader, bool) {
 	if p, ok := fileStreamReaders[name]; ok {
+		return p(ctx), true
+	}
+	return nil, false
+}
+
+type FileStreamDecorator interface {
+	// Provision Set up the static properties
+	Provision(ctx api.StreamContext, props map[string]any) error
+	// ReadMeta Read the metadata from the file source, and save in the decorator itself
+	// It will receive lines, when receiving EOF, there will be no more lines.
+	ReadMeta(ctx api.StreamContext, line []byte)
+	// Decorate the file source
+	Decorate(ctx api.StreamContext, data any) any
+}
+
+type FileStreamDecoratorProvider func(ctx api.StreamContext) FileStreamDecorator
+
+var fileStreamDecorators = map[string]FileStreamDecoratorProvider{}
+
+func RegisterFileStreamDecorator(name string, provider FileStreamDecoratorProvider) {
+	fileStreamDecorators[name] = provider
+}
+
+func GetFileStreamDecorator(ctx api.StreamContext, name string) (FileStreamDecorator, bool) {
+	if p, ok := fileStreamDecorators[name]; ok {
 		return p(ctx), true
 	}
 	return nil, false

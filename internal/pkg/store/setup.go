@@ -15,7 +15,10 @@
 package store
 
 import (
+	"database/sql"
+
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store/definition"
+	sqldb "github.com/lf-edge/ekuiper/v2/internal/pkg/store/sql"
 )
 
 type StoreConf struct {
@@ -68,5 +71,13 @@ func Setup(config definition.Config) error {
 		return err
 	}
 	extStateStores = s
-	return nil
+	db, err := sqldb.BuildSqliteStore(config, "trace.db")
+	if err != nil {
+		return err
+	}
+	TraceStores = db
+	return TraceStores.Apply(func(db *sql.DB) error {
+		_, err := db.Exec(`CREATE TABLE IF NOT EXISTS trace (traceID TEXT PRIMARY KEY, ruleID TEXT NOT NULL, value BLOB,createdtimestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP);`)
+		return err
+	})
 }

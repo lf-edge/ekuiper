@@ -48,7 +48,7 @@ func (m *MockSource) SetEofIngest(eof api.EOFIngest) {
 	m.eof = eof
 }
 
-func (m *MockSource) Connect(_ api.StreamContext) error {
+func (m *MockSource) Connect(_ api.StreamContext, _ api.StatusChangeHandler) error {
 	return nil
 }
 

@@ -84,11 +84,18 @@ func (m *influxSink) Provision(ctx api.StreamContext, props map[string]any) erro
 	return nil
 }
 
-func (m *influxSink) Connect(ctx api.StreamContext) (err error) {
+func (m *influxSink) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) (err error) {
 	var insecureSkip bool
 	if m.tlsconf != nil {
 		insecureSkip = m.tlsconf.InsecureSkipVerify
 	}
+	defer func() {
+		if err != nil {
+			sch(api.ConnectionDisconnected, err.Error())
+		} else {
+			sch(api.ConnectionConnecting, "")
+		}
+	}()
 	m.cli, err = client.NewHTTPClient(client.HTTPConfig{
 		Addr:               m.conf.Addr,
 		Username:           m.conf.Username,

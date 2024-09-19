@@ -14,7 +14,15 @@
 
 package api
 
+const (
+	ConnectionConnected    = "connected"
+	ConnectionConnecting   = "connecting"
+	ConnectionDisconnected = "disconnected"
+)
+
+type StatusChangeHandler func(status string, message string)
+
 // Connector is a source feature that allows the source to connect to the data source.
 type Connector interface {
-	Connect(ctx StreamContext) error
+	Connect(ctx StreamContext, sch StatusChangeHandler) error
 }

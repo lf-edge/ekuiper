@@ -33,6 +33,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/encryptor"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/topotest/mockclock"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
+	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/message"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
@@ -142,7 +143,7 @@ func TestFileSink_Configure(t *testing.T) {
 		{
 			name: "default configurations",
 			c: &sinkConf{
-				CheckInterval: defaultCheckInterval,
+				CheckInterval: cast.DurationConf(defaultCheckInterval),
 				Path:          "cache",
 				FileType:      LINES_TYPE,
 				RollingCount:  1000000,
@@ -152,7 +153,7 @@ func TestFileSink_Configure(t *testing.T) {
 		{
 			name: "new props",
 			c: &sinkConf{
-				CheckInterval:      500 * time.Millisecond,
+				CheckInterval:      cast.DurationConf(500 * time.Millisecond),
 				Path:               "test",
 				FileType:           CSV_TYPE,
 				Format:             message.FormatDelimited,
@@ -171,10 +172,10 @@ func TestFileSink_Configure(t *testing.T) {
 		{ // only set rolling interval
 			name: "rolling",
 			c: &sinkConf{
-				CheckInterval:   defaultCheckInterval,
+				CheckInterval:   cast.DurationConf(defaultCheckInterval),
 				Path:            "cache",
 				FileType:        LINES_TYPE,
-				RollingInterval: 500 * time.Millisecond,
+				RollingInterval: cast.DurationConf(500 * time.Millisecond),
 				RollingCount:    0,
 			},
 			p: map[string]interface{}{
@@ -185,10 +186,10 @@ func TestFileSink_Configure(t *testing.T) {
 		{
 			name: "fields",
 			c: &sinkConf{
-				CheckInterval:   defaultCheckInterval,
+				CheckInterval:   cast.DurationConf(defaultCheckInterval),
 				Path:            "cache",
 				FileType:        LINES_TYPE,
-				RollingInterval: 5 * time.Second,
+				RollingInterval: cast.DurationConf(5 * time.Second),
 				RollingCount:    0,
 				Fields:          []string{"c", "a", "b"},
 			},
@@ -313,7 +314,9 @@ func TestFileSink_Collect(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			err = sink.Connect(ctx)
+			err = sink.Connect(ctx, func(status string, message string) {
+				// do nothing
+			})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -390,7 +393,9 @@ func TestCSVSingMessHeader(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			err = sink.Connect(ctx)
+			err = sink.Connect(ctx, func(status string, message string) {
+				// do nothing
+			})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -522,7 +527,9 @@ func TestFileSinkRolling_Collect(t *testing.T) {
 				t.Fatal(err)
 			}
 			mockclock.ResetClock(10)
-			err = sink.Connect(ctx)
+			err = sink.Connect(ctx, func(status string, message string) {
+				// do nothing
+			})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -603,7 +610,9 @@ func TestFileSinkReopen(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = sink.Connect(ctx)
+	err = sink.Connect(ctx, func(status string, message string) {
+		// do nothing
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -634,7 +643,9 @@ func TestFileSinkReopen(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = sink.Connect(ctx)
+	err = sink.Connect(ctx, func(status string, message string) {
+		// do nothing
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -712,7 +723,9 @@ func TestFileCompressAndEncrypt(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			err = sink.Connect(ctx)
+			err = sink.Connect(ctx, func(status string, message string) {
+				// do nothing
+			})
 			if err != nil {
 				t.Fatal(err)
 			}

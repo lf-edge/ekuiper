@@ -172,6 +172,7 @@ See the table below for a detailed explanation of each rule behavior:
 | cron               | string: ""           | Specify the periodic trigger strategy of the rule, which is described by [cron expression](https://en.wikipedia.org/wiki/Cron) |
 | duration           | string: ""           | Specifies the running duration of the rule, only valid when cron is specified. The duration should not exceed the time interval between two cron cycles, otherwise it will cause unexpected behavior. |
 | cronDatetimeRange  | lists of struct      | Specify the effective time period of the Scheduled Rule, which is only valid when `cron` is specified. When this `cronDatetimeRange` is specified, the Scheduled Rule will only take effect within the time range specified. Please see [Scheduled Rule](#Scheduled Rule) for detailed configuration items |
+| enableRuleTracer   | bool: false    |  Specify whether the rule enables rule-level data tracing                                                                                             |
 
 For detail about `qos` and `checkpointInterval`, please check [state and fault tolerance](./state_and_fault_tolerance.md).
 
@@ -300,3 +301,6 @@ When we try to send a record to the stream, the status of the rule is obtained a
 ```
 
 It can be seen that `records_in_total` and `records_out_total` of each operator have changed from 0 to 1, which means that the operator has received a record and passed a record to the next operator, and finally sent to the `sink` and the `sink` wrote 1 record.
+
+If Prometheus configuration is enabled, these metrics will also be collected by Prometheus. For a complete list of
+operational metrics, please refer to the [Metrics List](../../operation/usage/monitor_with_prometheus.md#metric-types).

@@ -1,10 +1,10 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//	http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -78,7 +78,9 @@ func TestKafkaSink(t *testing.T) {
 		"brokers": "localhost:9092",
 	}
 	require.NoError(t, ks.Provision(ctx, configs))
-	require.NoError(t, ks.Connect(ctx))
+	require.NoError(t, ks.Connect(ctx, func(status string, message string) {
+		// do nothing
+	}))
 	mockT := testx.MockTuple{
 		Map: map[string]any{"1": 1},
 	}
@@ -106,7 +108,9 @@ func TestKafkaSinkBuildMsg(t *testing.T) {
 	ks := &KafkaSink{}
 	ctx := mockContext.NewMockContext("1", "2")
 	require.NoError(t, ks.Provision(ctx, configs))
-	require.NoError(t, ks.Connect(ctx))
+	require.NoError(t, ks.Connect(ctx, func(status string, message string) {
+		// do nothing
+	}))
 	item := map[string]any{
 		"a": 1,
 	}
@@ -123,4 +127,23 @@ func TestKafkaSinkBuildMsg(t *testing.T) {
 	require.Equal(t, b, msg.Headers[0].Value)
 	require.Equal(t, []byte("1"), msg.Key)
 	require.NoError(t, ks.Close(ctx))
+
+	configs = map[string]any{
+		"topic":   "t",
+		"brokers": "localhost:9092",
+		"headers": "{\"a\":\"{{.a}}\"}",
+	}
+	ks = &KafkaSink{}
+	require.NoError(t, ks.Provision(ctx, configs))
+	require.NoError(t, ks.Connect(ctx, func(status string, message string) {
+		// do nothing
+	}))
+	mockT = testx.MockTuple{
+		Map:      item,
+		Template: map[string]string{"headers": "{\"a\":\"1\"}"},
+	}
+	msg, err = ks.buildMsg(ctx, mockT, d)
+	require.NoError(t, err)
+	require.Equal(t, "a", msg.Headers[0].Key)
+	require.Equal(t, b, msg.Headers[0].Value)
 }

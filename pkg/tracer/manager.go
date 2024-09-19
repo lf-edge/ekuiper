@@ -12,22 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:build trace || !core
+
 package tracer
 
 import (
 	"context"
+	"database/sql"
+	"encoding/json"
+	"errors"
 	"sync"
+	"time"
 
+	"github.com/pingcap/failpoint"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
 )
 
 type SpanExporter struct {
 	remoteSpanExport *otlptrace.Exporter
-	LocalSpanStorage LocalSpanStorage
+	spanStorage      LocalSpanStorage
 }
 
 func NewSpanExporter(remoteCollector bool) (*SpanExporter, error) {
@@ -42,7 +50,11 @@ func NewSpanExporter(remoteCollector bool) (*SpanExporter, error) {
 		}
 		s.remoteSpanExport = exporter
 	}
-	s.LocalSpanStorage = newLocalSpanMemoryStorage(conf.Config.OpenTelemetry.LocalTraceCapacity)
+	if !conf.Config.OpenTelemetry.EnableLocalStorage {
+		s.spanStorage = newLocalSpanMemoryStorage(conf.Config.OpenTelemetry.LocalTraceCapacity)
+	} else {
+		s.spanStorage = newSqlspanStorage()
+	}
 	return s, nil
 }
 
@@ -57,7 +69,9 @@ func (l *SpanExporter) ExportSpans(ctx context.Context, spans []sdktrace.ReadOnl
 		}
 	}
 	for _, span := range spans {
-		l.LocalSpanStorage.SaveSpan(span)
+		if err := l.spanStorage.SaveSpan(span); err != nil {
+			conf.Log.Errorf("save span err:%v", err)
+		}
 	}
 	return nil
 }
@@ -75,13 +89,18 @@ func (l *SpanExporter) Shutdown(ctx context.Context) error {
 	return nil
 }
 
-func (l *SpanExporter) GetTraceById(traceID string) *LocalSpan {
-	return l.LocalSpanStorage.GetTraceById(traceID)
+func (l *SpanExporter) GetTraceById(traceID string) (*LocalSpan, error) {
+	return l.spanStorage.GetTraceById(traceID)
+}
+
+func (l *SpanExporter) GetTraceByRuleID(ruleID string, limit int) ([]string, error) {
+	return l.spanStorage.GetTraceByRuleID(ruleID, limit)
 }
 
 type LocalSpanStorage interface {
 	SaveSpan(span sdktrace.ReadOnlySpan) error
-	GetTraceById(traceID string) *LocalSpan
+	GetTraceById(traceID string) (*LocalSpan, error)
+	GetTraceByRuleID(ruleID string, limit int) ([]string, error)
 }
 
 type LocalSpanMemoryStorage struct {
@@ -89,12 +108,15 @@ type LocalSpanMemoryStorage struct {
 	queue *Queue
 	// traceid -> spanid -> span
 	m map[string]map[string]*LocalSpan
+	// rule -> traceID
+	ruleTraceMap map[string]map[string]struct{}
 }
 
 func newLocalSpanMemoryStorage(capacity int) *LocalSpanMemoryStorage {
 	return &LocalSpanMemoryStorage{
-		queue: NewQueue(capacity),
-		m:     map[string]map[string]*LocalSpan{},
+		queue:        NewQueue(capacity),
+		ruleTraceMap: make(map[string]map[string]struct{}),
+		m:            map[string]map[string]*LocalSpan{},
 	}
 }
 
@@ -115,27 +137,55 @@ func (l *LocalSpanMemoryStorage) saveSpan(localSpan *LocalSpan) error {
 		spanMap = make(map[string]*LocalSpan)
 		l.m[localSpan.TraceID] = spanMap
 	}
+	if len(localSpan.RuleID) > 0 {
+		traceMap, ok := l.ruleTraceMap[localSpan.RuleID]
+		if !ok {
+			traceMap = make(map[string]struct{})
+			l.ruleTraceMap[localSpan.RuleID] = traceMap
+		}
+		traceMap[localSpan.TraceID] = struct{}{}
+	}
+
 	spanMap[localSpan.SpanID] = localSpan
 	return nil
 }
 
-func (l *LocalSpanMemoryStorage) GetTraceById(traceID string) *LocalSpan {
+func (l *LocalSpanMemoryStorage) GetTraceById(traceID string) (*LocalSpan, error) {
 	l.RLock()
 	defer l.RUnlock()
 	allSpans := l.m[traceID]
 	if len(allSpans) < 1 {
-		return nil
+		return nil, nil
 	}
 	rootSpan := findRootSpan(allSpans)
 	if rootSpan == nil {
-		return nil
+		return nil, nil
 	}
 	copySpan := make(map[string]*LocalSpan)
 	for k, s := range allSpans {
 		copySpan[k] = s
 	}
 	buildSpanLink(rootSpan, copySpan)
-	return rootSpan
+	return rootSpan, nil
+}
+
+func (l *LocalSpanMemoryStorage) GetTraceByRuleID(ruleID string, limit int) ([]string, error) {
+	l.RLock()
+	defer l.RUnlock()
+	traceMap := l.ruleTraceMap[ruleID]
+	r := make([]string, 0)
+	if limit < 1 {
+		limit = len(traceMap)
+	}
+	count := 0
+	for traceID := range traceMap {
+		r = append(r, traceID)
+		count++
+		if count >= limit {
+			break
+		}
+	}
+	return r, nil
 }
 
 func findRootSpan(allSpans map[string]*LocalSpan) *LocalSpan {
@@ -212,4 +262,162 @@ func (q *Queue) Dequeue() string {
 
 func (q *Queue) Len() int {
 	return len(q.items)
+}
+
+type sqlSpanStorage struct{}
+
+func newSqlspanStorage() *sqlSpanStorage {
+	go func() {
+		ticker := time.NewTicker(time.Hour)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ticker.C:
+				if err := gcSqliteSpan(); err != nil {
+					conf.Log.Warnf("gc sqlite trace span err:%v", err.Error())
+				}
+			}
+		}
+	}()
+	return &sqlSpanStorage{}
+}
+
+func (s *sqlSpanStorage) SaveSpan(span sdktrace.ReadOnlySpan) error {
+	localSpan := FromReadonlySpan(span)
+	return s.saveLocalSpan(localSpan)
+}
+
+func (s *sqlSpanStorage) GetTraceById(traceID string) (*LocalSpan, error) {
+	return s.loadTraceByTraceID(traceID)
+}
+
+func (s *sqlSpanStorage) GetTraceByRuleID(ruleID string, limit int) ([]string, error) {
+	return s.loadTraceByRuleID(ruleID)
+}
+
+func (s *sqlSpanStorage) saveLocalSpan(span *LocalSpan) error {
+	bs, err := span.ToBytes()
+	if err != nil {
+		return err
+	}
+	if store.TraceStores != nil {
+		return store.TraceStores.Apply(func(db *sql.DB) error {
+			stmt, err := db.Prepare("insert into trace(traceID , ruleID,value) values (?,?,?)")
+			failpoint.Inject("injectTraceErr_1", func() {
+				err = errors.New("injectTraceErr_1")
+			})
+			if err != nil {
+				return err
+			}
+			_, err = stmt.Exec(span.TraceID, span.RuleID, bs)
+			failpoint.Inject("injectTraceErr_2", func() {
+				err = errors.New("injectTraceErr_2")
+			})
+			return err
+		})
+	}
+	return nil
+}
+
+func (s *sqlSpanStorage) loadTraceByRuleID(ruleID string) ([]string, error) {
+	traceIDList := make([]string, 0)
+	err := store.TraceStores.Apply(func(db *sql.DB) error {
+		stmt, err := db.Prepare("select traceID from trace where ruleID = ?")
+		failpoint.Inject("injectTraceErr_3", func() {
+			stmt.Close()
+			err = errors.New("injectTraceErr_3")
+		})
+		if err != nil {
+			return err
+		}
+		rows, err := stmt.Query(ruleID)
+		failpoint.Inject("injectTraceErr_4", func() {
+			rows.Close()
+			stmt.Close()
+			err = errors.New("injectTraceErr_4")
+		})
+		if err != nil {
+			return err
+		}
+		var traceID string
+		for rows.Next() {
+			err := rows.Scan(&traceID)
+			failpoint.Inject("injectTraceErr_5", func() {
+				rows.Close()
+				stmt.Close()
+				err = errors.New("injectTraceErr_5")
+			})
+			if err != nil {
+				return err
+			}
+			traceIDList = append(traceIDList, traceID)
+		}
+		return nil
+	})
+	return traceIDList, err
+}
+
+func (s *sqlSpanStorage) loadTraceByTraceID(traceID string) (*LocalSpan, error) {
+	var valueList [][]byte
+	err := store.TraceStores.Apply(func(db *sql.DB) error {
+		stmt, err := db.Prepare("select value from trace where traceID = ?")
+		failpoint.Inject("injectTraceErr_6", func() {
+			stmt.Close()
+			err = errors.New("injectTraceErr_6")
+		})
+		if err != nil {
+			return err
+		}
+		rows, err := stmt.Query(traceID)
+		failpoint.Inject("injectTraceErr_7", func() {
+			rows.Close()
+			stmt.Close()
+			err = errors.New("injectTraceErr_7")
+		})
+		if err != nil {
+			return err
+		}
+		var value []byte
+		for rows.Next() {
+			err := rows.Scan(&value)
+			failpoint.Inject("injectTraceErr_8", func() {
+				rows.Close()
+				stmt.Close()
+				err = errors.New("injectTraceErr_8")
+			})
+			if err != nil {
+				return err
+			}
+			valueList = append(valueList, value)
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	spans := make(map[string]*LocalSpan)
+	for _, value := range valueList {
+		l := &LocalSpan{}
+		if err := json.Unmarshal(value, &l); err != nil {
+			return nil, err
+		}
+		spans[l.SpanID] = l
+	}
+	rootSpan := findRootSpan(spans)
+	if rootSpan == nil {
+		return nil, nil
+	}
+	copySpan := make(map[string]*LocalSpan)
+	for k, s := range spans {
+		copySpan[k] = s
+	}
+	buildSpanLink(rootSpan, copySpan)
+	return rootSpan, nil
+}
+
+func gcSqliteSpan() error {
+	return store.TraceStores.Apply(func(db *sql.DB) error {
+		_, err := db.Exec("DELETE FROM trace WHERE createdtimestamp < datetime('now', '-1 day')")
+		return err
+	})
 }

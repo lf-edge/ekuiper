@@ -1,356 +1,132 @@
-eKuiper 实现了下面的插件，目前这些插件有的是用于描述插件开发过程的样例，有的是来自社区开发者贡献的插件，在使用插件前，请仔细阅读相关文档。
+# 原生插件开发
 
-eKuiper 插件开发者在开发过程中，可以指定元数据文件，这些元数据主要应用于以下方面：
+用户可以使用 Go 语言原生插件系统，采用 Go 语言编写 Source，Sink 和函数实现。不管开发哪种类型的插件，都需要经过以下步骤：
 
-- 插件编译：对于在目录 `plugins/sinks` 和 `plugins/sources` 中的插件，如果开发者提供了相关的元数据文件，那么 eKuiper 在版本发布的时候会自动编译该插件，然后自动上传这些插件到 EMQ 的插件下载网站上： www.emqx.cn/downloads/kuiper/vx.x.x/plugins，其中 `x.x.x` 为版本号。
+1. 创建插件项目。
+2. 根据插件扩展的类型，编写插件的实现逻辑。
+3. 构建插件 so。
+4. 将插件 so 和元数据/配置文件等依赖文件打包成插件 zip 包。
 
-  **<u>请注意：由于 Golang 插件的局限性，这些自动编译出来的插件能运行在 eKuiper 官方发布的对应版本的容器中；但是对于直接下载的二进制安装包，或者用户自己编译出来的二进制包，这些下载的插件不保证可以正常运行。</u>**
+## 插件开发环境设置
 
-- 可视化展示：从 0.9.1 版本开始，eKuiper 会随版本同步发布管理控制台，该控制台可以用于管理 eKuiper 节点、流、规则和插件等。开发者提供的插件元数据可以让用户在使用插件的时候更加方便，因此强烈建议插件开发者在提交插件的时候同时提供对应的元数据文件。元数据文件为 json 格式，文件名与插件一致，与插件一起放在压缩包的根目录下。
+需要使用与主项目完全相同版本的依赖项，特别是 (`github.com/lf-edge/ekuiper/contract/v2`) 来构建插件。用户可以自行管理插件项目，确保
+go.mod 中的 go 语言版本和与主项目相同的依赖模块的版本一致。
 
-## 源 (Sources)
+例如，开发对应 eKuiper v2.0.0 版本的插件时，需要先看 eKuiper 对应版本的 go.mod 文件。确保插件项目的 go 版本和 contract mod
+版本一致。例如以下的插件 go.mod 中，使用了 contract mod v2.0.0 版本，go 1.23.0 版本。
 
-| 名称                                                | 描述                              | 备注            |
-|---------------------------------------------------|---------------------------------|---------------|
-| [zmq](../../../guide/sources/plugin/zmq.md)       | 该插件监听 Zero Mq 消息并发送到 eKuiper 流中 | 插件样例，不可用于生产环境 |
-| [random](../../../guide/sources/plugin/random.md) | 该插件按照指定模式生成消息                   | 插件样例，不可用于生产环境 |
+```go.mod
+module mycompany.com/myplugin
 
-### source 元数据文件格式
+require github.com/lf-edge/ekuiper/contract/v2 v2.0.0
 
-source 的大部分属性用户通过对应的配置文件指定，用户无法在创建流的过程中对其进行配置。插件开发者提供的元数据文件中，只需指定以下部分的内容。
+go 1.23.0
+```
 
-#### libs
+## 插件开发
 
-该部分内容定义了插件用到了哪些库依赖 (格式为 `github.com/x/y@version`)，在插件的编译过程中，会读取该信息，将相关的库依赖加入到项目的 `go.mod` 中，该配置项内容为字符串数组。
+插件的开发就是根据插件类型实现特定的接口，并导出具有特定名称的实现。导出的符合名称必须与插件名称相同。插件支持两种类型的导出symbol:
 
-#### about
+1. 导出一个构造函数：eKuiper 将使用构造函数为每次加载创建一个插件实现的新实例。因此，每条规则将有一个插件实例，并且每个实例都将与其他实例隔离。这是推荐的方式。以下示例导出名为
+   Random 的 Source 构造函数。
 
-- trial:表示插件是否为 beta 测试阶段
-
-- author
-
-  这部分包含了插件的作者信息，插件开发者可以视情况提供这些信息，这部分信息会被展示在管理控制台的插件信息列表上。
-
-  - name：名字
-  - email：电子邮件地址
-  - company：公司名称
-  - website：公司网站地址
-
-- helpUrl
-
-  该插件的帮助文件地址，控制台会根据语言的支持情况，链接到对应的帮助文档中。
-
-  - en_US：英文文档帮助地址
-  - zh_CN：中文文档帮助地址
-
-- description
-
-  该插件的简单描述，控制台支持多种语言。
-
-  - en_US：英文描述
-  - zh_CN：中文描述
-
-#### properties
-
-该插件所支持的属性列表，以及每个属性相关的配置。
-
-- name：属性名称；**该字段必须提供；**
-- default：缺省值，用于设定该属性的缺省值，类型可以为数字、字符、布尔等；该字段可选(可嵌套)；
-- optional：设定该属性是否是必须提供；该字段可选，如果不提供则为 `true`, 表示用户可以提供该字段的值；
-- control：控件类型，控制在界面中显示的控件类型；**该字段必须提供；**
-  - text：文本输入框
-  - text-area：文字编辑区域
-  - list：列表框
-  - radio：单选框
-- helpUrl：如果有关于该属性更详细的帮助，可以在此指定；该字段可选；
-  - en_US：英文文档帮助地址
-  - zh_CN：中文文档帮助地址
-- hint：控件的提示信息；该字段可选；
-  - en_US
-  - zh_CN
-- label：控件针对的标签控件；**该字段必须提供；**
-  - en_US
-  - zh_CN
-- type：字段类型；**该字段必须提供；**
-
-  - string：字符串
-  - float：小数
-  - int：整数
-  - list_object：列表，元素是结构体
-  - list_string：列表，元素是字符串
-- values：如果控件类型为 `list-box` 或者 `radio`，**该字段必须提供；**
-  - 数组：数据类型可以为数字、字符、布尔等
-
-#### 样例文件
-
-以下为样例元数据文件。
-
-```json
-{
-    "libs": [""],
-    "about": {
-        "trial": false,
-        "author": {
-            "name": "",
-            "email": "",
-            "company": "",
-            "website": ""
-        },
-        "helpUrl": {
-            "en_US": "",
-            "zh_CN": ""
-        },
-        "description": {
-            "en_US": "",
-            "zh_CN": ""
-        }
-    },
-    "properties": {
-        "default": [{
-            "name": "",
-            "default": "",
-            "optional": false,
-            "control": "",
-            "type": "",
-            "hint": {
-                "en_US": "",
-                "zh_CN": ""
-            },
-            "label": {
-                "en_US": "",
-                "zh_CN": ""
-            }
-        }, {
-            "name": "",
-            "default": [{
-                "name": "",
-                "default": "",
-                "optional": false,
-                "control": "",
-                "type": "",
-                "hint": {
-                    "en_US": "",
-                    "zh_CN": ""
-                },
-                "label": {
-                    "en_US": "",
-                    "zh_CN": ""
-                }
-            }],
-            "optional": false,
-            "control": "",
-            "type": "",
-            "hint": {
-                "en_US": "",
-                "zh_CN": ""
-            },
-            "label": {
-                "en_US": "",
-                "zh_CN": ""
-            }
-        }]
+    ```go
+    func Random() api.Source {
+        return random.GetSource()
     }
+    ```
+
+2. 导出一个实例：eKuiper
+   将使用该实例作为所有插件加载的单例。因此，所有规则将共享相同的实例。对于这种实现，开发人员需要处理共享状态，以避免任何潜在的多线程问题。在没有共享状态且性能至关重要的情况下，建议使用此模式。函数扩展通常是没有内部状态的函数，适合这种模式。以下示例导出名为
+   Random 的 Source 实例。
+
+    ```go
+      var Random = random.GetSource()
+    ```
+
+扩展实现数据源（source），数据汇（sink）和函数（function）分别需要实现不同的接口。详情请参考：
+
+- [源扩展](./source.md)
+- [Sink 扩展](./sink.md)
+- [函数扩展](./function.md)
+
+### 状态存储
+
+eKuiper 扩展通过 context 参数暴露了一个基于键值对的状态存储接口，可用于所有类型的扩展，包括 Source，Sink 和 Function 扩展.
+
+状态为键值对，其中键为 string 类型而值为任意数据。键的作用域仅为当前扩展的实例。
+
+用户可通过 context 对象访问状态存储。状态相关方法包括 putState，getState，incrCounter，getCounter and deleteState。
+
+以下代码为函数扩展访问状态的实例。该函数将计算传入的单词数，并将累积数目保存在状态中。
+
+```go
+func (f *accumulateWordCountFunc) Exec(args []interface{}, ctx api.FunctionContext) (interface{}, bool) {
+logger := ctx.GetLogger()
+err := ctx.IncrCounter("allwordcount", len(strings.Split(args[0], args[1])))
+if err != nil {
+return err, false
+}
+if c, err := ctx.GetCounter("allwordcount"); err != nil   {
+return err, false
+} else {
+return c, true
+}
 }
 ```
 
-## 动作 (Sinks/Actions)
+### 运行时依赖
 
-| 名称                                                  | 描述                       | 备注                                                |
-|-----------------------------------------------------|--------------------------|---------------------------------------------------|
-| [zmq](../../../guide/sinks/plugin/zmq.md)           | 该插件将分析结果发送到 Zero Mq 的主题中 | 插件样例，不能用于生产环境                                     |
-| [Influxdb](../../../guide/sinks/plugin/influx.md)   | 该插件将分析结果发送到 InfluxDB 中   | 由 [@smart33690](https://github.com/smart33690) 提供 |
-| [TDengine](../../../guide/sinks/plugin/tdengine.md) | 该插件将分析结果发送到 TDengine 中   |                                                   |
+有些插件可能需要访问文件系统中的依赖文件。依赖文件建放置于 <span v-pre>
+{{ekuiperPath}}/etc/{{pluginType}}/{{pluginName}}</span>
+目录。打包插件时，依赖文件应放置于 [etc 目录](../../../api/restapi/plugins.md#插件文件格式)。安装后，这些文件会自动移动到推荐的位置。
 
-### sink 元数据文件格式
+在插件源代码中，开发者可通过 context 获取 eKuiper 根目录，以访问文件系统中的依赖：
 
-元数据文件格式为 JSON，主要分成以下部分：
-
-#### libs
-
-该部分内容定义了插件用到了哪些库依赖 (格式为 `github.com/x/y@version`)，在插件的编译过程中，会读取该信息，将相关的库依赖加入到项目的 `go.mod` 中，该配置项内容为字符串数组。
-
-#### about
-
-- trial:表示插件是否 为 beta 测试阶段
-
-- author
-
-  这部分包含了插件的作者信息，插件开发者可以视情况提供这些信息，这部分信息会被展示在管理控制台的插件信息列表上。
-
-  - name：名字
-  - email：电子邮件地址
-  - company：公司名称
-  - website：公司网站地址
-
-- helpUrl
-
-  该插件的帮助文件地址，控制台会根据语言的支持情况，链接到对应的帮助文档中。
-
-  - en_US：英文文档帮助地址
-  - zh_CN：中文文档帮助地址
-
-- description
-
-  该插件的简单描述，控制台支持多种语言。
-
-  - en_US：英文描述
-  - zh_CN：中文描述
-
-#### properties
-
-该插件所支持的属性列表，以及每个属性相关的配置。
-
-- name：属性名称；**该字段必须提供；**
-- default：缺省值，用于设定该属性的缺省值，类型可以为数字、字符、布尔等；该字段可选；
-- optional：设定该属性是否是必须提供；该字段可选，如果不提供则为 `true`，表示用户可以提供该字段的值；
-- control：控件类型，控制在界面中显示的控件类型；**该字段必须提供；**
-  - text：文本输入框
-  - text-area：文字编辑区域
-  - list：列表框
-  - radio：单选框
-- helpUrl：如果有关于该属性更详细的帮助，可以在此指定；该字段可选；
-  - en_US：英文文档帮助地址
-  - zh_CN：中文文档帮助地址
-- hint：控件的提示信息；该字段可选；
-  - en_US
-  - zh_CN
-- label：控件针对的标签控件；**该字段必须提供；**
-  - en_US
-  - zh_CN
-- type：字段类型；**该字段必须提供；**
-  - string：字符串
-  - float：小数
-  - int：整数
-  - list_object：列表，元素是结构体
-  - list_string：列表，元素是字符串
-  - list_float：列表，元素是小数
-  - list_int：列表，元素是整数
-- values：如果控件类型为 `list-box` 或者 `radio-button`，**该字段必须提供；**
-  - 数组：数据类型可以为数字、字符、布尔等
-
-#### 样例文件
-
-以下为样例元数据文件。
-
-```json
-{
-    "about": {
-        "trial": false,
-        "author": {
-            "name": "",
-            "email": "",
-            "company": "",
-            "website": ""
-        },
-        "helpUrl": {
-            "en_US": "",
-            "zh_CN": ""
-        },
-        "description": {
-            "en_US": "",
-            "zh_CN": ""
-        }
-    },
-    "libs": [""],
-    "properties": [{
-        "name": "",
-        "default": "",
-        "optional": false,
-        "control": "",
-        "type": "",
-        "hint": {
-            "en_US": "",
-            "zh_CN": ""
-        },
-        "label": {
-            "en_US": "",
-            "zh_CN": ""
-        }
-    }]
-}
+```go
+ctx.GetRootPath()
 ```
 
-## 函数 (Functions)
+## 插件编译
 
-| 名称                                                                 | 描述                                                      | 备注            |
-|--------------------------------------------------------------------|---------------------------------------------------------|---------------|
-| [echo](../../../sqls/functions/custom_functions.md)                | 原样输出参数值                                                 | 插件样例，不可用于生产环境 |
-| [countPlusOne](../../../sqls/functions/custom_functions.md)        | 输出参数长度加一的值                                              | 插件样例，不可用于生产环境 |
-| [accumulateWordCount](../../../sqls/functions/custom_functions.md) | 函数统计一共有多少个单词                                            | 插件样例，不可用于生产环境 |
-| [resize](../../../sqls/functions/custom_functions.md)              | 创建具有新尺寸（宽度，高度）的缩放图像。如果 width 或 height 设置为0，则将其设置为长宽比保留值 | 插件样例，不可用于生产环境 |
-| [thumbnail](../../../sqls/functions/custom_functions.md)           | 将保留宽高比的图像缩小到最大尺寸( maxWidth，maxHeight)。                  | 插件样例，不可用于生产环境 |
+插件代码编写完成后，用户需要使用 Go 语言编译工具编译出对应环境的插件 so 文件。**请注意**，插件必须与主项目 eKuiper
+使用相同的编译环境进行编译。
 
-eKuiper 具有许多内置函数，可以对数据执行计算。(具体文档参考 <https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/sqls/built-in_functions.md>)
+- 用户自行编译 eKuiper 主程序：插件可在主程序编译环境进行编译。做插件开发时多为此场景。
+- eKuiper 预编译二进制或默认 Docker image: 这些版本的 eKuiper 使用 alpine docker image 编译。具体版本可进入对应版本的
+  Dockerfile 源代码 (deploy/docker/Dockerfile) 查看。插件应使用相同版本的 docker image 进行编译。
+- eKuiper -slim 或者 -slim-python Docker image: 这些版本的 eKuiper 使用 debian docker image 编译。具体版本可进入对应版本的
+  Dockerfile 源代码 (deploy/docker/Dockerfile-slim) 查看。插件应使用相同版本的 docker image 进行编译。
 
-### functions 元数据文件格式
+环境准备好之后，可以使用如下编译指令进行编译：
 
-元数据文件格式为 JSON，主要分成以下部分：
-
-#### about
-
-- trial:表示插件是否 为 beta 测试阶段
-
-- author
-
-  这部分包含了插件的作者信息，插件开发者可以视情况提供这些信息，这部分信息会被展示在管理控制台的插件信息列表上。
-
-  - name：名字
-  - email：电子邮件地址
-  - company：公司名称
-  - website：公司网站地址
-
-- helpUrl
-
-  该插件的帮助文件地址，控制台会根据语言的支持情况，链接到对应的帮助文档中。
-
-  - en_US：英文文档帮助地址
-  - zh_CN：中文文档帮助地址
-
-- description
-
-  该插件的简单描述，控制台支持多种语言。
-
-  - en_US：英文描述
-  - zh_CN：中文描述
-
-#### functions
-
-- name：属性名称；**该字段必须提供；**
-- example：样例
-- hint：函数的提示信息；该字段可选；
-  - en_US
-  - zh_CN
-
-#### 样例文件
-
-以下为样例元数据文件。
-
-```json
-{
-    "about": {
-        "trial":false,
-        "author": {
-            "name": "",
-            "email": "",
-            "company": "",
-            "website": ""
-        },
-        "helpUrl": {
-            "en_US": "",
-            "zh_CN": ""
-        },
-        "description": {
-            "en_US": "",
-            "zh_CN": ""
-        }
-    },
-    "functions": [{
-        "name": "",
-        "example": "",
-        "hint": {
-            "en_US": "",
-            "zh_CN": ""
-        }
-    }]
-}
+```bash
+go build -trimpath --buildmode=plugin -o plugins/sources/MySource.so plugins/sources/my_source.go
 ```
+
+### 命名
+
+建议插件名使用 camel case 形式。插件命名有一些限制：
+
+1. 插件 Export 的变量必须为**插件名的首字母大写形式**。 例如，插件名为 _file_ ，则其输出变量名必须为 _File_。
+2. _.so_ 文件的名字必须与输出变量名或者插件名相同。例如， _MySource.so_ 或 _mySink.so_。
+
+### 版本
+
+用户可以**选择**将版本信息添加到 _.so_ 的名称中，以帮助识别插件的版本。然后可以通过 describe CLI 命令或 REST API
+检索版本信息。命名约定是在 _@_ 之后的名称中添加一个版本字符串。版本可以是任何字符串。如果版本字符串以 "v"
+开头，则返回结果中将忽略 "v" 。下面是一些典型的例子。
+
+- _MySource@v1.0.0.so_ ：版本是 1.0.0
+- _MySource@20200331.so_ ：版本是 20200331
+
+如果有多个具有相同名称的插件版本，则只有最新版本(按版本的字符串排序)将生效。
+
+## 插件打包
+
+插件编译完成后，需要将编译出的 so 文件，默认配置文件 xx.yaml (source 插件必需)，插件描述文件 xx.json 以及插件依赖的文件全部打包到
+zip 文件中。zip文件名没有特殊要求，用户可以自行命名。**请注意**：所有文件都必须在 zip 的根目录下，不可有额外的文件夹。
+
+## 进一步阅读
+
+插件的开发打包过程较为繁琐，可跟随[插件教程](./plugins_tutorial.md)一步一步完成插件编写部署。

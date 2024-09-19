@@ -142,6 +142,8 @@ portable:
   initTimeout: 5s
 
 openTelemetry:
+  serviceName: kuiperd-service
   enableRemoteCollector: false
   remoteEndpoint: localhost:4318
   localTraceCapacity: 2048
+  enableLocalStorage: false

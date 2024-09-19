@@ -65,7 +65,7 @@ func (s *randomSource) Provision(ctx api.StreamContext, props map[string]any) er
 	return nil
 }
 
-func (s *randomSource) Connect(ctx api.StreamContext) error {
+func (s *randomSource) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) error {
 	logger := ctx.GetLogger()
 	logger.Debugf("open random source with deduplicate %d", s.conf.Deduplicate)
 	if s.conf.Deduplicate != 0 {
@@ -85,6 +85,7 @@ func (s *randomSource) Connect(ctx api.StreamContext) error {
 			}
 		}
 	}
+	sch(api.ConnectionConnected, "")
 	return nil
 }
 

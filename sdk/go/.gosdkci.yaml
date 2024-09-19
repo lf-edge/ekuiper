@@ -1,5 +1,6 @@
 run:
   timeout: 10m
+  go: '1.23'
 
 linters:
   disable-all: true
@@ -18,5 +19,3 @@ linters-settings:
       - standard
       - default
       - prefix(github.com/lf-edge/ekuiper/sdk/go)
-  staticcheck:
-    go: '1.22'

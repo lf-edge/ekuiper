@@ -84,15 +84,15 @@ func TestProvisionMockErr(t *testing.T) {
 		"interval": "1s",
 		"dburl":    "mysql://root:@127.0.0.1:4000/test",
 	}
-	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/io/sql/MapToStructErr", "return(true)")
+	failpoint.Enable("github.com/lf-edge/ekuiper/v2/extensions/impl/sql/MapToStructErr", "return(true)")
 	err := GetSource().Provision(ctx, props)
 	require.Error(t, err)
-	failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/io/sql/MapToStructErr")
+	failpoint.Disable("github.com/lf-edge/ekuiper/v2/extensions/impl/sql/MapToStructErr")
 
-	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/io/sql/GetQueryGeneratorErr", "return(true)")
+	failpoint.Enable("github.com/lf-edge/ekuiper/v2/extensions/impl/sql/GetQueryGeneratorErr", "return(true)")
 	err = GetSource().Provision(ctx, props)
 	require.Error(t, err)
-	failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/io/sql/GetQueryGeneratorErr")
+	failpoint.Disable("github.com/lf-edge/ekuiper/v2/extensions/impl/sql/GetQueryGeneratorErr")
 }
 
 func TestSQLConnectionConnect(t *testing.T) {
@@ -112,7 +112,9 @@ func TestSQLConnectionConnect(t *testing.T) {
 	}
 	sqlSource := GetSource()
 	require.NoError(t, sqlSource.Provision(ctx, props))
-	require.NoError(t, sqlSource.Connect(ctx))
+	require.NoError(t, sqlSource.Connect(ctx, func(status string, message string) {
+		// do nothing
+	}))
 	sqlConnector, ok := sqlSource.(*SQLSourceConnector)
 	require.True(t, ok)
 	expectedData := map[string]any{
@@ -124,7 +126,6 @@ func TestSQLConnectionConnect(t *testing.T) {
 	}, func(ctx api.StreamContext, err error) {
 		require.NoError(t, err)
 	})
-
 	// query data Error
 	testcases := []struct {
 		path string
@@ -143,7 +144,7 @@ func TestSQLConnectionConnect(t *testing.T) {
 		},
 	}
 	for _, tc := range testcases {
-		fp := "github.com/lf-edge/ekuiper/v2/internal/io/sql/" + tc.path
+		fp := "github.com/lf-edge/ekuiper/v2/extensions/impl/sql/" + tc.path
 		failpoint.Enable(fp, "return(true)")
 		sqlConnector.queryData(ctx, time.Now(), func(ctx api.StreamContext, data any, meta map[string]any, ts time.Time) {}, func(ctx api.StreamContext, err error) {
 			require.Error(t, err)
@@ -165,7 +166,9 @@ func TestSQLConnectionErr(t *testing.T) {
 	}
 	sqlSource := GetSource()
 	require.NoError(t, sqlSource.Provision(ctx, props))
-	require.NoError(t, sqlSource.Connect(ctx))
+	require.NoError(t, sqlSource.Connect(ctx, func(status string, message string) {
+		// do nothing
+	}))
 }
 
 func TestSQLSourceRewind(t *testing.T) {
@@ -198,7 +201,9 @@ func TestSQLSourceRewind(t *testing.T) {
 	}
 	sqlSource := GetSource()
 	require.NoError(t, sqlSource.Provision(ctx, props))
-	require.NoError(t, sqlSource.Connect(ctx))
+	require.NoError(t, sqlSource.Connect(ctx, func(status string, message string) {
+		// do nothing
+	}))
 	sqlConnector, ok := sqlSource.(*SQLSourceConnector)
 	require.True(t, ok)
 	expectedData := map[string]any{
@@ -225,6 +230,30 @@ func TestSQLSourceRewind(t *testing.T) {
 		},
 	}...).GetStore()
 	require.Equal(t, expectState, state)
+	require.NoError(t, sqlConnector.ResetOffset(map[string]interface{}{
+		"a": int64(2),
+		"b": int64(2),
+	}))
+	expectState2 := store.NewIndexFieldWrap([]*store.IndexField{
+		{
+			IndexFieldName:     "a",
+			IndexFieldValue:    int64(2),
+			IndexFieldDataType: "bigint",
+		},
+		{
+			IndexFieldName:     "b",
+			IndexFieldValue:    int64(2),
+			IndexFieldDataType: "bigint",
+		},
+	}...).GetStore()
+	state2, err := sqlConnector.GetOffset()
+	require.NoError(t, err)
+	require.Equal(t, expectState2, state2)
+
+	require.NoError(t, sqlConnector.Rewind(expectState))
+	gotState, err := sqlConnector.GetOffset()
+	require.NoError(t, err)
+	require.Equal(t, expectState, gotState)
 }
 
 func TestSQLReconnect(t *testing.T) {
@@ -239,10 +268,17 @@ func TestSQLReconnect(t *testing.T) {
 	}
 	sqlSource := GetSource()
 	require.NoError(t, sqlSource.Provision(ctx, props))
-	require.NoError(t, sqlSource.Connect(ctx))
+	require.NoError(t, sqlSource.Connect(ctx, func(status string, message string) {
+		// do nothing
+	}))
 	sqlConnector, ok := sqlSource.(*SQLSourceConnector)
 	require.True(t, ok)
 	sqlConnector.queryData(ctx, time.Now(), func(ctx api.StreamContext, data any, meta map[string]any, ts time.Time) {}, func(ctx api.StreamContext, err error) {})
+	require.True(t, sqlConnector.needReconnect)
+
+	sqlConnector.queryData(ctx, time.Now(), func(ctx api.StreamContext, data any, meta map[string]any, ts time.Time) {}, func(ctx api.StreamContext, err error) {
+		require.Error(t, err)
+	})
 	require.True(t, sqlConnector.needReconnect)
 
 	// start server then reconnect

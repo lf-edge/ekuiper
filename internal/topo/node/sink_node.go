@@ -68,9 +68,9 @@ func newSinkNode(ctx api.StreamContext, name string, rOpt def.RuleOption, eoflim
 
 func (s *SinkNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 	s.prepareExec(ctx, errCh, "sink")
-	err := s.sink.Connect(ctx)
 	go func() {
 		err := infra.SafeRun(func() error {
+			err := s.sink.Connect(ctx, s.connectionStatusChange)
 			if err != nil {
 				infra.DrainError(ctx, err, errCh)
 			}
@@ -140,6 +140,13 @@ func (s *SinkNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 
 func (s *SinkNode) SetResendOutput(output chan<- any) {
 	s.resendOut = output
+}
+
+func (s *SinkNode) connectionStatusChange(status string, message string) {
+	if status == api.ConnectionDisconnected {
+		s.statManager.IncTotalExceptions(message)
+	}
+	s.statManager.SetConnectionState(status, message)
 }
 
 func (s *SinkNode) ingest(ctx api.StreamContext, item any) (any, bool) {

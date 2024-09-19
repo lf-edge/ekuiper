@@ -55,7 +55,9 @@ func TestSourceConnectorCompare(t *testing.T, r api.Source, props map[string]any
 	err = r.Provision(ctx, props)
 	assert.NoError(t, err)
 	// connect, subscribe and read data
-	err = r.Connect(ctx)
+	err = r.Connect(ctx, func(status string, message string) {
+		// do nothing
+	})
 	assert.NoError(t, err)
 	// Send data
 	go func() {
@@ -160,7 +162,7 @@ func TestSourceConnectorCompare(t *testing.T, r api.Source, props map[string]any
 		assert.NoError(t, err)
 	}()
 
-	ticker := time.After(60000 * time.Second)
+	ticker := time.After(60 * time.Second)
 	finished := make(chan struct{})
 	go func() {
 		wg.Wait()

@@ -35,20 +35,20 @@ import (
 )
 
 type sinkConf struct {
-	RollingInterval    time.Duration  `json:"rollingInterval"`
-	RollingCount       int            `json:"rollingCount"`
-	RollingNamePattern string         `json:"rollingNamePattern"` // where to add the timestamp to the file name
-	RollingHook        string         `json:"rollingHook"`
-	RollingHookProps   map[string]any `json:"rollingHookProps"`
-	CheckInterval      time.Duration  `json:"checkInterval"`
-	Path               string         `json:"path"` // support dynamic property, when rolling, make sure the path is updated
-	FileType           FileType       `json:"fileType"`
-	HasHeader          bool           `json:"hasHeader"`
-	Delimiter          string         `json:"delimiter"`
-	Format             string         `json:"format"` // only use for validation; transformation is done in sink_node
-	Compression        string         `json:"compression"`
-	Encryption         string         `json:"encryption"`
-	Fields             []string       `json:"fields"` // only use for extracting header for csv; transformation is done in sink_node
+	RollingInterval    cast.DurationConf `json:"rollingInterval"`
+	RollingCount       int               `json:"rollingCount"`
+	RollingNamePattern string            `json:"rollingNamePattern"` // where to add the timestamp to the file name
+	RollingHook        string            `json:"rollingHook"`
+	RollingHookProps   map[string]any    `json:"rollingHookProps"`
+	CheckInterval      cast.DurationConf `json:"checkInterval"`
+	Path               string            `json:"path"` // support dynamic property, when rolling, make sure the path is updated
+	FileType           FileType          `json:"fileType"`
+	HasHeader          bool              `json:"hasHeader"`
+	Delimiter          string            `json:"delimiter"`
+	Format             string            `json:"format"` // only use for validation; transformation is done in sink_node
+	Compression        string            `json:"compression"`
+	Encryption         string            `json:"encryption"`
+	Fields             []string          `json:"fields"` // only use for extracting header for csv; transformation is done in sink_node
 }
 
 type fileSink struct {
@@ -65,7 +65,7 @@ func (m *fileSink) Provision(ctx api.StreamContext, props map[string]interface{}
 		RollingCount:  1000000,
 		Path:          "cache",
 		FileType:      LINES_TYPE,
-		CheckInterval: 5 * time.Minute,
+		CheckInterval: cast.DurationConf(5 * time.Minute),
 	}
 	if err := cast.MapToStruct(props, c); err != nil {
 		return err
@@ -121,11 +121,11 @@ func (m *fileSink) Provision(ctx api.StreamContext, props map[string]interface{}
 	return nil
 }
 
-func (m *fileSink) Connect(ctx api.StreamContext) error {
+func (m *fileSink) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) error {
 	ctx.GetLogger().Debug("Opening file sink")
 	// Check if the files have opened longer than the rolling interval, if so close it and create a new one
 	if m.c.CheckInterval > 0 {
-		t := timex.GetTicker(m.c.CheckInterval)
+		t := timex.GetTicker(time.Duration(m.c.CheckInterval))
 		go func() { // this will never panic
 			defer t.Stop()
 			for {
@@ -135,7 +135,7 @@ func (m *fileSink) Connect(ctx api.StreamContext) error {
 						m.mux.Lock()
 						defer m.mux.Unlock()
 						for k, v := range m.fws {
-							if now.Sub(v.Start) > m.c.RollingInterval {
+							if now.Sub(v.Start) > time.Duration(m.c.RollingInterval) {
 								err := m.roll(ctx, k, v)
 								// TODO how to deal with this error
 								if err != nil {
@@ -155,6 +155,7 @@ func (m *fileSink) Connect(ctx api.StreamContext) error {
 			}
 		}()
 	}
+	sch(api.ConnectionConnected, "")
 	return nil
 }
 

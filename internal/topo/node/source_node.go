@@ -39,7 +39,7 @@ type SourceNode struct {
 }
 
 type sourceConf struct {
-	Interval time.Duration `json:"interval"`
+	Interval cast.DurationConf `json:"interval"`
 }
 
 // NewSourceNode creates a SourceConnectorNode
@@ -57,7 +57,7 @@ func NewSourceNode(ctx api.StreamContext, name string, ss api.Source, props map[
 	m := &SourceNode{
 		defaultNode: newDefaultNode(name, rOpt),
 		s:           ss,
-		interval:    cc.Interval,
+		interval:    time.Duration(cc.Interval),
 	}
 	switch st := ss.(type) {
 	case api.Bounded:
@@ -65,10 +65,6 @@ func NewSourceNode(ctx api.StreamContext, name string, ss api.Source, props map[
 	}
 	return m, nil
 }
-
-// TODO manage connection, use connection entity later
-// Connection must be able to retry. There is another metrics to record the connection status.(connected, retry count, connect time, disconnect time)
-// connect and auto reconnect
 
 // Open will be invoked by topo. It starts reading data.
 func (m *SourceNode) Open(ctx api.StreamContext, ctrlCh chan<- error) {
@@ -134,6 +130,14 @@ func (m *SourceNode) ingestAnyTuple(ctx api.StreamContext, data any, meta map[st
 	m.updateState(ctx)
 }
 
+func (m *SourceNode) connectionStatusChange(status string, message string) {
+	// TODO only send out error when status change from connected?
+	if status == api.ConnectionDisconnected {
+		m.ingestError(m.ctx, fmt.Errorf("disconnected: %s", message))
+	}
+	m.statManager.SetConnectionState(status, message)
+}
+
 func (m *SourceNode) ingestMap(t map[string]any, meta map[string]any, ts time.Time) {
 	tuple := &xsql.Tuple{Emitter: m.name, Message: t, Timestamp: ts, Metadata: meta}
 	m.Broadcast(tuple)
@@ -196,7 +200,7 @@ func (m *SourceNode) Run(ctx api.StreamContext, ctrlCh chan<- error) {
 		m.Close()
 	}()
 	poe := infra.SafeRun(func() error {
-		err := m.s.Connect(ctx)
+		err := m.s.Connect(ctx, m.connectionStatusChange)
 		if err != nil {
 			return err
 		}

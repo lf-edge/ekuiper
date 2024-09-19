@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,9 +19,9 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/jhump/protoreflect/desc"
-	"github.com/jhump/protoreflect/desc/protoparse"
-	"github.com/jhump/protoreflect/dynamic"
+	"github.com/jhump/protoreflect/desc"            //nolint:staticcheck
+	"github.com/jhump/protoreflect/desc/protoparse" //nolint:staticcheck
+	"github.com/jhump/protoreflect/dynamic"         //nolint:staticcheck
 	// introduce annotations
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 

@@ -26,6 +26,32 @@ type HttpPushConnection struct {
 	cfg      *connectionCfg
 	endpoint string
 	method   string
+	id       string
+}
+
+func (h *HttpPushConnection) GetId(ctx api.StreamContext) string {
+	return h.id
+}
+
+func (h *HttpPushConnection) Provision(ctx api.StreamContext, conId string, props map[string]any) error {
+	cfg := &connectionCfg{}
+	if err := cast.MapToStruct(props, cfg); err != nil {
+		return err
+	}
+	h.cfg = cfg
+	h.endpoint = cfg.Datasource
+	h.method = cfg.Method
+	h.id = conId
+	return nil
+}
+
+func (h *HttpPushConnection) Dial(ctx api.StreamContext) error {
+	topic, err := RegisterEndpoint(h.cfg.Datasource, h.cfg.Method)
+	if err != nil {
+		return err
+	}
+	h.topic = topic
+	return nil
 }
 
 type connectionCfg struct {
@@ -33,28 +59,15 @@ type connectionCfg struct {
 	Method     string `json:"method"`
 }
 
-func CreateConnection(ctx api.StreamContext, props map[string]any) (modules.Connection, error) {
-	cfg := &connectionCfg{}
-	if err := cast.MapToStruct(props, cfg); err != nil {
-		return nil, err
-	}
-	topic, err := RegisterEndpoint(cfg.Datasource, cfg.Method)
-	if err != nil {
-		return nil, err
-	}
-	return &HttpPushConnection{
-		topic:    topic,
-		cfg:      cfg,
-		endpoint: cfg.Datasource,
-		method:   cfg.Method,
-	}, nil
+func CreateConnection(_ api.StreamContext) modules.Connection {
+	return &HttpPushConnection{}
 }
 
 func (h *HttpPushConnection) Ping(ctx api.StreamContext) error {
 	return nil
 }
 
-func (h *HttpPushConnection) DetachSub(ctx api.StreamContext, props map[string]any) {
+func (h *HttpPushConnection) DetachSub(ctx api.StreamContext) {
 	UnregisterEndpoint(h.endpoint)
 }
 

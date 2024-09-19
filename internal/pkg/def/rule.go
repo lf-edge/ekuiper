@@ -39,7 +39,6 @@ type RuleOption struct {
 	Cron               string                   `json:"cron,omitempty" yaml:"cron,omitempty"`
 	Duration           string                   `json:"duration,omitempty" yaml:"duration,omitempty"`
 	CronDatetimeRange  []schedule.DatetimeRange `json:"cronDatetimeRange,omitempty" yaml:"cronDatetimeRange,omitempty"`
-	EnableRuleTracer   bool                     `json:"enableRuleTracer,omitempty" yaml:"enableRuleTracer,omitempty"`
 }
 
 type RestartStrategy struct {
