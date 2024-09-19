@@ -12,15 +12,11 @@ import (
 type grayscaleFloat float32
 
 func (f grayscaleFloat) RGBA() (r, g, b, a uint32) {
-	a = 0xffff
 	v := uint32(f * 0xffff)
 	if v > 0xffff {
 		v = 0xffff
 	}
-	r = v
-	g = v
-	b = v
-	return
+	return v, v, v, 0xffff
 }
 
 // ProcessedImage Used to satisfy the image interface as well as to help with formatting and
