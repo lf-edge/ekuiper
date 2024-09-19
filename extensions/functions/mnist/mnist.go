@@ -61,7 +61,6 @@ func (f *MnistFunc) Exec(_ api.FunctionContext, args []any) (any, bool) {
 				f.initModelError = fmt.Errorf("failed to initialize environment: %s", err)
 				return
 			}
-
 			_, _, err = ort.GetInputOutputInfo(f.modelPath)
 			if err != nil {
 				f.initModelError = fmt.Errorf("error getting input and output info for %s: %w", f.modelPath, err)
@@ -73,7 +72,7 @@ func (f *MnistFunc) Exec(_ api.FunctionContext, args []any) (any, bool) {
 		return fmt.Errorf("%v", f.initModelError), false
 	}
 
-	bounds := originalPic.Bounds().Canon()
+	bounds := image.Rect(0, 0, 28, 28).Canon()
 	if (bounds.Min.X != 0) || (bounds.Min.Y != 0) {
 		// Should never happen with the standard library.
 		return fmt.Errorf("bounding rect doesn't start at 0, 0"), false
