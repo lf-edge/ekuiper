@@ -84,6 +84,7 @@ func (g *GlobalTracerManager) SetTracer(enableRemote bool, serviceName, endpoint
 	tp := sdktrace.NewTracerProvider(opts...)
 	otel.SetTracerProvider(tp)
 	g.Init = true
+	conf.Log.Infof("set tracer success, enableRemote:%v, serviceName:%v, endpoint:%v", enableRemote, serviceName, endpoint)
 	return nil
 }
 
