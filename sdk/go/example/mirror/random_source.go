@@ -22,8 +22,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/lf-edge/ekuiper/sdk/go/api"
 	"github.com/mitchellh/mapstructure"
+
+	"github.com/lf-edge/ekuiper/sdk/go/api"
 )
 
 const dedupStateKey = "input"
