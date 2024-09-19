@@ -114,6 +114,55 @@ Via REST API [Create Rules](../../api/restapi/rules.md#create-a-rule)
 
 [Enable data tracing](../../api/restapi/trace.md#start-trace-the-data-of-specific-rule) for rules through REST API
 
-## Access Jaeger to view Trace data
+### Access Jaeger to view Trace data
 
 Visit localhost:16686 to view Trace data in Jaeger
+
+
+## Debug rules through data tracing
+
+In this example, we will debug the rules through data tracing to see how data is transferred among various operators in SQL.
+
+### Create rules
+
+First we create a rule that will filter the data based on column a
+
+```json
+{
+    "id": "rule1",
+    "sql": "select * from demo where a > 5",
+    "actions": [
+        {
+            "log": {
+            }
+        }
+    ]
+}
+```
+
+### Send the data
+
+Send two pieces of data, one of which will be filtered by the filter condition, and the other will not.
+
+```json
+{"a":10}
+{"a":4}
+```
+
+### Get the TraceID list of rules through REST API
+
+We can get the [TraceID list of rules](../../api/restapi/trace.md#view-the-latest-trace-id-based-on-the-rule-id) through the Rest API
+
+### View the corresponding data trace in Jaeger through TraceID
+
+For the data {"a":10}, you can view the transmission of this data in various operators in Jaeger:
+
+![traced_png](../../resources/traced.png)
+
+Since column a meets the filtering conditions of SQL, the data is not filtered and is eventually output.
+
+For the data {"a":4}, you can view the transmission of this data in various operators in Jaeger:
+
+![un_traced_png](../../resources/un_traced.png)
+
+Since column a does not meet the filtering conditions of SQL, the data is filtered and is not output.

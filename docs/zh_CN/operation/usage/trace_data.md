@@ -112,6 +112,54 @@ openTelemetry:
 
 通过 REST API 为规则[开启数据追踪](../../api//restapi/trace.md#开启特定规则的数据追踪)
 
-## 访问 Jaeger 查看 Trace 数据
+### 访问 Jaeger 查看 Trace 数据
 
 访问 localhost:16686 查看 Jaeger 内的 Trace 数据
+
+## 通过数据追踪来 debug 规则
+
+在本例中我们将通过数据追踪来 debug 规则，查看在 SQL 中，数据是如何在各个算子中传输的。
+
+### 创建规则
+
+首先我们创建一个规则，该规则会根据 a 列来将数据进行筛选
+
+```json
+{
+    "id": "rule1",
+    "sql": "select * from demo where a > 5",
+    "actions": [
+        {
+            "log": {
+            }
+        }
+    ]
+}
+```
+
+### 发送数据
+
+发送两条数据，其中一条数据会被过滤条件过滤，另一条则不会。
+
+```json
+{"a":10}
+{"a":4}
+```
+
+### 通过 REST API 获取规则的 TraceID 列表
+
+我们可以通过 Rest API 来获取[规则的 TraceID 列表](../../api/restapi/trace.md#根据规则-id-查看最近的-trace-id)
+
+### 通过 TraceID 在 Jaeger 中查看对应的数据追踪
+
+对于 {"a":10} 这条数据，在 Jaeger 中可以查看该数据在各个算子中的传输：
+
+![traced_png](../../resources/traced.png)
+
+由于 a 列满足了 SQL 的筛选条件，所以该数据没有被过滤，最终被输出了。
+
+对于 {"a":4} 这条数据，在 Jaeger 中可以查看该数据在各个算子中的传输：
+
+![un_traced_png](../../resources/un_traced.png)
+
+由于 a 列没有满足 SQL 的筛选条件，所以该数据被过滤，最终没有被输出。
