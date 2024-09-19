@@ -118,7 +118,6 @@ Via REST API [Create Rules](../../api/restapi/rules.md#create-a-rule)
 
 Visit localhost:16686 to view Trace data in Jaeger
 
-
 ## Debug rules through data tracing
 
 In this example, we will debug the rules through data tracing to see how data is transferred among various operators in SQL.
