@@ -24,6 +24,7 @@ import (
 	_ "go.nanomsg.org/mangos/v3/transport/ipc"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )

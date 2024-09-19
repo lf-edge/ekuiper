@@ -19,6 +19,7 @@ import (
 	"strings"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+
 	"github.com/lf-edge/ekuiper/v2/internal/io/memory/pubsub"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"

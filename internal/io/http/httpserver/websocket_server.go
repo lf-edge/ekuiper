@@ -24,6 +24,7 @@ import (
 	"github.com/gorilla/websocket"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/io/memory/pubsub"
 )

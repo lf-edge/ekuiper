@@ -28,6 +28,7 @@ import (
 	"github.com/segmentio/kafka-go/sasl/scram"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cert"

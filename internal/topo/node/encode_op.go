@@ -18,6 +18,7 @@ import (
 	"fmt"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+
 	"github.com/lf-edge/ekuiper/v2/internal/converter"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node/tracenode"

@@ -21,6 +21,7 @@ import (
 	"testing"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+
 	"github.com/lf-edge/ekuiper/v2/pkg/mock"
 	"github.com/lf-edge/ekuiper/v2/pkg/model"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"

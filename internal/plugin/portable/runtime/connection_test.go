@@ -26,6 +26,7 @@ import (
 	"go.nanomsg.org/mangos/v3/protocol/req"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/testx"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
