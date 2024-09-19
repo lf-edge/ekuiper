@@ -35,6 +35,9 @@ jobs:
           - 1883:1883
           - 18083:18083
 
+    env:
+      JMETER_VERSION: 5.4.3
+
     steps:
       - uses: actions/setup-go@v5
         with:
@@ -49,18 +52,30 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install pynng==0.7.2
-      - name: install jmeter
+      - name: Cache jmeter
+        id: cache-jmeter
+        uses: actions/cache@v4
+        with:
+          path: apache-jmeter.tgz
+          key: apache-jmeter-${{ env.JMETER_VERSION }}
+      - name: Download jmeter
+        if: steps.cache-jmeter.outputs.cache-hit != 'true'
         timeout-minutes: 10
         env:
-          JMETER_VERSION: 5.4.3
+          JMETER_VERSION: ${{ env.JMETER_VERSION }}
         run: |
-          wget --no-check-certificate -O /tmp/apache-jmeter.tgz https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-$JMETER_VERSION.tgz
-          cd /tmp && tar -xvf apache-jmeter.tgz
+          wget --no-check-certificate --no-verbose -O apache-jmeter.tgz https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-$JMETER_VERSION.tgz
+      - name: Install jmeter
+        timeout-minutes: 10
+        env:
+          JMETER_VERSION: ${{ env.JMETER_VERSION }}
+        run: |
+          tar -xvf apache-jmeter.tgz -C /tmp
           echo "jmeter.save.saveservice.output_format=xml" >> /tmp/apache-jmeter-$JMETER_VERSION/user.properties
           echo "jmeter.save.saveservice.response_data.on_error=true" >> /tmp/apache-jmeter-$JMETER_VERSION/user.properties
           wget -O /tmp/apache-jmeter-$JMETER_VERSION/lib/ext/mqtt-xmeter-1.13-jar-with-dependencies.jar https://github.com/emqx/mqtt-jmeter/raw/master/Download/v1.13.0/mqtt-xmeter-1.13-jar-with-dependencies.jar
           ln -s /tmp/apache-jmeter-$JMETER_VERSION /opt/jmeter
-      - name: install tdengine client
+      - name: Install tdengine client
         timeout-minutes: 10
         env:
           TD_VERSION: 2.4.0.18
@@ -148,6 +163,9 @@ jobs:
           - 1883:1883
           - 18083:18083
 
+    env:
+      JMETER_VERSION: 5.4.3
+
     steps:
       - uses: actions/setup-go@v5
         with:
@@ -158,13 +176,25 @@ jobs:
           java-version: '8' # The JDK version to make available on the path.
           java-package: jdk # (jre, jdk, or jdk+fx) - defaults to jdk
           architecture: x64 # (x64 or x86) - defaults to x64
-      - name: install jmeter
+      - name: Cache jmeter
+        id: cache-jmeter
+        uses: actions/cache@v4
+        with:
+          path: apache-jmeter.tgz
+          key: apache-jmeter-${{ env.JMETER_VERSION }}
+      - name: Download jmeter
+        if: steps.cache-jmeter.outputs.cache-hit != 'true'
         timeout-minutes: 10
         env:
-          JMETER_VERSION: 5.4.3
+          JMETER_VERSION: ${{ env.JMETER_VERSION }}
         run: |
-          wget --no-check-certificate -O /tmp/apache-jmeter.tgz https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-$JMETER_VERSION.tgz
-          cd /tmp && tar -xvf apache-jmeter.tgz
+          wget --no-check-certificate --no-verbose -O apache-jmeter.tgz https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-$JMETER_VERSION.tgz
+      - name: Install jmeter
+        timeout-minutes: 10
+        env:
+          JMETER_VERSION: ${{ env.JMETER_VERSION }}
+        run: |
+          tar -xvf apache-jmeter.tgz -C /tmp
           echo "jmeter.save.saveservice.output_format=xml" >> /tmp/apache-jmeter-$JMETER_VERSION/user.properties
           echo "jmeter.save.saveservice.response_data.on_error=true" >> /tmp/apache-jmeter-$JMETER_VERSION/user.properties
           wget -O /tmp/apache-jmeter-$JMETER_VERSION/lib/ext/mqtt-xmeter-1.13-jar-with-dependencies.jar https://github.com/emqx/mqtt-jmeter/raw/master/Download/v1.13.0/mqtt-xmeter-1.13-jar-with-dependencies.jar
@@ -231,6 +261,9 @@ jobs:
   fvt_tests_for_container_in_helm:
     runs-on: ubuntu-latest
 
+    env:
+      JMETER_VERSION: 5.4.3
+
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-java@v4
@@ -239,13 +272,25 @@ jobs:
         java-version: '8' # The JDK version to make available on the path.
         java-package: jdk # (jre, jdk, or jdk+fx) - defaults to jdk
         architecture: x64 # (x64 or x86) - defaults to x64
-    - name: install jmeter
+    - name: Cache jmeter
+      id: cache-jmeter
+      uses: actions/cache@v4
+      with:
+        path: apache-jmeter.tgz
+        key: apache-jmeter-${{ env.JMETER_VERSION }}
+    - name: Download jmeter
+      if: steps.cache-jmeter.outputs.cache-hit != 'true'
       timeout-minutes: 10
       env:
-          JMETER_VERSION: 5.4.3
+        JMETER_VERSION: ${{ env.JMETER_VERSION }}
       run: |
-        wget --no-check-certificate -O /tmp/apache-jmeter.tgz https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-$JMETER_VERSION.tgz
-        cd /tmp && tar -xvf apache-jmeter.tgz
+        wget --no-check-certificate --no-verbose -O apache-jmeter.tgz https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-$JMETER_VERSION.tgz
+    - name: Install jmeter
+      timeout-minutes: 10
+      env:
+        JMETER_VERSION: ${{ env.JMETER_VERSION }}
+      run: |
+        tar -xvf apache-jmeter.tgz -C /tmp
         echo "jmeter.save.saveservice.output_format=xml" >> /tmp/apache-jmeter-$JMETER_VERSION/user.properties
         echo "jmeter.save.saveservice.response_data.on_error=true" >> /tmp/apache-jmeter-$JMETER_VERSION/user.properties
         wget -O /tmp/apache-jmeter-$JMETER_VERSION/lib/ext/mqtt-xmeter-1.13-jar-with-dependencies.jar https://github.com/emqx/mqtt-jmeter/raw/master/Download/v1.13.0/mqtt-xmeter-1.13-jar-with-dependencies.jar
