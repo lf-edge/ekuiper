@@ -76,6 +76,26 @@ func Test_mnist_Exec(t *testing.T) {
 				fmt.Sprintf(" probably a %d, with probability %f\n", 8, 4.764542),
 			want1: true,
 		},
+		{
+			name: "test2",
+			fields: fields{
+				modelPath:         "etc/mnist.onnx",
+				inputShape:        ort.NewShape(1, 1, 28, 28),
+				outputShape:       ort.NewShape(1, 10),
+				sharedLibraryPath: getDefaultSharedLibPath(),
+				initModelError:    nil,
+			},
+			args: args{
+				in0: fctx,
+				args: func() []any {
+					args := make([]any, 0)
+					args = append(args, 1, 2, 3)
+					return args
+				}(),
+			},
+			want0: fmt.Errorf("labelImage function parameter must be a bytea, but got int(1)"),
+			want1: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -122,4 +142,16 @@ func getDefaultSharedLibPath() string {
 		" for OS \"%s\" and architecture \"%s\".\n", runtime.GOOS,
 		runtime.GOARCH)
 	return ""
+}
+
+func Test_123(t *testing.T) {
+
+	// 生成一个测试函数
+	ttt:=fmt.Errorf("labelImage function parameter must be a bytea, but got %[1]T(%[1]v)", func() []any {
+		args := make([]any, 0)
+		args = append(args, 1, 2, 3)
+		return args
+	}())
+	fmt.Print(ttt)
+
 }
