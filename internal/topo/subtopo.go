@@ -90,7 +90,7 @@ func (s *SrcSubTopo) Open(ctx api.StreamContext, parentErrCh chan<- error) {
 	if s.opened.CompareAndSwap(false, true) {
 		poe := infra.SafeRun(func() error {
 			ctx.GetLogger().Infof("Opening sub topo %s by rule %s", s.name, ctx.GetRuleId())
-			pctx, cancel, err := prepareSharedContext(s.name)
+			pctx, cancel, err := prepareSharedContext(ctx, s.name)
 			if err != nil {
 				return err
 			}
@@ -211,9 +211,12 @@ func (s *SrcSubTopo) EnableCheckpoint(sources *[]checkpoint.StreamTask, ops *[]c
 	}
 }
 
-func prepareSharedContext(k string) (api.StreamContext, context.CancelFunc, error) {
+func prepareSharedContext(parCtx api.StreamContext, k string) (api.StreamContext, context.CancelFunc, error) {
 	contextLogger := conf.Log.WithField("subtopo", k)
 	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+	if dParCtx, ok := parCtx.(*kctx.DefaultContext); ok {
+		ctx.PropagateTracer(dParCtx)
+	}
 	ruleId := "$$subtopo_" + k
 	opId := "subtopo_" + k
 	store, err := state.CreateStore("subtopo_"+k, 0)
