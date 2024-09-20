@@ -31,6 +31,7 @@ import (
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"go.opentelemetry.io/otel/propagation"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 
@@ -138,9 +139,14 @@ func jsonByteResponse(buffer bytes.Buffer, w http.ResponseWriter, logger api.Log
 func traceMiddleware(next http.Handler) http.Handler {
 	t := tracer.GetTracer()
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		_, span := t.Start(context.Background(), req.URL.Path)
+		propagator := propagation.TraceContext{}
+		originCtx := context.Background()
+		ctx := propagator.Extract(originCtx, propagation.HeaderCarrier(req.Header))
+		if ctx != originCtx {
+			_, span := t.Start(ctx, req.URL.Path)
+			defer span.End()
+		}
 		next.ServeHTTP(w, req)
-		span.End()
 	})
 }
 
