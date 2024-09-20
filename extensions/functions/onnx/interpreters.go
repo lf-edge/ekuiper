@@ -25,6 +25,7 @@ import (
 	_ "image/jpeg"
 	_ "image/png"
 	"path/filepath"
+	"runtime"
 	"sync"
 
 	ort "github.com/yalue/onnxruntime_go"
@@ -57,7 +58,7 @@ func (m *interpreterManager) GetOrCreate(name string) (*InterPreter, error) {
 	m.once.Do(
 		func() {
 			log := conf.Log
-			ort.SetSharedLibraryPath("/usr/local/onnx/lib/onnxruntime.so")
+			ort.SetSharedLibraryPath(getDefaultSharedLibPath())
 			err := ort.InitializeEnvironment()
 			if err != nil {
 				m.envInitErr = fmt.Errorf("failed to initialize environment: %s", err)
@@ -129,6 +130,25 @@ func (m *interpreterManager) GetOrCreate(name string) (*InterPreter, error) {
 		log.Infof("inputTensor.Destroy() start1")
 	}
 	return ip, nil
+}
+
+func getDefaultSharedLibPath() string {
+	// For now, we only include libraries for ARM64 darwin and x86_64 or ARM64 Linux. In the future, libraries may be added or removed.
+	if runtime.GOOS == "darwin" {
+		if runtime.GOARCH == "arm64" {
+			return "/usr/local/onnx/lib/onnxruntime_arm64.dylib"
+		}
+	}
+	if runtime.GOOS == "linux" {
+		if runtime.GOARCH == "arm64" {
+			return "/usr/local/onnx/lib/onnxruntime_arm64.so"
+		}
+		return "/usr/local/onnx/lib/onnxruntime.so"
+	}
+	fmt.Printf("Unable to determine a path to the onnxruntime shared library"+
+		" for OS \"%s\" and architecture \"%s\".\n", runtime.GOOS,
+		runtime.GOARCH)
+	return ""
 }
 
 type InterPreter struct {
