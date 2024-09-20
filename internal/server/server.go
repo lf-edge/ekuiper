@@ -47,6 +47,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/topo/rule"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
+	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 	"github.com/lf-edge/ekuiper/v2/pkg/tracer"
 )
 
@@ -137,6 +138,20 @@ func StartUp(Version string) {
 	createPaths()
 	conf.SetupEnv()
 	conf.InitConf()
+
+	// Print inited modules
+	for n := range modules.Sources {
+		conf.Log.Infof("register source %s", n)
+	}
+	for n := range modules.Sinks {
+		conf.Log.Infof("register sink %s", n)
+	}
+	for n := range modules.LookupSources {
+		conf.Log.Infof("register lookup source %s", n)
+	}
+	for n := range modules.Converters {
+		conf.Log.Infof("register format %s", n)
+	}
 
 	serverCtx, serverCancel := context.WithCancel(context.Background())
 	if conf.Config.Basic.EnableResourceProfiling {
