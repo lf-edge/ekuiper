@@ -38,11 +38,11 @@ type SpanExporter struct {
 	spanStorage      LocalSpanStorage
 }
 
-func NewSpanExporter(remoteCollector bool) (*SpanExporter, error) {
+func NewSpanExporter(remoteCollector bool, remoteEndpoint string) (*SpanExporter, error) {
 	s := &SpanExporter{}
 	if remoteCollector {
 		exporter, err := otlptracehttp.New(context.Background(),
-			otlptracehttp.WithEndpoint(conf.Config.OpenTelemetry.RemoteEndpoint),
+			otlptracehttp.WithEndpoint(remoteEndpoint),
 			otlptracehttp.WithInsecure(),
 		)
 		if err != nil {

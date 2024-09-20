@@ -75,7 +75,7 @@ func (g *GlobalTracerManager) SetTracer(enableRemote bool, serviceName, endpoint
 	g.ServiceName = serviceName
 	g.EnableRemoteEndpoint = enableRemote
 	g.RemoteEndpoint = endpoint
-	exporter, err := NewSpanExporter(enableRemote)
+	exporter, err := NewSpanExporter(enableRemote, endpoint)
 	if err != nil {
 		return err
 	}
