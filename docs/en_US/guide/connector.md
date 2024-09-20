@@ -64,7 +64,6 @@ For specialized data dispatch requirements or integrations with particular platf
 
 - [InfluxDB sink](./sinks/plugin/influx.md): A sink to InfluxDB `v1.x`.
 - [InfluxDBV2 sink](./sinks/plugin/influx2.md): A sink to InfluxDB `v2.x`.
-- [TDengine sink](./sinks/plugin/tdengine.md): A sink to TDengine.
 - [Image sink](./sinks/plugin/image.md): A sink to an image file. Only used to handle binary results.
 - [Zero MQ sink](./sinks/plugin/zmq.md): A sink to Zero MQ.
 - [Kafka sink](./sinks/plugin/kafka.md): A sink to Kafka.

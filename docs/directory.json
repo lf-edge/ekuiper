@@ -330,10 +330,6 @@
                   "path": "guide/sinks/plugin/influx2"
                 },
                 {
-                  "title": "TDengine Sink",
-                  "path": "guide/sinks/plugin/tdengine"
-                },
-                {
                   "title": "Image Sink",
                   "path": "guide/sinks/plugin/image"
                 },
@@ -1104,10 +1100,6 @@
                 {
                   "title": "InfluxDBV2 Sink",
                   "path": "guide/sinks/plugin/influx2"
-                },
-                {
-                  "title": "TDengine Sink",
-                  "path": "guide/sinks/plugin/tdengine"
                 },
                 {
                   "title": "Image Sink",
