@@ -30,8 +30,9 @@
 ### MQTT 源
 
 注意模型输入数据格式必须为浮点数组, 因此需要在数据源中指定数据类型，由源将其预处理为字节数组。
-```
-POST /streams HTTP/1.1
+
+```shell
+POST /streams 
 Host: 192.168.116.128:9081
 Content-Type: application/json
 Content-Length: 109
@@ -52,7 +53,8 @@ Content-Length: 109
 ![模型调用](../../resources/tflite_sin_rule.png)
 
 Rest API 创建规则以调用模型：
-```
+
+```shell
 {
     "id": "ruleOnnx",
     "sql": "SELECT onnx(\"mnist\",data) FROM onnxPubImg",
@@ -76,6 +78,7 @@ Rest API 创建规则以调用模型：
 ![结果查询](../../resources/mqttx_mnist.png)
 
 你可以使用类似如下程序的方式来发送图片，图片位于ONNX目录下。
+
 ```go
 func TestPic(t *testing.T) {
 	const TOPIC = "onnxPubImg"
@@ -142,8 +145,8 @@ func TestPic(t *testing.T) {
 类似于下图，这里选择使用Rest API 调用模型。
 ![模型调用](../../resources/tflite_sin_rule.png)
 
-```
-POST /rules HTTP/1.1
+```shell
+POST /rules 
 Host: 192.168.116.128:9081
 User-Agent: Apifox/1.0.0 (https://apifox.com)
 Content-Type: application/json
@@ -174,6 +177,7 @@ Content-Length: 319
 ![结果查询](../../resources/mqttx_sum_and_difference.png)
 
 你可以使用类似如下程序的方式来发送测试数据。
+
 ```go
 func TestSum(t *testing.T) {
 	const TOPIC = "sum_diff_pub"
