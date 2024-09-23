@@ -81,51 +81,50 @@ Rest API 创建规则以调用模型：
 
 ```go
 func TestPic(t *testing.T) {
-	const TOPIC = "onnxPubImg"
+    const TOPIC = "onnxPubImg"
 
-	images := []string{
-		
-		"img.png",
-		// 其他你需要的图像
-	}
-	opts := mqtt.NewClientOptions().AddBroker("tcp://localhost:1883")
-	client := mqtt.NewClient(opts)
-	if token := client.Connect(); token.Wait() && token.Error() != nil {
-		panic(token.Error())
-	}
-	for _, image := range images {
-		fmt.Println("Publishing " + image)
-		inputImage, err := NewProcessedImage(image, false)
+    images := []string{
+        "img.png",
+        // 其他你需要的图像
+    }
+    opts := mqtt.NewClientOptions().AddBroker("tcp://localhost:1883")
+    client := mqtt.NewClient(opts)
+    if token := client.Connect(); token.Wait() && token.Error() != nil {
+        panic(token.Error())
+    }
+    for _, image := range images {
+        fmt.Println("Publishing " + image)
+        inputImage, err := NewProcessedImage(image, false)
 
-		if err != nil {
-			fmt.Println(err)
-			continue
-		}
-		// payload, err := os.ReadFile(image)
-		payloadF32 := inputImage.GetNetworkInput()
+        if err != nil {
+            fmt.Println(err)
+            continue
+        }
+        // payload, err := os.ReadFile(image)
+        payloadF32 := inputImage.GetNetworkInput()
 
-		data := make([]any, len(payloadF32))
-		for i := 0; i < len(data); i++ {
-			data[i] = payloadF32[i]
-		}
-		payloadUnMarshal := MqttPayLoadFloat32Slice{
-			Data: payloadF32,
-		}
-		payload, err := json.Marshal(payloadUnMarshal)
-		if err != nil {
-			fmt.Println(err)
-			continue
-		} else {
-			fmt.Println(string(payload))
-		}
-		if token := client.Publish(TOPIC, 2, true, payload); token.Wait() && token.Error() != nil {
-			fmt.Println(token.Error())
-		} else {
-			fmt.Println("Published " + image)
-		}
-		time.Sleep(1 * time.Second)
-	}
-	client.Disconnect(0)
+        data := make([]any, len(payloadF32))
+        for i := 0; i < len(data); i++ {
+            data[i] = payloadF32[i]
+        }
+        payloadUnMarshal := MqttPayLoadFloat32Slice{
+            Data: payloadF32,
+        }
+        payload, err := json.Marshal(payloadUnMarshal)
+        if err != nil {
+            fmt.Println(err)
+            continue
+        } else {
+            fmt.Println(string(payload))
+        }
+        if token := client.Publish(TOPIC, 2, true, payload); token.Wait() && token.Error() != nil {
+            fmt.Println(token.Error())
+        } else {
+            fmt.Println("Published " + image)
+        }
+        time.Sleep(1 * time.Second)
+        }
+    client.Disconnect(0)
 }
 ```
 
@@ -134,12 +133,12 @@ func TestPic(t *testing.T) {
 请自行下载[sum_and_difference 模型](https://github.com/yalue/onnxruntime_go_examples/blob/master/sum_and_difference/sum_and_difference.onnx), 此模型预估输入值的总和和最大差值。例如用户输入 [0.2 0.3 0.6 0.9], 则预估总和为 2，最大差值为 0.7。
 用户需准备 MQTT Broker 并自行创建 MQTT 源用于向 eKuiper rule 发送待处理的数据并将推理结果发送回 MQTT Broker。
 
-### 模型上传
+### Sum_and_difference模型上传
 
 用户可以通过 eKuiper manager 上传模型文件到 eKuiper。类似于下图。也可以自行将模型文件放置在`{$build_output}/data/uploads`目录下。
 ![模型上传](../../resources/mobilenet_upload.png)
 
-### 调用模型
+### 调用Sum_and_difference模型
 
 用户安装完 ONNX 插件后，可以在 SQL 中按正常内置函数那样调用模型。第一个参数为模型名称，第二个参数为待处理数据。
 类似于下图，这里选择使用Rest API 调用模型。
@@ -168,46 +167,43 @@ Content-Length: 319
 }
 ```
 
-### 验证结果
+### 验证Sum_and_difference模型推理结果
 
 结果如下图所示，数据经过推理后，返回结果为：
-```
+
+```json
 [{"onnx":[[1.9999883,0.60734314]]}]
 ```
+
 ![结果查询](../../resources/mqttx_sum_and_difference.png)
 
 你可以使用类似如下程序的方式来发送测试数据。
 
 ```go
 func TestSum(t *testing.T) {
-	const TOPIC = "sum_diff_pub"
+    const TOPIC = "sum_diff_pub"
 
-	opts := mqtt.NewClientOptions().AddBroker("tcp://localhost:1883")
-	client := mqtt.NewClient(opts)
-	if token := client.Connect(); token.Wait() && token.Error() != nil {
-		panic(token.Error())
-	}
+    opts := mqtt.NewClientOptions().AddBroker("tcp://localhost:1883")
+    client := mqtt.NewClient(opts)
+    if token := client.Connect(); token.Wait() && token.Error() != nil {
+        panic(token.Error())
+    }
+    payloadF32 := []float32{0.2, 0.3, 0.6, 0.9}
+    payloadUnMarshal := MqttPayLoadFloat32Slice{
+        Data: payloadF32,
+    }
+    payload, err := json.Marshal(payloadUnMarshal)
+    if err != nil {
+        fmt.Println(err)
+        return
+    }
 
-	// payload, err := os.ReadFile(image)
-	payloadF32 := []float32{0.2, 0.3, 0.6, 0.9}
-
-	payloadUnMarshal := MqttPayLoadFloat32Slice{
-		Data: payloadF32,
-	}
-	payload, err := json.Marshal(payloadUnMarshal)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	if token := client.Publish(TOPIC, 2, true, payload); token.Wait() && token.Error() != nil {
-		fmt.Println(token.Error())
-	} else {
-		fmt.Println("Published ")
-	}
-	time.Sleep(1 * time.Second)
-
-	client.Disconnect(0)
+    if token := client.Publish(TOPIC, 2, true, payload); token.Wait() && token.Error() != nil {
+        fmt.Println(token.Error())
+    } else {
+        fmt.Println("Published ")
+    }
+    client.Disconnect(0)
 }
 ```
 
