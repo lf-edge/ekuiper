@@ -2,10 +2,13 @@ package tracenode
 
 import (
 	"context"
+	"encoding/hex"
 	"encoding/json"
+	"fmt"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/trace"
 
 	topoContext "github.com/lf-edge/ekuiper/v2/internal/topo/context"
@@ -78,7 +81,6 @@ func StartTrace(ctx api.StreamContext, opName string) (bool, api.StreamContext, 
 	spanCtx, span := tracer.GetTracer().Start(context.Background(), opName)
 	span.SetAttributes(attribute.String(RuleKey, ctx.GetRuleId()))
 	ingestCtx := topoContext.WithContext(spanCtx)
-	ingestCtx.IsTraceEnabled()
 	return true, ingestCtx, span
 }
 
@@ -86,13 +88,14 @@ func StartTraceByID(ctx api.StreamContext, traceID [16]byte, spanID [8]byte) (bo
 	if !ctx.IsTraceEnabled() {
 		return false, nil, nil
 	}
-	spanCtx, span := tracer.GetTracer().Start(trace.ContextWithSpanContext(context.Background(), trace.NewSpanContext(trace.SpanContextConfig{
-		TraceID: traceID,
-		SpanID:  spanID,
-	})), ctx.GetOpId())
+	carrier := map[string]string{
+		"traceparent": buildTraceParent(traceID, spanID),
+	}
+	propagator := propagation.TraceContext{}
+	traceCtx := propagator.Extract(context.Background(), propagation.MapCarrier(carrier))
+	spanCtx, span := tracer.GetTracer().Start(traceCtx, ctx.GetOpId())
 	span.SetAttributes(attribute.String(RuleKey, ctx.GetRuleId()))
 	ingestCtx := topoContext.WithContext(spanCtx)
-	ingestCtx.IsTraceEnabled()
 	return true, ingestCtx, span
 }
 
@@ -106,4 +109,8 @@ func ToStringCollection(r xsql.Collection) string {
 	d := r.Clone().ToMaps()
 	b, _ := json.Marshal(d)
 	return string(b)
+}
+
+func buildTraceParent(traceID [16]byte, spanID [8]byte) string {
+	return fmt.Sprintf("00-%s-%s-01", hex.EncodeToString(traceID[:]), hex.EncodeToString(spanID[:]))
 }
