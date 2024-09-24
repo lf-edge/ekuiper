@@ -108,6 +108,24 @@ func InitManager() (*Manager, error) {
 	return m, nil
 }
 
+func MockManager(plugins map[string]*PluginInfo) (*Manager, error) {
+	reg := &registry{
+		RWMutex:   sync.RWMutex{},
+		plugins:   make(map[string]*PluginInfo),
+		sources:   make(map[string]string),
+		sinks:     make(map[string]string),
+		functions: make(map[string]string),
+	}
+	for name, pi := range plugins {
+		err := pi.Validate(name)
+		if err != nil {
+			return nil, err
+		}
+		reg.Set(name, pi)
+	}
+	return &Manager{reg: reg}, nil
+}
+
 func (m *Manager) syncRegistry() (err error) {
 	defer func() {
 		failpoint.Inject("syncRegistryErr", func() {

@@ -39,7 +39,7 @@ export BUILD_ID=dontKillMe
 export KUIPER__BASIC__PROMETHEUS="true"
 export KUIPER__BASIC__PROMETHEUSPORT=9081
 export KUIPER__BASIC__RESTPORT=9081
-export KUIPER__PORTABLE__INITTIMEOUT=50000
+export KUIPER__PORTABLE__INITTIMEOUT="5m"
 
 cd $base_dir/
 touch log/kuiper.out

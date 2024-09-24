@@ -24,6 +24,7 @@ import (
 	"github.com/dolthub/go-mysql-server/server"
 	"github.com/dolthub/go-mysql-server/sql"
 	"github.com/dolthub/go-mysql-server/sql/types"
+	_ "github.com/go-sql-driver/mysql"
 )
 
 func SetupEmbeddedMysqlServer(address string, port int) (*server.Server, error) {

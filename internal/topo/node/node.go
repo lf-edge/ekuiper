@@ -271,6 +271,17 @@ func SourcePing(sourceType string, config map[string]any) error {
 	return fmt.Errorf("source %v doesn't support ping connection", sourceType)
 }
 
+func SinkPing(sinkType string, config map[string]any) error {
+	sink, err := io.Sink(sinkType)
+	if err != nil {
+		return err
+	}
+	if pingAble, ok := sink.(util.PingableConn); ok {
+		return pingAble.Ping("", config)
+	}
+	return fmt.Errorf("sink %v doesn't support ping connection", sinkType)
+}
+
 func LookupPing(lookupType string, config map[string]interface{}) error {
 	lookup, err := io.LookupSource(lookupType)
 	if err != nil {

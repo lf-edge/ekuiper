@@ -1,4 +1,4 @@
-// Copyright 2022-2023 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -71,7 +71,6 @@ func loadConfigOperatorForSource(pluginName string) {
 		ConfigManager.lock.Lock()
 		ConfigManager.cfgOperators[yamlKey] = cfg
 		ConfigManager.lock.Unlock()
-		conf.Log.Infof("Loading yaml file for source: %s", pluginName)
 	}
 }
 
@@ -85,7 +84,6 @@ func loadConfigOperatorForSink(pluginName string) {
 		ConfigManager.lock.Lock()
 		ConfigManager.cfgOperators[yamlKey] = cfg
 		ConfigManager.lock.Unlock()
-		conf.Log.Infof("Loading yaml file for sink: %s", pluginName)
 	}
 }
 
@@ -99,7 +97,6 @@ func loadConfigOperatorForConnection(pluginName string) {
 		ConfigManager.lock.Lock()
 		ConfigManager.cfgOperators[yamlKey] = cfg
 		ConfigManager.lock.Unlock()
-		conf.Log.Infof("Loading yaml file for connection: %s", pluginName)
 	}
 }
 

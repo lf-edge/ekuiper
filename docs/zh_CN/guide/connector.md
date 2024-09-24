@@ -64,7 +64,6 @@ eKuiper Sink 连接器负责将 eKuiper 处理后的数据发送到各种目标�
 
 - [InfluxDB Sink](./sinks/plugin/influx.md)：输出到 Influx DB `v1.x`。
 - [InfluxDBV2 Sink](./sinks/plugin/influx2.md)：输出到 Influx DB `v2.x`。
-- [TDengine Sink](./sinks/plugin/tdengine.md)：输出到 Tdengine。
 - [Image Sink](./sinks/plugin/image.md)：输出到一个图像文件。仅用于处理二进制结果。
 - [Zero MQ Sink](./sinks/plugin/zmq.md)：输出到 ZeroMQ。
 - [Kafka Sink](./sinks/plugin/kafka.md)：输出到 Kafka。

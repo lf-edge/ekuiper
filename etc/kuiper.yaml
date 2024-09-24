@@ -139,7 +139,7 @@ portable:
   # or other circumstance where the python executable cannot be successfully invoked through the default command.
   pythonBin: python
   # control init timeout. If the init time is longer than this value, the plugin will be terminated.
-  initTimeout: 5s
+  initTimeout: 60s
 
 openTelemetry:
   serviceName: kuiperd-service

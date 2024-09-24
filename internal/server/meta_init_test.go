@@ -70,6 +70,7 @@ var (
 func (suite *MetaTestSuite) TestLookupPing() {
 	modules.RegisterConnection("sql", client.CreateConnection)
 	modules.RegisterLookupSource("sql", sql.GetLookupSource)
+	modules.RegisterSink("sql", sql.GetSink)
 	connection.InitConnectionManager4Test()
 	s, err := testx.SetupEmbeddedMysqlServer(address, port)
 	require.NoError(suite.T(), err)
@@ -79,10 +80,15 @@ func (suite *MetaTestSuite) TestLookupPing() {
 	props := map[string]interface{}{
 		"dburl":      fmt.Sprintf("mysql://root:@%v:%v/test", address, port),
 		"datasource": "t",
+		"table":      "t",
 	}
 	b, _ := json.Marshal(props)
 	req, _ := http.NewRequest(http.MethodPost, "/metadata/lookups/connection/sql", bytes.NewBuffer(b))
 	w := httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	require.Equal(suite.T(), http.StatusOK, w.Code)
+	req, _ = http.NewRequest(http.MethodPost, "/metadata/sinks/connection/sql", bytes.NewBuffer(b))
+	w = httptest.NewRecorder()
 	suite.r.ServeHTTP(w, req)
 	require.Equal(suite.T(), http.StatusOK, w.Code)
 }

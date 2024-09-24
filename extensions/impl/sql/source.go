@@ -20,16 +20,17 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strings"
 	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/pingcap/failpoint"
 
 	client2 "github.com/lf-edge/ekuiper/v2/extensions/impl/sql/client"
+	"github.com/lf-edge/ekuiper/v2/extensions/impl/sql/sqldatabase/sqlgen"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
-	"github.com/lf-edge/ekuiper/v2/pkg/sqldatabase/sqlgen"
 )
 
 type SQLSourceConnector struct {
@@ -162,7 +163,7 @@ func (s *SQLSourceConnector) queryData(ctx api.StreamContext, rcvTime time.Time,
 	for rows.Next() {
 		data := make(map[string]interface{})
 		columns := make([]interface{}, len(cols))
-		prepareValues(columns, types, cols)
+		prepareValues(ctx, columns, types, cols)
 		err := rows.Scan(columns...)
 		failpoint.Inject("ScanErr", func() {
 			err = errors.New("ScanErr")
@@ -210,9 +211,13 @@ func scanIntoMap(mapValue map[string]interface{}, values []interface{}, columns 
 	}
 }
 
-func prepareValues(values []interface{}, columnTypes []*sql.ColumnType, columns []string) {
+func prepareValues(ctx api.StreamContext, values []interface{}, columnTypes []*sql.ColumnType, columns []string) {
 	if len(columnTypes) > 0 {
 		for idx, columnType := range columnTypes {
+			if got := buildScanValueByColumnType(ctx, columnType.Name(), columnType.DatabaseTypeName()); got != nil {
+				values[idx] = got
+				continue
+			}
 			if columnType.ScanType() != nil {
 				values[idx] = reflect.New(reflect.PointerTo(columnType.ScanType())).Interface()
 			} else {
@@ -242,4 +247,20 @@ func (sc *SQLConf) resolveDBURL(props map[string]any) (map[string]any, error) {
 	}
 	sc.URL = ""
 	return props, nil
+}
+
+func buildScanValueByColumnType(ctx api.StreamContext, colName, colType string) interface{} {
+	switch strings.ToUpper(colType) {
+	case "CHAR", "VARCHAR", "NCHAR", "NVARCHAR", "TEXT", "NTEXT":
+		return new(string)
+	case "DECIMAL", "NUMERIC", "FLOAT", "REAL":
+		return new(float64)
+	case "BOOL":
+		return new(bool)
+	case "INT", "BIGINT", "SMALLINT", "TINYINT":
+		return new(int64)
+	default:
+		ctx.GetLogger().Infof("sql source meet column %v unknown columnType:%v", colName, colType)
+		return nil
+	}
 }

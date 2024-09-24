@@ -1,4 +1,4 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,8 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:build (all || odbc) && !no_odbc
+
 package driver
 
-func GetSupportedDrivers() []string {
-	return []string{"mysql"}
-}
+import (
+	_ "github.com/alexbrainman/odbc" // ODBC driver
+)

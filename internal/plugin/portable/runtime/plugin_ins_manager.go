@@ -72,7 +72,7 @@ func NewPluginInsForTest(name string, ctrlChan ControlChannel) *PluginIns {
 		InstanceId: 0,
 	}] = []byte{}
 	return &PluginIns{
-		process:  nil,
+		process:  &os.Process{},
 		ctrlChan: ctrlChan,
 		name:     name,
 		commands: commands,
@@ -195,13 +195,6 @@ func GetPluginInsManager() *pluginInsManager {
 		}
 	})
 	return pm
-}
-
-func GetPluginInsManager4Test() *pluginInsManager {
-	testPM := &pluginInsManager{
-		instances: make(map[string]*PluginIns),
-	}
-	return testPM
 }
 
 func (p *pluginInsManager) GetPluginInsStatus(name string) (*PluginStatus, bool) {

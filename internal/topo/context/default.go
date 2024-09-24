@@ -92,6 +92,10 @@ func WithValue(parent *DefaultContext, key, val interface{}) *DefaultContext {
 	return parent
 }
 
+func (c *DefaultContext) PropagateTracer(par *DefaultContext) {
+	c.isTraceEnabled = par.isTraceEnabled
+}
+
 // Deadline Implement context interface
 func (c *DefaultContext) Deadline() (deadline time.Time, ok bool) {
 	return c.ctx.Deadline()

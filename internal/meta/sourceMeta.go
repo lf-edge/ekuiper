@@ -132,7 +132,6 @@ func ReadSourceMetaDir(scanChecker InstallChecker, lookupChecker InstallChecker)
 	if err = ReadSourceMetaFile(path.Join(confDir, "mqtt_source.json"), true, false); nil != err {
 		return err
 	}
-	conf.Log.Infof("Loading metadata file for source : %s", "mqtt_source.json")
 
 	for _, entry := range dirEntries {
 		fileName := entry.Name()
@@ -145,7 +144,6 @@ func ReadSourceMetaDir(scanChecker InstallChecker, lookupChecker InstallChecker)
 				if err = ReadSourceMetaFile(filePath, isScan, isLookup); nil != err {
 					return err
 				}
-				conf.Log.Infof("Loading metadata file for source : %s", fileName)
 			} else {
 				conf.Log.Warnf("Find source metadata file but not installed : %s", fileName)
 			}
