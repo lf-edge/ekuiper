@@ -163,49 +163,6 @@ func CreateNamedConnection(ctx api.StreamContext, id, typ string, props map[stri
 	return meta.cw, nil
 }
 
-func GetAllConnectionStatus(ctx api.StreamContext) map[string]modules.ConnectionStatus {
-	cws := make(map[string]*Meta)
-	globalConnectionManager.RLock()
-	for id, meta := range globalConnectionManager.connectionPool {
-		cws[id] = meta
-	}
-	globalConnectionManager.RUnlock()
-	s := make(map[string]modules.ConnectionStatus)
-	for id, meta := range cws {
-		switch mm := meta.cw.conn.(type) {
-		case modules.StatefulDialer:
-			s[id] = mm.Status(ctx)
-		default:
-			if meta.cw.IsInitialized() {
-				conn, err := meta.cw.Wait()
-				if err != nil {
-					s[id] = modules.ConnectionStatus{
-						Status: api.ConnectionDisconnected,
-						ErrMsg: err.Error(),
-					}
-					continue
-				}
-				err = conn.Ping(ctx)
-				if err != nil {
-					s[id] = modules.ConnectionStatus{
-						Status: api.ConnectionDisconnected,
-						ErrMsg: err.Error(),
-					}
-					continue
-				}
-				s[id] = modules.ConnectionStatus{
-					Status: api.ConnectionConnected,
-				}
-			} else {
-				s[id] = modules.ConnectionStatus{
-					Status: api.ConnectionConnecting,
-				}
-			}
-		}
-	}
-	return s
-}
-
 func GetAllConnectionsMeta() []*Meta {
 	globalConnectionManager.RLock()
 	defer globalConnectionManager.RUnlock()
