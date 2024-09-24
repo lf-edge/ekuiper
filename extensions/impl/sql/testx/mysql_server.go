@@ -19,6 +19,8 @@ import (
 	"fmt"
 	"time"
 
+	_ "github.com/go-sql-driver/mysql" // mysql driver
+
 	sqle "github.com/dolthub/go-mysql-server"
 	"github.com/dolthub/go-mysql-server/memory"
 	"github.com/dolthub/go-mysql-server/server"

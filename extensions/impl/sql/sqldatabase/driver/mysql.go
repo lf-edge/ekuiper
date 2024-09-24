@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build (all || most || mysql) && !no_mysql
+//go:build (!no_base || mysql) && !no_mysql
 
 package driver
 
