@@ -256,3 +256,9 @@ func checkConn(id string) bool {
 	_, ok := globalConnectionManager.connectionPool[id]
 	return ok
 }
+
+func TestFetchConnectionNotExist(t *testing.T) {
+	ctx := context.Background()
+	_, err := FetchConnection(ctx, "2222", "mock", map[string]interface{}{"connectionSelector": "id2"}, nil)
+	require.Error(t, err)
+}
