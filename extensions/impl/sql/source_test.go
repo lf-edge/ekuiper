@@ -327,3 +327,76 @@ func TestSQLConfURL(t *testing.T) {
 		require.Equal(t, tc.exp, tc.got)
 	}
 }
+
+func TestBuildScanValueByColumnType(t *testing.T) {
+	testcases := []struct {
+		colType string
+		exp     interface{}
+	}{
+		{
+			colType: "ntext",
+			exp:     new(string),
+		},
+		{
+			colType: "nchar",
+			exp:     new(string),
+		},
+		{
+			colType: "nchar",
+			exp:     new(string),
+		},
+		{
+			colType: "varchar",
+			exp:     new(string),
+		},
+		{
+			colType: "char",
+			exp:     new(string),
+		},
+		{
+			colType: "text",
+			exp:     new(string),
+		},
+		{
+			colType: "DECIMAL",
+			exp:     new(float64),
+		},
+		{
+			colType: "NUMERIC",
+			exp:     new(float64),
+		},
+		{
+			colType: "FLOAT",
+			exp:     new(float64),
+		},
+		{
+			colType: "REAL",
+			exp:     new(float64),
+		},
+		{
+			colType: "BOOL",
+			exp:     new(bool),
+		},
+		{
+			colType: "int",
+			exp:     new(int64),
+		},
+		{
+			colType: "bigint",
+			exp:     new(int64),
+		},
+		{
+			colType: "smallint",
+			exp:     new(int64),
+		},
+		{
+			colType: "tinyint",
+			exp:     new(int64),
+		},
+	}
+	ctx := mockContext.NewMockContext("1", "2")
+	for _, tc := range testcases {
+		got := buildScanValueByColumnType(ctx, "col", tc.colType)
+		require.Equal(t, tc.exp, got)
+	}
+}

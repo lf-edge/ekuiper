@@ -130,7 +130,7 @@ func (s *SqlLookupSource) Lookup(ctx api.StreamContext, fields []string, keys []
 	for rows.Next() {
 		data := make(map[string]any)
 		columns := make([]interface{}, len(cols))
-		prepareValues(columns, types, cols)
+		prepareValues(ctx, columns, types, cols)
 
 		err := rows.Scan(columns...)
 		if err != nil {
