@@ -70,6 +70,7 @@ var (
 func (suite *MetaTestSuite) TestLookupPing() {
 	modules.RegisterConnection("sql", client.CreateConnection)
 	modules.RegisterLookupSource("sql", sql.GetLookupSource)
+	modules.RegisterSink("sql", sql.GetSink)
 	connection.InitConnectionManager4Test()
 	s, err := testx.SetupEmbeddedMysqlServer(address, port)
 	require.NoError(suite.T(), err)
