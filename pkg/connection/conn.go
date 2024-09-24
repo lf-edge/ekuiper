@@ -20,6 +20,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
+	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
 
@@ -75,9 +76,18 @@ type Meta struct {
 	refCount atomic.Int32 `json:"-"`
 	ref      sync.Map     `json:"-"`
 	cw       *ConnWrapper `json:"-"`
+	// The first connection status
+	// If connection is stateful, the status will update all the way
+	// For stateless connection, the status needs to ping
+	status    atomic.Value `json:"-"`
+	lastError atomic.Value `json:"-"`
 }
 
 func (meta *Meta) NotifyStatus(status string, s string) {
+	meta.status.Store(status)
+	if s != "" {
+		meta.lastError.Store(s)
+	}
 	meta.ref.Range(func(refId, sc any) bool {
 		sch := sc.(api.StatusChangeHandler)
 		if sch != nil {
@@ -89,4 +99,30 @@ func (meta *Meta) NotifyStatus(status string, s string) {
 
 func (meta *Meta) GetRefCount() int {
 	return int(meta.refCount.Load())
+}
+
+func (meta *Meta) GetStatus() (s string, e string) {
+	ee := meta.lastError.Load()
+	if ee != nil {
+		e = ee.(string)
+	}
+	ss := meta.status.Load()
+	if ss != nil {
+		s = ss.(string)
+		if s == api.ConnectionConnected {
+			e = ""
+			// if connected, cw, cw.conn should exist
+			if _, isStateful := meta.cw.conn.(modules.StatefulDialer); !isStateful {
+				err := meta.cw.conn.Ping(context.Background())
+				if err != nil {
+					s = api.ConnectionDisconnected
+					e = err.Error()
+				}
+			}
+		}
+		return
+	} else {
+		s = api.ConnectionConnecting
+		return
+	}
 }

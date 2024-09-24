@@ -11,25 +11,21 @@ To create a connection, provide the connection's id, type, and configuration par
 ```shell
 POST http://localhost:9081/connections
 {
-  "id": "connecton-1"
+  "id": "connecton-1",
   "typ":"mqtt",
   "props": {
-    server: "tcp://127.0.0.1:1883"
+    "server": "tcp://127.0.0.1:1883"
   }
 }
 ```
 
-### Get all connection IDs
+### Get all connection information
 
 ```shell
 GET http://localhost:9081/connections
 ```
 
-### Get all connection status
-
-```shell
-GET http://localhost:9081/connections/status
-```
+Return all connections' information and status.
 
 ### Get a single connection status
 
