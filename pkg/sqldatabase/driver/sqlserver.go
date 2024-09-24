@@ -1,4 +1,4 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,6 +14,6 @@
 
 package driver
 
-func GetSupportedDrivers() []string {
-	return []string{"mysql"}
-}
+import (
+	_ "github.com/denisenkom/go-mssqldb" // Microsoft SQL Server
+)

@@ -9,6 +9,7 @@ require (
 	github.com/apple/foundationdb/bindings/go v0.0.0-20240904211458-9b3a2f0f068f
 	github.com/benbjohnson/clock v1.3.5
 	github.com/cenkalti/backoff/v4 v4.3.0
+	github.com/denisenkom/go-mssqldb v0.12.3
 	github.com/dolthub/go-mysql-server v0.18.1
 	github.com/dop251/goja v0.0.0-20240828124009-016eb7256539
 	github.com/eclipse/paho.mqtt.golang v1.5.0
@@ -120,6 +121,8 @@ require (
 	github.com/go-redis/redis/v7 v7.4.1 // indirect
 	github.com/go-resty/resty/v2 v2.13.1 // indirect
 	github.com/go-sourcemap/sourcemap v2.1.4+incompatible // indirect
+	github.com/golang-sql/civil v0.0.0-20190719163853-cb61b32ac6fe // indirect
+	github.com/golang-sql/sqlexp v0.1.0 // indirect
 	github.com/google/pprof v0.0.0-20240903155634-a8630aee4ab9 // indirect
 	github.com/gorilla/schema v1.3.0 // indirect
 	github.com/gorilla/securecookie v1.1.2 // indirect

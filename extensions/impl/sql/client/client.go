@@ -22,7 +22,6 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
-	"github.com/lf-edge/ekuiper/v2/pkg/sqldatabase/driver"
 )
 
 type SQLConnection struct {
@@ -56,7 +55,7 @@ func (s *SQLConnection) GetId(ctx api.StreamContext) string {
 func (s *SQLConnection) Dial(ctx api.StreamContext) error {
 	db, err := openDB(s.url)
 	if err != nil {
-		return fmt.Errorf("create connection err:%v, supported drivers:%v", err, driver.GetSupportedDrivers())
+		return fmt.Errorf("create connection err:%v", err)
 	}
 	s.db = db
 	return nil
@@ -72,7 +71,7 @@ func (s *SQLConnection) Reconnect() error {
 	oldDB.Close()
 	db, err := openDB(s.url)
 	if err != nil {
-		return fmt.Errorf("reconnect sql err:%v, supported drivers:%v", err, driver.GetSupportedDrivers())
+		return fmt.Errorf("reconnect sql err:%v", err)
 	}
 	s.db = db
 	return s.db.Ping()
