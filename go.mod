@@ -14,7 +14,6 @@ require (
 	github.com/apache/calcite-avatica-go/v5 v5.3.0
 	github.com/apple/foundationdb/bindings/go v0.0.0-20240904211458-9b3a2f0f068f
 	github.com/benbjohnson/clock v1.3.5
-	github.com/bippio/go-impala v2.1.0+incompatible
 	github.com/btnguyen2k/gocosmos v1.1.0
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/couchbase/go_n1ql v0.0.0-20220303011133-0ed4bf93e31d
