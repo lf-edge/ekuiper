@@ -79,6 +79,7 @@ func (suite *MetaTestSuite) TestLookupPing() {
 	props := map[string]interface{}{
 		"dburl":      fmt.Sprintf("mysql://root:@%v:%v/test", address, port),
 		"datasource": "t",
+		"table":      "t",
 	}
 	b, _ := json.Marshal(props)
 	req, _ := http.NewRequest(http.MethodPost, "/metadata/lookups/connection/sql", bytes.NewBuffer(b))
