@@ -500,8 +500,6 @@ func NewConfigOperatorFromConnectionStorage(pluginName string) (ConfigOperator, 
 		} else {
 			return nil, fmt.Errorf("file content is not right: %v", plgCnfs)
 		}
-	} else {
-		return nil, fmt.Errorf("not find the target connection type: %s", c.pluginName)
 	}
 
 	prefix := buildKey("connections", pluginName, "")
