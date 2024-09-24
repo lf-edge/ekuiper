@@ -22,6 +22,7 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
 	"github.com/lf-edge/ekuiper/v2/extensions/impl/sql/client"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
@@ -85,6 +86,20 @@ func (c *sqlSinkConfig) getKeyValues(ctx api.StreamContext, mapData map[string]i
 		}
 	}
 	return keys, vals, nil
+}
+
+func (s *SQLSinkConnector) Ping(_ string, props map[string]interface{}) error {
+	ctx := context.Background()
+	if err := s.Provision(ctx, props); err != nil {
+		return err
+	}
+	if err := s.Connect(ctx, nil); err != nil {
+		return err
+	}
+	defer func() {
+		s.Close(ctx)
+	}()
+	return s.conn.Ping(ctx)
 }
 
 func (s *SQLSinkConnector) Provision(ctx api.StreamContext, configs map[string]any) error {
