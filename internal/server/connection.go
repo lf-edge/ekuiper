@@ -31,16 +31,6 @@ type ConnectionRequest struct {
 	Props map[string]interface{} `json:"props"`
 }
 
-func connectionsStatusHandler(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
-	switch r.Method {
-	case http.MethodGet:
-		allStatus := connection.GetAllConnectionStatus(context.Background())
-		w.WriteHeader(http.StatusOK)
-		jsonResponse(allStatus, w, logger)
-	}
-}
-
 func connectionsHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	switch r.Method {
@@ -105,17 +95,14 @@ func connectionHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func getConnectionRespByMeta(meta *connection.Meta) *ConnectionResponse {
-	err := connection.PingConnection(context.Background(), meta.ID)
+	status, e := meta.GetStatus()
 	r := &ConnectionResponse{
 		Typ:      meta.Typ,
 		ID:       meta.ID,
 		Props:    meta.Props,
 		RefCount: meta.GetRefCount(),
-	}
-	if err == nil {
-		r.Status = "running"
-	} else {
-		r.Err = err.Error()
+		Status:   status,
+		Err:      e,
 	}
 	return r
 }

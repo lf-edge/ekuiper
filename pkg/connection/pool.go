@@ -68,21 +68,18 @@ func InitConnectionManager() {
 	if conf.IsTesting {
 		return
 	}
-	DefaultBackoffMaxElapsedDuration = time.Duration(conf.Config.Connection.BackoffMaxElapsedDuration)
 }
 
 const (
 	DefaultInitialInterval = 100 * time.Millisecond
-	DefaultMaxInterval     = 1 * time.Second
+	DefaultMaxInterval     = 10 * time.Second
 )
-
-var DefaultBackoffMaxElapsedDuration = 100 * time.Minute
 
 func NewExponentialBackOff() *backoff.ExponentialBackOff {
 	return backoff.NewExponentialBackOff(
 		backoff.WithInitialInterval(DefaultInitialInterval),
 		backoff.WithMaxInterval(DefaultMaxInterval),
-		backoff.WithMaxElapsedTime(DefaultBackoffMaxElapsedDuration),
+		backoff.WithMaxElapsedTime(0),
 	)
 }
 
@@ -166,49 +163,6 @@ func CreateNamedConnection(ctx api.StreamContext, id, typ string, props map[stri
 	return meta.cw, nil
 }
 
-func GetAllConnectionStatus(ctx api.StreamContext) map[string]modules.ConnectionStatus {
-	cws := make(map[string]*Meta)
-	globalConnectionManager.RLock()
-	for id, meta := range globalConnectionManager.connectionPool {
-		cws[id] = meta
-	}
-	globalConnectionManager.RUnlock()
-	s := make(map[string]modules.ConnectionStatus)
-	for id, meta := range cws {
-		switch mm := meta.cw.conn.(type) {
-		case modules.StatefulDialer:
-			s[id] = mm.Status(ctx)
-		default:
-			if meta.cw.IsInitialized() {
-				conn, err := meta.cw.Wait()
-				if err != nil {
-					s[id] = modules.ConnectionStatus{
-						Status: api.ConnectionDisconnected,
-						ErrMsg: err.Error(),
-					}
-					continue
-				}
-				err = conn.Ping(ctx)
-				if err != nil {
-					s[id] = modules.ConnectionStatus{
-						Status: api.ConnectionDisconnected,
-						ErrMsg: err.Error(),
-					}
-					continue
-				}
-				s[id] = modules.ConnectionStatus{
-					Status: api.ConnectionConnected,
-				}
-			} else {
-				s[id] = modules.ConnectionStatus{
-					Status: api.ConnectionConnecting,
-				}
-			}
-		}
-	}
-	return s
-}
-
 func GetAllConnectionsMeta() []*Meta {
 	globalConnectionManager.RLock()
 	defer globalConnectionManager.RUnlock()
@@ -230,23 +184,6 @@ func GetConnectionDetail(_ api.StreamContext, id string) (*Meta, error) {
 		return nil, fmt.Errorf("connection %s not existed", id)
 	}
 	return meta, nil
-}
-
-func PingConnection(ctx api.StreamContext, id string) error {
-	if id == "" {
-		return fmt.Errorf("connection id should be defined")
-	}
-	globalConnectionManager.RLock()
-	defer globalConnectionManager.RUnlock()
-	meta, ok := globalConnectionManager.connectionPool[id]
-	if !ok {
-		return fmt.Errorf("connection %s not existed", id)
-	}
-	conn, err := meta.cw.Wait()
-	if err != nil {
-		return err
-	}
-	return conn.Ping(ctx)
 }
 
 func DropNameConnection(ctx api.StreamContext, selId string) error {
@@ -365,9 +302,8 @@ func createConnection(ctx api.StreamContext, meta *Meta) (modules.Connection, er
 			return nil
 		default:
 		}
-		if !isStateful {
-			meta.NotifyStatus(api.ConnectionConnecting, "")
-		}
+		meta.NotifyStatus(api.ConnectionConnecting, "")
+		ctx.GetLogger().Debugf("connection retry: %s", meta.ID)
 		err = conn.Dial(ctx)
 		failpoint.Inject("createConnectionErr", func() {
 			if mockErr {
@@ -381,9 +317,8 @@ func createConnection(ctx api.StreamContext, meta *Meta) (modules.Connection, er
 			}
 			return nil
 		}
-		if !isStateful {
-			meta.NotifyStatus(api.ConnectionDisconnected, err.Error())
-		}
+		ctx.GetLogger().Debugf("connection failed: %s, %v", meta.ID, err)
+		meta.NotifyStatus(api.ConnectionDisconnected, err.Error())
 		if errorx.IsIOError(err) {
 			return err
 		}

@@ -20,6 +20,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -49,6 +50,7 @@ func (suite *RestTestSuite) TestGetConnectionStatus() {
 	suite.r.ServeHTTP(w, req)
 	require.Equal(suite.T(), http.StatusCreated, w.Code)
 
+	time.Sleep(500 * time.Millisecond)
 	req, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/connections", bytes.NewBufferString("any"))
 	w = httptest.NewRecorder()
 	suite.r.ServeHTTP(w, req)
@@ -64,6 +66,6 @@ func (suite *RestTestSuite) TestGetConnectionStatus() {
 	suite.r.ServeHTTP(w, req)
 	require.Equal(suite.T(), http.StatusOK, w.Code)
 	returnVal, _ = io.ReadAll(w.Result().Body)
-	require.Equal(suite.T(), `{"id":"conn1","typ":"httppush","props":{"datasource":"/test1","method":"post"},"status":"running"}`, string(returnVal))
+	require.Equal(suite.T(), `{"id":"conn1","typ":"httppush","props":{"datasource":"/test1","method":"post"},"status":"connected"}`, string(returnVal))
 	require.Equal(suite.T(), w.Header().Get("Content-Type"), "application/json")
 }

@@ -11,25 +11,21 @@
 ```shell
 POST http://localhost:9081/connections
 {
-  "id": "connecton-1"
+  "id": "connecton-1",
   "typ":"mqtt",
   "props": {
-    server: "tcp://127.0.0.1:1883"
+    "server": "tcp://127.0.0.1:1883"
   }
 }
 ```
 
-### 获取所有连接 ID
+### 获取所有连接信息
 
 ```shell
 GET http://localhost:9081/connections
 ```
 
-### 获取所有连接状态
-
-```shell
-GET http://localhost:9081/connections/status
-```
+返回所有连接的信息和连接状态。
 
 ### 获取单个连接状态
 
