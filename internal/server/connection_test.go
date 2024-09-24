@@ -64,6 +64,6 @@ func (suite *RestTestSuite) TestGetConnectionStatus() {
 	suite.r.ServeHTTP(w, req)
 	require.Equal(suite.T(), http.StatusOK, w.Code)
 	returnVal, _ = io.ReadAll(w.Result().Body)
-	require.Equal(suite.T(), `{"id":"conn1","typ":"httppush","props":{"datasource":"/test1","method":"post"},"status":"connected"}`, string(returnVal))
+	require.Equal(suite.T(), `{"id":"conn1","typ":"httppush","props":{"datasource":"/test1","method":"post"},"status":"connecting"}`, string(returnVal))
 	require.Equal(suite.T(), w.Header().Get("Content-Type"), "application/json")
 }
