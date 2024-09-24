@@ -67,6 +67,25 @@ var (
 	port    = 33061
 )
 
+func (suite *MetaTestSuite) TestSinkPing() {
+	modules.RegisterConnection("sql", client.CreateConnection)
+	modules.RegisterSink("sql", sql.GetSink)
+	connection.InitConnectionManager4Test()
+	s, err := testx.SetupEmbeddedMysqlServer(address, port)
+	require.NoError(suite.T(), err)
+	defer func() {
+		s.Close()
+	}()
+	props := map[string]interface{}{
+		"dburl": fmt.Sprintf("mysql://root:@%v:%v/test", address, port),
+	}
+	b, _ := json.Marshal(props)
+	req, _ := http.NewRequest(http.MethodPost, "/metadata/sinks/connection/sql", bytes.NewBuffer(b))
+	w := httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	require.Equal(suite.T(), http.StatusOK, w.Code)
+}
+
 func (suite *MetaTestSuite) TestLookupPing() {
 	modules.RegisterConnection("sql", client.CreateConnection)
 	modules.RegisterLookupSource("sql", sql.GetLookupSource)
