@@ -69,7 +69,7 @@ func TestProvisionErr(t *testing.T) {
 				"interval": "1s",
 				"dburl":    "123",
 			},
-			err: errors.New("dburl.Parse 123 fail with error: parse driver err:invalid database scheme, support drivers:[mysql]"),
+			err: errors.New("dburl.Parse 123 fail with error: parse driver err:invalid database scheme"),
 		},
 	}
 	for _, tc := range testcases {
