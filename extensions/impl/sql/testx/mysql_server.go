@@ -19,13 +19,12 @@ import (
 	"fmt"
 	"time"
 
-	_ "github.com/go-sql-driver/mysql" // mysql driver
-
 	sqle "github.com/dolthub/go-mysql-server"
 	"github.com/dolthub/go-mysql-server/memory"
 	"github.com/dolthub/go-mysql-server/server"
 	"github.com/dolthub/go-mysql-server/sql"
 	"github.com/dolthub/go-mysql-server/sql/types"
+	_ "github.com/go-sql-driver/mysql"
 )
 
 func SetupEmbeddedMysqlServer(address string, port int) (*server.Server, error) {
