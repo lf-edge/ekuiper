@@ -100,6 +100,9 @@ func FetchConnection(ctx api.StreamContext, refId, typ string, props map[string]
 	if _, ok := globalConnectionManager.connectionPool[conId]; ok {
 		conf.Log.Infof("FetchConnection return existed conn %s", conId)
 	} else {
+		if conId != refId {
+			return nil, fmt.Errorf("connection %s not existed", conId)
+		}
 		meta := &Meta{
 			ID:    conId,
 			Typ:   typ,
