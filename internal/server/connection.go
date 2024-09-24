@@ -18,8 +18,10 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/gorilla/mux"
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
@@ -103,9 +105,14 @@ func getConnectionRespByMeta(meta *connection.Meta) *ConnectionResponse {
 		RefCount: meta.GetRefCount(),
 	}
 	if err == nil {
-		r.Status = "running"
+		r.Status = api.ConnectionConnected
 	} else {
-		r.Err = err.Error()
+		if strings.Contains(err.Error(), "not ready") {
+			r.Status = api.ConnectionConnecting
+		} else {
+			r.Status = api.ConnectionDisconnected
+			r.Err = err.Error()
+		}
 	}
 	return r
 }

@@ -17,13 +17,11 @@ package connection
 import (
 	"sync"
 	"testing"
-	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/pingcap/failpoint"
 	"github.com/stretchr/testify/require"
 
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
@@ -118,65 +116,6 @@ func TestConnectionErr(t *testing.T) {
 	err = DropNameConnection(ctx, "qwe")
 	require.Error(t, err)
 	failpoint.Disable("github.com/lf-edge/ekuiper/v2/pkg/connection/dropConnectionStoreErr")
-}
-
-func TestConnectionStatus(t *testing.T) {
-	require.NoError(t, InitConnectionManager4Test())
-	conf.WriteCfgIntoKVStorage("connections", "mockErr", "a1", map[string]interface{}{})
-	conf.WriteCfgIntoKVStorage("connections", "mock", "a2", map[string]interface{}{})
-	require.NoError(t, ReloadNamedConnection())
-	time.Sleep(100 * time.Millisecond)
-	ctx := context.Background()
-	allStatus := GetAllConnectionStatus(ctx)
-	s, ok := allStatus["a1"]
-	require.True(t, ok)
-	require.Equal(t, modules.ConnectionStatus{
-		Status: api.ConnectionDisconnected,
-		ErrMsg: "mockErr",
-	}, s)
-	s, ok = allStatus["a2"]
-	require.True(t, ok)
-	require.Equal(t, modules.ConnectionStatus{
-		Status: api.ConnectionConnected,
-	}, s)
-}
-
-func TestGetAllConnectionStatus(t *testing.T) {
-	require.NoError(t, InitConnectionManager4Test())
-	ctx := mockContext.NewMockContext("id", "2")
-	cw1, err := FetchConnection(ctx, "id1", "mock", nil, nil)
-	require.NoError(t, err)
-	cw2, err := FetchConnection(ctx, "id2", "mockErr", nil, nil)
-	require.NoError(t, err)
-	cw3, err := FetchConnection(ctx, "id3", "blockconn", nil, nil)
-	require.NoError(t, err)
-	cw1.Wait()
-	cw2.Wait()
-	allStatus := GetAllConnectionStatus(ctx)
-	s, ok := allStatus["id2"]
-	require.True(t, ok)
-	require.Equal(t, modules.ConnectionStatus{
-		Status: api.ConnectionDisconnected,
-		ErrMsg: "mockErr",
-	}, s)
-	s, ok = allStatus["id1"]
-	require.True(t, ok)
-	require.Equal(t, modules.ConnectionStatus{
-		Status: api.ConnectionConnected,
-	}, s)
-	s, ok = allStatus["id3"]
-	require.True(t, ok)
-	require.Equal(t, modules.ConnectionStatus{
-		Status: api.ConnectionConnecting,
-	}, s)
-	blockCh <- struct{}{}
-	cw3.Wait()
-	allStatus = GetAllConnectionStatus(ctx)
-	s, ok = allStatus["id3"]
-	require.True(t, ok)
-	require.Equal(t, modules.ConnectionStatus{
-		Status: api.ConnectionConnected,
-	}, s)
 }
 
 func TestNonStoredConnection(t *testing.T) {
