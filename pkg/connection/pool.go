@@ -239,6 +239,9 @@ func PingConnection(ctx api.StreamContext, id string) error {
 	if !ok {
 		return fmt.Errorf("connection %s not existed", id)
 	}
+	if !meta.cw.IsInitialized() {
+		return fmt.Errorf("connection %s not ready", id)
+	}
 	conn, err := meta.cw.Wait()
 	if err != nil {
 		return err
