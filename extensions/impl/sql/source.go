@@ -27,10 +27,10 @@ import (
 	"github.com/pingcap/failpoint"
 
 	client2 "github.com/lf-edge/ekuiper/v2/extensions/impl/sql/client"
+	"github.com/lf-edge/ekuiper/v2/extensions/impl/sql/sqldatabase/sqlgen"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
-	"github.com/lf-edge/ekuiper/v2/pkg/sqldatabase/sqlgen"
 )
 
 type SQLSourceConnector struct {
