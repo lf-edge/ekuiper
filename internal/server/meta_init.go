@@ -344,6 +344,10 @@ func sinkConnectionHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	err = node.SinkPing(sinkNm, config)
+	if err != nil {
+		handleError(w, err, "", logger)
+		return
+	}
 	w.WriteHeader(http.StatusOK)
 }
 
