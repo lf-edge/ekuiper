@@ -43,9 +43,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
 
-var (
-	LoadConfigCache map[string]map[string]interface{}
-)
+var LoadConfigCache map[string]map[string]interface{}
 
 func init() {
 	LoadConfigCache = make(map[string]map[string]interface{})
