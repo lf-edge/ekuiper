@@ -80,9 +80,9 @@ func TestGetYamlConfigAllKeys(t *testing.T) {
 }
 
 func TestGetStorage(t *testing.T) {
-	IsTesting = false
+	IsTesting = true
 	defer func() {
-		IsTesting = true
+		IsTesting = false
 	}()
 	dataDir, err := GetDataLoc()
 	require.NoError(t, err)
@@ -91,4 +91,21 @@ func TestGetStorage(t *testing.T) {
 	s, err := getKVStorage()
 	require.NoError(t, err)
 	require.NotNil(t, s)
+}
+
+func TestGetCfgKeyFromStorageByPrefix(t *testing.T) {
+	IsTesting = true
+	defer func() {
+		IsTesting = false
+	}()
+	kvStore = nil
+	s, err := getKVStorage()
+	require.NoError(t, err)
+	require.NoError(t, s.Set("mock", map[string]interface{}{}))
+	require.NoError(t, s.Set("a.b.c", map[string]interface{}{}))
+	got, err := getCfgKeyFromStorageByPrefix("")
+	require.NoError(t, err)
+	_, ok := got["c"]
+	require.True(t, ok)
+	require.Len(t, got, 1)
 }
