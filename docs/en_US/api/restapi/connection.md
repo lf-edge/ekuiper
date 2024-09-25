@@ -30,7 +30,7 @@ Return all connections' information and status.
 ### Get a single connection status
 
 ```shell
-GET http://localhost:9081/connection/{id}
+GET http://localhost:9081/connections/{id}
 ```
 
 ### Delete a single connection
@@ -38,7 +38,7 @@ GET http://localhost:9081/connection/{id}
 When deleting a connection, it will check whether there are rules using the connection. If there are rules using the connection, the connection cannot be deleted.
 
 ```shell
-DELETE http://localhost:9081/connection/{id}
+DELETE http://localhost:9081/connections/{id}
 ```
 
 ## Connectivity check

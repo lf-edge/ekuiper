@@ -30,7 +30,7 @@ GET http://localhost:9081/connections
 ### 获取单个连接状态
 
 ```shell
-GET http://localhost:9081/connection/{id}
+GET http://localhost:9081/connections/{id}
 ```
 
 ### 删除单个连接
@@ -38,7 +38,7 @@ GET http://localhost:9081/connection/{id}
 删除连接时会是否有规则正在使用连接，如果存在规则正在使用连接，那么连接将无法被删除。
 
 ```shell
-DELETE http://localhost:9081/connection/{id}
+DELETE http://localhost:9081/connections/{id}
 ```
 
 ## 连通性检查
