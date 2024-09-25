@@ -128,6 +128,18 @@ func (s *State) Validate() error {
 	return err
 }
 
+func (s *State) ValidateRule() error {
+	s.Lock()
+	defer s.Unlock()
+	err := infra.SafeRun(func() error {
+		if _, err := planner.Plan(s.Rule); err != nil {
+			return err
+		}
+		return nil
+	})
+	return err
+}
+
 func (s *State) transit(newState RunState, err error) {
 	s.Lock()
 	defer s.Unlock()

@@ -170,7 +170,7 @@ func (rr *RuleRegistry) UpdateRule(ruleId, ruleJson string) error {
 	// Try plan with the new json. If err, revert to old rule
 	oldRule := rs.Rule
 	rs.Rule = r
-	err = rs.Validate()
+	err = rs.ValidateRule()
 	if err != nil {
 		rs.Rule = oldRule
 		return err
