@@ -22,7 +22,7 @@ import (
 )
 
 func TestEnv(t *testing.T) {
-	LoadConfigCache = make(map[string]map[string]interface{})
+	clearLoadConfigCache()
 	key := "KUIPER__BASIC__CONSOLELOG"
 	value := "true"
 

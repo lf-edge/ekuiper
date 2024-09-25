@@ -49,6 +49,10 @@ func init() {
 	LoadConfigCache = make(map[string]map[string]interface{})
 }
 
+func clearLoadConfigCache() {
+	LoadConfigCache = make(map[string]map[string]interface{})
+}
+
 const Separator = "__"
 
 func LoadConfig(c interface{}) error {
