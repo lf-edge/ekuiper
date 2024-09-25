@@ -390,6 +390,8 @@ func (suite *RestTestSuite) Test_rulesManageHandler() {
 	suite.r.ServeHTTP(w1, req1)
 	assert.Equal(suite.T(), http.StatusOK, w1.Code)
 
+	time.Sleep(10 * time.Millisecond)
+
 	// update wrong rule
 	ruleJson = `{"id": "rule321","sql": "select * from alert1","actions": [{"nop": {}}]}`
 	buf2 = bytes.NewBuffer([]byte(ruleJson))
