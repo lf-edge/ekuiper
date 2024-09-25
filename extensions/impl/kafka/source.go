@@ -149,7 +149,7 @@ func (k *KafkaSource) Connect(ctx api.StreamContext, sch api.StatusChangeHandler
 	if err != nil {
 		sch(api.ConnectionDisconnected, err.Error())
 	} else {
-		sch(api.ConnectionConnecting, "")
+		sch(api.ConnectionConnected, "")
 	}
 	return nil
 }

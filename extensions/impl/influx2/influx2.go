@@ -142,7 +142,7 @@ func (m *influxSink2) Connect(ctx api.StreamContext, sch api.StatusChangeHandler
 		if err != nil {
 			sch(api.ConnectionDisconnected, err.Error())
 		} else {
-			sch(api.ConnectionConnecting, "")
+			sch(api.ConnectionConnected, "")
 		}
 	}()
 	m.cli = client.NewClientWithOptions(m.conf.Addr, m.conf.Token, options)
