@@ -97,8 +97,30 @@ func (meta *Meta) NotifyStatus(status string, s string) {
 	})
 }
 
+func (meta *Meta) AddRef(refId string, sc api.StatusChangeHandler) {
+	s, e := meta.GetStatus()
+	if sc != nil {
+		sc(s, e)
+	}
+	meta.ref.Store(refId, sc)
+	meta.refCount.Add(1)
+}
+
+func (meta *Meta) DeRef(refId string) {
+	meta.ref.Delete(refId)
+	meta.refCount.Add(-1)
+}
+
 func (meta *Meta) GetRefCount() int {
 	return int(meta.refCount.Load())
+}
+
+func (meta *Meta) GetRefNames() (result []string) {
+	meta.ref.Range(func(key, _ any) bool {
+		result = append(result, key.(string))
+		return true
+	})
+	return
 }
 
 func (meta *Meta) GetStatus() (s string, e string) {

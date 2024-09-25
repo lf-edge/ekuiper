@@ -196,8 +196,8 @@ func DropNameConnection(ctx api.StreamContext, selId string) error {
 	if !ok {
 		return nil
 	}
-	if meta.refCount.Load() > 0 {
-		return fmt.Errorf("connection %s can't be dropped due to reference", selId)
+	if meta.GetRefCount() > 0 {
+		return fmt.Errorf("connection %s can't be dropped due to references %v", selId, meta.GetRefNames())
 	}
 	err := dropConnectionStore(meta.Typ, selId)
 	if err != nil {
@@ -254,19 +254,18 @@ func attachConnection(conId string, refId string, sc api.StatusChangeHandler) (*
 	if !ok {
 		return nil, fmt.Errorf("connection %s not existed", conId)
 	}
-	meta.ref.Store(refId, sc)
-	meta.refCount.Add(1)
+	meta.AddRef(refId, sc)
 	return meta.cw, nil
 }
 
 func detachConnection(ctx api.StreamContext, conId string) error {
 	meta, ok := globalConnectionManager.connectionPool[conId]
 	if !ok {
+		conf.Log.Infof("detachConnection not found:%v", conId)
 		return nil
 	}
 	refId := extractRefId(ctx)
-	meta.ref.Delete(refId)
-	meta.refCount.Add(-1)
+	meta.DeRef(refId)
 	globalConnectionManager.connectionPool[conId] = meta
 	conf.Log.Infof("detachConnection remove conn:%v,ref:%v", conId, refId)
 	if !meta.Named && meta.refCount.Load() == 0 {
