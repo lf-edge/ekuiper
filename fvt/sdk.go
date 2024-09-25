@@ -21,6 +21,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"time"
 )
 
 const ContentTypeJson = "application/json"
@@ -113,10 +114,36 @@ func GetResponseResultMap(resp *http.Response) (result map[string]any, err error
 		fmt.Println(err)
 		return
 	}
+	fmt.Println(string(body))
 	err = json.Unmarshal(body, &result)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 	return
+}
+
+func (sdk *SDK) CreateConf(confpath string, conf map[string]any) (resp *http.Response, err error) {
+	cc, err := json.Marshal(conf)
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
+	req, err := http.NewRequest(http.MethodPut, sdk.baseUrl.JoinPath("metadata", confpath).String(), bytes.NewBuffer(cc))
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	return sdk.httpClient.Do(req)
+}
+
+func TryAssert(count int, interval time.Duration, tryFunc func() bool) bool {
+	for count > 0 {
+		time.Sleep(interval)
+		if tryFunc() {
+			return true
+		}
+		count--
+	}
+	return false
 }
