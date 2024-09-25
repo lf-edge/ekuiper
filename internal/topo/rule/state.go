@@ -108,6 +108,7 @@ func NewState(rule *def.Rule) *State {
 
 func (s *State) WithTopo(topo *topo.Topo) *State {
 	s.topology = topo
+	s.topoGraph = s.topology.GetTopo()
 	return s
 }
 
@@ -128,16 +129,16 @@ func (s *State) Validate() error {
 	return err
 }
 
-func (s *State) ValidateRule() error {
+func (s *State) ValidateRule() (*topo.Topo, error) {
 	s.Lock()
 	defer s.Unlock()
-	err := infra.SafeRun(func() error {
-		if _, err := planner.Plan(s.Rule); err != nil {
-			return err
-		}
-		return nil
+	var topo *topo.Topo
+	var err error
+	infra.SafeRun(func() error {
+		topo, err = planner.Plan(s.Rule)
+		return err
 	})
-	return err
+	return topo, err
 }
 
 func (s *State) transit(newState RunState, err error) {
@@ -450,6 +451,7 @@ func (s *State) doStart() error {
 				return err
 			} else {
 				s.topology = tp
+				s.topoGraph = s.topology.GetTopo()
 			}
 		}
 		ctx, cancel := context.WithCancel(context.Background())
