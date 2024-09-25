@@ -207,7 +207,8 @@ const (
 type saslConf struct {
 	SaslAuthType string `json:"saslAuthType"`
 	SaslUserName string `json:"saslUserName"`
-	SaslPassword string `json:"saslPassword"`
+	SaslPassword string `json:"password"`
+	OldPassword  string `json:"saslPassword,omitempty"`
 }
 
 func getSaslConf(props map[string]interface{}) (*saslConf, error) {
@@ -215,7 +216,17 @@ func getSaslConf(props map[string]interface{}) (*saslConf, error) {
 		SaslAuthType: SASL_NONE,
 	}
 	err := cast.MapToStruct(props, &sc)
+	sc.resolvePassword()
 	return sc, err
+}
+
+func (c *saslConf) resolvePassword() {
+	if len(c.OldPassword) > 0 {
+		if len(c.SaslPassword) < 1 {
+			c.SaslPassword = c.OldPassword
+		}
+		c.OldPassword = ""
+	}
 }
 
 func (c *saslConf) Validate() error {

@@ -79,3 +79,40 @@ func TestKafkaSource(t *testing.T) {
 	}
 	failpoint.Disable("github.com/lf-edge/ekuiper/v2/extensions/impl/kafka/kafkaErr")
 }
+
+func TestKafkaPassword(t *testing.T) {
+	testcase := []struct {
+		oldPassword    string
+		newPassword    string
+		expectPassword string
+	}{
+		{
+			oldPassword:    "",
+			newPassword:    "",
+			expectPassword: "",
+		},
+		{
+			oldPassword:    "123",
+			newPassword:    "",
+			expectPassword: "123",
+		},
+		{
+			oldPassword:    "",
+			newPassword:    "123",
+			expectPassword: "123",
+		},
+		{
+			oldPassword:    "123",
+			newPassword:    "1234",
+			expectPassword: "1234",
+		},
+	}
+	for _, tc := range testcase {
+		sconf := &saslConf{
+			OldPassword:  tc.oldPassword,
+			SaslPassword: tc.newPassword,
+		}
+		sconf.resolvePassword()
+		require.Equal(t, tc.expectPassword, sconf.SaslPassword)
+	}
+}
