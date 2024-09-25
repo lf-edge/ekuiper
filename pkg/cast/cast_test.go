@@ -952,6 +952,15 @@ func TestMapToStructDuration(t *testing.T) {
 			},
 		},
 		{
+			name: "duration float for millisecond",
+			input: map[string]any{
+				"interval": 1000.0,
+			},
+			output: mockconf{
+				Interval: time.Second,
+			},
+		},
+		{
 			name: "invalid duration string",
 			input: map[string]any{
 				"interval": "400",
