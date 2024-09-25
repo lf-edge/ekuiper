@@ -43,6 +43,14 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
 
+var (
+	LoadConfigCache map[string]map[string]interface{}
+)
+
+func init() {
+	LoadConfigCache = make(map[string]map[string]interface{})
+}
+
 const Separator = "__"
 
 func LoadConfig(c interface{}) error {
@@ -59,6 +67,9 @@ func LoadConfigByName(name string, c interface{}) error {
 }
 
 func LoadConfigFromPath(p string, c interface{}) error {
+	if cache, ok := LoadConfigCache[p]; ok {
+		return cast.MapToStruct(cache, c)
+	}
 	prefix := getPrefix(p)
 	b, err := os.ReadFile(p)
 	if err != nil {
@@ -84,6 +95,7 @@ func LoadConfigFromPath(p string, c interface{}) error {
 		}
 		applyKeys(configs, names)
 	}
+	LoadConfigCache[p] = configs
 	return cast.MapToStruct(configs, c)
 }
 
