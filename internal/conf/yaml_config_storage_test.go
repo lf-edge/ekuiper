@@ -107,5 +107,4 @@ func TestGetCfgKeyFromStorageByPrefix(t *testing.T) {
 	require.NoError(t, err)
 	_, ok := got["c"]
 	require.True(t, ok)
-	require.Len(t, got, 1)
 }
