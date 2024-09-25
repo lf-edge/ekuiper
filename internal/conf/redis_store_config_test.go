@@ -6,6 +6,7 @@ import (
 )
 
 func TestRedisStorageConSelectorApply(t *testing.T) {
+	clearLoadConfigCache()
 	type args struct {
 		conf        *KuiperConf
 		conSelector string
@@ -50,6 +51,7 @@ func TestRedisStorageConSelectorApply(t *testing.T) {
 }
 
 func TestRedisStorageConSelector(t *testing.T) {
+	clearLoadConfigCache()
 	envs := map[string]string{
 		"KUIPER__STORE__TYPE":                                "redis",
 		"KUIPER__STORE__REDIS__CONNECTIONSELECTOR":           "edgex.redisMsgBus",
