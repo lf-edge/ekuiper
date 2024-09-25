@@ -26,6 +26,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/topo"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/planner"
+	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 )
 
@@ -69,7 +70,7 @@ func create(def *RunDef) (*topo.Topo, error) {
 	}
 	trialRule := genTrialRule(def, sinkProps)
 	// Add trial run prefix for rule id to avoid duplicate rule id with real rules in runtime or other trial rule
-	tp, err := planner.PlanSQLWithSourcesAndSinks(trialRule, prepareSourceProps(def.Mock))
+	tp, err := planner.PlanSQLWithSourcesAndSinks(trialRule, def.Mock)
 	if err != nil {
 		return nil, fmt.Errorf("fail to run rule %s: %s", def.Id, err)
 	}
@@ -79,13 +80,14 @@ func create(def *RunDef) (*topo.Topo, error) {
 	err = infra.SafeRun(func() error {
 		select {
 		case e := <-tp.Open():
-			if e != nil {
+			if errorx.IsUnexpectedErr(e) {
 				return e
+			} else {
+				return nil
 			}
 		case <-time.After(10 * time.Millisecond):
 			return nil
 		}
-		return nil
 	})
 	if err != nil {
 		return nil, fmt.Errorf("fail to run rule %s: %s", def.Id, err)
@@ -100,10 +102,13 @@ func trialRun(tp *topo.Topo) {
 		err := infra.SafeRun(func() error {
 			select {
 			case err := <-tp.Open():
-				if err != nil {
+				if errorx.IsUnexpectedErr(err) {
 					conf.Log.Errorf("closing test run for error: %v", err)
 					tp.Cancel()
 					return err
+				} else {
+					tp.Cancel()
+					return nil
 				}
 			case <-timeout:
 				tp.GetContext().GetLogger().Debugf("trial run stops after timeout")
@@ -115,19 +120,4 @@ func trialRun(tp *topo.Topo) {
 			conf.Log.Debugf("trial run error: %v", err)
 		}
 	}()
-}
-
-func prepareSourceProps(mockSource map[string]map[string]any) map[string]map[string]any {
-	for source, props := range mockSource {
-		v, ok := props["interval"]
-		if ok {
-			vi, ok := v.(int)
-			if ok {
-				props["interval"] = fmt.Sprintf("%dms", vi)
-				mockSource[source] = props
-				continue
-			}
-		}
-	}
-	return mockSource
 }

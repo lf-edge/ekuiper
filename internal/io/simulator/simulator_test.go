@@ -15,7 +15,6 @@
 package simulator
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -70,7 +69,5 @@ func TestSourcePull(t *testing.T) {
 	s2.Pull(ctx, time.Now(), func(ctx api.StreamContext, data any, meta map[string]any, ts time.Time) {}, func(ctx api.StreamContext, err error) {
 		recvData <- err
 	})
-	expErr := fmt.Errorf("simulator source message running out")
-	require.Equal(t, expErr, <-recvData)
 	require.NoError(t, s2.Close(ctx))
 }

@@ -15,7 +15,6 @@
 package simulator
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
@@ -26,6 +25,7 @@ import (
 type SimulatorSource struct {
 	index int
 	cfg   *sConfig
+	eof   api.EOFIngest
 }
 
 type sConfig struct {
@@ -51,12 +51,18 @@ func (s *SimulatorSource) Connect(ctx api.StreamContext, sch api.StatusChangeHan
 	return nil
 }
 
-func (s *SimulatorSource) Pull(ctx api.StreamContext, trigger time.Time, ingest api.TupleIngest, ingestError api.ErrorIngest) {
+func (s *SimulatorSource) SetEofIngest(eof api.EOFIngest) {
+	s.eof = eof
+}
+
+func (s *SimulatorSource) Pull(ctx api.StreamContext, trigger time.Time, ingest api.TupleIngest, _ api.ErrorIngest) {
 	if s.index >= len(s.cfg.Data) {
 		if s.cfg.Loop {
 			s.index = 0
 		} else {
-			ingestError(ctx, fmt.Errorf("simulator source message running out"))
+			if s.eof != nil {
+				s.eof(ctx)
+			}
 			return
 		}
 	}

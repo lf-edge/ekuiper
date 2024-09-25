@@ -68,6 +68,10 @@ func IsEOF(err error) bool {
 	return false
 }
 
+func IsUnexpectedErr(err error) bool {
+	return err != nil && !IsEOF(err)
+}
+
 func NewParserError(msg string) error {
 	return &Error{
 		code: ParserError,
