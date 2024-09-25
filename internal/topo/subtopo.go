@@ -183,6 +183,9 @@ func (s *SrcSubTopo) Close(ctx api.StreamContext, ruleId string, runId int) {
 			if s.cancel != nil {
 				s.cancel()
 			}
+			if ss, ok := s.source.(*SrcSubTopo); ok {
+				ss.Close(ctx, "$$subtopo_"+s.name, runId)
+			}
 			RemoveSubTopo(s.name)
 		}
 		for _, op := range s.ops {
