@@ -18,6 +18,9 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"reflect"
+	"strings"
+
+	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
 func scanIntoMap(mapValue map[string]interface{}, values []interface{}, columns []string) {
@@ -35,9 +38,13 @@ func scanIntoMap(mapValue map[string]interface{}, values []interface{}, columns 
 	}
 }
 
-func prepareValues(values []interface{}, columnTypes []*sql.ColumnType, columns []string) {
+func prepareValues(ctx api.StreamContext, values []interface{}, columnTypes []*sql.ColumnType, columns []string) {
 	if len(columnTypes) > 0 {
 		for idx, columnType := range columnTypes {
+			if got := buildScanValueByColumnType(ctx, columnType.Name(), columnType.DatabaseTypeName()); got != nil {
+				values[idx] = got
+				continue
+			}
 			if columnType.ScanType() != nil {
 				values[idx] = reflect.New(reflect.PtrTo(columnType.ScanType())).Interface()
 			} else {
@@ -48,5 +55,21 @@ func prepareValues(values []interface{}, columnTypes []*sql.ColumnType, columns 
 		for idx := range columns {
 			values[idx] = new(interface{})
 		}
+	}
+}
+
+func buildScanValueByColumnType(ctx api.StreamContext, colName, colType string) interface{} {
+	switch strings.ToUpper(colType) {
+	case "CHAR", "VARCHAR", "NCHAR", "NVARCHAR", "TEXT", "NTEXT":
+		return new(string)
+	case "DECIMAL", "NUMERIC", "FLOAT", "REAL":
+		return new(float64)
+	case "BOOL":
+		return new(bool)
+	case "INT", "BIGINT", "SMALLINT", "TINYINT":
+		return new(int64)
+	default:
+		ctx.GetLogger().Infof("sql source meet column %v unknown columnType:%v", colName, colType)
+		return nil
 	}
 }

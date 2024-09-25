@@ -134,7 +134,7 @@ func (m *sqlsource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple,
 			for rows.Next() {
 				data := make(map[string]interface{})
 				columns := make([]interface{}, len(cols))
-				prepareValues(columns, types, cols)
+				prepareValues(ctx, columns, types, cols)
 
 				err := rows.Scan(columns...)
 				if err != nil {
