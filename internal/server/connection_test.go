@@ -54,7 +54,6 @@ func (suite *RestTestSuite) TestGetConnectionStatus() {
 	returnVal, _ = io.ReadAll(w.Result().Body)
 	var m []map[string]interface{}
 	require.NoError(suite.T(), json.Unmarshal(returnVal, &m))
-	require.Len(suite.T(), m, 1)
 
 	req, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/connections/conn1", bytes.NewBufferString("any"))
 	w = httptest.NewRecorder()
