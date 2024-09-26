@@ -40,6 +40,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/plugin"
 	"github.com/lf-edge/ekuiper/v2/internal/plugin/portable/runtime"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 	"github.com/lf-edge/ekuiper/v2/pkg/kv"
 )
 
@@ -142,10 +143,14 @@ func (m *Manager) syncRegistry() (err error) {
 	}
 	for _, file := range files {
 		if file.IsDir() {
-			err := m.parsePlugin(file.Name())
-			if err != nil {
-				conf.Log.Warn(err)
-			}
+			// Parse plugins asyncly because it will run the plugin which may block in handshake
+			go infra.SafeRun(func() error {
+				err := m.parsePlugin(file.Name())
+				if err != nil {
+					conf.Log.Warn(err)
+				}
+				return err
+			})
 		} else {
 			conf.Log.Warnf("find file `%s`, portable plugin must be a directory", file.Name())
 		}
@@ -267,6 +272,7 @@ func (m *Manager) install(name, src string, shellParas []string) (resultErr erro
 				_ = os.Remove(p)
 			}
 			_ = os.Remove(pluginTarget)
+			m.reg.Delete(name)
 		}
 	}()
 	r, err := zip.OpenReader(src)
