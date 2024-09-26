@@ -83,6 +83,10 @@ func (m *fileSink) Provision(ctx api.StreamContext, props map[string]interface{}
 	if c.RollingInterval == 0 && c.RollingCount == 0 {
 		return fmt.Errorf("one of rollingInterval and rollingCount must be set")
 	}
+	if c.RollingInterval > 0 && c.RollingInterval < c.CheckInterval {
+		c.CheckInterval = c.RollingInterval
+		ctx.GetLogger().Infof("set checkInterval to %v", c.CheckInterval)
+	}
 	if c.RollingNamePattern != "" && c.RollingNamePattern != "prefix" && c.RollingNamePattern != "suffix" && c.RollingNamePattern != "none" {
 		return fmt.Errorf("rollingNamePattern must be one of prefix, suffix or none")
 	}
@@ -218,7 +222,7 @@ func (m *fileSink) Close(ctx api.StreamContext) error {
 }
 
 func (m *fileSink) roll(ctx api.StreamContext, k string, v *fileWriter) error {
-	ctx.GetLogger().Debugf("rolling file %s", k)
+	ctx.GetLogger().Infof("rolling file %s", k)
 	err := v.Close(ctx)
 	if err != nil {
 		return err

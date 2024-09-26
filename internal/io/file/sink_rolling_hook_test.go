@@ -85,7 +85,7 @@ func TestProvision(t *testing.T) {
 		{
 			name: "interval duration",
 			c: &sinkConf{
-				CheckInterval:      cast.DurationConf(5 * time.Minute),
+				CheckInterval:      cast.DurationConf(10 * time.Second),
 				Path:               "test",
 				FileType:           CSV_TYPE,
 				Format:             message.FormatDelimited,
@@ -134,7 +134,7 @@ func TestProvision(t *testing.T) {
 				assert.EqualError(t, err, tt.err)
 			} else {
 				assert.NoError(t, err)
-				assert.Equal(t, m.c, tt.c)
+				assert.Equal(t, tt.c, m.c)
 			}
 		})
 	}
