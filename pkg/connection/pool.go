@@ -209,7 +209,7 @@ func dropNameConnection(ctx api.StreamContext, selId string) error {
 		return err
 	}
 	if isInternal {
-		return fmt.Errorf("internal conneciton %v can't be edit", selId)
+		return fmt.Errorf("internal connection %v can't be edit", selId)
 	}
 	if meta.GetRefCount() > 0 {
 		return fmt.Errorf("connection %s can't be dropped due to references %v", selId, meta.GetRefNames())
@@ -237,7 +237,7 @@ func UpdateConnection(ctx api.StreamContext, id, typ string, props map[string]an
 		return nil, err
 	}
 	if isInternal {
-		return nil, fmt.Errorf("internal conneciton %v can't be edit", id)
+		return nil, fmt.Errorf("internal connection %v can't be edit", id)
 	}
 	if err := dropNameConnection(ctx, id); err != nil {
 		return nil, err
