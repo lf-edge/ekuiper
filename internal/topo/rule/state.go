@@ -176,9 +176,9 @@ func (s *State) GetStatusMessage() string {
 	result.WriteString(`"status": "`)
 	result.WriteString(StateName[s.currentState])
 	result.WriteString(`",`)
-	result.WriteString(`"message": "`)
-	result.WriteString(strings.ReplaceAll(s.lastWill, `"`, `\"`))
-	result.WriteString(`",`)
+	result.WriteString(`"message": `)
+	result.WriteString(fmt.Sprintf("%q", s.lastWill))
+	result.WriteString(`,`)
 	// Compose run timing metrics
 	result.WriteString(`"lastStartTimestamp": `)
 	result.WriteString(strconv.FormatInt(s.lastStartTimestamp, 10))
@@ -210,9 +210,7 @@ func (s *State) GetStatusMessage() string {
 			v, _ := cast.ToString(value, cast.CONVERT_ALL)
 			switch value.(type) {
 			case string:
-				result.WriteString(`"`)
-				result.WriteString(strings.ReplaceAll(v, `"`, `\"`))
-				result.WriteString(`"`)
+				result.WriteString(fmt.Sprintf("%q", v))
 			default:
 				result.WriteString(v)
 			}
