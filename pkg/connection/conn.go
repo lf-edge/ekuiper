@@ -71,11 +71,10 @@ type Meta struct {
 	ID    string         `json:"id"`
 	Typ   string         `json:"typ"`
 	Props map[string]any `json:"props"`
+	Named bool           `json:"named"`
 
-	Named    bool         `json:"-"`
-	refCount atomic.Int32 `json:"-"`
-	ref      sync.Map     `json:"-"`
-	cw       *ConnWrapper `json:"-"`
+	ref sync.Map     `json:"-"`
+	cw  *ConnWrapper `json:"-"`
 	// The first connection status
 	// If connection is stateful, the status will update all the way
 	// For stateless connection, the status needs to ping
@@ -103,16 +102,14 @@ func (meta *Meta) AddRef(refId string, sc api.StatusChangeHandler) {
 		sc(s, e)
 	}
 	meta.ref.Store(refId, sc)
-	meta.refCount.Add(1)
 }
 
 func (meta *Meta) DeRef(refId string) {
 	meta.ref.Delete(refId)
-	meta.refCount.Add(-1)
 }
 
 func (meta *Meta) GetRefCount() int {
-	return int(meta.refCount.Load())
+	return len(meta.GetRefNames())
 }
 
 func (meta *Meta) GetRefNames() (result []string) {
