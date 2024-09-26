@@ -51,7 +51,7 @@ Users can upload the model file to eKuiper via the eKuiper manager as shown in t
 
 ### Calling the Model
 
-After installing the ONNX plugin, users can call the model in SQL like a normal built-in function. The first parameter is the model name, and the second is the data to be processed. 
+After installing the ONNX plugin, users can call the model in SQL like a normal built-in function. The first parameter is the model name, and the second is the data to be processed.
 The following image shows using the Rest API to call the model.
 ![model call](../../resources/tflite_sin_rule.png)
 
@@ -123,7 +123,7 @@ Users can upload the model file to eKuiper via the eKuiper manager as shown belo
 
 ### Calling the Sum_and_difference Model
 
-After installing the ONNX plugin, users can call the model in SQL like a normal built-in function. The first parameter is the model name, and the second is the data to be processed. 
+After installing the ONNX plugin, users can call the model in SQL like a normal built-in function. The first parameter is the model name, and the second is the data to be processed.
 The following image shows using the Rest API to call the model.
 ![model call](../../resources/tflite_sin_rule.png)
 
