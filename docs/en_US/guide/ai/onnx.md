@@ -13,19 +13,13 @@ streaming data. This tutorial demonstrates how to quickly invoke pre-trained ONN
 
 ### 模型下载
 
-To run the ONNX interpreter, a trained model is needed. This tutorial will not cover training or model specifics; you
-can learn how to do this by checking the [ONNX tutorials](https://github.com/onnx/tutorials#converting-to-onnx-format) .
+To run the ONNX interpreter, a trained model is needed. This tutorial will not cover training or model specifics; you can learn how to do this by checking the [ONNX tutorials](https://github.com/onnx/tutorials#converting-to-onnx-format).
 We can either train a new model or choose an existing one.
-In this tutorial, we will use
-the [yalue/go onnxruntime](https://github.com/yalue/onnxruntime_go_examples)  [sum_and_difference](https://github.com/yalue/onnxruntime_go_examples/tree/master/sum_and_difference)
-model
-and [MNIST-12](https://github.com/onnx/models/tree/ddbbd1274c8387e3745778705810c340dea3d8c7/validated/vision/classification/mnist)
-for demonstration.
+In this tutorial, we will use the [yalue/go onnxruntime](https://github.com/yalue/onnxruntime_go_examples)  [sum_and_difference](https://github.com/yalue/onnxruntime_go_examples/tree/master/sum_and_difference) model and [MNIST-12](https://github.com/onnx/models/tree/ddbbd1274c8387e3745778705810c340dea3d8c7/validated/vision/classification/mnist) for demonstration.
 
 ### Running eKuiper
 
-This tutorial uses the eKuiper v2 and Rest API released by the team. If you want to use the eKuiper manager Docker, you
-can find installation and usage details [here](https://hub.docker.com/r/emqx/ekuiper-manager).
+This tutorial uses the eKuiper v2 and Rest API released by the team. If you want to use the eKuiper manager Docker, you can find installation and usage details [here](https://hub.docker.com/r/emqx/ekuiper-manager).
 
 ### ONNX Plugin Installation
 
@@ -33,9 +27,9 @@ Before running model inference, the ONNX plugin needs to be installed.
 Installing the ONNX plugin does not require manual building of the C API like TensorFlow Lite; it can be built similarly to other plugins like Echo. For details, refer to [Function Extensions](https://ekuiper.org/docs/zh/latest/extension/native/develop/function.html).
 
 ## Running the MNIST-12 Model
-Download the [MNIST-12 model](https://github.com/onnx/models/blob/ddbbd1274c8387e3745778705810c340dea3d8c7/validated/vision/classification/mnist/model/mnist-12.onnx) to predict digits in images. 
-Users need to prepare an MQTT Broker and create an MQTT source to send data to the eKuiper rule for processing and return the inference results to the MQTT Broker.
 
+Download the [MNIST-12 model](https://github.com/onnx/models/blob/ddbbd1274c8387e3745778705810c340dea3d8c7/validated/vision/classification/mnist/model/mnist-12.onnx) to predict digits in images.
+Users need to prepare an MQTT Broker and create an MQTT source to send data to the eKuiper rule for processing and return the inference results to the MQTT Broker.
 
 ### MQTT Source
 
@@ -90,51 +84,30 @@ The results are shown in the image below, indicating the predicted probabilities
 You can use a program like the one below to send images located in the ONNX directory.
 
 ```go
-func TestPic(t *testing.T) {
-const TOPIC = "onnxPubImg"
+func TestSum(t *testing.T) {
+    const TOPIC = "sum_diff_pub"
 
-images := []string{
-"img.png",
-// Other images you need
-}
-opts := mqtt.NewClientOptions().AddBroker("tcp://localhost:1883")
-client := mqtt.NewClient(opts)
-if token := client.Connect(); token.Wait() && token.Error() != nil {
-panic(token.Error())
-}
-for _, image := range images {
-fmt.Println("Publishing " + image)
-inputImage, err := NewProcessedImage(image, false)
+    opts := mqtt.NewClientOptions().AddBroker("tcp://localhost:1883")
+    client := mqtt.NewClient(opts)
+    if token := client.Connect(); token.Wait() && token.Error() != nil {
+        panic(token.Error())
+    }
+    payloadF32 := []float32{0.2, 0.3, 0.6, 0.9}
+    payloadUnMarshal := MqttPayLoadFloat32Slice{
+        Data: payloadF32,
+    }
+    payload, err := json.Marshal(payloadUnMarshal)
+    if err != nil {
+        fmt.Println(err)
+        return
+    }
 
-if err != nil {
-fmt.Println(err)
-continue
-}
-// payload, err := os.ReadFile(image)
-payloadF32 := inputImage.GetNetworkInput()
-
-data := make([]any, len(payloadF32))
-for i := 0; i < len(data); i++ {
-data[i] = payloadF32[i]
-}
-payloadUnMarshal := MqttPayLoadFloat32Slice{
-Data: payloadF32,
-}
-payload, err := json.Marshal(payloadUnMarshal)
-if err != nil {
-fmt.Println(err)
-continue
-} else {
-fmt.Println(string(payload))
-}
-if token := client.Publish(TOPIC, 2, true, payload); token.Wait() && token.Error() != nil {
-fmt.Println(token.Error())
-} else {
-fmt.Println("Published " + image)
-}
-time.Sleep(1 * time.Second)
-}
-client.Disconnect(0)
+    if token := client.Publish(TOPIC, 2, true, payload); token.Wait() && token.Error() != nil {
+        fmt.Println(token.Error())
+    } else {
+        fmt.Println("Published ")
+    }
+    client.Disconnect(0)
 }
 ```
 
@@ -201,33 +174,33 @@ You can use a program like the one below to send test data.
 
 ```go
 func TestSum(t *testing.T) {
-const TOPIC = "sum_diff_pub"
+    const TOPIC = "sum_diff_pub"
 
-opts := mqtt.NewClientOptions().AddBroker("tcp://localhost:1883")
-client := mqtt.NewClient(opts)
-if token := client.Connect(); token.Wait() && token.Error() != nil {
-panic(token.Error())
-}
-payloadF32 := []float32{0.2, 0.3, 0.6, 0.9}
-payloadUnMarshal := MqttPayLoadFloat32Slice{
-Data: payloadF32,
-}
-payload, err := json.Marshal(payloadUnMarshal)
-if err != nil {
-fmt.Println(err)
-return
-}
+    opts := mqtt.NewClientOptions().AddBroker("tcp://localhost:1883")
+    client := mqtt.NewClient(opts)
+    if token := client.Connect(); token.Wait() && token.Error() != nil {
+        panic(token.Error())
+    }
+    payloadF32 := []float32{0.2, 0.3, 0.6, 0.9}
+    payloadUnMarshal := MqttPayLoadFloat32Slice{
+        Data: payloadF32,
+    }
+    payload, err := json.Marshal(payloadUnMarshal)
+    if err != nil {
+        fmt.Println(err)
+        return
+    }
 
-if token := client.Publish(TOPIC, 2, true, payload); token.Wait() && token.Error() != nil {
-fmt.Println(token.Error())
-} else {
-fmt.Println("Published ")
-}
-client.Disconnect(0)
+    if token := client.Publish(TOPIC, 2, true, payload); token.Wait() && token.Error() != nil {
+        fmt.Println(token.Error())
+    } else {
+        fmt.Println("Published ")
+    }
+    client.Disconnect(0)
 }
 ```
 
 ## Conclusion
 
-In this tutorial, we directly invoked pre-trained ONNX models in eKuiper using the precompiled ONNX plugin, simplifying the inference steps without writing code. 
+In this tutorial, we directly invoked pre-trained ONNX models in eKuiper using the precompiled ONNX plugin, simplifying the inference steps without writing code.
 By supporting ONNX, we can easily implement various model inferences in eKuiper, including Pytorch and TensorFlow models.
