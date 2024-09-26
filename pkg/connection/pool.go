@@ -246,9 +246,6 @@ func UpdateConnection(ctx api.StreamContext, id, typ string, props map[string]an
 }
 
 func isInternalConnection(id string) (bool, error) {
-	if id == "" {
-		return false, fmt.Errorf("connection id and type should be defined")
-	}
 	meta, ok := globalConnectionManager.connectionPool[id]
 	if !ok {
 		return false, fmt.Errorf("connection %s not existed", id)
