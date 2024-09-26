@@ -19,6 +19,21 @@ POST http://localhost:9081/connections
 }
 ```
 
+### 更新连接
+
+更新连接要提供连接的 id, 类型和配置参数。目前已经支持了 `mqtt`/`nng`/`httppush`/`websocket`/`edgex`/`sql` 类型的连接，这里以更新 mqtt 连接为例。如果连接被规则引用中，则无法被更新。
+
+```shell
+PUT http://localhost:9081/connections/connection-1
+{
+  "id": "connecton-1",
+  "typ":"mqtt",
+  "props": {
+    "server": "tcp://127.0.0.1:1883"
+  }
+}
+```
+
 ### 获取所有连接信息
 
 ```shell

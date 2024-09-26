@@ -167,11 +167,14 @@ func createNamedConnection(ctx api.StreamContext, id, typ string, props map[stri
 	return meta.cw, nil
 }
 
-func GetAllConnectionsMeta() []*Meta {
+func GetAllConnectionsMeta(forceAll bool) []*Meta {
 	globalConnectionManager.RLock()
 	defer globalConnectionManager.RUnlock()
 	metaList := make([]*Meta, 0)
 	for _, meta := range globalConnectionManager.connectionPool {
+		if !meta.Named && !forceAll {
+			continue
+		}
 		metaList = append(metaList, meta)
 	}
 	return metaList

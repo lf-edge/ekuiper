@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/mux"
 
@@ -53,7 +54,8 @@ func connectionsHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusCreated)
 		w.Write([]byte("success"))
 	case http.MethodGet:
-		metaList := connection.GetAllConnectionsMeta()
+		forceAll, _ := strconv.ParseBool(r.URL.Query().Get("forceAll"))
+		metaList := connection.GetAllConnectionsMeta(forceAll)
 		resp := make([]*ConnectionResponse, 0)
 		for _, meta := range metaList {
 			resp = append(resp, getConnectionRespByMeta(meta))
