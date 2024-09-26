@@ -116,6 +116,21 @@ func TestConnectionErr(t *testing.T) {
 	failpoint.Disable("github.com/lf-edge/ekuiper/v2/pkg/connection/dropConnectionStoreErr")
 }
 
+func TestUpdateConn(t *testing.T) {
+	require.NoError(t, InitConnectionManager4Test())
+	ctx := mockContext.NewMockContext("id", "2")
+	_, err := UpdateConnection(ctx, "", "mock", map[string]any{})
+	require.Error(t, err)
+	_, err = UpdateConnection(ctx, "1", "mock", map[string]any{})
+	require.Error(t, err)
+	_, err = UpdateConnection(ctx, "1", "mockmock", map[string]any{})
+	require.Error(t, err)
+	_, err = FetchConnection(ctx, "id1", "mock", nil, nil)
+	require.NoError(t, err)
+	_, err = UpdateConnection(ctx, "id1", "mockmock", map[string]any{})
+	require.Error(t, err)
+}
+
 func TestNonStoredConnection(t *testing.T) {
 	require.NoError(t, InitConnectionManager4Test())
 	ctx := mockContext.NewMockContext("id", "2")

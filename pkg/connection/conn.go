@@ -71,8 +71,8 @@ type Meta struct {
 	ID    string         `json:"id"`
 	Typ   string         `json:"typ"`
 	Props map[string]any `json:"props"`
+	Named bool           `json:"named"`
 
-	Named    bool         `json:"-"`
 	refCount atomic.Int32 `json:"-"`
 	ref      sync.Map     `json:"-"`
 	cw       *ConnWrapper `json:"-"`

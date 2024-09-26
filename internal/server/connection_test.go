@@ -24,33 +24,28 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/lf-edge/ekuiper/v2/internal/io/http/httpserver"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 )
 
 func (suite *RestTestSuite) TestGetConnectionStatus() {
-	ip := "127.0.0.1"
-	port := 10091
-	httpserver.InitGlobalServerManager(ip, port, nil)
-	defer httpserver.ShutDown()
 	connection.InitConnectionManager4Test()
-	ruleJson := `
+	connJson := `
 {
   "id": "conn1",
-  "typ":"httppush",
+  "typ":"mock",
   "props": {
     "method": "post",
 	"datasource": "/test1"
   }
 }
 `
-	buf := bytes.NewBuffer([]byte(ruleJson))
+	buf := bytes.NewBuffer([]byte(connJson))
 	req, _ := http.NewRequest(http.MethodPost, "http://localhost:8080/connections", buf)
 	w := httptest.NewRecorder()
 	suite.r.ServeHTTP(w, req)
 	require.Equal(suite.T(), http.StatusCreated, w.Code)
 
-	time.Sleep(500 * time.Millisecond)
+	time.Sleep(100 * time.Millisecond)
 	req, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/connections", bytes.NewBufferString("any"))
 	w = httptest.NewRecorder()
 	suite.r.ServeHTTP(w, req)
@@ -59,13 +54,76 @@ func (suite *RestTestSuite) TestGetConnectionStatus() {
 	returnVal, _ = io.ReadAll(w.Result().Body)
 	var m []map[string]interface{}
 	require.NoError(suite.T(), json.Unmarshal(returnVal, &m))
-	require.Len(suite.T(), m, 1)
 
-	req, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/connection/conn1", bytes.NewBufferString("any"))
+	req, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/connections/conn1", bytes.NewBufferString("any"))
 	w = httptest.NewRecorder()
 	suite.r.ServeHTTP(w, req)
 	require.Equal(suite.T(), http.StatusOK, w.Code)
 	returnVal, _ = io.ReadAll(w.Result().Body)
-	require.Equal(suite.T(), `{"id":"conn1","typ":"httppush","props":{"datasource":"/test1","method":"post"},"status":"connected"}`, string(returnVal))
+	require.Equal(suite.T(), `{"id":"conn1","typ":"mock","props":{"datasource":"/test1","method":"post"},"isNamed":true,"status":"connected"}`, string(returnVal))
 	require.Equal(suite.T(), w.Header().Get("Content-Type"), "application/json")
+
+	connJson = `
+{
+  "id": "conn1",
+  "typ":"mock",
+  "props": {
+    "method": "post",
+	"datasource": "/test2"
+  }
+}
+`
+	buf = bytes.NewBuffer([]byte(connJson))
+	req, _ = http.NewRequest(http.MethodPut, "http://localhost:8080/connections/conn1", buf)
+	w = httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	require.Equal(suite.T(), http.StatusOK, w.Code)
+	time.Sleep(100 * time.Millisecond)
+	req, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/connections/conn1", bytes.NewBufferString("any"))
+	w = httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	require.Equal(suite.T(), http.StatusOK, w.Code)
+	returnVal, _ = io.ReadAll(w.Result().Body)
+	require.Equal(suite.T(), `{"id":"conn1","typ":"mock","props":{"datasource":"/test2","method":"post"},"isNamed":true,"status":"connected"}`, string(returnVal))
+	require.Equal(suite.T(), w.Header().Get("Content-Type"), "application/json")
+}
+
+func (suite *RestTestSuite) TestEditInternalConn() {
+	connection.InitConnectionManager4Test()
+	// create stream
+	buf := bytes.NewBuffer([]byte(`{"sql":"CREATE stream connTest() WITH (DATASOURCE=\"0\", TYPE=\"mqtt\")"}`))
+	req, _ := http.NewRequest(http.MethodPost, "http://localhost:8080/streams", buf)
+	w := httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	require.Equal(suite.T(), http.StatusCreated, w.Code)
+
+	// create rule with trigger false
+	ruleJson := `{"id": "connTest","sql": "select * from connTest","actions": [{"log": {}}]}`
+	buf = bytes.NewBuffer([]byte(ruleJson))
+	req, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/rules", buf)
+	w = httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	require.Equal(suite.T(), http.StatusCreated, w.Code)
+	time.Sleep(100 * time.Millisecond)
+
+	req, _ = http.NewRequest(http.MethodDelete, "http://localhost:8080/connections/connTest-connTest-0-mqtt-source", bytes.NewBufferString("any"))
+	w = httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	require.Equal(suite.T(), http.StatusBadRequest, w.Code)
+
+	updateJson := `
+{
+  "id": "connTest-connTest-0-mqtt-source",
+  "typ":"mqtt",
+  "props": {
+    "method": "post",
+	"datasource": "/test1"
+  }
+}
+`
+	buf = bytes.NewBuffer([]byte(updateJson))
+	req, _ = http.NewRequest(http.MethodPut, "http://localhost:8080/connections/connTest-connTest-0-mqtt-source", buf)
+	w = httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	require.Equal(suite.T(), http.StatusBadRequest, w.Code)
 }
