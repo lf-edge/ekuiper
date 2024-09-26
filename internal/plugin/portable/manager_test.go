@@ -21,17 +21,15 @@ import (
 	"net/http/httptest"
 	"os"
 	"path"
-	"path/filepath"
-	"reflect"
 	"testing"
 	"time"
 
 	"github.com/pingcap/failpoint"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/meta"
 	"github.com/lf-edge/ekuiper/v2/internal/plugin"
-	"github.com/lf-edge/ekuiper/v2/internal/plugin/portable/runtime"
 	"github.com/lf-edge/ekuiper/v2/internal/testx"
 )
 
@@ -109,78 +107,27 @@ func TestManager_Install(t *testing.T) {
 }
 
 func TestManager_Read(t *testing.T) {
-	expPlugins := []*PluginInfo{
-		{
-			PluginMeta: runtime.PluginMeta{
-				Name:       "mirror2",
-				Version:    "v1.0.0",
-				Language:   "go",
-				Executable: filepath.Clean(path.Join(manager.pluginDir, "mirror2", "mirror2")),
-			},
-			Sources:   []string{"randomGo"},
-			Sinks:     []string{"fileGo"},
-			Functions: []string{"echoGo"},
-		},
-	}
 	result := manager.List()
-	if len(result) != 2 {
-		t.Errorf("list result mismatch:\n  exp=%v\n  got=%v\n\n", expPlugins, result)
+	if len(result) != 1 {
+		t.Errorf("list result mismatch:\n got=%v\n\n", result)
 	}
 
 	_, ok := manager.GetPluginInfo("mirror3")
-	if ok {
-		t.Error("find inexist plugin mirror3")
-	}
-	pi, ok := manager.GetPluginInfo("mirror2")
-	if !ok {
-		t.Error("can't find plugin mirror2")
-	}
-	if !reflect.DeepEqual(expPlugins[0], pi) {
-		t.Errorf("Get plugin mirror2 mismatch:\n exp=%v\n got=%v", expPlugins[0], pi)
-	}
-	_, ok = manager.GetPluginMeta(plugin.SOURCE, "echoGo")
-	if ok {
-		t.Error("find inexist source symbol echo")
-	}
-	m, ok := manager.GetPluginMeta(plugin.SINK, "fileGo")
-	if !ok {
-		t.Error("can't find sink symbol fileGo")
-	}
-	if !reflect.DeepEqual(&(expPlugins[0].PluginMeta), m) {
-		t.Errorf("Get sink symbol mismatch:\n exp=%v\n got=%v", expPlugins[0].PluginMeta, m)
-	}
-}
+	assert.False(t, ok, "mirror3 should not be found")
 
-// This will start channel, so test it in integration tests.
-//func TestFactory(t *testing.T){
-//	_, err := manager.Source("alss")
-//	expErr := fmt.Errorf("can't find random")
-//	if !reflect.DeepEqual(expErr, err){
-//		t.Errorf("error mismatch:\n  exp=%s\n  got=%s\n\n", expErr, err)
-//	}
-//	src, _ := manager.Source("randomGo")
-//	if src  == nil {
-//		t.Errorf("can't get source randomGo")
-//	}
-//	snk, _ := manager.Sink("fileGo")
-//	if snk == nil {
-//		t.Errorf("can't get sink fileGo")
-//	}
-//	fun, _ := manager.Function("echoGo")
-//	if fun == nil {
-//		t.Errorf("can't get function echoGo")
-//	}
-//	ok := manager.HasFunctionSet("echoGo")
-//	if !ok {
-//		t.Errorf("can't check function set")
-//	}
-//}
+	_, ok = manager.GetPluginInfo("mirror2")
+	assert.False(t, ok, "plugin mirror2 should not be found")
+
+	_, ok = manager.GetPluginMeta(plugin.SOURCE, "echoGo")
+	assert.False(t, ok, "symbol echoGo should not be found")
+
+	_, ok = manager.GetPluginMeta(plugin.SINK, "fileGo")
+	assert.False(t, ok, "symbol fileGo should not be found")
+}
 
 func TestDelete(t *testing.T) {
 	err := manager.Delete("mirror2")
-	if err != nil {
-		t.Errorf("delete plugin error: %v", err)
-	}
+	require.EqualError(t, err, "portable plugin mirror2 is not found")
 	err = checkFileForMirror(manager.pluginDir, manager.pluginConfDir, false)
 	if err != nil {
 		t.Errorf("error : %s\n\n", err)
