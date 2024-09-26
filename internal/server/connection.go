@@ -67,6 +67,7 @@ type ConnectionResponse struct {
 	ID       string         `json:"id"`
 	Typ      string         `json:"typ"`
 	Props    map[string]any `json:"props"`
+	IsNamed  bool           `json:"isNamed"`
 	Status   string         `json:"status,omitempty"`
 	Err      string         `json:"err,omitempty"`
 	RefCount int            `json:"refCount,omitempty"`
@@ -118,6 +119,7 @@ func getConnectionRespByMeta(meta *connection.Meta) *ConnectionResponse {
 		Typ:      meta.Typ,
 		ID:       meta.ID,
 		Props:    meta.Props,
+		IsNamed:  meta.Named,
 		RefCount: meta.GetRefCount(),
 		Status:   status,
 		Err:      e,

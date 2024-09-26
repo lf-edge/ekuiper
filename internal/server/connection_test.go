@@ -61,7 +61,7 @@ func (suite *RestTestSuite) TestGetConnectionStatus() {
 	suite.r.ServeHTTP(w, req)
 	require.Equal(suite.T(), http.StatusOK, w.Code)
 	returnVal, _ = io.ReadAll(w.Result().Body)
-	require.Equal(suite.T(), `{"id":"conn1","typ":"mock","props":{"datasource":"/test1","method":"post"},"status":"connected"}`, string(returnVal))
+	require.Equal(suite.T(), `{"id":"conn1","typ":"mock","props":{"datasource":"/test1","method":"post"},"isNamed":true,"status":"connected"}`, string(returnVal))
 	require.Equal(suite.T(), w.Header().Get("Content-Type"), "application/json")
 
 	connJson = `
@@ -85,7 +85,7 @@ func (suite *RestTestSuite) TestGetConnectionStatus() {
 	suite.r.ServeHTTP(w, req)
 	require.Equal(suite.T(), http.StatusOK, w.Code)
 	returnVal, _ = io.ReadAll(w.Result().Body)
-	require.Equal(suite.T(), `{"id":"conn1","typ":"mock","props":{"datasource":"/test2","method":"post"},"status":"connected"}`, string(returnVal))
+	require.Equal(suite.T(), `{"id":"conn1","typ":"mock","props":{"datasource":"/test2","method":"post"},"isNamed":true,"status":"connected"}`, string(returnVal))
 	require.Equal(suite.T(), w.Header().Get("Content-Type"), "application/json")
 }
 
