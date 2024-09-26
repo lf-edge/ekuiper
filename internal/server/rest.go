@@ -105,7 +105,7 @@ func packageInternalErrorCode(err error, msg string) string {
 	if errWithCode, ok := err.(errorx.ErrorWithCode); ok {
 		errCode = errWithCode.Code()
 	}
-	return fmt.Sprintf(`{"error":%v,"message":"%v"}`, errCode, msg)
+	return fmt.Sprintf(`{"error":%v,"message":%q}`, errCode, msg)
 }
 
 func jsonResponse(i interface{}, w http.ResponseWriter, logger api.Logger) {

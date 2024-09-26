@@ -36,7 +36,7 @@ func (s *ImportTestSuite) TestImportError() {
 		s.Require().Equal(400, resp.StatusCode)
 		result, err := GetResponseText(resp)
 		s.Require().NoError(err)
-		exp := "{\"error\":1000,\"message\":\"{\"streams\":{\"demo\":\"found \\\"STWREAM\\\", expected keyword stream or table.\"},\"tables\":{},\"rules\":{},\"nativePlugins\":{},\"portablePlugins\":{},\"sourceConfig\":{},\"sinkConfig\":{},\"connectionConfig\":{},\"Service\":{},\"Schema\":{},\"uploads\":{},\"scripts\":{}}\"}\n"
+		exp := "{\"error\":1000,\"message\":\"{\\\"streams\\\":{\\\"demo\\\":\\\"found \\\\\\\"STWREAM\\\\\\\", expected keyword stream or table.\\\"},\\\"tables\\\":{},\\\"rules\\\":{},\\\"nativePlugins\\\":{},\\\"portablePlugins\\\":{},\\\"sourceConfig\\\":{},\\\"sinkConfig\\\":{},\\\"connectionConfig\\\":{},\\\"Service\\\":{},\\\"Schema\\\":{},\\\"uploads\\\":{},\\\"scripts\\\":{}}\"}\n"
 
 		s.Require().Equal(exp, result)
 	})
@@ -48,7 +48,7 @@ func (s *ImportTestSuite) TestImportError() {
 		s.Require().Equal(400, resp.StatusCode)
 		result, err := GetResponseText(resp)
 		s.Require().NoError(err)
-		exp := "{\"error\":1000,\"message\":\"{\"streams\":{\"demo\":\"found \\\"STWREAM\\\", expected keyword stream or table.\"},\"tables\":{},\"rules\":{},\"nativePlugins\":{},\"portablePlugins\":{},\"sourceConfig\":{},\"sinkConfig\":{},\"connectionConfig\":{},\"Service\":{},\"Schema\":{},\"uploads\":{},\"scripts\":{}}\"}\n"
+		exp := "{\"error\":1000,\"message\":\"{\\\"streams\\\":{\\\"demo\\\":\\\"found \\\\\\\"STWREAM\\\\\\\", expected keyword stream or table.\\\"},\\\"tables\\\":{},\\\"rules\\\":{},\\\"nativePlugins\\\":{},\\\"portablePlugins\\\":{},\\\"sourceConfig\\\":{},\\\"sinkConfig\\\":{},\\\"connectionConfig\\\":{},\\\"Service\\\":{},\\\"Schema\\\":{},\\\"uploads\\\":{},\\\"scripts\\\":{}}\"}\n"
 
 		s.Require().Equal(exp, result)
 	})
