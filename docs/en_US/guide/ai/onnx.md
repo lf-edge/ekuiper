@@ -6,8 +6,7 @@ designed for various resource-constrained IoT devices.
 [ONNX](https://onnx.ai/get-started.html) is an open file format designed for machine learning to store trained models.
 It allows different AI frameworks to store model data and interact using the same format.
 
-By integrating eKuiper and ONNX, users can simply upload pre-built ONNX models and use them in rules to analyze
-streaming data. This tutorial demonstrates how to quickly invoke pre-trained ONNX models using eKuiper.
+By integrating eKuiper and ONNX, users can simply upload pre-built ONNX models and use them in rules to analyze streaming data. This tutorial demonstrates how to quickly invoke pre-trained ONNX models using eKuiper.
 
 ## Prerequisites
 
