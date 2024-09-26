@@ -156,6 +156,10 @@ func getCfgKeyFromStorageByPrefix(prefix string) (map[string]map[string]interfac
 	v := make(map[string]map[string]interface{})
 	for key, value := range val {
 		ss := strings.Split(key, ".")
+		// skip data if not conf
+		if len(ss) != 3 {
+			continue
+		}
 		v[ss[2]] = value
 	}
 	return v, nil

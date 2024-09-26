@@ -105,7 +105,7 @@ func packageInternalErrorCode(err error, msg string) string {
 	if errWithCode, ok := err.(errorx.ErrorWithCode); ok {
 		errCode = errWithCode.Code()
 	}
-	return fmt.Sprintf(`{"error":%v,"message":"%v"}`, errCode, msg)
+	return fmt.Sprintf(`{"error":%v,"message":%q}`, errCode, msg)
 }
 
 func jsonResponse(i interface{}, w http.ResponseWriter, logger api.Logger) {
@@ -201,7 +201,7 @@ func createRestServer(ip string, port int, needToken bool) *http.Server {
 	r.HandleFunc("/data/import", configurationImportHandler).Methods(http.MethodPost)
 	r.HandleFunc("/data/import/status", configurationStatusHandler).Methods(http.MethodGet)
 	r.HandleFunc("/connections", connectionsHandler).Methods(http.MethodGet, http.MethodPost)
-	r.HandleFunc("/connection/{id}", connectionHandler).Methods(http.MethodGet, http.MethodDelete)
+	r.HandleFunc("/connections/{id}", connectionHandler).Methods(http.MethodGet, http.MethodDelete, http.MethodPut)
 	r.HandleFunc("/ruletest", testRuleHandler).Methods(http.MethodPost)
 	r.HandleFunc("/ruletest/{name}/start", testRuleStartHandler).Methods(http.MethodPost)
 	r.HandleFunc("/ruletest/{name}", testRuleStopHandler).Methods(http.MethodDelete)

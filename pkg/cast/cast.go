@@ -1046,6 +1046,8 @@ func ToTimeDurationHookFunc() mapstructure.DecodeHookFunc {
 			return time.ParseDuration(data.(string))
 		case reflect.Int:
 			return time.Duration(data.(int)) * time.Millisecond, nil
+		case reflect.Float64:
+			return time.Duration(data.(float64)) * time.Millisecond, nil
 		default:
 			return data, nil
 		}

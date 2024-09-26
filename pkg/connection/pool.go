@@ -146,6 +146,10 @@ func CreateNamedConnection(ctx api.StreamContext, id, typ string, props map[stri
 	}
 	globalConnectionManager.Lock()
 	defer globalConnectionManager.Unlock()
+	return createNamedConnection(ctx, id, typ, props)
+}
+
+func createNamedConnection(ctx api.StreamContext, id, typ string, props map[string]any) (*ConnWrapper, error) {
 	if _, ok := globalConnectionManager.connectionPool[id]; ok {
 		return nil, fmt.Errorf("connection %v already been created", id)
 	}
@@ -192,14 +196,25 @@ func DropNameConnection(ctx api.StreamContext, selId string) error {
 	}
 	globalConnectionManager.Lock()
 	defer globalConnectionManager.Unlock()
+	return dropNameConnection(ctx, selId)
+}
+
+func dropNameConnection(ctx api.StreamContext, selId string) error {
 	meta, ok := globalConnectionManager.connectionPool[selId]
 	if !ok {
 		return nil
 	}
-	if meta.refCount.Load() > 0 {
-		return fmt.Errorf("connection %s can't be dropped due to reference", selId)
+	isInternal, err := isInternalConnection(selId)
+	if err != nil {
+		return err
 	}
-	err := dropConnectionStore(meta.Typ, selId)
+	if isInternal {
+		return fmt.Errorf("internal connection %v can't be edit", selId)
+	}
+	if meta.GetRefCount() > 0 {
+		return fmt.Errorf("connection %s can't be dropped due to references %v", selId, meta.GetRefNames())
+	}
+	err = dropConnectionStore(meta.Typ, selId)
 	if err != nil {
 		return fmt.Errorf("drop connection %s failed, err:%v", selId, err)
 	}
@@ -209,6 +224,33 @@ func DropNameConnection(ctx api.StreamContext, selId string) error {
 	}
 	delete(globalConnectionManager.connectionPool, selId)
 	return nil
+}
+
+func UpdateConnection(ctx api.StreamContext, id, typ string, props map[string]any) (*ConnWrapper, error) {
+	if id == "" || typ == "" {
+		return nil, fmt.Errorf("connection id and type should be defined")
+	}
+	globalConnectionManager.Lock()
+	defer globalConnectionManager.Unlock()
+	isInternal, err := isInternalConnection(id)
+	if err != nil {
+		return nil, err
+	}
+	if isInternal {
+		return nil, fmt.Errorf("internal connection %v can't be edit", id)
+	}
+	if err := dropNameConnection(ctx, id); err != nil {
+		return nil, err
+	}
+	return createNamedConnection(ctx, id, typ, props)
+}
+
+func isInternalConnection(id string) (bool, error) {
+	meta, ok := globalConnectionManager.connectionPool[id]
+	if !ok {
+		return false, fmt.Errorf("connection %s not existed", id)
+	}
+	return !meta.Named, nil
 }
 
 func DetachConnection(ctx api.StreamContext, conId string) error {
@@ -254,22 +296,21 @@ func attachConnection(conId string, refId string, sc api.StatusChangeHandler) (*
 	if !ok {
 		return nil, fmt.Errorf("connection %s not existed", conId)
 	}
-	meta.ref.Store(refId, sc)
-	meta.refCount.Add(1)
+	meta.AddRef(refId, sc)
 	return meta.cw, nil
 }
 
 func detachConnection(ctx api.StreamContext, conId string) error {
 	meta, ok := globalConnectionManager.connectionPool[conId]
 	if !ok {
+		conf.Log.Infof("detachConnection not found:%v", conId)
 		return nil
 	}
 	refId := extractRefId(ctx)
-	meta.ref.Delete(refId)
-	meta.refCount.Add(-1)
+	meta.DeRef(refId)
 	globalConnectionManager.connectionPool[conId] = meta
 	conf.Log.Infof("detachConnection remove conn:%v,ref:%v", conId, refId)
-	if !meta.Named && meta.refCount.Load() == 0 {
+	if !meta.Named && meta.GetRefCount() == 0 {
 		conn, err := meta.cw.Wait()
 		if conn != nil && err == nil {
 			conn.Close(ctx)

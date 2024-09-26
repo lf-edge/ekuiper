@@ -170,7 +170,8 @@ func (rr *RuleRegistry) UpdateRule(ruleId, ruleJson string) error {
 	// Try plan with the new json. If err, revert to old rule
 	oldRule := rs.Rule
 	rs.Rule = r
-	err = rs.Validate()
+	// validateRule only check plan is valid, topology shouldn't be changed before ruleState stop
+	newTopo, err := rs.ValidateRule()
 	if err != nil {
 		rs.Rule = oldRule
 		return err
@@ -179,6 +180,7 @@ func (rr *RuleRegistry) UpdateRule(ruleId, ruleJson string) error {
 	err1 := rr.update(r.Id, ruleJson)
 	// ReRun the rule
 	rs.Stop()
+	rs.WithTopo(newTopo)
 	if r.Triggered {
 		err2 := rs.Start()
 		if err2 != nil {

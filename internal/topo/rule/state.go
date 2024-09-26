@@ -108,6 +108,7 @@ func NewState(rule *def.Rule) *State {
 
 func (s *State) WithTopo(topo *topo.Topo) *State {
 	s.topology = topo
+	s.topoGraph = s.topology.GetTopo()
 	return s
 }
 
@@ -126,6 +127,18 @@ func (s *State) Validate() error {
 		return nil
 	})
 	return err
+}
+
+func (s *State) ValidateRule() (*topo.Topo, error) {
+	s.Lock()
+	defer s.Unlock()
+	var topo *topo.Topo
+	var err error
+	infra.SafeRun(func() error {
+		topo, err = planner.Plan(s.Rule)
+		return err
+	})
+	return topo, err
 }
 
 func (s *State) transit(newState RunState, err error) {
@@ -163,9 +176,9 @@ func (s *State) GetStatusMessage() string {
 	result.WriteString(`"status": "`)
 	result.WriteString(StateName[s.currentState])
 	result.WriteString(`",`)
-	result.WriteString(`"message": "`)
-	result.WriteString(strings.ReplaceAll(s.lastWill, `"`, `\"`))
-	result.WriteString(`",`)
+	result.WriteString(`"message": `)
+	result.WriteString(fmt.Sprintf("%q", s.lastWill))
+	result.WriteString(`,`)
 	// Compose run timing metrics
 	result.WriteString(`"lastStartTimestamp": `)
 	result.WriteString(strconv.FormatInt(s.lastStartTimestamp, 10))
@@ -197,9 +210,7 @@ func (s *State) GetStatusMessage() string {
 			v, _ := cast.ToString(value, cast.CONVERT_ALL)
 			switch value.(type) {
 			case string:
-				result.WriteString(`"`)
-				result.WriteString(strings.ReplaceAll(v, `"`, `\"`))
-				result.WriteString(`"`)
+				result.WriteString(fmt.Sprintf("%q", v))
 			default:
 				result.WriteString(v)
 			}
@@ -438,6 +449,7 @@ func (s *State) doStart() error {
 				return err
 			} else {
 				s.topology = tp
+				s.topoGraph = s.topology.GetTopo()
 			}
 		}
 		ctx, cancel := context.WithCancel(context.Background())
@@ -479,7 +491,7 @@ func (s *State) runTopo(ctx context.Context, tp *topo.Topo, rs *def.RestartStrat
 			select {
 			case e := <-tp.Open():
 				er = e
-				if er != nil && !errorx.IsEOF(er) { // Only restart Rule for errors
+				if errorx.IsUnexpectedErr(er) { // Only restart Rule for errors
 					tp.GetContext().SetError(er)
 					s.logger.Errorf("closing Rule for error: %v", er)
 					tp.Cancel()

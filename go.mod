@@ -80,7 +80,7 @@ require (
 	github.com/valyala/fastjson v1.6.4
 	github.com/vertica/vertica-sql-go v1.3.3
 	github.com/xo/dburl v0.23.2
-	github.com/yisaer/file-rotatelogs v0.0.0-20240606072000-fe792f3c4e04
+	github.com/yisaer/file-rotatelogs v0.0.0-20240926070915-3a4d03835c68
 	github.com/ziutek/mymysql v1.5.4
 	go.nanomsg.org/mangos/v3 v3.4.2
 	go.opentelemetry.io/otel v1.29.0
@@ -97,7 +97,7 @@ require (
 	gopkg.in/ini.v1 v1.67.0
 	gopkg.in/yaml.v3 v3.0.1
 	modernc.org/ql v1.4.7
-	modernc.org/sqlite v1.32.0
+	modernc.org/sqlite v1.33.1
 	sqlflow.org/gohive v0.0.0-20240730014249-8960223660e2
 	sqlflow.org/gomaxcompute v0.0.0-20210805062559-c14ae028b44c
 )

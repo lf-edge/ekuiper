@@ -102,7 +102,7 @@ func (suite *RestTestSuite) SetupTest() {
 	r.HandleFunc("/data/import", configurationImportHandler).Methods(http.MethodPost)
 	r.HandleFunc("/data/import/status", configurationStatusHandler).Methods(http.MethodGet)
 	r.HandleFunc("/connections", connectionsHandler).Methods(http.MethodGet, http.MethodPost)
-	r.HandleFunc("/connection/{id}", connectionHandler).Methods(http.MethodGet, http.MethodDelete)
+	r.HandleFunc("/connections/{id}", connectionHandler).Methods(http.MethodGet, http.MethodDelete, http.MethodPut)
 	r.HandleFunc("/ruletest", testRuleHandler).Methods(http.MethodPost)
 	r.HandleFunc("/ruletest/{name}/start", testRuleStartHandler).Methods(http.MethodPost)
 	r.HandleFunc("/ruletest/{name}", testRuleStopHandler).Methods(http.MethodDelete)
@@ -389,6 +389,8 @@ func (suite *RestTestSuite) Test_rulesManageHandler() {
 	w1 = httptest.NewRecorder()
 	suite.r.ServeHTTP(w1, req1)
 	assert.Equal(suite.T(), http.StatusOK, w1.Code)
+
+	time.Sleep(10 * time.Millisecond)
 
 	// update wrong rule
 	ruleJson = `{"id": "rule321","sql": "select * from alert1","actions": [{"nop": {}}]}`

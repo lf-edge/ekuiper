@@ -67,6 +67,7 @@ type ConnectionResponse struct {
 	ID       string         `json:"id"`
 	Typ      string         `json:"typ"`
 	Props    map[string]any `json:"props"`
+	IsNamed  bool           `json:"isNamed"`
 	Status   string         `json:"status,omitempty"`
 	Err      string         `json:"err,omitempty"`
 	RefCount int            `json:"refCount,omitempty"`
@@ -91,6 +92,24 @@ func connectionHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("success"))
+	case http.MethodPut:
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			handleError(w, err, "Invalid body", logger)
+			return
+		}
+		req := &ConnectionRequest{}
+		if err := json.Unmarshal(body, req); err != nil {
+			handleError(w, err, "Invalid body", logger)
+			return
+		}
+		_, err = connection.UpdateConnection(context.Background(), id, req.Typ, req.Props)
+		if err != nil {
+			handleError(w, err, "update connection failed", logger)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("success"))
 	}
 }
 
@@ -100,6 +119,7 @@ func getConnectionRespByMeta(meta *connection.Meta) *ConnectionResponse {
 		Typ:      meta.Typ,
 		ID:       meta.ID,
 		Props:    meta.Props,
+		IsNamed:  meta.Named,
 		RefCount: meta.GetRefCount(),
 		Status:   status,
 		Err:      e,

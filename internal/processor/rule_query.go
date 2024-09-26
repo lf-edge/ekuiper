@@ -1,4 +1,4 @@
-// Copyright 2022-2023 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/topo"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/planner"
+	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 )
 
@@ -31,7 +32,7 @@ func (p *RuleProcessor) ExecQuery(ruleid, sql string) (*topo.Topo, error) {
 			err := infra.SafeRun(func() error {
 				select {
 				case err := <-tp.Open():
-					if err != nil {
+					if errorx.IsUnexpectedErr(err) {
 						tp.GetContext().SetError(err)
 						tp.Cancel()
 						return err
