@@ -172,7 +172,7 @@ func TestFileSink_Configure(t *testing.T) {
 		{ // only set rolling interval
 			name: "rolling",
 			c: &sinkConf{
-				CheckInterval:   cast.DurationConf(defaultCheckInterval),
+				CheckInterval:   cast.DurationConf(500 * time.Millisecond),
 				Path:            "cache",
 				FileType:        LINES_TYPE,
 				RollingInterval: cast.DurationConf(500 * time.Millisecond),
@@ -186,7 +186,7 @@ func TestFileSink_Configure(t *testing.T) {
 		{
 			name: "fields",
 			c: &sinkConf{
-				CheckInterval:   cast.DurationConf(defaultCheckInterval),
+				CheckInterval:   cast.DurationConf(5 * time.Second),
 				Path:            "cache",
 				FileType:        LINES_TYPE,
 				RollingInterval: cast.DurationConf(5 * time.Second),
@@ -208,9 +208,7 @@ func TestFileSink_Configure(t *testing.T) {
 				t.Errorf("fileSink.Configure() error = %v", err)
 				return
 			}
-			if !reflect.DeepEqual(m.c, tt.c) {
-				t.Errorf("fileSink.Configure() = %v, want %v", m.c, tt.c)
-			}
+			assert.Equal(t, tt.c, m.c)
 		})
 	}
 }
