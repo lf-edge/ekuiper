@@ -1493,8 +1493,8 @@ github.com/xo/dburl v0.23.2/go.mod h1:uazlaAQxj4gkshhfuuYyvwCBouOmNnG2aDxTCFZpmL
 github.com/xo/tblfmt v0.0.0-20190609041254-28c54ec42ce8/go.mod h1:3U5kKQdIhwACye7ml3acccHmjGExY9WmUGU7rnDWgv0=
 github.com/xwb1989/sqlparser v0.0.0-20180606152119-120387863bf2 h1:zzrxE1FKn5ryBNl9eKOeqQ58Y/Qpo3Q9QNxKHX5uzzQ=
 github.com/xwb1989/sqlparser v0.0.0-20180606152119-120387863bf2/go.mod h1:hzfGeIUDq/j97IG+FhNqkowIyEcD88LrW6fyU3K3WqY=
-github.com/yisaer/file-rotatelogs v0.0.0-20240606072000-fe792f3c4e04 h1:Ynl+fQB7r5qCcVp8YGpv6FM8lENDd+fbtgmWV6EvqV0=
-github.com/yisaer/file-rotatelogs v0.0.0-20240606072000-fe792f3c4e04/go.mod h1:sHmlLyviUxcsK1WS/LDK92OR4l5ns0wbDs3nT1YnOeE=
+github.com/yisaer/file-rotatelogs v0.0.0-20240926070915-3a4d03835c68 h1:KD25C9eguTXR9L5H49HR90HXOR4unBnV3UO0EylyWWo=
+github.com/yisaer/file-rotatelogs v0.0.0-20240926070915-3a4d03835c68/go.mod h1:sHmlLyviUxcsK1WS/LDK92OR4l5ns0wbDs3nT1YnOeE=
 github.com/youmark/pkcs8 v0.0.0-20181117223130-1be2e3e5546d/go.mod h1:rHwXgn7JulP+udvsHwJoVG1YGAP6VLg4y9I5dyZdqmA=
 github.com/yuin/goldmark v1.1.25/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.1.27/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
