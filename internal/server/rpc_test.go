@@ -24,6 +24,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/meta"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/model"
 	"github.com/lf-edge/ekuiper/v2/internal/plugin/native"
@@ -38,6 +39,7 @@ type ServerTestSuite struct {
 }
 
 func (suite *ServerTestSuite) SetupTest() {
+	conf.IsTesting = true
 	suite.s = new(Server)
 	nativeManager, _ = native.InitManager()
 	portableManager, _ = portable.InitManager()

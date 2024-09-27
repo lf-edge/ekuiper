@@ -1,8 +1,19 @@
 package replace
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"os"
+	"strconv"
+
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
+)
+
+func init() {
+	isFvtTest, _ = strconv.ParseBool(os.Getenv("KUIPER__BASIC__FVTTEST"))
+}
 
 var (
+	isFvtTest       = false
 	replaceURL      = []string{"url"}
 	replacePassword = []string{"saslPassword"}
 	replaceAction   = map[string]struct{}{
@@ -12,6 +23,9 @@ var (
 )
 
 func ReplaceRuleJson(ruleJson string) string {
+	if conf.IsTesting || isFvtTest {
+		return ruleJson
+	}
 	m := make(map[string]interface{})
 	if err := json.Unmarshal([]byte(ruleJson), &m); err != nil {
 		return ruleJson
