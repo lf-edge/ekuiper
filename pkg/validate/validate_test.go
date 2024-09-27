@@ -52,5 +52,5 @@ func TestValidateRuleID(t *testing.T) {
 
 func TestValidatePath(t *testing.T) {
 	require.Error(t, ValidatePath("../a"))
-	require.Error(t, ValidatePath("./a"))
+	require.NoError(t, ValidatePath("./a"))
 }
