@@ -80,13 +80,9 @@ func schemasHandler(w http.ResponseWriter, r *http.Request) {
 			handleError(w, err, "schema create command error", logger)
 			return
 		}
-		tmpl := template.Must(template.New("response").Parse("{{.Type}} schema {{.Name}} is created"))
-		err = tmpl.Execute(w, sch)
-		if err != nil {
-			handleError(w, err, "schema update command error", logger)
-			return
-		}
 		w.WriteHeader(http.StatusCreated)
+		tmpl := template.Must(template.New("response").Parse("{{.Type}} schema {{.Name}} is created"))
+		tmpl.Execute(w, sch)
 	}
 }
 

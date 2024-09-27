@@ -38,6 +38,9 @@ func createSqlTs(database Database, table string) (*ts, error) {
 	err := store.database.Apply(func(db *sql.DB) error {
 		query := fmt.Sprintf("CREATE TABLE IF NOT EXISTS '%s'('key' INTEGER PRIMARY KEY, 'val' BLOB);", table)
 		stmt, err := db.Prepare(query)
+		if err != nil {
+			return err
+		}
 		_, err = stmt.Exec(query)
 		return err
 	})
