@@ -1,4 +1,4 @@
-// Copyright 2023 EMQ Technologies Co., Ltd.
+// Copyright 2023-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -49,25 +49,6 @@ func Test_SelectMap(t *testing.T) {
 			args: args{
 				input: []map[string]interface{}{
 					{
-						"a": 1,
-						"b": 2,
-						"c": 3,
-					},
-				},
-				fields: []string{"a", "b"},
-			},
-			want: []map[string]interface{}{
-				{
-					"a": 1,
-					"b": 2,
-				},
-			},
-		},
-		{
-			name: "test3",
-			args: args{
-				input: []interface{}{
-					map[string]interface{}{
 						"a": 1,
 						"b": 2,
 						"c": 3,
@@ -248,6 +229,21 @@ func TestTransItem(t *testing.T) {
 				},
 			},
 			wantErr: false,
+		},
+		{
+			name: "test5",
+			args: args{
+				input: []interface{}{
+					map[string]interface{}{
+						"telemetry": []any{
+							"abc", "Def",
+						},
+					},
+				},
+				dataField: "telemetry",
+				fields:    []string{"temperature", "humidity"},
+			},
+			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
