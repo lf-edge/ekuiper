@@ -21,6 +21,7 @@ import (
 
 	"github.com/xo/dburl"
 
+	_ "github.com/lf-edge/ekuiper/v2/extensions/impl/sql/sqldatabase/driver"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 )
 
