@@ -406,8 +406,8 @@ func fileUploadHandler(w http.ResponseWriter, r *http.Request) {
 func fileDeleteHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	name := vars["name"]
-	filePath := filepath.Join(uploadDir, name)
-	e := os.Remove(filePath)
+	fPath := filepath.Join(uploadDir, name)
+	e := os.Remove(filepath.Clean(fPath))
 	if e != nil {
 		handleError(w, e, "Error deleting the file", logger)
 		return

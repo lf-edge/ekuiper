@@ -289,7 +289,7 @@ func (fs *Source) parseFile(ctx api.StreamContext, file string, ingest api.Tuple
 	ctx.GetLogger().Debugf("Finish loading from file %s", file)
 	switch fs.config.ActionAfterRead {
 	case 1:
-		if err := os.Remove(file); err != nil {
+		if err := os.Remove(filepath.Clean(file)); err != nil {
 			ingestError(ctx, err)
 		}
 		ctx.GetLogger().Debugf("Remove file %s", file)

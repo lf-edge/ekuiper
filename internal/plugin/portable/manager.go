@@ -242,7 +242,7 @@ func (m *Manager) Register(p plugin.Plugin) error {
 
 	zipPath := path.Join(m.pluginDir, name+".zip")
 	// clean up: delete zip file and unzip files in error
-	defer os.Remove(zipPath)
+	defer os.Remove(filepath.Clean(zipPath))
 	// download
 	err := httpx.DownloadFile(zipPath, uri)
 	if err != nil {
@@ -269,9 +269,9 @@ func (m *Manager) install(name, src string, shellParas []string) (resultErr erro
 		// remove all installed files if err happens
 		if resultErr != nil {
 			for _, p := range installedMap {
-				_ = os.Remove(p)
+				_ = os.Remove(filepath.Clean(p))
 			}
-			_ = os.Remove(pluginTarget)
+			_ = os.Remove(filepath.Clean(pluginTarget))
 			m.reg.Delete(name)
 		}
 	}()
@@ -430,23 +430,23 @@ func (m *Manager) Delete(name string) error {
 	// delete files and uninstall metas
 	for _, s := range pinfo.Sources {
 		p := path.Join(m.pluginConfDir, plugin.PluginTypes[plugin.SOURCE], s+".yaml")
-		os.Remove(p)
+		os.Remove(filepath.Clean(p))
 		p = path.Join(m.pluginConfDir, plugin.PluginTypes[plugin.SOURCE], s+".json")
-		os.Remove(p)
+		os.Remove(filepath.Clean(p))
 		meta.UninstallSource(s)
 	}
 	for _, s := range pinfo.Sinks {
 		p := path.Join(m.pluginConfDir, plugin.PluginTypes[plugin.SINK], s+".yaml")
-		os.Remove(p)
+		os.Remove(filepath.Clean(p))
 		p = path.Join(m.pluginConfDir, plugin.PluginTypes[plugin.SINK], s+".json")
-		os.Remove(p)
+		os.Remove(filepath.Clean(p))
 		meta.UninstallSink(s)
 	}
 	for _, s := range pinfo.Functions {
 		p := path.Join(m.pluginConfDir, plugin.PluginTypes[plugin.FUNCTION], s+".json")
-		os.Remove(p)
+		os.Remove(filepath.Clean(p))
 	}
-	_ = os.RemoveAll(path.Join(m.pluginDir, name))
+	_ = os.RemoveAll(filepath.Clean(path.Join(m.pluginDir, name)))
 	m.removePluginInstallScript(name)
 	// Kill the process in the end, and return error if it cannot be deleted
 	pm := runtime.GetPluginInsManager()

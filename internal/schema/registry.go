@@ -231,13 +231,13 @@ func DeleteSchema(schemaType def.SchemaType, name string) error {
 	}
 	schemaFile := registry.schemas[schemaType][name]
 	if schemaFile.SchemaFile != "" {
-		err := os.Remove(schemaFile.SchemaFile)
+		err := os.Remove(filepath.Clean(schemaFile.SchemaFile))
 		if err != nil {
 			conf.Log.Errorf("cannot delete schema file %s: %s", schemaFile.SchemaFile, err)
 		}
 	}
 	if schemaFile.SoFile != "" {
-		err := os.Remove(schemaFile.SoFile)
+		err := os.Remove(filepath.Clean(schemaFile.SoFile))
 		if err != nil {
 			conf.Log.Errorf("cannot delete schema so file %s: %s", schemaFile.SoFile, err)
 		}
