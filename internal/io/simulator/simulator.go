@@ -43,6 +43,8 @@ func (s *SimulatorSource) Provision(ctx api.StreamContext, configs map[string]an
 }
 
 func (s *SimulatorSource) Close(ctx api.StreamContext) error {
+	// Allow to reset in close rule trial run
+	s.index = 0
 	return nil
 }
 

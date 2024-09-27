@@ -21,11 +21,11 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
-	"github.com/lf-edge/ekuiper/v2/internal/io/http/httpserver"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/topo"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/planner"
+	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 )
@@ -56,15 +56,21 @@ func genTrialRule(rd *RunDef, sinkProps map[string]interface{}) *def.Rule {
 
 func create(def *RunDef) (*topo.Topo, error) {
 	endpoint := "/test/" + def.Id
-	def.endpoint = endpoint
-	_, _, err := httpserver.RegisterWebSocketEndpoint(context.Background(), endpoint)
+	def.endpoint = fmt.Sprintf("$$ws/%s", endpoint)
+	sinkProps := map[string]any{
+		"path":       endpoint,
+		"sendError":  true,
+		"datasource": endpoint,
+	}
+	cw, err := connection.FetchConnection(context.Background(), def.endpoint, "websocket", sinkProps, nil)
 	if err != nil {
 		return nil, err
 	}
-	sinkProps := map[string]any{
-		"path":      endpoint,
-		"sendError": true,
+	_, err = cw.Wait()
+	if err != nil {
+		return nil, err
 	}
+
 	for k, v := range def.SinkProps {
 		sinkProps[k] = v
 	}
@@ -96,8 +102,9 @@ func create(def *RunDef) (*topo.Topo, error) {
 	return tp, nil
 }
 
-func trialRun(tp *topo.Topo) {
+func trialRun(tp *topo.Topo, endpoint string) {
 	go func() {
+		defer connection.DetachConnection(context.Background(), endpoint)
 		timeout := time.After(5 * time.Minute)
 		err := infra.SafeRun(func() error {
 			select {
@@ -106,6 +113,11 @@ func trialRun(tp *topo.Topo) {
 					conf.Log.Errorf("closing test run for error: %v", err)
 					tp.Cancel()
 					return err
+				} else if errorx.IsEOF(err) {
+					// If stop by EOF
+					tp.Cancel()
+					tp.GetContext().GetLogger().Debugf("trial run stops by EOF, wait for timeout")
+					<-timeout
 				} else {
 					tp.Cancel()
 					return nil
