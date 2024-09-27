@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"html/template"
 	"io"
 	"net/http"
 	"os"
@@ -348,7 +349,8 @@ func fileUploadHandler(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			w.WriteHeader(http.StatusCreated)
-			w.Write([]byte(filePath))
+			escapedContent := template.HTMLEscapeString(filePath)
+			w.Write([]byte(escapedContent))
 		default:
 			// Maximum upload of 1 GB files
 			err := r.ParseMultipartForm(1024 << 20)
@@ -382,7 +384,8 @@ func fileUploadHandler(w http.ResponseWriter, r *http.Request) {
 			}
 
 			w.WriteHeader(http.StatusCreated)
-			w.Write([]byte(filePath))
+			escapedContent := template.HTMLEscapeString(filePath)
+			w.Write([]byte(escapedContent))
 		}
 
 	case http.MethodGet:
@@ -525,7 +528,8 @@ func sourcesManageHandler(w http.ResponseWriter, r *http.Request, st ast.StreamT
 			return
 		}
 		w.WriteHeader(http.StatusCreated)
-		w.Write([]byte(content))
+		escapedContent := template.HTMLEscapeString(content)
+		w.Write([]byte(escapedContent))
 	}
 }
 

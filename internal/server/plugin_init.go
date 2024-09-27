@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"html/template"
 	"io"
 	"net/http"
 	"runtime"
@@ -115,7 +116,8 @@ func pluginHandler(w http.ResponseWriter, r *http.Request, t plugin.PluginType) 
 		} else {
 			result = fmt.Sprintf("%s and eKuiper must restart for the change to take effect.", result)
 		}
-		_, _ = fmt.Fprint(w, result)
+		escapedContent := template.HTMLEscapeString(result)
+		w.Write([]byte(escapedContent))
 	case http.MethodGet:
 		j, ok := nativeManager.GetPluginInfo(t, name)
 		if !ok {

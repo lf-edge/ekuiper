@@ -20,6 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -79,8 +80,13 @@ func schemasHandler(w http.ResponseWriter, r *http.Request) {
 			handleError(w, err, "schema create command error", logger)
 			return
 		}
+		tmpl := template.Must(template.New("response").Parse("{{.Type}} schema {{.Name}} is created"))
+		err = tmpl.Execute(w, sch)
+		if err != nil {
+			handleError(w, err, "schema update command error", logger)
+			return
+		}
 		w.WriteHeader(http.StatusCreated)
-		fmt.Fprintf(w, "%s schema %s is created", sch.Type, sch.Name)
 	}
 }
 
@@ -106,8 +112,14 @@ func schemaHandler(w http.ResponseWriter, r *http.Request) {
 			handleError(w, err, fmt.Sprintf("delete %s schema %s error", st, name), logger)
 			return
 		}
+		sch := &schema.Info{Type: def.SchemaType(st), Name: name}
+		tmpl := template.Must(template.New("response").Parse("{{.Type}} schema {{.Name}} is deleted"))
+		err = tmpl.Execute(w, sch)
+		if err != nil {
+			handleError(w, err, "schema update command error", logger)
+			return
+		}
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, "%s schema %s is deleted", st, name)
 	case http.MethodPut:
 		sch := &schema.Info{Type: def.SchemaType(st), Name: name}
 		err := json.NewDecoder(r.Body).Decode(sch)
@@ -128,8 +140,13 @@ func schemaHandler(w http.ResponseWriter, r *http.Request) {
 			handleError(w, err, "schema update command error", logger)
 			return
 		}
+		tmpl := template.Must(template.New("response").Parse("{{.Type}} schema {{.Name}} is updated"))
+		err = tmpl.Execute(w, sch)
+		if err != nil {
+			handleError(w, err, "schema update command error", logger)
+			return
+		}
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, "%s schema %s is updated", sch.Type, sch.Name)
 	}
 }
 
