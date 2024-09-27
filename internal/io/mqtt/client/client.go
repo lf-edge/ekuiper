@@ -117,13 +117,17 @@ func (conn *Connection) Status(_ api.StreamContext) modules.ConnectionStatus {
 }
 
 func (conn *Connection) SetStatusChangeHandler(ctx api.StreamContext, sch api.StatusChangeHandler) {
+	st := conn.status.Load().(modules.ConnectionStatus)
+	sch(st.Status, st.ErrMsg)
 	conn.scHandler = sch
+	conn.logger.Infof("trigger status change handler")
 }
 
 func (conn *Connection) onConnect(_ pahoMqtt.Client) {
 	conn.connected.Store(true)
 	conn.status.Store(modules.ConnectionStatus{Status: api.ConnectionConnected})
 	if conn.scHandler != nil {
+		conn.logger.Warnf("sc handler has not set yet")
 		conn.scHandler(api.ConnectionConnected, "")
 	}
 	conn.logger.Infof("The connection to mqtt broker is established")

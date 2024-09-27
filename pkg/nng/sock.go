@@ -47,8 +47,12 @@ type Sock struct {
 	status    atomic.Value
 }
 
-func (s *Sock) SetStatusChangeHandler(_ api.StreamContext, handler api.StatusChangeHandler) {
+func (s *Sock) SetStatusChangeHandler(ctx api.StreamContext, handler api.StatusChangeHandler) {
 	s.scHandler = handler
+	st := s.status.Load().(modules.ConnectionStatus)
+	handler(st.Status, st.ErrMsg)
+	s.scHandler = handler
+	ctx.GetLogger().Infof("trigger status change handler")
 }
 
 func (s *Sock) Status(_ api.StreamContext) modules.ConnectionStatus {
