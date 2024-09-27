@@ -1,0 +1,76 @@
+{
+  "about": {
+    "trial": false,
+    "author": {
+      "name": "思无邪",
+      "email": "cwl90110@163.com",
+      "website": "https://github.com/578223592"
+    },
+    "helpUrl": {
+      "en_US": "https://ekuiper.org/docs/en/latest/sqls/functions/custom_functions.html",
+      "zh_CN": "https://ekuiper.org/docs/zh/latest/sqls/functions/custom_functions.html"
+    },
+    "description": {
+      "en_US": "General onnx plugin which can infer any tflite model dynamically.So you can support pytorch model inference by onnx.",
+      "zh_CN": "通用的 onnx 插件，可以动态推断任何 onnx 模型。通过支持onnx模型以支持pytorch模型推理。"
+    }
+  },
+  "name": "onnx",
+  "functions": [
+    {
+      "name": "onnx",
+      "example": "onnx(model,para1, para2,...)",
+      "hint": {
+        "en_US": "Select AI model in runtime and infer the stream data",
+        "zh_CN": "动态选择模型进行推断"
+      },
+      "args": [
+        {
+          "name": "model",
+          "hidden": false,
+          "optional": false,
+          "control": "text",
+          "type": "string",
+          "hint": {
+            "en_US": "Input data",
+            "zh_CN": "输入模型"
+          },
+          "label": {
+            "en_US": "Model Name",
+            "zh_CN": "模型名称"
+          }
+        },
+        {
+          "name": "fields",
+          "default": "",
+          "optional": false,
+          "control": "list",
+          "type": "list_string",
+          "hint": {
+            "en_US": "select parameter fields",
+            "zh_CN": "选取参数字段"
+          },
+          "label": {
+            "en_US": "Parameter Fields",
+            "zh_CN": "参数字段"
+          }
+        }
+      ],
+      "return": {
+        "type": "array",
+        "hint": {
+          "en_US": "Inferred result",
+          "zh_CN": "推理结果"
+        }
+      },
+      "node": {
+        "category": "function",
+        "icon": "iconPath",
+        "label": {
+          "en_US": "onnx",
+          "zh_CN": "onnx"
+        }
+      }
+    }
+  ]
+}

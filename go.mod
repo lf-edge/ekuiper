@@ -318,11 +318,12 @@ require (
 	github.com/tklauser/numcpus v0.8.0 // indirect
 	github.com/u2takey/go-utils v0.3.1 // indirect
 	github.com/uber-go/tally v3.3.17+incompatible // indirect
-	github.com/x448/float16 v0.8.4 // indirect
+	github.com/x448/float16 v0.8.4
 	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
 	github.com/xdg-go/scram v1.1.2 // indirect
 	github.com/xdg-go/stringprep v1.0.4 // indirect
 	github.com/xwb1989/sqlparser v0.0.0-20180606152119-120387863bf2 // indirect
+	github.com/yalue/onnxruntime_go v1.9.0
 	github.com/yuin/gopher-lua v1.1.0 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
 	github.com/zeebo/xxh3 v1.0.2 // indirect
