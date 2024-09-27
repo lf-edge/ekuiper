@@ -505,7 +505,7 @@ func gcOutdatedLog(filePath string, maxDuration time.Duration) {
 			continue
 		}
 		if isLogOutdated(entry.Name(), now, maxDuration) {
-			err := os.Remove(path.Join(filePath, entry.Name()))
+			err := os.Remove(filepath.Clean(path.Join(filePath, entry.Name())))
 			if err != nil {
 				Log.Errorf("remove outdated log %v failed, err:%v", entry.Name(), err)
 			}

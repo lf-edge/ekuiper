@@ -278,7 +278,7 @@ func (rr *Manager) Register(t plugin2.PluginType, j plugin2.Plugin) error {
 	zipPath := path.Join(rr.pluginDir, name+".zip")
 
 	// clean up: delete zip file and unzip files in error
-	defer func(name string) { _ = os.Remove(name) }(zipPath)
+	defer func(name string) { _ = os.Remove(filepath.Clean(name)) }(zipPath)
 	// download
 	err = httpx.DownloadFile(zipPath, uri)
 	if err != nil {
@@ -386,19 +386,19 @@ func (rr *Manager) Delete(t plugin2.PluginType, name string, stop bool) error {
 	switch t {
 	case plugin2.SOURCE:
 		yamlPaths := path.Join(rr.pluginConfDir, plugin2.PluginTypes[plugin2.SOURCE], name+".yaml")
-		_ = os.Remove(yamlPaths)
+		_ = os.Remove(filepath.Clean(yamlPaths))
 		srcJsonPath := path.Join(rr.pluginConfDir, plugin2.PluginTypes[plugin2.SOURCE], name+".json")
-		_ = os.Remove(srcJsonPath)
+		_ = os.Remove(filepath.Clean(srcJsonPath))
 		meta.UninstallSource(name)
 	case plugin2.SINK:
 		yamlPaths := path.Join(rr.pluginConfDir, plugin2.PluginTypes[plugin2.SINK], name+".yaml")
-		_ = os.Remove(yamlPaths)
+		_ = os.Remove(filepath.Clean(yamlPaths))
 		sinkJsonPaths := path.Join(rr.pluginConfDir, plugin2.PluginTypes[plugin2.SINK], name+".json")
-		_ = os.Remove(sinkJsonPaths)
+		_ = os.Remove(filepath.Clean(sinkJsonPaths))
 		meta.UninstallSink(name)
 	case plugin2.FUNCTION:
 		funcJsonPath := path.Join(rr.pluginConfDir, plugin2.PluginTypes[plugin2.FUNCTION], name+".json")
-		_ = os.Remove(funcJsonPath)
+		_ = os.Remove(filepath.Clean(funcJsonPath))
 		old := make([]string, 0)
 		if ok, err := rr.funcSymbolsDb.Get(name, &old); err != nil {
 			return err
@@ -416,7 +416,7 @@ func (rr *Manager) Delete(t plugin2.PluginType, name string, stop bool) error {
 	for _, p := range paths {
 		_, err := os.Stat(p)
 		if err == nil {
-			err = os.RemoveAll(p)
+			err = os.RemoveAll(filepath.Clean(p))
 			if err != nil {
 				results = append(results, err.Error())
 			}
@@ -466,7 +466,7 @@ func (rr *Manager) install(t plugin2.PluginType, name, src string, shellParas []
 	var filenames []string
 	tempPath := path.Join(rr.pluginDir, "temp", plugin2.PluginTypes[t], name)
 	defer func(path string) {
-		_ = os.RemoveAll(path)
+		_ = os.RemoveAll(filepath.Clean(path))
 	}(tempPath)
 	r, err := zip.OpenReader(src)
 	if err != nil {
@@ -500,7 +500,7 @@ func (rr *Manager) install(t plugin2.PluginType, name, src string, shellParas []
 	defer func() {
 		if err != nil {
 			for _, f := range revokeFiles {
-				_ = os.RemoveAll(f)
+				_ = os.RemoveAll(filepath.Clean(f))
 			}
 		}
 	}()

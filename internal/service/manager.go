@@ -375,7 +375,7 @@ func (m *Manager) Create(r *ServiceCreationRequest) error {
 	}
 	zipPath := path.Join(m.etcDir, name+".zip")
 	// clean up: delete zip file and unzip files in error
-	defer os.Remove(zipPath)
+	defer os.Remove(filepath.Clean(zipPath))
 	// download
 	err := httpx.DownloadFile(zipPath, uri)
 	if err != nil {
@@ -405,7 +405,7 @@ func (m *Manager) Delete(name string) error {
 	}
 	_ = m.serviceInstallKV.Delete(name)
 	path := path.Join(m.etcDir, name+".json")
-	err = os.Remove(path)
+	err = os.Remove(filepath.Clean(path))
 	if err != nil {
 		kconf.Log.Errorf("remove service json fails: %v", err)
 	}

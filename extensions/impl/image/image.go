@@ -132,7 +132,7 @@ func (m *imageSink) delFile(logger api.Logger) error {
 		logger.Debugf("try to delete %s", fname)
 		if strings.HasSuffix(fname, m.c.ImageFormat) {
 			fpath := filepath.Join(m.c.Path, fname)
-			os.Remove(fpath)
+			os.Remove(filepath.Clean(fpath))
 		}
 	}
 	return nil
@@ -161,7 +161,7 @@ func (m *imageSink) saveFile(b []byte, fpath string) error {
 		defer fp.Close()
 		err = png.Encode(fp, img)
 		if err != nil {
-			os.Remove(fpath)
+			os.Remove(filepath.Clean(fpath))
 			return err
 		}
 	case "jpeg":
@@ -176,7 +176,7 @@ func (m *imageSink) saveFile(b []byte, fpath string) error {
 		defer fp.Close()
 		err = jpeg.Encode(fp, img, nil)
 		if err != nil {
-			os.Remove(fpath)
+			os.Remove(filepath.Clean(fpath))
 			return err
 		}
 	default:

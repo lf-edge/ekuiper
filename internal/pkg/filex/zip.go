@@ -44,7 +44,7 @@ func UnzipTo(f *zip.File, fpath string) (err error) {
 	}
 
 	if err == nil || !os.IsNotExist(err) {
-		if err = os.RemoveAll(fpath); err != nil {
+		if err = os.RemoveAll(filepath.Clean(fpath)); err != nil {
 			return fmt.Errorf("failed to delete file %s", fpath)
 		}
 	}
