@@ -60,4 +60,33 @@ func TestReplaceRuleJson(t *testing.T) {
 	got := ReplaceRuleJson(data, false)
 	require.False(t, strings.Contains(got, `"url"`))
 	require.True(t, strings.Contains(got, `"dburl"`))
+
+	data = `{
+    "triggered": true,
+    "id": "sql",
+    "sql": "SELECT\n  *\nFROM\n  simulator",
+    "actions": [
+        {
+            "kafka": {
+                "saslPassword": "123"
+            }
+        }
+    ],
+    "options": {
+        "lateTolerance": "1s",
+        "concurrency": 1,
+        "bufferLength": 1024,
+        "sendError": true,
+        "checkpointInterval": "5m0s",
+        "restartStrategy": {
+            "delay": "1s",
+            "multiplier": 2,
+            "maxDelay": "30s",
+            "jitterFactor": 0.1
+        }
+    }
+}`
+	got = ReplaceRuleJson(data, false)
+	require.False(t, strings.Contains(got, `"saslPassword"`))
+	require.True(t, strings.Contains(got, `"password"`))
 }
