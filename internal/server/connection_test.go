@@ -46,7 +46,7 @@ func (suite *RestTestSuite) TestGetConnectionStatus() {
 	require.Equal(suite.T(), http.StatusCreated, w.Code)
 
 	time.Sleep(100 * time.Millisecond)
-	req, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/connections", bytes.NewBufferString("any"))
+	req, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/connections?forceAll=true", bytes.NewBufferString("any"))
 	w = httptest.NewRecorder()
 	suite.r.ServeHTTP(w, req)
 	require.Equal(suite.T(), http.StatusOK, w.Code)

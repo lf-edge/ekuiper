@@ -19,6 +19,21 @@ POST http://localhost:9081/connections
 }
 ```
 
+### Update connection
+
+To update a connection, provide the connection's id, type, and configuration parameters. Currently, `mqtt`/`nng`/`httppush`/`websocket`/`edgex`/`sql` types of connections are supported. Here we take updating the mqtt connection as an example. If the connection is referenced by a rule, it cannot be updated.
+
+```shell
+PUT http://localhost:9081/connections/connection-1
+{
+  "id": "connecton-1",
+  "typ":"mqtt",
+  "props": {
+    "server": "tcp://127.0.0.1:1883"
+  }
+}
+```
+
 ### Get all connection information
 
 ```shell
