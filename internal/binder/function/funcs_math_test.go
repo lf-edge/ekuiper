@@ -545,8 +545,8 @@ func TestConvFunc(t *testing.T) {
 	}{
 		{[]interface{}{"a", 16, 2}, "1010", false, false},
 		{[]interface{}{"6E", 18, 8}, "172", false, false},
-		{[]interface{}{"-17", 10, -18}, "-H", false, false},
-		{[]interface{}{"-17", 10, 18}, "2D3FGB0B9CG4BD1H", false, false},
+		{[]interface{}{"-17", 10, -18}, "-H", false, true},
+		{[]interface{}{"-17", 10, 18}, "2D3FGB0B9CG4BD1H", false, true},
 		{[]interface{}{"+18aZ", 7, 36}, "1", false, false},
 		{[]interface{}{"18446744073709551615", -10, 16}, "7FFFFFFFFFFFFFFF", false, false},
 		{[]interface{}{"12F", -10, 16}, "C", false, false},
@@ -559,6 +559,10 @@ func TestConvFunc(t *testing.T) {
 	}
 	for _, c := range cases {
 		got, _ := fConv.exec(fctx, []interface{}{c.args[0], c.args[1], c.args[2]})
+		if c.getErr {
+			require.Error(t, got.(error))
+			continue
+		}
 		if got != c.expected {
 			t.Errorf("%s:Expected %s, but got %s", c.args[0], c.expected, got)
 		}
