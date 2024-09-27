@@ -1,4 +1,4 @@
-// Copyright 2022-2023 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -44,6 +44,7 @@ type MetricGroup struct {
 	ProcessLatencyHist     *prometheus.HistogramVec
 	ProcessLatency         *prometheus.GaugeVec
 	BufferLength           *prometheus.GaugeVec
+	ConnectionStatus       *prometheus.GaugeVec
 }
 
 type PrometheusMetrics struct {
@@ -88,7 +89,7 @@ func newPrometheusMetrics() *PrometheusMetrics {
 			Help: "The length of the plan buffer which is shared by all instances of " + prefix,
 		}, labelNames)
 		prometheus.MustRegister(totalRecordsIn, totalRecordsOut, totalMessagesProcessed, totalExceptions, processLatency, processLatencyHist, bufferLength)
-		vecs = append(vecs, &MetricGroup{
+		mg := &MetricGroup{
 			TotalRecordsIn:         totalRecordsIn,
 			TotalRecordsOut:        totalRecordsOut,
 			TotalMessagesProcessed: totalMessagesProcessed,
@@ -96,7 +97,17 @@ func newPrometheusMetrics() *PrometheusMetrics {
 			ProcessLatency:         processLatency,
 			ProcessLatencyHist:     processLatencyHist,
 			BufferLength:           bufferLength,
-		})
+		}
+		if prefix != "kuiper_op" {
+			connectionStatus := prometheus.NewGaugeVec(prometheus.GaugeOpts{
+				Name: prefix + "_" + ConnectionStatus,
+				Help: "The connection status of the operator. Only meaningful for source/sink nodes. 0 means connecting, 1 means connected and -1 means disconnected " + prefix,
+			}, labelNames)
+			_ = prometheus.Register(connectionStatus)
+			mg.ConnectionStatus = connectionStatus
+		}
+		vecs = append(vecs, mg)
+
 	}
 	return &PrometheusMetrics{vecs: vecs}
 }

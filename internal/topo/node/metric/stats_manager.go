@@ -219,6 +219,10 @@ type ConnectionStatManager struct {
 }
 
 func (csm *ConnectionStatManager) SetConnectionState(state string, message string) {
+	setMemConnState(csm, state, message)
+}
+
+func setMemConnState(csm *ConnectionStatManager, state string, message string) {
 	now := time.Now()
 	switch state {
 	case api.ConnectionDisconnected:

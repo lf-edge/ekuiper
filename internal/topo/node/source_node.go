@@ -132,6 +132,7 @@ func (m *SourceNode) ingestAnyTuple(ctx api.StreamContext, data any, meta map[st
 
 func (m *SourceNode) connectionStatusChange(status string, message string) {
 	// TODO only send out error when status change from connected?
+	m.ctx.GetLogger().Debugf("receive status %s message %s", status, message)
 	if status == api.ConnectionDisconnected {
 		m.ingestError(m.ctx, fmt.Errorf("disconnected: %s", message))
 	}
