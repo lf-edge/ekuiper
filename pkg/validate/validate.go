@@ -34,3 +34,10 @@ func ValidateID(id string) error {
 	}
 	return nil
 }
+
+func ValidatePath(path string) error {
+	if strings.Contains(path, "..") {
+		return fmt.Errorf("path: %s should not contain ..", path)
+	}
+	return nil
+}
