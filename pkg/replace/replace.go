@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"os"
 	"strconv"
-
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
 )
 
 func init() {
@@ -22,8 +20,8 @@ var (
 	}
 )
 
-func ReplaceRuleJson(ruleJson string) string {
-	if conf.IsTesting || isFvtTest {
+func ReplaceRuleJson(ruleJson string, isTesting bool) string {
+	if isTesting || isFvtTest {
 		return ruleJson
 	}
 	m := make(map[string]interface{})
