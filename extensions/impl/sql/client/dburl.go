@@ -21,6 +21,7 @@ import (
 
 	"github.com/xo/dburl"
 
+	"github.com/lf-edge/ekuiper/v2/extensions/impl/sql/sqldatabase/driver"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 )
 
@@ -40,7 +41,7 @@ func ParseDBUrl(urlstr string) (string, string, error) {
 func ParseDriver(url string) (string, error) {
 	u, err := dburl.Parse(url)
 	if err != nil {
-		return "", fmt.Errorf("parse driver err:%v", err)
+		return "", fmt.Errorf("parse driver err:%v, known drivers: %v", err, driver.KnownBuildTags())
 	}
 	return u.Driver, nil
 }
