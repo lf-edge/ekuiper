@@ -630,6 +630,9 @@ func conv(str string, fromBase, toBase int64) (res string, isNull bool, err erro
 		val = -val
 	}
 
+	if val > math.MaxInt64 {
+		return "", false, fmt.Errorf("value %d is out of int64 range", val)
+	}
 	if int64(val) < 0 {
 		negative = true
 	} else {
