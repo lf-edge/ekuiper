@@ -219,6 +219,8 @@ jobs:
             plugin: functions/labelImage
           - os: [ alpine,"alpine" ]
             plugin: functions/tfLite
+          - os: [ alpine,"alpine" ]
+            plugin: functions/onnx
 
     steps:
       - uses: actions/checkout@v4
