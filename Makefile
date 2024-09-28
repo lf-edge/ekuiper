@@ -176,7 +176,8 @@ PLUGINS := sinks/influx \
 	functions/geohash \
 	functions/echo \
 	functions/labelImage \
-	functions/tfLite
+	functions/tfLite \
+	functions/onnx
 
 .PHONY: plugins $(PLUGINS)
 plugins: $(PLUGINS)
