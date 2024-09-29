@@ -158,7 +158,11 @@ func (kv *sqlKvStore) Delete(key string) error {
 			return errorx.NewWithCode(errorx.NOT_FOUND, fmt.Sprintf("%s is not found", key))
 		}
 		query = fmt.Sprintf("DELETE FROM '%s' WHERE key='%s';", kv.table, key)
-		_, err = db.Exec(query)
+		stmt, err = db.Prepare(query)
+		if err != nil {
+			return err
+		}
+		_, err = stmt.Exec(query)
 		return err
 	})
 }
