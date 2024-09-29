@@ -24,6 +24,7 @@ import (
 	"github.com/jhump/protoreflect/desc"    //nolint:staticcheck
 	"github.com/jhump/protoreflect/dynamic" //nolint:staticcheck
 
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
 
@@ -113,7 +114,7 @@ func (fc *FieldConverter) EncodeField(field *desc.FieldDescriptor, v interface{}
 					return 0, nil
 				} else {
 					if r > math.MaxInt32 {
-						return 0, fmt.Errorf("value %d is out of int32 range", v)
+						conf.Log.Warnf("value %d is out of int32 range", r)
 					}
 					return int32(r), nil
 				}
@@ -127,7 +128,7 @@ func (fc *FieldConverter) EncodeField(field *desc.FieldDescriptor, v interface{}
 					return 0, nil
 				} else {
 					if r > math.MaxUint32 {
-						return 0, fmt.Errorf("value %d is out of uint32 range", v)
+						conf.Log.Warnf("value %d is out of uint32 range", v)
 					}
 					return uint32(r), nil
 				}
@@ -182,7 +183,7 @@ func (fc *FieldConverter) encodeSingleField(field *desc.FieldDescriptor, v inter
 		r, err := cast.ToInt(v, cast.CONVERT_SAMEKIND)
 		if err == nil {
 			if r > math.MaxInt32 {
-				return 0, fmt.Errorf("value %d is out of int32 range", v)
+				conf.Log.Warnf("value %d is out of int32 range", v)
 			}
 			return int32(r), nil
 		} else {
@@ -199,7 +200,7 @@ func (fc *FieldConverter) encodeSingleField(field *desc.FieldDescriptor, v inter
 		r, err := cast.ToUint64(v, cast.CONVERT_SAMEKIND)
 		if err == nil {
 			if r > math.MaxUint32 {
-				return 0, fmt.Errorf("value %d is out of uint32 range", v)
+				conf.Log.Warnf("value %d is out of uint32 range", v)
 			}
 			return uint32(r), nil
 		} else {

@@ -26,6 +26,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
@@ -631,7 +632,7 @@ func conv(str string, fromBase, toBase int64) (res string, isNull bool, err erro
 	}
 
 	if val > math.MaxInt64 {
-		return "", false, fmt.Errorf("value %d is out of int64 range", val)
+		conf.Log.Warnf("value %d is out of int64 range", val)
 	}
 	if int64(val) < 0 {
 		negative = true
