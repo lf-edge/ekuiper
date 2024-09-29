@@ -24,7 +24,7 @@ import (
 
 var traceErr = fmt.Errorf("trace not enabled")
 
-func GetTraceIDListByRuleID(ruleID string, limit int) ([]string, error) {
+func GetTraceIDListByRuleID(ruleID string, limit int64) ([]string, error) {
 	return nil, traceErr
 }
 
