@@ -50,6 +50,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/kv"
 	"github.com/lf-edge/ekuiper/v2/pkg/memory"
 	"github.com/lf-edge/ekuiper/v2/pkg/tracer"
+	"github.com/lf-edge/ekuiper/v2/pkg/validate"
 )
 
 const (
@@ -341,7 +342,10 @@ func fileUploadHandler(w http.ResponseWriter, r *http.Request) {
 				handleError(w, err, "Invalid body: missing necessary field", logger)
 				return
 			}
-
+			if err := validate.ValidatePath(fc.FilePath); err != nil {
+				handleError(w, err, "", logger)
+				return
+			}
 			filePath := filepath.Join(uploadDir, fc.Name)
 			err = upload(fc)
 			if err != nil {
@@ -407,6 +411,11 @@ func fileDeleteHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	name := vars["name"]
 	filePath := filepath.Join(uploadDir, name)
+	if err := validate.ValidatePath(filePath); err != nil {
+		handleError(w, err, "", logger)
+		return
+	}
+
 	e := os.Remove(filePath)
 	if e != nil {
 		handleError(w, e, "Error deleting the file", logger)
