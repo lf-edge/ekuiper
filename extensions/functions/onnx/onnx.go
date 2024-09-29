@@ -1,4 +1,4 @@
-// Copyright 2021-2024 思无邪. All rights reserved.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -46,6 +46,7 @@ func (f *OnnxFunc) Validate(args []interface{}) error {
 }
 
 func (f *OnnxFunc) Exec(ctx api.FunctionContext, args []any) (any, bool) {
+	ctx.GetLogger().Debugf("onnx args %[1]T(%[1]v)", args)
 	modelName, ok := args[0].(string)
 	if !ok {
 		return fmt.Errorf("onnx function first parameter must be a string, but got %[1]T(%[1]v)", args[0]), false
@@ -58,19 +59,18 @@ func (f *OnnxFunc) Exec(ctx api.FunctionContext, args []any) (any, bool) {
 	if len(args)-1 != inputCount {
 		return fmt.Errorf("onnx function requires %d tensors but got %d", inputCount, len(args)-1), false
 	}
-
 	ctx.GetLogger().Debugf("onnx function %s with %d tensors", modelName, inputCount)
 
 	var inputTensors []ort.ArbitraryTensor
 	// Set input tensors
 	for i := 1; i < len(args); i++ {
-
 		inputInfo := interpreter.inputInfo[i-1]
 		var arg []interface{}
 		switch v := args[i].(type) {
 		case []any: // only supports one dimensional arg. Even dim 0 must be an array of 1 element
 			arg = v
-			return fmt.Errorf("onnx function parameter %d must be a bytea or array of bytea, but got %[1]T(%[1]v)", i, v), false
+		default:
+			return fmt.Errorf("onnx function parameter %d must be a bytea or array of bytea, but got %[1]T(%[1]v)", v), false
 		}
 
 		notSupportedDataLen := -1
@@ -256,10 +256,9 @@ func (f *OnnxFunc) Exec(ctx api.FunctionContext, args []any) (any, bool) {
 			modelParaLen *= inputInfo.Dimensions[j]
 		}
 		ctx.GetLogger().Debugf("receive tensor %v, require %d length", arg, modelParaLen)
-		if modelParaLen != inputTensors[i].GetShape().FlattenedSize() {
+		if modelParaLen != inputTensors[i-1].GetShape().FlattenedSize() {
 			return fmt.Errorf("onnx function input tensor %d must have %d elements but got %d", i-1, modelParaLen, len(arg)), false
 		}
-
 	}
 	// todo :optimize: avoid creating output tensor every time
 

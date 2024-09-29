@@ -10,7 +10,7 @@ By integrating eKuiper and ONNX, users can simply upload pre-built ONNX models a
 
 ## Prerequisites
 
-### 模型下载
+### Download Models
 
 To run the ONNX interpreter, a trained model is needed. This tutorial will not cover training or model specifics; you can learn how to do this by checking the [ONNX tutorials](https://github.com/onnx/tutorials#converting-to-onnx-format).
 We can either train a new model or choose an existing one.
@@ -36,9 +36,8 @@ Note that the model input data format must be a float array, so the data type mu
 
 ```shell
 POST /streams 
-Host: 192.168.116.128:9081
 Content-Type: application/json
-Content-Length: 109
+
 {
   "sql": "CREATE STREAM onnxPubImg (data array(float)) WITH (DATASOURCE=\"onnxPubImg\", FORMAT=\"json\")"
 }
@@ -65,12 +64,11 @@ Rest API rule creation to call the model:
         {
             "log": {},
             "mqtt": {
-                "server": "127.0.0.1:1883",
+                "server": "tcp://127.0.0.1:1883",
                 "topic": "demoresult"
             }
         }
-    ],
-    "type": "string"
+    ]
 }
 ```
 
@@ -78,34 +76,55 @@ Rest API rule creation to call the model:
 
 The results are shown in the image below, indicating the predicted probabilities of different digits in the input image.
 
-![result query](../../resources/mqttx_mnist.png)
+![result query](../../../resources/mqttx_mnist.png)
 
 You can use a program like the one below to send images located in the ONNX directory.
 
 ```go
-func TestSum(t *testing.T) {
-    const TOPIC = "sum_diff_pub"
+func TestPic(t *testing.T) {
+const TOPIC = "onnxPubImg"
 
+images := []string{
+"img.png",
+// 其他你需要的图像
+}
     opts := mqtt.NewClientOptions().AddBroker("tcp://localhost:1883")
     client := mqtt.NewClient(opts)
     if token := client.Connect(); token.Wait() && token.Error() != nil {
         panic(token.Error())
     }
-    payloadF32 := []float32{0.2, 0.3, 0.6, 0.9}
-    payloadUnMarshal := MqttPayLoadFloat32Slice{
-        Data: payloadF32,
-    }
-    payload, err := json.Marshal(payloadUnMarshal)
-    if err != nil {
-        fmt.Println(err)
-        return
-    }
+for _, image := range images {
+fmt.Println("Publishing " + image)
+inputImage, err := NewProcessedImage(image, false)
 
-    if token := client.Publish(TOPIC, 2, true, payload); token.Wait() && token.Error() != nil {
-        fmt.Println(token.Error())
-    } else {
-        fmt.Println("Published ")
-    }
+if err != nil {
+fmt.Println(err)
+continue
+}
+// payload, err := os.ReadFile(image)
+payloadF32 := inputImage.GetNetworkInput()
+
+data := make([]any, len(payloadF32))
+for i := 0; i < len(data); i++ {
+data[i] = payloadF32[i]
+}
+payloadUnMarshal := MqttPayLoadFloat32Slice{
+Data: payloadF32,
+}
+payload, err := json.Marshal(payloadUnMarshal)
+if err != nil {
+fmt.Println(err)
+continue
+} else {
+fmt.Println(string(payload))
+}
+if token := client.Publish(TOPIC, 2, true, payload); token.Wait() && token.Error() != nil {
+fmt.Println(token.Error())
+} else {
+fmt.Println("Published " + image)
+}
+time.Sleep(1 * time.Second)
+}
     client.Disconnect(0)
 }
 ```
@@ -129,10 +148,7 @@ The following image shows using the Rest API to call the model.
 
 ```shell
 POST /rules 
-Host: 192.168.116.128:9081
-User-Agent: Apifox/1.0.0 (https://apifox.com)
 Content-Type: application/json
-Content-Length: 319
 
 {
     "id": "ruleSum",
@@ -141,12 +157,11 @@ Content-Length: 319
         {
             "log": {},
             "mqtt": {
-                "server": "127.0.0.1:1883",
+                "server": "tcp://127.0.0.1:1883",
                 "topic": "demoresult"
             }
         }
-    ],
-    "type": "string"
+    ]
 }
 ```
 
@@ -167,35 +182,18 @@ The results are shown in the image below, with the inference returning:
 ]
 ```
 
-![result query](../../resources/mqttx_sum_and_difference.png)
+![result query](../../../resources/mqttx_sum_and_difference.png)
 
-You can use a program like the one below to send test data.
+Send test data like below through MQTT client.
 
-```go
-func TestSum(t *testing.T) {
-    const TOPIC = "sum_diff_pub"
-
-    opts := mqtt.NewClientOptions().AddBroker("tcp://localhost:1883")
-    client := mqtt.NewClient(opts)
-    if token := client.Connect(); token.Wait() && token.Error() != nil {
-        panic(token.Error())
-    }
-    payloadF32 := []float32{0.2, 0.3, 0.6, 0.9}
-    payloadUnMarshal := MqttPayLoadFloat32Slice{
-        Data: payloadF32,
-    }
-    payload, err := json.Marshal(payloadUnMarshal)
-    if err != nil {
-        fmt.Println(err)
-        return
-    }
-
-    if token := client.Publish(TOPIC, 2, true, payload); token.Wait() && token.Error() != nil {
-        fmt.Println(token.Error())
-    } else {
-        fmt.Println("Published ")
-    }
-    client.Disconnect(0)
+```json
+{
+  "data": [
+    0.2,
+    0.3,
+    0.6,
+    0.9
+  ]
 }
 ```
 

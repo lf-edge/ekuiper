@@ -17,12 +17,8 @@
 
 dir=/usr/local/onnx
 
-# 获取操作系统和架构信息
 OS=$(uname -s)
 ARCH=$(uname -m)
-
-# 检查操作系统和架构并返回对应的库路径
-
 
 cur=$(dirname "$0")
 echo "Base path $cur"
@@ -30,7 +26,7 @@ if [ -d "$dir" ]; then
   echo "SDK path $dir exists."
 else
   echo "Creating SDK path $dir"
-  mkdir -p $dir
+  mkdir -p $dir/lib
   echo "Created SDK path $dir"
   echo "Moving libs"
 
