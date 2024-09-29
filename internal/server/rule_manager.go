@@ -30,6 +30,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
+	"github.com/lf-edge/ekuiper/v2/pkg/replace"
 )
 
 // Rule storage includes kv and in memory registry
@@ -108,6 +109,7 @@ func (rr *RuleRegistry) CreateRule(name, ruleJson string) (id string, err error)
 	if _, ok := rr.load(r.Id); ok {
 		return name, fmt.Errorf("rule %s already exists", r.Id)
 	}
+	ruleJson = replace.ReplaceRuleJson(ruleJson, conf.IsTesting)
 	// create state and save
 	rs := rule.NewState(r)
 	// Validate the topo
