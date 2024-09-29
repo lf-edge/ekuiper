@@ -94,7 +94,7 @@ func (g *GlobalTracerManager) GetTraceById(traceID string) (root *LocalSpan, err
 	return g.SpanExporter.GetTraceById(traceID)
 }
 
-func (g *GlobalTracerManager) GetTraceByRuleID(ruleID string, limit int) ([]string, error) {
+func (g *GlobalTracerManager) GetTraceByRuleID(ruleID string, limit int64) ([]string, error) {
 	g.RLock()
 	defer g.RUnlock()
 	return g.SpanExporter.GetTraceByRuleID(ruleID, limit)
@@ -145,7 +145,7 @@ func loadTracerConfig() (*TracerConfig, error) {
 	return tracerConfig, nil
 }
 
-func GetTraceIDListByRuleID(ruleID string, limit int) ([]string, error) {
+func GetTraceIDListByRuleID(ruleID string, limit int64) ([]string, error) {
 	globalTracerManager.InitIfNot()
 	return globalTracerManager.GetTraceByRuleID(ruleID, limit)
 }

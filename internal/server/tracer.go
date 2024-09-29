@@ -74,7 +74,7 @@ func getTraceIDByRuleID(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		limit = 0
 	}
-	root, err := tracer.GetTraceIDListByRuleID(id, int(limit))
+	root, err := tracer.GetTraceIDListByRuleID(id, limit)
 	if err != nil {
 		handleError(w, err, "", logger)
 		return

@@ -16,6 +16,7 @@ package protobuf
 
 import (
 	"fmt"
+	"math"
 
 	// TODO: replace with `google.golang.org/protobuf/proto` pkg.
 	"github.com/golang/protobuf/proto" //nolint:staticcheck
@@ -23,6 +24,7 @@ import (
 	"github.com/jhump/protoreflect/desc"    //nolint:staticcheck
 	"github.com/jhump/protoreflect/dynamic" //nolint:staticcheck
 
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
 
@@ -111,6 +113,9 @@ func (fc *FieldConverter) EncodeField(field *desc.FieldDescriptor, v interface{}
 				if err != nil {
 					return 0, nil
 				} else {
+					if r > math.MaxInt32 {
+						conf.Log.Warnf("value %d is out of int32 range", r)
+					}
 					return int32(r), nil
 				}
 			}, "int", cast.CONVERT_SAMEKIND)
@@ -122,6 +127,9 @@ func (fc *FieldConverter) EncodeField(field *desc.FieldDescriptor, v interface{}
 				if err != nil {
 					return 0, nil
 				} else {
+					if r > math.MaxUint32 {
+						conf.Log.Warnf("value %d is out of uint32 range", v)
+					}
 					return uint32(r), nil
 				}
 			}, "uint", cast.CONVERT_SAMEKIND)
@@ -174,6 +182,9 @@ func (fc *FieldConverter) encodeSingleField(field *desc.FieldDescriptor, v inter
 	case dpb.FieldDescriptorProto_TYPE_INT32, dpb.FieldDescriptorProto_TYPE_SFIXED32, dpb.FieldDescriptorProto_TYPE_SINT32, dpb.FieldDescriptorProto_TYPE_ENUM:
 		r, err := cast.ToInt(v, cast.CONVERT_SAMEKIND)
 		if err == nil {
+			if r > math.MaxInt32 {
+				conf.Log.Warnf("value %d is out of int32 range", v)
+			}
 			return int32(r), nil
 		} else {
 			return nil, fmt.Errorf("invalid type for int type field '%s': %v", fn, err)
@@ -188,6 +199,9 @@ func (fc *FieldConverter) encodeSingleField(field *desc.FieldDescriptor, v inter
 	case dpb.FieldDescriptorProto_TYPE_FIXED32, dpb.FieldDescriptorProto_TYPE_UINT32:
 		r, err := cast.ToUint64(v, cast.CONVERT_SAMEKIND)
 		if err == nil {
+			if r > math.MaxUint32 {
+				conf.Log.Warnf("value %d is out of uint32 range", v)
+			}
 			return uint32(r), nil
 		} else {
 			return nil, fmt.Errorf("invalid type for uint type field '%s': %v", fn, err)

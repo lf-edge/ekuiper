@@ -93,14 +93,14 @@ func (l *SpanExporter) GetTraceById(traceID string) (*LocalSpan, error) {
 	return l.spanStorage.GetTraceById(traceID)
 }
 
-func (l *SpanExporter) GetTraceByRuleID(ruleID string, limit int) ([]string, error) {
+func (l *SpanExporter) GetTraceByRuleID(ruleID string, limit int64) ([]string, error) {
 	return l.spanStorage.GetTraceByRuleID(ruleID, limit)
 }
 
 type LocalSpanStorage interface {
 	SaveSpan(span sdktrace.ReadOnlySpan) error
 	GetTraceById(traceID string) (*LocalSpan, error)
-	GetTraceByRuleID(ruleID string, limit int) ([]string, error)
+	GetTraceByRuleID(ruleID string, limit int64) ([]string, error)
 }
 
 type LocalSpanMemoryStorage struct {
@@ -169,15 +169,15 @@ func (l *LocalSpanMemoryStorage) GetTraceById(traceID string) (*LocalSpan, error
 	return rootSpan, nil
 }
 
-func (l *LocalSpanMemoryStorage) GetTraceByRuleID(ruleID string, limit int) ([]string, error) {
+func (l *LocalSpanMemoryStorage) GetTraceByRuleID(ruleID string, limit int64) ([]string, error) {
 	l.RLock()
 	defer l.RUnlock()
 	traceMap := l.ruleTraceMap[ruleID]
 	r := make([]string, 0)
 	if limit < 1 {
-		limit = len(traceMap)
+		limit = int64(len(traceMap))
 	}
-	count := 0
+	count := int64(0)
 	for traceID := range traceMap {
 		r = append(r, traceID)
 		count++
@@ -291,7 +291,7 @@ func (s *sqlSpanStorage) GetTraceById(traceID string) (*LocalSpan, error) {
 	return s.loadTraceByTraceID(traceID)
 }
 
-func (s *sqlSpanStorage) GetTraceByRuleID(ruleID string, limit int) ([]string, error) {
+func (s *sqlSpanStorage) GetTraceByRuleID(ruleID string, limit int64) ([]string, error) {
 	return s.loadTraceByRuleID(ruleID)
 }
 

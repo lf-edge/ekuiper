@@ -17,6 +17,7 @@ package cast
 import (
 	"encoding/base64"
 	"fmt"
+	"math"
 	"reflect"
 	"strconv"
 	"sync"
@@ -187,6 +188,9 @@ func ToInt8(input interface{}, sn Strictness) (int8, error) {
 		if sn == CONVERT_ALL {
 			v, err := strconv.ParseInt(s, 0, 0)
 			if err == nil {
+				if v > math.MaxInt8 {
+					return 0, fmt.Errorf("value %d is out of int8 range", v)
+				}
 				return int8(v), nil
 			}
 		}
@@ -239,6 +243,9 @@ func ToInt16(input interface{}, sn Strictness) (int16, error) {
 		if sn == CONVERT_ALL {
 			v, err := strconv.ParseInt(s, 0, 0)
 			if err == nil {
+				if v > math.MaxInt16 {
+					return 0, fmt.Errorf("value %d is out of int32 range", v)
+				}
 				return int16(v), nil
 			}
 		}
@@ -291,6 +298,9 @@ func ToInt32(input interface{}, sn Strictness) (int32, error) {
 		if sn == CONVERT_ALL {
 			v, err := strconv.ParseInt(s, 0, 0)
 			if err == nil {
+				if v > math.MaxInt32 {
+					return 0, fmt.Errorf("value %d is out of int32 range", v)
+				}
 				return int32(v), nil
 			}
 		}
@@ -577,6 +587,9 @@ func ToUint8(i interface{}, sn Strictness) (uint8, error) {
 		if sn == CONVERT_ALL {
 			v, err := strconv.ParseUint(s, 0, 64)
 			if err == nil {
+				if v > math.MaxUint8 {
+					return 0, fmt.Errorf("value %d is out of uint16 range", v)
+				}
 				return uint8(v), nil
 			}
 		}
@@ -650,6 +663,9 @@ func ToUint16(i interface{}, sn Strictness) (uint16, error) {
 		if sn == CONVERT_ALL {
 			v, err := strconv.ParseUint(s, 0, 64)
 			if err == nil {
+				if v > math.MaxUint16 {
+					return 0, fmt.Errorf("value %d is out of uint16 range", v)
+				}
 				return uint16(v), nil
 			}
 		}

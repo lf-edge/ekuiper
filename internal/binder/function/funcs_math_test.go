@@ -559,6 +559,10 @@ func TestConvFunc(t *testing.T) {
 	}
 	for _, c := range cases {
 		got, _ := fConv.exec(fctx, []interface{}{c.args[0], c.args[1], c.args[2]})
+		if c.getErr {
+			require.Error(t, got.(error))
+			continue
+		}
 		if got != c.expected {
 			t.Errorf("%s:Expected %s, but got %s", c.args[0], c.expected, got)
 		}
