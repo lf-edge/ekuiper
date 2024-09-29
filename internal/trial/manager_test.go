@@ -45,7 +45,7 @@ func TestTrialRule(t *testing.T) {
 	p := processor.NewStreamProcessor()
 	p.ExecStmt("DROP STREAM demo876")
 	// Test 1 wrong rule
-	mockDef1 := `{"id":"rule876","sql":"select * from demo876","mockSource":{"demo876":{"data":[{"name":"demo876","value":1}],"interval":100,"loop":true}},"sinkProps":{"sendSingle":true}}`
+	mockDef1 := `{"id":"rule876","sql":"select * from demo876","mockSource":{"demo876":{"data":[{"name":"demo876","value":1}],"interval":100,"loop":false}},"sinkProps":{"sendSingle":true}}`
 	_, err = TrialManager.CreateRule(mockDef1)
 	require.Error(t, err)
 	require.Equal(t, "fail to run rule rule876: fail to get stream demo876, please check if stream is created", err.Error())

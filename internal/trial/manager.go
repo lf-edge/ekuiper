@@ -1,10 +1,10 @@
-// Copyright 2023 EMQ Technologies Co., Ltd.
+// Copyright 2023-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//	http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,8 +20,9 @@ import (
 	"sync"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
-	"github.com/lf-edge/ekuiper/v2/internal/io/http/httpserver"
 	"github.com/lf-edge/ekuiper/v2/internal/topo"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
+	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 )
 
 // TrialManager Manager Initialized in the binder
@@ -71,7 +72,7 @@ func (m *Manager) StopRule(ruleId string) {
 	if r, ok := m.runs[ruleId]; ok {
 		r.topo.Cancel()
 		delete(m.runs, ruleId)
-		httpserver.UnRegisterWebSocketEndpoint(r.def.endpoint)
+		_ = connection.DetachConnection(context.Background(), r.def.endpoint)
 	} else {
 		conf.Log.Warnf("try to stop test rule %s but it is not found", ruleId)
 	}
@@ -81,7 +82,7 @@ func (m *Manager) StartRule(ruleId string) error {
 	m.RLock()
 	defer m.RUnlock()
 	if r, ok := m.runs[ruleId]; ok {
-		trialRun(r.topo)
+		trialRun(r.topo, r.def.endpoint)
 	} else {
 		return fmt.Errorf("try to start test rule %s but it is not found", ruleId)
 	}
