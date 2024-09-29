@@ -73,7 +73,7 @@ Rest API 创建规则以调用模型：
 
 结果如下图所示，输入图片之后，推导出图片中不同数字的输出可能性。
 
-![结果查询](../../../resources/mqttx_mnist.png)
+![结果查询](../../resources/mqttx_mnist.png)
 
 你可以使用类似如下程序的方式来发送图片，图片位于ONNX目录下。
 
@@ -168,7 +168,7 @@ POST /rules
 [{"onnx":[[1.9999883,0.60734314]]}]
 ```
 
-![结果查询](../../../resources/mqttx_sum_and_difference.png)
+![结果查询](../../resources/mqttx_sum_and_difference.png)
 
 你可以使用 MQTT 客户端发送测试数据。
 
