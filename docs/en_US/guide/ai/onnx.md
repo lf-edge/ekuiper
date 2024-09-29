@@ -76,7 +76,7 @@ Rest API rule creation to call the model:
 
 The results are shown in the image below, indicating the predicted probabilities of different digits in the input image.
 
-![result query](../../../resources/mqttx_mnist.png)
+![result query](../../resources/mqttx_mnist.png)
 
 You can use a program like the one below to send images located in the ONNX directory.
 
@@ -182,7 +182,7 @@ The results are shown in the image below, with the inference returning:
 ]
 ```
 
-![result query](../../../resources/mqttx_sum_and_difference.png)
+![result query](../../resources/mqttx_sum_and_difference.png)
 
 Send test data like below through MQTT client.
 
