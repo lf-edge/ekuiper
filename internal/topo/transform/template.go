@@ -1,4 +1,4 @@
-// Copyright 2022-2023 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package transform
 import (
 	"encoding/json"
 	"fmt"
+	"maps"
 	"text/template"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
@@ -58,7 +59,17 @@ func TransItem(input interface{}, dataField string, fields []string) (interface{
 			return nil, false, fmt.Errorf("fail to decode data %v", input)
 		}
 	}
-
+	if inputArr, ok := input.([]any); ok {
+		ma := make([]map[string]any, len(inputArr))
+		for i, v := range inputArr {
+			if out, isMap := v.(map[string]interface{}); !isMap {
+				return nil, false, fmt.Errorf("unsupported type %v", input)
+			} else {
+				ma[i] = maps.Clone(out)
+			}
+		}
+		input = ma
+	}
 	m, err := selectMap(input, fields)
 	if err != nil && err.Error() != "fields cannot be empty" {
 		return nil, false, fmt.Errorf("fail to decode data %v for error %v", input, err)
@@ -81,19 +92,6 @@ func selectMap(input interface{}, fields []string) (interface{}, error) {
 			output[field] = input.(map[string]interface{})[field]
 		}
 		return output, nil
-	case []interface{}:
-		for _, v := range input.([]interface{}) {
-			output := make(map[string]interface{})
-			if out, ok := v.(map[string]interface{}); !ok {
-				return input, fmt.Errorf("unsupported type %v", input)
-			} else {
-				for _, field := range fields {
-					output[field] = out[field]
-				}
-				outputs = append(outputs, output)
-			}
-		}
-		return outputs, nil
 	case []map[string]interface{}:
 		for _, v := range input.([]map[string]interface{}) {
 			output := make(map[string]interface{})
