@@ -25,13 +25,13 @@ import (
 )
 
 type RuleOption struct {
-	Debug              bool                     `json:"debug,omitempty" yaml:"debug,omitempty"`
+	Debug              bool                     `json:"debug" yaml:"debug"`
 	LogFilename        string                   `json:"logFilename,omitempty" yaml:"logFilename,omitempty"`
-	IsEventTime        bool                     `json:"isEventTime,omitempty" yaml:"isEventTime,omitempty"`
+	IsEventTime        bool                     `json:"isEventTime" yaml:"isEventTime"`
 	LateTol            cast.DurationConf        `json:"lateTolerance,omitempty" yaml:"lateTolerance,omitempty"`
 	Concurrency        int                      `json:"concurrency" yaml:"concurrency"`
 	BufferLength       int                      `json:"bufferLength" yaml:"bufferLength"`
-	SendMetaToSink     bool                     `json:"sendMetaToSink,omitempty" yaml:"sendMetaToSink,omitempty"`
+	SendMetaToSink     bool                     `json:"sendMetaToSink" yaml:"sendMetaToSink"`
 	SendError          bool                     `json:"sendError,omitempty" yaml:"sendError,omitempty"`
 	Qos                Qos                      `json:"qos,omitempty" yaml:"qos,omitempty"`
 	CheckpointInterval cast.DurationConf        `json:"checkpointInterval,omitempty" yaml:"checkpointInterval,omitempty"`
