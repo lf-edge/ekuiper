@@ -40,7 +40,6 @@ export KUIPER__BASIC__PROMETHEUS="true"
 export KUIPER__BASIC__PROMETHEUSPORT=9081
 export KUIPER__BASIC__RESTPORT=9081
 export KUIPER__PORTABLE__INITTIMEOUT="5m"
-export KUIPER__BASIC__FVTTEST="true"
 
 cd $base_dir/
 touch log/kuiper.out
