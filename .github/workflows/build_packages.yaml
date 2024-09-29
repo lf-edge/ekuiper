@@ -206,6 +206,7 @@ jobs:
           - functions/geohash
           - functions/labelImage
           - functions/tfLite
+          - functions/onnx
         arch: ${{fromJson(needs.prepare.outputs.arch)}}
         os:
           - [ debian, "slim" ]
@@ -218,6 +219,8 @@ jobs:
             plugin: functions/labelImage
           - os: [ alpine,"alpine" ]
             plugin: functions/tfLite
+          - os: [ alpine,"alpine" ]
+            plugin: functions/onnx
 
     steps:
       - uses: actions/checkout@v4
