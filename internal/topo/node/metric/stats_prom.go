@@ -43,6 +43,9 @@ func getStatManager(ctx api.StreamContext, dsm DefaultStatManager) (StatManager,
 		mg.ProcessLatency.DeleteLabelValues(ctx.GetRuleId(), dsm.opType, dsm.opId, strInId)
 		mg.ProcessLatencyHist.DeleteLabelValues(ctx.GetRuleId(), dsm.opType, dsm.opId, strInId)
 		mg.BufferLength.DeleteLabelValues(ctx.GetRuleId(), dsm.opType, dsm.opId, strInId)
+		if mg.ConnectionStatus != nil {
+			mg.ConnectionStatus.DeleteLabelValues(ctx.GetRuleId(), dsm.opType, dsm.opId, strInId)
+		}
 
 		psm.pTotalRecordsIn = mg.TotalRecordsIn.WithLabelValues(ctx.GetRuleId(), dsm.opType, dsm.opId, strInId)
 		psm.pTotalMessagesProcessed = mg.TotalMessagesProcessed.WithLabelValues(ctx.GetRuleId(), dsm.opType, dsm.opId, strInId)
@@ -51,6 +54,9 @@ func getStatManager(ctx api.StreamContext, dsm DefaultStatManager) (StatManager,
 		psm.pProcessLatency = mg.ProcessLatency.WithLabelValues(ctx.GetRuleId(), dsm.opType, dsm.opId, strInId)
 		psm.pProcessLatencyHist = mg.ProcessLatencyHist.WithLabelValues(ctx.GetRuleId(), dsm.opType, dsm.opId, strInId)
 		psm.pBufferLength = mg.BufferLength.WithLabelValues(ctx.GetRuleId(), dsm.opType, dsm.opId, strInId)
+		if dsm.opType != "op" {
+			psm.pConnectionStatus = mg.ConnectionStatus.WithLabelValues(ctx.GetRuleId(), dsm.opType, dsm.opId, strInId)
+		}
 		sm = psm
 	} else {
 		sm = &dsm
@@ -68,6 +74,7 @@ type PrometheusStatManager struct {
 	pProcessLatency         prometheus.Gauge
 	pProcessLatencyHist     prometheus.Observer
 	pBufferLength           prometheus.Gauge
+	pConnectionStatus       prometheus.Gauge
 }
 
 func (sm *PrometheusStatManager) IncTotalRecordsIn() {
@@ -113,6 +120,21 @@ func (sm *PrometheusStatManager) Clean(ruleId string) {
 		mg.TotalExceptions.DeleteLabelValues(ruleId, sm.opType, sm.opId, strInId)
 		mg.ProcessLatency.DeleteLabelValues(ruleId, sm.opType, sm.opId, strInId)
 		mg.BufferLength.DeleteLabelValues(ruleId, sm.opType, sm.opId, strInId)
-		conf.Log.Infof("finish removing rule:%v, opType:%v, opId:%v, InId:%v prometheus metrics", ruleId, sm.opType, sm.opId, strInId)
+		if mg.ConnectionStatus != nil {
+			mg.ConnectionStatus.DeleteLabelValues(ruleId, sm.opType, sm.opId, strInId)
+		}
+		conf.Log.Debugf("finish removing rule:%v, opType:%v, opId:%v, InId:%v prometheus metrics", ruleId, sm.opType, sm.opId, strInId)
 	}
+}
+
+func (sm *PrometheusStatManager) SetConnectionState(state string, message string) {
+	switch state {
+	case api.ConnectionDisconnected:
+		sm.pConnectionStatus.Set(-1)
+	case api.ConnectionConnecting:
+		sm.pConnectionStatus.Set(0)
+	case api.ConnectionConnected:
+		sm.pConnectionStatus.Set(1)
+	}
+	setMemConnState(sm.connectionState, state, message)
 }

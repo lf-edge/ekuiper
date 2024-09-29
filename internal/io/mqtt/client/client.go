@@ -127,8 +127,9 @@ func (conn *Connection) onConnect(_ pahoMqtt.Client) {
 	conn.connected.Store(true)
 	conn.status.Store(modules.ConnectionStatus{Status: api.ConnectionConnected})
 	if conn.scHandler != nil {
-		conn.logger.Warnf("sc handler has not set yet")
 		conn.scHandler(api.ConnectionConnected, "")
+	} else {
+		conn.logger.Warnf("sc handler has not set yet")
 	}
 	conn.logger.Infof("The connection to mqtt broker is established")
 	for topic, info := range conn.subscriptions {
