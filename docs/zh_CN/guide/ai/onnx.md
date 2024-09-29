@@ -33,9 +33,8 @@
 
 ```shell
 POST /streams 
-Host: 192.168.116.128:9081
 Content-Type: application/json
-Content-Length: 109
+
 {
   "sql": "CREATE STREAM onnxPubImg (data array(float)) WITH (DATASOURCE=\"onnxPubImg\", FORMAT=\"json\")"
 }
@@ -62,12 +61,11 @@ Rest API 创建规则以调用模型：
         {
             "log": {},
             "mqtt": {
-                "server": "127.0.0.1:1883",
+                "server": "tcp://127.0.0.1:1883",
                 "topic": "demoresult"
             }
         }
-    ],
-    "type": "string"
+    ]
 }
 ```
 
@@ -75,7 +73,7 @@ Rest API 创建规则以调用模型：
 
 结果如下图所示，输入图片之后，推导出图片中不同数字的输出可能性。
 
-![结果查询](../../resources/mqttx_mnist.png)
+![结果查询](../../../resources/mqttx_mnist.png)
 
 你可以使用类似如下程序的方式来发送图片，图片位于ONNX目录下。
 
@@ -146,10 +144,6 @@ func TestPic(t *testing.T) {
 
 ```shell
 POST /rules 
-Host: 192.168.116.128:9081
-User-Agent: Apifox/1.0.0 (https://apifox.com)
-Content-Type: application/json
-Content-Length: 319
 
 {
     "id": "ruleSum",
@@ -158,12 +152,11 @@ Content-Length: 319
         {
             "log": {},
             "mqtt": {
-                "server": "127.0.0.1:1883",
+                "server": "tcp://127.0.0.1:1883",
                 "topic": "demoresult"
             }
         }
-    ],
-    "type": "string"
+    ]
 }
 ```
 
@@ -175,35 +168,18 @@ Content-Length: 319
 [{"onnx":[[1.9999883,0.60734314]]}]
 ```
 
-![结果查询](../../resources/mqttx_sum_and_difference.png)
+![结果查询](../../../resources/mqttx_sum_and_difference.png)
 
-你可以使用类似如下程序的方式来发送测试数据。
+你可以使用 MQTT 客户端发送测试数据。
 
-```go
-func TestSum(t *testing.T) {
-    const TOPIC = "sum_diff_pub"
-
-    opts := mqtt.NewClientOptions().AddBroker("tcp://localhost:1883")
-    client := mqtt.NewClient(opts)
-    if token := client.Connect(); token.Wait() && token.Error() != nil {
-        panic(token.Error())
-    }
-    payloadF32 := []float32{0.2, 0.3, 0.6, 0.9}
-    payloadUnMarshal := MqttPayLoadFloat32Slice{
-        Data: payloadF32,
-    }
-    payload, err := json.Marshal(payloadUnMarshal)
-    if err != nil {
-        fmt.Println(err)
-        return
-    }
-
-    if token := client.Publish(TOPIC, 2, true, payload); token.Wait() && token.Error() != nil {
-        fmt.Println(token.Error())
-    } else {
-        fmt.Println("Published ")
-    }
-    client.Disconnect(0)
+```json
+{
+  "data": [
+    0.2,
+    0.3,
+    0.6,
+    0.9
+  ]
 }
 ```
 

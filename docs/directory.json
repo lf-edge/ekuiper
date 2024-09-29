@@ -158,6 +158,10 @@
               "path": "guide/ai/tensorflow_lite"
             },
             {
+              "title": "使用 onnx 原生插件调用 AI 模型",
+              "path": "guide/ai/onnx"
+            },
+            {
               "title": "使用外部函数调用 tensorflow_lite AI 模型",
               "path": "guide/ai/tensorflow_lite_external_function_tutorial"
             }
@@ -928,6 +932,10 @@
             {
               "title": "Running AI Model with TensorFlow Lite Function Plugin",
               "path": "guide/ai/tensorflow_lite"
+            },
+            {
+              "title": "Running AI Model with Onnx Function Plugin",
+              "path": "guide/ai/onnx"
             },
             {
               "title": "Running tensorflow_lite AI Model with External Function",
