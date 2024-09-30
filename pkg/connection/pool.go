@@ -221,9 +221,11 @@ func dropNameConnection(ctx api.StreamContext, selId string) error {
 	if err != nil {
 		return fmt.Errorf("drop connection %s failed, err:%v", selId, err)
 	}
-	conn, err := meta.cw.Wait()
-	if conn != nil && err == nil {
-		conn.Close(ctx)
+	if meta.cw.IsInitialized() {
+		conn, err := meta.cw.Wait()
+		if conn != nil && err == nil {
+			conn.Close(ctx)
+		}
 	}
 	delete(globalConnectionManager.connectionPool, selId)
 	return nil
