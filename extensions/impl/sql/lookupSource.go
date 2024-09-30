@@ -24,7 +24,7 @@ import (
 
 	client2 "github.com/lf-edge/ekuiper/v2/extensions/impl/sql/client"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
-	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/util"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 )
@@ -39,8 +39,7 @@ type SqlLookupSource struct {
 	gen           sqlQueryGen
 }
 
-func (s *SqlLookupSource) Ping(_ string, m map[string]interface{}) error {
-	ctx := context.Background()
+func (s *SqlLookupSource) Ping(ctx api.StreamContext, m map[string]any) error {
 	if err := s.Provision(ctx, m); err != nil {
 		return err
 	}
@@ -217,4 +216,7 @@ func GetLookupSource() api.Source {
 	return &SqlLookupSource{}
 }
 
-var _ api.LookupSource = &SqlLookupSource{}
+var (
+	_ api.LookupSource  = &SqlLookupSource{}
+	_ util.PingableConn = &SqlLookupSource{}
+)

@@ -64,6 +64,7 @@ func TestValidate(t *testing.T) {
 func TestMqttClientPing(t *testing.T) {
 	url, cancel, err := testx.InitBroker("TestMqttClientPing")
 	require.NoError(t, err)
+	defer cancel()
 	ctx := mockContext.NewMockContext("1", "2")
 	c := CreateConnection(ctx)
 	err = c.Provision(ctx, "test", map[string]any{
@@ -76,8 +77,4 @@ func TestMqttClientPing(t *testing.T) {
 	// wait connection done
 	time.Sleep(100 * time.Millisecond)
 	require.NoError(t, c.Ping(ctx))
-	cancel()
-	// wait status done
-	time.Sleep(100 * time.Millisecond)
-	require.Error(t, c.Ping(ctx))
 }

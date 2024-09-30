@@ -15,12 +15,12 @@
 package redis
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/redis/go-redis/v9"
 
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/util"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
@@ -51,7 +51,7 @@ func (r *redisSub) Validate(props map[string]any) error {
 	return nil
 }
 
-func (r *redisSub) Ping(dataSource string, props map[string]any) error {
+func (r *redisSub) Ping(ctx api.StreamContext, props map[string]any) error {
 	if err := r.Validate(props); err != nil {
 		return err
 	}
@@ -61,7 +61,7 @@ func (r *redisSub) Ping(dataSource string, props map[string]any) error {
 		Password: r.conf.Password,
 		DB:       r.conf.Db,
 	})
-	if err := r.conn.Ping(context.Background()).Err(); err != nil {
+	if err := r.conn.Ping(ctx).Err(); err != nil {
 		return fmt.Errorf("Ping Redis failed with error: %v", err)
 	}
 	return nil
@@ -120,3 +120,5 @@ func (r *redisSub) Close(ctx api.StreamContext) error {
 func RedisSub() api.Source {
 	return &redisSub{}
 }
+
+var _ util.PingableConn = &redisSub{}

@@ -22,6 +22,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/extensions/impl/sql/testx"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
@@ -128,10 +129,10 @@ func TestLookupPing(t *testing.T) {
 		"datasource": "t",
 	}
 	ls := &SqlLookupSource{}
-	require.NoError(t, ls.Ping("", props))
+	require.NoError(t, ls.Ping(context.Background(), props))
 	props = map[string]interface{}{
 		"dburl":      "",
 		"datasource": "t",
 	}
-	require.Error(t, ls.Ping("", props))
+	require.Error(t, ls.Ping(context.Background(), props))
 }

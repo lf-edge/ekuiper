@@ -14,10 +14,12 @@
 
 package util
 
+import "github.com/lf-edge/ekuiper/contract/v2/api"
+
 type PropsValidator interface {
-	Validate(props map[string]interface{}) error
+	Validate(props map[string]any) error
 }
 
 type PingableConn interface {
-	Ping(string, map[string]interface{}) error
+	Ping(api.StreamContext, map[string]any) error
 }

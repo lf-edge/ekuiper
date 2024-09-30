@@ -21,6 +21,7 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/redis/go-redis/v9"
 
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/util"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 )
@@ -54,7 +55,7 @@ func (r *redisPub) Validate(props map[string]any) error {
 	return nil
 }
 
-func (r *redisPub) Ping(_ string, props map[string]any) error {
+func (r *redisPub) Ping(ctx api.StreamContext, props map[string]any) error {
 	if err := r.Validate(props); err != nil {
 		return err
 	}
@@ -115,4 +116,7 @@ func RedisPub() api.Sink {
 	return &redisPub{}
 }
 
-var _ api.BytesCollector = &redisPub{}
+var (
+	_ api.BytesCollector = &redisPub{}
+	_ util.PingableConn  = &redisPub{}
+)

@@ -22,6 +22,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/io/mqtt/client"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/util"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 )
@@ -116,8 +117,21 @@ func (ms *Sink) Close(ctx api.StreamContext) error {
 	return nil
 }
 
+func (ms *Sink) Ping(ctx api.StreamContext, props map[string]any) error {
+	cli := &client.Connection{}
+	err := cli.Provision(ctx, "test", props)
+	if err != nil {
+		return err
+	}
+	defer cli.Close(ctx)
+	return cli.Ping(ctx)
+}
+
 func GetSink() api.Sink {
 	return &Sink{}
 }
 
-var _ api.BytesCollector = &Sink{}
+var (
+	_ api.BytesCollector = &Sink{}
+	_ util.PingableConn  = &Sink{}
+)

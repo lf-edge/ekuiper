@@ -29,6 +29,7 @@ import (
 	"github.com/segmentio/kafka-go/sasl/scram"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/util"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cert"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
@@ -127,6 +128,32 @@ func (k *KafkaSource) Provision(ctx api.StreamContext, configs map[string]any) e
 	}
 	k.mechanism = mechanism
 	conf.Log.Infof("kafka source got configured.")
+	return nil
+}
+
+func (k *KafkaSource) Ping(ctx api.StreamContext, props map[string]any) error {
+	if err := k.Provision(ctx, props); err != nil {
+		return err
+	}
+	for _, broker := range strings.Split(k.sc.Brokers, ",") {
+		err := k.ping(broker)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (k *KafkaSource) ping(address string) error {
+	d := &kafkago.Dialer{
+		TLS:           k.tlsConfig,
+		SASLMechanism: k.mechanism,
+	}
+	c, err := d.Dial("tcp", address)
+	if err != nil {
+		return err
+	}
+	c.Close()
 	return nil
 }
 
@@ -281,4 +308,7 @@ func GetSource() api.Source {
 	return &KafkaSource{}
 }
 
-var _ api.BytesSource = &KafkaSource{}
+var (
+	_ api.BytesSource   = &KafkaSource{}
+	_ util.PingableConn = &KafkaSource{}
+)

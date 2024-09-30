@@ -26,6 +26,7 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
 	"github.com/lf-edge/ekuiper/v2/extensions/impl/tspoint"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/util"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cert"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
@@ -58,8 +59,8 @@ type influxSink2 struct {
 	cli client.Client
 }
 
-func (m *influxSink2) Ping(_ string, props map[string]interface{}) error {
-	if err := m.Provision(nil, props); err != nil {
+func (m *influxSink2) Ping(ctx api.StreamContext, props map[string]any) error {
+	if err := m.Provision(ctx, props); err != nil {
 		return err
 	}
 	options := client.DefaultOptions().SetPrecision(m.conf.Precision).SetBatchSize(uint(m.conf.BatchSize))
@@ -262,4 +263,7 @@ func GetSink() api.Sink {
 	return &influxSink2{}
 }
 
-var _ api.TupleCollector = &influxSink2{}
+var (
+	_ api.TupleCollector = &influxSink2{}
+	_ util.PingableConn  = &influxSink2{}
+)

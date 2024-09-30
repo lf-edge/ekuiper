@@ -22,7 +22,7 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
 	"github.com/lf-edge/ekuiper/v2/extensions/impl/sql/client"
-	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/util"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
@@ -88,8 +88,7 @@ func (c *sqlSinkConfig) getKeyValues(ctx api.StreamContext, mapData map[string]i
 	return keys, vals, nil
 }
 
-func (s *SQLSinkConnector) Ping(_ string, props map[string]interface{}) error {
-	ctx := context.Background()
+func (s *SQLSinkConnector) Ping(ctx api.StreamContext, props map[string]any) error {
 	if err := s.Provision(ctx, props); err != nil {
 		return err
 	}
@@ -118,7 +117,7 @@ func (s *SQLSinkConnector) Provision(ctx api.StreamContext, configs map[string]a
 		return err
 	}
 	if c.Table == "" {
-		return fmt.Errorf("property Table is required")
+		return fmt.Errorf("property table is required")
 	}
 	if c.RowKindField != "" && c.KeyField == "" {
 		return fmt.Errorf("keyField is required when rowKindField is set")
@@ -299,4 +298,7 @@ func GetSink() api.Sink {
 	return &SQLSinkConnector{}
 }
 
-var _ api.TupleCollector = &SQLSinkConnector{}
+var (
+	_ api.TupleCollector = &SQLSinkConnector{}
+	_ util.PingableConn  = &SQLSinkConnector{}
+)

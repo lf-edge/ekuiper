@@ -25,6 +25,7 @@ import (
 	kafkago "github.com/segmentio/kafka-go"
 	"github.com/segmentio/kafka-go/sasl"
 
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/util"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cert"
 )
@@ -103,6 +104,32 @@ func (k *KafkaSink) Provision(ctx api.StreamContext, configs map[string]any) err
 	if err != nil {
 		return err
 	}
+	return nil
+}
+
+func (k *KafkaSink) Ping(ctx api.StreamContext, props map[string]any) error {
+	if err := k.Provision(ctx, props); err != nil {
+		return err
+	}
+	for _, broker := range strings.Split(k.kc.Brokers, ",") {
+		err := k.ping(broker)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (k *KafkaSink) ping(address string) error {
+	d := &kafkago.Dialer{
+		TLS:           k.tlsConfig,
+		SASLMechanism: k.mechanism,
+	}
+	c, err := d.Dial("tcp", address)
+	if err != nil {
+		return err
+	}
+	c.Close()
 	return nil
 }
 
@@ -265,4 +292,7 @@ func GetSink() api.Sink {
 	return &KafkaSink{}
 }
 
-var _ api.TupleCollector = &KafkaSink{}
+var (
+	_ api.TupleCollector = &KafkaSink{}
+	_ util.PingableConn  = &KafkaSink{}
+)

@@ -15,7 +15,6 @@
 package redis
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -24,6 +23,7 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/redis/go-redis/v9"
 
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/util"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
@@ -99,7 +99,7 @@ func (r *RedisSink) Validate(props map[string]any) error {
 	return nil
 }
 
-func (r *RedisSink) Ping(dataSource string, props map[string]interface{}) error {
+func (r *RedisSink) Ping(ctx api.StreamContext, props map[string]any) error {
 	if err := r.Validate(props); err != nil {
 		return err
 	}
@@ -109,7 +109,7 @@ func (r *RedisSink) Ping(dataSource string, props map[string]interface{}) error 
 		Password: r.c.Password,
 		DB:       r.c.Db, // use default DB
 	})
-	_, err := cli.Ping(context.Background()).Result()
+	_, err := cli.Ping(ctx).Result()
 	defer func() {
 		cli.Close()
 	}()
@@ -225,4 +225,7 @@ func GetSink() api.Sink {
 	return &RedisSink{}
 }
 
-var _ api.TupleCollector = &RedisSink{}
+var (
+	_ api.TupleCollector = &RedisSink{}
+	_ util.PingableConn  = &RedisSink{}
+)

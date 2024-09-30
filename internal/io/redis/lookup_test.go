@@ -23,6 +23,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
 
@@ -146,5 +147,5 @@ func TestLookUpPingRedis(t *testing.T) {
 		"addr":       addr,
 		"datatype":   "string",
 	}
-	require.NoError(t, s.Ping("1", prop))
+	require.NoError(t, s.Ping(context.Background(), prop))
 }

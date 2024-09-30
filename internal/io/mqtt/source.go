@@ -23,6 +23,7 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
 	"github.com/lf-edge/ekuiper/v2/internal/io/mqtt/client"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/util"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node/tracenode"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
@@ -152,6 +153,7 @@ func GetSource() api.Source {
 }
 
 var (
-	_ api.BytesSource = &SourceConnector{}
-	_ api.Bounded     = &SourceConnector{}
+	_ api.BytesSource   = &SourceConnector{}
+	_ api.Bounded       = &SourceConnector{}
+	_ util.PingableConn = &SourceConnector{}
 )

@@ -23,6 +23,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/util"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/mock"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
@@ -73,7 +74,7 @@ func TestSinkPingRedisError(t *testing.T) {
 		"channel": DefaultChannel,
 	}
 	expErrStr := fmt.Sprintf("Ping Redis failed with error")
-	err := s.Ping("", prop)
+	err := s.Ping(context.Background(), prop)
 	if err == nil {
 		t.Errorf("should have error")
 		return
