@@ -159,6 +159,7 @@ func (rr *RuleRegistry) RecoverRule(r *def.Rule) string {
 
 // UpdateRule validates the new rule, then update the db, then restart the rule
 func (rr *RuleRegistry) UpdateRule(ruleId, ruleJson string) error {
+	ruleJson = replace.ReplaceRuleJson(ruleJson, conf.IsTesting)
 	// Validate the rule json
 	r, err := ruleProcessor.GetRuleByJson(ruleId, ruleJson)
 	if err != nil {
