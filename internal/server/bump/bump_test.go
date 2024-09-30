@@ -40,7 +40,7 @@ func TestBumpVersion(t *testing.T) {
 	}
 	require.NoError(t, InitBumpManager())
 	GlobalBumpManager.Version = 0
-	testBumpVersion(t)
+	testBumpVersion(t, 3)
 }
 
 func prepareBumpVersion(t *testing.T, dir string) {
@@ -49,14 +49,14 @@ func prepareBumpVersion(t *testing.T, dir string) {
 	prepareBumpVersion1Data(t, dir, "connections")
 }
 
-func testBumpVersion(t *testing.T) {
+func testBumpVersion(t *testing.T, expectVer int) {
 	dir := os.TempDir()
 	prepareBumpVersion(t, dir)
 	require.NoError(t, BumpToCurrentVersion(dir))
-	require.Equal(t, 1, GlobalBumpManager.Version)
+	require.Equal(t, expectVer, GlobalBumpManager.Version)
 	v, err := loadVersionFromStorage()
 	require.NoError(t, err)
-	require.Equal(t, 1, v)
+	require.Equal(t, expectVer, v)
 	assertBumpVersion1Data(t, "sources")
 	assertBumpVersion1Data(t, "sinks")
 	assertBumpVersion1Data(t, "connections")

@@ -83,6 +83,7 @@ func BumpToCurrentVersion(dataDir string) error {
 			if err := storeGlobalVersion(1); err != nil {
 				return err
 			}
+			GlobalBumpManager.Version = 1
 		case 1:
 			if err := bumpFrom1TO2(); err != nil {
 				return err
@@ -90,6 +91,7 @@ func BumpToCurrentVersion(dataDir string) error {
 			if err := storeGlobalVersion(2); err != nil {
 				return err
 			}
+			GlobalBumpManager.Version = 2
 		case 2:
 			if err := bumpFrom2TO3(); err != nil {
 				return err
@@ -97,6 +99,7 @@ func BumpToCurrentVersion(dataDir string) error {
 			if err := storeGlobalVersion(3); err != nil {
 				return err
 			}
+			GlobalBumpManager.Version = 3
 		}
 	}
 	return nil
