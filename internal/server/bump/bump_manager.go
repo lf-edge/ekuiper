@@ -30,7 +30,10 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/kv"
 )
 
-const currentVersion = 3
+const (
+	currentVersion = 3
+	bumpTable      = "eKuiperMeta_bump_version"
+)
 
 var GlobalBumpManager *BumpManager
 
@@ -40,7 +43,7 @@ type BumpManager struct {
 }
 
 func InitBumpManager() error {
-	s, err := store.GetKV("$$eKuiperMeta")
+	s, err := store.GetKV(bumpTable)
 	failpoint.Inject("initManagerError", func() {
 		err = errors.New("initManagerError")
 	})
@@ -73,16 +76,25 @@ func loadVersionFromStorage() (int, error) {
 func BumpToCurrentVersion(dataDir string) error {
 	for i := GlobalBumpManager.Version; i <= currentVersion; i++ {
 		switch i {
-		case 1:
+		case 0:
 			if err := bumpFrom0To1(dataDir); err != nil {
 				return err
 			}
-		case 2:
+			if err := storeGlobalVersion(1); err != nil {
+				return err
+			}
+		case 1:
 			if err := bumpFrom1TO2(); err != nil {
 				return err
 			}
-		case 3:
+			if err := storeGlobalVersion(2); err != nil {
+				return err
+			}
+		case 2:
 			if err := bumpFrom2TO3(); err != nil {
+				return err
+			}
+			if err := storeGlobalVersion(3); err != nil {
 				return err
 			}
 		}
@@ -100,10 +112,6 @@ func bumpFrom0To1(dir string) error {
 	if err := migrateDataIntoStorage(dir, "sinks"); err != nil {
 		return err
 	}
-	if err := storeGlobalVersion(1); err != nil {
-		return err
-	}
-	GlobalBumpManager.Version = 1
 	return nil
 }
 
