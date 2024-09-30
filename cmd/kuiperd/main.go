@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:debug x509negativeserial=1
 package main
 
 import "github.com/lf-edge/ekuiper/v2/cmd"
