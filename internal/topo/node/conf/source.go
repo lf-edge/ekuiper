@@ -63,7 +63,7 @@ func GetSourceConf(sourceType string, options *ast.Options) map[string]interface
 		if ok {
 			meta, err := connection.GetConnectionDetail(nil, selectorID)
 			if err != nil {
-				conf.Log.Warnf("load conneciton meta %s failed, err:%v", selectorID, err)
+				conf.Log.Warnf("load connection meta %s failed, err:%v", selectorID, err)
 			} else {
 				for key, value := range meta.Props {
 					props[key] = value
