@@ -36,12 +36,12 @@ func createSqlTs(database Database, table string) (*ts, error) {
 		last:     getLast(database, table),
 	}
 	err := store.database.Apply(func(db *sql.DB) error {
-		query := fmt.Sprintf("CREATE TABLE IF NOT EXISTS '%s'('key' INTEGER PRIMARY KEY, 'val' BLOB);", table)
-		stmt, err := db.Prepare(query)
+		createTblStmt := "CREATE TABLE IF NOT EXISTS '?'('key' INTEGER PRIMARY KEY, 'val' BLOB);"
+		stmt, err := db.Prepare(createTblStmt)
 		if err != nil {
 			return err
 		}
-		_, err = stmt.Exec(query)
+		_, err = stmt.Exec(table)
 		return err
 	})
 	if err != nil {
@@ -131,12 +131,12 @@ func (t ts) Delete(key int64) error {
 
 func (t ts) DeleteBefore(key int64) error {
 	return t.database.Apply(func(db *sql.DB) error {
-		query := fmt.Sprintf("DELETE FROM %s WHERE key<?;", t.table)
-		stmt, err := db.Prepare(query)
+		deletTbl := "DELETE FROM ? WHERE key<?;"
+		stmt, err := db.Prepare(deletTbl)
 		if err != nil {
 			return err
 		}
-		_, err = stmt.Exec(key)
+		_, err = stmt.Exec(t.table, key)
 		return err
 	})
 }
@@ -147,8 +147,12 @@ func (t ts) Close() error {
 
 func (t ts) Drop() error {
 	return t.database.Apply(func(db *sql.DB) error {
-		query := fmt.Sprintf("Drop table %s;", t.table)
-		_, err := db.Exec(query)
+		dropTbl := "Drop table ?;"
+		stmt, err := db.Prepare(dropTbl)
+		if err != nil {
+			return err
+		}
+		_, err = stmt.Exec(t.table)
 		return err
 	})
 }
@@ -156,12 +160,12 @@ func (t ts) Drop() error {
 func getLast(d Database, table string) int64 {
 	var last int64 = 0
 	_ = d.Apply(func(db *sql.DB) error {
-		query := fmt.Sprintf("SELECT key FROM %s Order by key DESC Limit 1;", table)
+		query := "SELECT key FROM ? Order by key DESC Limit 1;"
 		stmt, err := db.Prepare(query)
 		if err != nil {
 			return err
 		}
-		row := stmt.QueryRow(query)
+		row := stmt.QueryRow(table)
 		return row.Scan(&last)
 	})
 	return last
