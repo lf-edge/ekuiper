@@ -162,7 +162,7 @@ func (kv *sqlKvStore) Delete(key string) error {
 		if err != nil {
 			return err
 		}
-		_, err = stmt.Exec(query)
+		_, err = stmt.Exec()
 		return err
 	})
 }

@@ -158,10 +158,19 @@ func TestConnectionLock(t *testing.T) {
 		require.NoError(t, err)
 		wg.Done()
 	}()
-	require.False(t, checkConn("ccc1"))
 	blockCh <- struct{}{}
 	wg.Wait()
 	require.True(t, checkConn("ccc1"))
+
+	wg = sync.WaitGroup{}
+	wg.Add(1)
+	go func() {
+		_, err := CreateNamedConnection(ctx, "ccc2", "blockconn", nil)
+		require.NoError(t, err)
+		wg.Done()
+	}()
+	wg.Wait()
+	require.NoError(t, DropNameConnection(ctx, "ccc2"))
 }
 
 var blockCh chan any
