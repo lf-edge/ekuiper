@@ -40,16 +40,13 @@ type SqlLookupSource struct {
 }
 
 func (s *SqlLookupSource) Ping(ctx api.StreamContext, m map[string]any) error {
-	if err := s.Provision(ctx, m); err != nil {
+	cli := &client2.SQLConnection{}
+	err := cli.Provision(ctx, "test", m)
+	if err != nil {
 		return err
 	}
-	if err := s.Connect(ctx, nil); err != nil {
-		return err
-	}
-	defer func() {
-		s.Close(ctx)
-	}()
-	return s.conn.Ping(ctx)
+	defer cli.Close(ctx)
+	return cli.Ping(ctx)
 }
 
 func (s *SqlLookupSource) Provision(ctx api.StreamContext, configs map[string]any) error {

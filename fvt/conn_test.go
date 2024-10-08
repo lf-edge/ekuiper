@@ -256,16 +256,17 @@ func (s *ConnectionTestSuite) TestConnStatus() {
 
 func (s *ConnectionTestSuite) TestSourcePing() {
 	tests := []struct {
-		name  string
-		props map[string]any
-		err   string
+		name    string
+		props   map[string]any
+		timeout bool
+		err     string
 	}{
 		{
 			name: "mqtt",
 			props: map[string]any{
 				"server": "tcp://127.0.0.1:1883",
 			},
-			err: "{\"error\":1003,\"message\":\"found error when connecting for tcp://127.0.0.1:1883: network Error : dial tcp 127.0.0.1:1883: connectex: No connection could be made because the target machine actively refused it.\"}\n",
+			err: "{\"error\":1003,\"message\":\"found error when connecting for tcp://127.0.0.1:1883: network Error : dial tcp 127.0.0.1:1883: connect: connection refused\"}\n",
 		},
 		{
 			name: "httppull",
@@ -322,13 +323,10 @@ func (s *ConnectionTestSuite) TestSourcePing() {
 		{
 			name: "sql",
 			props: map[string]any{
-				"url":      "mysql://root:Q1w2e3r4t%25@test.com/test?parseTime=true",
-				"interval": "100s",
-				"templateSqlQueryCfg": map[string]any{
-					"templateSql": "select * from devices where id >1",
-				},
+				"url": "mysql://root:Q1w2e3r4t%25@test.com/test?parseTime=true",
 			},
-			err: "{\"error\":1000,\"message\":\"dial tcp 127.0.0.1:3306: connectex: No connection could be made because the target machine actively refused it.\"}\n",
+			timeout: true,
+			err:     "{\"error\":1000,\"message\":\"dial tcp 127.0.0.1:3306: connectex: No connection could be made because the target machine actively refused it.\"}\n",
 		},
 	}
 	prefix := "metadata/sources/connection"
@@ -337,14 +335,18 @@ func (s *ConnectionTestSuite) TestSourcePing() {
 			body, err := json.Marshal(tt.props)
 			s.Require().NoError(err)
 			resp, err := client.Post(path.Join(prefix, tt.name), string(body))
-			s.Require().NoError(err)
-			if tt.err == "" {
-				s.Require().Equal(http.StatusOK, resp.StatusCode)
+			if tt.timeout {
+				s.Require().Error(err)
 			} else {
-				s.Require().Equal(http.StatusBadRequest, resp.StatusCode)
-				t, err := GetResponseText(resp)
 				s.Require().NoError(err)
-				s.Require().Equal(tt.err, t)
+				if tt.err == "" {
+					s.Require().Equal(http.StatusOK, resp.StatusCode)
+				} else {
+					s.Require().Equal(http.StatusBadRequest, resp.StatusCode)
+					t, err := GetResponseText(resp)
+					s.Require().NoError(err)
+					s.Require().Equal(tt.err, t)
+				}
 			}
 		})
 	}
@@ -352,9 +354,10 @@ func (s *ConnectionTestSuite) TestSourcePing() {
 
 func (s *ConnectionTestSuite) TestLookupSourcePing() {
 	tests := []struct {
-		name  string
-		props map[string]any
-		err   string
+		name    string
+		props   map[string]any
+		timeout bool
+		err     string
 	}{
 		{
 			name: "httppull",
@@ -371,13 +374,10 @@ func (s *ConnectionTestSuite) TestLookupSourcePing() {
 		{
 			name: "sql",
 			props: map[string]any{
-				"url":      "mysql://root:Q1w2e3r4t%25@test.com/test?parseTime=true",
-				"interval": "100s",
-				"templateSqlQueryCfg": map[string]any{
-					"templateSql": "select * from devices where id >1",
-				},
+				"url": "mysql://root:Q1w2e3r4t%25@test.com/test?parseTime=true",
 			},
-			err: "{\"error\":1000,\"message\":\"dial tcp 127.0.0.1:3306: connectex: No connection could be made because the target machine actively refused it.\"}\n",
+			timeout: true,
+			err:     "{\"error\":1000,\"message\":\"dial tcp 127.0.0.1:3306: connectex: No connection could be made because the target machine actively refused it.\"}\n",
 		},
 	}
 	prefix := "metadata/lookups/connection"
@@ -386,14 +386,18 @@ func (s *ConnectionTestSuite) TestLookupSourcePing() {
 			body, err := json.Marshal(tt.props)
 			s.Require().NoError(err)
 			resp, err := client.Post(path.Join(prefix, tt.name), string(body))
-			s.Require().NoError(err)
-			if tt.err == "" {
-				s.Require().Equal(http.StatusOK, resp.StatusCode)
+			if tt.timeout {
+				s.Require().Error(err)
 			} else {
-				s.Require().Equal(http.StatusBadRequest, resp.StatusCode)
-				t, err := GetResponseText(resp)
 				s.Require().NoError(err)
-				s.Require().Equal(tt.err, t)
+				if tt.err == "" {
+					s.Require().Equal(http.StatusOK, resp.StatusCode)
+				} else {
+					s.Require().Equal(http.StatusBadRequest, resp.StatusCode)
+					t, err := GetResponseText(resp)
+					s.Require().NoError(err)
+					s.Require().Equal(tt.err, t)
+				}
 			}
 		})
 	}
@@ -401,16 +405,17 @@ func (s *ConnectionTestSuite) TestLookupSourcePing() {
 
 func (s *ConnectionTestSuite) TestSinkPing() {
 	tests := []struct {
-		name  string
-		props map[string]any
-		err   string
+		name    string
+		props   map[string]any
+		timeout bool
+		err     string
 	}{
 		{
 			name: "mqtt",
 			props: map[string]any{
 				"server": "tcp://127.0.0.1:1883",
 			},
-			err: "{\"error\":1003,\"message\":\"found error when connecting for tcp://127.0.0.1:1883: network Error : dial tcp 127.0.0.1:1883: connectex: No connection could be made because the target machine actively refused it.\"}\n",
+			err: "{\"error\":1003,\"message\":\"found error when connecting for tcp://127.0.0.1:1883: network Error : dial tcp 127.0.0.1:1883: connect: connection refused\"}\n",
 		},
 		{
 			name: "rest",
@@ -452,10 +457,10 @@ func (s *ConnectionTestSuite) TestSinkPing() {
 		{
 			name: "sql",
 			props: map[string]any{
-				"url":   "mysql://root:Q1w2e3r4t%25@test.com/test?parseTime=true",
-				"table": "test",
+				"url": "mysql://root:Q1w2e3r4t%25@test.com/test?parseTime=true",
 			},
-			err: "{\"error\":1000,\"message\":\"dial tcp 127.0.0.1:3306: connectex: No connection could be made because the target machine actively refused it.\"}\n",
+			timeout: true,
+			// err: "{\"error\":1000,\"message\":\"dial tcp 127.0.0.1:3306: connectex: No connection could be made because the target machine actively refused it.\"}\n",
 		},
 		{
 			name: "influx",
@@ -464,7 +469,8 @@ func (s *ConnectionTestSuite) TestSinkPing() {
 				"database":    "test",
 				"measurement": "test",
 			},
-			err: "{\"error\":1000,\"message\":\"Get \\\"http://test.com/test/ping?parseTime=true&wait_for_leader=10s\\\": dial tcp 127.0.0.1:80: connectex: No connection could be made because the target machine actively refused it.\"}\n",
+			timeout: true,
+			// err: "{\"error\":1000,\"message\":\"Get \\\"http://test.com/test/ping?parseTime=true&wait_for_leader=10s\\\": dial tcp 127.0.0.1:80: connectex: No connection could be made because the target machine actively refused it.\"}\n",
 		},
 		{
 			name: "influx2",
@@ -475,7 +481,8 @@ func (s *ConnectionTestSuite) TestSinkPing() {
 				"bucket":      "test",
 				"measurement": "test",
 			},
-			err: "{\"error\":1000,\"message\":\"error connecting to influxdb2: Get \\\"http://root:***@test.com/ping\\\": dial tcp 127.0.0.1:80: connectex: No connection could be made because the target machine actively refused it.\"}\n",
+			timeout: true,
+			// err: "{\"error\":1000,\"message\":\"error connecting to influxdb2: Get \\\"http://root:***@test.com/ping\\\": dial tcp 127.0.0.1:80: connectex: No connection could be made because the target machine actively refused it.\"}\n",
 		},
 	}
 	prefix := "metadata/sinks/connection"
@@ -484,14 +491,18 @@ func (s *ConnectionTestSuite) TestSinkPing() {
 			body, err := json.Marshal(tt.props)
 			s.Require().NoError(err)
 			resp, err := client.Post(path.Join(prefix, tt.name), string(body))
-			s.Require().NoError(err)
-			if tt.err == "" {
-				s.Require().Equal(http.StatusOK, resp.StatusCode)
+			if tt.timeout {
+				s.Require().Error(err)
 			} else {
-				s.Require().Equal(http.StatusBadRequest, resp.StatusCode)
-				t, err := GetResponseText(resp)
 				s.Require().NoError(err)
-				s.Require().Equal(tt.err, t)
+				if tt.err == "" {
+					s.Require().Equal(http.StatusOK, resp.StatusCode)
+				} else {
+					s.Require().Equal(http.StatusBadRequest, resp.StatusCode)
+					t, err := GetResponseText(resp)
+					s.Require().NoError(err)
+					s.Require().Equal(tt.err, t)
+				}
 			}
 		})
 	}

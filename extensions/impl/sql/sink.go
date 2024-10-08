@@ -89,16 +89,13 @@ func (c *sqlSinkConfig) getKeyValues(ctx api.StreamContext, mapData map[string]i
 }
 
 func (s *SQLSinkConnector) Ping(ctx api.StreamContext, props map[string]any) error {
-	if err := s.Provision(ctx, props); err != nil {
+	cli := &client.SQLConnection{}
+	err := cli.Provision(ctx, "test", props)
+	if err != nil {
 		return err
 	}
-	if err := s.Connect(ctx, nil); err != nil {
-		return err
-	}
-	defer func() {
-		s.Close(ctx)
-	}()
-	return s.conn.Ping(ctx)
+	defer cli.Close(ctx)
+	return cli.Ping(ctx)
 }
 
 func (s *SQLSinkConnector) Provision(ctx api.StreamContext, configs map[string]any) error {
