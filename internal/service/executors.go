@@ -258,7 +258,7 @@ func (h *httpExecutor) invokeFunction(ctx api.FunctionContext, name string, para
 	if err != nil {
 		return nil, err
 	}
-	resp, err := httpx.Send(ctx.GetLogger(), h.conn, "json", hm.Method, u, h.restOpt.Headers, false, hm.Body)
+	resp, err := httpx.Send(ctx.GetLogger(), h.conn, "json", hm.Method, u, h.restOpt.Headers, hm.Body)
 	if err != nil {
 		return nil, err
 	}

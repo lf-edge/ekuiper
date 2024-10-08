@@ -15,6 +15,7 @@
 package http
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -31,9 +32,10 @@ import (
 )
 
 type request struct {
-	Method      string
-	Body        string
-	ContentType string
+	Method          string
+	Body            string
+	ContentType     string
+	ContentEncoding string
 }
 
 func TestRestSink_Apply(t *testing.T) {
@@ -48,7 +50,8 @@ func TestRestSink_Apply(t *testing.T) {
 			config: map[string]interface{}{
 				"method": "post",
 				//"url": "http://localhost/test",  //set dynamically to the test server
-				"sendSingle": true,
+				"sendSingle":  true,
+				"compression": "gzip",
 			},
 			data: []map[string]interface{}{{
 				"ab": "hello1",
@@ -56,22 +59,23 @@ func TestRestSink_Apply(t *testing.T) {
 				"ab": "hello2",
 			}},
 			result: []request{{
-				Method:      "POST",
-				Body:        `{"ab":"hello1"}`,
-				ContentType: "application/json",
+				Method:          "POST",
+				Body:            `{"ab":"hello1"}`,
+				ContentType:     "application/json",
+				ContentEncoding: "gzip",
 			}, {
-				Method:      "POST",
-				Body:        `{"ab":"hello2"}`,
-				ContentType: "application/json",
+				Method:          "POST",
+				Body:            `{"ab":"hello2"}`,
+				ContentType:     "application/json",
+				ContentEncoding: "gzip",
 			}},
 		}, {
 			name: "2",
 			config: map[string]interface{}{
 				"method": "post",
 				//"url": "http://localhost/test",  //set dynamically to the test server
-				"headers": map[string]any{
-					"Content-Type": "application/vnd.microsoft.servicebus.json",
-				},
+				"sendSingle":  true,
+				"compression": "zstd",
 			},
 			data: []map[string]interface{}{{
 				"ab": "hello1",
@@ -79,58 +83,15 @@ func TestRestSink_Apply(t *testing.T) {
 				"ab": "hello2",
 			}},
 			result: []request{{
-				Method:      "POST",
-				Body:        `[{"ab":"hello1"},{"ab":"hello2"}]`,
-				ContentType: "application/vnd.microsoft.servicebus.json",
-			}},
-		}, {
-			name: "3",
-			config: map[string]interface{}{
-				"method": "get",
-				//"url": "http://localhost/test",  //set dynamically to the test server
-			},
-			data: []map[string]interface{}{{
-				"ab": "hello1",
+				Method:          "POST",
+				Body:            `{"ab":"hello1"}`,
+				ContentType:     "application/json",
+				ContentEncoding: "zstd",
 			}, {
-				"ab": "hello2",
-			}},
-			result: []request{{
-				Method:      "GET",
-				ContentType: "",
-			}},
-		}, {
-			name: "4",
-			config: map[string]interface{}{
-				"method": "put",
-				//"url": "http://localhost/test",  //set dynamically to the test server
-				"bodyType": "text",
-			},
-			data: []map[string]interface{}{{
-				"ab": "hello1",
-			}, {
-				"ab": "hello2",
-			}},
-			result: []request{{
-				Method:      "PUT",
-				ContentType: "text/plain",
-				Body:        `[{"ab":"hello1"},{"ab":"hello2"}]`,
-			}},
-		}, {
-			name: "5",
-			config: map[string]interface{}{
-				"method": "post",
-				//"url": "http://localhost/test",  //set dynamically to the test server
-				"bodyType": "form",
-			},
-			data: []map[string]interface{}{{
-				"ab": "hello1",
-			}, {
-				"ab": "hello2",
-			}},
-			result: []request{{
-				Method:      "POST",
-				ContentType: "application/x-www-form-urlencoded;param=value",
-				Body:        `result=%5B%7B%22ab%22%3A%22hello1%22%7D%2C%7B%22ab%22%3A%22hello2%22%7D%5D`,
+				Method:          "POST",
+				Body:            `{"ab":"hello2"}`,
+				ContentType:     "application/json",
+				ContentEncoding: "zstd",
 			}},
 		}, {
 			name: "6",
@@ -148,11 +109,11 @@ func TestRestSink_Apply(t *testing.T) {
 			result: []request{{
 				Method:      "POST",
 				ContentType: "application/x-www-form-urlencoded;param=value",
-				Body:        `ab=hello1`,
+				Body:        "{\"ab\":\"hello1\"}",
 			}, {
 				Method:      "POST",
 				ContentType: "application/x-www-form-urlencoded;param=value",
-				Body:        `ab=hello2`,
+				Body:        "{\"ab\":\"hello2\"}",
 			}},
 		}, {
 			name: "7",
@@ -191,9 +152,10 @@ func TestRestSink_Apply(t *testing.T) {
 		}
 
 		requests = append(requests, request{
-			Method:      r.Method,
-			Body:        string(body),
-			ContentType: r.Header.Get("Content-Type"),
+			Method:          r.Method,
+			Body:            string(body),
+			ContentType:     r.Header.Get("Content-Type"),
+			ContentEncoding: r.Header.Get("Content-Encoding"),
 		})
 		ctx.GetLogger().Debugf(string(body))
 		fmt.Fprint(w, string(body))
@@ -202,10 +164,6 @@ func TestRestSink_Apply(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			requests = nil
-			ss, ok := tt.config["sendSingle"]
-			if !ok {
-				ss = false
-			}
 			s := &RestSink{}
 			tt.config["url"] = ts.URL
 			e := s.Provision(ctx, tt.config)
@@ -214,23 +172,12 @@ func TestRestSink_Apply(t *testing.T) {
 				// do nothing
 			})
 			assert.NoError(t, e)
-			if ss.(bool) {
-				for _, d := range tt.data {
-					e = s.Collect(ctx, &xsql.Tuple{
-						Message: d,
-					})
-					assert.NoError(t, e)
-				}
-			} else {
-				b := &xsql.WindowTuples{
-					Content: make([]xsql.Row, 0, len(tt.data)),
-				}
-				for _, d := range tt.data {
-					b.Content = append(b.Content, &xsql.Tuple{
-						Message: d,
-					})
-				}
-				e = s.CollectList(ctx, b)
+			for _, d := range tt.data {
+				bb, err := json.Marshal(d)
+				require.NoError(t, err)
+				e = s.Collect(ctx, &xsql.RawTuple{
+					Rawdata: bb,
+				})
 				assert.NoError(t, e)
 			}
 
@@ -253,15 +200,13 @@ func TestRestSinkCollect(t *testing.T) {
 		"method":    "get",
 		"debugResp": true,
 	}))
-	data := &xsql.Tuple{
-		Message: map[string]interface{}{
-			"a": 1,
-		},
+	data := &xsql.RawTuple{
+		Rawdata: []byte(`{"a":1}`),
 	}
 	require.NoError(t, s.Connect(ctx, func(status string, message string) {
 		// do nothing
 	}))
-	require.NoError(t, s.collect(ctx, data, data.ToMap()))
+	require.NoError(t, s.Collect(ctx, data))
 	require.NoError(t, s.Close(ctx))
 }
 
@@ -271,10 +216,8 @@ func TestRestSinkRecoverErr(t *testing.T) {
 		server.Close()
 	}()
 	ctx := mockContext.NewMockContext("1", "2")
-	data := &xsql.Tuple{
-		Message: map[string]interface{}{
-			"a": 1,
-		},
+	data := &xsql.RawTuple{
+		Rawdata: []byte(`{"a":1}`),
 	}
 	sErr := &RestSink{}
 	require.NoError(t, sErr.Provision(ctx, map[string]any{
@@ -284,7 +227,7 @@ func TestRestSinkRecoverErr(t *testing.T) {
 	require.NoError(t, sErr.Connect(ctx, func(status string, message string) {
 		// do nothing
 	}))
-	err := sErr.collect(ctx, data, data.ToMap())
+	err := sErr.Collect(ctx, data)
 	require.Error(t, err)
 	require.False(t, errorx.IsIOError(err))
 	s := &RestSink{}
@@ -297,7 +240,7 @@ func TestRestSinkRecoverErr(t *testing.T) {
 	require.NoError(t, s.Connect(ctx, func(status string, message string) {
 		// do nothing
 	}))
-	err = s.collect(ctx, data, data.ToMap())
+	err = s.Collect(ctx, data)
 	require.Error(t, err)
 	require.True(t, errorx.IsIOError(err))
 }
