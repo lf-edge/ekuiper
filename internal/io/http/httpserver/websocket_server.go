@@ -184,6 +184,7 @@ func (m *GlobalServerManager) AddEndpointConnection(endpoint string, c *websocke
 	wctx, ok := m.websocketEndpoint[endpoint]
 	if ok {
 		wctx.conns[c] = cancel
+		wctx.wg.Add(1)
 		return wctx.wg
 	}
 	wg := &sync.WaitGroup{}
