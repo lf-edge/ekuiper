@@ -388,7 +388,7 @@ func Test_createLogicalPlan(t *testing.T) {
 						},
 					},
 				},
-				windowFuncNames: map[string]ast.Field{
+				otherFieldNames: map[string]ast.Field{
 					"index": {
 						Name:  "row_number",
 						AName: "index",
@@ -449,7 +449,7 @@ func Test_createLogicalPlan(t *testing.T) {
 						},
 					},
 				},
-				windowFuncNames: map[string]ast.Field{
+				otherFieldNames: map[string]ast.Field{
 					"row_number": {
 						Name: "row_number",
 						Expr: &ast.Call{
