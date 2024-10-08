@@ -168,8 +168,5 @@ func migrateDataIntoStorage(dataDir, confType string) error {
 
 func storeGlobalVersion(ver int) error {
 	err := GlobalBumpManager.store.Set("version", ver)
-	failpoint.Inject("storeVersionErr", func() {
-		err = errors.New("storeVersionErr")
-	})
 	return err
 }

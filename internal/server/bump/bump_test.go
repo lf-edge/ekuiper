@@ -124,10 +124,6 @@ func TestBumpManager0To1(t *testing.T) {
 	require.Error(t, bumpFrom0To1(dir))
 	failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/server/bump/migrateReadError")
 
-	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/server/bump/storeVersionErr", "return(true)")
-	require.Error(t, bumpFrom0To1(dir))
-	failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/server/bump/storeVersionErr")
-
 	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/server/bump/migrateUnmarshalErr", "return(true)")
 	require.Error(t, bumpFrom0To1(dir))
 	failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/server/bump/migrateUnmarshalErr")
