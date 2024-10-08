@@ -21,7 +21,6 @@ import (
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
-	"github.com/lf-edge/ekuiper/v2/pkg/message"
 )
 
 type SinkConf struct {
@@ -61,9 +60,6 @@ func ParseConf(logger api.Logger, props map[string]any) (*SinkConf, error) {
 		sconf.Concurrency = 1
 	}
 	if sconf.Format == "" {
-		sconf.Format = "json"
-	} else if sconf.Format != message.FormatJson && sconf.Format != message.FormatProtobuf && sconf.Format != message.FormatBinary && sconf.Format != message.FormatCustom && sconf.Format != message.FormatDelimited {
-		logger.Warnf("invalid type for format property, should be json protobuf or binary but found %s", sconf.Format)
 		sconf.Format = "json"
 	}
 	err = cast.MapToStruct(props, &sconf.SinkConf)

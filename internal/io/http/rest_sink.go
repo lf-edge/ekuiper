@@ -30,9 +30,24 @@ type RestSink struct {
 	*ClientConf
 }
 
+var bodyTypeFormat = map[string]string{
+	"json": "json",
+	"form": "urlencoded",
+}
+
 func (r *RestSink) Provision(ctx api.StreamContext, configs map[string]any) error {
 	r.ClientConf = &ClientConf{}
-	return r.InitConf("", configs)
+	err := r.InitConf("", configs)
+	if err != nil {
+		return err
+	}
+	if r.ClientConf.config.Format == "" {
+		r.ClientConf.config.Format = "json"
+	}
+	if rf, ok := bodyTypeFormat[r.ClientConf.config.BodyType]; ok && r.ClientConf.config.Format != rf {
+		return fmt.Errorf("format must be %s if bodyType is %s", rf, r.ClientConf.config.BodyType)
+	}
+	return nil
 }
 
 func (r *RestSink) Close(ctx api.StreamContext) error {
