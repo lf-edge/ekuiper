@@ -15,8 +15,10 @@
 package fvt
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
+	"path"
 	"testing"
 	"time"
 
@@ -250,4 +252,258 @@ func (s *ConnectionTestSuite) TestConnStatus() {
 		})
 		s.Require().True(r)
 	})
+}
+
+func (s *ConnectionTestSuite) TestSourcePing() {
+	tests := []struct {
+		name    string
+		props   map[string]any
+		timeout bool
+		err     string
+	}{
+		{
+			name: "mqtt",
+			props: map[string]any{
+				"server": "tcp://127.0.0.1:1883",
+			},
+			err: "{\"error\":1003,\"message\":\"found error when connecting for tcp://127.0.0.1:1883: network Error : dial tcp 127.0.0.1:1883: connect: connection refused\"}\n",
+		},
+		{
+			name: "httppull",
+			props: map[string]any{
+				"url": "https://www.githubstatus.com/api/v2/status.json",
+			},
+			err: "{\"error\":1000,\"message\":\"source httppull doesn't support ping connection\"}\n",
+		},
+		{
+			name:  "httppush",
+			props: map[string]any{},
+			err:   "{\"error\":1000,\"message\":\"source httppush doesn't support ping connection\"}\n",
+		},
+		{
+			name: "neuron",
+			props: map[string]any{
+				"url": "tcp://127.0.0.1:7081",
+			},
+			err: "{\"error\":1000,\"message\":\"not connected\"}\n",
+		},
+		{
+			name:  "file",
+			props: map[string]any{},
+			err:   "{\"error\":1000,\"message\":\"source file doesn't support ping connection\"}\n",
+		},
+		{
+			name:  "memory",
+			props: map[string]any{},
+			err:   "{\"error\":1000,\"message\":\"source memory doesn't support ping connection\"}\n",
+		},
+		{
+			name:  "websocket",
+			props: map[string]any{},
+			err:   "{\"error\":1000,\"message\":\"source websocket doesn't support ping connection\"}\n",
+		},
+		{
+			name:  "simulator",
+			props: map[string]any{},
+			err:   "{\"error\":1000,\"message\":\"source simulator doesn't support ping connection\"}\n",
+		},
+		{
+			name:  "video",
+			props: map[string]any{},
+			err:   "{\"error\":1000,\"message\":\"source video doesn't support ping connection\"}\n",
+		},
+		{
+			name: "kafka",
+			props: map[string]any{
+				"brokers": "tcp://127.0.0.1:1883",
+				"topic":   "test",
+			},
+			err: "{\"error\":1000,\"message\":\"failed to dial: failed to open connection to [tcp://127.0.0.1:1883]:9092: dial tcp: lookup tcp://127.0.0.1:1883: no such host\"}\n",
+		},
+		{
+			name: "sql",
+			props: map[string]any{
+				"url": "mysql://root:Q1w2e3r4t%25@test.com/test?parseTime=true",
+			},
+			timeout: true,
+			err:     "{\"error\":1000,\"message\":\"dial tcp 127.0.0.1:3306: connectex: No connection could be made because the target machine actively refused it.\"}\n",
+		},
+	}
+	prefix := "metadata/sources/connection"
+	for _, tt := range tests {
+		s.Run("ping source "+tt.name, func() {
+			body, err := json.Marshal(tt.props)
+			s.Require().NoError(err)
+			resp, err := client.Post(path.Join(prefix, tt.name), string(body))
+			if tt.timeout {
+				s.Require().Error(err)
+			} else {
+				s.Require().NoError(err)
+				if tt.err == "" {
+					s.Require().Equal(http.StatusOK, resp.StatusCode)
+				} else {
+					s.Require().Equal(http.StatusBadRequest, resp.StatusCode)
+					t, err := GetResponseText(resp)
+					s.Require().NoError(err)
+					s.Require().Equal(tt.err, t)
+				}
+			}
+		})
+	}
+}
+
+func (s *ConnectionTestSuite) TestLookupSourcePing() {
+	tests := []struct {
+		name    string
+		props   map[string]any
+		timeout bool
+		err     string
+	}{
+		{
+			name: "httppull",
+			props: map[string]any{
+				"url": "https://www.githubstatus.com/api/v2/status.json",
+			},
+			err: "{\"error\":1000,\"message\":\"lookup source httppull doesn't support ping connection\"}\n",
+		},
+		{
+			name:  "memory",
+			props: map[string]any{},
+			err:   "{\"error\":1000,\"message\":\"lookup source memory doesn't support ping connection\"}\n",
+		},
+		{
+			name: "sql",
+			props: map[string]any{
+				"url": "mysql://root:Q1w2e3r4t%25@test.com/test?parseTime=true",
+			},
+			timeout: true,
+			err:     "{\"error\":1000,\"message\":\"dial tcp 127.0.0.1:3306: connectex: No connection could be made because the target machine actively refused it.\"}\n",
+		},
+	}
+	prefix := "metadata/lookups/connection"
+	for _, tt := range tests {
+		s.Run("ping source "+tt.name, func() {
+			body, err := json.Marshal(tt.props)
+			s.Require().NoError(err)
+			resp, err := client.Post(path.Join(prefix, tt.name), string(body))
+			if tt.timeout {
+				s.Require().Error(err)
+			} else {
+				s.Require().NoError(err)
+				if tt.err == "" {
+					s.Require().Equal(http.StatusOK, resp.StatusCode)
+				} else {
+					s.Require().Equal(http.StatusBadRequest, resp.StatusCode)
+					t, err := GetResponseText(resp)
+					s.Require().NoError(err)
+					s.Require().Equal(tt.err, t)
+				}
+			}
+		})
+	}
+}
+
+func (s *ConnectionTestSuite) TestSinkPing() {
+	tests := []struct {
+		name    string
+		props   map[string]any
+		timeout bool
+		err     string
+	}{
+		{
+			name: "mqtt",
+			props: map[string]any{
+				"server": "tcp://127.0.0.1:1883",
+			},
+			err: "{\"error\":1003,\"message\":\"found error when connecting for tcp://127.0.0.1:1883: network Error : dial tcp 127.0.0.1:1883: connect: connection refused\"}\n",
+		},
+		{
+			name: "rest",
+			props: map[string]any{
+				"url": "https://www.githubstatus.com/api/v2/status.json",
+			},
+			err: "{\"error\":1000,\"message\":\"sink rest doesn't support ping connection\"}\n",
+		},
+		{
+			name: "neuron",
+			props: map[string]any{
+				"url": "tcp://127.0.0.1:7081",
+			},
+			err: "{\"error\":1000,\"message\":\"not connected\"}\n",
+		},
+		{
+			name:  "file",
+			props: map[string]any{},
+			err:   "{\"error\":1000,\"message\":\"sink file doesn't support ping connection\"}\n",
+		},
+		{
+			name:  "memory",
+			props: map[string]any{},
+			err:   "{\"error\":1000,\"message\":\"sink memory doesn't support ping connection\"}\n",
+		},
+		{
+			name:  "websocket",
+			props: map[string]any{},
+			err:   "{\"error\":1000,\"message\":\"sink websocket doesn't support ping connection\"}\n",
+		},
+		{
+			name: "kafka",
+			props: map[string]any{
+				"brokers": "tcp://127.0.0.1:1883",
+				"topic":   "test",
+			},
+			err: "{\"error\":1000,\"message\":\"failed to dial: failed to open connection to [tcp://127.0.0.1:1883]:9092: dial tcp: lookup tcp://127.0.0.1:1883: no such host\"}\n",
+		},
+		{
+			name: "sql",
+			props: map[string]any{
+				"url": "mysql://root:Q1w2e3r4t%25@test.com/test?parseTime=true",
+			},
+			timeout: true,
+			// err: "{\"error\":1000,\"message\":\"dial tcp 127.0.0.1:3306: connectex: No connection could be made because the target machine actively refused it.\"}\n",
+		},
+		{
+			name: "influx",
+			props: map[string]any{
+				"addr":        "http://test.com/test?parseTime=true",
+				"database":    "test",
+				"measurement": "test",
+			},
+			timeout: true,
+			// err: "{\"error\":1000,\"message\":\"Get \\\"http://test.com/test/ping?parseTime=true&wait_for_leader=10s\\\": dial tcp 127.0.0.1:80: connectex: No connection could be made because the target machine actively refused it.\"}\n",
+		},
+		{
+			name: "influx2",
+			props: map[string]any{
+				"addr":        "http://root:Q1w2e3r4t%25@test.com/test?parseTime=true",
+				"database":    "test",
+				"org":         "test",
+				"bucket":      "test",
+				"measurement": "test",
+			},
+			timeout: true,
+			// err: "{\"error\":1000,\"message\":\"error connecting to influxdb2: Get \\\"http://root:***@test.com/ping\\\": dial tcp 127.0.0.1:80: connectex: No connection could be made because the target machine actively refused it.\"}\n",
+		},
+	}
+	prefix := "metadata/sinks/connection"
+	for _, tt := range tests {
+		s.Run("ping sink "+tt.name, func() {
+			body, err := json.Marshal(tt.props)
+			s.Require().NoError(err)
+			resp, err := client.Post(path.Join(prefix, tt.name), string(body))
+			if tt.timeout {
+				s.Require().Error(err)
+			} else {
+				s.Require().NoError(err)
+				if tt.err == "" {
+					s.Require().Equal(http.StatusOK, resp.StatusCode)
+				} else {
+					s.Require().Equal(http.StatusBadRequest, resp.StatusCode)
+					t, err := GetResponseText(resp)
+					s.Require().NoError(err)
+					s.Require().Equal(tt.err, t)
+				}
+			}
+		})
+	}
 }

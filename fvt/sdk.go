@@ -36,7 +36,7 @@ func NewSdk(baseUrl string) (*SDK, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &SDK{baseUrl: u, httpClient: &http.Client{}}, nil
+	return &SDK{baseUrl: u, httpClient: &http.Client{Timeout: 5 * time.Second}}, nil
 }
 
 func (sdk *SDK) Get(command string) (resp *http.Response, err error) {
@@ -44,7 +44,13 @@ func (sdk *SDK) Get(command string) (resp *http.Response, err error) {
 }
 
 func (sdk *SDK) Post(command string, body string) (resp *http.Response, err error) {
-	return http.Post(sdk.baseUrl.JoinPath(command).String(), ContentTypeJson, bytes.NewBufferString(body))
+	req, err := http.NewRequest(http.MethodPost, sdk.baseUrl.JoinPath(command).String(), bytes.NewBufferString(body))
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	req.Header.Set("Content-Type", ContentTypeJson)
+	return sdk.httpClient.Do(req)
 }
 
 func (sdk *SDK) PostWithParam(command string, param string, body string) (resp *http.Response, err error) {

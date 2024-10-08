@@ -33,11 +33,14 @@ type SQLConnection struct {
 }
 
 func (s *SQLConnection) Provision(ctx api.StreamContext, conId string, props map[string]any) error {
-	dbUrlRaw, ok := props["dburl"]
+	url, ok := props["url"]
 	if !ok {
-		return fmt.Errorf("dburl should be defined")
+		url, ok = props["dburl"]
+		if !ok {
+			return fmt.Errorf("dburl should be defined")
+		}
 	}
-	dburl, ok := dbUrlRaw.(string)
+	dburl, ok := url.(string)
 	if !ok || len(dburl) < 1 {
 		return fmt.Errorf("dburl should be defined as string")
 	}
@@ -86,6 +89,12 @@ func (s *SQLConnection) GetDB() *sql.DB {
 func (s *SQLConnection) Ping(ctx api.StreamContext) error {
 	s.RLock()
 	defer s.RUnlock()
+	if s.db == nil {
+		err := s.Dial(ctx)
+		if err != nil {
+			return err
+		}
+	}
 	return s.db.Ping()
 }
 

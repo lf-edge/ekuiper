@@ -40,16 +40,13 @@ type SqlLookupSource struct {
 }
 
 func (s *SqlLookupSource) Ping(ctx api.StreamContext, m map[string]any) error {
-	if err := s.Provision(ctx, m); err != nil {
+	cli := &client2.SQLConnection{}
+	err := cli.Provision(ctx, "test", m)
+	if err != nil {
 		return err
 	}
-	if err := s.Connect(ctx, nil); err != nil {
-		return err
-	}
-	defer func() {
-		s.Close(ctx)
-	}()
-	return s.conn.Ping(ctx)
+	defer cli.Close(ctx)
+	return cli.Ping(ctx)
 }
 
 func (s *SqlLookupSource) Provision(ctx api.StreamContext, configs map[string]any) error {
@@ -61,8 +58,9 @@ func (s *SqlLookupSource) Provision(ctx api.StreamContext, configs map[string]an
 	if err != nil {
 		return fmt.Errorf("read properties %v fail with error: %v", configs, err)
 	}
-	if len(cfg.DBUrl) < 1 {
-		return fmt.Errorf("dburl should be defined")
+	props, err := cfg.resolveDBURL(configs)
+	if err != nil {
+		return err
 	}
 	s.conf = cfg
 	s.driver, err = client2.ParseDriver(s.conf.DBUrl)
@@ -70,7 +68,7 @@ func (s *SqlLookupSource) Provision(ctx api.StreamContext, configs map[string]an
 		return err
 	}
 	s.table = cfg.Datasource
-	s.props = configs
+	s.props = props
 	s.gen = s.buildGen()
 	return nil
 }

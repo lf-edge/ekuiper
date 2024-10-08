@@ -292,5 +292,5 @@ func LookupPing(lookupType string, config map[string]any) error {
 	if pingAble, ok := lookup.(util.PingableConn); ok {
 		return pingAble.Ping(context.Background(), config)
 	}
-	return fmt.Errorf("lookup %v doesn't support ping connection", lookup)
+	return fmt.Errorf("lookup source %v doesn't support ping connection", lookupType)
 }
