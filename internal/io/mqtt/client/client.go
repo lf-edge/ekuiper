@@ -16,7 +16,6 @@ package client
 
 import (
 	"crypto/tls"
-	"errors"
 	"fmt"
 	"sync/atomic"
 	"time"
@@ -178,7 +177,7 @@ func (conn *Connection) Ping(ctx api.StreamContext) error {
 	if conn.connected.Load() {
 		return nil
 	}
-	return errors.New("failed to connect to broker")
+	return conn.Dial(ctx)
 }
 
 // MQTT features

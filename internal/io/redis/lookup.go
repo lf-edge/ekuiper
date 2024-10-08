@@ -15,7 +15,6 @@
 package redis
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -24,6 +23,7 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/redis/go-redis/v9"
 
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/util"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
 
@@ -43,7 +43,7 @@ type lookupSource struct {
 	cli *redis.Client
 }
 
-func (s *lookupSource) Ping(dataSource string, props map[string]interface{}) error {
+func (s *lookupSource) Ping(ctx api.StreamContext, props map[string]any) error {
 	err := s.Validate(props)
 	if err != nil {
 		return err
@@ -55,7 +55,7 @@ func (s *lookupSource) Ping(dataSource string, props map[string]interface{}) err
 		DB:       s.db, // use default DB
 	})
 	defer s.cli.Close()
-	_, err = s.cli.Ping(context.Background()).Result()
+	_, err = s.cli.Ping(ctx).Result()
 	return err
 }
 
@@ -135,6 +135,9 @@ func (s *lookupSource) Validate(props map[string]any) error {
 	if cfg.DataType != "string" && cfg.DataType != "list" {
 		return errors.New("redis dataType must be string or list")
 	}
+	if cfg.DB == "/$$TEST_CONNECTION$$" {
+		cfg.DB = "0"
+	}
 	s.db, err = strconv.Atoi(cfg.DB)
 	if err != nil {
 		return fmt.Errorf("datasource %s is invalid", cfg.DB)
@@ -160,4 +163,7 @@ func GetLookupSource() api.Source {
 	return &lookupSource{}
 }
 
-var _ api.LookupSource = &lookupSource{}
+var (
+	_ api.LookupSource  = &lookupSource{}
+	_ util.PingableConn = &lookupSource{}
+)

@@ -28,6 +28,7 @@ import (
 
 	client2 "github.com/lf-edge/ekuiper/v2/extensions/impl/sql/client"
 	"github.com/lf-edge/ekuiper/v2/extensions/impl/sql/sqldatabase/sqlgen"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/util"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
@@ -40,6 +41,19 @@ type SQLSourceConnector struct {
 	conn          *client2.SQLConnection
 	props         map[string]any
 	needReconnect bool
+}
+
+func (s *SQLSourceConnector) Ping(ctx api.StreamContext, m map[string]any) error {
+	if err := s.Provision(ctx, m); err != nil {
+		return err
+	}
+	if err := s.Connect(ctx, nil); err != nil {
+		return err
+	}
+	defer func() {
+		s.Close(ctx)
+	}()
+	return s.conn.Ping(ctx)
 }
 
 type SQLConf struct {
@@ -235,7 +249,10 @@ func GetSource() api.Source {
 	return &SQLSourceConnector{}
 }
 
-var _ api.PullTupleSource = &SQLSourceConnector{}
+var (
+	_ api.PullTupleSource = &SQLSourceConnector{}
+	_ util.PingableConn   = &SQLSourceConnector{}
+)
 
 func (sc *SQLConf) resolveDBURL(props map[string]any) (map[string]any, error) {
 	if len(sc.DBUrl) < 1 && len(sc.URL) < 1 {

@@ -24,6 +24,7 @@ import (
 	_ "go.nanomsg.org/mangos/v3/transport/ipc"
 
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/util"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/mock"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/model"
@@ -63,7 +64,7 @@ func TestSourcePingRedisError(t *testing.T) {
 		"channels": []string{DefaultChannel},
 	}
 	expErrStr := fmt.Sprintf("Ping Redis failed with error")
-	err := s.Ping("new", prop)
+	err := s.Ping(context.Background(), prop)
 	if err == nil {
 		t.Errorf("should have error")
 		return

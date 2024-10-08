@@ -23,6 +23,7 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
 	"github.com/lf-edge/ekuiper/v2/extensions/impl/tspoint"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/util"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cert"
 )
@@ -121,8 +122,8 @@ func (m *influxSink) Connect(ctx api.StreamContext, sch api.StatusChangeHandler)
 	return err
 }
 
-func (m *influxSink) Ping(_ string, props map[string]interface{}) (err error) {
-	if err = m.Provision(nil, props); err != nil {
+func (m *influxSink) Ping(ctx api.StreamContext, props map[string]any) (err error) {
+	if err = m.Provision(ctx, props); err != nil {
 		return err
 	}
 	var insecureSkip bool
@@ -208,4 +209,7 @@ func GetSink() api.Sink {
 	return &influxSink{}
 }
 
-var _ api.TupleCollector = &influxSink{}
+var (
+	_ api.TupleCollector = &influxSink{}
+	_ util.PingableConn  = &influxSink{}
+)

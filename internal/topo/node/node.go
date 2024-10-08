@@ -261,12 +261,11 @@ func SourcePing(sourceType string, config map[string]any) error {
 	if err != nil {
 		return err
 	}
-	dataSource := "/$$TEST_CONNECTION$$"
-	if v, ok := config["DATASOURCE"]; ok {
-		dataSource = v.(string)
+	if _, ok := config["datasource"]; !ok {
+		config["datasource"] = "/$$TEST_CONNECTION$$"
 	}
 	if pingAble, ok := source.(util.PingableConn); ok {
-		return pingAble.Ping(dataSource, config)
+		return pingAble.Ping(context.Background(), config)
 	}
 	return fmt.Errorf("source %v doesn't support ping connection", sourceType)
 }
@@ -277,22 +276,21 @@ func SinkPing(sinkType string, config map[string]any) error {
 		return err
 	}
 	if pingAble, ok := sink.(util.PingableConn); ok {
-		return pingAble.Ping("", config)
+		return pingAble.Ping(context.Background(), config)
 	}
 	return fmt.Errorf("sink %v doesn't support ping connection", sinkType)
 }
 
-func LookupPing(lookupType string, config map[string]interface{}) error {
+func LookupPing(lookupType string, config map[string]any) error {
 	lookup, err := io.LookupSource(lookupType)
 	if err != nil {
 		return err
 	}
-	dataSource := "/$$TEST_CONNECTION$$"
-	if v, ok := config["DATASOURCE"]; ok {
-		dataSource = v.(string)
+	if _, ok := config["datasource"]; !ok {
+		config["datasource"] = "/$$TEST_CONNECTION$$"
 	}
 	if pingAble, ok := lookup.(util.PingableConn); ok {
-		return pingAble.Ping(dataSource, config)
+		return pingAble.Ping(context.Background(), config)
 	}
 	return fmt.Errorf("lookup %v doesn't support ping connection", lookup)
 }

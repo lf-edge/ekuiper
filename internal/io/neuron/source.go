@@ -24,6 +24,7 @@ import (
 	"go.nanomsg.org/mangos/v3"
 	"go.opentelemetry.io/otel/trace"
 
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/util"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node/tracenode"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 	"github.com/lf-edge/ekuiper/v2/pkg/nng"
@@ -153,3 +154,5 @@ func extractTraceMeta(ctx api.StreamContext, data []byte) ([]byte, map[string]in
 	}
 	return rawData, meta
 }
+
+var _ util.PingableConn = &source{}
