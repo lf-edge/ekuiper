@@ -18,11 +18,24 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
+	"github.com/lf-edge/ekuiper/v2/pkg/connection"
+	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
 
 func TestGetSourceConf(t *testing.T) {
+	connection.InitConnectionManager4Test()
+	ctx := mockContext.NewMockContext("1", "2")
+	_, err := connection.CreateNamedConnection(ctx, "test11", "mock", map[string]any{
+		"a": 1,
+	})
+	require.NoError(t, err)
+	require.NoError(t, conf.WriteCfgIntoKVStorage("sources", "mqtt", "test11", map[string]interface{}{
+		"connectionSelector": "test11",
+	}))
 	type args struct {
 		sourceType string
 		options    *ast.Options
@@ -80,6 +93,33 @@ func TestGetSourceConf(t *testing.T) {
 				"strictValidation":   false,
 				"timestamp":          "",
 				"timestampFormat":    "",
+			},
+		},
+		{
+			name: "connTest",
+			args: args{
+				sourceType: "mqtt",
+				options: &ast.Options{
+					CONF_KEY:   "test11",
+					DATASOURCE: "abc",
+				},
+			},
+			want: map[string]interface{}{
+				"server":             "tcp://127.0.0.1:1883",
+				"format":             "json",
+				"key":                "",
+				"insecureSkipVerify": false,
+				"protocolVersion":    "3.1.1",
+				"qos":                1,
+				"datasource":         "abc",
+				"delimiter":          "",
+				"retainSize":         0,
+				"schemaId":           "",
+				"strictValidation":   false,
+				"timestamp":          "",
+				"timestampFormat":    "",
+				"connectionSelector": "test11",
+				"a":                  1,
 			},
 		},
 	}

@@ -19,6 +19,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
+	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 )
 
 // GetSourceConf unifies all properties set in different locations
@@ -56,6 +57,21 @@ func GetSourceConf(sourceType string, options *ast.Options) map[string]interface
 			}
 		}
 	}
+	connectionSelector, ok := props["connectionSelector"]
+	if ok {
+		selectorID, ok := connectionSelector.(string)
+		if ok {
+			meta, err := connection.GetConnectionDetail(nil, selectorID)
+			if err != nil {
+				conf.Log.Warnf("load connection meta %s failed, err:%v", selectorID, err)
+			} else {
+				for key, value := range meta.Props {
+					props[key] = value
+				}
+			}
+		}
+	}
+
 	f := options.FORMAT
 	if f == "" {
 		f = "json"
