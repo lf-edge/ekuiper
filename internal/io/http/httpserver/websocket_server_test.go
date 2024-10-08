@@ -112,3 +112,17 @@ func TestWebsocketServerSendData(t *testing.T) {
 	<-assertCh
 	UnRegisterWebSocketEndpoint(endpoint)
 }
+
+func TestWebsocketServerHandleWg(t *testing.T) {
+	ip := "127.0.0.1"
+	port := 10091
+	InitGlobalServerManager(ip, port, nil)
+	defer ShutDown()
+	ctx := mockContext.NewMockContext("1", "2")
+	_, _, err := RegisterWebSocketEndpoint(ctx, "/e123")
+	require.NoError(t, err)
+	_, _, err = RegisterWebSocketEndpoint(ctx, "/e123")
+	require.NoError(t, err)
+	UnRegisterWebSocketEndpoint("/e123")
+	UnRegisterWebSocketEndpoint("/e123")
+}
