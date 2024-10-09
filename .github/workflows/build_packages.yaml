@@ -130,6 +130,7 @@ jobs:
             suffix:
             - ""
             - "-alpine"
+            - "-alpine-python"
             - "-dev"
             - "-slim"
             - "-slim-python"
