@@ -69,6 +69,7 @@ type RawConf struct {
 	Method      string            `json:"method"`
 	Body        string            `json:"body"`
 	BodyType    string            `json:"bodyType"`
+	Format      string            `json:"format"`
 	Headers     map[string]string `json:"headers"`
 	Timeout     cast.DurationConf `json:"timeout"`
 	Incremental bool              `json:"incremental"`

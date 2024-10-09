@@ -17,5 +17,5 @@ package xsql
 import "github.com/lf-edge/ekuiper/v2/pkg/message"
 
 func IsTextFormat(format string) bool {
-	return format == message.FormatJson || format == message.FormatDelimited
+	return format == message.FormatJson || format == message.FormatDelimited || format == message.FormatUrlEncoded
 }

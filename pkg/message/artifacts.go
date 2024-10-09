@@ -21,11 +21,12 @@ import (
 )
 
 const (
-	FormatBinary    = "binary"
-	FormatJson      = "json"
-	FormatProtobuf  = "protobuf"
-	FormatDelimited = "delimited"
-	FormatCustom    = "custom"
+	FormatBinary     = "binary"
+	FormatJson       = "json"
+	FormatProtobuf   = "protobuf"
+	FormatDelimited  = "delimited"
+	FormatUrlEncoded = "urlencoded"
+	FormatCustom     = "custom"
 
 	DefaultField = "self"
 	MetaKey      = "__meta"

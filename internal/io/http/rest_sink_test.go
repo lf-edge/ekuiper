@@ -26,6 +26,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
@@ -99,6 +100,7 @@ func TestRestSink_Apply(t *testing.T) {
 				"method": "post",
 				//"url": "http://localhost/test",  //set dynamically to the test server
 				"bodyType":   "form",
+				"format":     "urlencoded",
 				"sendSingle": true,
 			},
 			data: []map[string]interface{}{{
@@ -186,6 +188,16 @@ func TestRestSink_Apply(t *testing.T) {
 			assert.Equal(t, tt.result, requests)
 		})
 	}
+}
+
+func TestRestSinkProvision(t *testing.T) {
+	s := &RestSink{}
+	require.EqualError(t, s.Provision(context.Background(), map[string]any{
+		"url":      "http://localhost/test",
+		"method":   "get",
+		"bodyType": "form",
+		"format":   "json",
+	}), "format must be urlencoded if bodyType is form")
 }
 
 func TestRestSinkCollect(t *testing.T) {
