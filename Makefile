@@ -157,6 +157,7 @@ docker:
 	docker buildx build --no-cache --platform=linux/amd64 -t $(TARGET):$(VERSION)-slim -f deploy/docker/Dockerfile-slim . --load
 	docker buildx build --no-cache --platform=linux/amd64 -t $(TARGET):$(VERSION)-full -f deploy/docker/Dockerfile-full . --load
 	docker buildx build --no-cache --platform=linux/amd64 -t $(TARGET):$(VERSION)-dev -f deploy/docker/Dockerfile-dev . --load
+	docker buildx build --no-cache --platform=linux/amd64 -t $(TARGET):$(VERSION)-alpine-python -f deploy/docker/Dockerfile-alpine-python . --load
 
 PLUGINS := sinks/influx \
 	sinks/influx2 \
