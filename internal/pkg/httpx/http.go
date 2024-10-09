@@ -33,10 +33,10 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 )
 
-var BodyTypeMap = map[string]string{"none": "", "text": "text/plain", "json": "application/json", "html": "text/html", "xml": "application/xml", "javascript": "application/javascript", "form": ""}
+var BodyTypeMap = map[string]string{"none": "", "text": "text/plain", "json": "application/json", "html": "text/html", "xml": "application/xml", "javascript": "application/javascript", "form": "application/x-www-form-urlencoded;param=value"}
 
 // Send v must be a []byte or map
-func Send(logger api.Logger, client *http.Client, bodyType string, method string, u string, headers map[string]string, sendSingle bool, v interface{}) (*http.Response, error) {
+func Send(logger api.Logger, client *http.Client, bodyType string, method string, u string, headers map[string]string, v any) (*http.Response, error) {
 	var req *http.Request
 	var err error
 	switch bodyType {
@@ -45,7 +45,7 @@ func Send(logger api.Logger, client *http.Client, bodyType string, method string
 		if err != nil {
 			return nil, fmt.Errorf("fail to create request: %v", err)
 		}
-	case "json", "text", "javascript", "html", "xml":
+	case "json", "text", "javascript", "html", "xml", "form":
 		var body io.Reader
 		switch t := v.(type) {
 		case []byte:
@@ -53,11 +53,7 @@ func Send(logger api.Logger, client *http.Client, bodyType string, method string
 		case string:
 			body = strings.NewReader(t)
 		default:
-			vj, err := json.Marshal(v)
-			if err != nil {
-				return nil, fmt.Errorf("invalid content: %v", v)
-			}
-			body = bytes.NewBuffer(vj)
+			return nil, fmt.Errorf("http send only supports bytes but receive invalid content: %v", v)
 		}
 		req, err = http.NewRequest(method, u, body)
 		if err != nil {
@@ -65,34 +61,6 @@ func Send(logger api.Logger, client *http.Client, bodyType string, method string
 		}
 		if req.Header.Get("Content-Type") == "" {
 			req.Header.Set("Content-Type", BodyTypeMap[bodyType])
-		}
-	case "form":
-		form := url.Values{}
-		im, err := convertToMap(v, sendSingle)
-		if err != nil {
-			return nil, err
-		}
-		for key, value := range im {
-			var vstr string
-			switch value.(type) {
-			case []interface{}, map[string]interface{}:
-				if temp, err := json.Marshal(value); err != nil {
-					return nil, fmt.Errorf("fail to parse from value: %v", err)
-				} else {
-					vstr = string(temp)
-				}
-			default:
-				vstr = fmt.Sprintf("%v", value)
-			}
-			form.Set(key, vstr)
-		}
-		body := io.NopCloser(strings.NewReader(form.Encode()))
-		req, err = http.NewRequest(method, u, body)
-		if err != nil {
-			return nil, fmt.Errorf("fail to create request: %v", err)
-		}
-		if req.Header.Get("Content-Type") == "" {
-			req.Header.Set("Content-Type", "application/x-www-form-urlencoded;param=value")
 		}
 	default:
 		return nil, fmt.Errorf("unsupported body type %s", bodyType)
