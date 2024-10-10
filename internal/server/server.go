@@ -61,6 +61,7 @@ var (
 	rulesetProcessor       *processor.RulesetProcessor
 	ruleMigrationProcessor *RuleMigrationProcessor
 	stopSignal             chan struct{}
+	cpuProfiler            = &ekuiperProfile{}
 )
 
 // newNetListener allows EdgeX Foundry, protected by OpenZiti to override and obtain a transport
@@ -138,6 +139,9 @@ func StartUp(Version string) {
 	createPaths()
 	conf.SetupEnv()
 	conf.InitConf()
+	if conf.Config.Basic.Prometheus {
+		promMetrics.RegisterMetrics()
+	}
 
 	// Print inited modules
 	for n := range modules.Sources {
@@ -155,7 +159,7 @@ func StartUp(Version string) {
 
 	serverCtx, serverCancel := context.WithCancel(context.Background())
 	if conf.Config.Basic.EnableResourceProfiling {
-		err := StartCPUProfiling(serverCtx, &ekuiperProfile{})
+		err := StartCPUProfiling(serverCtx, cpuProfiler)
 		conf.Log.Warn(err)
 	}
 
@@ -263,10 +267,6 @@ func StartUp(Version string) {
 	for k, v := range servers {
 		logger.Infof("start service %s", k)
 		v.serve()
-	}
-
-	if conf.Config.Basic.Prometheus {
-		promMetrics.RegisterMetrics()
 	}
 	// Register conf managers
 	InitConfManagers()
