@@ -33,6 +33,8 @@ jobs:
           DEBIAN_FRONTEND: noninteractive
         run: |
           pip3 install pynng==0.7.2 && sudo apt-get update && sudo apt-get install ffmpeg libzmq3-dev -y
+      - name: make install.sh executable
+        run: chmod +x ./extensions/functions/onnx/install.sh
       - name: Build plugins
         run: |
           set -e -u -x
@@ -54,6 +56,10 @@ jobs:
           cd ../../../../
           cp -r sdk/python/ekuiper sdk/python/example/pysam/
           cp test/lookup.json data/lookup.json
+
+          cd extensions/functions/onnx
+          sudo ./install.sh
+
       - name: Run test case
         run: |
           make failpoint-enable
