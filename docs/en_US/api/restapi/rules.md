@@ -248,6 +248,11 @@ GET  http://localhost:9081/rules/{id}/explain
 
 ```shell
 GET http://localhost:9081/rules/usage/cpu
+
+{
+    "rule1": 220,
+    "rule2": 270
+}
 ```
 
 Get the CPU time used by all rules in the past 30 seconds, in milliseconds.

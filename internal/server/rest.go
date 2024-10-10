@@ -1006,13 +1006,18 @@ func testRuleStopHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func rulesTopCpuUsageHandler(w http.ResponseWriter, r *http.Request) {
+	if !conf.Config.Basic.EnableResourceProfiling {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("cpu usage not enabled"))
+		return
+	}
 	dataMap := cpuProfiler.GetWindowData()
 	if dataMap == nil {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("cpu usage not ready"))
 		return
 	}
-	ruleResult, ok := dataMap["ok"]
+	ruleResult, ok := dataMap["rule"]
 	if !ok {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("cpu usage not ready"))

@@ -139,6 +139,9 @@ func StartUp(Version string) {
 	createPaths()
 	conf.SetupEnv()
 	conf.InitConf()
+	if conf.Config.Basic.Prometheus {
+		promMetrics.RegisterMetrics()
+	}
 
 	// Print inited modules
 	for n := range modules.Sources {
@@ -264,10 +267,6 @@ func StartUp(Version string) {
 	for k, v := range servers {
 		logger.Infof("start service %s", k)
 		v.serve()
-	}
-
-	if conf.Config.Basic.Prometheus {
-		promMetrics.RegisterMetrics()
 	}
 	// Register conf managers
 	InitConfManagers()

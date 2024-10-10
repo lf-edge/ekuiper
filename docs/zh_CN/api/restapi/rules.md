@@ -219,6 +219,11 @@ GET  http://localhost:9081/rules/{id}/explain
 
 ```shell
 GET http://localhost:9081/rules/usage/cpu
+
+{
+    "rule1": 220,
+    "rule2": 270
+}
 ```
 
 获取所有规则在过去 30s 内的所使用的 CPU 时间，单位为毫秒
