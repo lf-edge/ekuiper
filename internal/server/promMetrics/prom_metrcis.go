@@ -50,7 +50,7 @@ func InitServerMetrics() {
 	RuleCPUUsageGauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: "kuiper",
 		Subsystem: "rule",
-		Name:      "cpuUsage",
+		Name:      "cpu_ms",
 		Help:      "gauge of rule CPU usage",
 	}, []string{LblRuleIDType})
 }
