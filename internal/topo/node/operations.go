@@ -26,7 +26,6 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node/tracenode"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
-	"github.com/lf-edge/ekuiper/v2/pkg/tracer"
 )
 
 // UnOperation interface represents unary operations (i.e. Map, Filter, etc)
@@ -159,11 +158,13 @@ func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
 }
 
 func (o *UnaryOperator) traceUnarySplitRow(ctx, spanCtx api.StreamContext, row xsql.Row) {
-	if !ctx.IsTraceEnabled() || row == nil {
+	if row == nil {
 		return
 	}
-	subCtx, span := tracer.GetTracer().Start(spanCtx, fmt.Sprintf("%s_split", ctx.GetOpId()))
-	defer span.End()
-	row.SetTracerCtx(topoContext.WithContext(subCtx))
-	tracenode.RecordRowOrCollection(row, span)
+	traced, subCtx, span := tracenode.StartTraceBySpanCtx(ctx, spanCtx, fmt.Sprintf("%s_split", ctx.GetOpId()))
+	if traced {
+		defer span.End()
+		row.SetTracerCtx(topoContext.WithContext(subCtx))
+		tracenode.RecordRowOrCollection(row, span)
+	}
 }

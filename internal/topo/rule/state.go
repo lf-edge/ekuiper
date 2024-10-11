@@ -33,6 +33,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/schedule"
 	"github.com/lf-edge/ekuiper/v2/internal/topo"
+	kctx "github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/planner"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
@@ -562,11 +563,11 @@ func (s *State) GetTopoGraph() *def.PrintableTopo {
 	}
 }
 
-func (s *State) SetIsTraceEnabled(isEnabled bool) error {
+func (s *State) SetIsTraceEnabled(isEnabled bool, stra kctx.TraceStrategy) error {
 	s.Lock()
 	defer s.Unlock()
 	if s.topology != nil {
-		s.topology.EnableTracer(isEnabled)
+		s.topology.EnableTracer(isEnabled, stra)
 		return nil
 	}
 	return fmt.Errorf("rule %s set trace failed due to rule didn't started", s.Rule.Name)

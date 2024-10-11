@@ -121,7 +121,7 @@ func (ms *SourceConnector) onMessage(ctx api.StreamContext, msg pahoMqtt.Message
 		ms.eof(ctx)
 		return
 	}
-	traced, spanCtx, span := tracenode.StartTrace(ctx, ctx.GetOpId())
+	traced, spanCtx, span := tracenode.StartTraceBackground(ctx, ctx.GetOpId())
 	meta := map[string]interface{}{
 		"topic":     msg.Topic(),
 		"qos":       msg.Qos(),

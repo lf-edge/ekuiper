@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"regexp"
 	"runtime/pprof"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"text/template"
@@ -37,7 +38,20 @@ const (
 	LoggerKey        = "$$logger"
 	RuleStartKey     = "$$ruleStart"
 	RuleWaitGroupKey = "$$ruleWaitGroup"
+	TraceStrategyKey = "$$TraceStrategyKey"
 )
+
+const (
+	AlwaysTraceStrategy = iota
+	HeadTraceStrategy
+)
+
+type TraceStrategy int
+
+type TraceStrategyWrapper struct {
+	sync.RWMutex
+	Strategy TraceStrategy
+}
 
 type DefaultContext struct {
 	ruleId         string
@@ -46,6 +60,7 @@ type DefaultContext struct {
 	ctx            context.Context
 	err            error
 	isTraceEnabled *atomic.Bool
+	strategy       *TraceStrategyWrapper
 	// Only initialized after withMeta set
 	store    api.Store
 	state    *sync.Map
@@ -64,6 +79,7 @@ func RuleBackground(ruleName string) *DefaultContext {
 	c := &DefaultContext{
 		ctx:            ctx,
 		isTraceEnabled: &atomic.Bool{},
+		strategy:       &TraceStrategyWrapper{Strategy: AlwaysTraceStrategy},
 	}
 	c.isTraceEnabled.Store(false)
 	return c
@@ -75,6 +91,7 @@ func Background() *DefaultContext {
 		isTraceEnabled: &atomic.Bool{},
 	}
 	c.isTraceEnabled.Store(false)
+	c.strategy = &TraceStrategyWrapper{Strategy: AlwaysTraceStrategy}
 	return c
 }
 
@@ -84,6 +101,7 @@ func WithContext(ctx context.Context) *DefaultContext {
 		isTraceEnabled: &atomic.Bool{},
 	}
 	c.isTraceEnabled.Store(false)
+	c.strategy = &TraceStrategyWrapper{Strategy: AlwaysTraceStrategy}
 	return c
 }
 
@@ -94,6 +112,7 @@ func WithValue(parent *DefaultContext, key, val interface{}) *DefaultContext {
 
 func (c *DefaultContext) PropagateTracer(par *DefaultContext) {
 	c.isTraceEnabled = par.isTraceEnabled
+	c.strategy = par.strategy
 }
 
 // Deadline Implement context interface
@@ -217,6 +236,7 @@ func (c *DefaultContext) WithMeta(ruleId string, opId string, store api.Store) a
 		tpReg:          sync.Map{},
 		jpReg:          sync.Map{},
 		isTraceEnabled: c.isTraceEnabled,
+		strategy:       c.strategy,
 	}
 }
 
@@ -228,6 +248,7 @@ func (c *DefaultContext) WithInstance(instanceId int) api.StreamContext {
 		ctx:            c.ctx,
 		state:          c.state,
 		isTraceEnabled: c.isTraceEnabled,
+		strategy:       c.strategy,
 	}
 }
 
@@ -240,6 +261,7 @@ func (c *DefaultContext) WithCancel() (api.StreamContext, context.CancelFunc) {
 		ctx:            ctx,
 		state:          c.state,
 		isTraceEnabled: c.isTraceEnabled,
+		strategy:       c.strategy,
 	}, cancel
 }
 
@@ -307,4 +329,26 @@ func (c *DefaultContext) EnableTracer(enabled bool) {
 
 func (c *DefaultContext) IsTraceEnabled() bool {
 	return c.isTraceEnabled.Load()
+}
+
+func (c *DefaultContext) GetStrategy() TraceStrategy {
+	c.strategy.RLock()
+	defer c.strategy.RUnlock()
+	return c.strategy.Strategy
+}
+
+func (c *DefaultContext) SetStrategy(s TraceStrategy) {
+	c.strategy.Lock()
+	defer c.strategy.Unlock()
+	c.strategy.Strategy = s
+}
+
+func StringToStrategy(s string) TraceStrategy {
+	switch strings.ToLower(s) {
+	case "always":
+		return AlwaysTraceStrategy
+	case "head":
+		return HeadTraceStrategy
+	}
+	return AlwaysTraceStrategy
 }

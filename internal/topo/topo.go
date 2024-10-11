@@ -231,8 +231,12 @@ func (s *Topo) prepareContext() {
 	}
 }
 
-func (s *Topo) EnableTracer(isEnabled bool) {
+func (s *Topo) EnableTracer(isEnabled bool, strategy kctx.TraceStrategy) {
 	s.ctx.EnableTracer(isEnabled)
+	dctx, ok := s.ctx.(*kctx.DefaultContext)
+	if ok {
+		dctx.SetStrategy(strategy)
+	}
 }
 
 func (s *Topo) IsTraceEnabled() bool {
