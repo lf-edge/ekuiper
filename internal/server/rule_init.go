@@ -262,16 +262,18 @@ func StartCPUProfiling(ctx context.Context, cpuProfile Profiler) error {
 			case <-ctx.Done():
 				return
 			case <-ticker.C:
-				data := cpuProfile.GetWindowData()
-				if data == nil {
-					continue
-				}
-				ruleUsage, ok := data["rule"]
-				if !ok {
-					continue
-				}
-				for labelValue, t := range ruleUsage.Stats {
-					promMetrics.SetRuleCPUUsageGauge(labelValue, t)
+				if conf.Config.Basic.Prometheus {
+					data := cpuProfile.GetWindowData()
+					if data == nil {
+						continue
+					}
+					ruleUsage, ok := data["rule"]
+					if !ok {
+						continue
+					}
+					for labelValue, t := range ruleUsage.Stats {
+						promMetrics.SetRuleCPUUsageGauge(labelValue, t)
+					}
 				}
 			}
 		}

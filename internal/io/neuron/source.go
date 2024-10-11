@@ -145,7 +145,7 @@ func extractTraceMeta(ctx api.StreamContext, data []byte) ([]byte, map[string]in
 		spanID := data[NeuronTraceSpanIDStartIndex:NeuronTraceSpanIDEndIndex]
 		traced, tracerCtx, span = tracenode.StartTraceByID(ctx, [16]byte(traceID), [8]byte(spanID))
 	} else {
-		traced, tracerCtx, span = tracenode.StartTrace(ctx, ctx.GetOpId())
+		traced, tracerCtx, span = tracenode.StartTraceBackground(ctx, ctx.GetOpId())
 	}
 	if traced {
 		meta["traceId"] = span.SpanContext().TraceID().String()

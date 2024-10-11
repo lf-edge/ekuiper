@@ -23,13 +23,11 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
-	topoContext "github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node/tracenode"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/transform"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
-	"github.com/lf-edge/ekuiper/v2/pkg/tracer"
 )
 
 // TransformOp transforms the row/collection to sink tuples
@@ -152,10 +150,8 @@ func toSinkTuple(ctx, spanCtx api.StreamContext, bs any, props map[string]string
 	if bs == nil {
 		return bs
 	}
-	var tupleCtx api.StreamContext
-	if ctx.IsTraceEnabled() {
-		sctx, span := tracer.GetTracer().Start(spanCtx, "transform_op_split")
-		tupleCtx = topoContext.WithContext(sctx)
+	traced, tupleCtx, span := tracenode.StartTraceBySpanCtx(ctx, spanCtx, "transform_op_split")
+	if traced {
 		defer span.End()
 	}
 	switch bt := bs.(type) {

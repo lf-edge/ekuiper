@@ -29,7 +29,6 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
-	"github.com/lf-edge/ekuiper/v2/pkg/tracer"
 )
 
 type BatchOp struct {
@@ -205,7 +204,7 @@ func (b *BatchOp) runWithTicker(ctx api.StreamContext, errCh chan<- error) {
 }
 
 func (b *BatchOp) handleNextWindowTupleSpan(ctx api.StreamContext) {
-	traced, spanCtx, span := tracenode.StartTrace(ctx, "batch_op")
+	traced, spanCtx, span := tracenode.StartTraceBackground(ctx, "batch_op")
 	if traced {
 		b.nextSpanCtx = spanCtx
 		b.nextSpan = span
@@ -216,18 +215,13 @@ func (b *BatchOp) handleNextWindowTupleSpan(ctx api.StreamContext) {
 }
 
 func (b *BatchOp) handleTraceIngest(ctx api.StreamContext, d any, row xsql.Row) {
-	if !ctx.IsTraceEnabled() {
-		return
+	traced, spanCtx, span := tracenode.TraceInput(ctx, d, "batch_op_ingest_split")
+	if traced {
+		b.rowHandle[row] = struct{}{}
+		row.SetTracerCtx(topoContext.WithContext(spanCtx))
+		tracenode.RecordRowOrCollection(row, span)
+		defer span.End()
 	}
-	input, ok := d.(xsql.HasTracerCtx)
-	if !ok {
-		return
-	}
-	b.rowHandle[row] = struct{}{}
-	spanCtx, span := tracer.GetTracer().Start(input.GetTracerCtx(), "batch_op_ingest_split")
-	row.SetTracerCtx(topoContext.WithContext(spanCtx))
-	tracenode.RecordRowOrCollection(row, span)
-	span.End()
 }
 
 func (b *BatchOp) handleTraceEmitTuple(ctx api.StreamContext, wt *xsql.WindowTuples) {
