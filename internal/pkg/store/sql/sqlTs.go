@@ -1,4 +1,4 @@
-// Copyright 2022-2023 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -30,6 +30,9 @@ type ts struct {
 }
 
 func createSqlTs(database Database, table string) (*ts, error) {
+	if !isValidTableName(table) {
+		return nil, fmt.Errorf("invalid table name: %s", table)
+	}
 	store := &ts{
 		database: database,
 		table:    table,
