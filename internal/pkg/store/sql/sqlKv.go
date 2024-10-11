@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -31,6 +31,9 @@ type sqlKvStore struct {
 }
 
 func createSqlKvStore(database Database, table string) (*sqlKvStore, error) {
+	if !isValidTableName(table) {
+		return nil, fmt.Errorf("invalid table name: %s", table)
+	}
 	store := &sqlKvStore{
 		database: database,
 		table:    table,
@@ -157,12 +160,12 @@ func (kv *sqlKvStore) Delete(key string) error {
 		if nil != err || 0 == len(tmp) {
 			return errorx.NewWithCode(errorx.NOT_FOUND, fmt.Sprintf("%s is not found", key))
 		}
-		query = fmt.Sprintf("DELETE FROM '%s' WHERE key='%s';", kv.table, key)
+		query = fmt.Sprintf("DELETE FROM '%s' WHERE key=?;", kv.table)
 		stmt, err = db.Prepare(query)
 		if err != nil {
 			return err
 		}
-		_, err = stmt.Exec()
+		_, err = stmt.Exec(key)
 		return err
 	})
 }
