@@ -21,11 +21,15 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/pingcap/failpoint"
 )
 
 func UnzipTo(f *zip.File, fpath string) (err error) {
+	if strings.Contains(fpath, "..") {
+		return fmt.Errorf("invalid file path: %s", fpath)
+	}
 	defer func() {
 		failpoint.Inject("UnzipToErr", func() {
 			err = errors.New("UnzipToErr")

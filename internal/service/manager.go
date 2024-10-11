@@ -452,7 +452,12 @@ func (m *Manager) unzip(name, src string) error {
 	}
 	// unzip
 	for _, file := range r.File {
-		err := filex.UnzipTo(file, path.Join(m.etcDir, file.Name))
+		// Validate the file path to prevent directory traversal
+		fpath := path.Join(m.etcDir, file.Name)
+		if !strings.HasPrefix(filepath.Clean(fpath), filepath.Clean(m.etcDir)) {
+			return fmt.Errorf("invalid file path: %s", fpath)
+		}
+		err := filex.UnzipTo(file, fpath)
 		if err != nil {
 			return err
 		}

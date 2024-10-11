@@ -510,6 +510,9 @@ func (rr *Manager) install(t plugin2.PluginType, name, src string, shellParas []
 	for _, file := range r.File {
 		zipFiles = append(zipFiles, file.Name)
 		fileName := file.Name
+		if strings.Contains(fileName, "..") {
+			return version, fmt.Errorf("invalid file path: %s", fileName)
+		}
 		switch {
 		case yamlFile == fileName:
 			yamlFileChecked = true

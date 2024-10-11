@@ -346,6 +346,9 @@ func (m *Manager) install(name, src string, shellParas []string) (resultErr erro
 	target := ""
 	for _, file := range r.File {
 		fileName := file.Name
+		if strings.Contains(fileName, "..") {
+			return fmt.Errorf("invalid file path: %s", fileName)
+		}
 		if strings.HasPrefix(fileName, "sources/") || strings.HasPrefix(fileName, "sinks/") || strings.HasPrefix(fileName, "functions/") {
 			target = path.Join(m.pluginConfDir, fileName)
 		} else {
