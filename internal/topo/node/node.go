@@ -256,6 +256,23 @@ func (o *defaultSinkNode) handleEof(ctx api.StreamContext, d xsql.EOFTuple) {
 	}
 }
 
+// onProcessStart do the common works(metric, trace) when receiving a message from upstream
+func (o *defaultNode) onProcessStart(ctx api.StreamContext) {
+	o.statManager.IncTotalRecordsIn()
+	o.statManager.ProcessTimeStart()
+}
+
+// onProcessEnd do the common works(metric, trace) after processing a message from upstream
+func (o *defaultNode) onProcessEnd(ctx api.StreamContext) {
+	o.statManager.ProcessTimeEnd()
+	o.statManager.IncTotalMessagesProcessed(1)
+}
+
+// onSend do the common works(metric, trace) after sending a message to downstream
+func (o *defaultNode) onSend(ctx api.StreamContext, val any) {
+	o.statManager.IncTotalRecordsOut()
+}
+
 func SourcePing(sourceType string, config map[string]any) error {
 	source, err := io.Source(sourceType)
 	if err != nil {

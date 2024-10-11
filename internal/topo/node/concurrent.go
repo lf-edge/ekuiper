@@ -65,7 +65,7 @@ func merge(ctx api.StreamContext, node *defaultSinkNode, sendInterval time.Durat
 						continue
 					}
 					node.Broadcast(dd)
-					node.statManager.IncTotalRecordsOut()
+					node.onSend(ctx, dd)
 					if sendInterval > 0 {
 						time.Sleep(sendInterval)
 					}
@@ -114,9 +114,9 @@ func worker(ctx api.StreamContext, node *defaultSinkNode, i int, wf workerFunc, 
 			case error, *xsql.WatermarkTuple, xsql.EOFTuple:
 				result = []any{item}
 			default:
-				node.statManager.IncTotalRecordsIn()
+				node.onProcessStart(ctx)
 				result = wf(ctx, item)
-				node.statManager.IncTotalMessagesProcessed(1)
+				node.onProcessEnd(ctx)
 			}
 			select {
 			case output <- result:

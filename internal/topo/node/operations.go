@@ -106,8 +106,7 @@ func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
 			if processed {
 				break
 			}
-			o.statManager.IncTotalRecordsIn()
-			o.statManager.ProcessTimeStart()
+			o.onProcessStart(ctx)
 			traced, _, span := tracenode.TraceInput(ctx, data, ctx.GetOpId())
 			result := o.op.Apply(exeCtx, data, fv, afv)
 			switch val := result.(type) {
@@ -115,39 +114,31 @@ func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
 				if traced {
 					span.End()
 				}
-				o.statManager.IncTotalMessagesProcessed(1)
-				continue
 			case error:
 				logger.Errorf("Operation %s error: %s", ctx.GetOpId(), val)
 				if traced {
 					span.End()
 				}
 				o.Broadcast(val)
-				o.statManager.IncTotalMessagesProcessed(1)
 				o.statManager.IncTotalExceptions(val.Error())
-				continue
 			case []xsql.Row:
-				o.statManager.ProcessTimeEnd()
 				if traced {
 					span.End()
 				}
 				for _, v := range val {
 					o.Broadcast(v)
-					o.statManager.IncTotalMessagesProcessed(1)
-					o.statManager.IncTotalRecordsOut()
+					o.onSend(ctx, v)
 				}
-				o.statManager.SetBufferLength(int64(len(o.input)))
 			default:
-				o.statManager.ProcessTimeEnd()
 				if traced {
 					tracenode.RecordRowOrCollection(val, span)
 					span.End()
 				}
 				o.Broadcast(val)
-				o.statManager.IncTotalMessagesProcessed(1)
-				o.statManager.IncTotalRecordsOut()
-				o.statManager.SetBufferLength(int64(len(o.input)))
+				o.onSend(ctx, val)
 			}
+			o.onProcessEnd(ctx)
+			o.statManager.SetBufferLength(int64(len(o.input)))
 		// is cancelling
 		case <-ctx.Done():
 			logger.Infof("unary operator %s instance %d cancelling....", o.name, ctx.GetInstanceId())

@@ -62,8 +62,6 @@ func (o *EncryptNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 }
 
 func (o *EncryptNode) Worker(_ api.StreamContext, item any) []any {
-	o.statManager.ProcessTimeStart()
-	defer o.statManager.ProcessTimeEnd()
 	switch d := item.(type) {
 	case api.RawTuple:
 		r := o.tool.Encrypt(d.Raw())

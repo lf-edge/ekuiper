@@ -89,8 +89,7 @@ func (n *JoinAlignNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 					if processed {
 						break
 					}
-					n.statManager.IncTotalRecordsIn()
-					n.statManager.ProcessTimeStart()
+					n.onProcessStart(ctx)
 					switch d := data.(type) {
 					case *xsql.Tuple:
 						log.Debugf("JoinAlignNode receive tuple input %v", d)
@@ -113,6 +112,7 @@ func (n *JoinAlignNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 						n.Broadcast(e)
 						n.statManager.IncTotalExceptions(e.Error())
 					}
+					n.onProcessEnd(ctx)
 				case <-ctx.Done():
 					log.Info("Cancelling join align node....")
 					return nil
@@ -125,8 +125,7 @@ func (n *JoinAlignNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 	}()
 }
 
-func (n *JoinAlignNode) alignBatch(_ api.StreamContext, input any) {
-	n.statManager.ProcessTimeStart()
+func (n *JoinAlignNode) alignBatch(ctx api.StreamContext, input any) {
 	var w *xsql.WindowTuples
 	switch t := input.(type) {
 	case *xsql.Tuple:
@@ -145,8 +144,6 @@ func (n *JoinAlignNode) alignBatch(_ api.StreamContext, input any) {
 		}
 	}
 	n.Broadcast(w)
-	n.statManager.ProcessTimeEnd()
-	n.statManager.IncTotalRecordsOut()
-	n.statManager.IncTotalMessagesProcessed(int64(w.Len()))
+	n.onSend(ctx, w)
 	n.statManager.SetBufferLength(int64(len(n.input)))
 }

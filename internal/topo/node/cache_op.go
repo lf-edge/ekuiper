@@ -81,28 +81,22 @@ func (s *CacheOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 					if processed {
 						break
 					}
+					s.onProcessStart(ctx)
 					// If already have the cache, append this to cache and send the currItem
 					// Otherwise, send out the new data. If blocked, make it currItem
-					s.statManager.IncTotalRecordsIn()
-					s.statManager.ProcessTimeStart()
-
 					if s.hasCache { // already have cache, add current data to cache and send out the cache
 						err := s.cache.AddCache(ctx, data)
 						ctx.GetLogger().Debugf("add data %v to cache", data)
 						if err != nil {
 							s.statManager.IncTotalExceptions(err.Error())
 							s.Broadcast(err)
-							s.statManager.ProcessTimeEnd()
-							s.statManager.IncTotalMessagesProcessed(1)
 							break
 						}
 					} else {
 						s.currItem = data
 					}
 					s.send()
-
-					s.statManager.ProcessTimeEnd()
-					s.statManager.IncTotalMessagesProcessed(1)
+					s.onProcessEnd(ctx)
 					l := int64(len(s.input) + s.cache.CacheLength)
 					if s.currItem != nil {
 						l += 1
@@ -160,7 +154,7 @@ func (s *CacheOp) doBroadcast(val interface{}) {
 		s.ctx.GetLogger().Debugf("send out data %v", val)
 		// send through. The sink must retry until successful
 		s.currItem = nil
-		s.statManager.IncTotalRecordsOut()
+		s.onSend(s.ctx, val)
 	case <-s.ctx.Done():
 		// rule stop so stop waiting
 	default:

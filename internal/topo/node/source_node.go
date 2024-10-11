@@ -74,8 +74,7 @@ func (m *SourceNode) Open(ctx api.StreamContext, ctrlCh chan<- error) {
 
 func (m *SourceNode) ingestBytes(ctx api.StreamContext, data []byte, meta map[string]any, ts time.Time) {
 	ctx.GetLogger().Debugf("source connector %s receive data %+v", m.name, data)
-	m.statManager.ProcessTimeStart()
-	m.statManager.IncTotalRecordsIn()
+	m.onProcessStart(ctx)
 	tuple := &xsql.RawTuple{Emitter: m.name, Rawdata: data, Timestamp: ts, Metadata: meta}
 	if ctx.IsTraceEnabled() {
 		traceCtx, ok := meta["traceCtx"].(api.StreamContext)
@@ -85,16 +84,14 @@ func (m *SourceNode) ingestBytes(ctx api.StreamContext, data []byte, meta map[st
 		}
 	}
 	m.Broadcast(tuple)
-	m.statManager.IncTotalRecordsOut()
-	m.statManager.IncTotalMessagesProcessed(1)
-	m.statManager.ProcessTimeEnd()
-	m.updateState(ctx)
+	m.onSend(ctx, tuple)
+	m.onProcessEnd(ctx)
+	_ = m.updateState(ctx)
 }
 
 func (m *SourceNode) ingestAnyTuple(ctx api.StreamContext, data any, meta map[string]any, ts time.Time) {
 	ctx.GetLogger().Debugf("source connector %s receive data %+v", m.name, data)
-	m.statManager.ProcessTimeStart()
-	m.statManager.IncTotalRecordsIn()
+	m.onProcessStart(ctx)
 	switch mess := data.(type) {
 	// Maps are expected from user extension
 	case map[string]any:
@@ -109,7 +106,7 @@ func (m *SourceNode) ingestAnyTuple(ctx api.StreamContext, data any, meta map[st
 	case []byte:
 		tuple := &xsql.RawTuple{Emitter: m.name, Rawdata: mess, Timestamp: ts, Metadata: meta}
 		m.Broadcast(tuple)
-		m.statManager.IncTotalRecordsOut()
+		m.onSend(ctx, tuple)
 	// Source tuples are expected from memory
 	case *xsql.Tuple:
 		m.ingestTuple(mess, ts)
@@ -125,8 +122,7 @@ func (m *SourceNode) ingestAnyTuple(ctx api.StreamContext, data any, meta map[st
 		// should never happen
 		panic(fmt.Sprintf("receive wrong data %v", data))
 	}
-	m.statManager.IncTotalMessagesProcessed(1)
-	m.statManager.ProcessTimeEnd()
+	m.onProcessEnd(ctx)
 	m.updateState(ctx)
 }
 
@@ -148,7 +144,7 @@ func (m *SourceNode) ingestMap(t map[string]any, meta map[string]any, ts time.Ti
 func (m *SourceNode) ingestTuple(t *xsql.Tuple, ts time.Time) {
 	tuple := &xsql.Tuple{Emitter: m.name, Message: t.Message, Timestamp: ts, Metadata: t.Metadata}
 	m.Broadcast(tuple)
-	m.statManager.IncTotalRecordsOut()
+	m.onSend(m.ctx, tuple)
 }
 
 func (m *SourceNode) ingestError(ctx api.StreamContext, err error) {
