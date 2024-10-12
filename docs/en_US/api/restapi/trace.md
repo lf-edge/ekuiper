@@ -5,13 +5,13 @@ eKuiper supports viewing recent tracing data of rules through API.
 ## Start trace the data of specific rule
 
 ```shell
-POST http://localhost:9081/rule/{ruleID}/trace/start
+POST http://localhost:9081/rules/{ruleID}/trace/start
 ```
 
 ## Stop trace the data of specific rule
 
 ```shell
-POST http://localhost:9081/rule/{ruleID}/trace/stop
+POST http://localhost:9081/rules/{ruleID}/trace/stop
 ```
 
 ## View the latest Trace ID based on the rule ID

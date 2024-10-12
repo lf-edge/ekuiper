@@ -82,7 +82,7 @@ The numeric types of these metrics can all be monitored using Prometheus. In the
 
 View CPU running metrics for a rule
 
-- kuiper_rule_cpuUsage: The CPU running indicator of the rule represents the CPU time used by the CPU in the past 30 seconds, in ms.
+- kuiper_rule_cpu_ms: The CPU running indicator of the rule represents the CPU time used by the CPU in the past 30 seconds, in ms.
 
 ## Configuring the Prometheus Service in eKuiper
 

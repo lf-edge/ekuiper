@@ -82,7 +82,7 @@ kuiper_rule_count: eKuiper 中有多少条规则运行，多少条规则暂停�
 
 查看规则的 CPU 运行指标
 
-- kuiper_rule_cpuUsage 规则的 CPU 运行指标，代表了 CPU 在过去 30 秒内所使用的 CPU 时间，单位为 ms
+- kuiper_rule_cpu_ms 规则的 CPU 运行指标，代表了 CPU 在过去 30 秒内所使用的 CPU 时间，单位为 ms
 
 ## 配置 eKuiper 的 Prometheus 服务
 

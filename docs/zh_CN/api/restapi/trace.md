@@ -5,13 +5,13 @@ eKuiper 支持通过 API 查看规则最近的追踪数据。
 ## 开启特定规则的数据追踪
 
 ```shell
-POST http://localhost:9081/rule/{ruleID}/trace/start
+POST http://localhost:9081/rules/{ruleID}/trace/start
 ```
 
 ## 关闭特定规则的数据追踪
 
 ```shell
-POST http://localhost:9081/rule/{ruleID}/trace/stop
+POST http://localhost:9081/rules/{ruleID}/trace/stop
 ```
 
 ## 根据规则 ID 查看最近的 Trace ID
