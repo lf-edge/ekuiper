@@ -645,6 +645,23 @@ func (l *TransformedTupleList) ToMaps() []map[string]any {
 	return l.Maps
 }
 
+func (l *TransformedTupleList) Clone() *TransformedTupleList {
+	ng := make([]api.MessageTuple, len(l.Content))
+	for i, g := range l.Content {
+		switch gt := g.(type) {
+		case Row:
+			ng[i] = gt.Clone()
+		default:
+			ng[i] = g
+		}
+	}
+	return &TransformedTupleList{
+		Ctx:     l.Ctx,
+		Content: ng,
+		Props:   l.Props,
+	}
+}
+
 func (l *TransformedTupleList) RangeOfTuples(f func(index int, tuple api.MessageTuple) bool) {
 	for i, v := range l.Content {
 		if !f(i, v) {
