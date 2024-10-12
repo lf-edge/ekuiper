@@ -89,7 +89,7 @@ func (n *JoinAlignNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 					if processed {
 						break
 					}
-					n.onProcessStart(ctx)
+					n.onProcessStart(ctx, data)
 					switch d := data.(type) {
 					case *xsql.Tuple:
 						log.Debugf("JoinAlignNode receive tuple input %v", d)
@@ -108,9 +108,7 @@ func (n *JoinAlignNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 						log.Debugf("JoinAlignNode receive window input %v", d)
 						n.alignBatch(ctx, d)
 					default:
-						e := fmt.Errorf("run JoinAlignNode error: invalid input type but got %[1]T(%[1]v)", d)
-						n.Broadcast(e)
-						n.statManager.IncTotalExceptions(e.Error())
+						n.onError(ctx, fmt.Errorf("run JoinAlignNode error: invalid input type but got %[1]T(%[1]v)", d))
 					}
 					n.onProcessEnd(ctx)
 				case <-ctx.Done():

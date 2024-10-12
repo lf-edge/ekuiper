@@ -114,7 +114,7 @@ func worker(ctx api.StreamContext, node *defaultSinkNode, i int, wf workerFunc, 
 			case error, *xsql.WatermarkTuple, xsql.EOFTuple:
 				result = []any{item}
 			default:
-				node.onProcessStart(ctx)
+				node.onProcessStart(ctx, item)
 				result = wf(ctx, item)
 				node.onProcessEnd(ctx)
 			}

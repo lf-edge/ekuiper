@@ -23,7 +23,6 @@ import (
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
-	"github.com/lf-edge/ekuiper/v2/internal/topo/node/tracenode"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
@@ -88,16 +87,10 @@ func (s *SinkNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 					if processed {
 						break
 					}
-					traced, _, span := tracenode.TraceInput(ctx, data, ctx.GetOpId())
-					if traced {
-						tracenode.RecordRowOrCollection(data, span)
-						span.End()
-					}
-					s.onProcessStart(ctx)
+					s.onProcessStart(ctx, data)
 					err = s.doCollect(ctx, s.sink, data)
 					if err != nil { // resend handling when enabling cache. Two cases: 1. send to alter queue with resendOUt. 2. retry (blocking) until success or unrecoverable error if resendInterval is set
-						ctx.GetLogger().Error(err)
-						s.statManager.IncTotalExceptions(err.Error())
+						s.onError(ctx, err)
 						if s.resendOut != nil {
 							s.BroadcastCustomized(data, func(val any) {
 								select {
@@ -106,7 +99,7 @@ func (s *SinkNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 								case <-ctx.Done():
 									// rule stop so stop waiting
 								default:
-									s.statManager.IncTotalExceptions(fmt.Sprintf("buffer full, drop message from %s to resend sink", s.name))
+									s.onError(ctx, fmt.Errorf("buffer full, drop message from %s to resend sink", s.name))
 								}
 							})
 						} else if s.resendInterval > 0 {

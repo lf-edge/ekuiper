@@ -113,7 +113,7 @@ func (w *WatermarkOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 					if processed {
 						break
 					}
-					w.onProcessStart(ctx)
+					w.onProcessStart(ctx, data)
 					switch d := data.(type) {
 					case *xsql.Tuple:
 						// whether to drop the late event
@@ -122,9 +122,7 @@ func (w *WatermarkOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 							w.addAndTrigger(ctx, d)
 						}
 					default:
-						e := fmt.Errorf("run watermark op error: expect *xsql.Tuple type but got %[1]T(%[1]v)", d)
-						w.Broadcast(e)
-						w.statManager.IncTotalExceptions(e.Error())
+						w.onError(ctx, fmt.Errorf("run watermark op error: expect *xsql.Tuple type but got %[1]T(%[1]v)", d))
 					}
 					w.onProcessEnd(ctx)
 				}

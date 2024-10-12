@@ -19,7 +19,6 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
-	"github.com/lf-edge/ekuiper/v2/internal/topo/node/tracenode"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 )
 
@@ -133,7 +132,6 @@ func (ps *ProjectSetOperator) handleSRFRow(ctx api.StreamContext, row xsql.Row) 
 	for i, v := range aValues {
 		newRow := row.Clone().(xsql.Row)
 		newRow.SetTracerCtx(row.GetTracerCtx())
-		traced, _, span := tracenode.TraceInput(ctx, newRow, ctx.GetOpId())
 		// clear original column value
 		newRow.Del(srfName)
 		if mv, ok := v.(map[string]interface{}); ok {
@@ -142,10 +140,6 @@ func (ps *ProjectSetOperator) handleSRFRow(ctx api.StreamContext, row xsql.Row) 
 			}
 		} else {
 			newRow.Set(srfName, v)
-		}
-		if traced {
-			tracenode.RecordRowOrCollection(newRow, span)
-			span.End()
 		}
 		res.appendTuple(i, newRow)
 	}

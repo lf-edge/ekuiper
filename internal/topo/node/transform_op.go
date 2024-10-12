@@ -23,7 +23,6 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
-	"github.com/lf-edge/ekuiper/v2/internal/topo/node/tracenode"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/transform"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
@@ -100,17 +99,16 @@ func (t *TransformOp) Worker(ctx api.StreamContext, item any) []any {
 		ctx.GetLogger().Debugf("receive empty collection, dropped")
 		return nil
 	}
-	traced, spanCtx, span := tracenode.TraceInput(ctx, item, "transform_op")
 	outs := itemToMap(item)
-	if traced {
-		tracenode.RecordRowOrCollection(item, span)
-		span.End()
-	}
 	if t.omitIfEmpty && (item == nil || len(outs) == 0) {
 		ctx.GetLogger().Debugf("receive empty result %v in sink, dropped", outs)
 		return nil
 	}
 	// MessageTuple or SinkTupleList
+	var spanCtx api.StreamContext
+	if input, ok := item.(xsql.HasTracerCtx); ok {
+		spanCtx = input.GetTracerCtx()
+	}
 	var result []any
 	if t.sendSingle {
 		result = make([]any, 0, len(outs))
@@ -148,21 +146,17 @@ func toSinkTuple(ctx, spanCtx api.StreamContext, bs any, props map[string]string
 	if bs == nil {
 		return bs
 	}
-	traced, tupleCtx, span := tracenode.StartTraceBySpanCtx(ctx, spanCtx, "transform_op_split")
-	if traced {
-		defer span.End()
-	}
 	switch bt := bs.(type) {
 	case []byte:
-		return &xsql.RawTuple{Ctx: tupleCtx, Rawdata: bt, Props: props, Timestamp: timex.GetNow()}
+		return &xsql.RawTuple{Ctx: spanCtx, Rawdata: bt, Props: props, Timestamp: timex.GetNow()}
 	case map[string]any:
-		return &xsql.Tuple{Ctx: tupleCtx, Message: bt, Timestamp: timex.GetNow(), Props: props}
+		return &xsql.Tuple{Ctx: spanCtx, Message: bt, Timestamp: timex.GetNow(), Props: props}
 	case []map[string]any:
 		tuples := make([]api.MessageTuple, 0, len(bt))
 		for _, m := range bt {
-			tuples = append(tuples, &xsql.Tuple{Ctx: tupleCtx, Message: m, Timestamp: timex.GetNow()})
+			tuples = append(tuples, &xsql.Tuple{Ctx: spanCtx, Message: m, Timestamp: timex.GetNow()})
 		}
-		return &xsql.TransformedTupleList{Ctx: tupleCtx, Content: tuples, Maps: bt, Props: props}
+		return &xsql.TransformedTupleList{Ctx: spanCtx, Content: tuples, Maps: bt, Props: props}
 	default:
 		return fmt.Errorf("invalid transform result type %v", bs)
 	}
