@@ -699,7 +699,7 @@ func (o *WindowOperator) isMatchCondition(ctx api.StreamContext, d *xsql.Tuple) 
 }
 
 func (o *WindowOperator) handleTraceIngestTuple(ctx api.StreamContext, t *xsql.Tuple) {
-	traced, _, span := tracenode.TraceRow(ctx, t, "window_op_ingest")
+	traced, _, span := tracenode.TraceInput(ctx, t, "window_op_ingest")
 	if traced {
 		span.SetAttributes(attribute.String(tracenode.DataKey, tracenode.ToStringRow(t)))
 		span.End()
@@ -728,7 +728,7 @@ func (o *WindowOperator) handleTraceEmitTuple(ctx api.StreamContext, wt *xsql.Wi
 			if ok {
 				_, stored := o.tupleSpanMap[t]
 				if stored {
-					traced, _, span := tracenode.TraceRow(ctx, t, "window_op_emit", trace.WithLinks(o.nextLink))
+					traced, _, span := tracenode.TraceInput(ctx, t, "window_op_emit", trace.WithLinks(o.nextLink))
 					if traced {
 						span.End()
 					}

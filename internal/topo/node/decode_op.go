@@ -387,7 +387,7 @@ func mergeTuple(ctx api.StreamContext, d *xsql.Tuple, result any) {
 }
 
 func toTupleFromRawTuple(ctx api.StreamContext, v map[string]any, d *xsql.RawTuple) *xsql.Tuple {
-	traced, spanCtx, span := tracenode.TraceRowTuple(ctx, d, ctx.GetOpId())
+	traced, spanCtx, span := tracenode.TraceInput(ctx, d, ctx.GetOpId())
 	t := &xsql.Tuple{
 		Ctx:       d.Ctx,
 		Message:   v,

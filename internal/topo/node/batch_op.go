@@ -232,7 +232,7 @@ func (b *BatchOp) handleTraceEmitTuple(ctx api.StreamContext, wt *xsql.WindowTup
 		for _, row := range wt.Content {
 			_, stored := b.rowHandle[row]
 			if stored {
-				traced, _, span := tracenode.TraceRow(ctx, row, "batch_op_emit", trace.WithLinks(b.nextLink))
+				traced, _, span := tracenode.TraceInput(ctx, row, "batch_op_emit", trace.WithLinks(b.nextLink))
 				if traced {
 					span.End()
 				}
