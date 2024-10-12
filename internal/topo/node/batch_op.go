@@ -226,11 +226,16 @@ func (b *BatchOp) handleTraceIngest(ctx api.StreamContext, d any, row xsql.Row) 
 
 func (b *BatchOp) handleTraceEmitTuple(ctx api.StreamContext, wt *xsql.WindowTuples) {
 	if ctx.IsTraceEnabled() {
+		if b.nextSpan == nil {
+			b.handleNextWindowTupleSpan(ctx)
+		}
 		for _, row := range wt.Content {
 			_, stored := b.rowHandle[row]
 			if stored {
-				_, _, span := tracenode.TraceRow(ctx, row, "batch_op_emit", trace.WithLinks(b.nextLink))
-				span.End()
+				traced, _, span := tracenode.TraceInput(ctx, row, "batch_op_emit", trace.WithLinks(b.nextLink))
+				if traced {
+					span.End()
+				}
 				delete(b.rowHandle, row)
 			}
 		}
