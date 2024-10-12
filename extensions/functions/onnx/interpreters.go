@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build onnx
-
 package main
 
 import (
@@ -43,6 +41,9 @@ func init() {
 	ipManager = &interpreterManager{
 		registry: make(map[string]*InterPreter),
 		path:     filepath.Join(path, "uploads"),
+	}
+	if conf.IsTesting {
+		ipManager.path = "test"
 	}
 }
 
