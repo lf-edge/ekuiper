@@ -23,7 +23,6 @@ import (
 
 	"github.com/benbjohnson/clock"
 	"github.com/lf-edge/ekuiper/contract/v2/api"
-	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
@@ -333,7 +332,7 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 			if processed {
 				break
 			}
-			o.onProcessStart(ctx)
+			o.onProcessStart(ctx, data)
 			switch d := data.(type) {
 			case *xsql.Tuple:
 				log.Debugf("Event window receive tuple %s", d.Message)
@@ -404,9 +403,7 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 				_ = ctx.PutState(WindowInputsKey, inputs)
 				_ = ctx.PutState(MsgCountKey, o.msgCount)
 			default:
-				e := fmt.Errorf("run Window error: expect xsql.Tuple type but got %[1]T(%[1]v)", d)
-				o.Broadcast(e)
-				o.statManager.IncTotalExceptions(e.Error())
+				o.onError(ctx, fmt.Errorf("run Window error: expect xsql.Tuple type but got %[1]T(%[1]v)", d))
 			}
 			o.onProcessEnd(ctx)
 			o.statManager.SetBufferLength(int64(len(o.input)))
@@ -697,10 +694,7 @@ func (o *WindowOperator) isMatchCondition(ctx api.StreamContext, d *xsql.Tuple) 
 }
 
 func (o *WindowOperator) handleTraceIngestTuple(ctx api.StreamContext, t *xsql.Tuple) {
-	traced, _, span := tracenode.TraceInput(ctx, t, "window_op_ingest")
-	if traced {
-		span.SetAttributes(attribute.String(tracenode.DataKey, tracenode.ToStringRow(t)))
-		span.End()
+	if ctx.IsTraceEnabled() {
 		o.tupleSpanMap[t] = struct{}{}
 	}
 }

@@ -81,15 +81,14 @@ func (s *CacheOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 					if processed {
 						break
 					}
-					s.onProcessStart(ctx)
+					s.onProcessStart(ctx, data)
 					// If already have the cache, append this to cache and send the currItem
 					// Otherwise, send out the new data. If blocked, make it currItem
 					if s.hasCache { // already have cache, add current data to cache and send out the cache
 						err := s.cache.AddCache(ctx, data)
 						ctx.GetLogger().Debugf("add data %v to cache", data)
 						if err != nil {
-							s.statManager.IncTotalExceptions(err.Error())
-							s.Broadcast(err)
+							s.onError(ctx, err)
 							break
 						}
 					} else {

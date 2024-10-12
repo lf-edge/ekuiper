@@ -175,7 +175,7 @@ func (o *WindowOperator) execEventWindow(ctx api.StreamContext, inputs []*xsql.T
 				nextWindowEndTs = windowEndTs
 				log.Debugf("next window end %d", nextWindowEndTs.UnixMilli())
 			case *xsql.Tuple:
-				o.onProcessStart(ctx)
+				o.onProcessStart(ctx, d)
 				ctx.GetLogger().Debug("Tuple", d.GetTimestamp())
 				log.Debugf("event window receive tuple %s", d.Message)
 				// first tuple, set the window start time, which will set to triggerTime
@@ -189,10 +189,8 @@ func (o *WindowOperator) execEventWindow(ctx api.StreamContext, inputs []*xsql.T
 				o.onProcessEnd(ctx)
 				_ = ctx.PutState(WindowInputsKey, inputs)
 			default:
-				o.onProcessStart(ctx)
-				e := fmt.Errorf("run Window error: expect xsql.Event type but got %[1]T(%[1]v)", d)
-				o.Broadcast(e)
-				o.statManager.IncTotalExceptions(e.Error())
+				o.onProcessStart(ctx, d)
+				o.onError(ctx, fmt.Errorf("run Window error: expect xsql.Event type but got %[1]T(%[1]v)", d))
 				o.onProcessEnd(ctx)
 			}
 		// is cancelling

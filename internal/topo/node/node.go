@@ -20,6 +20,8 @@ import (
 	"sync"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/lf-edge/ekuiper/v2/internal/binder/io"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
@@ -27,6 +29,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/topo/checkpoint"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node/metric"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/node/tracenode"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
@@ -43,6 +46,8 @@ type defaultNode struct {
 	outputMu    sync.RWMutex
 	outputs     map[string]chan<- any
 	opsWg       *sync.WaitGroup
+	// tracing state
+	span trace.Span
 }
 
 func newDefaultNode(name string, options *def.RuleOption) *defaultNode {
@@ -133,8 +138,7 @@ func (o *defaultNode) doBroadcast(val any) {
 		case <-o.ctx.Done():
 			// rule stop so stop waiting
 		default:
-			o.statManager.IncTotalExceptions(fmt.Sprintf("buffer full, drop message from %s to %s", o.name, name))
-			o.ctx.GetLogger().Debugf("drop message from %s to %s", o.name, name)
+			o.onError(o.ctx, fmt.Errorf("buffer full, drop message from %s to %s", o.name, name))
 		}
 		c++
 		if c == l {
@@ -257,20 +261,43 @@ func (o *defaultSinkNode) handleEof(ctx api.StreamContext, d xsql.EOFTuple) {
 }
 
 // onProcessStart do the common works(metric, trace) when receiving a message from upstream
-func (o *defaultNode) onProcessStart(ctx api.StreamContext) {
+func (o *defaultNode) onProcessStart(ctx api.StreamContext, val any) {
 	o.statManager.IncTotalRecordsIn()
 	o.statManager.ProcessTimeStart()
+	// Source just pass nil val so that no trace
+	if val != nil {
+		traced, _, span := tracenode.TraceInput(ctx, val, ctx.GetOpId())
+		if traced {
+			tracenode.RecordRowOrCollection(val, span)
+			o.span = span
+		}
+	}
 }
 
 // onProcessEnd do the common works(metric, trace) after processing a message from upstream
 func (o *defaultNode) onProcessEnd(ctx api.StreamContext) {
 	o.statManager.ProcessTimeEnd()
 	o.statManager.IncTotalMessagesProcessed(1)
+	if o.span != nil {
+		o.span.End()
+		o.span = nil
+	}
 }
 
 // onSend do the common works(metric, trace) after sending a message to downstream
 func (o *defaultNode) onSend(ctx api.StreamContext, val any) {
 	o.statManager.IncTotalRecordsOut()
+}
+
+// onError do the common works(metric, trace) after throwing an error
+func (o *defaultNode) onError(ctx api.StreamContext, err error) {
+	ctx.GetLogger().Errorf("Operation %s error: %s", ctx.GetOpId(), err)
+	o.Broadcast(err)
+	o.statManager.IncTotalExceptions(err.Error())
+	if o.span != nil {
+		o.span.RecordError(err)
+		o.span.SetStatus(codes.Error, err.Error())
+	}
 }
 
 func SourcePing(sourceType string, config map[string]any) error {

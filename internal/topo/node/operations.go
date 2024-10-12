@@ -15,15 +15,12 @@
 package node
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/pingcap/failpoint"
 
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
-	topoContext "github.com/lf-edge/ekuiper/v2/internal/topo/context"
-	"github.com/lf-edge/ekuiper/v2/internal/topo/node/tracenode"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 )
@@ -106,34 +103,23 @@ func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
 			if processed {
 				break
 			}
-			o.onProcessStart(ctx)
-			traced, _, span := tracenode.TraceInput(ctx, data, ctx.GetOpId())
+			o.onProcessStart(ctx, data)
 			result := o.op.Apply(exeCtx, data, fv, afv)
 			switch val := result.(type) {
 			case nil:
-				if traced {
-					span.End()
-				}
+				// ends, do nothing
 			case error:
-				logger.Errorf("Operation %s error: %s", ctx.GetOpId(), val)
-				if traced {
-					span.End()
-				}
-				o.Broadcast(val)
-				o.statManager.IncTotalExceptions(val.Error())
+				o.onError(ctx, val)
 			case []xsql.Row:
-				if traced {
-					span.End()
-				}
+				input, ok := data.(xsql.HasTracerCtx)
 				for _, v := range val {
+					if ok {
+						v.SetTracerCtx(input.GetTracerCtx())
+					}
 					o.Broadcast(v)
 					o.onSend(ctx, v)
 				}
 			default:
-				if traced {
-					tracenode.RecordRowOrCollection(val, span)
-					span.End()
-				}
 				o.Broadcast(val)
 				o.onSend(ctx, val)
 			}
@@ -145,17 +131,5 @@ func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
 			cancel()
 			return
 		}
-	}
-}
-
-func (o *UnaryOperator) traceUnarySplitRow(ctx, spanCtx api.StreamContext, row xsql.Row) {
-	if row == nil {
-		return
-	}
-	traced, subCtx, span := tracenode.StartTraceBySpanCtx(ctx, spanCtx, fmt.Sprintf("%s_split", ctx.GetOpId()))
-	if traced {
-		defer span.End()
-		row.SetTracerCtx(topoContext.WithContext(subCtx))
-		tracenode.RecordRowOrCollection(row, span)
 	}
 }

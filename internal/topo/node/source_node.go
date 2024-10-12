@@ -74,7 +74,7 @@ func (m *SourceNode) Open(ctx api.StreamContext, ctrlCh chan<- error) {
 
 func (m *SourceNode) ingestBytes(ctx api.StreamContext, data []byte, meta map[string]any, ts time.Time) {
 	ctx.GetLogger().Debugf("source connector %s receive data %+v", m.name, data)
-	m.onProcessStart(ctx)
+	m.onProcessStart(ctx, nil)
 	tuple := &xsql.RawTuple{Emitter: m.name, Rawdata: data, Timestamp: ts, Metadata: meta}
 	if ctx.IsTraceEnabled() {
 		traceCtx, ok := meta["traceCtx"].(api.StreamContext)
@@ -91,7 +91,7 @@ func (m *SourceNode) ingestBytes(ctx api.StreamContext, data []byte, meta map[st
 
 func (m *SourceNode) ingestAnyTuple(ctx api.StreamContext, data any, meta map[string]any, ts time.Time) {
 	ctx.GetLogger().Debugf("source connector %s receive data %+v", m.name, data)
-	m.onProcessStart(ctx)
+	m.onProcessStart(ctx, nil)
 	switch mess := data.(type) {
 	// Maps are expected from user extension
 	case map[string]any:
@@ -148,9 +148,7 @@ func (m *SourceNode) ingestTuple(t *xsql.Tuple, ts time.Time) {
 }
 
 func (m *SourceNode) ingestError(ctx api.StreamContext, err error) {
-	ctx.GetLogger().Error(err)
-	m.Broadcast(err)
-	m.statManager.IncTotalExceptions(err.Error())
+	m.onError(ctx, err)
 }
 
 func (m *SourceNode) ingestEof(ctx api.StreamContext) {

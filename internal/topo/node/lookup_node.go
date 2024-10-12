@@ -150,15 +150,14 @@ func (n *LookupNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 					if processed {
 						break
 					}
-					n.onProcessStart(ctx)
+					n.onProcessStart(ctx, data)
 					switch d := data.(type) {
 					case xsql.Row:
 						log.Debugf("Lookup Node receive tuple input %s", d)
 						sets := &xsql.JoinTuples{Content: make([]*xsql.JoinTuple, 0)}
 						err := n.lookup(ctx, d, fv, ns, sets, c)
 						if err != nil {
-							n.Broadcast(err)
-							n.statManager.IncTotalExceptions(err.Error())
+							n.onError(ctx, err)
 						} else if sets.Len() > 0 {
 							n.Broadcast(sets)
 							n.onSend(ctx, sets)
@@ -180,8 +179,7 @@ func (n *LookupNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 							return true, nil
 						})
 						if err != nil {
-							n.Broadcast(err)
-							n.statManager.IncTotalExceptions(err.Error())
+							n.onError(ctx, err)
 						} else if sets.Len() > 0 {
 							n.Broadcast(sets)
 							n.statManager.IncTotalRecordsOut()
@@ -189,9 +187,7 @@ func (n *LookupNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 							ctx.GetLogger().Debugf("lookup return nil")
 						}
 					default:
-						e := fmt.Errorf("run lookup node error: invalid input type but got %[1]T(%[1]v)", d)
-						n.Broadcast(e)
-						n.statManager.IncTotalExceptions(e.Error())
+						n.onError(ctx, fmt.Errorf("run lookup node error: invalid input type but got %[1]T(%[1]v)", d))
 					}
 					n.onProcessEnd(ctx)
 					n.statManager.SetBufferLength(int64(len(n.input)))

@@ -20,12 +20,10 @@ import (
 	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
-	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/lf-edge/ekuiper/v2/internal/converter"
 	schemaLayer "github.com/lf-edge/ekuiper/v2/internal/converter/schema"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
-	"github.com/lf-edge/ekuiper/v2/internal/topo/node/tracenode"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
@@ -381,18 +379,12 @@ func mergeTuple(ctx api.StreamContext, d *xsql.Tuple, result any) {
 }
 
 func toTupleFromRawTuple(ctx api.StreamContext, v map[string]any, d *xsql.RawTuple) *xsql.Tuple {
-	traced, spanCtx, span := tracenode.TraceInput(ctx, d, ctx.GetOpId())
 	t := &xsql.Tuple{
 		Ctx:       d.Ctx,
 		Message:   v,
 		Metadata:  d.Metadata,
 		Timestamp: d.Timestamp,
 		Emitter:   d.Emitter,
-	}
-	if traced {
-		t.Ctx = spanCtx
-		span.SetAttributes(attribute.String(tracenode.DataKey, tracenode.ToStringRow(t)))
-		defer span.End()
 	}
 	return t
 }

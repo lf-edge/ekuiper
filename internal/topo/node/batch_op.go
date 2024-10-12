@@ -109,12 +109,7 @@ func (b *BatchOp) ingest(ctx api.StreamContext, item any, checkSize bool) {
 	if processed {
 		return
 	}
-	b.onProcessStart(ctx)
-	traced, _, span := tracenode.TraceInput(ctx, data, "batch_op_ingest")
-	if traced {
-		tracenode.RecordRowOrCollection(data, span)
-		span.End()
-	}
+	b.onProcessStart(ctx, data)
 	switch input := data.(type) {
 	case xsql.Row:
 		b.handleTraceIngest(ctx, input, input)
@@ -217,7 +212,7 @@ func (b *BatchOp) handleTraceIngest(ctx api.StreamContext, d any, row xsql.Row) 
 		b.rowHandle[row] = struct{}{}
 		row.SetTracerCtx(topoContext.WithContext(spanCtx))
 		tracenode.RecordRowOrCollection(row, span)
-		defer span.End()
+		span.End()
 	}
 }
 

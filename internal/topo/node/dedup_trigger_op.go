@@ -84,21 +84,18 @@ func (w *DedupTriggerNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 					if processed {
 						break
 					}
-					w.onProcessStart(ctx)
+					w.onProcessStart(ctx, data)
 					switch d := data.(type) {
 					case xsql.Row:
 						r, err := w.rowToReq(d)
 						if err != nil {
-							w.Broadcast(err)
-							w.statManager.IncTotalExceptions(err.Error())
+							w.onError(ctx, err)
 						} else {
 							w.requests.Push(r)
 							w.trigger(ctx, r.now)
 						}
 					default:
-						e := fmt.Errorf("run dedup trigger op error: expect *xsql.Tuple type but got %[1]T(%[1]v)", d)
-						w.Broadcast(e)
-						w.statManager.IncTotalExceptions(e.Error())
+						w.onError(ctx, fmt.Errorf("run dedup trigger op error: expect *xsql.Tuple type but got %[1]T(%[1]v)", d))
 					}
 				// future trigger event
 				case <-w.timeout:
@@ -134,8 +131,7 @@ func (w *DedupTriggerNode) trigger(ctx api.StreamContext, now int64) {
 		r = w.requests.Pop()
 		result, err := doTrigger(ctx, r.start, r.end, r.now, r.exp)
 		if err != nil {
-			w.Broadcast(err)
-			w.statManager.IncTotalExceptions(err.Error())
+			w.onError(ctx, err)
 		} else {
 			w.statManager.ProcessTimeStart()
 			r.tuple.Set(w.aliasName, result)

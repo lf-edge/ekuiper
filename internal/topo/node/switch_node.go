@@ -86,7 +86,7 @@ func (n *SwitchNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 					if processed {
 						break
 					}
-					n.onProcessStart(ctx)
+					n.onProcessStart(ctx, data)
 					var ve *xsql.ValuerEval
 					switch d := data.(type) {
 					case xsql.Row:
@@ -98,15 +98,11 @@ func (n *SwitchNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 							afv.SetData(cr)
 							ve = &xsql.ValuerEval{Valuer: xsql.MultiAggregateValuer(cr, fv, cr, fv, afv, &xsql.WildcardValuer{Data: cr})}
 						} else {
-							e := fmt.Errorf("run switch node error: invalid input type but got %[1]T(%[1]v)", d)
-							n.Broadcast(e)
-							n.statManager.IncTotalExceptions(e.Error())
+							n.onError(ctx, fmt.Errorf("run switch node error: invalid input type but got %[1]T(%[1]v)", d))
 							break
 						}
 					default:
-						e := fmt.Errorf("run switch node error: invalid input type but got %[1]T(%[1]v)", d)
-						n.Broadcast(e)
-						n.statManager.IncTotalExceptions(e.Error())
+						n.onError(ctx, fmt.Errorf("run switch node error: invalid input type but got %[1]T(%[1]v)", d))
 						break
 					}
 				caseLoop:
@@ -114,8 +110,7 @@ func (n *SwitchNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 						result := ve.Eval(c)
 						switch r := result.(type) {
 						case error:
-							ctx.GetLogger().Errorf("run switch node %s, case %s error: %s", n.name, c, r)
-							n.statManager.IncTotalExceptions(r.Error())
+							n.onError(ctx, r)
 						case bool:
 							if r {
 								n.outputNodes[i].Broadcast(item)
@@ -126,9 +121,7 @@ func (n *SwitchNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 						case nil: // nil is false
 							break
 						default:
-							m := fmt.Sprintf("run switch node %s, case %s error: invalid condition that returns non-bool value %[1]T(%[1]v)", n.name, c, r)
-							ctx.GetLogger().Errorf(m)
-							n.statManager.IncTotalExceptions(m)
+							n.onError(ctx, fmt.Errorf("run switch node %s, case %s error: invalid condition that returns non-bool value %[1]T(%[1]v)", n.name, c, r))
 						}
 					}
 					n.onProcessEnd(ctx)

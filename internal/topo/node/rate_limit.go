@@ -136,7 +136,7 @@ func (o *RateLimitOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 					if processed {
 						continue
 					}
-					o.onProcessStart(ctx)
+					o.onProcessStart(ctx, dd)
 					o.latest = dd
 					o.onProcessEnd(ctx)
 					o.statManager.SetBufferLength(int64(len(o.input)))
@@ -161,7 +161,7 @@ func (o *RateLimitOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 					if processed {
 						continue
 					}
-					o.onProcessStart(ctx)
+					o.onProcessStart(ctx, dd)
 					var (
 						val any
 						err error
@@ -180,8 +180,7 @@ func (o *RateLimitOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 						err = fmt.Errorf("rate limit merge only supports raw but got %v", d)
 					}
 					if err != nil {
-						o.statManager.IncTotalExceptions(err.Error())
-						o.Broadcast(err)
+						o.onError(ctx, err)
 					}
 					o.onProcessEnd(ctx)
 					o.statManager.SetBufferLength(int64(len(o.input)))
@@ -231,7 +230,7 @@ func (o *RateLimitOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 					if processed {
 						continue
 					}
-					o.onProcessStart(ctx)
+					o.onProcessStart(ctx, dd)
 					var err error
 					switch dt := dd.(type) {
 					case *xsql.RawTuple:
@@ -243,8 +242,7 @@ func (o *RateLimitOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 						err = fmt.Errorf("rate limit merge only supports raw but got %v", d)
 					}
 					if err != nil {
-						o.statManager.IncTotalExceptions(err.Error())
-						o.Broadcast(err)
+						o.onError(ctx, err)
 					}
 					o.onProcessEnd(ctx)
 					o.statManager.SetBufferLength(int64(len(o.input)))
