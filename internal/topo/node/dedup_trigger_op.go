@@ -84,11 +84,9 @@ func (w *DedupTriggerNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 					if processed {
 						break
 					}
-					w.statManager.IncTotalRecordsIn()
-					w.statManager.ProcessTimeStart()
+					w.onProcessStart(ctx)
 					switch d := data.(type) {
 					case xsql.Row:
-						w.statManager.IncTotalRecordsIn()
 						r, err := w.rowToReq(d)
 						if err != nil {
 							w.Broadcast(err)
@@ -142,9 +140,8 @@ func (w *DedupTriggerNode) trigger(ctx api.StreamContext, now int64) {
 			w.statManager.ProcessTimeStart()
 			r.tuple.Set(w.aliasName, result)
 			w.Broadcast(r.tuple)
-			ctx.GetLogger().Debug("send out event", r.tuple)
-			w.statManager.IncTotalRecordsOut()
-			w.statManager.ProcessTimeEnd()
+			w.onSend(ctx, r.tuple)
+			w.onProcessEnd(ctx)
 		}
 	}
 }

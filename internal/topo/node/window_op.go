@@ -325,7 +325,6 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 			o.statManager.ProcessTimeStart()
 			inputs = o.scan(inputs, delayTS, ctx)
 			o.statManager.ProcessTimeEnd()
-			o.statManager.SetBufferLength(int64(len(o.input)))
 			_ = ctx.PutState(WindowInputsKey, inputs)
 			_ = ctx.PutState(MsgCountKey, o.msgCount)
 		// process incoming item
@@ -334,8 +333,7 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 			if processed {
 				break
 			}
-			o.statManager.IncTotalRecordsIn()
-			o.statManager.ProcessTimeStart()
+			o.onProcessStart(ctx)
 			switch d := data.(type) {
 			case *xsql.Tuple:
 				log.Debugf("Event window receive tuple %s", d.Message)
@@ -398,14 +396,11 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 							log.Debugf("Sent: %v", tsets)
 							o.handleTraceEmitTuple(ctx, tsets)
 							o.Broadcast(tsets)
-							o.statManager.IncTotalRecordsOut()
+							o.onSend(ctx, tsets)
 						}
 						inputs = tl.getRestTuples()
 					}
 				}
-				o.statManager.ProcessTimeEnd()
-				o.statManager.IncTotalMessagesProcessed(1)
-				o.statManager.SetBufferLength(int64(len(o.input)))
 				_ = ctx.PutState(WindowInputsKey, inputs)
 				_ = ctx.PutState(MsgCountKey, o.msgCount)
 			default:
@@ -413,6 +408,8 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 				o.Broadcast(e)
 				o.statManager.IncTotalExceptions(e.Error())
 			}
+			o.onProcessEnd(ctx)
+			o.statManager.SetBufferLength(int64(len(o.input)))
 		case now := <-firstC:
 			log.Infof("First tick at %v(%d), defined at %d", now, now.UnixMilli(), firstTime.UnixMilli())
 			firstTicker.Stop()
@@ -453,6 +450,7 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 			}
 			return
 		}
+		o.statManager.SetBufferLength(int64(len(o.input)))
 	}
 }
 
@@ -644,7 +642,7 @@ func (o *WindowOperator) scan(inputs []*xsql.Tuple, triggerTime time.Time, ctx a
 	log.Debugf("window %s triggered for %d tuples", o.name, len(inputs))
 	log.Debugf("Sent: %v", results)
 	o.Broadcast(results)
-	o.statManager.IncTotalRecordsOut()
+	o.onSend(ctx, results)
 
 	o.triggerTime = triggerTime
 	log.Debugf("new trigger time %d", o.triggerTime.UnixMilli())

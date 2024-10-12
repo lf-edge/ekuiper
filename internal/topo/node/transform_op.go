@@ -96,8 +96,6 @@ func (t *TransformOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 
 // Worker do not need to process error and control messages
 func (t *TransformOp) Worker(ctx api.StreamContext, item any) []any {
-	t.statManager.ProcessTimeStart()
-	defer t.statManager.ProcessTimeEnd()
 	if ic, ok := item.(xsql.Collection); ok && t.omitIfEmpty && ic.Len() == 0 {
 		ctx.GetLogger().Debugf("receive empty collection, dropped")
 		return nil
