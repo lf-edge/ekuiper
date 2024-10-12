@@ -720,13 +720,18 @@ func (o *WindowOperator) handleTraceDiscardTuple(ctx api.StreamContext, tuples [
 
 func (o *WindowOperator) handleTraceEmitTuple(ctx api.StreamContext, wt *xsql.WindowTuples) {
 	if ctx.IsTraceEnabled() {
+		if o.nextSpan == nil {
+			o.handleNextWindowTupleSpan(ctx)
+		}
 		for _, row := range wt.Content {
 			t, ok := row.(*xsql.Tuple)
 			if ok {
 				_, stored := o.tupleSpanMap[t]
 				if stored {
-					_, _, span := tracenode.TraceRow(ctx, t, "window_op_emit", trace.WithLinks(o.nextLink))
-					span.End()
+					traced, _, span := tracenode.TraceRow(ctx, t, "window_op_emit", trace.WithLinks(o.nextLink))
+					if traced {
+						span.End()
+					}
 				}
 			}
 		}
