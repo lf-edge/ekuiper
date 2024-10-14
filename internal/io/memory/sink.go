@@ -77,8 +77,12 @@ func (s *sink) Collect(ctx api.StreamContext, data api.MessageTuple) error {
 		}
 	}
 	ctx.GetLogger().Debugf("publishing to topic %s", topic)
+	var spanCtx api.StreamContext
+	if dt, ok := data.(xsql.HasTracerCtx); ok {
+		spanCtx = dt.GetTracerCtx()
+	}
 	var (
-		t   pubsub.MemTuple = &xsql.Tuple{Message: data.ToMap(), Metadata: s.meta, Timestamp: timex.GetNow()}
+		t   pubsub.MemTuple = &xsql.Tuple{Message: data.ToMap(), Metadata: s.meta, Timestamp: timex.GetNow(), Ctx: spanCtx}
 		err error
 	)
 	if s.rowkindField != "" {
@@ -118,6 +122,10 @@ func (s *sink) wrapUpdatable(el pubsub.MemTuple) (pubsub.MemTuple, error) {
 
 func (s *sink) CollectList(ctx api.StreamContext, tuples api.MessageTupleList) error {
 	topic := s.topic
+	var spanCtx api.StreamContext
+	if dt, ok := tuples.(xsql.HasTracerCtx); ok {
+		spanCtx = dt.GetTracerCtx()
+	}
 	if dp, ok := tuples.(api.HasDynamicProps); ok {
 		temp, transformed := dp.DynamicProps(topic)
 		if transformed {
@@ -126,7 +134,7 @@ func (s *sink) CollectList(ctx api.StreamContext, tuples api.MessageTupleList) e
 	}
 	result := make([]pubsub.MemTuple, tuples.Len())
 	tuples.RangeOfTuples(func(index int, tuple api.MessageTuple) bool {
-		t := &xsql.Tuple{Message: tuple.ToMap(), Metadata: s.meta, Timestamp: timex.GetNow()}
+		t := &xsql.Tuple{Message: tuple.ToMap(), Metadata: s.meta, Timestamp: timex.GetNow(), Ctx: spanCtx}
 		if s.rowkindField != "" {
 			st, err := s.wrapUpdatable(t)
 			if err != nil {
