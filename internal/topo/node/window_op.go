@@ -405,6 +405,8 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 			default:
 				o.onError(ctx, fmt.Errorf("run Window error: expect xsql.Tuple type but got %[1]T(%[1]v)", d))
 			}
+			// For batching operator, do not end the span immediately so set it to nil
+			o.span = nil
 			o.onProcessEnd(ctx)
 			o.statManager.SetBufferLength(int64(len(o.input)))
 		case now := <-firstC:
@@ -702,8 +704,9 @@ func (o *WindowOperator) handleTraceIngestTuple(ctx api.StreamContext, t *xsql.T
 func (o *WindowOperator) handleTraceDiscardTuple(ctx api.StreamContext, tuples []*xsql.Tuple) {
 	if ctx.IsTraceEnabled() {
 		for _, tuple := range tuples {
-			_, ok := o.tupleSpanMap[tuple]
+			span, ok := o.tupleSpanMap[tuple]
 			if ok {
+				span.End()
 				delete(o.tupleSpanMap, tuple)
 			}
 		}

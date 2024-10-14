@@ -116,9 +116,9 @@ func (o *defaultNode) BroadcastCustomized(val any, broadcastFunc func(val any)) 
 		return
 	}
 	if o.spanCtx != nil {
-		if vt, ok := val.(xsql.HasTracerCtx); ok {
-			// By default, set the context when sending out so that all children have the same parent ctx
-			// If has set ctx in the node impl, this will take no effect.
+		// Fallback to set the context when sending out so that all children have the same parent ctx
+		// If has set ctx in the node impl, do not override it
+		if vt, ok := val.(xsql.HasTracerCtx); ok && vt.GetTracerCtx() == nil {
 			vt.SetTracerCtx(o.spanCtx)
 		}
 	}
@@ -158,9 +158,9 @@ func (o *defaultNode) doBroadcast(val any) {
 		case xsql.Row:
 			val = vt.Clone()
 		}
-		if vt, ok := val.(xsql.HasTracerCtx); ok {
-			// By default, set the context when sending out so that all children have the same parent ctx
-			// If has set ctx in the node impl, this will take no effect.
+		// Fallback to set the context when sending out so that all children have the same parent ctx
+		// If has set ctx in the node impl, do not override it
+		if vt, ok := val.(xsql.HasTracerCtx); ok && vt.GetTracerCtx() == nil {
 			vt.SetTracerCtx(o.spanCtx)
 		}
 	}

@@ -128,6 +128,8 @@ func (b *BatchOp) ingest(ctx api.StreamContext, item any, checkSize bool) {
 	if checkSize && b.currIndex >= b.batchSize {
 		b.send(ctx)
 	}
+	// For batching operator, do not end the span immediately so set it to nil
+	b.span = nil
 	b.onProcessEnd(ctx)
 	b.statManager.SetBufferLength(int64(len(b.input) + b.currIndex))
 }
@@ -219,6 +221,7 @@ func (b *BatchOp) handleTraceEmitTuple(ctx api.StreamContext, wt *xsql.WindowTup
 			span, stored := b.rowHandle[row]
 			if stored {
 				span.AddLink(b.nextLink)
+				span.End()
 				delete(b.rowHandle, row)
 			}
 		}
