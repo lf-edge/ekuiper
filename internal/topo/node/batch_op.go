@@ -209,7 +209,9 @@ func (b *BatchOp) handleNextWindowTupleSpan(ctx api.StreamContext) {
 }
 
 func (b *BatchOp) handleTraceIngest(_ api.StreamContext, row xsql.Row) {
-	b.rowHandle[row] = b.span
+	if b.span != nil {
+		b.rowHandle[row] = b.span
+	}
 }
 
 func (b *BatchOp) handleTraceEmitTuple(ctx api.StreamContext, wt *xsql.WindowTuples) {

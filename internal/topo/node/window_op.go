@@ -696,7 +696,7 @@ func (o *WindowOperator) isMatchCondition(ctx api.StreamContext, d *xsql.Tuple) 
 }
 
 func (o *WindowOperator) handleTraceIngestTuple(ctx api.StreamContext, t *xsql.Tuple) {
-	if ctx.IsTraceEnabled() {
+	if o.span != nil {
 		o.tupleSpanMap[t] = o.span
 	}
 }
