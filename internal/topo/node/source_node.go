@@ -19,9 +19,11 @@ import (
 	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/lf-edge/ekuiper/v2/internal/io/memory/pubsub"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/node/tracenode"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
@@ -74,14 +76,13 @@ func (m *SourceNode) Open(ctx api.StreamContext, ctrlCh chan<- error) {
 
 func (m *SourceNode) ingestBytes(ctx api.StreamContext, data []byte, meta map[string]any, ts time.Time) {
 	ctx.GetLogger().Debugf("source connector %s receive data %+v", m.name, data)
-	m.onProcessStart(ctx, nil)
+	m.onProcessStart(ctx, data)
+	if meta == nil {
+		meta = make(map[string]any)
+	}
 	tuple := &xsql.RawTuple{Emitter: m.name, Rawdata: data, Timestamp: ts, Metadata: meta}
 	if ctx.IsTraceEnabled() {
-		traceCtx, ok := meta["traceCtx"].(api.StreamContext)
-		if ok {
-			tuple.SetTracerCtx(traceCtx)
-			delete(meta, "traceCtx")
-		}
+		m.traceStart(ctx, meta, tuple)
 	}
 	m.Broadcast(tuple)
 	m.onSend(ctx, tuple)
@@ -89,9 +90,32 @@ func (m *SourceNode) ingestBytes(ctx api.StreamContext, data []byte, meta map[st
 	_ = m.updateState(ctx)
 }
 
+func (m *SourceNode) traceStart(ctx api.StreamContext, meta map[string]any, tuple xsql.HasTracerCtx) {
+	var (
+		traced   bool
+		traceCtx api.StreamContext
+		span     trace.Span
+	)
+	// If read from parent trace
+	if tid, ok := meta["traceId"]; ok {
+		traced, traceCtx, span = tracenode.StartTraceByID(ctx, tid.(string))
+	} else {
+		traced, traceCtx, span = tracenode.StartTraceBackground(ctx, ctx.GetOpId())
+		meta["traceId"] = span.SpanContext().TraceID()
+	}
+	if traced {
+		tuple.SetTracerCtx(traceCtx)
+		tracenode.RecordRowOrCollection(tuple, span)
+		m.span = span
+	}
+}
+
 func (m *SourceNode) ingestAnyTuple(ctx api.StreamContext, data any, meta map[string]any, ts time.Time) {
 	ctx.GetLogger().Debugf("source connector %s receive data %+v", m.name, data)
 	m.onProcessStart(ctx, nil)
+	if meta == nil {
+		meta = make(map[string]any)
+	}
 	switch mess := data.(type) {
 	// Maps are expected from user extension
 	case map[string]any:
@@ -105,6 +129,9 @@ func (m *SourceNode) ingestAnyTuple(ctx api.StreamContext, data any, meta map[st
 	// expected from file which send out any tuple type
 	case []byte:
 		tuple := &xsql.RawTuple{Emitter: m.name, Rawdata: mess, Timestamp: ts, Metadata: meta}
+		if ctx.IsTraceEnabled() {
+			m.traceStart(ctx, meta, tuple)
+		}
 		m.Broadcast(tuple)
 		m.onSend(ctx, tuple)
 	// Source tuples are expected from memory
@@ -123,7 +150,7 @@ func (m *SourceNode) ingestAnyTuple(ctx api.StreamContext, data any, meta map[st
 		panic(fmt.Sprintf("receive wrong data %v", data))
 	}
 	m.onProcessEnd(ctx)
-	m.updateState(ctx)
+	_ = m.updateState(ctx)
 }
 
 func (m *SourceNode) connectionStatusChange(status string, message string) {
@@ -137,12 +164,18 @@ func (m *SourceNode) connectionStatusChange(status string, message string) {
 
 func (m *SourceNode) ingestMap(t map[string]any, meta map[string]any, ts time.Time) {
 	tuple := &xsql.Tuple{Emitter: m.name, Message: t, Timestamp: ts, Metadata: meta}
+	if m.ctx.IsTraceEnabled() {
+		m.traceStart(m.ctx, meta, tuple)
+	}
 	m.Broadcast(tuple)
-	m.statManager.IncTotalRecordsOut()
+	m.onSend(m.ctx, tuple)
 }
 
 func (m *SourceNode) ingestTuple(t *xsql.Tuple, ts time.Time) {
 	tuple := &xsql.Tuple{Emitter: m.name, Message: t.Message, Timestamp: ts, Metadata: t.Metadata}
+	if m.ctx.IsTraceEnabled() {
+		m.traceStart(m.ctx, t.Metadata, tuple)
+	}
 	m.Broadcast(tuple)
 	m.onSend(m.ctx, tuple)
 }

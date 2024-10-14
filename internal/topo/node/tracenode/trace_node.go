@@ -84,12 +84,12 @@ func StartTraceBackground(ctx api.StreamContext, opName string) (bool, api.Strea
 	return true, ingestCtx, span
 }
 
-func StartTraceByID(ctx api.StreamContext, traceID [16]byte, spanID [8]byte) (bool, api.StreamContext, trace.Span) {
+func StartTraceByID(ctx api.StreamContext, parentId string) (bool, api.StreamContext, trace.Span) {
 	if !ctx.IsTraceEnabled() {
 		return false, nil, nil
 	}
 	carrier := map[string]string{
-		"traceparent": buildTraceParent(traceID, spanID),
+		"traceparent": parentId,
 	}
 	propagator := propagation.TraceContext{}
 	traceCtx := propagator.Extract(context.Background(), propagation.MapCarrier(carrier))
@@ -120,7 +120,7 @@ func ToStringCollection(r api.MessageTupleList) string {
 	return string(b)
 }
 
-func buildTraceParent(traceID [16]byte, spanID [8]byte) string {
+func BuildTraceParentId(traceID [16]byte, spanID [8]byte) string {
 	return fmt.Sprintf("00-%s-%s-01", hex.EncodeToString(traceID[:]), hex.EncodeToString(spanID[:]))
 }
 

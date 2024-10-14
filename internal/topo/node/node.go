@@ -264,7 +264,7 @@ func (o *defaultSinkNode) handleEof(ctx api.StreamContext, d xsql.EOFTuple) {
 func (o *defaultNode) onProcessStart(ctx api.StreamContext, val any) {
 	o.statManager.IncTotalRecordsIn()
 	o.statManager.ProcessTimeStart()
-	// Source just pass nil val so that no trace
+	// Source just pass nil val so that no trace. The trace will start after extracting trace id
 	if val != nil {
 		traced, _, span := tracenode.TraceInput(ctx, val, ctx.GetOpId())
 		if traced {
