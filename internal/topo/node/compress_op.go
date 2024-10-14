@@ -58,8 +58,6 @@ func (o *CompressOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 }
 
 func (o *CompressOp) Worker(_ api.StreamContext, item any) []any {
-	o.statManager.ProcessTimeStart()
-	defer o.statManager.ProcessTimeEnd()
 	switch d := item.(type) {
 	case api.RawTuple:
 		if r, err := o.tool.Compress(d.Raw()); err != nil {

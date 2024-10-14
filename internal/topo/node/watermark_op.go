@@ -113,12 +113,9 @@ func (w *WatermarkOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 					if processed {
 						break
 					}
+					w.onProcessStart(ctx)
 					switch d := data.(type) {
 					case *xsql.Tuple:
-						w.statManager.IncTotalRecordsIn()
-						// Start the first event processing.
-						// Later a series of events may send out in order
-						w.statManager.ProcessTimeStart()
 						// whether to drop the late event
 						if w.track(ctx, d.Emitter, d.Timestamp) {
 							// If not drop, check if it can be sent out
@@ -129,6 +126,7 @@ func (w *WatermarkOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 						w.Broadcast(e)
 						w.statManager.IncTotalExceptions(e.Error())
 					}
+					w.onProcessEnd(ctx)
 				}
 			}
 		})
@@ -185,10 +183,8 @@ func (w *WatermarkOp) addAndTrigger(ctx api.StreamContext, d *xsql.Tuple) {
 					w.statManager.ProcessTimeStart()
 				}
 				w.Broadcast(w.events[i])
+				w.onSend(ctx, w.events[i])
 				ctx.GetLogger().Debug("send out event", w.events[i].GetTimestamp())
-				w.statManager.IncTotalRecordsOut()
-				w.statManager.IncTotalMessagesProcessed(1)
-				w.statManager.ProcessTimeEnd()
 			}
 			w.events = w.events[c:]
 			_ = ctx.PutState(EventInputKey, w.events)

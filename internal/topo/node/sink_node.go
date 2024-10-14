@@ -93,8 +93,7 @@ func (s *SinkNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 						tracenode.RecordRowOrCollection(data, span)
 						span.End()
 					}
-					s.statManager.IncTotalRecordsIn()
-					s.statManager.ProcessTimeStart()
+					s.onProcessStart(ctx)
 					err = s.doCollect(ctx, s.sink, data)
 					if err != nil { // resend handling when enabling cache. Two cases: 1. send to alter queue with resendOUt. 2. retry (blocking) until success or unrecoverable error if resendInterval is set
 						ctx.GetLogger().Error(err)
@@ -118,16 +117,15 @@ func (s *SinkNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 								s.statManager.SetBufferLength(int64(len(s.input)))
 							}
 							if err == nil {
-								s.statManager.IncTotalRecordsOut()
+								s.onSend(ctx, data)
 							} else {
 								ctx.GetLogger().Errorf("resend error %v", err)
 							}
 						}
 					} else {
-						s.statManager.IncTotalRecordsOut()
+						s.onSend(ctx, data)
 					}
-					s.statManager.ProcessTimeEnd()
-					s.statManager.IncTotalMessagesProcessed(1)
+					s.onProcessEnd(ctx)
 					s.statManager.SetBufferLength(int64(len(s.input)))
 				}
 			}

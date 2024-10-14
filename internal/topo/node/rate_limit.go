@@ -136,17 +136,15 @@ func (o *RateLimitOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 					if processed {
 						continue
 					}
-					o.statManager.IncTotalRecordsIn()
-					o.statManager.ProcessTimeStart()
+					o.onProcessStart(ctx)
 					o.latest = dd
-					o.statManager.ProcessTimeEnd()
-					o.statManager.IncTotalMessagesProcessed(1)
+					o.onProcessEnd(ctx)
 					o.statManager.SetBufferLength(int64(len(o.input)))
 				case t := <-ticker.C:
 					if o.latest != nil {
 						o.Broadcast(o.latest)
+						o.onSend(ctx, o.latest)
 						o.latest = nil
-						o.statManager.IncTotalRecordsOut()
 					} else {
 						ctx.GetLogger().Debugf("ratelimit had nothing to sent at %d", t.UnixMilli())
 					}
@@ -163,8 +161,7 @@ func (o *RateLimitOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 					if processed {
 						continue
 					}
-					o.statManager.IncTotalRecordsIn()
-					o.statManager.ProcessTimeStart()
+					o.onProcessStart(ctx)
 					var (
 						val any
 						err error
@@ -186,8 +183,7 @@ func (o *RateLimitOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 						o.statManager.IncTotalExceptions(err.Error())
 						o.Broadcast(err)
 					}
-					o.statManager.ProcessTimeEnd()
-					o.statManager.IncTotalMessagesProcessed(1)
+					o.onProcessEnd(ctx)
 					o.statManager.SetBufferLength(int64(len(o.input)))
 				case t := <-ticker.C:
 					if len(o.frameSet) > 0 {
@@ -207,18 +203,18 @@ func (o *RateLimitOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 								frames = append(frames, f)
 							}
 						}
-
-						o.Broadcast(&xsql.Tuple{
+						val := &xsql.Tuple{
 							Emitter:   rt.Emitter,
 							Timestamp: rt.Timestamp,
 							Metadata:  rt.Metadata,
 							Message: map[string]any{
 								"frames": frames,
 							},
-						})
+						}
+						o.Broadcast(val)
+						o.onSend(ctx, val)
 						o.latest = nil
 						maps.Clear(o.frameSet)
-						o.statManager.IncTotalRecordsOut()
 					} else {
 						ctx.GetLogger().Debugf("ratelimit had nothing to sent at %d", t.UnixMilli())
 					}
@@ -235,8 +231,7 @@ func (o *RateLimitOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 					if processed {
 						continue
 					}
-					o.statManager.IncTotalRecordsIn()
-					o.statManager.ProcessTimeStart()
+					o.onProcessStart(ctx)
 					var err error
 					switch dt := dd.(type) {
 					case *xsql.RawTuple:
@@ -251,23 +246,23 @@ func (o *RateLimitOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 						o.statManager.IncTotalExceptions(err.Error())
 						o.Broadcast(err)
 					}
-					o.statManager.ProcessTimeEnd()
-					o.statManager.IncTotalMessagesProcessed(1)
+					o.onProcessEnd(ctx)
 					o.statManager.SetBufferLength(int64(len(o.input)))
 				case t := <-ticker.C:
 					frames, ok := o.merger.Trigger(ctx)
 					if ok {
 						rt := o.latest.(*xsql.RawTuple)
-						o.Broadcast(&xsql.Tuple{
+						val := &xsql.Tuple{
 							Emitter:   rt.Emitter,
 							Timestamp: rt.Timestamp,
 							Metadata:  rt.Metadata,
 							Message: map[string]any{
 								"frames": frames,
 							},
-						})
+						}
+						o.Broadcast(val)
+						o.onSend(ctx, val)
 						o.latest = nil
-						o.statManager.IncTotalRecordsOut()
 					} else {
 						ctx.GetLogger().Debugf("ratelimit had nothing to sent at %d", t.UnixMilli())
 					}

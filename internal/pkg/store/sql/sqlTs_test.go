@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,6 +19,9 @@ import (
 	"path"
 	"path/filepath"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store/definition"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store/sql/sqlite"
@@ -106,6 +109,26 @@ func setupTSqlKv() (ts2.Tskv, definition.Database, string) {
 		panic(err)
 	}
 	return store, db, absPath
+}
+
+func TestInvalidTsTableName(t *testing.T) {
+	absPath, err := filepath.Abs("test")
+	require.NoError(t, err)
+	err = deleteIfExists(absPath)
+	assert.NoError(t, err)
+	config := definition.Config{
+		Type: "sqlite",
+		Sqlite: definition.SqliteConfig{
+			Path: absPath,
+			Name: TDbName,
+		},
+	}
+	db, _ := sqlite.NewSqliteDatabase(config, "sqliteKV.db")
+	err = db.Connect()
+	require.NoError(t, err)
+	builder := NewTsBuilder(db.(Database))
+	_, err = builder.CreateTs("1_abc")
+	require.EqualError(t, err, "invalid table name: 1_abc")
 }
 
 func cleanTSqlKv(db definition.Database, abs string) {

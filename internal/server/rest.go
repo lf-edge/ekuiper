@@ -41,6 +41,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/v2/internal/processor"
 	"github.com/lf-edge/ekuiper/v2/internal/server/middleware"
+	kctx "github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/planner"
 	"github.com/lf-edge/ekuiper/v2/internal/trial"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
@@ -823,12 +824,21 @@ func restartRuleHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Rule %s was restarted", name)
 }
 
+type EnableRuleTraceRequest struct {
+	Strategy string `json:"strategy"`
+}
+
 func enableRuleTraceHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	vars := mux.Vars(r)
 	name := vars["name"]
-
-	err := setIsRuleTraceEnabledHandler(name, true)
+	req := &EnableRuleTraceRequest{}
+	err := json.NewDecoder(r.Body).Decode(req)
+	if err != nil {
+		handleError(w, err, "Invalid body: Error decoding json", logger)
+		return
+	}
+	err = setIsRuleTraceEnabledHandler(name, true, kctx.StringToStrategy(req.Strategy))
 	if err != nil {
 		handleError(w, err, "", logger)
 		return
@@ -841,7 +851,7 @@ func disableRuleTraceHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	name := vars["name"]
 
-	err := setIsRuleTraceEnabledHandler(name, false)
+	err := setIsRuleTraceEnabledHandler(name, false, kctx.AlwaysTraceStrategy)
 	if err != nil {
 		handleError(w, err, "", logger)
 		return
@@ -849,12 +859,12 @@ func disableRuleTraceHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func setIsRuleTraceEnabledHandler(name string, isEnabled bool) error {
+func setIsRuleTraceEnabledHandler(name string, isEnabled bool, stra kctx.TraceStrategy) error {
 	rs, ok := registry.load(name)
 	if !ok {
 		return fmt.Errorf("rule %s isn't existed", name)
 	}
-	return rs.SetIsTraceEnabled(isEnabled)
+	return rs.SetIsTraceEnabled(isEnabled, stra)
 }
 
 // get topo of a rule

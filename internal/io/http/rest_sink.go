@@ -30,9 +30,24 @@ type RestSink struct {
 	*ClientConf
 }
 
+var bodyTypeFormat = map[string]string{
+	"json": "json",
+	"form": "urlencoded",
+}
+
 func (r *RestSink) Provision(ctx api.StreamContext, configs map[string]any) error {
 	r.ClientConf = &ClientConf{}
-	return r.InitConf("", configs)
+	err := r.InitConf("", configs)
+	if err != nil {
+		return err
+	}
+	if r.ClientConf.config.Format == "" {
+		r.ClientConf.config.Format = "json"
+	}
+	if rf, ok := bodyTypeFormat[r.ClientConf.config.BodyType]; ok && r.ClientConf.config.Format != rf {
+		return fmt.Errorf("format must be %s if bodyType is %s", rf, r.ClientConf.config.BodyType)
+	}
+	return nil
 }
 
 func (r *RestSink) Close(ctx api.StreamContext) error {
@@ -44,20 +59,13 @@ func (r *RestSink) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) e
 	return nil
 }
 
-func (r *RestSink) Collect(ctx api.StreamContext, item api.MessageTuple) error {
-	return r.collect(ctx, item, item.ToMap())
-}
-
-func (r *RestSink) CollectList(ctx api.StreamContext, items api.MessageTupleList) error {
-	return r.collect(ctx, items, items.ToMaps())
-}
-
-func (r *RestSink) collect(ctx api.StreamContext, item any, data any) error {
+func (r *RestSink) Collect(ctx api.StreamContext, item api.RawTuple) error {
 	logger := ctx.GetLogger()
 	headers := r.config.Headers
 	bodyType := r.config.BodyType
 	method := r.config.Method
 	u := r.config.Url
+
 	if dp, ok := item.(api.HasDynamicProps); ok {
 		for k := range headers {
 			nv, ok := dp.DynamicProps(k)
@@ -78,7 +86,21 @@ func (r *RestSink) collect(ctx api.StreamContext, item any, data any) error {
 			u = nu
 		}
 	}
-	resp, err := httpx.Send(ctx.GetLogger(), r.client, bodyType, method, u, headers, r.config.SendSingle, data)
+
+	switch r.config.Compression {
+	case "zstd":
+		if headers == nil {
+			headers = make(map[string]string)
+		}
+		headers["Content-Encoding"] = "zstd"
+	case "gzip":
+		if headers == nil {
+			headers = make(map[string]string)
+		}
+		headers["Content-Encoding"] = "gzip"
+	}
+
+	resp, err := httpx.Send(ctx.GetLogger(), r.client, bodyType, method, u, headers, item.Raw())
 	failpoint.Inject("recoverAbleErr", func() {
 		err = errors.New("connection reset by peer")
 	})
@@ -91,15 +113,15 @@ func (r *RestSink) collect(ctx api.StreamContext, item any, data any) error {
 				originErr.Error(),
 				recoverAble,
 				method,
-				u, data))
+				u, string(item.Raw())))
 		}
 		return fmt.Errorf(`rest sink fails to send out the data:err=%s recoverAble=%v method=%s path="%s" request_body="%s"`,
 			originErr.Error(),
 			recoverAble,
-			method, u, data)
+			method, u, string(item.Raw()))
 	} else {
 		logger.Debugf("rest sink got response %v", resp)
-		_, b, err := r.parseResponse(ctx, resp, "")
+		_, b, err := r.parseResponse(ctx, resp, "", r.config.DebugResp, false)
 		// do not record response body error as it is not an error in the sink action.
 		if err != nil && !strings.HasPrefix(err.Error(), BODY_ERR) {
 			if strings.HasPrefix(err.Error(), BODY_ERR) {
@@ -125,4 +147,4 @@ func GetSink() api.Sink {
 	return &RestSink{}
 }
 
-var _ api.TupleCollector = &RestSink{}
+var _ api.BytesCollector = &RestSink{}

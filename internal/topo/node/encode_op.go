@@ -66,8 +66,6 @@ func (o *EncodeOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 }
 
 func (o *EncodeOp) Worker(ctx api.StreamContext, item any) []any {
-	o.statManager.ProcessTimeStart()
-	defer o.statManager.ProcessTimeEnd()
 	switch d := item.(type) {
 	case api.RawTuple:
 		return []any{d}

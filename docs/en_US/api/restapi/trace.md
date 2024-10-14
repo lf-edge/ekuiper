@@ -4,8 +4,14 @@ eKuiper supports viewing recent tracing data of rules through API.
 
 ## Start trace the data of specific rule
 
+Turn on the data tracing of the rules. The strategy supports `always` and `head`. `always` means that each message is always traced, and `head` means that only upstream messages containing trace context will be traced.
+
 ```shell
 POST http://localhost:9081/rules/{ruleID}/trace/start
+
+{
+    "strategy": "head"
+}
 ```
 
 ## Stop trace the data of specific rule

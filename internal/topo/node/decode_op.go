@@ -137,8 +137,6 @@ func (o *DecodeOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 }
 
 func (o *DecodeOp) Worker(ctx api.StreamContext, item any) []any {
-	o.statManager.ProcessTimeStart()
-	defer o.statManager.ProcessTimeEnd()
 	switch d := item.(type) {
 	case *xsql.RawTuple:
 		result, err := o.converter.Decode(ctx, d.Raw())
@@ -224,8 +222,6 @@ func (o *DecodeOp) DetachSchema(ctx api.StreamContext, ruleId string) {
 //
 // If parse result is a list, it will also output a list
 func (o *DecodeOp) PayloadDecodeWorker(ctx api.StreamContext, item any) []any {
-	o.statManager.ProcessTimeStart()
-	defer o.statManager.ProcessTimeEnd()
 	switch d := item.(type) {
 	case *xsql.Tuple:
 		// extract payload
@@ -304,8 +300,6 @@ func transTuple(d *xsql.Tuple, result any) []any {
 //
 // If parse result is a list, it will also merge them in
 func (o *DecodeOp) PayloadBatchDecodeWorker(ctx api.StreamContext, item any) []any {
-	o.statManager.ProcessTimeStart()
-	defer o.statManager.ProcessTimeEnd()
 	switch d := item.(type) {
 	case *xsql.Tuple:
 		// extract batch field
@@ -387,7 +381,7 @@ func mergeTuple(ctx api.StreamContext, d *xsql.Tuple, result any) {
 }
 
 func toTupleFromRawTuple(ctx api.StreamContext, v map[string]any, d *xsql.RawTuple) *xsql.Tuple {
-	traced, spanCtx, span := tracenode.TraceRowTuple(ctx, d, ctx.GetOpId())
+	traced, spanCtx, span := tracenode.TraceInput(ctx, d, ctx.GetOpId())
 	t := &xsql.Tuple{
 		Ctx:       d.Ctx,
 		Message:   v,

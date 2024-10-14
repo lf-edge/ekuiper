@@ -75,11 +75,11 @@ func doPull(ctx api.StreamContext, c *ClientConf, lastMD5 string) ([]map[string]
 	if err != nil {
 		return nil, "", err
 	}
-	resp, err := httpx.Send(ctx.GetLogger(), c.client, c.config.BodyType, c.config.Method, c.config.Url, headers, true, []byte(c.config.Body))
+	resp, err := httpx.Send(ctx.GetLogger(), c.client, c.config.BodyType, c.config.Method, c.config.Url, headers, []byte(c.config.Body))
 	if err != nil {
 		return nil, "", err
 	}
-	results, newMD5, err := c.parseResponse(ctx, resp, lastMD5)
+	results, newMD5, err := c.parseResponse(ctx, resp, lastMD5, true, false)
 	if err != nil {
 		return nil, "", err
 	}

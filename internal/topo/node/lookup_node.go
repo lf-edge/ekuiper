@@ -150,12 +150,10 @@ func (n *LookupNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 					if processed {
 						break
 					}
-					n.statManager.IncTotalRecordsIn()
-					n.statManager.ProcessTimeStart()
+					n.onProcessStart(ctx)
 					switch d := data.(type) {
 					case xsql.Row:
 						log.Debugf("Lookup Node receive tuple input %s", d)
-						n.statManager.ProcessTimeStart()
 						sets := &xsql.JoinTuples{Content: make([]*xsql.JoinTuple, 0)}
 						err := n.lookup(ctx, d, fv, ns, sets, c)
 						if err != nil {
@@ -163,16 +161,12 @@ func (n *LookupNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 							n.statManager.IncTotalExceptions(err.Error())
 						} else if sets.Len() > 0 {
 							n.Broadcast(sets)
-							n.statManager.IncTotalRecordsOut()
+							n.onSend(ctx, sets)
 						} else {
 							ctx.GetLogger().Debugf("lookup return nil")
 						}
-						n.statManager.ProcessTimeEnd()
-						n.statManager.IncTotalMessagesProcessed(1)
-						n.statManager.SetBufferLength(int64(len(n.input)))
 					case *xsql.WindowTuples:
 						log.Debugf("Lookup Node receive window input %v", d)
-						n.statManager.ProcessTimeStart()
 						sets := &xsql.JoinTuples{Content: make([]*xsql.JoinTuple, 0), WindowRange: item.(*xsql.WindowTuples).GetWindowRange()}
 						err := d.Range(func(i int, r xsql.ReadonlyRow) (bool, error) {
 							tr, ok := r.(xsql.Row)
@@ -194,14 +188,13 @@ func (n *LookupNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 						} else {
 							ctx.GetLogger().Debugf("lookup return nil")
 						}
-						n.statManager.ProcessTimeEnd()
-						n.statManager.IncTotalMessagesProcessed(1)
-						n.statManager.SetBufferLength(int64(len(n.input)))
 					default:
 						e := fmt.Errorf("run lookup node error: invalid input type but got %[1]T(%[1]v)", d)
 						n.Broadcast(e)
 						n.statManager.IncTotalExceptions(e.Error())
 					}
+					n.onProcessEnd(ctx)
+					n.statManager.SetBufferLength(int64(len(n.input)))
 				case <-ctx.Done():
 					log.Info("Cancelling lookup node....")
 					return nil

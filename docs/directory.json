@@ -492,10 +492,6 @@
           "path": "api/restapi/authentication"
         },
         {
-          "title": "连接管理",
-          "path": "api/restapi/connection"
-        },
-        {
           "title": "流管理",
           "path": "api/restapi/streams"
         },
@@ -1259,10 +1255,6 @@
         {
           "title": "Authentication",
           "path": "api/restapi/authentication"
-        },
-        {
-          "title": "Connection Management",
-          "path": "api/restapi/connection"
         },
         {
           "title": "Streams",

@@ -179,3 +179,43 @@ GET http://{{host}}/data/export
 ```shell
 POST -d '["rule1","rule2"]' http://{{host}}/data/export
 ```
+
+## 通过 yaml 格式导入导出数据
+
+对于 eKuiper 配置而言，yaml 格式具有更好的可读性，eKuiper 同时支持通过 yaml 格式导入导出配置，包含流 `stream`，表 `table`，规则 `rule`，插件 `plugin`，源配置 `source yaml` 等。每种类型保存名字和创建语句的键值对。在以下示例文件中，我们定义了流、规则、表、插件、源配置、目标动作配置。
+
+GET http://{{host}}/v2/data/export
+
+```yaml
+sourceConfig:
+    sources.mqtt.mqttconf1:
+        connectionSelector: mqttcon
+        qos: 1
+        sourceType: stream
+connectionConfig:
+    connections.mqtt.mqttcon:
+        insecureSkipVerify: false
+        protocolVersion: 3.1.1
+        server: tcp://127.0.0.1:1883
+streams:
+    mqttstream1:
+        sql: ' CREATE STREAM mqttstream1 ()       WITH (DATASOURCE="topic1", FORMAT="json", CONF_KEY="mqttconf1", TYPE="mqtt", SHARED="false", );'
+rules:
+    rule1:
+        triggered: false
+        id: rule1
+        sql: select * from mqttstream1
+        actions:
+            - log: {}
+```
+
+导入配置
+
+POST http://{{host}}/v2/data/import
+Content-Type: application/json
+
+```json
+{
+  "file": "file:///tmp/a.yaml"
+}
+```

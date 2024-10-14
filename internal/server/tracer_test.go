@@ -38,7 +38,11 @@ func (suite *RestTestSuite) TestTraceRule() {
 	suite.r.ServeHTTP(w2, req2)
 	require.Equal(suite.T(), http.StatusCreated, w2.Code)
 
-	req2, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/rules/test54321/trace/start", bytes.NewBufferString("any"))
+	r := &EnableRuleTraceRequest{
+		Strategy: "always",
+	}
+	c, _ := json.Marshal(r)
+	req2, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/rules/test54321/trace/start", bytes.NewBufferString(string(c)))
 	w2 = httptest.NewRecorder()
 	suite.r.ServeHTTP(w2, req2)
 	require.Equal(suite.T(), http.StatusOK, w2.Code)

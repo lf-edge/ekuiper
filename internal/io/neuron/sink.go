@@ -23,12 +23,11 @@ import (
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/util"
-	"github.com/lf-edge/ekuiper/v2/internal/xsql"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/node/tracenode"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	"github.com/lf-edge/ekuiper/v2/pkg/nng"
-	"github.com/lf-edge/ekuiper/v2/pkg/tracer"
 )
 
 type c struct {
@@ -216,11 +215,11 @@ func doPublish(ctx api.StreamContext, cli *nng.Sock, tuple api.MessageTuple, t *
 }
 
 func extractSpanContextIntoData(ctx api.StreamContext, data interface{}, sendBytes []byte) []byte {
-	if tracerCtx, ok := data.(xsql.HasTracerCtx); ok && ctx.IsTraceEnabled() {
-		_, span := tracer.GetTracer().Start(tracerCtx.GetTracerCtx(), ctx.GetOpId())
+	traced, _, span := tracenode.TraceInput(ctx, data, ctx.GetOpId())
+	if traced {
+		defer span.End()
 		traceID := span.SpanContext().TraceID()
 		spanID := span.SpanContext().SpanID()
-		defer span.End()
 		r := NeuronTraceHeader
 		r = append(r, traceID[:]...)
 		r = append(r, spanID[:]...)

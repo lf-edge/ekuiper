@@ -187,3 +187,43 @@ Example 2: export specific rules related data
 ```shell
 POST -d '["rule1","rule2"]' http://{{host}}/data/export
 ```
+
+## Import and export data through yaml format
+
+For eKuiper configuration, the yaml format is more readable. eKuiper also supports importing and exporting configurations through yaml format, including stream `stream`, table `table`, rule `rule`, plug-in `plugin`, and source configuration etc. Each type stores a name and a key-value pair of the creation statement. In the following example file, we define flows, rules, tables, plug-ins, source configurations, and target action configurations.
+
+GET /v2/data/export
+
+```yaml
+sourceConfig:
+    sources.mqtt.mqttconf1:
+        connectionSelector: mqttcon
+        qos: 1
+        sourceType: stream
+connectionConfig:
+    connections.mqtt.mqttcon:
+        insecureSkipVerify: false
+        protocolVersion: 3.1.1
+        server: tcp://127.0.0.1:1883
+streams:
+    mqttstream1:
+        sql: ' CREATE STREAM mqttstream1 ()       WITH (DATASOURCE="topic1", FORMAT="json", CONF_KEY="mqttconf1", TYPE="mqtt", SHARED="false", );'
+rules:
+    rule1:
+        triggered: false
+        id: rule1
+        sql: select * from mqttstream1
+        actions:
+            - log: {}
+```
+
+Import Configuration
+
+POST http://{{host}}/v2/data/import
+Content-Type: application/json
+
+```json
+{
+  "file": "file:///tmp/a.yaml"
+}
+```

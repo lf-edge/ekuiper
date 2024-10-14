@@ -42,7 +42,6 @@ import (
 type ClientConf struct {
 	config       *RawConf
 	client       *http.Client
-	compressor   message.Compressor   // compressor used to payload compression when specifies compressAlgorithm
 	decompressor message.Decompressor // decompressor used to payload decompression when specifies compressAlgorithm
 
 	// auth related
@@ -70,6 +69,7 @@ type RawConf struct {
 	Method      string            `json:"method"`
 	Body        string            `json:"body"`
 	BodyType    string            `json:"bodyType"`
+	Format      string            `json:"format"`
 	Headers     map[string]string `json:"headers"`
 	Timeout     cast.DurationConf `json:"timeout"`
 	Incremental bool              `json:"incremental"`
@@ -91,7 +91,7 @@ type bodyResp struct {
 	Code int `json:"code"`
 }
 
-var bodyTypeMap = map[string]string{"none": "", "text": "text/plain", "json": "application/json", "html": "text/html", "xml": "application/xml", "javascript": "application/javascript", "form": ""}
+var bodyTypeMap = map[string]string{"none": "", "text": "text/plain", "json": "application/json", "html": "text/html", "xml": "application/xml", "javascript": "application/javascript", "form": "", "binary": "application/octet-stream"}
 
 // newTransport allows EdgeX Foundry, protected by OpenZiti to override and obtain a transport
 // protected by OpenZiti's zero trust connectivity. See client_edgex.go where this function is
@@ -198,11 +198,6 @@ func (cc *ClientConf) InitConf(device string, props map[string]interface{}) erro
 	cc.config = c
 	// that means payload need compression and decompression, so we need initialize compressor and decompressor
 	if c.Compression != "" {
-		cc.compressor, err = compressor.GetCompressor(c.Compression)
-		if err != nil {
-			return fmt.Errorf("init payload compressor failed, %w", err)
-		}
-
 		cc.decompressor, err = compressor.GetDecompressor(c.Compression)
 		if err != nil {
 			return fmt.Errorf("init payload decompressor failed, %w", err)
@@ -222,11 +217,11 @@ func (cc *ClientConf) InitConf(device string, props map[string]interface{}) erro
 
 // initialize the oAuth access token
 func (cc *ClientConf) auth(ctx api.StreamContext) error {
-	resp, err := httpx.Send(conf.Log, cc.client, "json", http.MethodPost, cc.accessConf.Url, nil, true, cc.accessConf.Body)
+	resp, err := httpx.Send(conf.Log, cc.client, "json", http.MethodPost, cc.accessConf.Url, nil, cc.accessConf.Body)
 	if err != nil {
 		return err
 	}
-	tokens, _, err := cc.parseResponse(ctx, resp, "")
+	tokens, _, err := cc.parseResponse(ctx, resp, "", true, true)
 	if err != nil {
 		return err
 	}
@@ -274,11 +269,11 @@ func (cc *ClientConf) refresh(ctx api.StreamContext) error {
 			}
 		}
 
-		resp, err := httpx.Send(conf.Log, cc.client, "json", http.MethodPost, cc.refreshConf.Url, headers, true, cc.refreshConf.Body)
+		resp, err := httpx.Send(conf.Log, cc.client, "json", http.MethodPost, cc.refreshConf.Url, headers, cc.refreshConf.Body)
 		if err != nil {
 			return fmt.Errorf("fail to get refresh token: %v", err)
 		}
-		nt, _, err := cc.parseResponse(ctx, resp, "")
+		nt, _, err := cc.parseResponse(ctx, resp, "", true, true)
 		if err != nil {
 			return fmt.Errorf("Cannot parse refresh token response to json: %v", err)
 		}
@@ -317,9 +312,11 @@ func (cc *ClientConf) responseBodyDecompress(ctx api.StreamContext, resp *http.R
 }
 
 // parse the response status. For rest sink, it will not return the body by default if not need to debug
-func (cc *ClientConf) parseResponse(ctx api.StreamContext, resp *http.Response, lastMD5 string) ([]map[string]interface{}, string, error) {
+func (cc *ClientConf) parseResponse(ctx api.StreamContext, resp *http.Response, lastMD5 string, returnBody bool, skipDecompression bool) ([]map[string]interface{}, string, error) {
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
 		return nil, "", fmt.Errorf("%s: %d", CODE_ERR, resp.StatusCode)
+	} else if !returnBody { // For rest sink who only need to know if the request is successful
+		return nil, "", nil
 	}
 
 	c, err := io.ReadAll(resp.Body)
@@ -332,7 +329,7 @@ func (cc *ClientConf) parseResponse(ctx api.StreamContext, resp *http.Response, 
 	}()
 
 	newMD5 := ""
-	if cc.config.Incremental {
+	if returnBody && cc.config.Incremental {
 		newMD5 = getMD5Hash(c)
 		if newMD5 == lastMD5 {
 			return nil, newMD5, nil
@@ -341,18 +338,21 @@ func (cc *ClientConf) parseResponse(ctx api.StreamContext, resp *http.Response, 
 
 	switch cc.config.ResponseType {
 	case "code":
-		if cc.config.Compression != "" {
-			if c, err = cc.responseBodyDecompress(ctx, resp, c); err != nil {
-				return nil, "", fmt.Errorf("try to decompress payload failed, %w", err)
+		if returnBody {
+			if cc.config.Compression != "" && !skipDecompression {
+				if c, err = cc.responseBodyDecompress(ctx, resp, c); err != nil {
+					return nil, "", fmt.Errorf("try to decompress payload failed, %w", err)
+				}
 			}
+			m, e := decode(c)
+			if e != nil {
+				return nil, "", fmt.Errorf("%s: decode fail for %v", BODY_ERR, e)
+			}
+			return m, newMD5, e
 		}
-		m, e := decode(c)
-		if e != nil {
-			return nil, "", fmt.Errorf("%s: decode fail for %v", BODY_ERR, e)
-		}
-		return m, newMD5, e
+		return nil, "", nil
 	case "body":
-		if cc.config.Compression != "" {
+		if cc.config.Compression != "" && !skipDecompression {
 			if c, err = cc.responseBodyDecompress(ctx, resp, c); err != nil {
 				return nil, "", fmt.Errorf("try to decompress payload failed, %w", err)
 			}
@@ -371,7 +371,10 @@ func (cc *ClientConf) parseResponse(ctx api.StreamContext, resp *http.Response, 
 				return nil, "", fmt.Errorf("%s: %d", CODE_ERR, ro.Code)
 			}
 		}
-		return payloads, newMD5, nil
+		if returnBody {
+			return payloads, newMD5, nil
+		}
+		return nil, "", nil
 	default:
 		return nil, "", fmt.Errorf("%s: unsupported response type %s", BODY_ERR, cc.config.ResponseType)
 	}

@@ -23,6 +23,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/converter/binary"
 	"github.com/lf-edge/ekuiper/v2/internal/converter/delimited"
 	"github.com/lf-edge/ekuiper/v2/internal/converter/json"
+	"github.com/lf-edge/ekuiper/v2/internal/converter/urlencoded"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	"github.com/lf-edge/ekuiper/v2/pkg/message"
@@ -38,6 +39,9 @@ func init() {
 	})
 	modules.RegisterConverter(message.FormatDelimited, func(_ api.StreamContext, _ string, _ map[string]*ast.JsonStreamField, props map[string]any) (message.Converter, error) {
 		return delimited.NewConverter(props)
+	})
+	modules.RegisterConverter(message.FormatUrlEncoded, func(_ api.StreamContext, _ string, _ map[string]*ast.JsonStreamField, props map[string]any) (message.Converter, error) {
+		return urlencoded.NewConverter(props)
 	})
 }
 

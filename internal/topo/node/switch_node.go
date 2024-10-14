@@ -86,8 +86,7 @@ func (n *SwitchNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 					if processed {
 						break
 					}
-					n.statManager.IncTotalRecordsIn()
-					n.statManager.ProcessTimeStart()
+					n.onProcessStart(ctx)
 					var ve *xsql.ValuerEval
 					switch d := data.(type) {
 					case xsql.Row:
@@ -132,8 +131,7 @@ func (n *SwitchNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 							n.statManager.IncTotalExceptions(m)
 						}
 					}
-					n.statManager.ProcessTimeEnd()
-					n.statManager.IncTotalRecordsOut()
+					n.onProcessEnd(ctx)
 					n.statManager.SetBufferLength(int64(len(n.input)))
 				case <-ctx.Done():
 					ctx.GetLogger().Info("Cancelling switch node....")

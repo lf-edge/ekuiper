@@ -21,15 +21,6 @@ const (
 	RuleKey = "rule"
 )
 
-func TraceRowTuple(ctx api.StreamContext, input *xsql.RawTuple, opName string) (bool, api.StreamContext, trace.Span) {
-	if !ctx.IsTraceEnabled() {
-		return false, nil, nil
-	}
-	spanCtx, span := tracer.GetTracer().Start(input.GetTracerCtx(), opName)
-	x := topoContext.WithContext(spanCtx)
-	return true, x, span
-}
-
 func RecordRowOrCollection(input interface{}, span trace.Span) {
 	switch d := input.(type) {
 	case xsql.Row:
@@ -58,28 +49,39 @@ func TraceInput(ctx api.StreamContext, d interface{}, opName string, opts ...tra
 	if !ok {
 		return false, nil, nil
 	}
-	spanCtx, span := tracer.GetTracer().Start(input.GetTracerCtx(), opName, opts...)
-	x := topoContext.WithContext(spanCtx)
-	input.SetTracerCtx(x)
-	return true, x, span
-}
-
-func TraceRow(ctx api.StreamContext, input xsql.Row, opName string, opts ...trace.SpanStartOption) (bool, api.StreamContext, trace.Span) {
-	if !ctx.IsTraceEnabled() {
+	if !checkCtxByStrategy(ctx, input.GetTracerCtx()) {
 		return false, nil, nil
 	}
 	spanCtx, span := tracer.GetTracer().Start(input.GetTracerCtx(), opName, opts...)
+	span.SetAttributes(attribute.String(RuleKey, ctx.GetRuleId()))
 	x := topoContext.WithContext(spanCtx)
 	input.SetTracerCtx(x)
 	return true, x, span
 }
 
-func StartTrace(ctx api.StreamContext, opName string) (bool, api.StreamContext, trace.Span) {
+func StartTraceBySpanCtx(ctx, sctx api.StreamContext, opName string) (bool, api.StreamContext, trace.Span) {
 	if !ctx.IsTraceEnabled() {
+		return false, nil, nil
+	}
+	if !checkCtxByStrategy(ctx, sctx) {
+		return false, nil, nil
+	}
+	spanCtx, span := tracer.GetTracer().Start(sctx, opName)
+	span.SetAttributes(attribute.String(RuleKey, ctx.GetRuleId()))
+	ingestCtx := topoContext.WithContext(spanCtx)
+	return true, ingestCtx, span
+}
+
+func StartTraceBackground(ctx api.StreamContext, opName string) (bool, api.StreamContext, trace.Span) {
+	if !ctx.IsTraceEnabled() {
+		return false, nil, nil
+	}
+	if !checkCtxByStrategy(ctx, ctx) {
 		return false, nil, nil
 	}
 	spanCtx, span := tracer.GetTracer().Start(context.Background(), opName)
-	span.SetAttributes(attribute.String(RuleKey, ctx.GetRuleId()))
+	ruleID := ctx.GetRuleId()
+	span.SetAttributes(attribute.String(RuleKey, ruleID))
 	ingestCtx := topoContext.WithContext(spanCtx)
 	return true, ingestCtx, span
 }
@@ -113,4 +115,28 @@ func ToStringCollection(r xsql.Collection) string {
 
 func buildTraceParent(traceID [16]byte, spanID [8]byte) string {
 	return fmt.Sprintf("00-%s-%s-01", hex.EncodeToString(traceID[:]), hex.EncodeToString(spanID[:]))
+}
+
+func checkCtxByStrategy(ctx, tracerCtx api.StreamContext) bool {
+	strategy := extractStrategy(ctx)
+	switch strategy {
+	case topoContext.AlwaysTraceStrategy:
+		return true
+	case topoContext.HeadTraceStrategy:
+		return hasTraceContext(tracerCtx)
+	}
+	return false
+}
+
+func extractStrategy(ctx api.StreamContext) topoContext.TraceStrategy {
+	dctx, ok := ctx.(*topoContext.DefaultContext)
+	if !ok {
+		return topoContext.AlwaysTraceStrategy
+	}
+	return dctx.GetStrategy()
+}
+
+func hasTraceContext(ctx context.Context) bool {
+	spanContext := trace.SpanContextFromContext(ctx)
+	return spanContext.IsValid()
 }
