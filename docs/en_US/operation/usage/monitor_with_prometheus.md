@@ -80,6 +80,10 @@ After version 2.0.0, we added connection-related metrics for source/sink.
 
 The numeric types of these metrics can all be monitored using Prometheus. In the next section we will describe how to configure the Prometheus service in eKuiper.
 
+View CPU running metrics for a rule
+
+- kuiper_rule_cpu_ms: The CPU running indicator of the rule represents the CPU time used by the CPU in the past 30 seconds, in ms.
+
 ## Configuring the Prometheus Service in eKuiper
 
 The Prometheus service comes with eKuiper, but is disabled by default. You can turn on the service by modifying the configuration in `etc/kuiper.yaml`. Where `prometheus` is a boolean value, change it to `true` to turn on the service; `prometheusPort` configures the port of the service.

@@ -80,6 +80,10 @@ kuiper_rule_count: eKuiper 中有多少条规则运行，多少条规则暂停�
 
 这些运行指标中的数值类型指标均可使用 Prometheus 进行监控。下一节我们将描述如何配置 eKuiper 中的 Prometheus 服务。
 
+查看规则的 CPU 运行指标
+
+- kuiper_rule_cpu_ms 规则的 CPU 运行指标，代表了 CPU 在过去 30 秒内所使用的 CPU 时间，单位为 ms
+
 ## 配置 eKuiper 的 Prometheus 服务
 
 eKuiper 中自带 Prometheus 服务，但是默认为关闭状态。用户可修改 `etc/kuiper.yaml` 中的配置打开该服务。其中，`prometheus` 为布尔值，修改为 `true` 可打开服务；`prometheusPort` 配置服务的访问端口。

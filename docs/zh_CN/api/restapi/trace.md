@@ -7,7 +7,7 @@ eKuiper 支持通过 API 查看规则最近的追踪数据。
 开启规则的数据追踪，strategy 支持 `always` 与 `head`. `always` 代表总是对每条消息进行追踪，`head` 代表只有上游消息含有 trace context 才会进行追踪。
 
 ```shell
-POST http://localhost:9081/rule/{ruleID}/trace/start
+POST http://localhost:9081/rules/{ruleID}/trace/start
 
 {
     "strategy": "head"
@@ -17,7 +17,7 @@ POST http://localhost:9081/rule/{ruleID}/trace/start
 ## 关闭特定规则的数据追踪
 
 ```shell
-POST http://localhost:9081/rule/{ruleID}/trace/stop
+POST http://localhost:9081/rules/{ruleID}/trace/stop
 ```
 
 ## 根据规则 ID 查看最近的 Trace ID

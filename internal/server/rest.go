@@ -192,6 +192,7 @@ func createRestServer(ip string, port int, needToken bool) *http.Server {
 	r.HandleFunc("/rules/{name}/topo", getTopoRuleHandler).Methods(http.MethodGet)
 	r.HandleFunc("/rules/{name}/trace/start", enableRuleTraceHandler).Methods(http.MethodPost)
 	r.HandleFunc("/rules/{name}/trace/stop", disableRuleTraceHandler).Methods(http.MethodPost)
+	r.HandleFunc("/rules/usage/cpu", rulesTopCpuUsageHandler).Methods(http.MethodGet)
 	r.HandleFunc("/rules/validate", validateRuleHandler).Methods(http.MethodPost)
 	r.HandleFunc("/rules/{name}/reset_state", ruleStateHandler).Methods(http.MethodPut)
 	r.HandleFunc("/rules/{name}/explain", explainRuleHandler).Methods(http.MethodGet)
@@ -1012,4 +1013,29 @@ func testRuleStopHandler(w http.ResponseWriter, r *http.Request) {
 	trial.TrialManager.StopRule(id)
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprintf(w, "Test rule %s was stopped.", id)
+}
+
+func rulesTopCpuUsageHandler(w http.ResponseWriter, r *http.Request) {
+	if !conf.Config.Basic.EnableResourceProfiling {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("cpu usage not enabled"))
+		return
+	}
+	dataMap := cpuProfiler.GetWindowData()
+	if dataMap == nil {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("cpu usage not ready"))
+		return
+	}
+	ruleResult, ok := dataMap["rule"]
+	if !ok {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("cpu usage not ready"))
+		return
+	}
+	result := make(map[string]int)
+	for key, value := range ruleResult.Stats {
+		result[key] = value
+	}
+	jsonResponse(result, w, logger)
 }
