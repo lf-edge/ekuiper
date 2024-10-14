@@ -22,7 +22,6 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"go.nanomsg.org/mangos/v3"
-	"go.opentelemetry.io/otel/trace"
 
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/util"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node/tracenode"
@@ -136,21 +135,12 @@ func extractTraceMeta(ctx api.StreamContext, data []byte) ([]byte, map[string]in
 	if !ctx.IsTraceEnabled() {
 		return rawData, nil
 	}
-	meta := make(map[string]interface{})
-	var traced bool
-	var tracerCtx api.StreamContext
-	var span trace.Span
+	meta := make(map[string]any)
 	if len(data) > NeuronTraceHeaderLen && bytes.Equal(data[:2], NeuronTraceHeader) {
 		traceID := data[NeuronTraceIDStartIndex:NeuronTraceIDEndIndex]
 		spanID := data[NeuronTraceSpanIDStartIndex:NeuronTraceSpanIDEndIndex]
-		traced, tracerCtx, span = tracenode.StartTraceByID(ctx, [16]byte(traceID), [8]byte(spanID))
-	} else {
-		traced, tracerCtx, span = tracenode.StartTraceBackground(ctx, ctx.GetOpId())
-	}
-	if traced {
-		meta["traceId"] = span.SpanContext().TraceID().String()
-		meta["traceCtx"] = tracerCtx
-		defer span.End()
+		// by setting traceId meta, source node knows how to construct a trace
+		meta["traceId"] = tracenode.BuildTraceParentId([16]byte(traceID), [8]byte(spanID))
 	}
 	return rawData, meta
 }

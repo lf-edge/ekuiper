@@ -24,7 +24,6 @@ import (
 
 	"github.com/lf-edge/ekuiper/v2/internal/io/mqtt/client"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/util"
-	"github.com/lf-edge/ekuiper/v2/internal/topo/node/tracenode"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
@@ -121,16 +120,10 @@ func (ms *SourceConnector) onMessage(ctx api.StreamContext, msg pahoMqtt.Message
 		ms.eof(ctx)
 		return
 	}
-	traced, spanCtx, span := tracenode.StartTraceBackground(ctx, ctx.GetOpId())
 	meta := map[string]interface{}{
 		"topic":     msg.Topic(),
 		"qos":       msg.Qos(),
 		"messageId": msg.MessageID(),
-	}
-	if traced {
-		meta["traceId"] = span.SpanContext().TraceID()
-		meta["traceCtx"] = spanCtx
-		defer span.End()
 	}
 	ingest(ctx, msg.Payload(), meta, rcvTime)
 }

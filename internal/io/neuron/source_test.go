@@ -15,7 +15,6 @@
 package neuron
 
 import (
-	"encoding/hex"
 	"testing"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
@@ -95,14 +94,16 @@ func TestExtractSourceTraceData(t *testing.T) {
 	traceData = append(traceData, []byte(spanID)...)
 	traceData = append(traceData, []byte(rawData)...)
 	tests := []struct {
-		data    []byte
-		traceID string
-		spanID  string
+		data         []byte
+		traceID      string
+		spanID       string
+		finalTraceId string
 	}{
 		{
-			data:    traceData,
-			traceID: traceID,
-			spanID:  spanID,
+			data:         traceData,
+			traceID:      traceID,
+			spanID:       spanID,
+			finalTraceId: "00-30313233343536373839616263646566-3132333435363738-01",
 		},
 		{
 			data: []byte(rawData),
@@ -114,10 +115,10 @@ func TestExtractSourceTraceData(t *testing.T) {
 		gotData, meta := extractTraceMeta(ctx, tc.data)
 		require.Equal(t, []byte(rawData), gotData)
 		if len(tc.traceID) > 0 {
-			require.Equal(t, meta["traceId"], hex.EncodeToString([]byte(tc.traceID)))
+			require.Equal(t, tc.finalTraceId, meta["traceId"])
 		} else {
 			_, ok := meta["traceId"]
-			require.True(t, ok)
+			require.False(t, ok)
 		}
 	}
 }
