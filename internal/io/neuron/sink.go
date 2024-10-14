@@ -214,7 +214,7 @@ func doPublish(ctx api.StreamContext, cli *nng.Sock, tuple api.MessageTuple, t *
 	return nil
 }
 
-func extractSpanContextIntoData(ctx api.StreamContext, data interface{}, sendBytes []byte) []byte {
+func extractSpanContextIntoData(ctx api.StreamContext, data any, sendBytes []byte) []byte {
 	traced, _, span := tracenode.TraceInput(ctx, data, ctx.GetOpId())
 	if traced {
 		defer span.End()

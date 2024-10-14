@@ -52,7 +52,7 @@ func RecordRowOrCollection(input interface{}, span trace.Span) {
 	}
 }
 
-func TraceInput(ctx api.StreamContext, d interface{}, opName string, opts ...trace.SpanStartOption) (bool, api.StreamContext, trace.Span) {
+func TraceInput(ctx api.StreamContext, d any, opName string, opts ...trace.SpanStartOption) (bool, api.StreamContext, trace.Span) {
 	if !ctx.IsTraceEnabled() {
 		return false, nil, nil
 	}
@@ -125,7 +125,7 @@ func BuildTraceParentId(traceID [16]byte, spanID [8]byte) string {
 }
 
 func checkCtxByStrategy(ctx, tracerCtx api.StreamContext) bool {
-	strategy := extractStrategy(ctx)
+	strategy := ExtractStrategy(ctx)
 	switch strategy {
 	case topoContext.AlwaysTraceStrategy:
 		return true
@@ -135,7 +135,7 @@ func checkCtxByStrategy(ctx, tracerCtx api.StreamContext) bool {
 	return false
 }
 
-func extractStrategy(ctx api.StreamContext) topoContext.TraceStrategy {
+func ExtractStrategy(ctx api.StreamContext) topoContext.TraceStrategy {
 	dctx, ok := ctx.(*topoContext.DefaultContext)
 	if !ok {
 		return topoContext.AlwaysTraceStrategy
