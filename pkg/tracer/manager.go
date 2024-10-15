@@ -1,10 +1,10 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//	http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -108,15 +108,15 @@ type LocalSpanMemoryStorage struct {
 	queue *Queue
 	// traceid -> spanid -> span
 	m map[string]map[string]*LocalSpan
-	// rule -> traceID
-	ruleTraceMap map[string]map[string]struct{}
+	// rule -> traceID, traceIDs will have duplicates, need to dedup when return
+	ruleTraces map[string][]string
 }
 
 func newLocalSpanMemoryStorage(capacity int) *LocalSpanMemoryStorage {
 	return &LocalSpanMemoryStorage{
-		queue:        NewQueue(capacity),
-		ruleTraceMap: make(map[string]map[string]struct{}),
-		m:            map[string]map[string]*LocalSpan{},
+		queue:      NewQueue(capacity),
+		ruleTraces: make(map[string][]string),
+		m:          map[string]map[string]*LocalSpan{},
 	}
 }
 
@@ -138,12 +138,11 @@ func (l *LocalSpanMemoryStorage) saveSpan(localSpan *LocalSpan) error {
 		l.m[localSpan.TraceID] = spanMap
 	}
 	if len(localSpan.RuleID) > 0 {
-		traceMap, ok := l.ruleTraceMap[localSpan.RuleID]
+		_, ok := l.ruleTraces[localSpan.RuleID]
 		if !ok {
-			traceMap = make(map[string]struct{})
-			l.ruleTraceMap[localSpan.RuleID] = traceMap
+			l.ruleTraces[localSpan.RuleID] = make([]string, 0)
 		}
-		traceMap[localSpan.TraceID] = struct{}{}
+		l.ruleTraces[localSpan.RuleID] = append(l.ruleTraces[localSpan.RuleID], localSpan.TraceID)
 	}
 
 	spanMap[localSpan.SpanID] = localSpan
@@ -172,13 +171,19 @@ func (l *LocalSpanMemoryStorage) GetTraceById(traceID string) (*LocalSpan, error
 func (l *LocalSpanMemoryStorage) GetTraceByRuleID(ruleID string, limit int64) ([]string, error) {
 	l.RLock()
 	defer l.RUnlock()
-	traceMap := l.ruleTraceMap[ruleID]
+	allTraces := l.ruleTraces[ruleID]
 	r := make([]string, 0)
 	if limit < 1 {
-		limit = int64(len(traceMap))
+		limit = int64(len(allTraces))
 	}
 	count := int64(0)
-	for traceID := range traceMap {
+	traceMap := make(map[string]struct{})
+	for i := len(allTraces) - 1; i >= 0; i-- {
+		traceID := allTraces[i]
+		if _, existed := traceMap[traceID]; existed {
+			continue
+		}
+		traceMap[traceID] = struct{}{}
 		r = append(r, traceID)
 		count++
 		if count >= limit {
