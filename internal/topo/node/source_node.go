@@ -23,6 +23,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/v2/internal/io/memory/pubsub"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
+	topoContext "github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node/tracenode"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
@@ -81,9 +82,7 @@ func (m *SourceNode) ingestBytes(ctx api.StreamContext, data []byte, meta map[st
 		meta = make(map[string]any)
 	}
 	tuple := &xsql.RawTuple{Emitter: m.name, Rawdata: data, Timestamp: ts, Metadata: meta}
-	if ctx.IsTraceEnabled() {
-		m.traceStart(ctx, meta, tuple)
-	}
+	m.traceStart(ctx, meta, tuple)
 	m.Broadcast(tuple)
 	m.onSend(ctx, tuple)
 	m.onProcessEnd(ctx)
@@ -91,6 +90,9 @@ func (m *SourceNode) ingestBytes(ctx api.StreamContext, data []byte, meta map[st
 }
 
 func (m *SourceNode) traceStart(ctx api.StreamContext, meta map[string]any, tuple xsql.HasTracerCtx) {
+	if !ctx.IsTraceEnabled() {
+		return
+	}
 	var (
 		traced   bool
 		traceCtx api.StreamContext
@@ -100,13 +102,17 @@ func (m *SourceNode) traceStart(ctx api.StreamContext, meta map[string]any, tupl
 	if tid, ok := meta["traceId"]; ok {
 		traced, traceCtx, span = tracenode.StartTraceByID(ctx, tid.(string))
 	} else {
+		strategy := tracenode.ExtractStrategy(ctx)
+		if strategy != topoContext.AlwaysTraceStrategy {
+			return
+		}
 		traced, traceCtx, span = tracenode.StartTraceBackground(ctx, ctx.GetOpId())
 		meta["traceId"] = span.SpanContext().TraceID()
 	}
 	if traced {
-		tuple.SetTracerCtx(traceCtx)
 		tracenode.RecordRowOrCollection(tuple, span)
 		m.span = span
+		m.spanCtx = traceCtx
 	}
 }
 
@@ -129,9 +135,7 @@ func (m *SourceNode) ingestAnyTuple(ctx api.StreamContext, data any, meta map[st
 	// expected from file which send out any tuple type
 	case []byte:
 		tuple := &xsql.RawTuple{Emitter: m.name, Rawdata: mess, Timestamp: ts, Metadata: meta}
-		if ctx.IsTraceEnabled() {
-			m.traceStart(ctx, meta, tuple)
-		}
+		m.traceStart(ctx, meta, tuple)
 		m.Broadcast(tuple)
 		m.onSend(ctx, tuple)
 	// Source tuples are expected from memory
@@ -164,17 +168,19 @@ func (m *SourceNode) connectionStatusChange(status string, message string) {
 
 func (m *SourceNode) ingestMap(t map[string]any, meta map[string]any, ts time.Time) {
 	tuple := &xsql.Tuple{Emitter: m.name, Message: t, Timestamp: ts, Metadata: meta}
-	if m.ctx.IsTraceEnabled() {
-		m.traceStart(m.ctx, meta, tuple)
-	}
+	m.traceStart(m.ctx, meta, tuple)
 	m.Broadcast(tuple)
 	m.onSend(m.ctx, tuple)
 }
 
 func (m *SourceNode) ingestTuple(t *xsql.Tuple, ts time.Time) {
-	tuple := &xsql.Tuple{Emitter: m.name, Message: t.Message, Timestamp: ts, Metadata: t.Metadata}
-	if m.ctx.IsTraceEnabled() {
-		m.traceStart(m.ctx, t.Metadata, tuple)
+	tuple := &xsql.Tuple{Emitter: m.name, Message: t.Message, Timestamp: ts, Metadata: t.Metadata, Ctx: t.Ctx}
+	// If receiving tuple, its source is still in the system. So continue tracing
+	traced, spanCtx, span := tracenode.TraceInput(m.ctx, tuple, m.name)
+	if traced {
+		tracenode.RecordRowOrCollection(tuple, span)
+		m.span = span
+		m.spanCtx = spanCtx
 	}
 	m.Broadcast(tuple)
 	m.onSend(m.ctx, tuple)
