@@ -271,7 +271,7 @@ func (o *defaultNode) onProcessStart(ctx api.StreamContext, val any) {
 	o.statManager.ProcessTimeStart()
 	// Source just pass nil val so that no trace. The trace will start after extracting trace id
 	if val != nil {
-		traced, spanCtx, span := tracenode.TraceInput(ctx, val, ctx.GetOpId())
+		traced, spanCtx, span := tracenode.TraceInput(ctx, val, o.name)
 		if traced {
 			tracenode.RecordRowOrCollection(val, span)
 			o.span = span
