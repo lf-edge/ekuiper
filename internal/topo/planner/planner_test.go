@@ -388,17 +388,6 @@ func Test_createLogicalPlan(t *testing.T) {
 						},
 					},
 				},
-				otherFieldNames: map[string]ast.Field{
-					"index": {
-						Name:  "row_number",
-						AName: "index",
-						Expr: &ast.FieldRef{
-							StreamName: ast.AliasStream,
-							Name:       "index",
-							AliasRef:   ref,
-						},
-					},
-				},
 			}.Init(),
 		},
 		{
@@ -442,15 +431,6 @@ func Test_createLogicalPlan(t *testing.T) {
 						},
 					},
 					{
-						Name: "row_number",
-						Expr: &ast.Call{
-							Name:     "row_number",
-							FuncType: ast.FuncTypeWindow,
-						},
-					},
-				},
-				otherFieldNames: map[string]ast.Field{
-					"row_number": {
 						Name: "row_number",
 						Expr: &ast.Call{
 							Name:     "row_number",
