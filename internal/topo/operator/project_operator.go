@@ -26,12 +26,10 @@ import (
 )
 
 type ProjectOp struct {
-	ColNames    [][]string // list of [col, table]
-	AliasNames  []string   // list of alias name
-	ExprNames   []string   // list of expr name
-	ExceptNames []string   // list of except name
-	// OtherFieldNames store the field calculated by other operators, eg: window function
-	OtherFieldNames  map[string]ast.Field
+	ColNames         [][]string // list of [col, table]
+	AliasNames       []string   // list of alias name
+	ExprNames        []string   // list of expr name
+	ExceptNames      []string   // list of except name
 	AllWildcard      bool
 	WildcardEmitters map[string]bool
 	AliasFields      ast.Fields
@@ -139,11 +137,6 @@ func (pp *ProjectOp) project(row xsql.RawRow, ve *xsql.ValuerEval) error {
 	// Do not set value during calculations
 
 	for _, f := range pp.ExprFields {
-		if _, ok := pp.OtherFieldNames[f.Name]; ok {
-			vi, _ := row.Value(f.Name, "")
-			pp.kvs = append(pp.kvs, f.Name, vi)
-			continue
-		}
 		vi := ve.Eval(f.Expr)
 		if e, ok := vi.(error); ok {
 			return fmt.Errorf("expr: %s meet error, err:%v", f.Expr.String(), e)
@@ -160,11 +153,6 @@ func (pp *ProjectOp) project(row xsql.RawRow, ve *xsql.ValuerEval) error {
 		}
 	}
 	for _, f := range pp.AliasFields {
-		if _, ok := pp.OtherFieldNames[f.AName]; ok {
-			vi, _ := row.Value(f.AName, "")
-			pp.kvs = append(pp.kvs, f.AName, vi)
-			continue
-		}
 		vi := ve.Eval(f.Expr)
 		if e, ok := vi.(error); ok {
 			if ref, ok := f.Expr.(*ast.FieldRef); ok {
