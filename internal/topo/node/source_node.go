@@ -77,7 +77,7 @@ func (m *SourceNode) Open(ctx api.StreamContext, ctrlCh chan<- error) {
 
 func (m *SourceNode) ingestBytes(ctx api.StreamContext, data []byte, meta map[string]any, ts time.Time) {
 	ctx.GetLogger().Debugf("source connector %s receive data %+v", m.name, data)
-	m.onProcessStart(ctx, data)
+	m.onProcessStart(ctx, nil)
 	if meta == nil {
 		meta = make(map[string]any)
 	}
