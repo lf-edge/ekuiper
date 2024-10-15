@@ -115,13 +115,6 @@ func (o *defaultNode) BroadcastCustomized(val any, broadcastFunc func(val any)) 
 	if _, ok := val.(error); ok && !o.sendError {
 		return
 	}
-	if o.spanCtx != nil {
-		// Fallback to set the context when sending out so that all children have the same parent ctx
-		// If has set ctx in the node impl, do not override it
-		if vt, ok := val.(xsql.HasTracerCtx); ok && vt.GetTracerCtx() == nil {
-			vt.SetTracerCtx(o.spanCtx)
-		}
-	}
 	if o.qos >= def.AtLeastOnce {
 		boe := &checkpoint.BufferOrEvent{
 			Data:    val,
@@ -140,6 +133,11 @@ func (o *defaultNode) doBroadcast(val any) {
 	l := len(o.outputs)
 	c := 0
 	for name, out := range o.outputs {
+		// Fallback to set the context when sending out so that all children have the same parent ctx
+		// If has set ctx in the node impl, do not override it
+		if vt, ok := val.(xsql.HasTracerCtx); ok && vt.GetTracerCtx() == nil {
+			vt.SetTracerCtx(o.spanCtx)
+		}
 		select {
 		case out <- val:
 			// do nothing
@@ -157,11 +155,6 @@ func (o *defaultNode) doBroadcast(val any) {
 			val = vt.Clone()
 		case xsql.Row:
 			val = vt.Clone()
-		}
-		// Fallback to set the context when sending out so that all children have the same parent ctx
-		// If has set ctx in the node impl, do not override it
-		if vt, ok := val.(xsql.HasTracerCtx); ok && vt.GetTracerCtx() == nil {
-			vt.SetTracerCtx(o.spanCtx)
 		}
 	}
 }
