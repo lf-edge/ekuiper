@@ -20,6 +20,7 @@ import (
 
 	"github.com/benbjohnson/clock"
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
@@ -43,6 +44,8 @@ type CacheOp struct {
 	// send timer, only enabled when there is cache. disable when all cache are sent
 	resendTicker  *clock.Ticker
 	resendTimerCh <-chan time.Time
+	// trace span map. need to save it until it is sent because cache op does not send out one by one
+	rowHandle map[any]trace.Span
 }
 
 func NewCacheOp(ctx api.StreamContext, name string, rOpt *def.RuleOption, sc *conf.SinkConf) (*CacheOp, error) {
@@ -82,6 +85,9 @@ func (s *CacheOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 						break
 					}
 					s.onProcessStart(ctx, data)
+					if s.span != nil {
+						s.rowHandle[data] = s.span
+					}
 					// If already have the cache, append this to cache and send the currItem
 					// Otherwise, send out the new data. If blocked, make it currItem
 					if s.hasCache { // already have cache, add current data to cache and send out the cache
@@ -95,6 +101,7 @@ func (s *CacheOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 						s.currItem = data
 					}
 					s.send()
+					s.span = nil
 					s.onProcessEnd(ctx)
 					l := int64(len(s.input) + s.cache.CacheLength)
 					if s.currItem != nil {
@@ -153,6 +160,9 @@ func (s *CacheOp) doBroadcast(val interface{}) {
 		s.ctx.GetLogger().Debugf("send out data %v", val)
 		// send through. The sink must retry until successful
 		s.currItem = nil
+		if span, ok := s.rowHandle[s.currItem]; ok {
+			span.End()
+		}
 		s.onSend(s.ctx, val)
 	case <-s.ctx.Done():
 		// rule stop so stop waiting
