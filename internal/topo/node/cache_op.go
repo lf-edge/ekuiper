@@ -58,6 +58,7 @@ func NewCacheOp(ctx api.StreamContext, name string, rOpt *def.RuleOption, sc *co
 		defaultSinkNode: newDefaultSinkNode(name, rOpt),
 		cache:           c,
 		cacheConf:       sc,
+		rowHandle:       make(map[any]trace.Span),
 	}, nil
 }
 
@@ -159,10 +160,10 @@ func (s *CacheOp) doBroadcast(val interface{}) {
 	case out <- val:
 		s.ctx.GetLogger().Debugf("send out data %v", val)
 		// send through. The sink must retry until successful
-		s.currItem = nil
 		if span, ok := s.rowHandle[s.currItem]; ok {
 			span.End()
 		}
+		s.currItem = nil
 		s.onSend(s.ctx, val)
 	case <-s.ctx.Done():
 		// rule stop so stop waiting

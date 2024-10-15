@@ -1,0 +1,128 @@
+{
+  "name": "subtopo_pushStream",
+  "traceID": "30a418018378ba45d1ad5bf59834715a",
+  "spanID": "e7f0c1c94c9244bf",
+  "parentSpanID": "0000000000000000",
+  "attribute": {
+    "data": "ewogICJhIjogMjIsCiAgImIiOiA0MQp9",
+    "rule": "$$subtopo_pushStream"
+  },
+  "startTime": "2024-10-15T16:46:35.9000045+08:00",
+  "endTime": "2024-10-15T16:46:35.9000045+08:00",
+  "ruleID": "$$subtopo_pushStream",
+  "ChildSpan": [
+    {
+      "name": "2_decoder",
+      "traceID": "30a418018378ba45d1ad5bf59834715a",
+      "spanID": "774dd0c7d9acfb61",
+      "parentSpanID": "e7f0c1c94c9244bf",
+      "attribute": {
+        "data": "ewogICJhIjogMjIsCiAgImIiOiA0MQp9",
+        "rule": "$$subtopo_pushStream"
+      },
+      "startTime": "2024-10-15T16:46:35.9000045+08:00",
+      "endTime": "2024-10-15T16:46:35.9000045+08:00",
+      "ruleID": "$$subtopo_pushStream",
+      "ChildSpan": [
+        {
+          "name": "3_project",
+          "traceID": "30a418018378ba45d1ad5bf59834715a",
+          "spanID": "f27b60db5e02dcc4",
+          "parentSpanID": "774dd0c7d9acfb61",
+          "attribute": {
+            "data": "{\"a\":22,\"b\":41}",
+            "rule": "rule1"
+          },
+          "startTime": "2024-10-15T16:46:35.9000045+08:00",
+          "endTime": "2024-10-15T16:46:35.9000045+08:00",
+          "ruleID": "rule1",
+          "ChildSpan": [
+            {
+              "name": "memory_0_0_transform",
+              "traceID": "30a418018378ba45d1ad5bf59834715a",
+              "spanID": "95167fb2793496b6",
+              "parentSpanID": "f27b60db5e02dcc4",
+              "attribute": {
+                "data": "{\"c\":63}",
+                "rule": "rule1"
+              },
+              "startTime": "2024-10-15T16:46:35.9000045+08:00",
+              "endTime": "2024-10-15T16:46:35.9003491+08:00",
+              "ruleID": "rule1",
+              "ChildSpan": [
+                {
+                  "name": "memory_0",
+                  "traceID": "30a418018378ba45d1ad5bf59834715a",
+                  "spanID": "7e9bd9cd0c9c8983",
+                  "parentSpanID": "95167fb2793496b6",
+                  "attribute": {
+                    "data": "{\"c\":63}",
+                    "rule": "rule1"
+                  },
+                  "startTime": "2024-10-15T16:46:35.9003491+08:00",
+                  "endTime": "2024-10-15T16:46:35.9003491+08:00",
+                  "ruleID": "rule1",
+                  "ChildSpan": [
+                    {
+                      "name": "memStream",
+                      "traceID": "30a418018378ba45d1ad5bf59834715a",
+                      "spanID": "5aeca55c487d1846",
+                      "parentSpanID": "7e9bd9cd0c9c8983",
+                      "attribute": {
+                        "data": "{\"c\":63}",
+                        "rule": "rule2"
+                      },
+                      "startTime": "2024-10-15T16:46:35.9003491+08:00",
+                      "endTime": "2024-10-15T16:46:35.9003491+08:00",
+                      "ruleID": "rule2",
+                      "ChildSpan": [
+                        {
+                          "name": "2_window",
+                          "traceID": "30a418018378ba45d1ad5bf59834715a",
+                          "spanID": "998c771f999f53ed",
+                          "parentSpanID": "5aeca55c487d1846",
+                          "attribute": {
+                            "data": "{\"c\":63}",
+                            "rule": "rule2"
+                          },
+                          "links": [
+                            {
+                              "TraceID": "56089e91a2c9b481003979d856234114"
+                            }
+                          ],
+                          "startTime": "2024-10-15T16:46:35.9003491+08:00",
+                          "endTime": "2024-10-15T16:46:59.3921846+08:00",
+                          "ruleID": "rule2",
+                          "ChildSpan": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "log_0_0_batch",
+              "traceID": "30a418018378ba45d1ad5bf59834715a",
+              "spanID": "7dac5f8c84a6bb3f",
+              "parentSpanID": "f27b60db5e02dcc4",
+              "attribute": {
+                "data": "{\"c\":63}",
+                "rule": "rule1"
+              },
+              "links": [
+                {
+                  "TraceID": "7bf55299aeb03718164f949794798bd8"
+                }
+              ],
+              "startTime": "2024-10-15T16:46:35.9003491+08:00",
+              "endTime": "2024-10-15T16:46:35.9003491+08:00",
+              "ruleID": "rule1",
+              "ChildSpan": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
