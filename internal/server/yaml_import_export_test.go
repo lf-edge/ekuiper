@@ -141,3 +141,16 @@ func TestYamlImportErr(t *testing.T) {
 	}
 	failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/server/mockImportErr")
 }
+
+func TestReplaceConfigurations(t *testing.T) {
+	require.Equal(t, map[string]any{
+		"dburl": "123",
+	}, replaceConfigurations("sources.sql.sql1", map[string]any{
+		"url": "123",
+	}))
+	require.Equal(t, map[string]any{
+		"password": "123",
+	}, replaceConfigurations("sources.kafka.kafka1", map[string]any{
+		"saslPassword": "123",
+	}))
+}

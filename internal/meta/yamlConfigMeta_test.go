@@ -121,3 +121,28 @@ func TestValidateConf(t *testing.T) {
 	require.NoError(t, AddSinkConfKey("websocket", "k1", "en-us", c))
 	require.NoError(t, AddSourceConfKey("websocket", "k2", "en-us", c))
 }
+
+func TestReplaceConfigurations(t *testing.T) {
+	props := YamlConfigurations{
+		"sql1": {
+			"url": "123",
+		},
+	}
+	got := replaceConfigurations("sql", props)
+	require.Equal(t, YamlConfigurations{
+		"sql1": {
+			"dburl": "123",
+		},
+	}, got)
+	props = YamlConfigurations{
+		"kafka1": {
+			"saslPassword": "123",
+		},
+	}
+	got = replaceConfigurations("kafka", props)
+	require.Equal(t, YamlConfigurations{
+		"kafka1": {
+			"password": "123",
+		},
+	}, got)
+}
