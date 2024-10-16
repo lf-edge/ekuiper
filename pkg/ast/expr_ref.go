@@ -15,6 +15,7 @@
 package ast
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 )
@@ -78,6 +79,9 @@ func (fr *FieldRef) String() string {
 		}
 		n += fr.Name
 	}
+	if fr.AliasRef != nil {
+		n += fmt.Sprintf(",%s", fr.AliasRef.String())
+	}
 	return sn + n
 }
 
@@ -112,6 +116,10 @@ type AliasRef struct {
 	refSources []StreamName
 	// optional, lazy set when calculating isAggregate
 	IsAggregate *bool
+}
+
+func (a *AliasRef) String() string {
+	return a.Expression.String()
 }
 
 // SetRefSource only used for unit test

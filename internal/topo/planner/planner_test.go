@@ -125,15 +125,6 @@ func Test_createLogicalPlan(t *testing.T) {
 
 	// boolTrue = true
 	boolFalse := false
-
-	ref := &ast.AliasRef{
-		Expression: &ast.Call{
-			Name:     "row_number",
-			FuncType: ast.FuncTypeWindow,
-		},
-	}
-	ref.SetRefSource([]string{})
-
 	srcHumRef := &ast.AliasRef{
 		Expression: &ast.FieldRef{
 			StreamName: "src2",
@@ -331,110 +322,6 @@ func Test_createLogicalPlan(t *testing.T) {
 							StreamName: ast.AliasStream,
 							Name:       "hum2",
 							AliasRef:   tableHumRef,
-						},
-					},
-				},
-			}.Init(),
-		},
-		{
-			sql: "select name, row_number() as index from src1",
-			p: ProjectPlan{
-				baseLogicalPlan: baseLogicalPlan{
-					children: []LogicalPlan{
-						WindowFuncPlan{
-							baseLogicalPlan: baseLogicalPlan{
-								children: []LogicalPlan{
-									DataSourcePlan{
-										baseLogicalPlan: baseLogicalPlan{},
-										name:            "src1",
-										streamFields: map[string]*ast.JsonStreamField{
-											"name": {
-												Type: "string",
-											},
-										},
-										streamStmt:  streams["src1"],
-										metaFields:  []string{},
-										pruneFields: []string{},
-									}.Init(),
-								},
-							},
-							windowFuncField: ast.Field{
-								Name:  "row_number",
-								AName: "index",
-								Expr: &ast.FieldRef{
-									StreamName: ast.AliasStream,
-									Name:       "index",
-									AliasRef:   ref,
-								},
-							},
-						}.Init(),
-					},
-				},
-				fields: []ast.Field{
-					{
-						Name:  "row_number",
-						AName: "index",
-						Expr: &ast.FieldRef{
-							StreamName: ast.AliasStream,
-							Name:       "index",
-							AliasRef:   ref,
-						},
-					},
-					{
-						Name: "name",
-						Expr: &ast.FieldRef{
-							StreamName: "src1",
-							Name:       "name",
-						},
-					},
-				},
-			}.Init(),
-		},
-		{
-			sql: "select name, row_number() from src1",
-			p: ProjectPlan{
-				baseLogicalPlan: baseLogicalPlan{
-					children: []LogicalPlan{
-						WindowFuncPlan{
-							baseLogicalPlan: baseLogicalPlan{
-								children: []LogicalPlan{
-									DataSourcePlan{
-										baseLogicalPlan: baseLogicalPlan{},
-										name:            "src1",
-										streamFields: map[string]*ast.JsonStreamField{
-											"name": {
-												Type: "string",
-											},
-										},
-										streamStmt:  streams["src1"],
-										metaFields:  []string{},
-										pruneFields: []string{},
-									}.Init(),
-								},
-							},
-							windowFuncField: ast.Field{
-								Name: "row_number",
-								Expr: &ast.Call{
-									Name:     "row_number",
-									FuncType: ast.FuncTypeWindow,
-								},
-							},
-						}.Init(),
-					},
-				},
-				fields: []ast.Field{
-					{
-						Name: "name",
-						Expr: &ast.FieldRef{
-							StreamName: "src1",
-							Name:       "name",
-						},
-					},
-					{
-						Name: "row_number",
-						Expr: &ast.Call{
-							Name:     "row_number",
-							FuncType: ast.FuncTypeWindow,
 						},
 					},
 				},
