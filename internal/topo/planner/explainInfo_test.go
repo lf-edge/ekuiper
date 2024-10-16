@@ -818,7 +818,6 @@ func TestWindowPlanExplainInfo(t *testing.T) {
 		test[i].p.self.SetID(int64(i))
 		test[i].p.BuildExplainInfo()
 		explainInfo := test[i].p.Explain()
-		//fmt.Println(explainInfo)
 		require.Equal(t, test[i].res, strings.Trim(explainInfo, "\n"))
 	}
 }
@@ -854,7 +853,6 @@ func TestWatermarkPlanExplainInfo(t *testing.T) {
 		test[i].p.self.SetID(int64(i))
 		test[i].p.BuildExplainInfo()
 		explainInfo := test[i].p.Explain()
-		//fmt.Println(explainInfo)
 		require.Equal(t, test[i].res, strings.Trim(explainInfo, "\n"))
 	}
 }
