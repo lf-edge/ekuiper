@@ -254,7 +254,7 @@ func (s *TraceTestSuite) TestLookup() {
 		s.T().Log(GetResponseText(resp))
 		s.Require().Equal(http.StatusCreated, resp.StatusCode)
 	})
-
+	time.Sleep(ConstantInterval)
 	s.Run("send data to table", func() {
 		resp, err := http.Post("http://127.0.0.1:10081/test/table", ContentTypeJson, bytes.NewBufferString("{\"action\":\"upsert\",\"id\":1,\"name\":\"John\",\"address\":34,\"mobile\":\"334433\"}"))
 		s.Require().NoError(err)
@@ -298,7 +298,7 @@ func (s *TraceTestSuite) TestLookup() {
 		s.Require().Equal(http.StatusOK, resp.StatusCode)
 	})
 	time.Sleep(ConstantInterval)
-	s.Run("send data to table", func() {
+	s.Run("send data to rule", func() {
 		resp, err := http.Post("http://127.0.0.1:10081/test/push2", ContentTypeJson, bytes.NewBufferString("{\"id\":1}"))
 		s.Require().NoError(err)
 		s.Require().Equal(http.StatusOK, resp.StatusCode)
@@ -357,6 +357,101 @@ func (s *TraceTestSuite) TestLookup() {
 		s.Equal(http.StatusOK, res.StatusCode)
 
 		res, e = client.Delete("tables/memTable")
+		s.NoError(e)
+		s.Equal(http.StatusOK, res.StatusCode)
+	})
+}
+
+// Cover eventtime, watermark, rest sink (with error)
+func (s *TraceTestSuite) TestEventTime() {
+	s.Run("init rule3", func() {
+		streamSql := `{"sql":"CREATE STREAM pushStream3() WITH (TYPE=\"httppush\", DATASOURCE=\"/test/push3\", CONF_KEY=\"onesec\", FORMAT=\"json\", TIMESTAMP=\"ts\")"}`
+		resp, err := client.CreateStream(streamSql)
+		s.Require().NoError(err)
+		s.T().Log(GetResponseText(resp))
+		s.Require().Equal(http.StatusCreated, resp.StatusCode)
+
+		ruleSql := `{
+  "id": "rule3",
+  "name": "use event time window",
+  "sql": "SELECT count(*) FROM pushStream3 GROUP BY TumblingWindow(ss, 1)",
+  "actions": [
+    {
+      "rest": {
+        "url": "http://nonexist.com/test",
+        "sendSingle": true
+      }
+    }
+  ],
+  "options": {
+    "sendError": false,
+    "isEventTime": true,
+    "lateTolerance" : 0
+  }
+}`
+		resp, err = client.CreateRule(ruleSql)
+		s.Require().NoError(err)
+		s.T().Log(GetResponseText(resp))
+		s.Require().Equal(http.StatusCreated, resp.StatusCode)
+	})
+	s.Run("enable trace", func() {
+		resp, err := client.Post("rules/rule3/trace/start", `{"strategy": "always"}`)
+		s.Require().NoError(err)
+		s.Require().Equal(http.StatusOK, resp.StatusCode)
+	})
+	time.Sleep(ConstantInterval)
+	s.Run("send data to test", func() {
+		resp, err := http.Post("http://127.0.0.1:10081/test/push3", ContentTypeJson, bytes.NewBufferString("{\"id\":1, \"ts\": 1111}"))
+		s.Require().NoError(err)
+		s.Require().Equal(http.StatusOK, resp.StatusCode)
+
+		resp, err = http.Post("http://127.0.0.1:10081/test/push3", ContentTypeJson, bytes.NewBufferString("{\"id\":1, \"ts\": 1901}"))
+		s.Require().NoError(err)
+		s.Require().Equal(http.StatusOK, resp.StatusCode)
+
+		resp, err = http.Post("http://127.0.0.1:10081/test/push3", ContentTypeJson, bytes.NewBufferString("{\"id\":3, \"ts\": 2431}"))
+		s.Require().NoError(err)
+		s.Require().Equal(http.StatusOK, resp.StatusCode)
+	})
+	s.Run("assert trace", func() {
+		var ruleIds []string
+		// Assert rule1 traces
+		r := TryAssert(10, time.Second, func() bool {
+			resp, e := client.Get("trace/rule/rule3")
+			s.Require().NoError(e)
+			defer resp.Body.Close()
+			body, err := io.ReadAll(resp.Body)
+			s.Require().NoError(err)
+			err = json.Unmarshal(body, &ruleIds)
+			s.Require().NoError(err)
+			return len(ruleIds) == 5
+		})
+		s.Require().True(r)
+		// assert each trace, just check 0/1/2
+		for i := 0; i < 3; i++ {
+			tid := ruleIds[i]
+			resp, e := client.Get(path.Join("trace", tid))
+			s.NoError(e)
+			s.Equal(http.StatusOK, resp.StatusCode)
+			resultMap, err := GetResponseResultMap(resp)
+			s.NoError(err)
+			all, err := os.ReadFile(filepath.Join("result", "trace", fmt.Sprintf("event%d.json", i+1)))
+			s.NoError(err)
+			exp := make(map[string]any)
+			err = json.Unmarshal(all, &exp)
+			s.NoError(err)
+			if s.compareTrace(exp, resultMap) == false {
+				fmt.Println("trace lookup compares fail")
+				fmt.Println(resultMap)
+			}
+		}
+	})
+	s.Run("clean", func() {
+		res, e := client.Delete("rules/rule3")
+		s.NoError(e)
+		s.Equal(http.StatusOK, res.StatusCode)
+
+		res, e = client.Delete("streams/pushStream3")
 		s.NoError(e)
 		s.Equal(http.StatusOK, res.StatusCode)
 	})

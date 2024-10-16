@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
@@ -37,6 +38,7 @@ type WatermarkOp struct {
 	sendWatermark bool
 	// state
 	events          []*xsql.Tuple // All the cached events in order
+	rowHandle       map[any]trace.Span
 	streamWMs       map[string]time.Time
 	lastWatermarkTs time.Time
 }
@@ -60,6 +62,7 @@ func NewWatermarkOp(name string, sendWatermark bool, streams []string, options *
 		sendWatermark:   sendWatermark,
 		streamWMs:       wms,
 		lastWatermarkTs: time.Time{},
+		rowHandle:       make(map[any]trace.Span),
 	}
 }
 
@@ -114,6 +117,9 @@ func (w *WatermarkOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 						break
 					}
 					w.onProcessStart(ctx, data)
+					if w.span != nil {
+						w.rowHandle[data] = w.span
+					}
 					switch d := data.(type) {
 					case *xsql.Tuple:
 						// whether to drop the late event
@@ -124,6 +130,7 @@ func (w *WatermarkOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 					default:
 						w.onError(ctx, fmt.Errorf("run watermark op error: expect *xsql.Tuple type but got %[1]T(%[1]v)", d))
 					}
+					w.span = nil
 					w.onProcessEnd(ctx)
 				}
 			}
@@ -180,7 +187,16 @@ func (w *WatermarkOp) addAndTrigger(ctx api.StreamContext, d *xsql.Tuple) {
 				if i > 0 { // The first event processing time start at the beginning of event receiving
 					w.statManager.ProcessTimeStart()
 				}
+				span, stored := w.rowHandle[w.events[i]]
+				if stored {
+					// set the current span which will be set in broadcast
+					w.span = span
+				}
 				w.Broadcast(w.events[i])
+				if stored {
+					span.End()
+					w.span = nil
+				}
 				w.onSend(ctx, w.events[i])
 				ctx.GetLogger().Debug("send out event", w.events[i].GetTimestamp())
 			}
