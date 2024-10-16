@@ -75,11 +75,11 @@ var tests = []struct {
 	},
 	{ // 4
 		sql: `SELECT count(*) as c FROM src1 WHERE name = "dname" GROUP BY sin(c)`,
-		r:   newErrorStruct("Not allowed to call aggregate functions in GROUP BY clause: Call:{ name:sin, args:[$$alias.c] }."),
+		r:   newErrorStruct("Not allowed to call aggregate functions in GROUP BY clause: Call:{ name:sin, args:[$$alias.c,aliasRef:Call:{ name:count, args:[*] }] }."),
 	},
 	{ // 5
 		sql: `SELECT count(*) as c FROM src1 WHERE name = "dname" HAVING sum(c) > 0.3 OR sin(temp) > 3`,
-		r:   newErrorStruct("Not allowed to call non-aggregate functions in HAVING clause: binaryExpr:{ binaryExpr:{ Call:{ name:sum, args:[$$alias.c] } > 0.300000 } OR binaryExpr:{ Call:{ name:sin, args:[src1.temp] } > 3 } }."),
+		r:   newErrorStruct("Not allowed to call non-aggregate functions in HAVING clause: binaryExpr:{ binaryExpr:{ Call:{ name:sum, args:[$$alias.c,aliasRef:Call:{ name:count, args:[*] }] } > 0.300000 } OR binaryExpr:{ Call:{ name:sin, args:[src1.temp] } > 3 } }."),
 	},
 	{ // 6
 		sql: `SELECT collect(*) as c FROM src1 WHERE name = "dname" HAVING c[2]->temp > 20 AND sin(c[0]->temp) > 0`,
@@ -87,7 +87,7 @@ var tests = []struct {
 	},
 	{ // 7
 		sql: `SELECT collect(*) as c FROM src1 WHERE name = "dname" HAVING c[2]->temp + temp > 0`,
-		r:   newErrorStruct("Not allowed to call non-aggregate functions in HAVING clause: binaryExpr:{ binaryExpr:{ binaryExpr:{ binaryExpr:{ $$alias.c[2] } -> jsonFieldName:temp } + src1.temp } > 0 }."),
+		r:   newErrorStruct("Not allowed to call non-aggregate functions in HAVING clause: binaryExpr:{ binaryExpr:{ binaryExpr:{ binaryExpr:{ $$alias.c,aliasRef:Call:{ name:collect, args:[*] }[2] } -> jsonFieldName:temp } + src1.temp } > 0 }."),
 	},
 	{ // 8
 		sql: `SELECT deduplicate(temp, true) as de FROM src1 HAVING cardinality(de) > 20`,
