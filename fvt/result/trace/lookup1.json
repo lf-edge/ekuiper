@@ -1,0 +1,119 @@
+{
+  "name": "pushStream2",
+  "traceID": "f3b35db9f4d34f42693ccfbfbf81c0bf",
+  "spanID": "87d9b5f06fad912a",
+  "parentSpanID": "0000000000000000",
+  "attribute": {
+    "data": "ewogICJpZCI6Mgp9",
+    "rule": "ruleLookupMem1"
+  },
+  "startTime": "2024-10-16T11:51:43.4257784+08:00",
+  "endTime": "2024-10-16T11:51:43.4257784+08:00",
+  "ruleID": "ruleLookupMem1",
+  "ChildSpan": [
+    {
+      "name": "2_ratelimit",
+      "traceID": "f3b35db9f4d34f42693ccfbfbf81c0bf",
+      "spanID": "41b5c2528c5cbd98",
+      "parentSpanID": "87d9b5f06fad912a",
+      "attribute": {
+        "data": "ewogICJpZCI6Mgp9",
+        "rule": "ruleLookupMem1"
+      },
+      "startTime": "2024-10-16T11:51:43.4257784+08:00",
+      "endTime": "2024-10-16T11:51:49.9010616+08:00",
+      "ruleID": "ruleLookupMem1",
+      "ChildSpan": [
+        {
+          "name": "3_decoder",
+          "traceID": "f3b35db9f4d34f42693ccfbfbf81c0bf",
+          "spanID": "736a23075cbd28ef",
+          "parentSpanID": "41b5c2528c5cbd98",
+          "attribute": {
+            "data": "ewogICJpZCI6Mgp9",
+            "rule": "ruleLookupMem1"
+          },
+          "startTime": "2024-10-16T11:51:49.9010616+08:00",
+          "endTime": "2024-10-16T11:51:49.9010616+08:00",
+          "ruleID": "ruleLookupMem1",
+          "ChildSpan": [
+            {
+              "name": "memTable",
+              "traceID": "f3b35db9f4d34f42693ccfbfbf81c0bf",
+              "spanID": "7d7afc86963c39b9",
+              "parentSpanID": "736a23075cbd28ef",
+              "attribute": {
+                "data": "{\"id\":2}",
+                "rule": "ruleLookupMem1"
+              },
+              "startTime": "2024-10-16T11:51:49.9010616+08:00",
+              "endTime": "2024-10-16T11:51:49.9010616+08:00",
+              "ruleID": "ruleLookupMem1",
+              "ChildSpan": [
+                {
+                  "name": "5_project",
+                  "traceID": "f3b35db9f4d34f42693ccfbfbf81c0bf",
+                  "spanID": "5ed8cb5b64e1c583",
+                  "parentSpanID": "7d7afc86963c39b9",
+                  "attribute": {
+                    "data": "[{\"action\":\"upsert\",\"address\":54,\"id\":2,\"mobile\":\"534433\",\"name\":\"Jon\"}]",
+                    "rule": "ruleLookupMem1"
+                  },
+                  "startTime": "2024-10-16T11:51:49.9010616+08:00",
+                  "endTime": "2024-10-16T11:51:49.9014932+08:00",
+                  "ruleID": "ruleLookupMem1",
+                  "ChildSpan": [
+                    {
+                      "name": "log_0_0_transform",
+                      "traceID": "f3b35db9f4d34f42693ccfbfbf81c0bf",
+                      "spanID": "b2a93b19753529fc",
+                      "parentSpanID": "5ed8cb5b64e1c583",
+                      "attribute": {
+                        "data": "[{\"action\":\"upsert\",\"address\":54,\"id\":2,\"mobile\":\"534433\",\"name\":\"Jon\"}]",
+                        "rule": "ruleLookupMem1"
+                      },
+                      "startTime": "2024-10-16T11:51:49.9014932+08:00",
+                      "endTime": "2024-10-16T11:51:49.9014932+08:00",
+                      "ruleID": "ruleLookupMem1",
+                      "ChildSpan": [
+                        {
+                          "name": "log_0_1_encode",
+                          "traceID": "f3b35db9f4d34f42693ccfbfbf81c0bf",
+                          "spanID": "c9f3c7c67af06db5",
+                          "parentSpanID": "b2a93b19753529fc",
+                          "attribute": {
+                            "data": "[{\"action\":\"upsert\",\"address\":54,\"id\":2,\"mobile\":\"534433\",\"name\":\"Jon\"}]",
+                            "rule": "ruleLookupMem1"
+                          },
+                          "startTime": "2024-10-16T11:51:49.9014932+08:00",
+                          "endTime": "2024-10-16T11:51:49.9015723+08:00",
+                          "ruleID": "ruleLookupMem1",
+                          "ChildSpan": [
+                            {
+                              "name": "log_0",
+                              "traceID": "f3b35db9f4d34f42693ccfbfbf81c0bf",
+                              "spanID": "339c4ab3aacbc840",
+                              "parentSpanID": "c9f3c7c67af06db5",
+                              "attribute": {
+                                "data": "W3siYWN0aW9uIjoidXBzZXJ0IiwiYWRkcmVzcyI6NTQsImlkIjoyLCJtb2JpbGUiOiI1MzQ0MzMiLCJuYW1lIjoiSm9uIn1d",
+                                "rule": "ruleLookupMem1"
+                              },
+                              "startTime": "2024-10-16T11:51:49.9015723+08:00",
+                              "endTime": "2024-10-16T11:51:49.9017297+08:00",
+                              "ruleID": "ruleLookupMem1",
+                              "ChildSpan": []
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
