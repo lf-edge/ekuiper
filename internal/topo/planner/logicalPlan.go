@@ -17,6 +17,7 @@ package planner
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 )
@@ -38,7 +39,7 @@ type baseLogicalPlan struct {
 	// Can be used to return the derived instance from the base type
 	self LogicalPlan
 	// Interface for explaining
-	ExplainInfo PlanExplainInfo
+	ExplainInfo *PlanExplainInfo
 }
 
 type ExplainInfo interface {
@@ -55,14 +56,17 @@ type RuleRuntimeInfo interface {
 }
 
 type PlanExplainInfo struct {
-	T        PlanType `json:"type"`
-	Info     string   `json:"info"`
-	ID       int64    `json:"id"`
-	Children []int64  `json:"children,omitempty"`
+	T    PlanType `json:"-"`
+	ID   int64    `json:"-"`
+	Op   string   `json:"op"`
+	Info string   `json:"info"`
+}
+
+func (p *PlanExplainInfo) SetOp() {
+	p.Op = fmt.Sprintf("%s_%v", p.T, p.ID)
 }
 
 func (p *baseLogicalPlan) Explain() string {
-	p.ExplainInfo.Children = p.ChildrenID()
 	bf := bytes.NewBuffer([]byte{})
 	jsonEncoder := json.NewEncoder(bf)
 	jsonEncoder.SetEscapeHTML(false)
@@ -76,6 +80,7 @@ func (p *baseLogicalPlan) BuildExplainInfo() {
 
 func (p *baseLogicalPlan) SetID(id int64) {
 	p.ExplainInfo.ID = id
+	p.ExplainInfo.SetOp()
 }
 
 func (p *baseLogicalPlan) Type() string {
@@ -95,6 +100,9 @@ func (p *baseLogicalPlan) ChildrenID() []int64 {
 }
 
 func (p *baseLogicalPlan) setPlanType(planType PlanType) {
+	if p.ExplainInfo == nil {
+		p.ExplainInfo = &PlanExplainInfo{}
+	}
 	p.ExplainInfo.T = planType
 }
 
