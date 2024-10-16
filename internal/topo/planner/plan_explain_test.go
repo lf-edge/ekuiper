@@ -19,7 +19,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
@@ -28,25 +27,40 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 )
 
-func TestPushProjection(t *testing.T) {
+func TestExplainPlan(t *testing.T) {
 	kv, err := store.GetKV("stream")
 	require.NoError(t, err)
 	require.NoError(t, prepareStream())
-	sql := `select a as c from sharedStream group by countwindow(2)`
-	stmt, err := xsql.NewParser(strings.NewReader(sql)).Parse()
-	assert.NoError(t, err)
-	p, err := createLogicalPlan(stmt, &def.RuleOption{
-		Qos: 0,
-	}, kv)
-	require.NoError(t, err)
-	explain, err := ExplainFromLogicalPlan(p, "")
-	require.NoError(t, err)
-	expect := `
-{"type":"ProjectPlan","info":"Fields:[ $$alias.c ]","id":0,"children":[1]}
-	{"type":"WindowPlan","info":"{ length:2, windowType:COUNT_WINDOW, limit: 0 }","id":1,"children":[2]}
-			{"type":"ProjectPlan","info":"Fields:[ sharedStream.a ]","id":2,"children":[3]}
-					{"type":"DataSourcePlan","info":"StreamName: sharedStream, StreamFields:[ a ]","id":3}`
-	require.Equal(t, strings.TrimPrefix(expect, "\n"), explain)
+
+	testcases := []struct {
+		sql     string
+		explain string
+	}{
+		{
+			sql: `select a, row_number() as index from stream`,
+			explain: `{"op":"ProjectPlan_0","info":"Fields:[ $$alias.index,aliasRef:Call:{ name:row_number }, stream.a ]"}
+	{"op":"WindowFuncPlan_1","info":"windowFuncField:{name:index, expr:$$alias.index,aliasRef:Call:{ name:row_number }}"}
+			{"op":"DataSourcePlan_2","info":"StreamName: stream, StreamFields:[ a ]"}`,
+		},
+		{
+			sql: `select a as c from sharedStream group by countwindow(2)`,
+			explain: `{"op":"ProjectPlan_0","info":"Fields:[ $$alias.c,aliasRef:sharedStream.a ]"}
+	{"op":"WindowPlan_1","info":"{ length:2, windowType:COUNT_WINDOW, limit: 0 }"}
+			{"op":"ProjectPlan_2","info":"Fields:[ sharedStream.a ]"}
+					{"op":"DataSourcePlan_3","info":"StreamName: sharedStream, StreamFields:[ a ]"}`,
+		},
+	}
+	for _, tc := range testcases {
+		stmt, err := xsql.NewParser(strings.NewReader(tc.sql)).Parse()
+		require.NoError(t, err)
+		p, err := createLogicalPlan(stmt, &def.RuleOption{
+			Qos: 0,
+		}, kv)
+		require.NoError(t, err)
+		explain, err := ExplainFromLogicalPlan(p, "")
+		require.NoError(t, err)
+		require.Equal(t, tc.explain, explain)
+	}
 }
 
 func prepareStream() error {
@@ -59,9 +73,15 @@ func prepareStream() error {
 					a BIGINT,
 					b BIGINT,
 				) WITH (DATASOURCE="src1", SHARED="true");`,
+		"stream": `CREATE STREAM stream (
+					a BIGINT,
+					b BIGINT,
+				) WITH (DATASOURCE="src1");`,
 	}
+
 	types := map[string]ast.StreamType{
 		"sharedStream": ast.TypeStream,
+		"stream":       ast.TypeStream,
 	}
 	for name, sql := range streamSqls {
 		s, err := json.Marshal(&xsql.StreamInfo{

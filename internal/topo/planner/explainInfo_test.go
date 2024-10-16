@@ -1,6 +1,7 @@
 package planner
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -24,7 +25,7 @@ func TestDataSourcePlanExplainInfo(t *testing.T) {
 					"field3": {},
 				},
 			},
-			res: "{\"type\":\"DataSourcePlan\",\"info\":\"StreamName: test1, Fields:[ field1, field2, field3 ]\",\"id\":0}\n",
+			res: `{"op":"DataSourcePlan_0","info":"StreamName: test1, Fields:[ field1, field2, field3 ]"}`,
 			t:   "DataSourcePlan",
 		},
 		{
@@ -36,7 +37,7 @@ func TestDataSourcePlanExplainInfo(t *testing.T) {
 					"c": {},
 				},
 			},
-			res: "{\"type\":\"DataSourcePlan\",\"info\":\"StreamName: test2, StreamFields:[ a, b, c ]\",\"id\":1,\"children\":[0]}\n",
+			res: `{"op":"DataSourcePlan_1","info":"StreamName: test2, StreamFields:[ a, b, c ]"}`,
 			t:   "DataSourcePlan",
 		},
 		{
@@ -53,36 +54,31 @@ func TestDataSourcePlanExplainInfo(t *testing.T) {
 					"s3": {},
 				},
 			},
-			res: "{\"type\":\"DataSourcePlan\",\"info\":\"StreamName: test3, Fields:[ column1, column2, id ], StreamFields:[ s1, s2, s3 ]\",\"id\":2}\n",
+			res: `{"op":"DataSourcePlan_2","info":"StreamName: test3, Fields:[ column1, column2, id ], StreamFields:[ s1, s2, s3 ]"}`,
 			t:   "DataSourcePlan",
 		},
 		{
 			p: &DataSourcePlan{
 				name: "test4",
 			},
-			res: "{\"type\":\"DataSourcePlan\",\"info\":\"StreamName: test4\",\"id\":3}\n",
+			res: `{"op":"DataSourcePlan_3","info":"StreamName: test4"}`,
 			t:   "DataSourcePlan",
 		},
 		{
 			p:   &DataSourcePlan{},
-			res: "{\"type\":\"DataSourcePlan\",\"info\":\"\",\"id\":4}\n",
+			res: `{"op":"DataSourcePlan_4","info":""}`,
 			t:   "DataSourcePlan",
 		},
 	}
-
 	test[1].p.SetChildren([]LogicalPlan{test[2].p})
-
 	for i := 0; i < len(test); i++ {
 		test[i].p = test[i].p.Init()
 		test[i].p.self.SetID(int64(i))
 		test[i].p.BuildExplainInfo()
-		res := test[i].res
 		rty := test[i].t
 		explainInfo := test[i].p.Explain()
 		ty := test[i].p.Type()
-		if explainInfo != res {
-			t.Errorf("case %d: expect validate %v but got %v", i, res, explainInfo)
-		}
+		require.Equal(t, test[i].res, strings.Trim(explainInfo, "\n"))
 		if ty != rty {
 			t.Errorf("case %d: expect validate %v but got %v", i, rty, ty)
 		}
@@ -108,7 +104,7 @@ func TestAggregatePlanExplainInfo(t *testing.T) {
 					},
 				},
 			},
-			res: "{\"type\":\"AggregatePlan\",\"info\":\"Dimension:{ Call:{ name:lpad, args:[$$default.name, 1] } }\",\"id\":0}\n",
+			res: `{"op":"AggregatePlan_0","info":"Dimension:{ Call:{ name:lpad, args:[$$default.name, 1] } }"}`,
 			t:   "AggregatePlan",
 		},
 		{
@@ -130,7 +126,7 @@ func TestAggregatePlanExplainInfo(t *testing.T) {
 					},
 				},
 			},
-			res: "{\"type\":\"AggregatePlan\",\"info\":\"Dimension:{ window:{ windowType:SLIDING_WINDOW, timeUnit: MS  } }\",\"id\":0,\"children\":[0]}\n",
+			res: `{"op":"AggregatePlan_1","info":"Dimension:{ window:{ windowType:SLIDING_WINDOW, timeUnit: MS  } }"}`,
 			t:   "AggregatePlan",
 		},
 		{
@@ -139,7 +135,7 @@ func TestAggregatePlanExplainInfo(t *testing.T) {
 					ast.Dimension{Expr: &ast.FieldRef{Name: "department", StreamName: ast.DefaultStream}},
 				},
 			},
-			res: "{\"type\":\"AggregatePlan\",\"info\":\"Dimension:{ $$default.department }\",\"id\":0}\n",
+			res: `{"op":"AggregatePlan_2","info":"Dimension:{ $$default.department }"}`,
 			t:   "AggregatePlan",
 		},
 	}
@@ -148,17 +144,10 @@ func TestAggregatePlanExplainInfo(t *testing.T) {
 
 	for i := 0; i < len(test); i++ {
 		test[i].p = test[i].p.Init()
+		test[i].p.self.SetID(int64(i))
 		test[i].p.BuildExplainInfo()
-		res := test[i].res
-		rty := test[i].t
 		explainInfo := test[i].p.Explain()
-		ty := test[i].p.Type()
-		if explainInfo != res {
-			t.Errorf("case %d: expect validate %v but got %v", i, res, explainInfo)
-		}
-		if ty != rty {
-			t.Errorf("case %d: expect validate %v but got %v", i, rty, ty)
-		}
+		require.Equal(t, test[i].res, strings.Trim(explainInfo, "\n"))
 	}
 }
 
@@ -190,7 +179,7 @@ func TestAnalyticFuncsPlanExplainInfo(t *testing.T) {
 					},
 				},
 			},
-			res: "{\"type\":\"AnalyticFuncsPlan\",\"info\":\"Funcs:[ Call:{ name:lag, args:[src1.temp] } ], FieldFuncs:[ Call:{ name:lag, args:[src1.name] }, Call:{ name:latest, args:[Call:{ name:lag, args:[src1.name] }] } ]\",\"id\":0}\n",
+			res: `{"op":"AnalyticFuncsPlan_0","info":"Funcs:[ Call:{ name:lag, args:[src1.temp] } ], FieldFuncs:[ Call:{ name:lag, args:[src1.name] }, Call:{ name:latest, args:[Call:{ name:lag, args:[src1.name] }] } ]"}`,
 			t:   "AnalyticFuncsPlan",
 		},
 		{
@@ -241,7 +230,7 @@ func TestAnalyticFuncsPlanExplainInfo(t *testing.T) {
 					},
 				},
 			},
-			res: "{\"type\":\"AnalyticFuncsPlan\",\"info\":\"FieldFuncs:[ Call:{ name:lag, args:[src1.id1] }, Call:{ name:lag, args:[src1.temp], when:{ binaryExpr:{ Call:{ name:lag, args:[src1.id1] } > 1 } } } ]\",\"id\":0,\"children\":[0]}\n",
+			res: `{"op":"AnalyticFuncsPlan_1","info":"FieldFuncs:[ Call:{ name:lag, args:[src1.id1] }, Call:{ name:lag, args:[src1.temp], when:{ binaryExpr:{ Call:{ name:lag, args:[src1.id1] } > 1 } } } ]"}`,
 			t:   "AnalyticFuncsPlan",
 		},
 	}
@@ -250,17 +239,10 @@ func TestAnalyticFuncsPlanExplainInfo(t *testing.T) {
 
 	for i := 0; i < len(test); i++ {
 		test[i].p = test[i].p.Init()
+		test[i].p.self.SetID(int64(i))
 		test[i].p.BuildExplainInfo()
-		res := test[i].res
-		rty := test[i].t
 		explainInfo := test[i].p.Explain()
-		ty := test[i].p.Type()
-		if explainInfo != res {
-			t.Errorf("case %d: expect validate %v but got %v", i, res, explainInfo)
-		}
-		if ty != rty {
-			t.Errorf("case %d: expect validate %v but got %v", i, rty, ty)
-		}
+		require.Equal(t, test[i].res, strings.Trim(explainInfo, "\n"))
 	}
 }
 
@@ -278,7 +260,7 @@ func TestFilterPlanExplainInfo(t *testing.T) {
 					RHS: &ast.StringLiteral{Val: "v1"},
 				},
 			},
-			res: "{\"type\":\"FilterPlan\",\"info\":\"Condition:{ binaryExpr:{ src1.name = v1 } }, \",\"id\":0}\n",
+			res: `{"op":"FilterPlan_0","info":"Condition:{ binaryExpr:{ src1.name = v1 } }, "}`,
 			t:   "FilterPlan",
 		},
 		{
@@ -297,7 +279,7 @@ func TestFilterPlanExplainInfo(t *testing.T) {
 					},
 				},
 			},
-			res: "{\"type\":\"FilterPlan\",\"info\":\"Condition:{ binaryExpr:{ binaryExpr:{ src1.id1 > 111 } AND binaryExpr:{ src1.temp > 20 } } }, \",\"id\":0,\"children\":[0]}\n",
+			res: "{\"op\":\"FilterPlan_1\",\"info\":\"Condition:{ binaryExpr:{ binaryExpr:{ src1.id1 > 111 } AND binaryExpr:{ src1.temp > 20 } } }, \"}",
 			t:   "FilterPlan",
 		},
 	}
@@ -306,17 +288,10 @@ func TestFilterPlanExplainInfo(t *testing.T) {
 
 	for i := 0; i < len(test); i++ {
 		test[i].p = test[i].p.Init()
+		test[i].p.self.SetID(int64(i))
 		test[i].p.BuildExplainInfo()
-		res := test[i].res
-		rty := test[i].t
 		explainInfo := test[i].p.Explain()
-		ty := test[i].p.Type()
-		if explainInfo != res {
-			t.Errorf("case %d: expect validate %v but got %v", i, res, explainInfo)
-		}
-		if ty != rty {
-			t.Errorf("case %d: expect validate %v but got %v", i, rty, ty)
-		}
+		require.Equal(t, test[i].res, strings.Trim(explainInfo, "\n"))
 	}
 }
 
@@ -336,7 +311,7 @@ func TestHavingPlanExplainInfo(t *testing.T) {
 					RHS: &ast.IntegerLiteral{Val: 2},
 				},
 			},
-			res: "{\"type\":\"HavingPlan\",\"info\":\"Condition:{ binaryExpr:{ Call:{ name:count, args:[*] } > 2 } }, \",\"id\":0}\n",
+			res: `{"op":"HavingPlan_0","info":"Condition:{ binaryExpr:{ Call:{ name:count, args:[*] } > 2 } }, "}`,
 			t:   "HavingPlan",
 		},
 		{
@@ -380,7 +355,7 @@ func TestHavingPlanExplainInfo(t *testing.T) {
 					RHS: &ast.IntegerLiteral{Val: 0},
 				},
 			},
-			res: "{\"type\":\"HavingPlan\",\"info\":\"Condition:{ binaryExpr:{ Call:{ name:count, args:[*] } > 0 } }, \",\"id\":0,\"children\":[0]}\n",
+			res: `{"op":"HavingPlan_1","info":"Condition:{ binaryExpr:{ Call:{ name:count, args:[*] } > 0 } }, "}`,
 			t:   "HavingPlan",
 		},
 	}
@@ -389,17 +364,10 @@ func TestHavingPlanExplainInfo(t *testing.T) {
 
 	for i := 0; i < len(test); i++ {
 		test[i].p = test[i].p.Init()
+		test[i].p.self.SetID(int64(i))
 		test[i].p.BuildExplainInfo()
-		res := test[i].res
-		rty := test[i].t
 		explainInfo := test[i].p.Explain()
-		ty := test[i].p.Type()
-		if explainInfo != res {
-			t.Errorf("case %d: expect validate %v but got %v", i, res, explainInfo)
-		}
-		if ty != rty {
-			t.Errorf("case %d: expect validate %v but got %v", i, rty, ty)
-		}
+		require.Equal(t, test[i].res, strings.Trim(explainInfo, "\n"))
 	}
 }
 
@@ -413,14 +381,14 @@ func TestJoinAlignPlanExplainInfo(t *testing.T) {
 			p: &JoinAlignPlan{
 				Emitters: []string{"tableInPlanner"},
 			},
-			res: "{\"type\":\"JoinAlignPlan\",\"info\":\"Emitters:[ tableInPlanner ]\",\"id\":0}\n",
+			res: `{"op":"JoinAlignPlan_0","info":"Emitters:[ tableInPlanner ]"}`,
 			t:   "JoinAlignPlan",
 		},
 		{
 			p: &JoinAlignPlan{
 				Emitters: []string{"tableInPlanner"},
 			},
-			res: "{\"type\":\"JoinAlignPlan\",\"info\":\"Emitters:[ tableInPlanner ]\",\"id\":0,\"children\":[0]}\n",
+			res: `{"op":"JoinAlignPlan_1","info":"Emitters:[ tableInPlanner ]"}`,
 			t:   "JoinAlignPlan",
 		},
 	}
@@ -429,17 +397,10 @@ func TestJoinAlignPlanExplainInfo(t *testing.T) {
 
 	for i := 0; i < len(test); i++ {
 		test[i].p = test[i].p.Init()
+		test[i].p.self.SetID(int64(i))
 		test[i].p.BuildExplainInfo()
-		res := test[i].res
-		rty := test[i].t
 		explainInfo := test[i].p.Explain()
-		ty := test[i].p.Type()
-		if explainInfo != res {
-			t.Errorf("case %d: expect validate %v but got %v", i, res, explainInfo)
-		}
-		if ty != rty {
-			t.Errorf("case %d: expect validate %v but got %v", i, rty, ty)
-		}
+		require.Equal(t, test[i].res, strings.Trim(explainInfo, "\n"))
 	}
 }
 
@@ -478,7 +439,7 @@ func TestJoinPlanExplainInfo(t *testing.T) {
 					},
 				}},
 			},
-			res: "{\"type\":\"JoinPlan\",\"info\":\"Joins:[ { joinType:INNER_JOIN, binaryExpr:{ binaryExpr:{ binaryExpr:{ src1.temp > 20 } OR binaryExpr:{ src2.hum > 60 } } AND binaryExpr:{ src1.id1 = src2.id2 } } } ]\",\"id\":0}\n",
+			res: `{"op":"JoinPlan_0","info":"Joins:[ { joinType:INNER_JOIN, binaryExpr:{ binaryExpr:{ binaryExpr:{ src1.temp > 20 } OR binaryExpr:{ src2.hum > 60 } } AND binaryExpr:{ src1.id1 = src2.id2 } } } ]"}`,
 			t:   "JoinPlan",
 		},
 		{
@@ -510,7 +471,7 @@ func TestJoinPlanExplainInfo(t *testing.T) {
 					},
 				}},
 			},
-			res: "{\"type\":\"JoinPlan\",\"info\":\"Joins:[ { joinType:INNER_JOIN, binaryExpr:{ binaryExpr:{ binaryExpr:{ t1.cur > 20 } OR binaryExpr:{ t2.pre > 60 } } AND binaryExpr:{ t1.press1 = t2.press2 } } } ]\",\"id\":0,\"children\":[0]}\n",
+			res: `{"op":"JoinPlan_1","info":"Joins:[ { joinType:INNER_JOIN, binaryExpr:{ binaryExpr:{ binaryExpr:{ t1.cur > 20 } OR binaryExpr:{ t2.pre > 60 } } AND binaryExpr:{ t1.press1 = t2.press2 } } } ]"}`,
 			t:   "JoinPlan",
 		},
 	}
@@ -519,17 +480,10 @@ func TestJoinPlanExplainInfo(t *testing.T) {
 
 	for i := 0; i < len(test); i++ {
 		test[i].p = test[i].p.Init()
+		test[i].p.self.SetID(int64(i))
 		test[i].p.BuildExplainInfo()
-		res := test[i].res
-		rty := test[i].t
 		explainInfo := test[i].p.Explain()
-		ty := test[i].p.Type()
-		if explainInfo != res {
-			t.Errorf("case %d: expect validate %v but got %v", i, res, explainInfo)
-		}
-		if ty != rty {
-			t.Errorf("case %d: expect validate %v but got %v", i, rty, ty)
-		}
+		require.Equal(t, test[i].res, strings.Trim(explainInfo, "\n"))
 	}
 }
 
@@ -557,7 +511,7 @@ func TestLookupPlanExplainInfo(t *testing.T) {
 					},
 				},
 			},
-			res: "{\"type\":\"LookupPlan\",\"info\":\"Join:{ joinType:LEFT_JOIN, expr:binaryExpr:{ left.device_id = good.id } }\",\"id\":0}\n",
+			res: `{"op":"LookupPlan_0","info":"Join:{ joinType:LEFT_JOIN, expr:binaryExpr:{ left.device_id = good.id } }"}`,
 			t:   "LookupPlan",
 		},
 		{
@@ -575,7 +529,7 @@ func TestLookupPlanExplainInfo(t *testing.T) {
 					},
 				},
 			},
-			res: "{\"type\":\"LookupPlan\",\"info\":\"Join:{ joinType:LEFT_JOIN, expr:binaryExpr:{ left.device_id = 23 } }\",\"id\":0,\"children\":[0]}\n",
+			res: `{"op":"LookupPlan_1","info":"Join:{ joinType:LEFT_JOIN, expr:binaryExpr:{ left.device_id = 23 } }"}`,
 			t:   "LookupPlan",
 		},
 	}
@@ -584,17 +538,10 @@ func TestLookupPlanExplainInfo(t *testing.T) {
 
 	for i := 0; i < len(test); i++ {
 		test[i].p = test[i].p.Init()
+		test[i].p.self.SetID(int64(i))
 		test[i].p.BuildExplainInfo()
-		res := test[i].res
-		rty := test[i].t
 		explainInfo := test[i].p.Explain()
-		ty := test[i].p.Type()
-		if explainInfo != res {
-			t.Errorf("case %d: expect validate %v but got %v", i, res, explainInfo)
-		}
-		if ty != rty {
-			t.Errorf("case %d: expect validate %v but got %v", i, rty, ty)
-		}
+		require.Equal(t, test[i].res, strings.Trim(explainInfo, "\n"))
 	}
 }
 
@@ -679,7 +626,7 @@ func TestProjectPlanExplainInfo(t *testing.T) {
 				isAggregate: false,
 				sendMeta:    false,
 			},
-			res: "{\"type\":\"ProjectPlan\",\"info\":\"\",\"id\":0,\"children\":[0]}\n",
+			res: `{"op":"ProjectPlan_0","info":"Fields:[ * ]"}`,
 			t:   "ProjectPlan",
 		},
 		{
@@ -729,24 +676,17 @@ func TestProjectPlanExplainInfo(t *testing.T) {
 					},
 				},
 			},
-			res: "{\"type\":\"ProjectPlan\",\"info\":\"Fields:[ $$alias.col ]\",\"id\":0,\"children\":[0]}\n",
+			res: `{"op":"ProjectPlan_1","info":"Fields:[ $$alias.col,aliasRef:Call:{ name:unnest, args:[src1.myarray] } ]"}`,
 			t:   "ProjectPlan",
 		},
 	}
 
 	for i := 0; i < len(test); i++ {
 		test[i].p = test[i].p.Init()
-		test[1].p.BuildExplainInfo()
-		res := test[i].res
-		rty := test[i].t
+		test[i].p.self.SetID(int64(i))
+		test[i].p.BuildExplainInfo()
 		explainInfo := test[i].p.Explain()
-		ty := test[i].p.Type()
-		if explainInfo != res {
-			t.Errorf("case %d: expect validate %v but got %v", i, res, explainInfo)
-		}
-		if ty != rty {
-			t.Errorf("case %d: expect validate %v but got %v", i, rty, ty)
-		}
+		require.Equal(t, test[i].res, strings.Trim(explainInfo, "\n"))
 	}
 }
 
@@ -811,24 +751,17 @@ func TestProjectSetPlanExplainInfo(t *testing.T) {
 					},
 				},
 			},
-			res: "{\"type\":\"ProjectSetPlan\",\"info\":\"SrfMap:{key:unnest}, EnableLimit:false\",\"id\":0,\"children\":[0]}\n",
+			res: `{"op":"ProjectSetPlan_0","info":"SrfMap:{key:unnest}, EnableLimit:false"}`,
 			t:   "ProjectSetPlan",
 		},
 	}
 
 	for i := 0; i < len(test); i++ {
 		test[i].p = test[i].p.Init()
+		test[i].p.self.SetID(int64(i))
 		test[i].p.BuildExplainInfo()
-		res := test[i].res
-		rty := test[i].t
 		explainInfo := test[i].p.Explain()
-		ty := test[i].p.Type()
-		if explainInfo != res {
-			t.Errorf("case %d: expect validate %v but got %v", i, res, explainInfo)
-		}
-		if ty != rty {
-			t.Errorf("case %d: expect validate %v but got %v", i, rty, ty)
-		}
+		require.Equal(t, test[i].res, strings.Trim(explainInfo, "\n"))
 	}
 }
 
@@ -875,24 +808,17 @@ func TestWindowPlanExplainInfo(t *testing.T) {
 				interval:  0,
 				limit:     0,
 			},
-			res: "{\"type\":\"WindowPlan\",\"info\":\"{ length:10, windowType:TUMBLING_WINDOW, limit: 0 }\",\"id\":0,\"children\":[0]}\n",
+			res: `{"op":"WindowPlan_0","info":"{ length:10, windowType:TUMBLING_WINDOW, limit: 0 }"}`,
 			t:   "WindowPlan",
 		},
 	}
 
 	for i := 0; i < len(test); i++ {
 		test[i].p = test[i].p.Init()
+		test[i].p.self.SetID(int64(i))
 		test[i].p.BuildExplainInfo()
-		res := test[i].res
-		rty := test[i].t
 		explainInfo := test[i].p.Explain()
-		ty := test[i].p.Type()
-		if explainInfo != res {
-			t.Errorf("case %d: expect validate %v but got %v", i, res, explainInfo)
-		}
-		if ty != rty {
-			t.Errorf("case %d: expect validate %v but got %v", i, rty, ty)
-		}
+		require.Equal(t, test[i].res, strings.Trim(explainInfo, "\n"))
 	}
 }
 
@@ -907,7 +833,7 @@ func TestWatermarkPlanExplainInfo(t *testing.T) {
 				Emitters:      []string{"id", "grade"},
 				SendWatermark: false,
 			},
-			res: "{\"type\":\"WatermarkPlan\",\"info\":\"Emitters:[ id, grade ], SendWatermark:false\",\"id\":0}\n",
+			res: `{"op":"WatermarkPlan_0","info":"Emitters:[ id, grade ], SendWatermark:false"}`,
 			t:   "WatermarkPlan",
 		},
 		{
@@ -915,7 +841,7 @@ func TestWatermarkPlanExplainInfo(t *testing.T) {
 				Emitters:      []string{"campus", "student"},
 				SendWatermark: true,
 			},
-			res: "{\"type\":\"WatermarkPlan\",\"info\":\"Emitters:[ campus, student ], SendWatermark:true\",\"id\":0,\"children\":[0]}\n",
+			res: `{"op":"WatermarkPlan_1","info":"Emitters:[ campus, student ], SendWatermark:true"}`,
 			t:   "WatermarkPlan",
 		},
 	}
@@ -924,17 +850,10 @@ func TestWatermarkPlanExplainInfo(t *testing.T) {
 
 	for i := 0; i < len(test); i++ {
 		test[i].p = test[i].p.Init()
+		test[i].p.self.SetID(int64(i))
 		test[i].p.BuildExplainInfo()
-		res := test[i].res
-		rty := test[i].t
 		explainInfo := test[i].p.Explain()
-		ty := test[i].p.Type()
-		if explainInfo != res {
-			t.Errorf("case %d: expect validate %v but got %v", i, res, explainInfo)
-		}
-		if ty != rty {
-			t.Errorf("case %d: expect validate %v but got %v", i, rty, ty)
-		}
+		require.Equal(t, test[i].res, strings.Trim(explainInfo, "\n"))
 	}
 }
 
@@ -948,14 +867,14 @@ func TestOrderPlanExplainInfo(t *testing.T) {
 			p: &OrderPlan{
 				SortFields: []ast.SortField{{Uname: "name", Name: "name", Ascending: false, FieldExpr: &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream}}},
 			},
-			res: "{\"type\":\"OrderPlan\",\"info\":\"SortFields:[ sortField:{ name:name, ascending:false, fieldExpr:{ $$default.name } } ]\",\"id\":0}\n",
+			res: `{"op":"OrderPlan_0","info":"SortFields:[ sortField:{ name:name, ascending:false, fieldExpr:{ $$default.name } } ]"}`,
 			t:   "OrderPlan",
 		},
 		{
 			p: &OrderPlan{
 				SortFields: []ast.SortField{{Uname: "s1\007name", Name: "name", StreamName: ast.StreamName("s1"), Ascending: true, FieldExpr: &ast.FieldRef{Name: "name", StreamName: "s1"}}},
 			},
-			res: "{\"type\":\"OrderPlan\",\"info\":\"SortFields:[ sortField:{ name:name, ascending:true, fieldExpr:{ s1.name } } ]\",\"id\":0,\"children\":[0]}\n",
+			res: `{"op":"OrderPlan_1","info":"SortFields:[ sortField:{ name:name, ascending:true, fieldExpr:{ s1.name } } ]"}`,
 			t:   "OrderPlan",
 		},
 	}
@@ -964,17 +883,10 @@ func TestOrderPlanExplainInfo(t *testing.T) {
 
 	for i := 0; i < len(test); i++ {
 		test[i].p = test[i].p.Init()
+		test[i].p.self.SetID(int64(i))
 		test[i].p.BuildExplainInfo()
-		res := test[i].res
-		rty := test[i].t
 		explainInfo := test[i].p.Explain()
-		ty := test[i].p.Type()
-		if explainInfo != res {
-			t.Errorf("case %d: expect validate %v but got %v", i, res, explainInfo)
-		}
-		if ty != rty {
-			t.Errorf("case %d: expect validate %v but got %v", i, rty, ty)
-		}
+		require.Equal(t, test[i].res, strings.Trim(explainInfo, "\n"))
 	}
 }
 
