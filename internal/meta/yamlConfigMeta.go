@@ -27,6 +27,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	"github.com/lf-edge/ekuiper/v2/pkg/kv"
+	"github.com/lf-edge/ekuiper/v2/pkg/replace"
 )
 
 type configManager struct {
@@ -237,6 +238,26 @@ func GetYamlConf(configOperatorKey, language string) (b []byte, err error) {
 	}
 }
 
+func replaceConfigurations(plgName string, cf YamlConfigurations) YamlConfigurations {
+	switch plgName {
+	case "sql":
+		for key, props := range cf {
+			replaced, newProps := replace.ReplacePropsDBURL(props)
+			if replaced {
+				cf[key] = newProps
+			}
+		}
+	default:
+		for key, props := range cf {
+			replaced, newProps := replace.ReplacePassword(props)
+			if replaced {
+				cf[key] = newProps
+			}
+		}
+	}
+	return cf
+}
+
 func addSourceConfKeys(plgName string, configurations YamlConfigurations) (err error) {
 	defer func() {
 		if err != nil {
@@ -247,6 +268,8 @@ func addSourceConfKeys(plgName string, configurations YamlConfigurations) (err e
 	}()
 	ConfigManager.lock.Lock()
 	defer ConfigManager.lock.Unlock()
+
+	configurations = replaceConfigurations(plgName, configurations)
 
 	configOperatorKey := fmt.Sprintf(SourceCfgOperatorKeyTemplate, plgName)
 
@@ -386,6 +409,8 @@ func addSinkConfKeys(plgName string, cf YamlConfigurations) (err error) {
 	ConfigManager.lock.Lock()
 	defer ConfigManager.lock.Unlock()
 
+	cf = replaceConfigurations(plgName, cf)
+
 	configOperatorKey := fmt.Sprintf(SinkCfgOperatorKeyTemplate, plgName)
 
 	var cfgOps conf.ConfigOperator
@@ -448,6 +473,8 @@ func addConnectionConfKeys(plgName string, cf YamlConfigurations) (err error) {
 	}()
 	ConfigManager.lock.Lock()
 	defer ConfigManager.lock.Unlock()
+
+	cf = replaceConfigurations(plgName, cf)
 
 	configOperatorKey := fmt.Sprintf(ConnectionCfgOperatorKeyTemplate, plgName)
 
