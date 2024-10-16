@@ -1,0 +1,74 @@
+{
+  "name": "window_op",
+  "traceID": "9edbfb1d10532cd0de734b2a843a1361",
+  "spanID": "a6901fe22016b2b0",
+  "parentSpanID": "0000000000000000",
+  "attribute": {
+    "data": "[{\"ts\":1111},{\"ts\":1901}]",
+    "rule": "rule3"
+  },
+  "startTime": "2024-10-16T14:09:05.7260409+08:00",
+  "endTime": "2024-10-16T14:09:09.2270383+08:00",
+  "ruleID": "rule3",
+  "ChildSpan": [
+    {
+      "name": "6_project",
+      "traceID": "9edbfb1d10532cd0de734b2a843a1361",
+      "spanID": "4960287123d5c6d0",
+      "parentSpanID": "a6901fe22016b2b0",
+      "attribute": {
+        "data": "[{\"ts\":1111},{\"ts\":1901}]",
+        "rule": "rule3"
+      },
+      "startTime": "2024-10-16T14:09:09.2270383+08:00",
+      "endTime": "2024-10-16T14:09:09.2270383+08:00",
+      "ruleID": "rule3",
+      "ChildSpan": [
+        {
+          "name": "rest_0_0_transform",
+          "traceID": "9edbfb1d10532cd0de734b2a843a1361",
+          "spanID": "81f74d0aa69165ee",
+          "parentSpanID": "4960287123d5c6d0",
+          "attribute": {
+            "data": "[{\"count\":2}]",
+            "rule": "rule3"
+          },
+          "startTime": "2024-10-16T14:09:09.2270383+08:00",
+          "endTime": "2024-10-16T14:09:09.2270383+08:00",
+          "ruleID": "rule3",
+          "ChildSpan": [
+            {
+              "name": "rest_0_1_encode",
+              "traceID": "9edbfb1d10532cd0de734b2a843a1361",
+              "spanID": "a16c095efc8272f3",
+              "parentSpanID": "81f74d0aa69165ee",
+              "attribute": {
+                "data": "{\"count\":2}",
+                "rule": "rule3"
+              },
+              "startTime": "2024-10-16T14:09:09.2270383+08:00",
+              "endTime": "2024-10-16T14:09:09.2270383+08:00",
+              "ruleID": "rule3",
+              "ChildSpan": [
+                {
+                  "name": "rest_0",
+                  "traceID": "9edbfb1d10532cd0de734b2a843a1361",
+                  "spanID": "c6e8a8de746c6ac9",
+                  "parentSpanID": "a16c095efc8272f3",
+                  "attribute": {
+                    "data": "eyJjb3VudCI6Mn0=",
+                    "rule": "rule3"
+                  },
+                  "startTime": "2024-10-16T14:09:10.7280557+08:00",
+                  "endTime": "2024-10-16T14:09:15.7291079+08:00",
+                  "ruleID": "rule3",
+                  "ChildSpan": []
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
