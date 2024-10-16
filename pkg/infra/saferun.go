@@ -33,6 +33,7 @@ import (
 func SafeRun(fn func() error) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
+			conf.Log.Errorf("panic stack:%s", string(debug.Stack()))
 			debug.PrintStack()
 			switch x := r.(type) {
 			case string:
