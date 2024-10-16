@@ -71,7 +71,7 @@ type WindowOperator struct {
 	nextLink     trace.Link
 	nextSpanCtx  context.Context
 	nextSpan     trace.Span
-	tupleSpanMap map[*xsql.Tuple]struct{}
+	tupleSpanMap map[*xsql.Tuple]trace.Span
 }
 
 const (
@@ -111,7 +111,7 @@ func NewWindowOp(name string, w WindowConfig, options *def.RuleOption) (*WindowO
 	o.triggerTS = make([]time.Time, 0)
 	o.triggerTime = time.Time{}
 	o.isOverlapWindow = isOverlapWindow(w.Type)
-	o.tupleSpanMap = make(map[*xsql.Tuple]struct{})
+	o.tupleSpanMap = make(map[*xsql.Tuple]trace.Span)
 	return o, nil
 }
 
@@ -405,6 +405,8 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 			default:
 				o.onError(ctx, fmt.Errorf("run Window error: expect xsql.Tuple type but got %[1]T(%[1]v)", d))
 			}
+			// For batching operator, do not end the span immediately so set it to nil
+			o.span = nil
 			o.onProcessEnd(ctx)
 			o.statManager.SetBufferLength(int64(len(o.input)))
 		case now := <-firstC:
@@ -694,16 +696,17 @@ func (o *WindowOperator) isMatchCondition(ctx api.StreamContext, d *xsql.Tuple) 
 }
 
 func (o *WindowOperator) handleTraceIngestTuple(ctx api.StreamContext, t *xsql.Tuple) {
-	if ctx.IsTraceEnabled() {
-		o.tupleSpanMap[t] = struct{}{}
+	if o.span != nil {
+		o.tupleSpanMap[t] = o.span
 	}
 }
 
 func (o *WindowOperator) handleTraceDiscardTuple(ctx api.StreamContext, tuples []*xsql.Tuple) {
 	if ctx.IsTraceEnabled() {
 		for _, tuple := range tuples {
-			_, ok := o.tupleSpanMap[tuple]
+			span, ok := o.tupleSpanMap[tuple]
 			if ok {
+				span.End()
 				delete(o.tupleSpanMap, tuple)
 			}
 		}
@@ -718,12 +721,9 @@ func (o *WindowOperator) handleTraceEmitTuple(ctx api.StreamContext, wt *xsql.Wi
 		for _, row := range wt.Content {
 			t, ok := row.(*xsql.Tuple)
 			if ok {
-				_, stored := o.tupleSpanMap[t]
+				span, stored := o.tupleSpanMap[t]
 				if stored {
-					traced, _, span := tracenode.TraceInput(ctx, t, "window_op_emit", trace.WithLinks(o.nextLink))
-					if traced {
-						span.End()
-					}
+					span.AddLink(o.nextLink)
 				}
 			}
 		}

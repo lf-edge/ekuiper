@@ -47,7 +47,8 @@ type defaultNode struct {
 	outputs     map[string]chan<- any
 	opsWg       *sync.WaitGroup
 	// tracing state
-	span trace.Span
+	span    trace.Span
+	spanCtx api.StreamContext
 }
 
 func newDefaultNode(name string, options *def.RuleOption) *defaultNode {
@@ -132,6 +133,11 @@ func (o *defaultNode) doBroadcast(val any) {
 	l := len(o.outputs)
 	c := 0
 	for name, out := range o.outputs {
+		// Fallback to set the context when sending out so that all children have the same parent ctx
+		// If has set ctx in the node impl, do not override it
+		if vt, ok := val.(xsql.HasTracerCtx); ok && vt.GetTracerCtx() == nil {
+			vt.SetTracerCtx(o.spanCtx)
+		}
 		select {
 		case out <- val:
 			// do nothing
@@ -147,7 +153,6 @@ func (o *defaultNode) doBroadcast(val any) {
 		switch vt := val.(type) {
 		case xsql.Collection:
 			val = vt.Clone()
-			break
 		case xsql.Row:
 			val = vt.Clone()
 		}
@@ -266,10 +271,11 @@ func (o *defaultNode) onProcessStart(ctx api.StreamContext, val any) {
 	o.statManager.ProcessTimeStart()
 	// Source just pass nil val so that no trace. The trace will start after extracting trace id
 	if val != nil {
-		traced, _, span := tracenode.TraceInput(ctx, val, ctx.GetOpId())
+		traced, spanCtx, span := tracenode.TraceInput(ctx, val, o.name)
 		if traced {
 			tracenode.RecordRowOrCollection(val, span)
 			o.span = span
+			o.spanCtx = spanCtx
 		}
 	}
 }

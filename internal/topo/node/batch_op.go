@@ -42,7 +42,7 @@ type BatchOp struct {
 	nextLink    trace.Link
 	nextSpanCtx context.Context
 	nextSpan    trace.Span
-	rowHandle   map[xsql.Row]struct{}
+	rowHandle   map[xsql.Row]trace.Span
 	currIndex   int
 }
 
@@ -55,7 +55,7 @@ func NewBatchOp(name string, rOpt *def.RuleOption, batchSize int, lingerInterval
 		batchSize:       batchSize,
 		lingerInterval:  lingerInterval,
 		currIndex:       0,
-		rowHandle:       make(map[xsql.Row]struct{}),
+		rowHandle:       make(map[xsql.Row]trace.Span),
 	}
 	if batchSize == 0 {
 		batchSize = 1024
@@ -112,12 +112,12 @@ func (b *BatchOp) ingest(ctx api.StreamContext, item any, checkSize bool) {
 	b.onProcessStart(ctx, data)
 	switch input := data.(type) {
 	case xsql.Row:
-		b.handleTraceIngest(ctx, input, input)
+		b.handleTraceIngest(ctx, input)
 		b.buffer.AddTuple(input)
 	case xsql.Collection:
 		_ = input.Range(func(i int, r xsql.ReadonlyRow) (bool, error) {
 			x := r.(xsql.Row)
-			b.handleTraceIngest(ctx, input, x)
+			b.handleTraceIngest(ctx, x)
 			b.buffer.AddTuple(x)
 			return true, nil
 		})
@@ -128,6 +128,8 @@ func (b *BatchOp) ingest(ctx api.StreamContext, item any, checkSize bool) {
 	if checkSize && b.currIndex >= b.batchSize {
 		b.send(ctx)
 	}
+	// For batching operator, do not end the span immediately so set it to nil
+	b.span = nil
 	b.onProcessEnd(ctx)
 	b.statManager.SetBufferLength(int64(len(b.input) + b.currIndex))
 }
@@ -206,13 +208,9 @@ func (b *BatchOp) handleNextWindowTupleSpan(ctx api.StreamContext) {
 	}
 }
 
-func (b *BatchOp) handleTraceIngest(ctx api.StreamContext, d any, row xsql.Row) {
-	traced, spanCtx, span := tracenode.TraceInput(ctx, d, "batch_op_ingest_split")
-	if traced {
-		b.rowHandle[row] = struct{}{}
-		row.SetTracerCtx(topoContext.WithContext(spanCtx))
-		tracenode.RecordRowOrCollection(row, span)
-		span.End()
+func (b *BatchOp) handleTraceIngest(_ api.StreamContext, row xsql.Row) {
+	if b.span != nil {
+		b.rowHandle[row] = b.span
 	}
 }
 
@@ -222,12 +220,10 @@ func (b *BatchOp) handleTraceEmitTuple(ctx api.StreamContext, wt *xsql.WindowTup
 			b.handleNextWindowTupleSpan(ctx)
 		}
 		for _, row := range wt.Content {
-			_, stored := b.rowHandle[row]
+			span, stored := b.rowHandle[row]
 			if stored {
-				traced, _, span := tracenode.TraceInput(ctx, row, "batch_op_emit", trace.WithLinks(b.nextLink))
-				if traced {
-					span.End()
-				}
+				span.AddLink(b.nextLink)
+				span.End()
 				delete(b.rowHandle, row)
 			}
 		}

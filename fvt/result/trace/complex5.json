@@ -1,0 +1,89 @@
+{
+  "name": "window_op",
+  "traceID": "56089e91a2c9b481003979d856234114",
+  "spanID": "c4c43e9f48b0537b",
+  "parentSpanID": "0000000000000000",
+  "attribute": {
+    "data": "[{\"c\":33},{\"c\":63}]",
+    "rule": "rule2"
+  },
+  "startTime": "2024-10-15T16:46:33.501978+08:00",
+  "endTime": "2024-10-15T16:46:35.9003491+08:00",
+  "ruleID": "rule2",
+  "ChildSpan": [
+    {
+      "name": "3_project",
+      "traceID": "56089e91a2c9b481003979d856234114",
+      "spanID": "24004d32d6a27012",
+      "parentSpanID": "c4c43e9f48b0537b",
+      "attribute": {
+        "data": "[{\"c\":33},{\"c\":63}]",
+        "rule": "rule2"
+      },
+      "startTime": "2024-10-15T16:46:35.9003491+08:00",
+      "endTime": "2024-10-15T16:46:35.9003491+08:00",
+      "ruleID": "rule2",
+      "ChildSpan": [
+        {
+          "name": "log_0_0_transform",
+          "traceID": "56089e91a2c9b481003979d856234114",
+          "spanID": "becafee5bd6a2e91",
+          "parentSpanID": "24004d32d6a27012",
+          "attribute": {
+            "data": "[{\"count\":2}]",
+            "rule": "rule2"
+          },
+          "startTime": "2024-10-15T16:46:35.9003491+08:00",
+          "endTime": "2024-10-15T16:46:35.9003491+08:00",
+          "ruleID": "rule2",
+          "ChildSpan": [
+            {
+              "name": "log_0_1_encode",
+              "traceID": "56089e91a2c9b481003979d856234114",
+              "spanID": "5d9df49d31c9e448",
+              "parentSpanID": "becafee5bd6a2e91",
+              "attribute": {
+                "data": "{\"count\":2}",
+                "rule": "rule2"
+              },
+              "startTime": "2024-10-15T16:46:35.9003491+08:00",
+              "endTime": "2024-10-15T16:46:35.9003491+08:00",
+              "ruleID": "rule2",
+              "ChildSpan": [
+                {
+                  "name": "log_0_2_cache",
+                  "traceID": "56089e91a2c9b481003979d856234114",
+                  "spanID": "acdea99441b79a59",
+                  "parentSpanID": "5d9df49d31c9e448",
+                  "attribute": {
+                    "data": "eyJjb3VudCI6Mn0=",
+                    "rule": "rule2"
+                  },
+                  "startTime": "2024-10-15T16:46:35.9003491+08:00",
+                  "endTime": "2024-10-15T16:46:35.9003491+08:00",
+                  "ruleID": "rule2",
+                  "ChildSpan": [
+                    {
+                      "name": "log_0",
+                      "traceID": "56089e91a2c9b481003979d856234114",
+                      "spanID": "2a0a6f5362463ad3",
+                      "parentSpanID": "acdea99441b79a59",
+                      "attribute": {
+                        "data": "eyJjb3VudCI6Mn0=",
+                        "rule": "rule2"
+                      },
+                      "startTime": "2024-10-15T16:46:35.9003491+08:00",
+                      "endTime": "2024-10-15T16:46:35.9008565+08:00",
+                      "ruleID": "rule2",
+                      "ChildSpan": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

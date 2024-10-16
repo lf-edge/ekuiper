@@ -80,7 +80,7 @@ func (fr *FieldRef) String() string {
 		n += fr.Name
 	}
 	if fr.AliasRef != nil {
-		n += fmt.Sprintf(",%s", fr.AliasRef.String())
+		n += "," + fr.AliasRef.String()
 	}
 	return sn + n
 }
@@ -119,7 +119,7 @@ type AliasRef struct {
 }
 
 func (a *AliasRef) String() string {
-	return a.Expression.String()
+	return fmt.Sprintf("aliasRef:%s", a.Expression.String())
 }
 
 // SetRefSource only used for unit test

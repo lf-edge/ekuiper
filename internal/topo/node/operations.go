@@ -111,11 +111,7 @@ func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
 			case error:
 				o.onError(ctx, val)
 			case []xsql.Row:
-				input, ok := data.(xsql.HasTracerCtx)
 				for _, v := range val {
-					if ok {
-						v.SetTracerCtx(input.GetTracerCtx())
-					}
 					o.Broadcast(v)
 					o.onSend(ctx, v)
 				}

@@ -120,7 +120,6 @@ func GetResponseResultMap(resp *http.Response) (result map[string]any, err error
 		fmt.Println(err)
 		return
 	}
-	fmt.Println(string(body))
 	err = json.Unmarshal(body, &result)
 	if err != nil {
 		fmt.Println(err)
