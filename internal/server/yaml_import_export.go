@@ -36,6 +36,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/service"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/replace"
 )
 
 type MetaConfiguration struct {
@@ -545,6 +546,7 @@ func importDataSource(m *MetaConfiguration) error {
 }
 
 func writeConf(key string, value map[string]any) error {
+	value = replaceConfigurations(key, value)
 	typ, plu, name, err := splitConfKey(key)
 	if err != nil {
 		return err
@@ -562,4 +564,25 @@ func splitConfKey(key string) (string, string, string, error) {
 		return "", "", "", fmt.Errorf("%s isn't valid conf key", key)
 	}
 	return ss[0], ss[1], ss[2], nil
+}
+
+func replaceConfigurations(key string, props map[string]any) map[string]any {
+	_, plgName, _, err := splitConfKey(key)
+	if err != nil {
+		return props
+	}
+	switch plgName {
+	case "sql":
+		changed, newProps := replace.ReplacePropsDBURL(props)
+		if changed {
+			return newProps
+		}
+		return props
+	default:
+		changed, newProps := replace.ReplacePassword(props)
+		if changed {
+			return newProps
+		}
+		return props
+	}
 }
