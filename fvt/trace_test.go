@@ -222,6 +222,146 @@ func (s *TraceTestSuite) TestComplexTrace() {
 	})
 }
 
+// Cover ratelimit, lookup table
+func (s *TraceTestSuite) TestLookup() {
+	s.Run("init mem table", func() {
+		streamSql := `{"sql":"CREATE TABLE memTable() WITH (DATASOURCE=\"memtable\", TYPE=\"memory\", KIND=\"lookup\", KEY=\"id\")"}`
+		resp, err := client.CreateStream(streamSql)
+		s.Require().NoError(err)
+		s.T().Log(GetResponseText(resp))
+		s.Require().Equal(http.StatusCreated, resp.StatusCode)
+
+		streamSql = `{"sql":"CREATE STREAM permanent() WITH (TYPE=\"httppush\", DATASOURCE=\"/test/table\", FORMAT=\"json\")"}`
+		resp, err = client.CreateStream(streamSql)
+		s.Require().NoError(err)
+		s.T().Log(GetResponseText(resp))
+		s.Require().Equal(http.StatusCreated, resp.StatusCode)
+
+		ruleSql := `{
+  "id": "ruleMemTable",
+  "sql": "SELECT * FROM permanent ",
+  "actions": [{
+    "memory": {
+      "topic": "memtable",
+      "rowkindField": "action",
+      "keyField": "id",
+      "sendSingle": true
+    }
+  }]
+}`
+		resp, err = client.CreateRule(ruleSql)
+		s.Require().NoError(err)
+		s.T().Log(GetResponseText(resp))
+		s.Require().Equal(http.StatusCreated, resp.StatusCode)
+	})
+
+	s.Run("send data to table", func() {
+		resp, err := http.Post("http://127.0.0.1:10081/test/table", ContentTypeJson, bytes.NewBufferString("{\"action\":\"upsert\",\"id\":1,\"name\":\"John\",\"address\":34,\"mobile\":\"334433\"}"))
+		s.Require().NoError(err)
+		s.Require().Equal(http.StatusOK, resp.StatusCode)
+
+		resp, err = http.Post("http://127.0.0.1:10081/test/table", ContentTypeJson, bytes.NewBufferString("{\"action\":\"upsert\",\"id\":2,\"name\":\"Jon\",\"address\":54,\"mobile\":\"534433\"}"))
+		s.Require().NoError(err)
+		s.Require().Equal(http.StatusOK, resp.StatusCode)
+	})
+
+	s.Run("init rate limit and lookup rule", func() {
+		conf := map[string]any{
+			"interval": "100ms",
+		}
+		resp, err := client.CreateConf("sources/httppush/confKeys/onesec", conf)
+		s.Require().NoError(err)
+		s.Require().Equal(http.StatusOK, resp.StatusCode)
+
+		streamSql := `{"sql":"CREATE STREAM pushStream2() WITH (TYPE=\"httppush\", DATASOURCE=\"/test/push2\", CONF_KEY=\"onesec\", FORMAT=\"json\")"}`
+		resp, err = client.CreateStream(streamSql)
+		s.Require().NoError(err)
+		s.T().Log(GetResponseText(resp))
+		s.Require().Equal(http.StatusCreated, resp.StatusCode)
+
+		ruleSql := `{
+  "id": "ruleLookupMem1",
+  "sql": "SELECT * FROM pushStream2 INNER JOIN memTable ON pushStream2.id = memTable.id",
+  "actions": [{
+    "log": {
+    }
+  }]
+}`
+		resp, err = client.CreateRule(ruleSql)
+		s.Require().NoError(err)
+		s.T().Log(GetResponseText(resp))
+		s.Require().Equal(http.StatusCreated, resp.StatusCode)
+	})
+	s.Run("enable trace", func() {
+		resp, err := client.Post("rules/ruleLookupMem1/trace/start", `{"strategy": "always"}`)
+		s.Require().NoError(err)
+		s.Require().Equal(http.StatusOK, resp.StatusCode)
+	})
+	time.Sleep(ConstantInterval)
+	s.Run("send data to table", func() {
+		resp, err := http.Post("http://127.0.0.1:10081/test/push2", ContentTypeJson, bytes.NewBufferString("{\"id\":1}"))
+		s.Require().NoError(err)
+		s.Require().Equal(http.StatusOK, resp.StatusCode)
+
+		resp, err = http.Post("http://127.0.0.1:10081/test/push2", ContentTypeJson, bytes.NewBufferString("{\"id\":2}"))
+		s.Require().NoError(err)
+		s.Require().Equal(http.StatusOK, resp.StatusCode)
+	})
+	s.Run("assert trace", func() {
+		var ruleIds []string
+		// Assert rule1 traces
+		r := TryAssert(10, time.Second, func() bool {
+			resp, e := client.Get("trace/rule/ruleLookupMem1")
+			s.Require().NoError(e)
+			defer resp.Body.Close()
+			body, err := io.ReadAll(resp.Body)
+			s.Require().NoError(err)
+			err = json.Unmarshal(body, &ruleIds)
+			s.Require().NoError(err)
+			return len(ruleIds) == 2
+		})
+		s.Require().True(r)
+		// assert each trace, just check 1/2/3
+		for i, tid := range ruleIds {
+			resp, e := client.Get(path.Join("trace", tid))
+			s.NoError(e)
+			s.Equal(http.StatusOK, resp.StatusCode)
+			resultMap, err := GetResponseResultMap(resp)
+			s.NoError(err)
+			all, err := os.ReadFile(filepath.Join("result", "trace", fmt.Sprintf("lookup%d.json", i+1)))
+			s.NoError(err)
+			exp := make(map[string]any)
+			err = json.Unmarshal(all, &exp)
+			s.NoError(err)
+			if s.compareTrace(exp, resultMap) == false {
+				fmt.Println("trace lookup compares fail")
+				fmt.Println(resultMap)
+			}
+		}
+	})
+	s.Run("clean", func() {
+		res, e := client.Delete("rules/ruleLookupMem1")
+		s.NoError(e)
+		s.Equal(http.StatusOK, res.StatusCode)
+
+		res, e = client.Delete("rules/ruleMemTable")
+		s.NoError(e)
+		s.Equal(http.StatusOK, res.StatusCode)
+
+		res, e = client.Delete("streams/pushStream2")
+		s.NoError(e)
+		s.Equal(http.StatusOK, res.StatusCode)
+
+		res, e = client.Delete("streams/permanent")
+		s.NoError(e)
+		s.Equal(http.StatusOK, res.StatusCode)
+
+		res, e = client.Delete("tables/memTable")
+		s.NoError(e)
+		s.Equal(http.StatusOK, res.StatusCode)
+	})
+}
+
 func (s *TraceTestSuite) compareTrace(exp map[string]any, act map[string]any) bool {
 	if len(exp) != len(act) {
 		return false

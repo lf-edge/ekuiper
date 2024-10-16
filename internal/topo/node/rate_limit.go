@@ -132,16 +132,23 @@ func (o *RateLimitOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 				case <-ctx.Done():
 					return
 				case d := <-o.input:
+					if o.span != nil {
+						o.span.End()
+					}
 					dd, processed := o.commonIngest(ctx, d)
 					if processed {
 						continue
 					}
 					o.onProcessStart(ctx, dd)
 					o.latest = dd
-					o.onProcessEnd(ctx)
+					o.statManager.ProcessTimeEnd()
+					o.statManager.IncTotalMessagesProcessed(1)
 					o.statManager.SetBufferLength(int64(len(o.input)))
 				case t := <-ticker.C:
 					if o.latest != nil {
+						if o.span != nil {
+							o.span.End()
+						}
 						o.Broadcast(o.latest)
 						o.onSend(ctx, o.latest)
 						o.latest = nil
@@ -157,6 +164,9 @@ func (o *RateLimitOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 				case <-ctx.Done():
 					return
 				case d := <-o.input:
+					if o.span != nil {
+						o.span.End()
+					}
 					dd, processed := o.commonIngest(ctx, d)
 					if processed {
 						continue
@@ -182,7 +192,8 @@ func (o *RateLimitOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 					if err != nil {
 						o.onError(ctx, err)
 					}
-					o.onProcessEnd(ctx)
+					o.statManager.ProcessTimeEnd()
+					o.statManager.IncTotalMessagesProcessed(1)
 					o.statManager.SetBufferLength(int64(len(o.input)))
 				case t := <-ticker.C:
 					if len(o.frameSet) > 0 {
@@ -203,12 +214,16 @@ func (o *RateLimitOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 							}
 						}
 						val := &xsql.Tuple{
+							Ctx:       rt.Ctx,
 							Emitter:   rt.Emitter,
 							Timestamp: rt.Timestamp,
 							Metadata:  rt.Metadata,
 							Message: map[string]any{
 								"frames": frames,
 							},
+						}
+						if o.span != nil {
+							o.span.End()
 						}
 						o.Broadcast(val)
 						o.onSend(ctx, val)
@@ -226,6 +241,10 @@ func (o *RateLimitOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 				case <-ctx.Done():
 					return
 				case d := <-o.input:
+					// end the last span after receiving a new item
+					if o.span != nil {
+						o.span.End()
+					}
 					dd, processed := o.commonIngest(ctx, d)
 					if processed {
 						continue
@@ -244,19 +263,25 @@ func (o *RateLimitOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 					if err != nil {
 						o.onError(ctx, err)
 					}
-					o.onProcessEnd(ctx)
+					// do not use onProcessEnd because span still need to exist
+					o.statManager.ProcessTimeEnd()
+					o.statManager.IncTotalMessagesProcessed(1)
 					o.statManager.SetBufferLength(int64(len(o.input)))
 				case t := <-ticker.C:
 					frames, ok := o.merger.Trigger(ctx)
 					if ok {
 						rt := o.latest.(*xsql.RawTuple)
 						val := &xsql.Tuple{
+							Ctx:       rt.Ctx,
 							Emitter:   rt.Emitter,
 							Timestamp: rt.Timestamp,
 							Metadata:  rt.Metadata,
 							Message: map[string]any{
 								"frames": frames,
 							},
+						}
+						if o.span != nil {
+							o.span.End()
 						}
 						o.Broadcast(val)
 						o.onSend(ctx, val)
