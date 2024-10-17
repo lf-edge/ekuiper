@@ -216,6 +216,10 @@ func findRootSpan(allSpans map[string]*LocalSpan) *LocalSpan {
 }
 
 func buildSpanLink(cur *LocalSpan, OtherSpans map[string]*LocalSpan) {
+	// should only build once?
+	if len(cur.ChildSpan) > 0 {
+		return
+	}
 	for k, otherSpan := range OtherSpans {
 		if cur.SpanID == otherSpan.ParentSpanID {
 			cur.ChildSpan = append(cur.ChildSpan, otherSpan)
