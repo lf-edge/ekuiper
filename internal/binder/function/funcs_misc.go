@@ -42,6 +42,14 @@ import (
 )
 
 func registerMiscFunc() {
+	builtins["bypass"] = builtinFunc{
+		fType: ast.FuncTypeScalar,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			return args[0], true
+		},
+		val:   ValidateOneArg,
+		check: returnNilIfHasAnyNil,
+	}
 	builtins["cast"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {

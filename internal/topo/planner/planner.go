@@ -277,7 +277,7 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *def.RuleOption, sources ma
 	case *OrderPlan:
 		op = Transform(&operator.OrderOp{SortFields: t.SortFields}, fmt.Sprintf("%d_order", newIndex), options)
 	case *ProjectPlan:
-		op = Transform(&operator.ProjectOp{ColNames: t.colNames, AliasNames: t.aliasNames, AliasFields: t.aliasFields, ExprFields: t.exprFields, ExceptNames: t.exceptNames, IsAggregate: t.isAggregate, AllWildcard: t.allWildcard, WildcardEmitters: t.wildcardEmitters, ExprNames: t.exprNames, SendMeta: t.sendMeta, LimitCount: t.limitCount, EnableLimit: t.enableLimit, OtherFieldNames: t.otherFieldNames}, fmt.Sprintf("%d_project", newIndex), options)
+		op = Transform(&operator.ProjectOp{ColNames: t.colNames, AliasNames: t.aliasNames, AliasFields: t.aliasFields, ExprFields: t.exprFields, ExceptNames: t.exceptNames, IsAggregate: t.isAggregate, AllWildcard: t.allWildcard, WildcardEmitters: t.wildcardEmitters, ExprNames: t.exprNames, SendMeta: t.sendMeta, LimitCount: t.limitCount, EnableLimit: t.enableLimit}, fmt.Sprintf("%d_project", newIndex), options)
 	case *ProjectSetPlan:
 		op = Transform(&operator.ProjectSetOperator{SrfMapping: t.SrfMapping, LimitCount: t.limitCount, EnableLimit: t.enableLimit}, fmt.Sprintf("%d_projectset", newIndex), options)
 	case *WindowFuncPlan:
@@ -335,6 +335,7 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *def.RuleOption, store kv.
 	if err != nil {
 		return nil, err
 	}
+	windowFuncFields := rewriteStmt(stmt)
 
 	for _, sInfo := range streamStmts {
 		if sInfo.stmt.StreamType == ast.TypeTable && sInfo.stmt.Options.KIND == ast.StreamKindLookup {
@@ -495,7 +496,6 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *def.RuleOption, store kv.
 		p.SetChildren(children)
 		children = []LogicalPlan{p}
 	}
-	windowFuncFields := extractWindowFuncFields(stmt)
 	if len(windowFuncFields) > 0 {
 		for _, wf := range windowFuncFields {
 			p = WindowFuncPlan{
@@ -562,12 +562,11 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *def.RuleOption, store kv.
 			limitCount = int(stmt.Limit.(*ast.LimitExpr).LimitCount.Val)
 		}
 		p = ProjectPlan{
-			otherFieldNames: packOtherField(windowFuncFields),
-			fields:          fields,
-			isAggregate:     xsql.WithAggFields(stmt),
-			sendMeta:        opt.SendMetaToSink,
-			enableLimit:     enableLimit,
-			limitCount:      limitCount,
+			fields:      fields,
+			isAggregate: xsql.WithAggFields(stmt),
+			sendMeta:    opt.SendMetaToSink,
+			enableLimit: enableLimit,
+			limitCount:  limitCount,
 		}.Init()
 		p.SetChildren(children)
 		children = []LogicalPlan{p}
@@ -589,10 +588,6 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *def.RuleOption, store kv.
 	}
 
 	return optimize(p)
-}
-
-func packOtherField(windowFuncFields map[string]ast.Field) map[string]ast.Field {
-	return windowFuncFields
 }
 
 // extractSRFMapping extracts the set-returning-function in the field
@@ -621,19 +616,41 @@ func Transform(op node.UnOperation, name string, options *def.RuleOption) *node.
 	return unaryOperator
 }
 
-func extractWindowFuncFields(stmt *ast.SelectStatement) map[string]ast.Field {
-	windowFuncFields := make(map[string]ast.Field)
-	for _, field := range stmt.Fields {
-		if wf, ok := field.Expr.(*ast.Call); ok && wf.FuncType == ast.FuncTypeWindow {
-			windowFuncFields[wf.Name] = field
-			continue
-		}
-		if ref, ok := field.Expr.(*ast.FieldRef); ok && ref.AliasRef != nil {
-			if wf, ok := ref.AliasRef.Expression.(*ast.Call); ok && wf.FuncType == ast.FuncTypeWindow {
-				windowFuncFields[ref.Name] = field
-				continue
+func extractWindowFuncFields(stmt *ast.SelectStatement) []ast.Field {
+	windowFuncFields := make([]ast.Field, 0)
+	windowFunctionCount := 0
+	ast.WalkFunc(stmt.Fields, func(n ast.Node) bool {
+		switch wf := n.(type) {
+		case *ast.Call:
+			if wf.FuncType == ast.FuncTypeWindow {
+				newWf := &ast.Call{
+					Name:     wf.Name,
+					FuncType: wf.FuncType,
+					Args:     wf.Args,
+				}
+				windowFunctionCount++
+				newName := fmt.Sprintf("wf_%s_%d", wf.Name, windowFunctionCount)
+				newField := ast.Field{
+					Name: newName,
+					Expr: newWf,
+				}
+				newFieldRef := &ast.FieldRef{
+					Name: newName,
+				}
+				windowFuncFields = append(windowFuncFields, newField)
+				// in-place rewrite
+				wf.FuncType = ast.FuncTypeScalar
+				wf.Args = []ast.Expr{newFieldRef}
+				wf.Name = "bypass"
 			}
 		}
-	}
+		return true
+	})
 	return windowFuncFields
+}
+
+// rewrite stmt will do following things:
+// 1. extract and rewrite the window function
+func rewriteStmt(stmt *ast.SelectStatement) []ast.Field {
+	return extractWindowFuncFields(stmt)
 }

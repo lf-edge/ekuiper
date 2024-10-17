@@ -38,16 +38,22 @@ func TestExplainPlan(t *testing.T) {
 	}{
 		{
 			sql: `select a, row_number() as index from stream`,
-			explain: `{"op":"ProjectPlan_0","info":"Fields:[ $$alias.index,aliasRef:Call:{ name:row_number }, stream.a ]"}
-	{"op":"WindowFuncPlan_1","info":"windowFuncField:{name:index, expr:$$alias.index,aliasRef:Call:{ name:row_number }}"}
+			explain: `{"op":"ProjectPlan_0","info":"Fields:[ $$alias.index,aliasRef:Call:{ name:bypass, args:[wf_row_number_1] }, stream.a ]"}
+	{"op":"WindowFuncPlan_1","info":"windowFuncField:{name:wf_row_number_1, expr:Call:{ name:row_number }}"}
 			{"op":"DataSourcePlan_2","info":"StreamName: stream, StreamFields:[ a ]"}`,
 		},
 		{
-			sql: `select a as c from sharedStream group by countwindow(2)`,
-			explain: `{"op":"ProjectPlan_0","info":"Fields:[ $$alias.c,aliasRef:sharedStream.a ]"}
+			sql: `select a as c from stream group by countwindow(2)`,
+			explain: `{"op":"ProjectPlan_0","info":"Fields:[ $$alias.c,aliasRef:stream.a ]"}
 	{"op":"WindowPlan_1","info":"{ length:2, windowType:COUNT_WINDOW, limit: 0 }"}
-			{"op":"ProjectPlan_2","info":"Fields:[ sharedStream.a ]"}
-					{"op":"DataSourcePlan_3","info":"StreamName: sharedStream, StreamFields:[ a ]"}`,
+			{"op":"DataSourcePlan_2","info":"StreamName: stream, StreamFields:[ a ]"}`,
+		},
+		{
+			sql: `select row_number() + 1 as d, b from stream group by countwindow(2)`,
+			explain: `{"op":"ProjectPlan_0","info":"Fields:[ $$alias.d,aliasRef:binaryExpr:{ Call:{ name:bypass, args:[wf_row_number_1] } + 1 }, stream.b ]"}
+	{"op":"WindowFuncPlan_1","info":"windowFuncField:{name:wf_row_number_1, expr:Call:{ name:row_number }}"}
+			{"op":"WindowPlan_2","info":"{ length:2, windowType:COUNT_WINDOW, limit: 0 }"}
+					{"op":"DataSourcePlan_3","info":"StreamName: stream, StreamFields:[ b ]"}`,
 		},
 	}
 	for _, tc := range testcases {
