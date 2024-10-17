@@ -24,6 +24,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/v2/cmd"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 const (
@@ -64,6 +65,8 @@ func init() {
 		fmt.Println(err)
 	}
 	conf.IsTesting = false
+	timex.IsTesting = false
+	timex.InitClock()
 	// Start eKuiper
 	cmd.Version = "fvt"
 	go cmd.Main()

@@ -128,6 +128,21 @@ func GetResponseResultMap(resp *http.Response) (result map[string]any, err error
 	return
 }
 
+func GetResponseResultTextAndMap(resp *http.Response) (body []byte, result map[string]any, err error) {
+	defer resp.Body.Close()
+	body, err = io.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	err = json.Unmarshal(body, &result)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	return
+}
+
 func (sdk *SDK) CreateConf(confpath string, conf map[string]any) (resp *http.Response, err error) {
 	cc, err := json.Marshal(conf)
 	if err != nil {

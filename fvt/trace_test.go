@@ -116,11 +116,9 @@ func (s *TraceTestSuite) TestComplexTrace() {
 		resp, err := http.Post("http://127.0.0.1:10081/test/sim", ContentTypeJson, bytes.NewBufferString("{\"a\": 12,\"b\": 21}"))
 		s.Require().NoError(err)
 		s.Require().Equal(http.StatusOK, resp.StatusCode)
-
 		resp, err = http.Post("http://127.0.0.1:10081/test/sim", ContentTypeJson, bytes.NewBufferString("{\"a\": 22,\"b\": 41}"))
 		s.Require().NoError(err)
 		s.Require().Equal(http.StatusOK, resp.StatusCode)
-
 		time.Sleep(500 * time.Millisecond)
 		resp, err = http.Post("http://127.0.0.1:10081/test/sim", ContentTypeJson, bytes.NewBufferString("{\"a\": 32,\"b\": 61}"))
 		s.Require().NoError(err)
@@ -139,6 +137,7 @@ func (s *TraceTestSuite) TestComplexTrace() {
 			s.Require().NoError(err)
 			return len(rule1Ids) == 4
 		})
+		fmt.Println(len(rule1Ids))
 		s.Require().True(r)
 		// assert each trace, just check 1/2/3
 		for i := 1; i < 4; i++ {
@@ -146,16 +145,16 @@ func (s *TraceTestSuite) TestComplexTrace() {
 			resp, e := client.Get(path.Join("trace", tid))
 			s.NoError(e)
 			s.Equal(http.StatusOK, resp.StatusCode)
-			resultMap, err := GetResponseResultMap(resp)
+			act, resultMap, err := GetResponseResultTextAndMap(resp)
 			s.NoError(err)
-			all, err := os.ReadFile(filepath.Join("result", "trace", fmt.Sprintf("complex%d.json", i+1)))
+			all, err := os.ReadFile(filepath.Join("result", "trace", fmt.Sprintf("complex%d.json", i)))
 			s.NoError(err)
 			exp := make(map[string]any)
 			err = json.Unmarshal(all, &exp)
 			s.NoError(err)
 			if s.compareTrace(exp, resultMap) == false {
-				fmt.Println("trace 1 compares fail")
-				fmt.Println(resultMap)
+				fmt.Println(string(act))
+				s.Fail(fmt.Sprintf("trace 1 file %d compares fail", i))
 			}
 		}
 	})
@@ -163,13 +162,13 @@ func (s *TraceTestSuite) TestComplexTrace() {
 		var (
 			rule2Ids []string
 			checkMap = map[int]int{
-				2: 5,
-				3: 2,
+				1: 2,
+				2: 3,
 				4: 4,
-				5: 3,
+				5: 5,
 			}
 		)
-		// Assert rule1 traces
+		// Assert rule2 traces
 		r := TryAssert(10, 100*time.Millisecond, func() bool {
 			resp, e := client.Get("trace/rule/rule2")
 			s.Require().NoError(e)
@@ -181,7 +180,6 @@ func (s *TraceTestSuite) TestComplexTrace() {
 			return len(rule2Ids) == 6
 		})
 		s.Require().True(r)
-		// assert each trace, just check 1/2/3
 		for i, tid := range rule2Ids {
 			eid, ok := checkMap[i]
 			if !ok {
@@ -190,7 +188,7 @@ func (s *TraceTestSuite) TestComplexTrace() {
 			resp, e := client.Get(path.Join("trace", tid))
 			s.NoError(e)
 			s.Equal(http.StatusOK, resp.StatusCode)
-			resultMap, err := GetResponseResultMap(resp)
+			act, resultMap, err := GetResponseResultTextAndMap(resp)
 			s.NoError(err)
 			all, err := os.ReadFile(filepath.Join("result", "trace", fmt.Sprintf("complex%d.json", eid)))
 			s.NoError(err)
@@ -198,8 +196,8 @@ func (s *TraceTestSuite) TestComplexTrace() {
 			err = json.Unmarshal(all, &exp)
 			s.NoError(err)
 			if s.compareTrace(exp, resultMap) == false {
-				fmt.Println("trace 2 compares fail")
-				fmt.Println(resultMap)
+				fmt.Println(string(act))
+				s.Fail(fmt.Sprintf("trace 2 file %d compares fail", eid))
 			}
 		}
 	})
@@ -326,7 +324,7 @@ func (s *TraceTestSuite) TestLookup() {
 			resp, e := client.Get(path.Join("trace", tid))
 			s.NoError(e)
 			s.Equal(http.StatusOK, resp.StatusCode)
-			resultMap, err := GetResponseResultMap(resp)
+			act, resultMap, err := GetResponseResultTextAndMap(resp)
 			s.NoError(err)
 			all, err := os.ReadFile(filepath.Join("result", "trace", fmt.Sprintf("lookup%d.json", i+1)))
 			s.NoError(err)
@@ -334,8 +332,8 @@ func (s *TraceTestSuite) TestLookup() {
 			err = json.Unmarshal(all, &exp)
 			s.NoError(err)
 			if s.compareTrace(exp, resultMap) == false {
-				fmt.Println("trace lookup compares fail")
-				fmt.Println(resultMap)
+				fmt.Println(string(act))
+				s.Fail(fmt.Sprintf("trace lookup %d compares fail", i+1))
 			}
 		}
 	})
@@ -378,7 +376,7 @@ func (s *TraceTestSuite) TestEventTime() {
   "actions": [
     {
       "rest": {
-        "url": "http://nonexist.com/test",
+        "url": "https://www.githubstatus.com/test",
         "sendSingle": true
       }
     }
@@ -414,7 +412,14 @@ func (s *TraceTestSuite) TestEventTime() {
 		s.Require().Equal(http.StatusOK, resp.StatusCode)
 	})
 	s.Run("assert trace", func() {
-		var ruleIds []string
+		var (
+			ruleIds  []string
+			checkMap = map[int]int{
+				0: 1,
+				2: 2,
+				3: 3,
+			}
+		)
 		// Assert rule1 traces
 		r := TryAssert(10, time.Second, func() bool {
 			resp, e := client.Get("trace/rule/rule3")
@@ -428,21 +433,21 @@ func (s *TraceTestSuite) TestEventTime() {
 		})
 		s.Require().True(r)
 		// assert each trace, just check 0/1/2
-		for i := 0; i < 3; i++ {
+		for i, cid := range checkMap {
 			tid := ruleIds[i]
 			resp, e := client.Get(path.Join("trace", tid))
 			s.NoError(e)
 			s.Equal(http.StatusOK, resp.StatusCode)
-			resultMap, err := GetResponseResultMap(resp)
+			act, resultMap, err := GetResponseResultTextAndMap(resp)
 			s.NoError(err)
-			all, err := os.ReadFile(filepath.Join("result", "trace", fmt.Sprintf("event%d.json", i+1)))
+			all, err := os.ReadFile(filepath.Join("result", "trace", fmt.Sprintf("event%d.json", cid)))
 			s.NoError(err)
 			exp := make(map[string]any)
 			err = json.Unmarshal(all, &exp)
 			s.NoError(err)
 			if s.compareTrace(exp, resultMap) == false {
-				fmt.Println("trace lookup compares fail")
-				fmt.Println(resultMap)
+				fmt.Println(string(act))
+				s.Fail(fmt.Sprintf("trace event %d compares fail", cid))
 			}
 		}
 	})
@@ -459,47 +464,95 @@ func (s *TraceTestSuite) TestEventTime() {
 
 func (s *TraceTestSuite) compareTrace(exp map[string]any, act map[string]any) bool {
 	if len(exp) != len(act) {
+		fmt.Println("map length different")
 		return false
 	}
 	for k, v := range act {
 		switch k {
 		case "name", "attribute":
 			if reflect.DeepEqual(exp[k], v) == false {
+				fmt.Printf("compare %s, expect %s, actual %s\n", k, exp[k], v)
 				return false
 			}
 		case "ChildSpan":
-			ec, ok := exp[k]
+			ex, ok := exp[k]
 			if !ok {
+				fmt.Println("missing child span")
 				return false
 			}
-			ecm, ok := ec.(map[string]any)
+			exs, ok := ex.([]any)
 			if !ok {
+				fmt.Println("exp child span not slice")
 				return false
 			}
-			vm, ok := v.(map[string]any)
+			vs, ok := v.([]any)
 			if !ok {
+				fmt.Println("act child span not slice")
 				return false
 			}
-			return s.compareTrace(ecm, vm)
+			if len(vs) != len(exs) {
+				fmt.Println("child span not equal")
+				return false
+			}
+			childsMap := make(map[string]map[string]any)
+			for _, vss := range vs {
+				vm, ok := vss.(map[string]any)
+				if !ok {
+					fmt.Println("act child span not map")
+					return false
+				}
+				name, ok := vm["name"]
+				if !ok {
+					fmt.Println("act child span does not have name")
+					return false
+				}
+				childsMap[name.(string)] = vm
+			}
+			for _, exss := range exs {
+				exm, ok := exss.(map[string]any)
+				if !ok {
+					fmt.Println("exp child span not map")
+					return false
+				}
+				name, ok := exm["name"]
+				if !ok {
+					fmt.Println("exp child span does not have name")
+					return false
+				}
+				vm, ok := childsMap[name.(string)]
+				if !ok {
+					fmt.Printf("act child span does not have %s", name)
+					return false
+				}
+				r := s.compareTrace(exm, vm)
+				if !r {
+					return r
+				}
+			}
 		case "links":
 			ec, ok := exp[k]
 			if !ok {
+				fmt.Println("exp missing links")
 				return false
 			}
 			ecl, ok := ec.([]any)
 			if !ok {
+				fmt.Println("exp links not slice")
 				return false
 			}
 			vl, ok := v.([]any)
 			if !ok {
+				fmt.Println("act links not slice")
 				return false
 			}
 			if len(ecl) != len(vl) {
+				fmt.Println("links count not equal")
 				return false
 			}
 		default:
 			_, ok := exp[k]
 			if !ok {
+				fmt.Printf("exp missing key %s\n", k)
 				return false
 			}
 		}
