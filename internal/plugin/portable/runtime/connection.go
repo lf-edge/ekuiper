@@ -151,7 +151,7 @@ func (r *NanomsgReqRepChannel) Req(arg []byte) ([]byte, error) {
 			}
 		}
 		if err != nil {
-			return nil, fmt.Errorf("can't send message on function rep socket: %s", err.Error())
+			return nil, err
 		}
 		result, e := r.sock.Recv()
 		if e != nil {
