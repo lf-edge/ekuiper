@@ -36,7 +36,7 @@ func NewSdk(baseUrl string) (*SDK, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &SDK{baseUrl: u, httpClient: &http.Client{Timeout: 5 * time.Second}}, nil
+	return &SDK{baseUrl: u, httpClient: &http.Client{Timeout: 10 * time.Second}}, nil
 }
 
 func (sdk *SDK) Get(command string) (resp *http.Response, err error) {
