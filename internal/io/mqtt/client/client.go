@@ -70,9 +70,7 @@ func (conn *Connection) Provision(ctx api.StreamContext, conId string, props map
 	if err != nil {
 		return err
 	}
-	opts := pahoMqtt.NewClientOptions().AddBroker(c.Server).SetProtocolVersion(c.pversion).SetAutoReconnect(true).SetMaxReconnectInterval(connection.DefaultMaxInterval)
-
-	opts = opts.SetTLSConfig(c.tls)
+	opts := pahoMqtt.NewClientOptions().AddBroker(c.Server).SetProtocolVersion(c.pversion).SetAutoReconnect(true).SetMaxReconnectInterval(connection.DefaultMaxInterval).SetClientID(c.ClientId).SetTLSConfig(c.tls)
 
 	if c.Uname != "" {
 		opts = opts.SetUsername(c.Uname)
