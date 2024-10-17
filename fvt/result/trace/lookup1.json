@@ -4,7 +4,7 @@
   "spanID": "87d9b5f06fad912a",
   "parentSpanID": "0000000000000000",
   "attribute": {
-    "data": "ewogICJpZCI6Mgp9",
+    "data": "eyJpZCI6Mn0=",
     "rule": "ruleLookupMem1"
   },
   "startTime": "2024-10-16T11:51:43.4257784+08:00",
@@ -17,7 +17,7 @@
       "spanID": "41b5c2528c5cbd98",
       "parentSpanID": "87d9b5f06fad912a",
       "attribute": {
-        "data": "ewogICJpZCI6Mgp9",
+        "data": "eyJpZCI6Mn0=",
         "rule": "ruleLookupMem1"
       },
       "startTime": "2024-10-16T11:51:43.4257784+08:00",
@@ -30,7 +30,7 @@
           "spanID": "736a23075cbd28ef",
           "parentSpanID": "41b5c2528c5cbd98",
           "attribute": {
-            "data": "ewogICJpZCI6Mgp9",
+            "data": "eyJpZCI6Mn0=",
             "rule": "ruleLookupMem1"
           },
           "startTime": "2024-10-16T11:51:49.9010616+08:00",

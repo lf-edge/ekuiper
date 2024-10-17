@@ -4,7 +4,7 @@
   "spanID": "b22783c3e95ced38",
   "parentSpanID": "0000000000000000",
   "attribute": {
-    "data": "ewogICJhIjogMTIsCiAgImIiOiAyMQp9",
+    "data": "eyJhIjogMTIsImIiOiAyMX0=",
     "rule": "$$subtopo_pushStream"
   },
   "startTime": "2024-10-15T16:46:33.5004018+08:00",
@@ -17,7 +17,7 @@
       "spanID": "e8d9eee5a1b43ff9",
       "parentSpanID": "b22783c3e95ced38",
       "attribute": {
-        "data": "ewogICJhIjogMTIsCiAgImIiOiAyMQp9",
+        "data": "eyJhIjogMTIsImIiOiAyMX0=",
         "rule": "$$subtopo_pushStream"
       },
       "startTime": "2024-10-15T16:46:33.5013003+08:00",

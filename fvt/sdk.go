@@ -36,7 +36,7 @@ func NewSdk(baseUrl string) (*SDK, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &SDK{baseUrl: u, httpClient: &http.Client{Timeout: 5 * time.Second}}, nil
+	return &SDK{baseUrl: u, httpClient: &http.Client{Timeout: 10 * time.Second}}, nil
 }
 
 func (sdk *SDK) Get(command string) (resp *http.Response, err error) {
@@ -116,6 +116,21 @@ func GetResponseText(resp *http.Response) (string, error) {
 func GetResponseResultMap(resp *http.Response) (result map[string]any, err error) {
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	err = json.Unmarshal(body, &result)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	return
+}
+
+func GetResponseResultTextAndMap(resp *http.Response) (body []byte, result map[string]any, err error) {
+	defer resp.Body.Close()
+	body, err = io.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Println(err)
 		return

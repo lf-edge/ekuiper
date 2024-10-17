@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"net/http"
 	"path"
+	"strings"
 	"testing"
 	"time"
 
@@ -470,7 +471,7 @@ func (s *ConnectionTestSuite) TestSinkPing() {
 				"measurement": "test",
 			},
 			timeout: true,
-			// err: "{\"error\":1000,\"message\":\"Get \\\"http://test.com/test/ping?parseTime=true&wait_for_leader=10s\\\": dial tcp 127.0.0.1:80: connectex: No connection could be made because the target machine actively refused it.\"}\n",
+			err:     "{\"error\":1000,\"message\":\"Get \\\"http://test.com/test/ping?parseTime=true&wait_for_leader=10s\\\": dial tcp 127.0.0.1:80: connectex: No connection could be made because the target machine actively refused it.\"}\n",
 		},
 		{
 			name: "influx2",
@@ -482,7 +483,7 @@ func (s *ConnectionTestSuite) TestSinkPing() {
 				"measurement": "test",
 			},
 			timeout: true,
-			// err: "{\"error\":1000,\"message\":\"error connecting to influxdb2: Get \\\"http://root:***@test.com/ping\\\": dial tcp 127.0.0.1:80: connectex: No connection could be made because the target machine actively refused it.\"}\n",
+			err:     "i/o timeout",
 		},
 	}
 	prefix := "metadata/sinks/connection"
@@ -492,15 +493,19 @@ func (s *ConnectionTestSuite) TestSinkPing() {
 			s.Require().NoError(err)
 			resp, err := client.Post(path.Join(prefix, tt.name), string(body))
 			if tt.timeout {
-				s.Require().Error(err)
+				if err != nil {
+					s.Require().Error(err)
+					return
+				}
+			}
+			s.Require().NoError(err)
+			if tt.err == "" {
+				s.Require().Equal(http.StatusOK, resp.StatusCode)
 			} else {
+				s.Require().Equal(http.StatusBadRequest, resp.StatusCode)
+				t, err := GetResponseText(resp)
 				s.Require().NoError(err)
-				if tt.err == "" {
-					s.Require().Equal(http.StatusOK, resp.StatusCode)
-				} else {
-					s.Require().Equal(http.StatusBadRequest, resp.StatusCode)
-					t, err := GetResponseText(resp)
-					s.Require().NoError(err)
+				if !strings.Contains(t, tt.err) {
 					s.Require().Equal(tt.err, t)
 				}
 			}
