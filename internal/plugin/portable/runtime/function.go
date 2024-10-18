@@ -16,9 +16,11 @@ package runtime
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	nerrors "go.nanomsg.org/mangos/v3/errors"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	kctx "github.com/lf-edge/ekuiper/v2/internal/topo/context"
@@ -86,7 +88,8 @@ func (f *PortableFunc) Validate(args []interface{}) error {
 	}
 	res, err := f.dataCh.Req(jsonArg)
 	if err != nil {
-		return err
+		e := handleTimeout(err, f.reg.Name)
+		return e
 	}
 	fr := &FuncReply{}
 	err = json.Unmarshal(res, fr)
@@ -112,7 +115,8 @@ func (f *PortableFunc) Exec(ctx api.FunctionContext, args []any) (interface{}, b
 	}
 	res, err := f.dataCh.Req(jsonArg)
 	if err != nil {
-		return err, false
+		e := handleTimeout(err, f.reg.Name)
+		return e, false
 	}
 	fr := &FuncReply{}
 	err = json.Unmarshal(res, fr)
@@ -127,6 +131,19 @@ func (f *PortableFunc) Exec(ctx api.FunctionContext, args []any) (interface{}, b
 		}
 	}
 	return fr.Result, fr.State
+}
+
+func handleTimeout(err error, pname string) error {
+	if errors.Is(err, nerrors.ErrRecvTimeout) {
+		pm := GetPluginInsManager()
+		status, ok := pm.GetPluginInsStatus(pname)
+		if !ok {
+			return fmt.Errorf("plugin %s was removed", pname)
+		} else {
+			return fmt.Errorf("time out, plugin %s status %s, message: %s", pname, status.Status, status.ErrMsg)
+		}
+	}
+	return err
 }
 
 func (f *PortableFunc) IsAggregate() bool {

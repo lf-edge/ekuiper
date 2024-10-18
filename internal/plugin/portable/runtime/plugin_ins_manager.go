@@ -301,7 +301,6 @@ func (p *pluginInsManager) GetOrStartProcess(pluginMeta *PluginMeta, pconf *Port
 	cmd.Stdout = conf.Log.Out
 	cmd.Stderr = conf.Log.Out
 	cmd.Dir = filepath.Dir(pluginMeta.Executable)
-
 	conf.Log.Println("plugin starting")
 	err = cmd.Start()
 	failpoint.Inject("cmdStartErr", func() {
