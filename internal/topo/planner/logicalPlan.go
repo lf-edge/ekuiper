@@ -156,4 +156,5 @@ const (
 	WINDOW        PlanType = "WindowPlan"
 	WINDOWFUNC    PlanType = "WindowFuncPlan"
 	WATERMARK     PlanType = "WatermarkPlan"
+	IncAggWindow  PlanType = "IncAggWindowPlan"
 )
