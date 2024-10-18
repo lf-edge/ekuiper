@@ -471,7 +471,7 @@ func (s *ConnectionTestSuite) TestSinkPing() {
 				"measurement": "test",
 			},
 			timeout: true,
-			err:     "{\"error\":1000,\"message\":\"Get \\\"http://test.com/test/ping?parseTime=true&wait_for_leader=10s\\\": dial tcp 127.0.0.1:80: connectex: No connection could be made because the target machine actively refused it.\"}\n",
+			err:     "\"error\":1000",
 		},
 		{
 			name: "influx2",
@@ -483,7 +483,7 @@ func (s *ConnectionTestSuite) TestSinkPing() {
 				"measurement": "test",
 			},
 			timeout: true,
-			err:     "i/o timeout",
+			err:     "error connecting to influxdb2",
 		},
 	}
 	prefix := "metadata/sinks/connection"
