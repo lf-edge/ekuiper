@@ -59,9 +59,9 @@ func (w *WebsocketSink) Connect(ctx api.StreamContext, sch api.StatusChangeHandl
 	if err != nil {
 		return err
 	}
-	conn, err := w.cw.Wait()
-	if err != nil {
-		return err
+	conn, err := w.cw.Wait(ctx)
+	if conn == nil {
+		return fmt.Errorf("websocket endpoint not ready: %v", err)
 	}
 	c, ok := conn.(*httpserver.WebsocketConnection)
 	if !ok {
