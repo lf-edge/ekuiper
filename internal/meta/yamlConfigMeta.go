@@ -25,6 +25,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/util"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	"github.com/lf-edge/ekuiper/v2/pkg/kv"
 	"github.com/lf-edge/ekuiper/v2/pkg/replace"
@@ -768,6 +769,9 @@ func LoadConfigurations(configSets YamlConfigurationSet) YamlConfigurationSet {
 			continue
 		}
 	}
+	if err := connection.ReloadNamedConnection(); err != nil {
+		conf.Log.Errorf("reload connection config error: %s", err.Error())
+	}
 	return configResponse
 }
 
@@ -822,6 +826,9 @@ func LoadConfigurationsPartial(configSets YamlConfigurationSet) YamlConfiguratio
 			configResponse.Connections[key] = err.Error()
 			continue
 		}
+	}
+	if err := connection.ReloadNamedConnection(); err != nil {
+		conf.Log.Errorf("reload connection config error: %s", err.Error())
 	}
 	return configResponse
 }

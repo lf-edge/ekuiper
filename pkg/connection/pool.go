@@ -115,6 +115,8 @@ func FetchConnection(ctx api.StreamContext, refId, typ string, props map[string]
 
 // ReloadNamedConnection is called when server starts. It initializes all stored named connections
 func ReloadNamedConnection() error {
+	globalConnectionManager.Lock()
+	defer globalConnectionManager.Unlock()
 	cfgs, err := conf.GetCfgFromKVStorage("connections", "", "")
 	if err != nil {
 		return err
@@ -126,6 +128,9 @@ func ReloadNamedConnection() error {
 		}
 		typ := names[1]
 		id := names[2]
+		if _, ok := globalConnectionManager.connectionPool[id]; ok {
+			continue
+		}
 		meta := &Meta{
 			ID:    id,
 			Typ:   typ,
