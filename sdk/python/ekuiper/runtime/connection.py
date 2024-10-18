@@ -101,6 +101,7 @@ class SinkAckChannel:
 
 
 def listen_with_retry(sock, url: str):
+    sock.recv_max_size = 0
     retry_count = 10
     retry_interval = 0.05
     while True:
@@ -116,6 +117,7 @@ def listen_with_retry(sock, url: str):
 
 
 def dial_with_retry(sock, url: str):
+    sock.recv_max_size = 0
     retry_count = 50
     retry_interval = 0.1
     while True:
