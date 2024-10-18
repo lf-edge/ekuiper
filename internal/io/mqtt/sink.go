@@ -76,9 +76,8 @@ func (ms *Sink) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) erro
 		return err
 	}
 	conn, err := ms.cw.Wait(ctx)
-	if err != nil {
-		conf.Log.Infof("mqtt sink client not ready, err:%v", err)
-		return err
+	if conn == nil {
+		return fmt.Errorf("mqtt client not ready: %v", err)
 	}
 	c, ok := conn.(*client.Connection)
 	if !ok {

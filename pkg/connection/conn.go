@@ -16,7 +16,6 @@ package connection
 
 import (
 	rawContext "context"
-	"fmt"
 	"sync"
 	"sync/atomic"
 
@@ -51,7 +50,6 @@ func (cw *ConnWrapper) Wait(connectorCtx api.StreamContext) (modules.Connection,
 	select {
 	case <-connectorCtx.Done():
 		connectorCtx.GetLogger().Infof("stop waiting connection")
-		return nil, fmt.Errorf("cancel connection")
 	case <-cw.waitCtx.Done():
 	}
 	cw.l.RLock()

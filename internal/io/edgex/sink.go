@@ -113,8 +113,8 @@ func (ems *EdgexMsgBusSink) Connect(ctx api.StreamContext, sc api.StatusChangeHa
 		return err
 	}
 	conn, err := ems.cw.Wait(ctx)
-	if err != nil {
-		return err
+	if conn == nil {
+		return fmt.Errorf("edgex client not ready: %v", err)
 	}
 	c, ok := conn.(*client.Client)
 	if !ok {

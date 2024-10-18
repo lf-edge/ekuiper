@@ -134,8 +134,8 @@ func (s *SQLSinkConnector) Connect(ctx api.StreamContext, sc api.StatusChangeHan
 	}
 	s.cw = cw
 	conn, err := s.cw.Wait(ctx)
-	if err != nil {
-		return err
+	if conn == nil {
+		return fmt.Errorf("sql client not ready: %v", err)
 	}
 	s.conn = conn.(*client.SQLConnection)
 	return err

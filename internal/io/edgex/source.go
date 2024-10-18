@@ -89,8 +89,8 @@ func (es *Source) Connect(ctx api.StreamContext, sc api.StatusChangeHandler) err
 	}
 	es.conId = cw.ID
 	conn, err := cw.Wait(ctx)
-	if err != nil {
-		return err
+	if conn == nil {
+		return fmt.Errorf("edgex client not ready: %v", err)
 	}
 	cli = conn.(*client.Client)
 	es.cli = cli

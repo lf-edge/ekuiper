@@ -93,8 +93,8 @@ func (s *SqlLookupSource) Connect(ctx api.StreamContext, sc api.StatusChangeHand
 	}
 	s.conId = cw.ID
 	conn, err := cw.Wait(ctx)
-	if err != nil {
-		return err
+	if conn == nil {
+		return fmt.Errorf("sql client not ready: %v", err)
 	}
 	cli = conn.(*client2.SQLConnection)
 	s.conn = cli

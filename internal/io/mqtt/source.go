@@ -97,8 +97,8 @@ func (ms *SourceConnector) Connect(ctx api.StreamContext, sch api.StatusChangeHa
 	ms.conId = cw.ID
 	// wait for connection
 	conn, err := cw.Wait(ctx)
-	if err != nil {
-		return err
+	if conn == nil {
+		return fmt.Errorf("mqtt client not ready: %v", err)
 	}
 	cli = conn.(*client.Connection)
 	ms.cli = cli

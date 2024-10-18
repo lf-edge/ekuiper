@@ -93,8 +93,8 @@ func (s *sink) Connect(ctx api.StreamContext, sc api.StatusChangeHandler) error 
 	}
 	s.cw = cw
 	cli, err := cw.Wait(ctx)
-	if err != nil {
-		return err
+	if cli == nil {
+		return fmt.Errorf("neuron client not ready: %v", err)
 	}
 	s.cli = cli.(*nng.Sock)
 	return nil
