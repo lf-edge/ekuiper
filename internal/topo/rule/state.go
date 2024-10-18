@@ -537,14 +537,14 @@ func (s *State) runTopo(ctx context.Context, tp *topo.Topo, rs *def.RestartStrat
 			}
 		}
 	})
+	if s.topology != nil {
+		s.topoGraph = s.topology.GetTopo()
+		keys, values := s.topology.GetMetrics()
+		s.stoppedMetrics = []any{keys, values}
+		s.topology = nil
+	}
 	if err != nil { // Exit after retries
 		s.logger.Error(err)
-		if s.topology != nil {
-			s.topoGraph = s.topology.GetTopo()
-			keys, values := s.topology.GetMetrics()
-			s.stoppedMetrics = []any{keys, values}
-			s.topology = nil
-		}
 		s.transit(StoppedByErr, err)
 	} else {
 		s.transit(Stopped, err)
