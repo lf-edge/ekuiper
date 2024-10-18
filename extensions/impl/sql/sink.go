@@ -133,7 +133,7 @@ func (s *SQLSinkConnector) Connect(ctx api.StreamContext, sc api.StatusChangeHan
 		return err
 	}
 	s.cw = cw
-	conn, err := s.cw.Wait()
+	conn, err := s.cw.Wait(ctx)
 	if err != nil {
 		return err
 	}
@@ -143,8 +143,8 @@ func (s *SQLSinkConnector) Connect(ctx api.StreamContext, sc api.StatusChangeHan
 
 func (s *SQLSinkConnector) Close(ctx api.StreamContext) error {
 	ctx.GetLogger().Infof("Closing sql sink connector url:%v", s.config.DBUrl)
-	if s.conn != nil {
-		return connection.DetachConnection(ctx, s.conn.GetId(ctx))
+	if s.cw != nil {
+		return connection.DetachConnection(ctx, s.cw.ID)
 	}
 	return nil
 }

@@ -15,6 +15,8 @@
 package connection
 
 import (
+	rawContext "context"
+	"fmt"
 	"sync"
 	"sync/atomic"
 
@@ -29,40 +31,46 @@ type ConnWrapper struct {
 	initialized bool
 	conn        modules.Connection
 	err         error
-	cond        *sync.Cond
+	l           sync.RWMutex
+	ctx         rawContext.Context
 }
 
-func (cw *ConnWrapper) SetConn(conn modules.Connection, err error) {
-	cw.cond.L.Lock()
-	defer cw.cond.L.Unlock()
+func (cw *ConnWrapper) setConn(conn modules.Connection, err error) {
+	cw.l.Lock()
+	defer cw.l.Unlock()
 	cw.initialized = true
 	cw.conn, cw.err = conn, err
 }
 
-func (cw *ConnWrapper) Wait() (modules.Connection, error) {
-	cw.cond.L.Lock()
-	defer cw.cond.L.Unlock()
-	for !cw.initialized {
-		cw.cond.Wait()
+// Wait will wait for connection connected or the caller interrupts (like rule exit)
+func (cw *ConnWrapper) Wait(connectorCtx api.StreamContext) (modules.Connection, error) {
+	select {
+	case <-connectorCtx.Done():
+		connectorCtx.GetLogger().Infof("stop waiting connection")
+		return nil, fmt.Errorf("cancel connection")
+	case <-cw.ctx.Done():
 	}
+	cw.l.RLock()
+	defer cw.l.RUnlock()
 	return cw.conn, cw.err
 }
 
 func (cw *ConnWrapper) IsInitialized() bool {
-	cw.cond.L.Lock()
-	defer cw.cond.L.Unlock()
+	cw.l.RLock()
+	defer cw.l.RUnlock()
 	return cw.initialized
 }
 
 func newConnWrapper(ctx api.StreamContext, meta *Meta) *ConnWrapper {
+	connCtx, onConnect := rawContext.WithCancel(rawContext.Background())
 	cw := &ConnWrapper{
-		ID:   meta.ID,
-		cond: sync.NewCond(&sync.Mutex{}),
+		ID:  meta.ID,
+		ctx: connCtx,
 	}
 	go func() {
 		conn, err := createConnection(ctx, meta)
-		cw.SetConn(conn, err)
-		cw.cond.Broadcast()
+		cw.setConn(conn, err)
+		onConnect()
 	}()
 	return cw
 }

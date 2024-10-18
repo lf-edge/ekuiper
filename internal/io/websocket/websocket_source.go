@@ -63,7 +63,7 @@ func (w *WebsocketSource) Connect(ctx api.StreamContext, sc api.StatusChangeHand
 	if err != nil {
 		return err
 	}
-	conn, err := cw.Wait()
+	conn, err := cw.Wait(ctx)
 	if err != nil {
 		return err
 	}

@@ -112,7 +112,7 @@ func (ems *EdgexMsgBusSink) Connect(ctx api.StreamContext, sc api.StatusChangeHa
 	if err != nil {
 		return err
 	}
-	conn, err := ems.cw.Wait()
+	conn, err := ems.cw.Wait(ctx)
 	if err != nil {
 		return err
 	}
@@ -529,7 +529,9 @@ func (ems *EdgexMsgBusSink) Close(ctx api.StreamContext) error {
 	logger.Infof("Closing edgex sink")
 	if ems.cli != nil {
 		_ = ems.cli.Disconnect()
-		return connection.DetachConnection(ctx, ems.cli.GetId(ctx))
+	}
+	if ems.cw != nil {
+		return connection.DetachConnection(ctx, ems.cw.ID)
 	}
 	return nil
 }

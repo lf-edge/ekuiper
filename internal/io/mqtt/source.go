@@ -37,6 +37,7 @@ type SourceConnector struct {
 	props map[string]any
 
 	cli        *client.Connection
+	conId      string
 	eof        api.EOFIngest
 	eofPayload []byte
 }
@@ -93,8 +94,9 @@ func (ms *SourceConnector) Connect(ctx api.StreamContext, sch api.StatusChangeHa
 	if err != nil {
 		return err
 	}
+	ms.conId = cw.ID
 	// wait for connection
-	conn, err := cw.Wait()
+	conn, err := cw.Wait(ctx)
 	if err != nil {
 		return err
 	}
@@ -132,9 +134,8 @@ func (ms *SourceConnector) Close(ctx api.StreamContext) error {
 	ctx.GetLogger().Infof("Closing mqtt source connector to topic %s.", ms.tpc)
 	if ms.cli != nil {
 		ms.cli.DetachSub(ctx, ms.props)
-		return connection.DetachConnection(ctx, ms.cli.GetId(ctx))
 	}
-	return nil
+	return connection.DetachConnection(ctx, ms.conId)
 }
 
 func (ms *SourceConnector) SetEofIngest(eof api.EOFIngest) {

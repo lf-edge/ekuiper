@@ -66,7 +66,7 @@ func create(def *RunDef) (*topo.Topo, error) {
 	if err != nil {
 		return nil, err
 	}
-	_, err = cw.Wait()
+	_, err = cw.Wait(context.Background())
 	if err != nil {
 		return nil, err
 	}

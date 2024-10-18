@@ -59,7 +59,7 @@ func (w *WebsocketSink) Connect(ctx api.StreamContext, sch api.StatusChangeHandl
 	if err != nil {
 		return err
 	}
-	conn, err := w.cw.Wait()
+	conn, err := w.cw.Wait(ctx)
 	if err != nil {
 		return err
 	}

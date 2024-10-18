@@ -40,6 +40,7 @@ type Source struct {
 	topic       string
 	messageType messageType
 	buflen      int
+	conId       string
 }
 
 type SourceConf struct {
@@ -86,7 +87,8 @@ func (es *Source) Connect(ctx api.StreamContext, sc api.StatusChangeHandler) err
 	if err != nil {
 		return err
 	}
-	conn, err := cw.Wait()
+	es.conId = cw.ID
+	conn, err := cw.Wait(ctx)
 	if err != nil {
 		return err
 	}
@@ -324,9 +326,8 @@ func (es *Source) Close(ctx api.StreamContext) error {
 	if es.cli != nil {
 		es.cli.DetachSub(ctx, es.config)
 		_ = es.cli.Disconnect()
-		return connection.DetachConnection(ctx, es.cli.GetId(ctx))
 	}
-	return nil
+	return connection.DetachConnection(ctx, es.conId)
 }
 
 func GetSource() api.Source {

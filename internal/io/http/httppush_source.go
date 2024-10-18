@@ -77,7 +77,7 @@ func (h *HttpPushSource) Connect(ctx api.StreamContext, sch api.StatusChangeHand
 	if err != nil {
 		return err
 	}
-	c, err := cw.Wait()
+	c, err := cw.Wait(ctx)
 	if err != nil {
 		return err
 	}

@@ -75,7 +75,7 @@ func (ms *Sink) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) erro
 	if err != nil {
 		return err
 	}
-	conn, err := ms.cw.Wait()
+	conn, err := ms.cw.Wait(ctx)
 	if err != nil {
 		conf.Log.Infof("mqtt sink client not ready, err:%v", err)
 		return err
@@ -111,8 +111,8 @@ func (ms *Sink) Collect(ctx api.StreamContext, item api.RawTuple) error {
 
 func (ms *Sink) Close(ctx api.StreamContext) error {
 	ctx.GetLogger().Infof("Closing mqtt sink connector, id:%v", ms.id)
-	if ms.cli != nil {
-		return connection.DetachConnection(ctx, ms.cli.GetId(ctx))
+	if ms.cw != nil {
+		return connection.DetachConnection(ctx, ms.cw.ID)
 	}
 	return nil
 }

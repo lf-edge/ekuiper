@@ -41,6 +41,7 @@ type SQLSourceConnector struct {
 	conn          *client2.SQLConnection
 	props         map[string]any
 	needReconnect bool
+	conId         string
 }
 
 func (s *SQLSourceConnector) Ping(ctx api.StreamContext, m map[string]any) error {
@@ -106,7 +107,8 @@ func (s *SQLSourceConnector) Connect(ctx api.StreamContext, sc api.StatusChangeH
 	if err != nil {
 		return err
 	}
-	conn, err := cw.Wait()
+	s.conId = cw.ID
+	conn, err := cw.Wait(ctx)
 	if err != nil {
 		return err
 	}
@@ -119,9 +121,8 @@ func (s *SQLSourceConnector) Close(ctx api.StreamContext) error {
 	ctx.GetLogger().Infof("Closing sql source connector url:%v", s.conf.DBUrl)
 	if s.conn != nil {
 		s.conn.DetachSub(ctx, s.props)
-		return connection.DetachConnection(ctx, s.conn.GetId(ctx))
 	}
-	return nil
+	return connection.DetachConnection(ctx, s.conId)
 }
 
 func (s *SQLSourceConnector) Pull(ctx api.StreamContext, recvTime time.Time, ingest api.TupleIngest, ingestError api.ErrorIngest) {

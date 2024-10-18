@@ -86,7 +86,13 @@ func (s *sink) Ping(ctx api.StreamContext, props map[string]any) error {
 }
 
 func (s *sink) Connect(ctx api.StreamContext, sc api.StatusChangeHandler) error {
-	cli, err := connect(ctx, s.cc.Url, s.props, sc)
+	ctx.GetLogger().Infof("Connecting to neuron")
+	cw, err := connection.FetchConnection(ctx, PROTOCOL+s.cc.Url, "nng", s.props, sc)
+	if err != nil {
+		return err
+	}
+	s.cw = cw
+	cli, err := cw.Wait(ctx)
 	if err != nil {
 		return err
 	}
@@ -124,7 +130,9 @@ func (s *sink) CollectList(ctx api.StreamContext, data api.MessageTupleList) err
 
 func (s *sink) Close(ctx api.StreamContext) error {
 	ctx.GetLogger().Debugf("closing neuron sink")
-	close(ctx, s.cli)
+	if s.cw != nil {
+		_ = connection.DetachConnection(ctx, s.cw.ID)
+	}
 	s.cli = nil
 	return nil
 }

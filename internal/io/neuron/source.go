@@ -25,6 +25,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/util"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node/tracenode"
+	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 	"github.com/lf-edge/ekuiper/v2/pkg/nng"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
@@ -48,6 +49,7 @@ type source struct {
 	c     *nng.SockConf
 	cli   *nng.Sock
 	props map[string]any
+	conId string
 }
 
 func (s *source) Provision(_ api.StreamContext, props map[string]any) error {
@@ -80,7 +82,13 @@ func (s *source) SubId(_ map[string]any) string {
 }
 
 func (s *source) Connect(ctx api.StreamContext, sc api.StatusChangeHandler) error {
-	cli, err := connect(ctx, s.c.Url, s.props, sc)
+	ctx.GetLogger().Infof("Connecting to neuron")
+	cw, err := connection.FetchConnection(ctx, PROTOCOL+s.c.Url, "nng", s.props, sc)
+	if err != nil {
+		return err
+	}
+	s.conId = cw.ID
+	cli, err := cw.Wait(ctx)
 	if err != nil {
 		return err
 	}
@@ -117,7 +125,7 @@ func (s *source) Subscribe(ctx api.StreamContext, ingest api.BytesIngest, ingest
 
 func (s *source) Close(ctx api.StreamContext) error {
 	ctx.GetLogger().Infof("closing neuron source")
-	close(ctx, s.cli)
+	_ = connection.DetachConnection(ctx, s.conId)
 	s.cli = nil
 	return nil
 }
