@@ -49,7 +49,7 @@ require (
 	go.uber.org/automaxprocs v1.5.3
 	golang.org/x/text v0.18.0
 	google.golang.org/genproto/googleapis/api v0.0.0-20240528184218-531527333157
-	google.golang.org/grpc v1.64.0
+	google.golang.org/grpc v1.64.1
 	google.golang.org/protobuf v1.34.2
 	gopkg.in/ini.v1 v1.67.0
 	gopkg.in/yaml.v3 v3.0.1
@@ -357,6 +357,6 @@ require (
 
 go 1.22
 
-toolchain go1.22.1
+toolchain go1.22.8
 
 replace github.com/lf-edge/ekuiper/extensions v0.0.0-20240606005720-bdb167e36fd7 => ./extensions
