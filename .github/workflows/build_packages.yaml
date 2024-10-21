@@ -33,7 +33,7 @@ jobs:
     strategy:
       matrix:
         golang:
-          - 1.22.1
+          - 1.22.8
         arch: ${{fromJson(needs.prepare.outputs.arch)}}
         os:
           - debian
@@ -136,7 +136,7 @@ jobs:
             - "-slim-python"
             - "-full"
             golang:
-              - 1.22.1
+              - 1.22.8
 
     steps:
     - uses: actions/checkout@v3
@@ -233,7 +233,7 @@ jobs:
           - [debian, "slim"]
           - [alpine, "alpine"]
         golang:
-          - 1.22.1
+          - 1.22.8
         exclude:
           - arch: linux/arm/v7
           - os: [ alpine,"alpine" ]
