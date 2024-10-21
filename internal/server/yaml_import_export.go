@@ -36,6 +36,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/service"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 	"github.com/lf-edge/ekuiper/v2/pkg/replace"
 )
 
@@ -521,6 +522,9 @@ func importConfigurations(m *MetaConfiguration) error {
 		if err != nil {
 			return err
 		}
+	}
+	if err := connection.ReloadNamedConnection(); err != nil {
+		conf.Log.Errorf("reload connection config error: %s", err.Error())
 	}
 	return nil
 }
