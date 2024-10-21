@@ -197,7 +197,7 @@ func (s *TraceTestSuite) TestComplexTrace() {
 			err = json.Unmarshal(all, &exp)
 			s.NoError(err)
 			if s.compareTrace(exp, resultMap) == false {
-				fmt.Println(fmt.Sprintf("complex%d.json", i))
+				fmt.Println(fmt.Sprintf("complex%d.json", eid))
 				fmt.Println(string(act))
 				s.Fail(fmt.Sprintf("trace 2 file %d compares fail", eid))
 			}
@@ -334,6 +334,7 @@ func (s *TraceTestSuite) TestLookup() {
 			err = json.Unmarshal(all, &exp)
 			s.NoError(err)
 			if s.compareTrace(exp, resultMap) == false {
+				fmt.Println(fmt.Sprintf("lookup%d.json", i+1))
 				fmt.Println(string(act))
 				s.Fail(fmt.Sprintf("trace lookup %d compares fail", i+1))
 			}
