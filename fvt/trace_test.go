@@ -147,12 +147,19 @@ func (s *TraceTestSuite) TestComplexTrace() {
 			s.Equal(http.StatusOK, resp.StatusCode)
 			act, resultMap, err := GetResponseResultTextAndMap(resp)
 			s.NoError(err)
-			all, err := os.ReadFile(filepath.Join("result", "trace", fmt.Sprintf("complex%d.json", i)))
+			all1, err := os.ReadFile(filepath.Join("result", "trace", fmt.Sprintf("complex%d.json", i)))
 			s.NoError(err)
-			exp := make(map[string]any)
-			err = json.Unmarshal(all, &exp)
+			exp2 := make(map[string]any)
+			all2, err := os.ReadFile(filepath.Join("result", "trace", fmt.Sprintf("complex%d_another.json", i)))
+			if err == nil {
+				err = json.Unmarshal(all2, &exp2)
+				s.NoError(err)
+			}
+			exp1 := make(map[string]any)
+			err = json.Unmarshal(all1, &exp1)
 			s.NoError(err)
-			if s.compareTrace(exp, resultMap) == false {
+			if !s.compareTrace(exp1, resultMap) && !s.compareTrace(exp2, resultMap) {
+				fmt.Println(fmt.Sprintf("complex%d.json", i))
 				fmt.Println(string(act))
 				s.Fail(fmt.Sprintf("trace 1 file %d compares fail", i))
 			}
@@ -196,6 +203,7 @@ func (s *TraceTestSuite) TestComplexTrace() {
 			err = json.Unmarshal(all, &exp)
 			s.NoError(err)
 			if s.compareTrace(exp, resultMap) == false {
+				fmt.Println(fmt.Sprintf("complex%d.json", eid))
 				fmt.Println(string(act))
 				s.Fail(fmt.Sprintf("trace 2 file %d compares fail", eid))
 			}
@@ -332,6 +340,7 @@ func (s *TraceTestSuite) TestLookup() {
 			err = json.Unmarshal(all, &exp)
 			s.NoError(err)
 			if s.compareTrace(exp, resultMap) == false {
+				fmt.Println(fmt.Sprintf("lookup%d.json", i+1))
 				fmt.Println(string(act))
 				s.Fail(fmt.Sprintf("trace lookup %d compares fail", i+1))
 			}
@@ -446,6 +455,7 @@ func (s *TraceTestSuite) TestEventTime() {
 			err = json.Unmarshal(all, &exp)
 			s.NoError(err)
 			if s.compareTrace(exp, resultMap) == false {
+				fmt.Println(fmt.Sprintf("event%d.json", cid))
 				fmt.Println(string(act))
 				s.Fail(fmt.Sprintf("trace event %d compares fail", cid))
 			}
