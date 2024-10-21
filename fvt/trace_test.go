@@ -446,6 +446,7 @@ func (s *TraceTestSuite) TestEventTime() {
 			err = json.Unmarshal(all, &exp)
 			s.NoError(err)
 			if s.compareTrace(exp, resultMap) == false {
+				fmt.Println(fmt.Sprintf("event%d.json", cid))
 				fmt.Println(string(act))
 				s.Fail(fmt.Sprintf("trace event %d compares fail", cid))
 			}
