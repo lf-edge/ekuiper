@@ -37,6 +37,7 @@ type SqlLookupSource struct {
 	table         string
 	needReconnect bool
 	gen           sqlQueryGen
+	conId         string
 }
 
 func (s *SqlLookupSource) Ping(ctx api.StreamContext, m map[string]any) error {
@@ -77,9 +78,8 @@ func (s *SqlLookupSource) Close(ctx api.StreamContext) error {
 	ctx.GetLogger().Infof("Closing sql source connector url:%v", s.conf.DBUrl)
 	if s.conn != nil {
 		s.conn.DetachSub(ctx, s.props)
-		return connection.DetachConnection(ctx, s.conn.GetId(ctx))
 	}
-	return nil
+	return connection.DetachConnection(ctx, s.conId)
 }
 
 func (s *SqlLookupSource) Connect(ctx api.StreamContext, sc api.StatusChangeHandler) error {
@@ -91,9 +91,10 @@ func (s *SqlLookupSource) Connect(ctx api.StreamContext, sc api.StatusChangeHand
 	if err != nil {
 		return err
 	}
-	conn, err := cw.Wait()
-	if err != nil {
-		return err
+	s.conId = cw.ID
+	conn, err := cw.Wait(ctx)
+	if conn == nil {
+		return fmt.Errorf("sql client not ready: %v", err)
 	}
 	cli = conn.(*client2.SQLConnection)
 	s.conn = cli

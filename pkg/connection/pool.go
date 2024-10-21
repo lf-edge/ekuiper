@@ -227,7 +227,7 @@ func dropNameConnection(ctx api.StreamContext, selId string) error {
 		return fmt.Errorf("drop connection %s failed, err:%v", selId, err)
 	}
 	if meta.cw.IsInitialized() {
-		conn, err := meta.cw.Wait()
+		conn, err := meta.cw.Wait(ctx)
 		if conn != nil && err == nil {
 			conn.Close(ctx)
 		}
@@ -321,7 +321,10 @@ func detachConnection(ctx api.StreamContext, conId string) error {
 	globalConnectionManager.connectionPool[conId] = meta
 	conf.Log.Infof("detachConnection remove conn:%v,ref:%v", conId, refId)
 	if !meta.Named && meta.GetRefCount() == 0 {
-		conn, err := meta.cw.Wait()
+		if meta.cw.stop != nil {
+			meta.cw.stop()
+		}
+		conn, err := meta.cw.Wait(ctx)
 		if conn != nil && err == nil {
 			conn.Close(ctx)
 		}
@@ -331,31 +334,31 @@ func detachConnection(ctx api.StreamContext, conId string) error {
 	return nil
 }
 
-func createConnection(ctx api.StreamContext, meta *Meta) (modules.Connection, error) {
+func createConnection(connCtx api.StreamContext, meta *Meta) (modules.Connection, error) {
 	var conn modules.Connection
 	var err error
 	connRegister, ok := modules.ConnectionRegister[strings.ToLower(meta.Typ)]
 	if !ok {
 		return nil, fmt.Errorf("unknown connection type")
 	}
-	conn = connRegister(ctx)
+	conn = connRegister(connCtx)
 	sc, isStateful := conn.(modules.StatefulDialer)
-	err = conn.Provision(ctx, meta.ID, meta.Props)
+	err = conn.Provision(connCtx, meta.ID, meta.Props)
 	if err != nil {
 		return nil, err
 	}
 	if isStateful {
-		sc.SetStatusChangeHandler(ctx, meta.NotifyStatus)
+		sc.SetStatusChangeHandler(connCtx, meta.NotifyStatus)
 	}
 	err = backoff.Retry(func() error {
 		select {
-		case <-ctx.Done():
+		case <-connCtx.Done():
 			return nil
 		default:
 		}
 		meta.NotifyStatus(api.ConnectionConnecting, "")
-		ctx.GetLogger().Debugf("connection retry: %s", meta.ID)
-		err = conn.Dial(ctx)
+		connCtx.GetLogger().Debugf("connection retry: %s", meta.ID)
+		err = conn.Dial(connCtx)
 		failpoint.Inject("createConnectionErr", func() {
 			if mockErr {
 				err = errorx.NewIOErr("createConnectionErr")
@@ -368,7 +371,7 @@ func createConnection(ctx api.StreamContext, meta *Meta) (modules.Connection, er
 			}
 			return nil
 		}
-		ctx.GetLogger().Debugf("connection failed: %s, %v", meta.ID, err)
+		connCtx.GetLogger().Debugf("connection failed: %s, %v", meta.ID, err)
 		meta.NotifyStatus(api.ConnectionDisconnected, err.Error())
 		if errorx.IsIOError(err) {
 			return err

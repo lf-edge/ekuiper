@@ -15,11 +15,13 @@
 package connection
 
 import (
+	rawContext "context"
 	"sync"
 	"sync/atomic"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
@@ -29,40 +31,52 @@ type ConnWrapper struct {
 	initialized bool
 	conn        modules.Connection
 	err         error
-	cond        *sync.Cond
+	l           sync.RWMutex
+	// context for connection wait only
+	waitCtx rawContext.Context
+	// context for the lifecycle
+	stop rawContext.CancelFunc
 }
 
-func (cw *ConnWrapper) SetConn(conn modules.Connection, err error) {
-	cw.cond.L.Lock()
-	defer cw.cond.L.Unlock()
+func (cw *ConnWrapper) setConn(conn modules.Connection, err error) {
+	cw.l.Lock()
+	defer cw.l.Unlock()
 	cw.initialized = true
 	cw.conn, cw.err = conn, err
 }
 
-func (cw *ConnWrapper) Wait() (modules.Connection, error) {
-	cw.cond.L.Lock()
-	defer cw.cond.L.Unlock()
-	for !cw.initialized {
-		cw.cond.Wait()
+// Wait will wait for connection connected or the caller interrupts (like rule exit)
+func (cw *ConnWrapper) Wait(connectorCtx api.StreamContext) (modules.Connection, error) {
+	select {
+	case <-connectorCtx.Done():
+		connectorCtx.GetLogger().Infof("stop waiting connection")
+	case <-cw.waitCtx.Done():
 	}
+	cw.l.RLock()
+	defer cw.l.RUnlock()
 	return cw.conn, cw.err
 }
 
 func (cw *ConnWrapper) IsInitialized() bool {
-	cw.cond.L.Lock()
-	defer cw.cond.L.Unlock()
+	cw.l.RLock()
+	defer cw.l.RUnlock()
 	return cw.initialized
 }
 
-func newConnWrapper(ctx api.StreamContext, meta *Meta) *ConnWrapper {
+func newConnWrapper(callerCtx api.StreamContext, meta *Meta) *ConnWrapper {
+	callerCtx.GetLogger().Infof("creating new connection wrapper")
+	wctx, onConnect := rawContext.WithCancel(rawContext.Background())
+	contextLogger := conf.Log.WithField("conn", meta.ID)
+	connCtx, stop := context.WithValue(context.Background(), context.LoggerKey, contextLogger).WithCancel()
 	cw := &ConnWrapper{
-		ID:   meta.ID,
-		cond: sync.NewCond(&sync.Mutex{}),
+		ID:      meta.ID,
+		waitCtx: wctx,
+		stop:    stop,
 	}
 	go func() {
-		conn, err := createConnection(ctx, meta)
-		cw.SetConn(conn, err)
-		cw.cond.Broadcast()
+		conn, err := createConnection(connCtx, meta)
+		cw.setConn(conn, err)
+		onConnect()
 	}()
 	return cw
 }

@@ -77,9 +77,9 @@ func (h *HttpPushSource) Connect(ctx api.StreamContext, sch api.StatusChangeHand
 	if err != nil {
 		return err
 	}
-	c, err := cw.Wait()
-	if err != nil {
-		return err
+	c, err := cw.Wait(ctx)
+	if c == nil {
+		return fmt.Errorf("http push endpoint not ready: %v", err)
 	}
 	hc, ok := c.(*httpserver.HttpPushConnection)
 	if !ok {
