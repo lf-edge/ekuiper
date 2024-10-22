@@ -310,7 +310,7 @@ func TestSQLSinkReconnect(t *testing.T) {
 		// do nothing
 	}))
 	s.Close()
-	failpoint.Enable("github.com/lf-edge/ekuiper/v2/extensions/impl/sql/execErr", "return(true)")
+	failpoint.Enable("github.com/lf-edge/ekuiper/v2/extensions/impl/sql/dbErr", "return(true)")
 	// update
 	require.Error(t, sqlSink.collect(ctx, map[string]any{
 		"a":      1,
@@ -318,7 +318,7 @@ func TestSQLSinkReconnect(t *testing.T) {
 		"action": "update",
 	}))
 	require.True(t, sqlSink.needReconnect)
-	failpoint.Disable("github.com/lf-edge/ekuiper/v2/extensions/impl/sql/execErr")
+	failpoint.Disable("github.com/lf-edge/ekuiper/v2/extensions/impl/sql/dbErr")
 	s, err = testx.SetupEmbeddedMysqlServer(address, port)
 	require.NoError(t, err)
 	defer func() {

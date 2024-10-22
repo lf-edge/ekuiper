@@ -275,8 +275,8 @@ func (s *SQLSinkConnector) writeToDB(ctx api.StreamContext, sqlStr string) error
 		}
 	}
 	r, err := s.conn.GetDB().Exec(sqlStr)
-	failpoint.Inject("execErr", func() {
-		err = errors.New("execErr")
+	failpoint.Inject("dbErr", func() {
+		err = errors.New("dbErr")
 	})
 	if err != nil {
 		s.needReconnect = true
