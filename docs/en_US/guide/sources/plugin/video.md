@@ -46,6 +46,14 @@ The url address for the video streaming.
 
 The interval (ms) to issue a message.
 
+### vformat
+
+The video format. Run `ffmpeg -formats` to get all supported format, default to 'image2'.
+
+### codec
+
+The video codec. Check https://www.ffmpeg.org/general.html#Video-Codecs for all supported codec, default to 'mjpeg'
+
 ## Override the default settings
 
 If you have a specific connection that need to overwrite the default settings, you can create a customized section. In the previous sample, we create a specific setting named with `ext`.  Then you can specify the configuration with option `CONF_KEY` when creating the stream definition (see [stream specs](../../../sqls/streams.md) for more info).

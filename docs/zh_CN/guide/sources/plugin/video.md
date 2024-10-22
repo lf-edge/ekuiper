@@ -45,6 +45,14 @@ dedup:
 
 发出消息的间隔（毫秒）。
 
+### vformat
+
+视频格式。运行 `ffmpeg -formats` 可获取所有支持的格式，默认为 'image2'。
+
+### codec
+
+视频编码。访问 https://www.ffmpeg.org/general.html#Video-Codecs 以获取所有支持的编码。默认为 'mjpeg'。
+
 ## 覆盖默认设置
 
 如果您有特定的连接需要覆盖默认设置，则可以创建一个自定义部分。 在上一个示例中，我们创建一个名为 `ext` 的特定设置。 然后，您可以在创建流定义时使用选项 `CONF_KEY` 指定配置（有关更多信息，请参见 [stream specs](../../../sqls/streams.md)）。
