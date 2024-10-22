@@ -78,6 +78,7 @@ func TestIncAggWindow(t *testing.T) {
 			"inc_agg_col_1": int64(2),
 		},
 	}, d)
+	op.Close()
 }
 
 func extractIncWindowPlan(cur planner.LogicalPlan) *planner.IncWindowPlan {
