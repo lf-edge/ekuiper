@@ -16,6 +16,7 @@ package httpserver
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net/http"
 	"sync"
@@ -88,8 +89,8 @@ func RegisterEndpoint(endpoint string, method string) (string, error) {
 	return manager.RegisterEndpoint(endpoint, method)
 }
 
-func UnregisterEndpoint(endpoint string) {
-	manager.UnregisterEndpoint(endpoint)
+func UnregisterEndpoint(endpoint, method string) {
+	manager.UnregisterEndpoint(endpoint, method)
 }
 
 const (
@@ -99,15 +100,16 @@ const (
 func (m *GlobalServerManager) RegisterEndpoint(endpoint string, method string) (string, error) {
 	var topic string
 	var ok bool
+	key := buildKey(endpoint, method)
 	m.Lock()
-	topic, ok = m.endpoint[endpoint]
+	defer m.Unlock()
+	topic, ok = m.endpoint[key]
 	if ok {
 		return topic, nil
 	} else {
-		topic = TopicPrefix + endpoint
-		m.endpoint[endpoint] = topic
+		topic = TopicPrefix + key
+		m.endpoint[key] = topic
 	}
-	m.Unlock()
 	pubsub.CreatePub(topic)
 	m.router.HandleFunc(endpoint, func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
@@ -123,16 +125,17 @@ func (m *GlobalServerManager) RegisterEndpoint(endpoint string, method string) (
 	return topic, nil
 }
 
-func (m *GlobalServerManager) UnregisterEndpoint(endpoint string) {
+func (m *GlobalServerManager) UnregisterEndpoint(endpoint, method string) {
 	var ok bool
+	key := buildKey(endpoint, method)
 	m.Lock()
-	_, ok = m.endpoint[endpoint]
+	defer m.Unlock()
+	_, ok = m.endpoint[key]
 	if !ok {
 		return
 	}
-	delete(m.endpoint, endpoint)
-	m.Unlock()
-	pubsub.RemovePub(TopicPrefix + endpoint)
+	delete(m.endpoint, key)
+	pubsub.RemovePub(TopicPrefix + key)
 }
 
 func (m *GlobalServerManager) Shutdown() {
@@ -146,4 +149,8 @@ func handleError(w http.ResponseWriter, err error, prefix string) {
 	}
 	message += err.Error()
 	http.Error(w, message, http.StatusBadRequest)
+}
+
+func buildKey(ep, method string) string {
+	return fmt.Sprintf("%s$$%s", ep, method)
 }
