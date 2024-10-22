@@ -56,12 +56,9 @@ func (s *SQLConnection) GetId(ctx api.StreamContext) string {
 }
 
 func (s *SQLConnection) Dial(ctx api.StreamContext) error {
-	db, err := openDB(s.url)
-	if err != nil {
-		return fmt.Errorf("create connection err:%v", err)
-	}
-	s.db = db
-	return s.db.Ping()
+	s.Lock()
+	defer s.Unlock()
+	return s.dial(ctx)
 }
 
 func (s *SQLConnection) Reconnect() error {
@@ -87,10 +84,10 @@ func (s *SQLConnection) GetDB() *sql.DB {
 }
 
 func (s *SQLConnection) Ping(ctx api.StreamContext) error {
-	s.RLock()
-	defer s.RUnlock()
+	s.Lock()
+	defer s.Unlock()
 	if s.db == nil {
-		err := s.Dial(ctx)
+		err := s.dial(ctx)
 		if err != nil {
 			return err
 		}
@@ -116,4 +113,13 @@ func (s *SQLConnection) Close(ctx api.StreamContext) error {
 
 func CreateConnection(ctx api.StreamContext) modules.Connection {
 	return &SQLConnection{}
+}
+
+func (s *SQLConnection) dial(ctx api.StreamContext) error {
+	db, err := openDB(s.url)
+	if err != nil {
+		return fmt.Errorf("create connection err:%v", err)
+	}
+	s.db = db
+	return s.db.Ping()
 }
