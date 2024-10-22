@@ -15,11 +15,13 @@
 package sql
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"strings"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/pingcap/failpoint"
 
 	"github.com/lf-edge/ekuiper/v2/extensions/impl/sql/client"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/util"
@@ -273,6 +275,9 @@ func (s *SQLSinkConnector) writeToDB(ctx api.StreamContext, sqlStr string) error
 		}
 	}
 	r, err := s.conn.GetDB().Exec(sqlStr)
+	failpoint.Inject("execErr", func() {
+		err = errors.New("execErr")
+	})
 	if err != nil {
 		s.needReconnect = true
 		return errorx.NewIOErr(err.Error())
