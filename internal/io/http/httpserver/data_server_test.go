@@ -37,11 +37,11 @@ func TestEndpoints(t *testing.T) {
 	RegisterEndpoint(endpoints[1], "PUT")
 	RegisterEndpoint(endpoints[2], "POST")
 	require.Equal(t, map[string]struct{}{
-		"/ee1": {}, "/eb2": {}, "/ec3": {},
+		"/ee1$$POST": {}, "/eb2$$PUT": {}, "/ec3$$POST": {},
 	}, GetEndpoints())
-	UnregisterEndpoint(endpoints[0])
-	UnregisterEndpoint(endpoints[1])
-	UnregisterEndpoint(endpoints[2])
+	UnregisterEndpoint(endpoints[0], "POST")
+	UnregisterEndpoint(endpoints[1], "PUT")
+	UnregisterEndpoint(endpoints[2], "POST")
 	require.Equal(t, map[string]struct{}{}, GetEndpoints())
 
 	urlPrefix := fmt.Sprintf("http://%v:%v", ip, port)

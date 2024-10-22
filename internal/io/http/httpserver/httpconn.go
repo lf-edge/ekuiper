@@ -68,7 +68,7 @@ func (h *HttpPushConnection) Ping(ctx api.StreamContext) error {
 }
 
 func (h *HttpPushConnection) DetachSub(ctx api.StreamContext) {
-	UnregisterEndpoint(h.endpoint)
+	UnregisterEndpoint(h.endpoint, h.method)
 }
 
 func (h *HttpPushConnection) Close(ctx api.StreamContext) error {
