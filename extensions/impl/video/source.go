@@ -35,7 +35,7 @@ const FRAMENUMBER = 5
 type Source struct {
 	Url string `json:"url"`
 	// Run ffmpeg -formats to get all supported format, default to 'image2'
-	Format string `json:"format"`
+	Format string `json:"vformat"`
 	// Check https://www.ffmpeg.org/general.html#Video-Codecs, default to 'mjpeg'
 	Codec string `json:"codec"`
 	meta  map[string]any
@@ -60,7 +60,6 @@ func (s *Source) Provision(ctx api.StreamContext, props map[string]any) error {
 	if err != nil {
 		return err
 	}
-
 	if s.Url == "" {
 		return errors.New("url is empty")
 	}
