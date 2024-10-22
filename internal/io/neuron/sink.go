@@ -22,7 +22,6 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
-	"github.com/lf-edge/ekuiper/v2/internal/pkg/util"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node/tracenode"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
@@ -78,11 +77,6 @@ func (s *sink) Provision(_ api.StreamContext, props map[string]any) error {
 	s.c = cc
 	s.props = props
 	return nil
-}
-
-func (s *sink) Ping(ctx api.StreamContext, props map[string]any) error {
-	props["protocol"] = PROTOCOL
-	return ping(ctx, props)
 }
 
 func (s *sink) Connect(ctx api.StreamContext, sc api.StatusChangeHandler) error {
@@ -240,5 +234,3 @@ func extractSpanContextIntoData(ctx api.StreamContext, data any, sendBytes []byt
 func GetSink() api.Sink {
 	return &sink{}
 }
-
-var _ util.PingableConn = &sink{}

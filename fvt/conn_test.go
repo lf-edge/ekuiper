@@ -286,7 +286,7 @@ func (s *ConnectionTestSuite) TestSourcePing() {
 			props: map[string]any{
 				"url": "tcp://127.0.0.1:7081",
 			},
-			err: "{\"error\":1000,\"message\":\"not connected\"}\n",
+			err: "{\"error\":1000,\"message\":\"source neuron doesn't support ping connection\"}\n",
 		},
 		{
 			name:  "file",
@@ -430,7 +430,7 @@ func (s *ConnectionTestSuite) TestSinkPing() {
 			props: map[string]any{
 				"url": "tcp://127.0.0.1:7081",
 			},
-			err: "{\"error\":1000,\"message\":\"not connected\"}\n",
+			err: "{\"error\":1000,\"message\":\"sink neuron doesn't support ping connection\"}\n",
 		},
 		{
 			name:  "file",

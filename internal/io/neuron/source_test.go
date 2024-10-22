@@ -43,10 +43,6 @@ func TestRun(t *testing.T) {
 	}, exp, func() {
 		// do nothing
 	})
-
-	ctx := mockContext.NewMockContext("t", "tt")
-	err := s.(*source).Ping(ctx, map[string]any{"url": DefaultNeuronUrl})
-	assert.NoError(t, err)
 }
 
 func TestProvision(t *testing.T) {
