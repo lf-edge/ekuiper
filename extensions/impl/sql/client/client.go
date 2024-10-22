@@ -61,7 +61,7 @@ func (s *SQLConnection) Dial(ctx api.StreamContext) error {
 		return fmt.Errorf("create connection err:%v", err)
 	}
 	s.db = db
-	return nil
+	return s.db.Ping()
 }
 
 func (s *SQLConnection) Reconnect() error {
