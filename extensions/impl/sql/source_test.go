@@ -166,7 +166,7 @@ func TestSQLConnectionErr(t *testing.T) {
 	}
 	sqlSource := GetSource()
 	require.NoError(t, sqlSource.Provision(ctx, props))
-	require.NoError(t, sqlSource.Connect(ctx, func(status string, message string) {
+	require.Error(t, sqlSource.Connect(ctx, func(status string, message string) {
 		// do nothing
 	}))
 }
@@ -268,7 +268,7 @@ func TestSQLReconnect(t *testing.T) {
 	}
 	sqlSource := GetSource()
 	require.NoError(t, sqlSource.Provision(ctx, props))
-	require.NoError(t, sqlSource.Connect(ctx, func(status string, message string) {
+	require.Error(t, sqlSource.Connect(ctx, func(status string, message string) {
 		// do nothing
 	}))
 	sqlConnector, ok := sqlSource.(*SQLSourceConnector)
