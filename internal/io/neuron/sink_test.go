@@ -35,9 +35,6 @@ func TestSink(t *testing.T) {
 	defer server.Close()
 
 	s := GetSink().(api.TupleCollector)
-	ctx := mockContext.NewMockContext("t", "tt")
-	err := s.(*sink).Ping(ctx, map[string]any{"url": DefaultNeuronUrl})
-	assert.NoError(t, err)
 	data := []any{
 		&xsql.Tuple{
 			Message: map[string]any{
@@ -69,7 +66,7 @@ func TestSink(t *testing.T) {
 			},
 		},
 	}
-	err = mock.RunTupleSinkCollect(s, data, map[string]any{
+	err := mock.RunTupleSinkCollect(s, data, map[string]any{
 		"url":       DefaultNeuronUrl,
 		"nodeName":  "test1",
 		"groupName": "grp",
@@ -106,9 +103,6 @@ func TestSinkNoTags(t *testing.T) {
 	defer server.Close()
 
 	s := GetSink().(api.TupleCollector)
-	ctx := mockContext.NewMockContext("t", "tt")
-	err := s.(*sink).Ping(ctx, map[string]any{"url": DefaultNeuronUrl})
-	assert.NoError(t, err)
 	data := []any{
 		&xsql.Tuple{
 			Message: map[string]any{
@@ -122,7 +116,7 @@ func TestSinkNoTags(t *testing.T) {
 			},
 		},
 	}
-	err = mock.RunTupleSinkCollect(s, data, map[string]any{
+	err := mock.RunTupleSinkCollect(s, data, map[string]any{
 		"url":       DefaultNeuronUrl,
 		"nodeName":  "test1",
 		"groupName": "grp",

@@ -23,7 +23,6 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"go.nanomsg.org/mangos/v3"
 
-	"github.com/lf-edge/ekuiper/v2/internal/pkg/util"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node/tracenode"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
@@ -61,11 +60,6 @@ func (s *source) Provision(_ api.StreamContext, props map[string]any) error {
 	s.c = sc
 	s.props = props
 	return nil
-}
-
-func (s *source) Ping(ctx api.StreamContext, props map[string]any) error {
-	props["protocol"] = PROTOCOL
-	return ping(ctx, props)
 }
 
 func (s *source) ConnId(props map[string]any) string {
@@ -152,5 +146,3 @@ func extractTraceMeta(ctx api.StreamContext, data []byte) ([]byte, map[string]in
 	}
 	return rawData, meta
 }
-
-var _ util.PingableConn = &source{}
