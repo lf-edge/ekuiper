@@ -142,6 +142,10 @@ func (meta *Meta) GetStatus() (s string, e string) {
 	if ee != nil {
 		e = ee.(string)
 	}
+	if !meta.cw.IsInitialized() {
+		s = api.ConnectionConnecting
+		return
+	}
 	ss := meta.status.Load()
 	if ss != nil {
 		s = ss.(string)
