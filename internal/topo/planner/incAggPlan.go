@@ -64,6 +64,10 @@ func (p *IncWindowPlan) PruneColumns(fields []ast.Expr) error {
 	return p.baseLogicalPlan.PruneColumns(fields)
 }
 
+func (p *IncWindowPlan) PushDownPredicate(condition ast.Expr) (ast.Expr, LogicalPlan) {
+	return condition, p
+}
+
 func (p IncWindowPlan) Init() *IncWindowPlan {
 	p.baseLogicalPlan.self = &p
 	p.baseLogicalPlan.setPlanType(IncAggWindow)
