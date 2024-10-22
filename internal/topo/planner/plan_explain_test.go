@@ -16,6 +16,7 @@ package planner
 
 import (
 	"encoding/json"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -55,6 +56,25 @@ func TestExplainPlan(t *testing.T) {
 			{"op":"WindowPlan_2","info":"{ length:2, windowType:COUNT_WINDOW, limit: 0 }"}
 					{"op":"DataSourcePlan_3","info":"StreamName: stream, StreamFields:[ b ]"}`,
 		},
+		{
+			sql: `select count(a) from stream group by countwindow(2)`,
+			explain: `{"op":"ProjectPlan_0","info":"Fields:[ Call:{ name:bypass, args:[$$default.inc_agg_col_1] } ]"}
+	{"op":"IncAggWindowPlan_1","info":"wType:COUNT_WINDOW, , funcs:[Call:{ name:inc_count, args:[stream.a] }->inc_agg_col_1]"}
+			{"op":"DataSourcePlan_2","info":"StreamName: stream, StreamFields:[ a ]"}`,
+		},
+		{
+			sql: `select count(a),b from stream group by countwindow(2),b`,
+			explain: `{"op":"ProjectPlan_0","info":"Fields:[ Call:{ name:bypass, args:[$$default.inc_agg_col_1] }, stream.b ]"}
+	{"op":"IncAggWindowPlan_1","info":"wType:COUNT_WINDOW, Dimension:[stream.b], funcs:[Call:{ name:inc_count, args:[stream.a] }->inc_agg_col_1]"}
+			{"op":"DataSourcePlan_2","info":"StreamName: stream, StreamFields:[ a, b ]"}`,
+		},
+		{
+			sql: `select count(a),sum(a),b from stream group by countwindow(2),b`,
+			explain: `{"op":"ProjectPlan_0","info":"Fields:[ Call:{ name:count, args:[stream.a] }, Call:{ name:sum, args:[stream.a] }, stream.b ]"}
+	{"op":"AggregatePlan_1","info":"Dimension:{ stream.b }"}
+			{"op":"WindowPlan_2","info":"{ length:2, windowType:COUNT_WINDOW, limit: 0 }"}
+					{"op":"DataSourcePlan_3","info":"StreamName: stream, StreamFields:[ a, b ]"}`,
+		},
 	}
 	for _, tc := range testcases {
 		stmt, err := xsql.NewParser(strings.NewReader(tc.sql)).Parse()
@@ -65,6 +85,10 @@ func TestExplainPlan(t *testing.T) {
 		require.NoError(t, err)
 		explain, err := ExplainFromLogicalPlan(p, "")
 		require.NoError(t, err)
+		if tc.explain == "" {
+			fmt.Println(explain)
+			continue
+		}
 		require.Equal(t, tc.explain, explain)
 	}
 }

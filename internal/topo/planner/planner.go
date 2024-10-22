@@ -231,9 +231,9 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *def.RuleOption, sources ma
 		op = Transform(&operator.AnalyticFuncsOp{Funcs: t.funcs, FieldFuncs: t.fieldFuncs}, fmt.Sprintf("%d_analytic", newIndex), options)
 	case *IncWindowPlan:
 		op, err = node.NewWindowIncAggOp(fmt.Sprintf("%d_inc_agg_window", newIndex), &node.WindowConfig{
-			Type:        t.wType,
-			CountLength: t.length,
-		}, t.dimensions, t.IncAggFuncs, options)
+			Type:        t.WType,
+			CountLength: t.Length,
+		}, t.Dimensions, t.IncAggFuncs, options)
 		if err != nil {
 			return nil, 0, err
 		}
@@ -318,6 +318,10 @@ func convertFromDuration(t *WindowPlan) (time.Duration, time.Duration, time.Dura
 		unit = time.Millisecond
 	}
 	return time.Duration(t.length) * unit, time.Duration(t.interval) * unit, time.Duration(t.delay) * unit
+}
+
+func CreateLogicalPlan(stmt *ast.SelectStatement, opt *def.RuleOption, store kv.KeyValue) (lp LogicalPlan, err error) {
+	return createLogicalPlan(stmt, opt, store)
 }
 
 func createLogicalPlan(stmt *ast.SelectStatement, opt *def.RuleOption, store kv.KeyValue) (lp LogicalPlan, err error) {
@@ -407,9 +411,9 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *def.RuleOption, store kv.
 			}
 			if len(incAggFields) > 0 {
 				incWp := IncWindowPlan{
-					wType:       w.WindowType,
-					length:      int(w.Length.Val),
-					dimensions:  dimensions.GetGroups(),
+					WType:       w.WindowType,
+					Length:      int(w.Length.Val),
+					Dimensions:  dimensions.GetGroups(),
 					IncAggFuncs: incAggFields,
 				}.Init()
 				incWp.SetChildren(children)
@@ -678,9 +682,6 @@ func rewriteStmt(stmt *ast.SelectStatement) ([]ast.Field, []*ast.Field) {
 
 func rewriteIfIncAggStmt(stmt *ast.SelectStatement) ([]*ast.Field, bool) {
 	if stmt.Dimensions == nil {
-		return nil, false
-	}
-	if stmt.Dimensions.GetWindow() == nil {
 		return nil, false
 	}
 	if stmt.Dimensions.GetWindow().WindowType != ast.COUNT_WINDOW {

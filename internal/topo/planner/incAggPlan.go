@@ -18,21 +18,46 @@ import "github.com/lf-edge/ekuiper/v2/pkg/ast"
 
 type IncWindowPlan struct {
 	baseLogicalPlan
-	wType       ast.WindowType
-	length      int
-	dimensions  ast.Dimensions
+	WType       ast.WindowType
+	Length      int
+	Dimensions  ast.Dimensions
 	IncAggFuncs []*ast.Field
 }
 
 func (p *IncWindowPlan) BuildExplainInfo() {
-	return
+	info := "wType:"
+	info += p.WType.String()
+	info += ", "
+	if len(p.Dimensions) > 0 {
+		info += "Dimension:["
+		for i, dimension := range p.Dimensions {
+			if dimension.Expr != nil {
+				info += dimension.Expr.String()
+				if i != len(p.Dimensions)-1 {
+					info += ", "
+				}
+			}
+		}
+		info += "]"
+	}
+	info += ", funcs:["
+	for i, aggFunc := range p.IncAggFuncs {
+		if i > 0 {
+			info += ","
+		}
+		info += aggFunc.Expr.String()
+		info += "->"
+		info += aggFunc.Name
+	}
+	info += "]"
+	p.baseLogicalPlan.ExplainInfo.Info = info
 }
 
 func (p *IncWindowPlan) PruneColumns(fields []ast.Expr) error {
 	for _, IncAggFunc := range p.IncAggFuncs {
 		fields = append(fields, getFields(IncAggFunc)...)
 	}
-	for _, dim := range p.dimensions {
+	for _, dim := range p.Dimensions {
 		fields = append(fields, getFields(dim.Expr)...)
 	}
 
