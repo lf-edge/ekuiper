@@ -149,16 +149,17 @@ func (s *TraceTestSuite) TestComplexTrace() {
 			s.NoError(err)
 			all1, err := os.ReadFile(filepath.Join("result", "trace", fmt.Sprintf("complex%d.json", i)))
 			s.NoError(err)
-			exp1 := make(map[string]any)
-			err = json.Unmarshal(all1, &exp1)
+			exps := make([]map[string]any, 0)
+			err = json.Unmarshal(all1, &exps)
 			s.NoError(err)
-			exp2 := make(map[string]any)
-			all2, err := os.ReadFile(filepath.Join("result", "trace", fmt.Sprintf("complex%d_another.json", i)))
-			if err == nil {
-				err = json.Unmarshal(all2, &exp2)
-				s.NoError(err)
+			find := false
+			for _, exp := range exps {
+				if s.compareTrace(exp, resultMap) {
+					find = true
+					break
+				}
 			}
-			if !(s.compareTrace(exp1, resultMap) || s.compareTrace(exp2, resultMap)) {
+			if !find {
 				fmt.Println(fmt.Sprintf("complex%d.json", i))
 				fmt.Println(string(act))
 				s.Fail(fmt.Sprintf("trace 1 file %d compares fail", i))
