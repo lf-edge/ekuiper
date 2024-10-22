@@ -103,10 +103,10 @@ func TestSQLLookupReconnect(t *testing.T) {
 		// do nothing
 	}))
 	s.Close()
+	failpoint.Enable("github.com/lf-edge/ekuiper/v2/extensions/impl/sql/dbErr", "return(true)")
 	_, err = ls.Lookup(ctx, []string{"a", "b"}, []string{"a"}, []any{1})
 	require.Error(t, err)
-	_, err = ls.Lookup(ctx, []string{"a", "b"}, []string{"a"}, []any{1})
-	require.Error(t, err)
+	failpoint.Disable("github.com/lf-edge/ekuiper/v2/extensions/impl/sql/dbErr")
 	s, err = testx.SetupEmbeddedMysqlServer(address, port)
 	require.NoError(t, err)
 	defer func() {

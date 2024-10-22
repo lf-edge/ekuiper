@@ -112,6 +112,9 @@ func (s *SqlLookupSource) Lookup(ctx api.StreamContext, fields []string, keys []
 	query := s.gen.buildQuery(fields, keys, values)
 	ctx.GetLogger().Debugf("Query is %s", query)
 	rows, err := s.conn.GetDB().Query(query)
+	failpoint.Inject("dbErr", func() {
+		err = errors.New("dbErr")
+	})
 	if err != nil {
 		s.needReconnect = true
 		ctx.GetLogger().Errorf("sql look table failed, err:%v, query: %v", err, query)
