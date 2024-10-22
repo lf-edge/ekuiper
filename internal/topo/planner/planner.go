@@ -696,9 +696,9 @@ func rewriteIfIncAggStmt(stmt *ast.SelectStatement) ([]*ast.Field, bool) {
 		return nil, false
 	}
 	// TODO: support order by later
-	if len(stmt.SortFields) > 0 {
-		return nil, false
-	}
+	//if len(stmt.SortFields) > 0 {
+	//	return nil, false
+	//}
 	canIncAgg := true
 	hasAgg := false
 	ast.WalkFunc(stmt.Fields, func(n ast.Node) bool {
