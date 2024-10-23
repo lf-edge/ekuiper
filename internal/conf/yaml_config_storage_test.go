@@ -124,5 +124,5 @@ func TestGetAllConnConfigs(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, map[string]any{
 		"a": "b",
-	}, got["abc"])
+	}, got["mqtt"]["abc"])
 }
