@@ -139,6 +139,7 @@ func extractIndexField2(icfg *OriginTemplateSqlQueryCfg) *store.IndexField {
 	return f
 }
 
+// OriginSqlSourceCfg tends to rewrite index Field into index Fields
 type OriginSqlSourceCfg struct {
 	DBUrl               string                     `json:"dburl"`
 	Interval            cast.DurationConf          `json:"interval"`
