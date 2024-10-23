@@ -66,7 +66,7 @@ func rewriteSQLSourceConfiguration() error {
 
 func rewriteCfg(cfg *OriginSqlSourceCfg) map[string]interface{} {
 	m := make(map[string]interface{})
-	m["dburl"] = cfg.Url
+	m["dburl"] = cfg.DBUrl
 	m["interval"] = time.Duration(cfg.Interval).String()
 	if cfg.InternalSqlQueryCfg != nil {
 		icfg := cfg.InternalSqlQueryCfg
@@ -139,8 +139,9 @@ func extractIndexField2(icfg *OriginTemplateSqlQueryCfg) *store.IndexField {
 	return f
 }
 
+// OriginSqlSourceCfg tends to rewrite index Field into index Fields
 type OriginSqlSourceCfg struct {
-	Url                 string                     `json:"url"`
+	DBUrl               string                     `json:"dburl"`
 	Interval            cast.DurationConf          `json:"interval"`
 	InternalSqlQueryCfg *OriginInternalSqlQueryCfg `json:"internalSqlQueryCfg,omitempty"`
 	TemplateSqlQueryCfg *OriginTemplateSqlQueryCfg `json:"templateSqlQueryCfg,omitempty"`
