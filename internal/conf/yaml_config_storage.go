@@ -262,18 +262,24 @@ func ClearKVStorage() error {
 	return nil
 }
 
-func GetAllConnConfigs() (map[string]map[string]any, error) {
+// GetAllConnConfigs return connections' plugin -> confKey -> props
+func GetAllConnConfigs() (map[string]map[string]map[string]any, error) {
 	allConfigs, err := GetCfgFromKVStorage("connections", "", "")
 	if err != nil {
 		return nil, err
 	}
-	got := make(map[string]map[string]any)
+	got := make(map[string]map[string]map[string]any)
 	for key, props := range allConfigs {
-		_, _, confKey, err := splitKey(key)
+		_, plugin, confKey, err := splitKey(key)
 		if err != nil {
 			continue
 		}
-		got[confKey] = props
+		pluginProps, ok := got[plugin]
+		if !ok {
+			pluginProps = make(map[string]map[string]any)
+			got[plugin] = pluginProps
+		}
+		pluginProps[confKey] = props
 	}
 	return got, nil
 }
