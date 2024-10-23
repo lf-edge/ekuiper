@@ -34,7 +34,7 @@ import (
 
 type request struct {
 	Method          string
-	Body            string
+	Body            []byte
 	ContentType     string
 	ContentEncoding string
 }
@@ -43,7 +43,7 @@ func TestRestSink_Apply(t *testing.T) {
 	tests := []struct {
 		name   string
 		config map[string]interface{}
-		data   []map[string]interface{}
+		data   any
 		result []request
 	}{
 		{
@@ -61,12 +61,12 @@ func TestRestSink_Apply(t *testing.T) {
 			}},
 			result: []request{{
 				Method:          "POST",
-				Body:            `{"ab":"hello1"}`,
+				Body:            []byte(`{"ab":"hello1"}`),
 				ContentType:     "application/json",
 				ContentEncoding: "gzip",
 			}, {
 				Method:          "POST",
-				Body:            `{"ab":"hello2"}`,
+				Body:            []byte(`{"ab":"hello2"}`),
 				ContentType:     "application/json",
 				ContentEncoding: "gzip",
 			}},
@@ -85,12 +85,12 @@ func TestRestSink_Apply(t *testing.T) {
 			}},
 			result: []request{{
 				Method:          "POST",
-				Body:            `{"ab":"hello1"}`,
+				Body:            []byte(`{"ab":"hello1"}`),
 				ContentType:     "application/json",
 				ContentEncoding: "zstd",
 			}, {
 				Method:          "POST",
-				Body:            `{"ab":"hello2"}`,
+				Body:            []byte(`{"ab":"hello2"}`),
 				ContentType:     "application/json",
 				ContentEncoding: "zstd",
 			}},
@@ -111,11 +111,11 @@ func TestRestSink_Apply(t *testing.T) {
 			result: []request{{
 				Method:      "POST",
 				ContentType: "application/x-www-form-urlencoded;param=value",
-				Body:        "{\"ab\":\"hello1\"}",
+				Body:        []byte("{\"ab\":\"hello1\"}"),
 			}, {
 				Method:      "POST",
 				ContentType: "application/x-www-form-urlencoded;param=value",
-				Body:        "{\"ab\":\"hello2\"}",
+				Body:        []byte("{\"ab\":\"hello2\"}"),
 			}},
 		}, {
 			name: "7",
@@ -133,12 +133,41 @@ func TestRestSink_Apply(t *testing.T) {
 			}},
 			result: []request{{
 				Method:      "POST",
-				Body:        `{"ab":"hello1"}`,
+				Body:        []byte(`{"ab":"hello1"}`),
 				ContentType: "application/json",
 			}, {
 				Method:      "POST",
-				Body:        `{"ab":"hello2"}`,
+				Body:        []byte(`{"ab":"hello2"}`),
 				ContentType: "application/json",
+			}},
+		}, {
+			name: "8",
+			config: map[string]interface{}{
+				"method": "post",
+				//"url": "http://localhost/test",  //set dynamically to the test server
+				"bodyType":   "text",
+				"sendSingle": true,
+				//"timeout":    float64(1000),
+			},
+			data: []byte{0x1, 0x2, 0x3, 0x4, 0x5, 0x6},
+			result: []request{{
+				Method:      "POST",
+				Body:        []byte("\x01\x02\x03\x04\x05\x06"),
+				ContentType: "text/plain",
+			}},
+		}, {
+			name: "9",
+			config: map[string]interface{}{
+				"method": "post",
+				//"url": "http://localhost/test",  //set dynamically to the test server
+				"bodyType":   "binary",
+				"sendSingle": true,
+				//"timeout":    float64(1000),
+			},
+			data: []byte{0x1, 0x2, 0x3, 0x4, 0x5, 0x6},
+			result: []request{{
+				Method: "POST",
+				Body:   []byte{0x1, 0x2, 0x3, 0x4, 0x5, 0x6},
 			}},
 		},
 	}
@@ -155,11 +184,10 @@ func TestRestSink_Apply(t *testing.T) {
 
 		requests = append(requests, request{
 			Method:          r.Method,
-			Body:            string(body),
+			Body:            body,
 			ContentType:     r.Header.Get("Content-Type"),
 			ContentEncoding: r.Header.Get("Content-Encoding"),
 		})
-		ctx.GetLogger().Debugf(string(body))
 		fmt.Fprint(w, string(body))
 	}))
 	defer ts.Close()
@@ -174,15 +202,22 @@ func TestRestSink_Apply(t *testing.T) {
 				// do nothing
 			})
 			assert.NoError(t, e)
-			for _, d := range tt.data {
-				bb, err := json.Marshal(d)
-				require.NoError(t, err)
+			switch ttt := tt.data.(type) {
+			case []byte:
 				e = s.Collect(ctx, &xsql.RawTuple{
-					Rawdata: bb,
+					Rawdata: ttt,
 				})
 				assert.NoError(t, e)
+			case []map[string]any:
+				for _, d := range ttt {
+					bb, err := json.Marshal(d)
+					require.NoError(t, err)
+					e = s.Collect(ctx, &xsql.RawTuple{
+						Rawdata: bb,
+					})
+					assert.NoError(t, e)
+				}
 			}
-
 			err := s.Close(ctx)
 			assert.NoError(t, err)
 			assert.Equal(t, tt.result, requests)
