@@ -582,15 +582,6 @@ func GetConfigurations() YamlConfigurationSet {
 	connectionResources := map[string]string{}
 
 	for key, ops := range ConfigManager.cfgOperators {
-		if strings.HasPrefix(key, ConnectionCfgOperatorKeyPrefix) {
-			plugin := strings.TrimPrefix(key, ConnectionCfgOperatorKeyPrefix)
-			cfs := ops.CopyUpdatableConfContent()
-			if len(cfs) > 0 {
-				jsonByte, _ := json.Marshal(cfs)
-				connectionResources[plugin] = string(jsonByte)
-			}
-			continue
-		}
 		if strings.HasPrefix(key, SourceCfgOperatorKeyPrefix) {
 			plugin := strings.TrimPrefix(key, SourceCfgOperatorKeyPrefix)
 			cfs := ops.CopyUpdatableConfContent()
@@ -608,6 +599,15 @@ func GetConfigurations() YamlConfigurationSet {
 				sinkResources[plugin] = string(jsonByte)
 			}
 			continue
+		}
+	}
+	connConfigs, err := conf.GetAllConnConfigs()
+	if err != nil {
+		conf.Log.Warnf("export connections err:%v", err)
+	} else {
+		for plugin, props := range connConfigs {
+			jsonByte, _ := json.Marshal(props)
+			connectionResources[plugin] = string(jsonByte)
 		}
 	}
 

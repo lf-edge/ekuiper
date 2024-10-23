@@ -108,3 +108,23 @@ func TestGetCfgKeyFromStorageByPrefix(t *testing.T) {
 	_, ok := got["c"]
 	require.True(t, ok)
 }
+
+func TestGetAllConnConfigs(t *testing.T) {
+	IsTesting = true
+	defer func() {
+		IsTesting = false
+	}()
+	kvStore = nil
+	s, err := getKVStorage()
+	require.NoError(t, err)
+	require.NoError(t, s.Set("connections.mqtt.abc", map[string]interface{}{
+		"a": "b",
+	}))
+	got, err := GetAllConnConfigs()
+	require.NoError(t, err)
+	require.Equal(t, map[string]map[string]any{
+		"abc": {
+			"a": "b",
+		},
+	}, got)
+}
