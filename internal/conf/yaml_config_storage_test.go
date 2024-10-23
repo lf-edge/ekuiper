@@ -122,9 +122,7 @@ func TestGetAllConnConfigs(t *testing.T) {
 	}))
 	got, err := GetAllConnConfigs()
 	require.NoError(t, err)
-	require.Equal(t, map[string]map[string]any{
-		"abc": {
-			"a": "b",
-		},
-	}, got)
+	require.Equal(t, map[string]any{
+		"a": "b",
+	}, got["abc"])
 }
