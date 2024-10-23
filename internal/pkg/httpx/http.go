@@ -45,13 +45,21 @@ func Send(logger api.Logger, client *http.Client, bodyType string, method string
 		if err != nil {
 			return nil, fmt.Errorf("fail to create request: %v", err)
 		}
-	case "json", "text", "javascript", "html", "xml", "form":
+	case "json", "text", "javascript", "html", "xml", "form", "binary":
 		var body io.Reader
 		switch t := v.(type) {
 		case []byte:
-			body = bytes.NewBuffer(t)
+			if bodyType == "binary" {
+				body = bytes.NewBuffer(t)
+			} else {
+				body = strings.NewReader(string(t))
+			}
 		case string:
-			body = strings.NewReader(t)
+			if bodyType == "binary" {
+				body = bytes.NewBuffer([]byte(t))
+			} else {
+				body = strings.NewReader(t)
+			}
 		default:
 			return nil, fmt.Errorf("http send only supports bytes but receive invalid content: %v", v)
 		}
