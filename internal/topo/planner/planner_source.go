@@ -296,7 +296,7 @@ func checkByteSource(ss api.Source) model.NodeInfo {
 	switch st := ss.(type) {
 	case model.InfoNode:
 		return st.Info()
-	case api.BytesSource:
+	case api.BytesSource, api.PullBytesSource:
 		return model.NodeInfo{
 			NeedDecode:      true,
 			NeedBatchDecode: true,
