@@ -17,6 +17,7 @@ package conf
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/pingcap/failpoint"
@@ -259,4 +260,28 @@ func ClearKVStorage() error {
 		kvStorage.Delete(key)
 	}
 	return nil
+}
+
+func GetAllConnConfigs() (map[string]map[string]any, error) {
+	allConfigs, err := GetCfgFromKVStorage("connections", "", "")
+	if err != nil {
+		return nil, err
+	}
+	got := make(map[string]map[string]any)
+	for key, props := range allConfigs {
+		_, _, confKey, err := splitKey(key)
+		if err != nil {
+			continue
+		}
+		got[confKey] = props
+	}
+	return got, nil
+}
+
+func splitKey(key string) (string, string, string, error) {
+	keys := strings.Split(key, ".")
+	if len(keys) != 3 {
+		return "", "", "", fmt.Errorf("invalid key: %s", key)
+	}
+	return keys[0], keys[1], keys[2], nil
 }
