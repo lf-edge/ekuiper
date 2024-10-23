@@ -47,7 +47,7 @@ func TestRewriteSQLConf(t *testing.T) {
 	}{
 		{
 			oldCfg: &OriginSqlSourceCfg{
-				Url:      "123",
+				DBUrl:    "123",
 				Interval: cast.DurationConf(10 * time.Second),
 			},
 			expected: &TargetSqlSourceCfg{
@@ -57,7 +57,7 @@ func TestRewriteSQLConf(t *testing.T) {
 		},
 		{
 			oldCfg: &OriginSqlSourceCfg{
-				Url:      "123",
+				DBUrl:    "123",
 				Interval: cast.DurationConf(10 * time.Second),
 				InternalSqlQueryCfg: &OriginInternalSqlQueryCfg{
 					Table:              "t",
@@ -85,7 +85,7 @@ func TestRewriteSQLConf(t *testing.T) {
 		},
 		{
 			oldCfg: &OriginSqlSourceCfg{
-				Url:      "123",
+				DBUrl:    "123",
 				Interval: cast.DurationConf(10 * time.Second),
 				TemplateSqlQueryCfg: &OriginTemplateSqlQueryCfg{
 					TemplateSQL:        "select * from t",
@@ -111,7 +111,7 @@ func TestRewriteSQLConf(t *testing.T) {
 		},
 		{
 			oldCfg: &OriginSqlSourceCfg{
-				Url:      "123",
+				DBUrl:    "123",
 				Interval: cast.DurationConf(10 * time.Second),
 				InternalSqlQueryCfg: &OriginInternalSqlQueryCfg{
 					Table:              "t",
