@@ -42,6 +42,17 @@ func TestMessage(t *testing.T) {
 	revert := make([]byte, len(secret))
 	dstream.XORKeyStream(revert, secret)
 	assert.Equal(t, pt, string(revert))
+
+	// encrypt consequently
+	secret = stream.Encrypt([]byte(pt))
+	niv = secret[:aes.BlockSize]
+	assert.Equal(t, iv, niv)
+	secret = secret[aes.BlockSize:]
+	dstream, err = NewAESStreamDecrypter(key, iv)
+	assert.NoError(t, err)
+	revert = make([]byte, len(secret))
+	dstream.XORKeyStream(revert, secret)
+	assert.Equal(t, pt, string(revert))
 }
 
 func TestStreamWriter(t *testing.T) {

@@ -15,31 +15,33 @@
 package aes
 
 import (
+	"crypto/aes"
 	"crypto/cipher"
 	"fmt"
 	"io"
 )
 
 type StreamEncrypter struct {
-	stream cipher.Stream
-	iv     []byte
+	block cipher.Block
+	iv    []byte
 }
 
 func (a *StreamEncrypter) Encrypt(data []byte) []byte {
 	ciphertext := make([]byte, len(data))
-	a.stream.XORKeyStream(ciphertext, data)
+	stream := cipher.NewCFBEncrypter(a.block, a.iv)
+	stream.XORKeyStream(ciphertext, data)
 	result := append(a.iv, ciphertext...)
 	return result
 }
 
 func NewStreamEncrypter(key, iv []byte) (*StreamEncrypter, error) {
-	s, err := newAesStream(key, iv)
+	block, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, err
 	}
 	return &StreamEncrypter{
-		stream: s,
-		iv:     iv,
+		block: block,
+		iv:    iv,
 	}, nil
 }
 
