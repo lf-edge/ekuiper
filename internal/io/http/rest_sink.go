@@ -67,21 +67,21 @@ func (r *RestSink) Collect(ctx api.StreamContext, item api.RawTuple) error {
 	u := r.config.Url
 
 	if dp, ok := item.(api.HasDynamicProps); ok {
-		for k := range headers {
-			nv, ok := dp.DynamicProps(k)
+		for k, v := range headers {
+			nv, ok := dp.DynamicProps(v)
 			if ok {
 				headers[k] = nv
 			}
 		}
-		nb, ok := dp.DynamicProps("bodyType")
+		nb, ok := dp.DynamicProps(bodyType)
 		if ok {
 			bodyType = nb
 		}
-		nm, ok := dp.DynamicProps("method")
+		nm, ok := dp.DynamicProps(method)
 		if ok {
 			method = nm
 		}
-		nu, ok := dp.DynamicProps("url")
+		nu, ok := dp.DynamicProps(u)
 		if ok {
 			u = nu
 		}
