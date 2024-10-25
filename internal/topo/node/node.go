@@ -144,7 +144,8 @@ func (o *defaultNode) doBroadcast(val any) {
 		case <-o.ctx.Done():
 			// rule stop so stop waiting
 		default:
-			o.onError(o.ctx, fmt.Errorf("buffer full, drop message from %s to %s", o.name, name))
+			// record the error and stop propogating to avoid infinite loop
+			o.onErrorOpt(o.ctx, fmt.Errorf("buffer full, drop message from %s to %s", o.name, name), false)
 		}
 		c++
 		if c == l {
@@ -297,8 +298,15 @@ func (o *defaultNode) onSend(ctx api.StreamContext, val any) {
 
 // onError do the common works(metric, trace) after throwing an error
 func (o *defaultNode) onError(ctx api.StreamContext, err error) {
+	o.onErrorOpt(ctx, err, true)
+}
+
+// onError do the common works(metric, trace) after throwing an error
+func (o *defaultNode) onErrorOpt(ctx api.StreamContext, err error, sendOut bool) {
 	ctx.GetLogger().Errorf("Operation %s error: %s", ctx.GetOpId(), err)
-	o.Broadcast(err)
+	if sendOut {
+		o.Broadcast(err)
+	}
 	o.statManager.IncTotalExceptions(err.Error())
 	if o.span != nil {
 		o.span.RecordError(err)
