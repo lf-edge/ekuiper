@@ -321,9 +321,7 @@ func detachConnection(ctx api.StreamContext, conId string) error {
 	globalConnectionManager.connectionPool[conId] = meta
 	conf.Log.Infof("detachConnection remove conn:%v,ref:%v", conId, refId)
 	if !meta.Named && meta.GetRefCount() == 0 {
-		if meta.cw.stop != nil {
-			meta.cw.stop()
-		}
+		close(meta.cw.detachCh)
 		conn, err := meta.cw.Wait(ctx)
 		if conn != nil && err == nil {
 			conn.Close(ctx)
