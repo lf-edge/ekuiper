@@ -15,13 +15,11 @@
 package connection
 
 import (
-	rawContext "context"
 	"sync"
 	"sync/atomic"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
@@ -32,10 +30,8 @@ type ConnWrapper struct {
 	conn        modules.Connection
 	err         error
 	l           sync.RWMutex
-	// context for connection wait only
-	waitCtx rawContext.Context
-	// context for the lifecycle
-	stop rawContext.CancelFunc
+	readCh      chan struct{}
+	detachCh    chan struct{}
 }
 
 func (cw *ConnWrapper) setConn(conn modules.Connection, err error) {
@@ -50,7 +46,8 @@ func (cw *ConnWrapper) Wait(connectorCtx api.StreamContext) (modules.Connection,
 	select {
 	case <-connectorCtx.Done():
 		connectorCtx.GetLogger().Infof("stop waiting connection")
-	case <-cw.waitCtx.Done():
+	case <-cw.readCh:
+	case <-cw.detachCh:
 	}
 	cw.l.RLock()
 	defer cw.l.RUnlock()
@@ -63,20 +60,16 @@ func (cw *ConnWrapper) IsInitialized() bool {
 	return cw.initialized
 }
 
-func newConnWrapper(callerCtx api.StreamContext, meta *Meta) *ConnWrapper {
-	callerCtx.GetLogger().Infof("creating new connection wrapper")
-	wctx, onConnect := rawContext.WithCancel(rawContext.Background())
-	contextLogger := conf.Log.WithField("conn", meta.ID)
-	connCtx, stop := context.WithValue(context.Background(), context.LoggerKey, contextLogger).WithCancel()
+func newConnWrapper(ctx api.StreamContext, meta *Meta) *ConnWrapper {
 	cw := &ConnWrapper{
-		ID:      meta.ID,
-		waitCtx: wctx,
-		stop:    stop,
+		ID:       meta.ID,
+		readCh:   make(chan struct{}),
+		detachCh: make(chan struct{}),
 	}
 	go func() {
-		conn, err := createConnection(connCtx, meta)
+		conn, err := createConnection(ctx, meta)
 		cw.setConn(conn, err)
-		onConnect()
+		close(cw.readCh)
 	}()
 	return cw
 }
