@@ -384,7 +384,7 @@ func registerIncAggFunc() {
 	builtins["inc_count"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			key := fmt.Sprintf("%v", ctx.GetFuncId())
+			key := fmt.Sprintf("%v_inc_count", ctx.GetFuncId())
 			v, err := ctx.GetState(key)
 			if err != nil {
 				return err, false

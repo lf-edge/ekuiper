@@ -15,6 +15,7 @@
 package node
 
 import (
+	"bytes"
 	"fmt"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
@@ -107,28 +108,31 @@ func (co *CountWindowIncAggOp) exec(ctx api.StreamContext, errCh chan<- error) {
 			if processed {
 				continue
 			}
+			co.onProcessStart(ctx, input)
 			switch row := data.(type) {
 			case *xsql.Tuple:
 				if co.currWindow == nil {
 					co.setIncAggWindow(ctx)
 				}
-				name := "dim_"
+				name := bytes.NewBufferString("dim_")
 				ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(row, fv, &xsql.WildcardValuer{Data: row})}
 				for _, d := range co.Dimensions {
 					r := ve.Eval(d.Expr)
 					if _, ok := r.(error); ok {
 						continue
 					} else {
-						name += fmt.Sprintf("%v,", r)
+						name.WriteString(fmt.Sprintf("%v,", r))
 					}
 				}
-				co.incAggCal(ctx, name, row, co.currWindow)
+				co.incAggCal(ctx, name.String(), row, co.currWindow)
 				co.currWindowSize++
 				if co.currWindowSize >= co.windowSize {
 					co.emit(ctx, errCh)
 				}
 			}
+			co.onProcessEnd(ctx)
 		}
+		co.statManager.SetBufferLength(int64(len(co.input)))
 	}
 }
 
