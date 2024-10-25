@@ -1105,8 +1105,8 @@ github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible/go.mod h1:ZQnN8lSECae
 github.com/lestrrat-go/strftime v0.0.0-20180821113735-8b31f9c59b0f/go.mod h1:RMlXygAD3c48Psmr06d2G75L4E4xxzxkIe/+ppX9eAU=
 github.com/lestrrat-go/strftime v1.1.0 h1:gMESpZy44/4pXLO/m+sL0yBd1W6LjgjrrD4a68Gapyg=
 github.com/lestrrat-go/strftime v1.1.0/go.mod h1:uzeIB52CeUJenCo1syghlugshMysrqUT51HlxphXVeI=
-github.com/lf-edge/ekuiper/contract/v2 v2.0.0-beta.1 h1:4g5oeyEnPdlBFD8mbMHxAMd16B5nuYwJqefq6czD1I8=
-github.com/lf-edge/ekuiper/contract/v2 v2.0.0-beta.1/go.mod h1:AgzJVledX5rWyTsguk9JOIhVFua3nKYxCSQvWpQw7Vo=
+github.com/lf-edge/ekuiper/contract/v2 v2.0.0 h1:MJB4ZDG099rbHRYxry0X1Iu79kgMVencHd7YX80N1dw=
+github.com/lf-edge/ekuiper/contract/v2 v2.0.0/go.mod h1:Y8QwH4jJHqpx3id9mCp7KYS3gKmHtE5NKYeZ3ZK7C2E=
 github.com/lib/pq v1.0.0/go.mod h1:5WUZQaWbwv1U+lTReE5YruASi9Al49XbQIvNi/34Woo=
 github.com/lib/pq v1.1.0/go.mod h1:5WUZQaWbwv1U+lTReE5YruASi9Al49XbQIvNi/34Woo=
 github.com/lib/pq v1.2.0/go.mod h1:5WUZQaWbwv1U+lTReE5YruASi9Al49XbQIvNi/34Woo=
