@@ -49,6 +49,7 @@ func init() {
 	builtins = make(map[string]builtinFunc)
 	builtinStatfulFuncs = make(map[string]func() api.Function)
 	registerAggFunc()
+	registerIncAggFunc()
 	registerMathFunc()
 	registerStrFunc()
 	registerMiscFunc()
