@@ -105,8 +105,6 @@ func (s *source) Subscribe(ctx api.StreamContext, ingest api.BytesIngest, ingest
 					ingestErr(ctx, errors.New("neuron connection closed"))
 					time.Sleep(1 * time.Second)
 					continue
-				} else {
-					ingestErr(ctx, fmt.Errorf("neuron receiving error %v", err))
 				}
 			}
 		})
