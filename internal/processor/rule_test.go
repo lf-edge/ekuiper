@@ -91,7 +91,7 @@ func TestRuleActionParse_Apply(t *testing.T) {
 					SendMetaToSink:     false,
 					Qos:                def.AtMostOnce,
 					CheckpointInterval: cast.DurationConf(5 * time.Minute),
-					SendError:          true,
+					SendError:          false,
 					RestartStrategy: &def.RestartStrategy{
 						Attempts:     20,
 						Delay:        cast.DurationConf(time.Second),
@@ -155,7 +155,7 @@ func TestRuleActionParse_Apply(t *testing.T) {
 					SendMetaToSink:     false,
 					Qos:                def.ExactlyOnce,
 					CheckpointInterval: cast.DurationConf(time.Minute),
-					SendError:          true,
+					SendError:          false,
 					RestartStrategy: &def.RestartStrategy{
 						Attempts:     0,
 						Delay:        cast.DurationConf(time.Second),
@@ -192,7 +192,7 @@ func TestRuleActionParse_Apply(t *testing.T) {
 					SendMetaToSink:     false,
 					Qos:                def.AtMostOnce,
 					CheckpointInterval: cast.DurationConf(5 * time.Minute),
-					SendError:          true,
+					SendError:          false,
 					RestartStrategy: &def.RestartStrategy{
 						Attempts:     0,
 						Delay:        cast.DurationConf(time.Second),

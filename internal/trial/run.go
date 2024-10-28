@@ -51,6 +51,8 @@ func genTrialRule(rd *RunDef, sinkProps map[string]interface{}) *def.Rule {
 			"websocket": sinkProps,
 		},
 	}
+	// Let trial rule always send out error to show
+	rt.Options.SendError = true
 	return rt
 }
 

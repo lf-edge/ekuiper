@@ -32,7 +32,7 @@ type RuleOption struct {
 	Concurrency        int                      `json:"concurrency" yaml:"concurrency"`
 	BufferLength       int                      `json:"bufferLength" yaml:"bufferLength"`
 	SendMetaToSink     bool                     `json:"sendMetaToSink" yaml:"sendMetaToSink"`
-	SendError          bool                     `json:"sendError,omitempty" yaml:"sendError,omitempty"`
+	SendError          bool                     `json:"sendError" yaml:"sendError"`
 	Qos                Qos                      `json:"qos,omitempty" yaml:"qos,omitempty"`
 	CheckpointInterval cast.DurationConf        `json:"checkpointInterval,omitempty" yaml:"checkpointInterval,omitempty"`
 	RestartStrategy    *RestartStrategy         `json:"restartStrategy,omitempty" yaml:"restartStrategy,omitempty"`
@@ -122,7 +122,7 @@ func GetDefaultRule(name, sql string) *Rule {
 			Concurrency:        1,
 			BufferLength:       1024,
 			SendMetaToSink:     false,
-			SendError:          true,
+			SendError:          false,
 			Qos:                AtMostOnce,
 			CheckpointInterval: cast.DurationConf(5 * time.Minute),
 			RestartStrategy: &RestartStrategy{
