@@ -1,4 +1,4 @@
-// Copyright 2023 EMQ Technologies Co., Ltd.
+// Copyright 2023-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -317,7 +317,7 @@ func InitConf() {
 			Concurrency:        1,
 			BufferLength:       1024,
 			CheckpointInterval: cast.DurationConf(5 * time.Minute), // 5 minutes
-			SendError:          true,
+			SendError:          false,
 			RestartStrategy: &def.RestartStrategy{
 				Attempts:     0,
 				Delay:        1000,

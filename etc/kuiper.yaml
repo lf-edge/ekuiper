@@ -77,7 +77,7 @@ rule:
   # The interval duration to run the checkpoint mechanism.
   checkpointInterval: 300s
   # Whether to send errors to sinks
-  sendError: true
+  sendError: false
   # The strategy to retry for rule errors.
   restartStrategy:
     # The maximum retry times
