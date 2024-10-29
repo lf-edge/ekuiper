@@ -15,44 +15,26 @@
 package encryptor
 
 import (
-	"crypto/rand"
 	"fmt"
 	"io"
 
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/encryptor/aes"
 	"github.com/lf-edge/ekuiper/v2/pkg/message"
 )
 
-func GetEncryptor(name string) (message.Encryptor, error) {
-	if name == "aes" {
-		key, iv, err := GetKeyIv()
-		if err != nil {
-			return nil, err
-		}
-		return aes.NewStreamEncrypter(key, iv)
+func GetEncryptor(name string, encryptProps map[string]any) (message.Encryptor, error) {
+	switch name {
+	case "aes":
+		return aes.GetEncryptor(encryptProps)
+	default:
+		return nil, fmt.Errorf("encryptor '%s' is not supported", name)
 	}
-	return nil, fmt.Errorf("unsupported encryptor: %s", name)
 }
 
 func GetEncryptWriter(name string, output io.Writer) (io.Writer, error) {
+	// TODO support encryption props later
 	if name == "aes" {
-		key, iv, err := GetKeyIv()
-		if err != nil {
-			return nil, err
-		}
-		return aes.NewStreamWriter(key, iv, output)
+		return aes.GetEncryptWriter(output, nil)
 	}
 	return nil, fmt.Errorf("unsupported encryptor: %s", name)
-}
-
-func GetKeyIv() ([]byte, []byte, error) {
-	if conf.Config == nil || conf.Config.AesKey == nil {
-		return nil, nil, fmt.Errorf("AES key is not defined")
-	}
-	key := conf.Config.AesKey
-	iv := make([]byte, 16)
-	// Use the crypto/rand package to generate random bytes
-	_, _ = rand.Read(iv)
-	return key, iv, nil
 }

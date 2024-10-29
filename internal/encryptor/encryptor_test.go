@@ -24,8 +24,12 @@ import (
 
 func TestGetEncryptor(t *testing.T) {
 	conf.InitConf()
-	_, err := GetEncryptor("aes")
+	_, err := GetEncryptor("aes", map[string]any{"mode": "gcm"})
 	assert.NoError(t, err)
-	_, err = GetEncryptor("unknown")
+	_, err = GetEncryptor("unknown", map[string]any{"mode": "gcm"})
+	assert.Error(t, err)
+	_, err = GetEncryptor("aes", map[string]any{"mode": "cfb"})
+	assert.NoError(t, err)
+	_, err = GetEncryptor("aes", map[string]any{"mode": "abc"})
 	assert.Error(t, err)
 }
