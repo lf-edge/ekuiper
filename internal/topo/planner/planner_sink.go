@@ -206,7 +206,7 @@ func splitSink(tp *topo.Topo, s api.Sink, sinkName string, options *def.RuleOpti
 		}
 
 		if !isStreamWriter && sc.Encryption != "" {
-			encryptOp, err := node.NewEncryptOp(fmt.Sprintf("%s_%d_encrypt", sinkName, index), options, sc.Encryption)
+			encryptOp, err := node.NewEncryptOp(fmt.Sprintf("%s_%d_encrypt", sinkName, index), options, sc.Encryption, sc.EncProps)
 			if err != nil {
 				return nil, err
 			}
