@@ -27,20 +27,20 @@ import (
 )
 
 func TestNewEncryptOp(t *testing.T) {
-	_, err := NewEncryptOp("test", &def.RuleOption{}, "non")
+	_, err := NewEncryptOp("test", &def.RuleOption{}, "non", nil)
 	assert.Error(t, err)
-	assert.Equal(t, "get encryptor non fail with error: unsupported encryptor: non", err.Error())
+	assert.Equal(t, "get encryptor non fail with error: encryptor 'non' is not supported", err.Error())
 	if conf.Config != nil {
 		conf.Config.AesKey = nil
 	}
-	_, err = NewEncryptOp("test", &def.RuleOption{}, "aes")
+	_, err = NewEncryptOp("test", &def.RuleOption{}, "aes", nil)
 	assert.Error(t, err)
 	assert.Equal(t, errors.New("get encryptor aes fail with error: AES key is not defined"), err)
 }
 
 func TestEncryptOp_Exec(t *testing.T) {
 	conf.InitConf()
-	op, err := NewEncryptOp("test", &def.RuleOption{BufferLength: 10, SendError: true}, "aes")
+	op, err := NewEncryptOp("test", &def.RuleOption{BufferLength: 10, SendError: true}, "aes", nil)
 	assert.NoError(t, err)
 	op.tool = &MockEncryptor{}
 	out := make(chan any, 100)
@@ -79,6 +79,6 @@ func TestEncryptOp_Exec(t *testing.T) {
 
 type MockEncryptor struct{}
 
-func (m *MockEncryptor) Encrypt(_ []byte) []byte {
-	return []byte("mock encrypt")
+func (m *MockEncryptor) Encrypt(_ []byte) ([]byte, error) {
+	return []byte("mock encrypt"), nil
 }

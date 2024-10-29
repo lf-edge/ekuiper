@@ -30,7 +30,6 @@ import (
 
 	"github.com/lf-edge/ekuiper/v2/internal/compressor"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
-	"github.com/lf-edge/ekuiper/v2/internal/encryptor"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/topotest/mockclock"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
@@ -747,9 +746,7 @@ func TestFileCompressAndEncrypt(t *testing.T) {
 				t.Fatal(err)
 			}
 			// Decrypt then uncompress
-			key, _, err := encryptor.GetKeyIv()
-			assert.NoError(t, err)
-			revert := Decrypt(key, contents)
+			revert := Decrypt(contents)
 			// uncompress
 			if tt.compress != "" {
 				decompressor, _ := compressor.GetDecompressor(tt.compress)
@@ -766,7 +763,8 @@ func TestFileCompressAndEncrypt(t *testing.T) {
 	}
 }
 
-func Decrypt(key []byte, contents []byte) []byte {
+func Decrypt(contents []byte) []byte {
+	key := conf.Config.AesKey
 	// Create a new AES cipher block using the key
 	block, err := aes.NewCipher(key)
 	if err != nil {
