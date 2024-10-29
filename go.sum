@@ -425,6 +425,8 @@ github.com/aws/aws-sdk-go-v2/service/sts v1.28.6 h1:cwIxeBttqPN3qkaAjcEcsh8NYr8n
 github.com/aws/aws-sdk-go-v2/service/sts v1.28.6/go.mod h1:FZf1/nKNEkHdGGJP/cI2MoIMquumuRK6ol3QQJNDxmw=
 github.com/aws/smithy-go v1.20.2 h1:tbp628ireGtzcHDDmLT/6ADHidqnwgF57XOXZe6tp4Q=
 github.com/aws/smithy-go v1.20.2/go.mod h1:krry+ya/rV9RDcV/Q16kpu6ypI4K2czasz0NC3qS14E=
+github.com/beevik/etree v1.4.1 h1:PmQJDDYahBGNKDcpdX8uPy1xRCwoCGVUiW669MEirVI=
+github.com/beevik/etree v1.4.1/go.mod h1:gPNJNaBGVZ9AwsidazFZyygnd+0pAU38N4D+WemwKNs=
 github.com/beltran/gohive v1.6.0 h1:VqKaSeYhae4cY9QHfw8uqWZARq9yJdydiOVsqS63KbE=
 github.com/beltran/gohive v1.6.0/go.mod h1:IgDi0gD1c73aKKQyS+3j1+NWSNn5NUK7rDcg/Rr6mTs=
 github.com/beltran/gosasl v0.0.0-20231124144235-92b2e4f10bb6 h1:OPqfeBd/oCkMl9I4D999xqr8ExmXWA6I2tXIKsGlTLQ=

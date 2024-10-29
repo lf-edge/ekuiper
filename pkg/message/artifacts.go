@@ -26,6 +26,7 @@ const (
 	FormatProtobuf   = "protobuf"
 	FormatDelimited  = "delimited"
 	FormatUrlEncoded = "urlencoded"
+	FormatXML        = "xml"
 	FormatCustom     = "custom"
 
 	DefaultField = "self"
