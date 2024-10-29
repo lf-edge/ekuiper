@@ -60,7 +60,7 @@ type RawRow interface {
 	ToMap() map[string]interface{}
 	// Pick the columns and discard others. It replaces the underlying message with a new value. There are 3 types to pick: column, alias and anonymous expressions.
 	// cols is a list [columnname, tablename]
-	Pick(allWildcard bool, cols [][]string, wildcardEmitters map[string]bool, except []string)
+	Pick(allWildcard bool, cols [][]string, wildcardEmitters map[string]bool, except []string, sendNil bool)
 }
 
 type Row interface {
@@ -536,7 +536,7 @@ func (t *Tuple) FuncValue(key string) (interface{}, bool) {
 	}
 }
 
-func (t *Tuple) Pick(allWildcard bool, cols [][]string, wildcardEmitters map[string]bool, except []string) {
+func (t *Tuple) Pick(allWildcard bool, cols [][]string, wildcardEmitters map[string]bool, except []string, sendNil bool) {
 	// invalidate cache, will calculate again
 	t.cachedMap = nil
 	cols = t.AffiliateRow.Pick(cols)
@@ -550,6 +550,8 @@ func (t *Tuple) Pick(allWildcard bool, cols [][]string, wildcardEmitters map[str
 				if colTab[1] == "" || colTab[1] == string(ast.DefaultStream) || colTab[1] == t.Emitter {
 					if v, ok := t.Message.Value(colTab[0], colTab[1]); ok {
 						pickedMap[colTab[0]] = v
+					} else if sendNil {
+						pickedMap[colTab[0]] = nil
 					}
 				}
 			}
@@ -675,7 +677,7 @@ func (jt *JoinTuple) ToMap() map[string]interface{} {
 	return jt.cachedMap
 }
 
-func (jt *JoinTuple) Pick(allWildcard bool, cols [][]string, wildcardEmitters map[string]bool, except []string) {
+func (jt *JoinTuple) Pick(allWildcard bool, cols [][]string, wildcardEmitters map[string]bool, except []string, sendNil bool) {
 	cols = jt.AffiliateRow.Pick(cols)
 	if !allWildcard {
 		if len(cols) > 0 {
@@ -686,7 +688,7 @@ func (jt *JoinTuple) Pick(allWildcard bool, cols [][]string, wildcardEmitters ma
 					}
 				}
 				nt := tuple.Clone().(Row)
-				nt.Pick(allWildcard, cols, wildcardEmitters, except)
+				nt.Pick(allWildcard, cols, wildcardEmitters, except, sendNil)
 				jt.Tuples[i] = nt
 			}
 		} else {
@@ -753,9 +755,9 @@ func (s *GroupedTuples) Clone() Row {
 	return c
 }
 
-func (s *GroupedTuples) Pick(allWildcard bool, cols [][]string, wildcardEmitters map[string]bool, except []string) {
+func (s *GroupedTuples) Pick(allWildcard bool, cols [][]string, wildcardEmitters map[string]bool, except []string, sendNil bool) {
 	cols = s.AffiliateRow.Pick(cols)
 	sc := s.Content[0].Clone()
-	sc.Pick(allWildcard, cols, wildcardEmitters, except)
+	sc.Pick(allWildcard, cols, wildcardEmitters, except, sendNil)
 	s.Content[0] = sc
 }
