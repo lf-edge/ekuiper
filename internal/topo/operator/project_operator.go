@@ -39,6 +39,7 @@ type ProjectOp struct {
 	LimitCount       int
 
 	SendMeta bool
+	SendNil  bool
 
 	kvs   []interface{}
 	alias []interface{}
@@ -161,11 +162,11 @@ func (pp *ProjectOp) project(row xsql.RawRow, ve *xsql.ValuerEval) error {
 			}
 			return fmt.Errorf("alias: %v expr: %v meet error, err:%v", f.AName, f.Expr.String(), e)
 		}
-		if vi != nil {
+		if vi != nil || pp.SendNil {
 			pp.alias = append(pp.alias, f.AName, vi)
 		}
 	}
-	row.Pick(pp.AllWildcard, pp.ColNames, pp.WildcardEmitters, pp.ExceptNames)
+	row.Pick(pp.AllWildcard, pp.ColNames, pp.WildcardEmitters, pp.ExceptNames, pp.SendNil)
 	for i := 0; i < len(pp.kvs); i += 2 {
 		row.Set(pp.kvs[i].(string), pp.kvs[i+1])
 	}

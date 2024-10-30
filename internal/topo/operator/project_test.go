@@ -21,6 +21,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
@@ -2563,5 +2565,577 @@ func TestProjectPlanError(t *testing.T) {
 		if !reflect.DeepEqual(tt.result, opResult) {
 			t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, opResult)
 		}
+	}
+}
+
+func TestProjectPlan_SendNil(t *testing.T) {
+	tests := []struct {
+		sql    string
+		data   *xsql.Tuple
+		result []map[string]interface{}
+	}{
+		{ // 0
+			sql: "SELECT a FROM test",
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"a": "val_a",
+				},
+				Metadata: xsql.Metadata{
+					"id":    45,
+					"other": "mock",
+				},
+			},
+			result: []map[string]interface{}{{
+				"a": "val_a",
+				"__meta": xsql.Metadata{
+					"id":    45,
+					"other": "mock",
+				},
+			}},
+		},
+		{ // 1
+			sql: "SELECT b FROM test",
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"a": "val_a",
+				},
+			},
+			result: []map[string]interface{}{{"b": nil}},
+		},
+		// Schemaless may return a message without selecting column
+		{ // 3
+			sql: "SELECT ts FROM test",
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"a":   "val_a",
+					"ts2": cast.TimeFromUnixMilli(1568854573431),
+				},
+			},
+			result: []map[string]interface{}{{"ts": nil}},
+		},
+		{ // 4
+			sql: "SELECT A FROM test",
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"a": "val_a",
+				},
+			},
+			result: []map[string]interface{}{{
+				"A": "val_a",
+			}},
+		},
+		// 5
+		{
+			sql: `SELECT "value" FROM test`,
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{},
+			},
+			result: []map[string]interface{}{{
+				"kuiper_field_0": "value",
+			}},
+		},
+		// 6
+		{
+			sql: `SELECT 3.4 FROM test`,
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{},
+			},
+			result: []map[string]interface{}{{
+				"kuiper_field_0": 3.4,
+			}},
+		},
+		// 7
+		{
+			sql: `SELECT 5 FROM test`,
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{},
+			},
+			result: []map[string]interface{}{{
+				"kuiper_field_0": int64(5),
+			}},
+		},
+		// 8
+		{
+			sql: `SELECT a, "value" AS b FROM test`,
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"a": "val_a",
+				},
+			},
+			result: []map[string]interface{}{{
+				"a": "val_a",
+				"b": "value",
+			}},
+		},
+		// 9
+		{
+			sql: `SELECT a, "value" AS b, 3.14 as Pi, 0 as Zero FROM test`,
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"a": "val_a",
+				},
+			},
+			result: []map[string]interface{}{{
+				"a":    "val_a",
+				"b":    "value",
+				"Pi":   3.14,
+				"Zero": int64(0),
+			}},
+		},
+		// 11
+		{
+			sql: `SELECT a->b AS ab FROM test`,
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"a": map[string]interface{}(nil),
+				},
+			},
+			result: []map[string]interface{}{{"ab": nil}},
+		},
+		// 14
+		{
+			sql: `SELECT a[0]->b AS ab FROM test`,
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"a": []interface{}{
+						map[string]interface{}{"b": "hello1"},
+						map[string]interface{}{"b": "hello2"},
+					},
+				},
+			},
+			result: []map[string]interface{}{{
+				"ab": "hello1",
+			}},
+		},
+		// 15
+		{
+			sql: `SELECT a[0]->b AS ab FROM test`,
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"a": []map[string]interface{}{
+						{"b": "hello1"},
+						{"b": "hello2"},
+					},
+				},
+			},
+			result: []map[string]interface{}{{
+				"ab": "hello1",
+			}},
+		},
+		// 16
+		{
+			sql: `SELECT a[2:4] AS ab FROM test`,
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"a": []map[string]interface{}{
+						{"b": "hello1"},
+						{"b": "hello2"},
+						{"b": "hello3"},
+						{"b": "hello4"},
+						{"b": "hello5"},
+					},
+				},
+			},
+			result: []map[string]interface{}{{
+				"ab": []map[string]interface{}{
+					{"b": "hello3"},
+					{"b": "hello4"},
+				},
+			}},
+		},
+		// 17
+		{
+			sql: `SELECT a[2:] AS ab FROM test`,
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"a": []map[string]interface{}{
+						{"b": "hello1"},
+						{"b": "hello2"},
+						{"b": "hello3"},
+						{"b": "hello4"},
+						{"b": "hello5"},
+					},
+				},
+			},
+			result: []map[string]interface{}{{
+				"ab": []map[string]interface{}{
+					{"b": "hello3"},
+					{"b": "hello4"},
+					{"b": "hello5"},
+				},
+			}},
+		},
+		// 18
+		{
+			sql: `SELECT a[2:] AS ab FROM test`,
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"a": []interface{}{
+						true, false, true, false, true, true,
+					},
+				},
+			},
+			result: []map[string]interface{}{{
+				"ab": []interface{}{
+					true, false, true, true,
+				},
+			}},
+		},
+		// 19
+		{
+			sql: `SELECT a[:4] AS ab FROM test`,
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"a": []interface{}{
+						true, false, true, false, true, true,
+					},
+				},
+			},
+			result: []map[string]interface{}{{
+				"ab": []interface{}{
+					true, false, true, false,
+				},
+			}},
+		},
+		// 20
+		{
+			sql: `SELECT a[:4] AS ab FROM test`,
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"a": []interface{}{
+						3.14, 3.141, 3.1415, 3.14159, 3.141592, 3.1415926,
+					},
+				},
+			},
+			result: []map[string]interface{}{{
+				"ab": []interface{}{
+					3.14, 3.141, 3.1415, 3.14159,
+				},
+			}},
+		},
+		// 21
+		{
+			sql: `SELECT a->b[:4] AS ab FROM test`,
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"a": map[string]interface{}{
+						"b": []float64{3.14, 3.141, 3.1415, 3.14159, 3.141592, 3.1415926},
+					},
+				},
+			},
+			result: []map[string]interface{}{{
+				"ab": []float64{
+					3.14, 3.141, 3.1415, 3.14159,
+				},
+			}},
+		},
+		// 22
+		{
+			sql: `SELECT a->b[0:1] AS ab FROM test`,
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"a": map[string]interface{}{
+						"b": []float64{3.14, 3.141, 3.1415, 3.14159, 3.141592, 3.1415926},
+					},
+				},
+			},
+			result: []map[string]interface{}{{
+				"ab": []float64{
+					3.14,
+				},
+			}},
+		},
+		// 23
+		{
+			sql: `SELECT a->c->d AS f1 FROM test`,
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"a": map[string]interface{}{
+						"b": "hello",
+						"c": map[string]interface{}{
+							"d": 35.2,
+						},
+					},
+				},
+			},
+			result: []map[string]interface{}{{
+				"f1": 35.2,
+			}},
+		},
+		// 24
+		{
+			sql: `SELECT a->c->d AS f1 FROM test`,
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"a": map[string]interface{}{
+						"b": "hello",
+						"c": map[string]interface{}{
+							"e": 35.2,
+						},
+					},
+				},
+			},
+			result: []map[string]interface{}{{"f1": nil}},
+		},
+		// 25
+		{
+			sql: `SELECT a->c->d AS f1 FROM test`,
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"a": map[string]interface{}{
+						"b": "hello",
+					},
+				},
+			},
+			result: []map[string]interface{}{{"f1": nil}},
+		},
+		// 26
+		// The int type is not supported yet, the json parser returns float64 for int values
+		{
+			sql: `SELECT a->c->d AS f1 FROM test`,
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"a": map[string]interface{}{
+						"b": "hello",
+						"c": map[string]interface{}{
+							"d": float64(35),
+						},
+					},
+				},
+			},
+			result: []map[string]interface{}{{
+				"f1": float64(35),
+			}},
+		},
+		// 27
+		{
+			sql: "SELECT a FROM test",
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{},
+			},
+			result: []map[string]interface{}{
+				{"a": nil},
+			},
+		},
+		// 28
+		{
+			sql: "SELECT * FROM test",
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{},
+			},
+			result: []map[string]interface{}{
+				{},
+			},
+		},
+		// 29
+		{
+			sql: `SELECT * FROM test`,
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"a": map[string]interface{}{
+						"b": "hello",
+						"c": map[string]interface{}{
+							"d": 35.2,
+						},
+					},
+				},
+			},
+			result: []map[string]interface{}{{
+				"a": map[string]interface{}{
+					"b": "hello",
+					"c": map[string]interface{}{
+						"d": 35.2,
+					},
+				},
+			}},
+		},
+		// 30
+		{
+			sql: `SELECT * FROM test`,
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"a": "val1",
+					"b": 3.14,
+				},
+			},
+			result: []map[string]interface{}{{
+				"a": "val1",
+				"b": 3.14,
+			}},
+		},
+		// 31
+		{
+			sql: `SELECT 3*4 AS f1 FROM test`,
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{},
+			},
+			result: []map[string]interface{}{{
+				"f1": int64(12),
+			}},
+		},
+		// 32
+		{
+			sql: `SELECT 4.5*2 AS f1 FROM test`,
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{},
+			},
+			result: []map[string]interface{}{{
+				"f1": float64(9),
+			}},
+		},
+		// 33
+		{
+			sql: "SELECT `a.b.c` FROM test",
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"a.b.c": "val_a",
+				},
+			},
+			result: []map[string]interface{}{{
+				"a.b.c": "val_a",
+			}},
+		},
+		// 34
+		{
+			sql: `SELECT CASE a WHEN 10 THEN "true" END AS b FROM test`,
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"a": int64(10),
+				},
+			},
+			result: []map[string]interface{}{{
+				"b": "true",
+			}},
+		},
+		// 35
+		{
+			sql: `SELECT a->b AS ab, *, abs(f1) FROM test`,
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"a": map[string]interface{}{
+						"b": "test",
+					},
+					"b":  "b",
+					"f1": -12,
+				},
+			},
+			result: []map[string]interface{}{{
+				"a": map[string]interface{}{
+					"b": "test",
+				},
+				"ab":  "test",
+				"abs": 12,
+				"b":   "b",
+				"f1":  -12,
+			}},
+		},
+		// 36
+		{
+			sql: `SELECT * EXCEPT(a, b) from test`,
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"a": map[string]interface{}{
+						"b": "test",
+					},
+					"b": "b",
+					"c": "c",
+				},
+			},
+			result: []map[string]interface{}{
+				{
+					"c": "c",
+				},
+			},
+		},
+		// 37
+		{
+			sql: `SELECT * REPLACE(a->b as a) from test`,
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"a": map[string]interface{}{
+						"b": "test",
+					},
+					"b": "b",
+					"c": "c",
+				},
+			},
+			result: []map[string]interface{}{
+				{
+					"a": "test",
+					"b": "b",
+					"c": "c",
+				},
+			},
+		},
+		// 38
+		{
+			sql: `SELECT * EXCEPT(c) REPLACE("test" as b, a->b as a) from test`,
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"a": map[string]interface{}{
+						"b": "test",
+					},
+					"b": "b",
+					"c": 1,
+				},
+			},
+			result: []map[string]interface{}{
+				{
+					"a": "test",
+					"b": "test",
+				},
+			},
+		},
+	}
+
+	contextLogger := conf.Log.WithField("rule", "TestProjectPlan_Apply1")
+	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
+	for _, tt := range tests {
+		t.Run(tt.sql, func(t *testing.T) {
+			stmt, err := xsql.NewParser(strings.NewReader(tt.sql)).Parse()
+			require.NoError(t, err)
+			pp := &ProjectOp{SendMeta: true, SendNil: true, IsAggregate: xsql.WithAggFields(stmt)}
+			parseStmt(pp, stmt.Fields)
+			fv, afv := xsql.NewFunctionValuersForOp(nil)
+			opResult := pp.Apply(ctx, tt.data, fv, afv)
+			result, err := parseResult(opResult, pp.IsAggregate)
+			require.NoError(t, err)
+			require.Equal(t, tt.result, result)
+		})
 	}
 }
