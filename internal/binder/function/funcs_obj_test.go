@@ -78,7 +78,9 @@ func TestToMap(t *testing.T) {
 				nil,
 			},
 			result: map[string]interface{}{
+				"key1": nil,
 				"key2": "foo",
+				"key3": nil,
 			},
 		},
 	}
@@ -595,6 +597,16 @@ func TestObjectFuncArgNil(t *testing.T) {
 				nil, "v1", "k2", "v2",
 			},
 			result: map[string]interface{}{
+				"k2": "v2",
+			},
+		},
+		{
+			funcName: "object_construct",
+			args: []interface{}{
+				"k1", nil, "k2", "v2",
+			},
+			result: map[string]interface{}{
+				"k1": nil,
 				"k2": "v2",
 			},
 		},
