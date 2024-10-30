@@ -258,7 +258,7 @@ func (m *fileSink) GetFws(ctx api.StreamContext, fn string, item []byte) (*fileW
 				nextCursor = cursor + int(hl)
 				hb := item[cursor:nextCursor]
 				m.headers = string(hb)
-				ctx.GetLogger().Infof("csv header %s", hb)
+				ctx.GetLogger().Debugf("csv header %s", hb)
 				cursor = nextCursor
 				item = item[nextCursor:]
 			}
