@@ -169,7 +169,7 @@ func registerObjectFunc() {
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			result := make(map[string]interface{})
 			for i := 0; i < len(args); i += 2 {
-				if args[i] != nil && args[i+1] != nil {
+				if args[i] != nil {
 					s, err := cast.ToString(args[i], cast.CONVERT_SAMEKIND)
 					if err != nil {
 						return fmt.Errorf("key %v is not a string", args[i]), false
