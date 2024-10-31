@@ -38,6 +38,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/props"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
@@ -48,6 +49,18 @@ func registerMiscFunc() {
 			return args[0], true
 		},
 		val:   ValidateOneArg,
+		check: returnNilIfHasAnyNil,
+	}
+	builtins["props"] = builtinFunc{
+		fType: ast.FuncTypeScalar,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			key, ok := args[0].(string)
+			if !ok {
+				return fmt.Errorf("invalid input type: %v please input property name", args[0]), false
+			}
+			return props.SC.Get(key)
+		},
+		val:   ValidateOneStrArg,
 		check: returnNilIfHasAnyNil,
 	}
 	builtins["cast"] = builtinFunc{
