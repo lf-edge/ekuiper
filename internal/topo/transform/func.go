@@ -1,4 +1,4 @@
-// Copyright 2022-2024 EMQ Technologies Co., Ltd.
+// Copyright 2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -27,14 +27,12 @@ import (
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
-	"github.com/lf-edge/ekuiper/v2/pkg/props"
 )
 
 func RegisterAdditionalFuncs() {
 	conf.FuncMap = sprig.FuncMap()
 	conf.FuncMap["json"] = conf.FuncMap["toJson"]
 	conf.FuncMap["base64"] = Base64Encode
-	conf.FuncMap["prop"] = Prop
 }
 
 func Base64Encode(para interface{}) (string, error) {
@@ -69,14 +67,5 @@ func Base64Encode(para interface{}) (string, error) {
 		}
 	default:
 		return "", fmt.Errorf("Unsupported data type %s for base64 function.", v.Kind())
-	}
-}
-
-func Prop(k string) string {
-	v, ok := props.SC.Get(k)
-	if !ok {
-		return k
-	} else {
-		return v
 	}
 }
