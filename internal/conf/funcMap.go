@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,6 +14,22 @@
 
 package conf
 
-import "text/template"
+import (
+	"text/template"
+
+	"github.com/lf-edge/ekuiper/v2/pkg/props"
+)
 
 var FuncMap template.FuncMap
+
+func init() {
+	FuncMap = make(template.FuncMap)
+	FuncMap["prop"] = func(k string) string {
+		v, ok := props.SC.Get(k)
+		if !ok {
+			return k
+		} else {
+			return v
+		}
+	}
+}
