@@ -1,4 +1,4 @@
-// Copyright 2023-2023 EMQ Technologies Co., Ltd.
+// Copyright 2023-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import (
 )
 
 func NewZstdCompressor() (*zstdCompressor, error) {
-	zstdWriter, err := zstd.NewWriter(nil)
+	zstdWriter, err := zstd.NewWriter(nil, zstd.WithWindowSize(zstd.MinWindowSize))
 	if err != nil {
 		return nil, err
 	}
