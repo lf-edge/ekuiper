@@ -1,4 +1,4 @@
-// Copyright 2022-2023 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strconv"
 	"testing"
 	"time"
 
@@ -31,6 +32,7 @@ import (
 	kctx "github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/state"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
+	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 func init() {
@@ -647,4 +649,24 @@ func TestCast(t *testing.T) {
 			assert.NoError(t, err)
 		}
 	}
+}
+
+func TestProps(t *testing.T) {
+	f, ok := builtins["props"]
+	if !ok {
+		t.Fatal("builtin not found")
+	}
+	contextLogger := conf.Log.WithField("rule", "testExec")
+	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+	tempStore, _ := state.CreateStore("mockRule0", def.AtMostOnce)
+	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
+	e, ok := f.exec(fctx, []any{12})
+	require.False(t, ok)
+	err, ok := e.(error)
+	require.True(t, ok)
+	require.EqualError(t, err, "invalid input 12: must be property name of string type")
+	tt := timex.GetNowInMilli()
+	et, ok := f.exec(fctx, []any{"et"})
+	require.True(t, ok)
+	require.Equal(t, strconv.FormatInt(tt, 10), et)
 }
