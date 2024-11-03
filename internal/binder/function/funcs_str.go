@@ -181,6 +181,19 @@ func registerStrFunc() {
 		val:   ValidateTwoStrArg,
 		check: returnNilIfHasAnyNil,
 	}
+	builtins["reverse"] = builtinFunc{
+		fType: ast.FuncTypeScalar,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			arg0 := cast.ToStringAlways(args[0])
+			runes := []rune(arg0)
+			for i, j := 0, len(runes)-1; i < j; i, j = i+1, j-1 {
+				runes[i], runes[j] = runes[j], runes[i]
+			}
+			return string(runes), true
+		},
+		val:   ValidateOneStrArg,
+		check: returnNilIfHasAnyNil,
+	}
 	builtins["rpad"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
