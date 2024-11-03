@@ -1149,10 +1149,10 @@
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-					"en_US": "Natural Logarithm",
-					"zh_CN": "自然对数"
-				}
+				"en_US": "Natural Logarithm",
+				"zh_CN": "自然对数"
 			}
+		}
 	}, {
 		"name": "log",
 		"example": "log(col1)",
@@ -2135,6 +2135,44 @@
 			"label": {
 				"en_US": "Regular Expression First Match",
 				"zh_CN": "正则匹配子串"
+			}
+		}
+	},{
+		"name": "reverse",
+		"example": "reverse(col1)",
+		"hint": {
+			"en_US": "Returns the reversed string.",
+			"zh_CN": "返回反转的字符串。"
+		},
+		"args": [
+			{
+				"name": "string",
+				"optional": false,
+				"control": "field",
+				"type": "string",
+				"hint": {
+					"en_US": "A String",
+					"zh_CN": "String 值"
+				},
+				"label": {
+					"en_US": "String",
+					"zh_CN": "String 值"
+				}
+			}
+		],
+		"return": {
+			"type": "string",
+			"hint": {
+				"en_US": "Reversed String",
+				"zh_CN": "反转的字符串"
+			}
+		},
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Reverse",
+				"zh_CN": "反转字符串"
 			}
 		}
 	}, {
