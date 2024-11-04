@@ -47,8 +47,12 @@ func registerMiscFunc() {
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			return args[0], true
 		},
-		val:   ValidateOneArg,
-		check: returnNilIfHasAnyNil,
+		val: func(ctx api.FunctionContext, args []ast.Expr) error {
+			return nil
+		},
+		check: func(args []interface{}) (interface{}, bool) {
+			return args, false
+		},
 	}
 	builtins["cast"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
