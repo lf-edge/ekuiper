@@ -15,45 +15,55 @@
 package aes
 
 import (
-	"crypto/aes"
-	"crypto/cipher"
 	"fmt"
 	"io"
+
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/message"
 )
 
-type StreamEncrypter struct {
-	block cipher.Block
-	iv    []byte
+type c struct {
+	Mode    string `json:"mode"`
+	Iv      string `json:"iv"`
+	Aad     string `json:"aad"`
+	TagSize int    `json:"tagsize"`
 }
 
-func (a *StreamEncrypter) Encrypt(data []byte) []byte {
-	ciphertext := make([]byte, len(data))
-	stream := cipher.NewCFBEncrypter(a.block, a.iv)
-	stream.XORKeyStream(ciphertext, data)
-	result := append(a.iv, ciphertext...)
-	return result
-}
-
-func NewStreamEncrypter(key, iv []byte) (*StreamEncrypter, error) {
-	block, err := aes.NewCipher(key)
+func GetEncryptor(props map[string]any) (message.Encryptor, error) {
+	if conf.Config == nil || conf.Config.AesKey == nil {
+		return nil, fmt.Errorf("AES key is not defined")
+	}
+	key := conf.Config.AesKey
+	cc := &c{Mode: "cfb"}
+	err := cast.MapToStruct(props, cc)
 	if err != nil {
 		return nil, err
 	}
-	return &StreamEncrypter{
-		block: block,
-		iv:    iv,
-	}, nil
+	switch cc.Mode {
+	case "cfb":
+		return NewStreamEncrypter(key, cc)
+	case "gcm":
+		return NewGcmEncrypter(key, cc)
+	default:
+		return nil, fmt.Errorf("unsupported AES encryption mode: %s", cc.Mode)
+	}
 }
 
-func NewStreamWriter(key, iv []byte, output io.Writer) (*cipher.StreamWriter, error) {
-	blockMode, err := newAesStream(key, iv)
+func GetEncryptWriter(output io.Writer, props map[string]any) (io.Writer, error) {
+	if conf.Config == nil || conf.Config.AesKey == nil {
+		return nil, fmt.Errorf("AES key is not defined")
+	}
+	key := conf.Config.AesKey
+	cc := &c{Mode: "cfb"}
+	err := cast.MapToStruct(props, cc)
 	if err != nil {
 		return nil, err
 	}
-	writer := &cipher.StreamWriter{S: blockMode, W: output}
-	_, err = writer.W.Write(iv)
-	if err != nil {
-		return nil, fmt.Errorf("failed to write iv: %v", err)
+	switch cc.Mode {
+	case "cfb":
+		return NewStreamWriter(key, output, cc)
+	default:
+		return nil, fmt.Errorf("unsupported AES writer mode: %s", cc.Mode)
 	}
-	return writer, nil
 }

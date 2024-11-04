@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ type ProjectPlan struct {
 	isAggregate      bool
 	allWildcard      bool
 	sendMeta         bool
+	sendNil          bool
 	fields           ast.Fields
 	colNames         [][]string
 	aliasNames       []string

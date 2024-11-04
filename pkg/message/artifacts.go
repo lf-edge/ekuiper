@@ -67,5 +67,5 @@ type Decompressor interface {
 
 // Encryptor encrypts bytes
 type Encryptor interface {
-	Encrypt([]byte) []byte
+	Encrypt([]byte) ([]byte, error)
 }

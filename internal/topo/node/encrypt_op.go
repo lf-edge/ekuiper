@@ -34,8 +34,8 @@ type EncryptNode struct {
 	tool message.Encryptor
 }
 
-func NewEncryptOp(name string, rOpt *def.RuleOption, encryptMethod string) (*EncryptNode, error) {
-	dc, err := encryptor.GetEncryptor(encryptMethod)
+func NewEncryptOp(name string, rOpt *def.RuleOption, encryptMethod string, encProps map[string]any) (*EncryptNode, error) {
+	dc, err := encryptor.GetEncryptor(encryptMethod, encProps)
 	if err != nil {
 		return nil, fmt.Errorf("get encryptor %s fail with error: %v", encryptMethod, err)
 	}
@@ -64,7 +64,10 @@ func (o *EncryptNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 func (o *EncryptNode) Worker(_ api.StreamContext, item any) []any {
 	switch d := item.(type) {
 	case api.RawTuple:
-		r := o.tool.Encrypt(d.Raw())
+		r, err := o.tool.Encrypt(d.Raw())
+		if err != nil {
+			return []any{err}
+		}
 		d.Replace(r)
 		return []any{d}
 	default:
