@@ -92,6 +92,7 @@ func TestRun(t *testing.T) {
 				}
 				mc.Add(30 * time.Millisecond)
 			}
+			op.input <- xsql.EOFTuple(0)
 			r := <-out
 			w, ok := r.(*xsql.WindowTuples)
 			assert.True(t, ok)
