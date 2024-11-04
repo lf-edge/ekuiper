@@ -72,7 +72,7 @@ func TestPull(t *testing.T) {
 	}
 	r := GetSource()
 	mock.TestSourceConnectorCompare(t, r, map[string]any{
-		"url":      "https://gcwbcdks.v.kcdnvip.com/gcwbcd/cdrmipanda_1/index.m3u8",
+		"url":      "https://gcwbndtxy.liveplay.myqcloud.com/gcwbnd/xiongmao24_2_td.m3u8",
 		"interval": "15s",
 	}, exp, func(e any, r any) bool {
 		et, ok := e.([]api.MessageTuple)
@@ -94,7 +94,7 @@ func TestPullError(t *testing.T) {
 	exp := errors.New("read frame failed, err:exit status 1")
 	r := GetSource()
 	mock.TestSourceConnector(t, r, map[string]any{
-		"url":      "https://gcwbcdks.v.kcdnvip.com/gcwbcd/cdrmipanda_1/index.m3u8",
+		"url":      "https://gcwbndtxy.liveplay.myqcloud.com/gcwbnd/xiongmao24_2_td.m3u8",
 		"codec":    "ogv",
 		"interval": "15s",
 	}, exp, func() {
