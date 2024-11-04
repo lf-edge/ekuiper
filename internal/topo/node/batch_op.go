@@ -105,8 +105,14 @@ func (b *BatchOp) runWithTickerAndBatchSize(ctx api.StreamContext, errCh chan<- 
 }
 
 func (b *BatchOp) ingest(ctx api.StreamContext, item any, checkSize bool) {
-	data, processed := b.commonIngest(ctx, item)
+	data, processed := b.preprocess(ctx, item)
 	if processed {
+		return
+	}
+	// If receive EOF, send out the result immediately. Only work with single stream
+	if _, ok := data.(xsql.EOFTuple); ok {
+		b.send(ctx)
+		b.Broadcast(data)
 		return
 	}
 	b.onProcessStart(ctx, data)
