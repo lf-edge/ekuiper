@@ -112,6 +112,7 @@ func (b *BatchOp) ingest(ctx api.StreamContext, item any, checkSize bool) {
 	// If receive EOF, send out the result immediately. Only work with single stream
 	if _, ok := data.(xsql.EOFTuple); ok {
 		b.send(ctx)
+		b.Broadcast(data)
 		return
 	}
 	b.onProcessStart(ctx, data)
