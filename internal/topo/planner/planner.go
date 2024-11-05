@@ -282,7 +282,7 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *def.RuleOption, sources ma
 		op = Transform(&operator.AggregateOp{Dimensions: t.dimensions}, fmt.Sprintf("%d_aggregate", newIndex), options)
 	case *HavingPlan:
 		t.ExtractStateFunc()
-		op = Transform(&operator.HavingOp{Condition: t.condition, StateFuncs: t.stateFuncs}, fmt.Sprintf("%d_having", newIndex), options)
+		op = Transform((&operator.HavingOp{Condition: t.condition, StateFuncs: t.stateFuncs, IsIncAgg: t.IsIncAgg}), fmt.Sprintf("%d_having", newIndex), options)
 	case *OrderPlan:
 		op = Transform(&operator.OrderOp{SortFields: t.SortFields}, fmt.Sprintf("%d_order", newIndex), options)
 	case *ProjectPlan:
@@ -517,6 +517,7 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *def.RuleOption, store kv.
 	if stmt.Having != nil {
 		p = HavingPlan{
 			condition: stmt.Having,
+			IsIncAgg:  len(incAggFields) > 0,
 		}.Init()
 		p.SetChildren(children)
 		children = []LogicalPlan{p}
@@ -688,24 +689,19 @@ func rewriteIfIncAggStmt(stmt *ast.SelectStatement) []*ast.Field {
 	if stmt.Dimensions.GetWindow().WindowType != ast.COUNT_WINDOW {
 		return nil
 	}
+	if stmt.Dimensions.GetWindow().Interval != nil {
+		return nil
+	}
 	// TODO: support join later
 	if stmt.Joins != nil {
 		return nil
 	}
-	// TODO: support order by later
-	if len(stmt.SortFields) > 0 {
-		return nil
-	}
 	index := 0
-	incAggFields, canIncAgg := extractNodeIncAgg(stmt.Fields, &index)
+	incAggFields, canIncAgg := extractNodeIncAgg(stmt, &index)
 	if !canIncAgg {
 		return nil
 	}
-	incAggHaving, canIncAgg := extractNodeIncAgg(stmt.Having, &index)
-	if !canIncAgg {
-		return nil
-	}
-	return append(incAggFields, incAggHaving...)
+	return incAggFields
 }
 
 func extractNodeIncAgg(node ast.Node, index *int) ([]*ast.Field, bool) {

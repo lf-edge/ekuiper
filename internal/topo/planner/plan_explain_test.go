@@ -74,6 +74,13 @@ func TestExplainPlan(t *testing.T) {
 			{"op":"WindowPlan_2","info":"{ length:2, windowType:COUNT_WINDOW, limit: 0 }"}
 					{"op":"DataSourcePlan_3","info":"StreamName: stream, StreamFields:[ a, b ]"}`,
 		},
+		{
+			sql: `SELECT *,count(*) from stream group by countWindow(4),b having count(*) > 1 `,
+			explain: `{"op":"ProjectPlan_0","info":"Fields:[ *, Call:{ name:bypass, args:[$$default.inc_agg_col_1] } ]"}
+	{"op":"HavingPlan_1","info":"Condition:{ binaryExpr:{ Call:{ name:bypass, args:[$$default.inc_agg_col_2] } > 1 } }, "}
+			{"op":"IncAggWindowPlan_2","info":"wType:COUNT_WINDOW, Dimension:[stream.b], funcs:[Call:{ name:inc_count, args:[*] }->inc_agg_col_1,Call:{ name:inc_count, args:[*] }->inc_agg_col_2]"}
+					{"op":"DataSourcePlan_3","info":"StreamName: stream, StreamFields:[ a, b ]"}`,
+		},
 	}
 	for _, tc := range testcases {
 		stmt, err := xsql.NewParser(strings.NewReader(tc.sql)).Parse()

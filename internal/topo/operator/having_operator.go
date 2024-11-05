@@ -26,6 +26,7 @@ import (
 type HavingOp struct {
 	Condition  ast.Expr
 	StateFuncs []*ast.Call
+	IsIncAgg   bool
 }
 
 func (p *HavingOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.FunctionValuer, afv *xsql.AggregateFunctionValuer) interface{} {
@@ -36,9 +37,8 @@ func (p *HavingOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Funct
 		return input
 	case xsql.Collection:
 		var groups []int
-		switch inputGroup := input.(type) {
-		case *xsql.GroupedTuplesSet:
-			err := inputGroup.GroupRange(func(i int, aggRow xsql.CollectionRow) (bool, error) {
+		if !p.IsIncAgg {
+			err := input.GroupRange(func(i int, aggRow xsql.CollectionRow) (bool, error) {
 				afv.SetData(aggRow)
 				ve := &xsql.ValuerEval{Valuer: xsql.MultiAggregateValuer(aggRow, fv, aggRow, fv, afv, &xsql.WildcardValuer{Data: aggRow})}
 				result := ve.Eval(p.Condition)
@@ -63,10 +63,15 @@ func (p *HavingOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Funct
 				for _, f := range p.StateFuncs {
 					_ = ve.Eval(f)
 				}
-				return inputGroup.Filter(groups)
+				switch gi := input.(type) {
+				case *xsql.GroupedTuplesSet:
+					return gi.Filter(groups)
+				default:
+					return gi
+				}
 			}
-		case *xsql.WindowTuples:
-			err := inputGroup.RangeSet(func(i int, row xsql.Row) (bool, error) {
+		} else {
+			err := input.RangeSet(func(i int, row xsql.Row) (bool, error) {
 				ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(fv, row, &xsql.WildcardValuer{Data: row})}
 				result := ve.Eval(p.Condition)
 				switch val := result.(type) {
@@ -89,7 +94,7 @@ func (p *HavingOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Funct
 				for _, f := range p.StateFuncs {
 					_ = ve.Eval(f)
 				}
-				return inputGroup.Filter(groups)
+				return input.Filter(groups)
 			}
 		}
 	default:
