@@ -36,36 +36,60 @@ func (p *HavingOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Funct
 		return input
 	case xsql.Collection:
 		var groups []int
-		err := input.GroupRange(func(i int, aggRow xsql.CollectionRow) (bool, error) {
-			afv.SetData(aggRow)
-			ve := &xsql.ValuerEval{Valuer: xsql.MultiAggregateValuer(aggRow, fv, aggRow, fv, afv, &xsql.WildcardValuer{Data: aggRow})}
-			result := ve.Eval(p.Condition)
-			switch val := result.(type) {
-			case error:
-				return false, fmt.Errorf("run Having error: %s", val)
-			case bool:
-				if val {
-					groups = append(groups, i)
+		switch inputGroup := input.(type) {
+		case *xsql.GroupedTuplesSet:
+			err := inputGroup.GroupRange(func(i int, aggRow xsql.CollectionRow) (bool, error) {
+				afv.SetData(aggRow)
+				ve := &xsql.ValuerEval{Valuer: xsql.MultiAggregateValuer(aggRow, fv, aggRow, fv, afv, &xsql.WildcardValuer{Data: aggRow})}
+				result := ve.Eval(p.Condition)
+				switch val := result.(type) {
+				case error:
+					return false, fmt.Errorf("run Having error: %s", val)
+				case bool:
+					if val {
+						groups = append(groups, i)
+					}
+					return true, nil
+				default:
+					return false, fmt.Errorf("run Having error: invalid condition that returns non-bool value %[1]T(%[1]v)", val)
 				}
-				return true, nil
-			default:
-				return false, fmt.Errorf("run Having error: invalid condition that returns non-bool value %[1]T(%[1]v)", val)
+			})
+			if err != nil {
+				return err
 			}
-		})
-		if err != nil {
-			return err
-		}
-		if len(groups) > 0 {
-			// update trigger
-			ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(fv)}
-			for _, f := range p.StateFuncs {
-				_ = ve.Eval(f)
+			if len(groups) > 0 {
+				// update trigger
+				ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(fv)}
+				for _, f := range p.StateFuncs {
+					_ = ve.Eval(f)
+				}
+				return inputGroup.Filter(groups)
 			}
-			switch gi := input.(type) {
-			case *xsql.GroupedTuplesSet:
-				return gi.Filter(groups)
-			default:
-				return gi
+		case *xsql.WindowTuples:
+			err := inputGroup.RangeSet(func(i int, row xsql.Row) (bool, error) {
+				ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(fv, row, &xsql.WildcardValuer{Data: row})}
+				result := ve.Eval(p.Condition)
+				switch val := result.(type) {
+				case error:
+					return false, fmt.Errorf("run Having error: %s", val)
+				case bool:
+					if val {
+						groups = append(groups, i)
+					}
+					return true, nil
+				default:
+					return false, fmt.Errorf("run Having error: invalid condition that returns non-bool value %[1]T(%[1]v)", val)
+				}
+			})
+			if err != nil {
+				return err
+			}
+			if len(groups) > 0 {
+				ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(fv)}
+				for _, f := range p.StateFuncs {
+					_ = ve.Eval(f)
+				}
+				return inputGroup.Filter(groups)
 			}
 		}
 	default:
