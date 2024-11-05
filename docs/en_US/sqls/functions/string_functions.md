@@ -132,6 +132,14 @@ regexp_substring(col, regex)
 
 Returns the first substring of the specified string value that matches regexp.
 
+## REVERSE
+
+```text
+reverse(col)
+```
+
+Returns the reversed string.
+
 ## RPAD
 
 ```text
