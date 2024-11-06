@@ -697,11 +697,12 @@ func rewriteIfIncAggStmt(stmt *ast.SelectStatement) []*ast.Field {
 		return nil
 	}
 	index := 0
-	incAggFields, canIncAgg := extractNodeIncAgg(stmt, &index)
+	incAggFields, canIncAgg := extractNodeIncAgg(stmt.Fields, &index)
 	if !canIncAgg {
 		return nil
 	}
-	return incAggFields
+	incAggHavingFields, _ := extractNodeIncAgg(stmt.Having, &index)
+	return append(incAggFields, incAggHavingFields...)
 }
 
 func extractNodeIncAgg(node ast.Node, index *int) ([]*ast.Field, bool) {
