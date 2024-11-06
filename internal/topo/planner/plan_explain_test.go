@@ -36,59 +36,59 @@ func TestExplainPlan(t *testing.T) {
 		sql     string
 		explain string
 	}{
-		//	{
-		//		sql: `select a, row_number() as index from stream`,
-		//		explain: `{"op":"ProjectPlan_0","info":"Fields:[ $$alias.index,aliasRef:Call:{ name:bypass, args:[wf_row_number_1] }, stream.a ]"}
-		//{"op":"WindowFuncPlan_1","info":"windowFuncField:{name:wf_row_number_1, expr:Call:{ name:row_number }}"}
-		//		{"op":"DataSourcePlan_2","info":"StreamName: stream, StreamFields:[ a ]"}`,
-		//	},
-		//	{
-		//		sql: `select a as c from stream group by countwindow(2)`,
-		//		explain: `{"op":"ProjectPlan_0","info":"Fields:[ $$alias.c,aliasRef:stream.a ]"}
-		//{"op":"WindowPlan_1","info":"{ length:2, windowType:COUNT_WINDOW, limit: 0 }"}
-		//		{"op":"DataSourcePlan_2","info":"StreamName: stream, StreamFields:[ a ]"}`,
-		//	},
-		//	{
-		//		sql: `select row_number() + 1 as d, b from stream group by countwindow(2)`,
-		//		explain: `{"op":"ProjectPlan_0","info":"Fields:[ $$alias.d,aliasRef:binaryExpr:{ Call:{ name:bypass, args:[wf_row_number_1] } + 1 }, stream.b ]"}
-		//{"op":"WindowFuncPlan_1","info":"windowFuncField:{name:wf_row_number_1, expr:Call:{ name:row_number }}"}
-		//		{"op":"WindowPlan_2","info":"{ length:2, windowType:COUNT_WINDOW, limit: 0 }"}
-		//				{"op":"DataSourcePlan_3","info":"StreamName: stream, StreamFields:[ b ]"}`,
-		//	},
-		//	{
-		//		sql: `select count(a) from stream group by countwindow(2)`,
-		//		explain: `{"op":"ProjectPlan_0","info":"Fields:[ Call:{ name:bypass, args:[$$default.inc_agg_col_1] } ]"}
-		//{"op":"IncAggWindowPlan_1","info":"wType:COUNT_WINDOW, , funcs:[Call:{ name:inc_count, args:[stream.a] }->inc_agg_col_1]"}
-		//		{"op":"DataSourcePlan_2","info":"StreamName: stream, StreamFields:[ a ]"}`,
-		//	},
-		//	{
-		//		sql: `select count(a),b from stream group by countwindow(2),b`,
-		//		explain: `{"op":"ProjectPlan_0","info":"Fields:[ Call:{ name:bypass, args:[$$default.inc_agg_col_1] }, stream.b ]"}
-		//{"op":"IncAggWindowPlan_1","info":"wType:COUNT_WINDOW, Dimension:[stream.b], funcs:[Call:{ name:inc_count, args:[stream.a] }->inc_agg_col_1]"}
-		//		{"op":"DataSourcePlan_2","info":"StreamName: stream, StreamFields:[ a, b ]"}`,
-		//	},
-		//	{
-		//		sql: `select count(a),sum(a),b from stream group by countwindow(2),b`,
-		//		explain: `{"op":"ProjectPlan_0","info":"Fields:[ Call:{ name:count, args:[stream.a] }, Call:{ name:sum, args:[stream.a] }, stream.b ]"}
-		//{"op":"AggregatePlan_1","info":"Dimension:{ stream.b }"}
-		//		{"op":"WindowPlan_2","info":"{ length:2, windowType:COUNT_WINDOW, limit: 0 }"}
-		//				{"op":"DataSourcePlan_3","info":"StreamName: stream, StreamFields:[ a, b ]"}`,
-		//	},
-		//	{
-		//		sql: `SELECT *,count(*) from stream group by countWindow(4),b having count(*) > 1 `,
-		//		explain: `{"op":"ProjectPlan_0","info":"Fields:[ *, Call:{ name:bypass, args:[$$default.inc_agg_col_1] } ]"}
-		//{"op":"HavingPlan_1","info":"Condition:{ binaryExpr:{ Call:{ name:bypass, args:[$$default.inc_agg_col_2] } > 1 } }, "}
-		//		{"op":"IncAggWindowPlan_2","info":"wType:COUNT_WINDOW, Dimension:[stream.b], funcs:[Call:{ name:inc_count, args:[*] }->inc_agg_col_1,Call:{ name:inc_count, args:[*] }->inc_agg_col_2]"}
-		//				{"op":"DataSourcePlan_3","info":"StreamName: stream, StreamFields:[ a, b ]"}`,
-		//	},
-		//	{
-		//		sql: `SELECT *  from stream group by countWindow(4),b having count(*) > 1 `,
-		//		explain: `{"op":"ProjectPlan_0","info":"Fields:[ * ]"}
-		//{"op":"HavingPlan_1","info":"Condition:{ binaryExpr:{ Call:{ name:count, args:[*] } > 1 } }, "}
-		//		{"op":"AggregatePlan_2","info":"Dimension:{ stream.b }"}
-		//				{"op":"WindowPlan_3","info":"{ length:4, windowType:COUNT_WINDOW, limit: 0 }"}
-		//						{"op":"DataSourcePlan_4","info":"StreamName: stream, StreamFields:[ a, b ]"}`,
-		//	},
+		{
+			sql: `select a, row_number() as index from stream`,
+			explain: `{"op":"ProjectPlan_0","info":"Fields:[ $$alias.index,aliasRef:Call:{ name:bypass, args:[wf_row_number_1] }, stream.a ]"}
+	{"op":"WindowFuncPlan_1","info":"windowFuncField:{name:wf_row_number_1, expr:Call:{ name:row_number }}"}
+			{"op":"DataSourcePlan_2","info":"StreamName: stream, StreamFields:[ a ]"}`,
+		},
+		{
+			sql: `select a as c from stream group by countwindow(2)`,
+			explain: `{"op":"ProjectPlan_0","info":"Fields:[ $$alias.c,aliasRef:stream.a ]"}
+	{"op":"WindowPlan_1","info":"{ length:2, windowType:COUNT_WINDOW, limit: 0 }"}
+			{"op":"DataSourcePlan_2","info":"StreamName: stream, StreamFields:[ a ]"}`,
+		},
+		{
+			sql: `select row_number() + 1 as d, b from stream group by countwindow(2)`,
+			explain: `{"op":"ProjectPlan_0","info":"Fields:[ $$alias.d,aliasRef:binaryExpr:{ Call:{ name:bypass, args:[wf_row_number_1] } + 1 }, stream.b ]"}
+	{"op":"WindowFuncPlan_1","info":"windowFuncField:{name:wf_row_number_1, expr:Call:{ name:row_number }}"}
+			{"op":"WindowPlan_2","info":"{ length:2, windowType:COUNT_WINDOW, limit: 0 }"}
+					{"op":"DataSourcePlan_3","info":"StreamName: stream, StreamFields:[ b ]"}`,
+		},
+		{
+			sql: `select count(a) from stream group by countwindow(2)`,
+			explain: `{"op":"ProjectPlan_0","info":"Fields:[ Call:{ name:bypass, args:[$$default.inc_agg_col_1] } ]"}
+	{"op":"IncAggWindowPlan_1","info":"wType:COUNT_WINDOW, , funcs:[Call:{ name:inc_count, args:[stream.a] }->inc_agg_col_1]"}
+			{"op":"DataSourcePlan_2","info":"StreamName: stream, StreamFields:[ a ]"}`,
+		},
+		{
+			sql: `select count(a),b from stream group by countwindow(2),b`,
+			explain: `{"op":"ProjectPlan_0","info":"Fields:[ Call:{ name:bypass, args:[$$default.inc_agg_col_1] }, stream.b ]"}
+	{"op":"IncAggWindowPlan_1","info":"wType:COUNT_WINDOW, Dimension:[stream.b], funcs:[Call:{ name:inc_count, args:[stream.a] }->inc_agg_col_1]"}
+			{"op":"DataSourcePlan_2","info":"StreamName: stream, StreamFields:[ a, b ]"}`,
+		},
+		{
+			sql: `select count(a),sum(a),b from stream group by countwindow(2),b`,
+			explain: `{"op":"ProjectPlan_0","info":"Fields:[ Call:{ name:count, args:[stream.a] }, Call:{ name:sum, args:[stream.a] }, stream.b ]"}
+	{"op":"AggregatePlan_1","info":"Dimension:{ stream.b }"}
+			{"op":"WindowPlan_2","info":"{ length:2, windowType:COUNT_WINDOW, limit: 0 }"}
+					{"op":"DataSourcePlan_3","info":"StreamName: stream, StreamFields:[ a, b ]"}`,
+		},
+		{
+			sql: `SELECT *,count(*) from stream group by countWindow(4),b having count(*) > 1 `,
+			explain: `{"op":"ProjectPlan_0","info":"Fields:[ *, Call:{ name:bypass, args:[$$default.inc_agg_col_1] } ]"}
+	{"op":"HavingPlan_1","info":"Condition:{ binaryExpr:{ Call:{ name:bypass, args:[$$default.inc_agg_col_2] } > 1 } }, "}
+			{"op":"IncAggWindowPlan_2","info":"wType:COUNT_WINDOW, Dimension:[stream.b], funcs:[Call:{ name:inc_count, args:[*] }->inc_agg_col_1,Call:{ name:inc_count, args:[*] }->inc_agg_col_2]"}
+					{"op":"DataSourcePlan_3","info":"StreamName: stream, StreamFields:[ a, b ]"}`,
+		},
+		{
+			sql: `SELECT *  from stream group by countWindow(4),b having count(*) > 1 `,
+			explain: `{"op":"ProjectPlan_0","info":"Fields:[ * ]"}
+	{"op":"HavingPlan_1","info":"Condition:{ binaryExpr:{ Call:{ name:count, args:[*] } > 1 } }, "}
+			{"op":"AggregatePlan_2","info":"Dimension:{ stream.b }"}
+					{"op":"WindowPlan_3","info":"{ length:4, windowType:COUNT_WINDOW, limit: 0 }"}
+							{"op":"DataSourcePlan_4","info":"StreamName: stream, StreamFields:[ a, b ]"}`,
+		},
 		{
 			sql: `SELECT *  from stream left join sharedStream group by countWindow(4) having count(*) > 1 `,
 			explain: `{"op":"ProjectPlan_0","info":"Fields:[ * ]"}
@@ -108,7 +108,7 @@ func TestExplainPlan(t *testing.T) {
 		require.NoError(t, err)
 		explain, err := ExplainFromLogicalPlan(p, "")
 		require.NoError(t, err)
-		require.Equal(t, tc.explain, explain)
+		require.Equal(t, tc.explain, explain, tc.sql)
 	}
 }
 
