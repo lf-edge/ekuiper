@@ -117,10 +117,12 @@ func absolutePath(loc string) (dir string, err error) {
 
 // GetLoc subdir must be a relative path
 func GetLoc(subdir string) (string, error) {
+	if subdir == "" {
+		return os.Getenv(KuiperBaseKey), nil
+	}
 	if "relative" == PathConfig.LoadFileType {
 		return relativePath(subdir)
 	}
-
 	if "absolute" == PathConfig.LoadFileType {
 		return absolutePath(subdir)
 	}
