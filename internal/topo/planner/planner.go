@@ -180,12 +180,13 @@ func ExplainFromLogicalPlan(lp LogicalPlan, ruleID string) (string, error) {
 			res += "\n"
 			for _, v := range p.Children() {
 				res += tmp + getExplainInfo(v, level+1)
+				res += "\n"
 			}
 		}
 		return res
 	}
 	res := getExplainInfo(lp, 0)
-	return res, nil
+	return strings.Trim(res, "\n"), nil
 }
 
 func buildOps(lp LogicalPlan, tp *topo.Topo, options *def.RuleOption, sources map[string]map[string]any, streamsFromStmt []string, index int) (node.Emitter, int, error) {
