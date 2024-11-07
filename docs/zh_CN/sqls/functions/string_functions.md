@@ -129,6 +129,14 @@ regexp_substr(col, regex)
 
 在第一个参数中找到第二个参数（regex）的第一个匹配项。
 
+## REVERSE
+
+```text
+reverse(col)
+```
+
+返回反转的字符串。
+
 ## RPAD
 
 ```text

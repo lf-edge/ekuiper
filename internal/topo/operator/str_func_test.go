@@ -393,6 +393,18 @@ func TestStrFunc_Apply1(t *testing.T) {
 			result: []map[string]interface{}{{}},
 		},
 		{
+			sql: "SELECT reverse(a) AS a FROM test",
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"a": "abc",
+				},
+			},
+			result: []map[string]interface{}{{
+				"a": "cba",
+			}},
+		},
+		{
 			sql: "SELECT rpad(a, 3) AS a FROM test",
 			data: &xsql.Tuple{
 				Emitter: "test",
