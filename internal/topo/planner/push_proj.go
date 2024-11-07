@@ -23,6 +23,9 @@ type pushProjectionPlan struct{}
 // pushProjectionPlan inject Projection Plan between the shared Datasource and its father only if the Plan have windowPlan
 // We use Projection to remove the unused column before windowPlan in order to reduce memory consuming
 func (pp *pushProjectionPlan) optimize(plan LogicalPlan) (LogicalPlan, error) {
+	if pp.searchJoinPlan(plan) {
+		return plan, nil
+	}
 	if pp.searchWindowPlan(plan) {
 		ctx := &searchCtx{
 			find: make([]*sharedSource, 0),
@@ -43,6 +46,21 @@ func (pp *pushProjectionPlan) searchWindowPlan(plan LogicalPlan) bool {
 	}
 	for _, child := range plan.Children() {
 		search := pp.searchWindowPlan(child)
+		if search {
+			return true
+		}
+	}
+	return false
+}
+
+func (pp *pushProjectionPlan) searchJoinPlan(plan LogicalPlan) bool {
+	switch plan.(type) {
+	case *JoinPlan:
+		return true
+	default:
+	}
+	for _, child := range plan.Children() {
+		search := pp.searchJoinPlan(child)
 		if search {
 			return true
 		}

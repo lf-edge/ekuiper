@@ -180,12 +180,13 @@ func ExplainFromLogicalPlan(lp LogicalPlan, ruleID string) (string, error) {
 			res += "\n"
 			for _, v := range p.Children() {
 				res += tmp + getExplainInfo(v, level+1)
+				res += "\n"
 			}
 		}
 		return res
 	}
 	res := getExplainInfo(lp, 0)
-	return res, nil
+	return strings.Trim(res, "\n"), nil
 }
 
 func buildOps(lp LogicalPlan, tp *topo.Topo, options *def.RuleOption, sources map[string]map[string]any, streamsFromStmt []string, index int) (node.Emitter, int, error) {
@@ -282,7 +283,7 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *def.RuleOption, sources ma
 		op = Transform(&operator.AggregateOp{Dimensions: t.dimensions}, fmt.Sprintf("%d_aggregate", newIndex), options)
 	case *HavingPlan:
 		t.ExtractStateFunc()
-		op = Transform(&operator.HavingOp{Condition: t.condition, StateFuncs: t.stateFuncs}, fmt.Sprintf("%d_having", newIndex), options)
+		op = Transform((&operator.HavingOp{Condition: t.condition, StateFuncs: t.stateFuncs, IsIncAgg: t.IsIncAgg}), fmt.Sprintf("%d_having", newIndex), options)
 	case *OrderPlan:
 		op = Transform(&operator.OrderOp{SortFields: t.SortFields}, fmt.Sprintf("%d_order", newIndex), options)
 	case *ProjectPlan:
@@ -517,6 +518,7 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *def.RuleOption, store kv.
 	if stmt.Having != nil {
 		p = HavingPlan{
 			condition: stmt.Having,
+			IsIncAgg:  len(incAggFields) > 0,
 		}.Init()
 		p.SetChildren(children)
 		children = []LogicalPlan{p}
@@ -677,28 +679,37 @@ func extractWindowFuncFields(stmt *ast.SelectStatement) []ast.Field {
 // 2. extract and rewrite the aggregation function
 func rewriteStmt(stmt *ast.SelectStatement) ([]ast.Field, []*ast.Field) {
 	windowFunctionPlanField := extractWindowFuncFields(stmt)
-	incAggWindowPlanField, _ := rewriteIfIncAggStmt(stmt)
+	incAggWindowPlanField := rewriteIfIncAggStmt(stmt)
 	return windowFunctionPlanField, incAggWindowPlanField
 }
 
-func rewriteIfIncAggStmt(stmt *ast.SelectStatement) ([]*ast.Field, bool) {
+func rewriteIfIncAggStmt(stmt *ast.SelectStatement) []*ast.Field {
 	if stmt.Dimensions == nil {
-		return nil, false
+		return nil
 	}
 	if stmt.Dimensions.GetWindow().WindowType != ast.COUNT_WINDOW {
-		return nil, false
+		return nil
 	}
-	// TODO: support having later
-	if stmt.Having != nil {
-		return nil, false
+	if stmt.Dimensions.GetWindow().Interval != nil {
+		return nil
 	}
 	// TODO: support join later
 	if stmt.Joins != nil {
-		return nil, false
+		return nil
 	}
+	index := 0
+	incAggFields, canIncAgg := extractNodeIncAgg(stmt.Fields, &index)
+	if !canIncAgg {
+		return nil
+	}
+	incAggHavingFields, _ := extractNodeIncAgg(stmt.Having, &index)
+	return append(incAggFields, incAggHavingFields...)
+}
+
+func extractNodeIncAgg(node ast.Node, index *int) ([]*ast.Field, bool) {
 	canIncAgg := true
 	hasAgg := false
-	ast.WalkFunc(stmt.Fields, func(n ast.Node) bool {
+	ast.WalkFunc(node, func(n ast.Node) bool {
 		switch f := n.(type) {
 		case *ast.Call:
 			if f.FuncType == ast.FuncTypeAgg {
@@ -717,20 +728,20 @@ func rewriteIfIncAggStmt(stmt *ast.SelectStatement) ([]*ast.Field, bool) {
 	if !canIncAgg {
 		return nil, false
 	}
-	count := 0
 	incAggFuncFields := make([]*ast.Field, 0)
-	ast.WalkFunc(stmt.Fields, func(n ast.Node) bool {
+	ast.WalkFunc(node, func(n ast.Node) bool {
 		switch aggFunc := n.(type) {
 		case *ast.Call:
 			if aggFunc.FuncType == ast.FuncTypeAgg {
 				if function.IsSupportedIncAgg(aggFunc.Name) {
-					count++
+					*index++
 					newAggFunc := &ast.Call{
 						Name:     fmt.Sprintf("inc_%s", aggFunc.Name),
 						FuncType: ast.FuncTypeScalar,
 						Args:     aggFunc.Args,
+						FuncId:   *index,
 					}
-					name := fmt.Sprintf("inc_agg_col_%v", count)
+					name := fmt.Sprintf("inc_agg_col_%v", *index)
 					newField := &ast.Field{
 						Name: name,
 						Expr: newAggFunc,
@@ -746,7 +757,7 @@ func rewriteIfIncAggStmt(stmt *ast.SelectStatement) ([]*ast.Field, bool) {
 		}
 		return true
 	})
-	return incAggFuncFields, len(incAggFuncFields) > 0
+	return incAggFuncFields, true
 }
 
 func rewriteIntoBypass(newFieldRef *ast.FieldRef, f *ast.Call) {

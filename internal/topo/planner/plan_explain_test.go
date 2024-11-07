@@ -74,6 +74,30 @@ func TestExplainPlan(t *testing.T) {
 			{"op":"WindowPlan_2","info":"{ length:2, windowType:COUNT_WINDOW, limit: 0 }"}
 					{"op":"DataSourcePlan_3","info":"StreamName: stream, StreamFields:[ a, b ]"}`,
 		},
+		{
+			sql: `SELECT *,count(*) from stream group by countWindow(4),b having count(*) > 1 `,
+			explain: `{"op":"ProjectPlan_0","info":"Fields:[ *, Call:{ name:bypass, args:[$$default.inc_agg_col_1] } ]"}
+	{"op":"HavingPlan_1","info":"Condition:{ binaryExpr:{ Call:{ name:bypass, args:[$$default.inc_agg_col_2] } > 1 } }, "}
+			{"op":"IncAggWindowPlan_2","info":"wType:COUNT_WINDOW, Dimension:[stream.b], funcs:[Call:{ name:inc_count, args:[*] }->inc_agg_col_1,Call:{ name:inc_count, args:[*] }->inc_agg_col_2]"}
+					{"op":"DataSourcePlan_3","info":"StreamName: stream, StreamFields:[ a, b ]"}`,
+		},
+		{
+			sql: `SELECT *  from stream group by countWindow(4),b having count(*) > 1 `,
+			explain: `{"op":"ProjectPlan_0","info":"Fields:[ * ]"}
+	{"op":"HavingPlan_1","info":"Condition:{ binaryExpr:{ Call:{ name:count, args:[*] } > 1 } }, "}
+			{"op":"AggregatePlan_2","info":"Dimension:{ stream.b }"}
+					{"op":"WindowPlan_3","info":"{ length:4, windowType:COUNT_WINDOW, limit: 0 }"}
+							{"op":"DataSourcePlan_4","info":"StreamName: stream, StreamFields:[ a, b ]"}`,
+		},
+		{
+			sql: `SELECT *  from stream left join sharedStream group by countWindow(4) having count(*) > 1 `,
+			explain: `{"op":"ProjectPlan_0","info":"Fields:[ * ]"}
+	{"op":"HavingPlan_1","info":"Condition:{ binaryExpr:{ Call:{ name:count, args:[*] } > 1 } }, "}
+			{"op":"JoinPlan_2","info":"Joins:[ { joinType:LEFT_JOIN,  } ]"}
+					{"op":"WindowPlan_3","info":"{ length:4, windowType:COUNT_WINDOW, limit: 0 }"}
+							{"op":"DataSourcePlan_4","info":"StreamName: stream, StreamFields:[ a, b ]"}
+							{"op":"DataSourcePlan_5","info":"StreamName: sharedStream, StreamFields:[ a, b ]"}`,
+		},
 	}
 	for _, tc := range testcases {
 		stmt, err := xsql.NewParser(strings.NewReader(tc.sql)).Parse()
@@ -84,7 +108,7 @@ func TestExplainPlan(t *testing.T) {
 		require.NoError(t, err)
 		explain, err := ExplainFromLogicalPlan(p, "")
 		require.NoError(t, err)
-		require.Equal(t, tc.explain, explain)
+		require.Equal(t, tc.explain, explain, tc.sql)
 	}
 }
 
