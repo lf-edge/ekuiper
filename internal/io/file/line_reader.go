@@ -12,26 +12,23 @@ type LineReader struct {
 	scanner *bufio.Scanner
 	ctx     api.StreamContext
 	list    []map[string]interface{}
+	reader  io.Reader
 }
 
 func (r *LineReader) Read() (map[string]interface{}, error) {
-	for len(r.list) == 0 {
-		succ := r.scanner.Scan()
-		if !succ {
-			return nil, io.EOF
-		}
-		m, err := r.ctx.DecodeIntoList(r.scanner.Bytes())
-		if err != nil {
-			msg := fmt.Sprintf("Invalid data format, cannot decode %s with error %s", r.scanner.Text(), err)
-			return nil, BuildError(TupleError, msg)
-		}
-		r.list = m
+	succ := r.scanner.Scan()
+	if !succ {
+		return nil, io.EOF
 	}
-
-	mm := r.list[0]
-	r.list = r.list[1:]
-
-	return mm, nil
+	b := r.scanner.Bytes()
+	d := make([]byte, len(b))
+	copy(d, b)
+	m, err := r.ctx.Decode(d)
+	if err != nil {
+		msg := fmt.Sprintf("Invalid data format, cannot decode %s with error %s", string(d), err)
+		return nil, BuildError(TupleError, msg)
+	}
+	return m, nil
 }
 
 func (r *LineReader) Close() error {
@@ -45,6 +42,7 @@ func CreateLineReader(ctx api.StreamContext, fileStream io.Reader, config *FileS
 	reader := &LineReader{}
 	reader.scanner = scanner
 	reader.ctx = ctx
+	reader.reader = fileStream
 
 	return reader, nil
 }

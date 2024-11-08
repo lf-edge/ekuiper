@@ -53,6 +53,7 @@ type FileSource struct {
 	file   string
 	isDir  bool
 	config *FileSourceConfig
+	fr     FormatReader
 }
 
 func (fs *FileSource) Close(ctx api.StreamContext) error {
@@ -225,53 +226,55 @@ func (fs *FileSource) Load(ctx api.StreamContext, consumer chan<- api.SourceTupl
 }
 
 func (fs *FileSource) parseFile(ctx api.StreamContext, file string, consumer chan<- api.SourceTuple) (result error) {
-	var fr FormatReader
-	switch fs.config.FileType {
-	case JSON_TYPE, CSV_TYPE, LINES_TYPE:
-		r, err := fs.prepareFile(ctx, file)
-		if err != nil {
-			ctx.GetLogger().Debugf("prepare file %s error: %v", file, err)
-			return err
-		}
-		if closer, ok := r.(io.Closer); ok {
-			defer func() {
-				ctx.GetLogger().Debugf("Close reader")
-				closer.Close()
-			}()
-		}
-		fr, err = GetReader(ctx, fs.config.FileType, r, fs.config)
-		if err != nil {
-			return err
-		}
-	case PARQUET_TYPE:
-		var err error
-		fr, err = CreateParquetReader(ctx, file, fs.config)
-		if err != nil {
-			return err
-		}
-	}
-
-	defer func() {
-		fr.Close()
-		ctx.GetLogger().Debugf("Finish loading from file %s", file)
-		if result == nil {
-			switch fs.config.ActionAfterRead {
-			case 1:
-				if err := os.Remove(file); err != nil {
-					result = err
-				}
-				ctx.GetLogger().Debugf("Remove file %s", file)
-			case 2:
-				targetFile := filepath.Join(fs.config.MoveTo, filepath.Base(file))
-				if err := os.Rename(file, targetFile); err != nil {
-					result = err
-				}
-				ctx.GetLogger().Debugf("Move file %s to %s", file, targetFile)
+	if fs.fr == nil {
+		var fr FormatReader
+		switch fs.config.FileType {
+		case JSON_TYPE, CSV_TYPE, LINES_TYPE:
+			r, err := fs.prepareFile(ctx, file)
+			if err != nil {
+				ctx.GetLogger().Debugf("prepare file %s error: %v", file, err)
+				return err
+			}
+			if closer, ok := r.(io.Closer); ok {
+				defer func() {
+					ctx.GetLogger().Debugf("Close reader")
+					closer.Close()
+				}()
+			}
+			fr, err = GetReader(ctx, fs.config.FileType, r, fs.config)
+			if err != nil {
+				return err
+			}
+		case PARQUET_TYPE:
+			var err error
+			fr, err = CreateParquetReader(ctx, file, fs.config)
+			if err != nil {
+				return err
 			}
 		}
-	}()
 
-	return fs.publish(ctx, fr, consumer, map[string]any{"file": file})
+		defer func() {
+			fr.Close()
+			ctx.GetLogger().Debugf("Finish loading from file %s", file)
+			if result == nil {
+				switch fs.config.ActionAfterRead {
+				case 1:
+					if err := os.Remove(file); err != nil {
+						result = err
+					}
+					ctx.GetLogger().Debugf("Remove file %s", file)
+				case 2:
+					targetFile := filepath.Join(fs.config.MoveTo, filepath.Base(file))
+					if err := os.Rename(file, targetFile); err != nil {
+						result = err
+					}
+					ctx.GetLogger().Debugf("Move file %s to %s", file, targetFile)
+				}
+			}
+		}()
+		fs.fr = fr
+	}
+	return fs.publish(ctx, fs.fr, consumer, map[string]any{"file": file})
 }
 
 func (fs *FileSource) publish(ctx api.StreamContext, fr FormatReader, consumer chan<- api.SourceTuple, meta map[string]any) error {
