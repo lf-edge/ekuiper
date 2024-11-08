@@ -15,6 +15,7 @@
 package sql
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"testing"
@@ -396,7 +397,32 @@ func TestBuildScanValueByColumnType(t *testing.T) {
 	}
 	ctx := mockContext.NewMockContext("1", "2")
 	for _, tc := range testcases {
-		got := buildScanValueByColumnType(ctx, "col", tc.colType)
+		got := buildScanValueByColumnType(ctx, "col", tc.colType, false)
+		require.Equal(t, tc.exp, got)
+	}
+	testcases2 := []struct {
+		colType string
+		exp     interface{}
+	}{
+		{
+			colType: "varchar",
+			exp:     &sql.NullString{},
+		},
+		{
+			colType: "DECIMAL",
+			exp:     &sql.NullFloat64{},
+		},
+		{
+			colType: "BOOL",
+			exp:     &sql.NullBool{},
+		},
+		{
+			colType: "int",
+			exp:     &sql.NullInt64{},
+		},
+	}
+	for _, tc := range testcases2 {
+		got := buildScanValueByColumnType(ctx, "col", tc.colType, true)
 		require.Equal(t, tc.exp, got)
 	}
 }
