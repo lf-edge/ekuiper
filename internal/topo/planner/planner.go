@@ -803,14 +803,12 @@ func supportedWindowType(window *ast.Window) bool {
 	if !ok {
 		return false
 	}
+	// TODO: support it later
+	if window.Filter != nil {
+		return false
+	}
 	if window.WindowType == ast.COUNT_WINDOW {
 		if window.Interval != nil {
-			return false
-		}
-	}
-	if window.WindowType == ast.SLIDING_WINDOW {
-		// TODO: support it later
-		if window.Filter != nil {
 			return false
 		}
 	}

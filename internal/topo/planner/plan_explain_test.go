@@ -150,3 +150,54 @@ func prepareStream() error {
 	}
 	return nil
 }
+
+func TestSupportedWindowType(t *testing.T) {
+	testcases := []struct {
+		w  *ast.Window
+		ok bool
+	}{
+		{
+			w: &ast.Window{
+				WindowType: ast.COUNT_WINDOW,
+				Filter:     &ast.Window{},
+			},
+			ok: false,
+		},
+		{
+			w: &ast.Window{
+				WindowType: ast.SLIDING_WINDOW,
+			},
+			ok: true,
+		},
+		{
+			w: &ast.Window{
+				WindowType: ast.SESSION_WINDOW,
+			},
+			ok: false,
+		},
+		{
+			w: &ast.Window{
+				WindowType: ast.TUMBLING_WINDOW,
+			},
+			ok: true,
+		},
+		{
+			w: &ast.Window{
+				WindowType: ast.COUNT_WINDOW,
+			},
+			ok: true,
+		},
+		{
+			w: &ast.Window{
+				WindowType: ast.COUNT_WINDOW,
+				Interval: &ast.IntegerLiteral{
+					Val: 1,
+				},
+			},
+			ok: false,
+		},
+	}
+	for _, tc := range testcases {
+		require.Equal(t, tc.ok, supportedWindowType(tc.w))
+	}
+}
