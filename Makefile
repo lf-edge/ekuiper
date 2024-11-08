@@ -202,7 +202,7 @@ lint:tools/lint/bin/golangci-lint
 	tools/lint/bin/golangci-lint run ./... ./extensions/... ./tools/kubernetes/...
 
 tools/lint/bin/golangci-lint:
-	GOBIN=tools/lint/bin go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+	GOBIN=$(shell pwd)/tools/lint/bin go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 
 tools/failpoint/bin/failpoint-ctl:
 	GOBIN=$(shell pwd)/tools/failpoint/bin $(GO) install github.com/pingcap/failpoint/failpoint-ctl@2eaa328
