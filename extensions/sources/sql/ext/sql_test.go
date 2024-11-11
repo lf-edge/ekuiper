@@ -110,7 +110,7 @@ func TestBuildScanValueByColumnType(t *testing.T) {
 	}
 	ctx := mockContext.NewMockContext("1", "2")
 	for _, tc := range testcases {
-		got := buildScanValueByColumnType(ctx, "col", tc.colType)
+		got := buildScanValueByColumnType(ctx, "col", tc.colType, false)
 		require.Equal(t, tc.exp, got)
 	}
 }

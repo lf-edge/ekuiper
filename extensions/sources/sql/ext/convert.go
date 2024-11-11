@@ -41,7 +41,8 @@ func scanIntoMap(mapValue map[string]interface{}, values []interface{}, columns 
 func prepareValues(ctx api.StreamContext, values []interface{}, columnTypes []*sql.ColumnType, columns []string) {
 	if len(columnTypes) > 0 {
 		for idx, columnType := range columnTypes {
-			if got := buildScanValueByColumnType(ctx, columnType.Name(), columnType.DatabaseTypeName()); got != nil {
+			nullable, ok := columnType.Nullable()
+			if got := buildScanValueByColumnType(ctx, columnType.Name(), columnType.DatabaseTypeName(), nullable && ok); got != nil {
 				values[idx] = got
 				continue
 			}
@@ -58,15 +59,27 @@ func prepareValues(ctx api.StreamContext, values []interface{}, columnTypes []*s
 	}
 }
 
-func buildScanValueByColumnType(ctx api.StreamContext, colName, colType string) interface{} {
+func buildScanValueByColumnType(ctx api.StreamContext, colName, colType string, nullable bool) interface{} {
 	switch strings.ToUpper(colType) {
 	case "CHAR", "VARCHAR", "NCHAR", "NVARCHAR", "TEXT", "NTEXT":
+		if nullable {
+			return &sql.NullString{}
+		}
 		return new(string)
 	case "DECIMAL", "NUMERIC", "FLOAT", "REAL":
+		if nullable {
+			return &sql.NullFloat64{}
+		}
 		return new(float64)
 	case "BOOL":
+		if nullable {
+			return &sql.NullBool{}
+		}
 		return new(bool)
 	case "INT", "BIGINT", "SMALLINT", "TINYINT":
+		if nullable {
+			return &sql.NullInt64{}
+		}
 		return new(int64)
 	default:
 		ctx.GetLogger().Infof("sql source meet column %v unknown columnType:%v", colName, colType)
