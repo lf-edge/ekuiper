@@ -139,13 +139,19 @@ func (meta *Meta) GetStatus() (s string, e string) {
 	if ss != nil {
 		s = ss.(string)
 		if s == api.ConnectionConnected {
-			e = ""
-			// if connected, cw, cw.conn should exist
-			if _, isStateful := meta.cw.conn.(modules.StatefulDialer); !isStateful {
-				err := meta.cw.conn.Ping(context.Background())
-				if err != nil {
-					s = api.ConnectionDisconnected
-					e = err.Error()
+			if meta.cw.IsInitialized() {
+				conn, err := meta.cw.Wait(context.Background())
+				if err != nil || conn == nil {
+					return
+				}
+				e = ""
+				// if connected, cw, cw.conn should exist
+				if _, isStateful := conn.(modules.StatefulDialer); !isStateful {
+					err := conn.Ping(context.Background())
+					if err != nil {
+						s = api.ConnectionDisconnected
+						e = err.Error()
+					}
 				}
 			}
 		}
