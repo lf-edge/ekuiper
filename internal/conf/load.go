@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -135,7 +135,7 @@ func process(configMap map[string]interface{}, env map[string]string, prefix str
 		handle(configMap, keys, value)
 		printableK := strings.Join(keys, ".")
 		printableV := value
-		if strings.Contains(strings.ToLower(printableK), "password") {
+		if strings.Contains(strings.ToLower(printableK), "password") || strings.Contains(strings.ToLower(printableK), "kuiper_props") {
 			printableV = "*"
 		}
 		Log.Infof("Set config '%s.%s' to '%s' by environment variable", strings.ToLower(prefix), printableK, printableV)
