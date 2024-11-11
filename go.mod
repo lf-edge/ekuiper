@@ -23,6 +23,7 @@ require (
 	github.com/denisenkom/go-mssqldb v0.12.3
 	github.com/dolthub/go-mysql-server v0.18.1
 	github.com/dop251/goja v0.0.0-20240828124009-016eb7256539
+	github.com/eclipse/paho.golang v0.21.0
 	github.com/eclipse/paho.mqtt.golang v1.5.0
 	github.com/edgexfoundry/go-mod-core-contracts/v3 v3.1.0
 	github.com/edgexfoundry/go-mod-messaging/v3 v3.1.0
