@@ -21,7 +21,6 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
-	"github.com/lf-edge/ekuiper/v2/internal/io/mqtt/client"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/util"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
@@ -40,11 +39,11 @@ type Sink struct {
 	cw     *connection.ConnWrapper
 	adconf *AdConf
 	config map[string]interface{}
-	cli    *client.Connection
+	cli    *Connection
 }
 
 func (ms *Sink) Provision(_ api.StreamContext, ps map[string]any) error {
-	_, err := client.ValidateConfig(ps)
+	err := ValidateConfig(ps)
 	if err != nil {
 		return err
 	}
@@ -79,7 +78,7 @@ func (ms *Sink) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) erro
 	if conn == nil {
 		return fmt.Errorf("mqtt client not ready: %v", err)
 	}
-	c, ok := conn.(*client.Connection)
+	c, ok := conn.(*Connection)
 	if !ok {
 		return fmt.Errorf("connection %s should be mqtt connection", ms.adconf.SelId)
 	}
@@ -105,7 +104,7 @@ func (ms *Sink) Collect(ctx api.StreamContext, item api.RawTuple) error {
 		}
 	}
 	ctx.GetLogger().Debugf("publishing to topic %s", tpc)
-	return ms.cli.Publish(tpc, ms.adconf.Qos, ms.adconf.Retained, item.Raw())
+	return ms.cli.Publish(ctx, tpc, ms.adconf.Qos, ms.adconf.Retained, item.Raw(), nil)
 }
 
 func (ms *Sink) Close(ctx api.StreamContext) error {
@@ -117,7 +116,7 @@ func (ms *Sink) Close(ctx api.StreamContext) error {
 }
 
 func (ms *Sink) Ping(ctx api.StreamContext, props map[string]any) error {
-	cli := &client.Connection{}
+	cli := &Connection{}
 	err := cli.Provision(ctx, "test", props)
 	if err != nil {
 		return err
