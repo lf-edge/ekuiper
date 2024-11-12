@@ -27,6 +27,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gorilla/handlers"
@@ -219,6 +220,15 @@ func createRestServer(ip string, port int, needToken bool) *http.Server {
 	r.HandleFunc("/trace/{id}", getTraceByID).Methods(http.MethodGet)
 	r.HandleFunc("/trace/rule/{ruleID}", getTraceIDByRuleID).Methods(http.MethodGet)
 	r.HandleFunc("/tracer", tracerHandler).Methods(http.MethodPost)
+	r.PathPrefix("/web/").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		path := filepath.Clean(r.URL.Path)
+		if !strings.HasPrefix(path, "/web/") {
+			http.Error(w, "Not Found", http.StatusNotFound)
+			return
+		}
+		http.StripPrefix("/web/", http.FileServer(http.Dir("web"))).ServeHTTP(w, r)
+	})
+
 	// Register extended routes
 	for k, v := range components {
 		logger.Infof("register rest endpoint for component %s", k)
