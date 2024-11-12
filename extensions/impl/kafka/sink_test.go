@@ -21,6 +21,7 @@ import (
 	"testing"
 
 	"github.com/pingcap/failpoint"
+	kafkago "github.com/segmentio/kafka-go"
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/testx"
@@ -146,4 +147,36 @@ func TestKafkaSinkBuildMsg(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "a", msg.Headers[0].Key)
 	require.Equal(t, b, msg.Headers[0].Value)
+}
+
+func TestToCompression(t *testing.T) {
+	testcase := []struct {
+		c      string
+		expect kafkago.Compression
+	}{
+		{
+			c:      "gzip",
+			expect: kafkago.Gzip,
+		},
+		{
+			c:      "snappy",
+			expect: kafkago.Snappy,
+		},
+		{
+			c:      "lz4",
+			expect: kafkago.Lz4,
+		},
+		{
+			c:      "zstd",
+			expect: kafkago.Zstd,
+		},
+		{
+			c:      "",
+			expect: 0,
+		},
+	}
+	for _, tc := range testcase {
+		e := toCompression(tc.c)
+		require.Equal(t, tc.expect, e)
+	}
 }
