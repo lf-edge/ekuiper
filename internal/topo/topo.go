@@ -154,7 +154,9 @@ func (s *Topo) addEdge(from api.TopNode, to api.TopNode, toType string) {
 }
 
 func (s *Topo) WaitOperatorClose() {
-	s.wg.Wait()
+	if s.wg != nil {
+		s.wg.Wait()
+	}
 }
 
 // prepareContext setups internal context before
