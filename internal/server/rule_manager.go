@@ -341,6 +341,7 @@ func stopRule(name string) (result string, err error) {
 		if err != nil {
 			conf.Log.Warn(err)
 		}
+		rs.Topology.WaitOperatorClose()
 		_, err = ruleProcessor.ExecReplaceRuleState(name, false)
 		if err != nil {
 			conf.Log.Warnf("stop rule found error: %s", err.Error())
