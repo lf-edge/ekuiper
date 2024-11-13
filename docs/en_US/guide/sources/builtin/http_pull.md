@@ -50,6 +50,9 @@ default:
 #      # Expire time of the token in string, time unit is second, allow template
 #      expire: '3600'
 #    # Refresh token fetch method
+#      # Request header
+#      headers:
+#        Accept: application/json
 #    refresh:
 #      # Url to refresh the token, always use POST method
 #      url: https://127.0.0.1/api/refresh
