@@ -49,6 +49,9 @@ default:
 #      body: '{"username": "admin","password": "123456"}'
 #      # 令牌的过期时间，以字符串表示，时间单位为秒，允许使用模板
 #      expire: '3600'
+#      # 请求头
+#      headers:
+#        Accept: application/json
 #    # 如何刷新令牌
 #    refresh:
 #      # 刷新令牌的 URL，总是使用 POST 方法发送请求
