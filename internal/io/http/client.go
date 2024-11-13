@@ -52,9 +52,10 @@ type ClientConf struct {
 }
 
 type AccessTokenConf struct {
-	Url            string `json:"url"`
-	Body           string `json:"body"`
-	Expire         string `json:"expire"`
+	Url            string            `json:"url"`
+	Body           string            `json:"body"`
+	Expire         string            `json:"expire"`
+	Headers        map[string]string `json:"headers"`
 	ExpireInSecond int
 }
 
@@ -217,7 +218,7 @@ func (cc *ClientConf) InitConf(device string, props map[string]interface{}) erro
 
 // initialize the oAuth access token
 func (cc *ClientConf) auth(ctx api.StreamContext) error {
-	resp, err := httpx.Send(conf.Log, cc.client, "json", http.MethodPost, cc.accessConf.Url, nil, cc.accessConf.Body)
+	resp, err := httpx.Send(conf.Log, cc.client, "json", http.MethodPost, cc.accessConf.Url, cc.accessConf.Headers, cc.accessConf.Body)
 	if err != nil {
 		return err
 	}

@@ -32,6 +32,9 @@ default:
 #      body: '{"username": "admin","password": "123456"}'
 #      # Expire time of the token in string, time unit is second, allow template
 #      expire: '3600'
+#      # Request header
+#      headers:
+#        Accept: application/json
 #    # Refresh token fetch method
 #    refresh:
 #      # Url to refresh the token, always use POST method
