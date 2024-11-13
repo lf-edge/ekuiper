@@ -51,6 +51,7 @@ type Topo struct {
 	topo        *api.PrintableTopo
 	mu          sync.Mutex
 	hasOpened   atomic.Bool
+	wg          *sync.WaitGroup
 }
 
 func NewWithNameAndOptions(name string, options *api.RuleOption) (*Topo, error) {
@@ -152,6 +153,12 @@ func (s *Topo) addEdge(from api.TopNode, to api.TopNode, toType string) {
 	s.topo.Edges[f] = append(e, t)
 }
 
+func (s *Topo) WaitOperatorClose() {
+	if s.wg != nil {
+		s.wg.Wait()
+	}
+}
+
 // prepareContext setups internal context before
 // stream starts execution.
 func (s *Topo) prepareContext() {
@@ -191,6 +198,8 @@ func (s *Topo) prepareContext() {
 		}
 		ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
 		ctx = kctx.WithValue(ctx, kctx.RuleStartKey, conf.GetNowInMilli())
+		s.wg = &sync.WaitGroup{}
+		ctx = kctx.WithValue(ctx, kctx.RuleOpsWg, s.wg)
 		s.ctx, s.cancel = ctx.WithCancel()
 	}
 }

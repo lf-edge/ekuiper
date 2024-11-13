@@ -16,10 +16,12 @@ package node
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/lf-edge/ekuiper/internal/binder/io"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
+	kctx "github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/node/cache"
 	nodeConf "github.com/lf-edge/ekuiper/internal/topo/node/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/node/metric"
@@ -55,6 +57,7 @@ type SinkNode struct {
 	// configs (also static for sinks)
 	options map[string]interface{}
 	isMock  bool
+	wg      *sync.WaitGroup
 	// states varies after restart
 	sink api.Sink
 }
@@ -77,8 +80,21 @@ func NewSinkNodeWithSink(name string, sink api.Sink, props map[string]interface{
 	}
 }
 
+func (m *SinkNode) Close(ctx api.StreamContext) {
+	if m.wg != nil {
+		m.wg.Done()
+	}
+}
+
 func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 	m.ctx = ctx
+	v := ctx.Value(kctx.RuleOpsWg)
+	if v != nil {
+		wg, ok := v.(*sync.WaitGroup)
+		if ok {
+			m.wg = wg
+		}
+	}
 	logger := ctx.GetLogger()
 	logger.Debugf("open sink node %s", m.name)
 	go func() {
@@ -109,6 +125,20 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 
 			go func(instance int) {
 				panicOrError := infra.SafeRun(func() error {
+					if m.wg != nil {
+						m.wg.Add(1)
+					}
+					var exitCh1 chan struct{}
+					var exitCh2 chan struct{}
+					defer func() {
+						if exitCh1 != nil {
+							<-exitCh1
+						}
+						if exitCh2 != nil {
+							<-exitCh2
+						}
+						m.Close(ctx)
+					}()
 					var (
 						sink api.Sink
 						err  error
@@ -148,10 +178,12 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 					if !sconf.EnableCache {
 						dataOutCh = dataCh
 					} else {
-						c = cache.NewSyncCache(ctx, dataCh, result, &sconf.SinkConf, sconf.BufferLength)
+						exitCh1 = make(chan struct{}, 2)
+						c = cache.NewSyncCacheWithExitChanel(ctx, dataCh, result, &sconf.SinkConf, sconf.BufferLength, exitCh1)
 						if sconf.ResendAlterQueue {
 							resendCh = make(chan []map[string]interface{}, sconf.BufferLength)
-							rq = cache.NewSyncCache(ctx, resendCh, result, &sconf.SinkConf, sconf.BufferLength)
+							exitCh2 = make(chan struct{}, 2)
+							rq = cache.NewSyncCacheWithExitChanel(ctx, resendCh, result, &sconf.SinkConf, sconf.BufferLength, exitCh2)
 						}
 						dataOutCh = c.Out
 					}

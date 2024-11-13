@@ -34,6 +34,7 @@ import (
 const (
 	LoggerKey    = "$$logger"
 	RuleStartKey = "$$ruleStart"
+	RuleOpsWg    = "$$ops_wg"
 )
 
 type DefaultContext struct {
