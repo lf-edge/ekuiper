@@ -231,6 +231,11 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *def.RuleOption, sources ma
 	case *AnalyticFuncsPlan:
 		op = Transform(&operator.AnalyticFuncsOp{Funcs: t.funcs, FieldFuncs: t.fieldFuncs}, fmt.Sprintf("%d_analytic", newIndex), options)
 	case *IncWindowPlan:
+		if t.Condition != nil {
+			wfilterOp := Transform(&operator.FilterOp{Condition: t.Condition}, fmt.Sprintf("%d_windowFilter", newIndex), options)
+			tp.AddOperator(inputs, wfilterOp)
+			inputs = []node.Emitter{wfilterOp}
+		}
 		op, err = node.NewWindowIncAggOp(fmt.Sprintf("%d_inc_agg_window", newIndex), &node.WindowConfig{
 			Type:        t.WType,
 			CountLength: t.Length,
@@ -416,6 +421,7 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *def.RuleOption, store kv.
 					Length:      int(w.Length.Val),
 					Dimensions:  dimensions.GetGroups(),
 					IncAggFuncs: incAggFields,
+					Condition:   w.Filter,
 				}.Init()
 				incWp.SetChildren(children)
 				children = []LogicalPlan{incWp}
