@@ -28,9 +28,8 @@ type IncWindowPlan struct {
 func (p *IncWindowPlan) BuildExplainInfo() {
 	info := "wType:"
 	info += p.WType.String()
-	info += ", "
 	if len(p.Dimensions) > 0 {
-		info += "Dimension:["
+		info += ", Dimension:["
 		for i, dimension := range p.Dimensions {
 			if dimension.Expr != nil {
 				info += dimension.Expr.String()
