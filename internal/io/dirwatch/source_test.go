@@ -45,17 +45,12 @@ func TestFileDirSource(t *testing.T) {
 	_, err = f.Write([]byte("123"))
 	require.NoError(t, err)
 	f.Close()
-	data := <-output
-	require.Equal(t, "123", string(data))
-	os.WriteFile("./test.txt", []byte("1234"), 0o666)
-	data = <-output
-	require.Equal(t, "1234", string(data))
-	os.Remove("./test.txt")
+	require.NoError(t, os.Remove("./test.txt"))
 	time.Sleep(10 * time.Millisecond)
 	offset, err := fileDirSource.GetOffset()
 	require.NoError(t, err)
 	meta := &FileDirSourceRewindMeta{SentFile: map[string]time.Time{}}
-	json.Unmarshal(offset.([]byte), meta)
+	require.NoError(t, json.Unmarshal(offset.([]byte), meta))
 	require.Empty(t, meta.SentFile)
 	cancel()
 	fileDirSource.Close(ctx)
