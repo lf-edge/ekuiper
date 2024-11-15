@@ -12,9 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package fileDir
+package dirwatch
 
 import (
+	"encoding/json"
 	"os"
 	"testing"
 	"time"
@@ -44,14 +45,18 @@ func TestFileDirSource(t *testing.T) {
 	_, err = f.Write([]byte("123"))
 	require.NoError(t, err)
 	f.Close()
-	defer func() {
-		os.Remove("./test.txt")
-	}()
 	data := <-output
 	require.Equal(t, "123", string(data))
-	os.WriteFile("./test.txt", []byte("1234"), 0666)
+	os.WriteFile("./test.txt", []byte("1234"), 0o666)
 	data = <-output
 	require.Equal(t, "1234", string(data))
+	os.Remove("./test.txt")
+	time.Sleep(10 * time.Millisecond)
+	offset, err := fileDirSource.GetOffset()
+	require.NoError(t, err)
+	meta := &FileDirSourceRewindMeta{SentFile: map[string]time.Time{}}
+	json.Unmarshal(offset.([]byte), meta)
+	require.Empty(t, meta.SentFile)
 	cancel()
 	fileDirSource.Close(ctx)
 }

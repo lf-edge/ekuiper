@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package fileDir
+package dirwatch
 
 import (
 	"encoding/json"
@@ -76,16 +76,18 @@ func (f *FileDirSource) Connect(ctx api.StreamContext, sch api.StatusChangeHandl
 }
 
 func (f *FileDirSource) Subscribe(ctx api.StreamContext, ingest api.BytesIngest, ingestError api.ErrorIngest) error {
+	f.wg.Add(2)
 	go f.startHandleTask(ctx, ingest, ingestError)
-	go f.handleFileDirNotify()
+	go f.handleFileDirNotify(ctx)
 	return nil
 }
 
-func (f *FileDirSource) handleFileDirNotify() {
-	f.wg.Add(1)
+func (f *FileDirSource) handleFileDirNotify(ctx api.StreamContext) {
 	defer f.wg.Done()
 	for {
 		select {
+		case <-ctx.Done():
+			return
 		case event, ok := <-f.watcher.Events:
 			if !ok {
 				return
@@ -117,7 +119,6 @@ func (f *FileDirSource) handleFileDirNotify() {
 }
 
 func (f *FileDirSource) startHandleTask(ctx api.StreamContext, ingest api.BytesIngest, ingestError api.ErrorIngest) {
-	f.wg.Add(1)
 	defer f.wg.Done()
 	for {
 		select {
@@ -200,8 +201,7 @@ func (f *FileDirSource) Rewind(offset any) error {
 }
 
 func (f *FileDirSource) ResetOffset(input map[string]any) error {
-	//TODO implement me
-	panic("implement me")
+	return fmt.Errorf("FileDirSource ResetOffset not supported")
 }
 
 type FileSourceTask struct {
@@ -221,4 +221,8 @@ const (
 type FileDirSourceRewindMeta struct {
 	// filename -> modify time
 	SentFile map[string]time.Time
+}
+
+func GetSource() api.Source {
+	return &FileDirSource{}
 }
