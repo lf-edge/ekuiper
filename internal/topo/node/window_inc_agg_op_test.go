@@ -22,6 +22,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/v2/internal/testx"
@@ -30,6 +31,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
+	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 func init() {
@@ -47,6 +49,9 @@ func TestIncAggWindow(t *testing.T) {
 	stmt, err := xsql.NewParser(strings.NewReader(sql)).Parse()
 	require.NoError(t, err)
 	p, err := planner.CreateLogicalPlan(stmt, &def.RuleOption{
+		PlanOptimizeStrategy: &def.PlanOptimizeStrategy{
+			EnableIncrementalWindow: true,
+		},
 		Qos: 0,
 	}, kv)
 	require.NoError(t, err)
@@ -63,8 +68,9 @@ func TestIncAggWindow(t *testing.T) {
 	output := make(chan any, 10)
 	op.AddOutput(output, "output")
 	errCh := make(chan error, 10)
-	op.Exec(mockContext.NewMockContext("1", "2"), errCh)
-	time.Sleep(100 * time.Millisecond)
+	ctx, cancel := mockContext.NewMockContext("1", "2").WithCancel()
+	op.Exec(ctx, errCh)
+	time.Sleep(10 * time.Millisecond)
 	input <- &xsql.Tuple{Message: map[string]any{"a": int64(1)}}
 	input <- &xsql.Tuple{Message: map[string]any{"a": int64(1)}}
 	got := <-output
@@ -78,6 +84,229 @@ func TestIncAggWindow(t *testing.T) {
 			"inc_agg_col_1": int64(2),
 		},
 	}, d)
+	cancel()
+	time.Sleep(10 * time.Millisecond)
+	op.Close()
+}
+
+func TestIncAggTumblingWindow(t *testing.T) {
+	conf.IsTesting = true
+	o := &def.RuleOption{
+		BufferLength: 10,
+	}
+	kv, err := store.GetKV("stream")
+	require.NoError(t, err)
+	require.NoError(t, prepareStream())
+	sql := "select count(*) from stream group by tumblingWindow(ss,1)"
+	stmt, err := xsql.NewParser(strings.NewReader(sql)).Parse()
+	require.NoError(t, err)
+	p, err := planner.CreateLogicalPlan(stmt, &def.RuleOption{
+		PlanOptimizeStrategy: &def.PlanOptimizeStrategy{
+			EnableIncrementalWindow: true,
+		},
+		Qos: 0,
+	}, kv)
+	require.NoError(t, err)
+	require.NotNil(t, p)
+	incPlan := extractIncWindowPlan(p)
+	require.NotNil(t, incPlan)
+	op, err := node.NewWindowIncAggOp("1", &node.WindowConfig{
+		Type:     incPlan.WType,
+		Interval: time.Second,
+	}, incPlan.Dimensions, incPlan.IncAggFuncs, o)
+	require.NoError(t, err)
+	require.NotNil(t, op)
+	input, _ := op.GetInput()
+	output := make(chan any, 10)
+	op.AddOutput(output, "output")
+	errCh := make(chan error, 10)
+	ctx, cancel := mockContext.NewMockContext("1", "2").WithCancel()
+	op.Exec(ctx, errCh)
+	time.Sleep(10 * time.Millisecond)
+	input <- &xsql.Tuple{Message: map[string]any{"a": int64(1)}}
+	timex.Add(1100 * time.Millisecond)
+	got := <-output
+	wt, ok := got.(*xsql.WindowTuples)
+	require.True(t, ok)
+	require.NotNil(t, wt)
+	d := wt.ToMaps()
+	require.Equal(t, []map[string]any{
+		{
+			"a":             int64(1),
+			"inc_agg_col_1": int64(1),
+		},
+	}, d)
+	cancel()
+	time.Sleep(10 * time.Millisecond)
+	op.Close()
+}
+
+func TestIncAggSlidingWindow(t *testing.T) {
+	conf.IsTesting = true
+	o := &def.RuleOption{
+		BufferLength: 10,
+	}
+	kv, err := store.GetKV("stream")
+	require.NoError(t, err)
+	require.NoError(t, prepareStream())
+	sql := "select count(*) from stream group by slidingWindow(ss,100)"
+	stmt, err := xsql.NewParser(strings.NewReader(sql)).Parse()
+	require.NoError(t, err)
+	p, err := planner.CreateLogicalPlan(stmt, &def.RuleOption{
+		PlanOptimizeStrategy: &def.PlanOptimizeStrategy{
+			EnableIncrementalWindow: true,
+		},
+		Qos: 0,
+	}, kv)
+	require.NoError(t, err)
+	require.NotNil(t, p)
+	incPlan := extractIncWindowPlan(p)
+	require.NotNil(t, incPlan)
+	op, err := node.NewWindowIncAggOp("1", &node.WindowConfig{
+		Type:   incPlan.WType,
+		Length: time.Second,
+	}, incPlan.Dimensions, incPlan.IncAggFuncs, o)
+	require.NoError(t, err)
+	require.NotNil(t, op)
+	input, _ := op.GetInput()
+	output := make(chan any, 10)
+	op.AddOutput(output, "output")
+	errCh := make(chan error, 10)
+	ctx, cancel := mockContext.NewMockContext("1", "2").WithCancel()
+	op.Exec(ctx, errCh)
+	time.Sleep(10 * time.Millisecond)
+	input <- &xsql.Tuple{Message: map[string]any{"a": int64(1)}}
+	input <- &xsql.Tuple{Message: map[string]any{"a": int64(1)}}
+	got1 := <-output
+	wt, ok := got1.(*xsql.WindowTuples)
+	require.True(t, ok)
+	require.NotNil(t, wt)
+	d := wt.ToMaps()
+	require.Equal(t, []map[string]any{
+		{
+			"a":             int64(1),
+			"inc_agg_col_1": int64(1),
+		},
+	}, d)
+	got2 := <-output
+	wt, ok = got2.(*xsql.WindowTuples)
+	require.True(t, ok)
+	require.NotNil(t, wt)
+	d = wt.ToMaps()
+	require.Equal(t, []map[string]any{
+		{
+			"a":             int64(1),
+			"inc_agg_col_1": int64(2),
+		},
+	}, d)
+	cancel()
+	time.Sleep(10 * time.Millisecond)
+	op.Close()
+}
+
+func TestIncAggSlidingWindowOver(t *testing.T) {
+	conf.IsTesting = true
+	o := &def.RuleOption{
+		BufferLength: 10,
+	}
+	kv, err := store.GetKV("stream")
+	require.NoError(t, err)
+	require.NoError(t, prepareStream())
+	sql := "select count(*) from stream group by slidingWindow(ss,100) over(when a > 1)"
+	stmt, err := xsql.NewParser(strings.NewReader(sql)).Parse()
+	require.NoError(t, err)
+	p, err := planner.CreateLogicalPlan(stmt, &def.RuleOption{
+		PlanOptimizeStrategy: &def.PlanOptimizeStrategy{
+			EnableIncrementalWindow: true,
+		},
+		Qos: 0,
+	}, kv)
+	require.NoError(t, err)
+	require.NotNil(t, p)
+	incPlan := extractIncWindowPlan(p)
+	require.NotNil(t, incPlan)
+	op, err := node.NewWindowIncAggOp("1", &node.WindowConfig{
+		Type:             incPlan.WType,
+		Length:           time.Second,
+		TriggerCondition: incPlan.TriggerCondition,
+	}, incPlan.Dimensions, incPlan.IncAggFuncs, o)
+	require.NoError(t, err)
+	require.NotNil(t, op)
+	input, _ := op.GetInput()
+	output := make(chan any, 10)
+	op.AddOutput(output, "output")
+	errCh := make(chan error, 10)
+	ctx, cancel := mockContext.NewMockContext("1", "2").WithCancel()
+	op.Exec(ctx, errCh)
+	time.Sleep(10 * time.Millisecond)
+	input <- &xsql.Tuple{Message: map[string]any{"a": int64(1)}}
+	input <- &xsql.Tuple{Message: map[string]any{"a": int64(2)}}
+	got2 := <-output
+	wt, ok := got2.(*xsql.WindowTuples)
+	require.True(t, ok)
+	require.NotNil(t, wt)
+	d := wt.ToMaps()
+	require.Equal(t, []map[string]any{
+		{
+			"a":             int64(2),
+			"inc_agg_col_1": int64(2),
+		},
+	}, d)
+	cancel()
+	time.Sleep(10 * time.Millisecond)
+	op.Close()
+}
+
+func TestIncAggSlidingWindowDelay(t *testing.T) {
+	conf.IsTesting = true
+	o := &def.RuleOption{
+		BufferLength: 10,
+	}
+	kv, err := store.GetKV("stream")
+	require.NoError(t, err)
+	require.NoError(t, prepareStream())
+	sql := "select count(*) from stream group by slidingWindow(ss,1,1)"
+	stmt, err := xsql.NewParser(strings.NewReader(sql)).Parse()
+	require.NoError(t, err)
+	p, err := planner.CreateLogicalPlan(stmt, &def.RuleOption{
+		PlanOptimizeStrategy: &def.PlanOptimizeStrategy{
+			EnableIncrementalWindow: true,
+		},
+		Qos: 0,
+	}, kv)
+	require.NoError(t, err)
+	require.NotNil(t, p)
+	incPlan := extractIncWindowPlan(p)
+	require.NotNil(t, incPlan)
+	op, err := node.NewWindowIncAggOp("1", &node.WindowConfig{
+		Type:             incPlan.WType,
+		Length:           time.Second,
+		TriggerCondition: incPlan.TriggerCondition,
+	}, incPlan.Dimensions, incPlan.IncAggFuncs, o)
+	require.NoError(t, err)
+	require.NotNil(t, op)
+	input, _ := op.GetInput()
+	output := make(chan any, 10)
+	op.AddOutput(output, "output")
+	errCh := make(chan error, 10)
+	ctx, cancel := mockContext.NewMockContext("1", "2").WithCancel()
+	op.Exec(ctx, errCh)
+	time.Sleep(10 * time.Millisecond)
+	input <- &xsql.Tuple{Message: map[string]any{"a": int64(1)}}
+	timex.Add(1100 * time.Millisecond)
+	got := <-output
+	wt, ok := got.(*xsql.WindowTuples)
+	require.True(t, ok)
+	require.NotNil(t, wt)
+	d := wt.ToMaps()
+	require.Equal(t, []map[string]any{
+		{
+			"a":             int64(1),
+			"inc_agg_col_1": int64(1),
+		},
+	}, d)
+	cancel()
+	time.Sleep(10 * time.Millisecond)
 	op.Close()
 }
 
