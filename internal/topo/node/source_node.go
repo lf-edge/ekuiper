@@ -24,6 +24,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/v2/internal/io/memory/pubsub"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/sig"
 	topoContext "github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node/tracenode"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
@@ -38,8 +39,9 @@ import (
 type SourceNode struct {
 	*defaultNode
 
-	s        api.Source
-	interval time.Duration
+	s         api.Source
+	interval  time.Duration
+	notifySub bool
 }
 
 type sourceConf struct {
@@ -62,6 +64,7 @@ func NewSourceNode(ctx api.StreamContext, name string, ss api.Source, props map[
 		defaultNode: newDefaultNode(name, rOpt),
 		s:           ss,
 		interval:    time.Duration(cc.Interval),
+		notifySub:   rOpt.NotifySub,
 	}
 	switch st := ss.(type) {
 	case api.Bounded:
@@ -246,8 +249,10 @@ func (m *SourceNode) Run(ctx api.StreamContext, ctrlCh chan<- error) {
 	defer func() {
 		m.s.Close(ctx)
 		m.Close()
+		sig.Ctrl.Rem(m.name)
 	}()
 	poe := infra.SafeRun(func() error {
+		// Blocking and wait for connection. The connect will call the dial and retry if fails
 		err := m.s.Connect(ctx, m.connectionStatusChange)
 		if err != nil {
 			return err
@@ -265,6 +270,9 @@ func (m *SourceNode) Run(ctx api.StreamContext, ctrlCh chan<- error) {
 		}
 		if err != nil {
 			return err
+		}
+		if m.notifySub {
+			sig.Ctrl.Add(m.name)
 		}
 		return nil
 	})
