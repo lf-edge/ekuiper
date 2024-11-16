@@ -58,7 +58,7 @@ func TestInstances(ta *testing.T) {
 		messages := make([]string, 0, 2)
 		wg := &sync.WaitGroup{}
 		wg.Add(1)
-		cli.Subscribe(CTRL_TOPIC, 1, func(client paho.Client, message paho.Message) {
+		cli.Subscribe(CtrlTopic, 1, func(client paho.Client, message paho.Message) {
 			if len(messages) < 2 {
 				messages = append(messages, string(message.Payload()))
 			}
@@ -72,9 +72,9 @@ func TestInstances(ta *testing.T) {
 			}
 		})
 		wg.Wait()
-		cins1.Rem("stream1")
+		cli.Publish(CtrlAckTopic, 0, false, "stream1")
 		time.Sleep(time.Second)
-		cli.Subscribe(CTRL_TOPIC, 1, func(client paho.Client, message paho.Message) {
+		cli.Subscribe(CtrlTopic, 1, func(client paho.Client, message paho.Message) {
 			require.Equal(t, "stream2", string(message.Payload()))
 			cli.Unsubscribe("ctrl/subready")
 		})
@@ -87,7 +87,7 @@ func TestInstances(ta *testing.T) {
 		cins2.Add("stream1")
 		wg := &sync.WaitGroup{}
 		wg.Add(1)
-		cli.Subscribe(CTRL_TOPIC, 1, func(client paho.Client, message paho.Message) {
+		cli.Subscribe(CtrlTopic, 1, func(client paho.Client, message paho.Message) {
 			require.Equal(t, "stream1", string(message.Payload()))
 			cli.Unsubscribe("ctrl/subready")
 			wg.Done()
@@ -98,7 +98,7 @@ func TestInstances(ta *testing.T) {
 		cins2.Add("stream2")
 		wg2 := &sync.WaitGroup{}
 		wg2.Add(1)
-		cli.Subscribe(CTRL_TOPIC, 1, func(client paho.Client, message paho.Message) {
+		cli.Subscribe(CtrlTopic, 1, func(client paho.Client, message paho.Message) {
 			require.Equal(t, "stream2", string(message.Payload()))
 			cli.Unsubscribe("ctrl/subready")
 			wg2.Done()

@@ -235,7 +235,9 @@ func (m *SourceNode) Run(ctx api.StreamContext, ctrlCh chan<- error) {
 	defer func() {
 		m.s.Close(ctx)
 		m.Close()
-		sig.Ctrl.Rem(m.name)
+		if m.notifySub {
+			sig.Ctrl.Rem(m.name)
+		}
 	}()
 	poe := infra.SafeRun(func() error {
 		// Blocking and wait for connection. The connect will call the dial and retry if fails
