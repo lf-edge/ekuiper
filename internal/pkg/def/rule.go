@@ -41,6 +41,7 @@ type RuleOption struct {
 	Duration             string                   `json:"duration,omitempty" yaml:"duration,omitempty"`
 	CronDatetimeRange    []schedule.DatetimeRange `json:"cronDatetimeRange,omitempty" yaml:"cronDatetimeRange,omitempty"`
 	PlanOptimizeStrategy *PlanOptimizeStrategy    `json:"planOptimizeStrategy,omitempty" yaml:"planOptimizeStrategy,omitempty"`
+	NotifySub            bool                     `json:"notifySub,omitempty" yaml:"notifySub,omitempty"`
 }
 
 type PlanOptimizeStrategy struct {
