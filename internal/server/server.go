@@ -283,10 +283,10 @@ func StartUp(Version string) {
 
 	// Stop the services
 	sigint := make(chan os.Signal, 1)
-	signal.Notify(sigint, os.Interrupt, syscall.SIGTERM)
+	signal.Notify(sigint, os.Interrupt, syscall.SIGTERM, syscall.SIGTRAP)
 	select {
-	case <-sigint:
-		conf.Log.Info("eKuiper stopped by SIGTERM")
+	case sig := <-sigint:
+		conf.Log.Infof("eKuiper stopped by %v", sig)
 	case <-stopSignal:
 		// sleep 1 sec in order to let stop request got response
 		time.Sleep(time.Second)
