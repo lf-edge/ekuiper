@@ -37,11 +37,12 @@ type MqttControl struct {
 	cancel context.CancelFunc
 }
 
-var (
-	Ctrl *MqttControl
-)
+var Ctrl *MqttControl
 
-const CTRL_TOPIC = "ctrl/subready"
+const (
+	CtrlTopic    = "ctrl/subready"
+	CtrlAckTopic = "ctrl/suback"
+)
 
 // InitMQTTControl Should only called once
 func InitMQTTControl() {
@@ -51,10 +52,18 @@ func InitMQTTControl() {
 func NewMQTTControl(server string, cid string) *MqttControl {
 	// connect to MQTT
 	conf.Log.Infof("connect to local broker for control channel")
+	mc := &MqttControl{
+		sigs:     make(map[string]struct{}),
+		interval: time.Second,
+		lock:     sync.RWMutex{},
+	}
 	// Connect to MQTT
 	opts := mqtt.NewClientOptions().AddBroker(server).SetProtocolVersion(4).SetClientID(cid).SetAutoReconnect(true).SetConnectRetry(true).SetConnectRetryInterval(100 * time.Millisecond).SetMaxReconnectInterval(1 * time.Second)
 	opts.OnConnect = func(client mqtt.Client) {
 		conf.Log.Infof("mqtt control channel connected")
+		client.Subscribe(CtrlAckTopic, 0, func(client mqtt.Client, msg mqtt.Message) {
+			mc.Rem(string(msg.Payload()))
+		})
 	}
 	opts.OnConnectionLost = func(client mqtt.Client, err error) {
 		conf.Log.Errorf("mqtt control channel disconected for %v", err)
@@ -71,11 +80,8 @@ func NewMQTTControl(server string, cid string) *MqttControl {
 			conf.Log.Warnf("found error when connecting for mqtt control channel: %s", err)
 		}
 	}()
-	return &MqttControl{
-		cli:      cli,
-		sigs:     make(map[string]struct{}),
-		interval: time.Second,
-	}
+	mc.cli = cli
+	return mc
 }
 
 func handleToken(token mqtt.Token) error {
@@ -139,6 +145,6 @@ func (c *MqttControl) scan() {
 }
 
 func (c *MqttControl) pub(message string) {
-	c.cli.Publish(CTRL_TOPIC, 0, false, []byte(message))
+	c.cli.Publish(CtrlTopic, 0, false, []byte(message))
 	conf.Log.Debugf("mqtt control chan publish %s", message)
 }
