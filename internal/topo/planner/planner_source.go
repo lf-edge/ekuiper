@@ -101,7 +101,7 @@ func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, option
 			subId = us.SubId(props)
 		}
 		selName := fmt.Sprintf("%s/%s", conId, subId)
-		srcSubtopo, existed := topo.GetSubTopo(selName)
+		srcSubtopo, existed := topo.GetOrCreateSubTopo(selName)
 		if !existed {
 			var scn node.DataSourceNode
 			scn, err = node.NewSourceNode(ctx, selName, ss, props, options)
@@ -112,6 +112,7 @@ func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, option
 		}
 		srcConnNode = srcSubtopo
 		if err != nil {
+			topo.RemoveSubTopo(selName)
 			return nil, nil, 0, err
 		}
 		index++
@@ -189,7 +190,7 @@ func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, option
 
 	if t.streamStmt.Options.SHARED && len(ops) > 0 {
 		// Create subtopo in the end to avoid errors in the middle
-		srcSubtopo, existed := topo.GetSubTopo(string(t.name))
+		srcSubtopo, existed := topo.GetOrCreateSubTopo(string(t.name))
 		if !existed {
 			ctx.GetLogger().Infof("Create SubTopo %s", string(t.name))
 			srcSubtopo.AddSrc(srcConnNode)
