@@ -138,6 +138,7 @@ func TestRateLimit(t *testing.T) {
 }
 
 func TestRateLimitMerge(t *testing.T) {
+	timex.Set(3333)
 	testcases := []struct {
 		name        string
 		sendCount   int
@@ -160,6 +161,7 @@ func TestRateLimitMerge(t *testing.T) {
 							},
 						},
 					},
+					Timestamp: time.UnixMilli(4333),
 				},
 				&xsql.Tuple{
 					Message: map[string]any{
@@ -172,6 +174,7 @@ func TestRateLimitMerge(t *testing.T) {
 							},
 						},
 					},
+					Timestamp: time.UnixMilli(5333),
 				},
 				&xsql.Tuple{
 					Message: map[string]any{
@@ -184,6 +187,7 @@ func TestRateLimitMerge(t *testing.T) {
 							},
 						},
 					},
+					Timestamp: time.UnixMilli(6333),
 				},
 			},
 		},
@@ -191,7 +195,6 @@ func TestRateLimitMerge(t *testing.T) {
 	modules.RegisterConverter("mockp", func(ctx api.StreamContext, _ string, logicalSchema map[string]*ast.JsonStreamField, _ map[string]any) (message.Converter, error) {
 		return &message.MockPartialConverter{}, nil
 	})
-	mc := mockclock.GetMockClock()
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx, cancel := mockContext.NewMockContext("test1", "batch_test").WithCancel()
@@ -212,7 +215,7 @@ func TestRateLimitMerge(t *testing.T) {
 				op.input <- &xsql.RawTuple{
 					Rawdata: []byte(fmt.Sprintf(`{"id":%d, "value":%d}`, i%2, i)),
 				}
-				mc.Add(300 * time.Millisecond)
+				timex.Add(300 * time.Millisecond)
 			}
 			cancel()
 			// make sure op has done all sending
