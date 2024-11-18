@@ -216,7 +216,7 @@ func (o *RateLimitOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 						val := &xsql.Tuple{
 							Ctx:       rt.Ctx,
 							Emitter:   rt.Emitter,
-							Timestamp: rt.Timestamp,
+							Timestamp: t,
 							Metadata:  rt.Metadata,
 							Message: map[string]any{
 								"frames": frames,
@@ -274,7 +274,7 @@ func (o *RateLimitOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 						val := &xsql.Tuple{
 							Ctx:       rt.Ctx,
 							Emitter:   rt.Emitter,
-							Timestamp: rt.Timestamp,
+							Timestamp: t,
 							Metadata:  rt.Metadata,
 							Message: map[string]any{
 								"frames": frames,
