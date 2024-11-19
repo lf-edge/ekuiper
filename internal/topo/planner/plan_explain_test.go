@@ -16,7 +16,6 @@ package planner
 
 import (
 	"encoding/json"
-	"fmt"
 	"strings"
 	"testing"
 
@@ -115,10 +114,6 @@ func TestExplainPlan(t *testing.T) {
 		require.NoError(t, err)
 		explain, err := ExplainFromLogicalPlan(p, "")
 		require.NoError(t, err)
-		if tc.explain == "" {
-			fmt.Println(explain)
-			continue
-		}
 		require.Equal(t, tc.explain, explain, tc.sql)
 	}
 }
