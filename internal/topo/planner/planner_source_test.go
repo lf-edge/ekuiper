@@ -22,6 +22,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/io/mqtt"
@@ -403,6 +404,30 @@ func TestPlanTopo(t *testing.T) {
 			assert.Equal(t, tt.topo, tp.GetTopo())
 		})
 	}
+}
+
+func TestSourceErr(t *testing.T) {
+	conf.IsTesting = true
+	kv, err := store.GetKV("stream")
+	require.NoError(t, err)
+	require.NoError(t, conf.WriteCfgIntoKVStorage("sources", "mqtt", "srcTest1", map[string]interface{}{"server": 123}))
+	streamSqls := map[string]string{
+		"srcErr1": `CREATE STREAM srcErr1 () WITH (CONF_KEY="srcErr1", FORMAT="json", TYPE="mqtt",DATASOURCE="t1");`,
+	}
+	for name, sql := range streamSqls {
+		s, err := json.Marshal(&xsql.StreamInfo{
+			StreamType: ast.TypeStream,
+			Statement:  sql,
+		})
+		assert.NoError(t, err)
+		err = kv.Set(name, string(s))
+		assert.NoError(t, err)
+	}
+	_, err = PlanSQLWithSourcesAndSinks(def.GetDefaultRule("srcErr1", "select * from srcErr1"), nil)
+	assert.NoError(t, err)
+	require.NoError(t, conf.WriteCfgIntoKVStorage("sources", "mqtt", "srcTest1", map[string]interface{}{"server": "tcp://127.0.0.1:1883"}))
+	_, err = PlanSQLWithSourcesAndSinks(def.GetDefaultRule("srcErr1", "select * from srcErr1"), nil)
+	assert.NoError(t, err)
 }
 
 func TestPlanError(t *testing.T) {
