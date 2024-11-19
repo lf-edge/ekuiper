@@ -32,7 +32,7 @@ import (
 
 func TestSubtopoLC(t *testing.T) {
 	assert.Equal(t, 0, mlen(&subTopoPool))
-	subTopo, existed := GetSubTopo("shared")
+	subTopo, existed := GetOrCreateSubTopo("shared")
 	assert.False(t, existed)
 	// Test creation
 	srcNode := &mockSrc{name: "shared"}
@@ -68,7 +68,7 @@ func TestSubtopoLC(t *testing.T) {
 	assert.Equal(t, int32(1), subTopo.refCount.Load())
 	assert.Equal(t, 1, opNode.schemaCount)
 	// Run another
-	subTopo2, existed := GetSubTopo("shared")
+	subTopo2, existed := GetOrCreateSubTopo("shared")
 	assert.True(t, existed)
 	assert.Equal(t, subTopo, subTopo2)
 	subTopo.StoreSchema("rule2", "shared", map[string]*ast.JsonStreamField{
@@ -121,14 +121,14 @@ func TestSubtopoLC(t *testing.T) {
 // Test when connection fails
 func TestSubtopoRunError(t *testing.T) {
 	assert.Equal(t, 0, mlen(&subTopoPool))
-	subTopo, existed := GetSubTopo("shared")
+	subTopo, existed := GetOrCreateSubTopo("shared")
 	assert.False(t, existed)
 	srcNode := &mockSrc{name: "src1"}
 	opNode := &mockOp{name: "op1", ch: make(chan any)}
 	subTopo.AddSrc(srcNode)
 	subTopo.AddOperator([]node.Emitter{srcNode}, opNode)
 	// create another subtopo
-	subTopo2, existed := GetSubTopo("shared")
+	subTopo2, existed := GetOrCreateSubTopo("shared")
 	assert.True(t, existed)
 	assert.Equal(t, subTopo, subTopo2)
 	assert.Equal(t, 1, mlen(&subTopoPool))
@@ -179,7 +179,7 @@ func TestSubtopoPrint(t *testing.T) {
 			"source_shared": {"op_shared_op1"},
 		},
 	}
-	subTopo, _ := GetSubTopo("shared")
+	subTopo, _ := GetOrCreateSubTopo("shared")
 	subTopo.topo = tt
 	subTopo.tail = &mockOp{name: "op1", ch: make(chan any)}
 	ptopo := &def.PrintableTopo{
