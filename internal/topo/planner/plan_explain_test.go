@@ -167,7 +167,7 @@ func TestSupportedWindowType(t *testing.T) {
 				WindowType: ast.COUNT_WINDOW,
 				Filter:     &ast.Window{},
 			},
-			ok: false,
+			ok: true,
 		},
 		{
 			w: &ast.Window{
