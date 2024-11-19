@@ -403,6 +403,10 @@ func TestPlanTopo(t *testing.T) {
 			assert.Equal(t, tt.topo, tp.GetTopo())
 		})
 	}
+	r := def.GetDefaultRule("incplan", "select count(*) from src1 group by countwindow(2) filter (where a > 1)")
+	r.Options.PlanOptimizeStrategy.EnableIncrementalWindow = true
+	_, err = PlanSQLWithSourcesAndSinks(r, nil)
+	assert.NoError(t, err)
 }
 
 func TestPlanError(t *testing.T) {
