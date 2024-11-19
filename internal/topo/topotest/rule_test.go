@@ -1246,18 +1246,27 @@ func TestSingleSQL(t *testing.T) {
 		{
 			BufferLength: 100,
 			SendError:    true,
+			PlanOptimizeStrategy: &def.PlanOptimizeStrategy{
+				EnableIncrementalWindow: true,
+			},
 		},
 		{
 			BufferLength:       100,
 			SendError:          true,
 			Qos:                def.AtLeastOnce,
 			CheckpointInterval: cast.DurationConf(5 * time.Second),
+			PlanOptimizeStrategy: &def.PlanOptimizeStrategy{
+				EnableIncrementalWindow: true,
+			},
 		},
 		{
 			BufferLength:       100,
 			SendError:          true,
 			Qos:                def.ExactlyOnce,
 			CheckpointInterval: cast.DurationConf(5 * time.Second),
+			PlanOptimizeStrategy: &def.PlanOptimizeStrategy{
+				EnableIncrementalWindow: true,
+			},
 		},
 	}
 	for _, opt := range options {

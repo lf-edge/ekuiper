@@ -18,11 +18,15 @@ import "github.com/lf-edge/ekuiper/v2/pkg/ast"
 
 type IncWindowPlan struct {
 	baseLogicalPlan
-	WType       ast.WindowType
-	Length      int
-	Dimensions  ast.Dimensions
-	IncAggFuncs []*ast.Field
-	Condition   ast.Expr
+	WType            ast.WindowType
+	Length           int
+	Delay            int64
+	Interval         int // If interval is not set, it is equals to Length
+	TimeUnit         ast.Token
+	Dimensions       ast.Dimensions
+	IncAggFuncs      []*ast.Field
+	TriggerCondition ast.Expr
+	Condition        ast.Expr
 }
 
 func (p *IncWindowPlan) BuildExplainInfo() {
@@ -74,6 +78,9 @@ func (p *IncWindowPlan) PushDownPredicate(condition ast.Expr) (ast.Expr, Logical
 }
 
 func (p IncWindowPlan) Init() *IncWindowPlan {
+	if p.WType == ast.TUMBLING_WINDOW {
+		p.Interval = p.Length
+	}
 	p.baseLogicalPlan.self = &p
 	p.baseLogicalPlan.setPlanType(IncAggWindow)
 	return &p

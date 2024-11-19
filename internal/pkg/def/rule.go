@@ -25,21 +25,26 @@ import (
 )
 
 type RuleOption struct {
-	Debug              bool                     `json:"debug" yaml:"debug"`
-	LogFilename        string                   `json:"logFilename,omitempty" yaml:"logFilename,omitempty"`
-	IsEventTime        bool                     `json:"isEventTime" yaml:"isEventTime"`
-	LateTol            cast.DurationConf        `json:"lateTolerance,omitempty" yaml:"lateTolerance,omitempty"`
-	Concurrency        int                      `json:"concurrency" yaml:"concurrency"`
-	BufferLength       int                      `json:"bufferLength" yaml:"bufferLength"`
-	SendMetaToSink     bool                     `json:"sendMetaToSink" yaml:"sendMetaToSink"`
-	SendNil            bool                     `json:"sendNilField" yaml:"sendNilField"`
-	SendError          bool                     `json:"sendError" yaml:"sendError"`
-	Qos                Qos                      `json:"qos,omitempty" yaml:"qos,omitempty"`
-	CheckpointInterval cast.DurationConf        `json:"checkpointInterval,omitempty" yaml:"checkpointInterval,omitempty"`
-	RestartStrategy    *RestartStrategy         `json:"restartStrategy,omitempty" yaml:"restartStrategy,omitempty"`
-	Cron               string                   `json:"cron,omitempty" yaml:"cron,omitempty"`
-	Duration           string                   `json:"duration,omitempty" yaml:"duration,omitempty"`
-	CronDatetimeRange  []schedule.DatetimeRange `json:"cronDatetimeRange,omitempty" yaml:"cronDatetimeRange,omitempty"`
+	Debug                bool                     `json:"debug" yaml:"debug"`
+	LogFilename          string                   `json:"logFilename,omitempty" yaml:"logFilename,omitempty"`
+	IsEventTime          bool                     `json:"isEventTime" yaml:"isEventTime"`
+	LateTol              cast.DurationConf        `json:"lateTolerance,omitempty" yaml:"lateTolerance,omitempty"`
+	Concurrency          int                      `json:"concurrency" yaml:"concurrency"`
+	BufferLength         int                      `json:"bufferLength" yaml:"bufferLength"`
+	SendMetaToSink       bool                     `json:"sendMetaToSink" yaml:"sendMetaToSink"`
+	SendNil              bool                     `json:"sendNilField" yaml:"sendNilField"`
+	SendError            bool                     `json:"sendError" yaml:"sendError"`
+	Qos                  Qos                      `json:"qos,omitempty" yaml:"qos,omitempty"`
+	CheckpointInterval   cast.DurationConf        `json:"checkpointInterval,omitempty" yaml:"checkpointInterval,omitempty"`
+	RestartStrategy      *RestartStrategy         `json:"restartStrategy,omitempty" yaml:"restartStrategy,omitempty"`
+	Cron                 string                   `json:"cron,omitempty" yaml:"cron,omitempty"`
+	Duration             string                   `json:"duration,omitempty" yaml:"duration,omitempty"`
+	CronDatetimeRange    []schedule.DatetimeRange `json:"cronDatetimeRange,omitempty" yaml:"cronDatetimeRange,omitempty"`
+	PlanOptimizeStrategy *PlanOptimizeStrategy    `json:"planOptimizeStrategy,omitempty" yaml:"planOptimizeStrategy,omitempty"`
+}
+
+type PlanOptimizeStrategy struct {
+	EnableIncrementalWindow bool `json:"enableIncrementalWindow,omitempty" yaml:"enableIncrementalWindow,omitempty"`
 }
 
 type RestartStrategy struct {
