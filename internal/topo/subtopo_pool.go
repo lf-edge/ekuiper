@@ -25,7 +25,7 @@ import (
 
 var subTopoPool = sync.Map{}
 
-func GetSubTopo(name string) (*SrcSubTopo, bool) {
+func GetOrCreateSubTopo(name string) (*SrcSubTopo, bool) {
 	ac, ok := subTopoPool.LoadOrStore(name, &SrcSubTopo{
 		name: name,
 		topo: &def.PrintableTopo{
