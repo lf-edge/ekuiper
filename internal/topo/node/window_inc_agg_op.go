@@ -425,7 +425,6 @@ func NewHoppingWindowIncAggOp(o *WindowIncAggOperator) *HoppingWindowIncAggOp {
 		taskCh:               make(chan *IncAggOpTask, 1024),
 	}
 	return op
-
 }
 
 func (ho *HoppingWindowIncAggOp) exec(ctx api.StreamContext, errCh chan<- error) {
