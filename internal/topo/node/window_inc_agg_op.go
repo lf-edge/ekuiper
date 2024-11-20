@@ -57,6 +57,8 @@ func NewWindowIncAggOp(name string, w *WindowConfig, dimensions ast.Dimensions, 
 	case ast.SLIDING_WINDOW:
 		wExec := NewSlidingWindowIncAggOp(o)
 		o.windowExec = wExec
+	case ast.HOPPING_WINDOW:
+		o.windowExec = NewHoppingWindowIncAggOp(o)
 	}
 	return o, nil
 }
@@ -290,7 +292,7 @@ func (so *SlidingWindowIncAggOp) exec(ctx api.StreamContext, errCh chan<- error)
 			}
 			switch row := data.(type) {
 			case *xsql.Tuple:
-				so.gcIncAggWindow(now)
+				so.currWindowList = gcIncAggWindow(so.currWindowList, so.Length, now)
 				if so.Delay > 0 {
 					so.appendDelayIncAggWindow(ctx, errCh, fv, row, now)
 					continue
@@ -336,22 +338,6 @@ func (so *SlidingWindowIncAggOp) removeDelayWindow(window *IncAggWindow) {
 			return
 		}
 	}
-}
-
-func (so *SlidingWindowIncAggOp) gcIncAggWindow(now time.Time) {
-	index := 0
-	for i, incAggWindow := range so.currWindowList {
-		if now.Sub(incAggWindow.StartTime) >= so.Length {
-			index = i + 1
-			continue
-		}
-		break
-	}
-	if index >= len(so.currWindowList) {
-		so.currWindowList = make([]*IncAggWindow, 0)
-		return
-	}
-	so.currWindowList = so.currWindowList[index:]
 }
 
 func (so *SlidingWindowIncAggOp) appendIncAggWindow(ctx api.StreamContext, errCh chan<- error, fv *xsql.FunctionValuer, row *xsql.Tuple, now time.Time) {
@@ -422,6 +408,94 @@ func (so *SlidingWindowIncAggOp) isMatchCondition(ctx api.StreamContext, fv *xsq
 	}
 }
 
+type HoppingWindowIncAggOp struct {
+	*WindowIncAggOperator
+	Length         time.Duration
+	Interval       time.Duration
+	currWindowList []*IncAggWindow
+	taskCh         chan *IncAggOpTask
+}
+
+func NewHoppingWindowIncAggOp(o *WindowIncAggOperator) *HoppingWindowIncAggOp {
+	op := &HoppingWindowIncAggOp{
+		WindowIncAggOperator: o,
+		Length:               o.windowConfig.Length,
+		Interval:             o.windowConfig.Interval,
+		currWindowList:       make([]*IncAggWindow, 0),
+		taskCh:               make(chan *IncAggOpTask, 1024),
+	}
+	return op
+
+}
+
+func (ho *HoppingWindowIncAggOp) exec(ctx api.StreamContext, errCh chan<- error) {
+	now := timex.GetNow()
+	ho.newIncWindow(ctx, now)
+	ticker := timex.GetTicker(ho.Interval)
+	defer ticker.Stop()
+	fv, _ := xsql.NewFunctionValuersForOp(ctx)
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			now := timex.GetNow()
+			ho.currWindowList = gcIncAggWindow(ho.currWindowList, ho.Length, now)
+			ho.newIncWindow(ctx, now)
+		case task := <-ho.taskCh:
+			now := timex.GetNow()
+			ho.emit(ctx, errCh, task.window, now)
+			ho.currWindowList = gcIncAggWindow(ho.currWindowList, ho.Length, now)
+		case input := <-ho.input:
+			now := timex.GetNow()
+			data, processed := ho.commonIngest(ctx, input)
+			if processed {
+				continue
+			}
+			switch row := data.(type) {
+			case *xsql.Tuple:
+				ho.currWindowList = gcIncAggWindow(ho.currWindowList, ho.Length, now)
+				ho.calIncAggWindow(ctx, fv, row)
+			}
+		}
+	}
+}
+
+func (ho *HoppingWindowIncAggOp) newIncWindow(ctx api.StreamContext, now time.Time) {
+	newWindow := newIncAggWindow(ctx, now)
+	ho.currWindowList = append(ho.currWindowList, newWindow)
+	go func() {
+		after := timex.After(ho.Length)
+		select {
+		case <-ctx.Done():
+			return
+		case <-after:
+			ho.taskCh <- &IncAggOpTask{window: newWindow}
+		}
+	}()
+}
+
+func (ho *HoppingWindowIncAggOp) emit(ctx api.StreamContext, errCh chan<- error, window *IncAggWindow, now time.Time) {
+	results := &xsql.WindowTuples{
+		Content: make([]xsql.Row, 0),
+	}
+	for _, incAggRange := range window.DimensionsIncAggRange {
+		for name, value := range incAggRange.fields {
+			incAggRange.lastRow.Set(name, value)
+		}
+		results.Content = append(results.Content, incAggRange.lastRow)
+	}
+	results.WindowRange = xsql.NewWindowRange(window.StartTime.UnixMilli(), now.UnixMilli())
+	ho.Broadcast(results)
+}
+
+func (ho *HoppingWindowIncAggOp) calIncAggWindow(ctx api.StreamContext, fv *xsql.FunctionValuer, row *xsql.Tuple) {
+	name := calDimension(fv, ho.Dimensions, row)
+	for _, incWindow := range ho.currWindowList {
+		incAggCal(ctx, name, row, incWindow, ho.aggFields)
+	}
+}
+
 func incAggCal(ctx api.StreamContext, dimension string, row *xsql.Tuple, incAggWindow *IncAggWindow, aggFields []*ast.Field) {
 	dimensionsRange, ok := incAggWindow.DimensionsIncAggRange[dimension]
 	if !ok {
@@ -470,4 +544,20 @@ func calDimension(fv *xsql.FunctionValuer, dimensions ast.Dimensions, row *xsql.
 		}
 	}
 	return name
+}
+
+func gcIncAggWindow(currWindowList []*IncAggWindow, windowLength time.Duration, now time.Time) []*IncAggWindow {
+	index := 0
+	for i, incAggWindow := range currWindowList {
+		if now.Sub(incAggWindow.StartTime) >= windowLength {
+			index = i + 1
+			continue
+		}
+		break
+	}
+	if index >= len(currWindowList) {
+		newList := make([]*IncAggWindow, 0)
+		return newList
+	}
+	return currWindowList[index:]
 }
