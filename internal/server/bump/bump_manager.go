@@ -31,7 +31,7 @@ import (
 )
 
 const (
-	currentVersion = 3
+	currentVersion = 4
 	bumpTable      = "eKuiperMeta_bump_version"
 )
 
@@ -100,6 +100,14 @@ func BumpToCurrentVersion(dataDir string) error {
 				return err
 			}
 			GlobalBumpManager.Version = 3
+		case 3:
+			if err := bumpFrom3TO4(); err != nil {
+				return err
+			}
+			if err := storeGlobalVersion(4); err != nil {
+				return err
+			}
+			GlobalBumpManager.Version = 4
 		}
 	}
 	return nil

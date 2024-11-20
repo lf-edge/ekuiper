@@ -575,18 +575,9 @@ func replaceConfigurations(key string, props map[string]any) map[string]any {
 	if err != nil {
 		return props
 	}
-	switch plgName {
-	case "sql":
-		changed, newProps := replace.ReplacePropsDBURL(props)
-		if changed {
-			return newProps
-		}
-		return props
-	default:
-		changed, newProps := replace.ReplacePassword(props)
-		if changed {
-			return newProps
-		}
-		return props
+	changed, newProps := replace.ReplacePropsWithPlug(plgName, props)
+	if changed {
+		return newProps
 	}
+	return props
 }
