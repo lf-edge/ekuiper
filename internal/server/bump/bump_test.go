@@ -40,7 +40,7 @@ func TestBumpVersion(t *testing.T) {
 	}
 	require.NoError(t, InitBumpManager())
 	GlobalBumpManager.Version = 0
-	testBumpVersion(t, 3)
+	testBumpVersion(t, currentVersion)
 }
 
 func prepareBumpVersion(t *testing.T, dir string) {
