@@ -26,14 +26,14 @@ type IncWindowPlan struct {
 	Dimensions       ast.Dimensions
 	IncAggFuncs      []*ast.Field
 	TriggerCondition ast.Expr
+	Condition        ast.Expr
 }
 
 func (p *IncWindowPlan) BuildExplainInfo() {
 	info := "wType:"
 	info += p.WType.String()
-	info += ", "
 	if len(p.Dimensions) > 0 {
-		info += "Dimension:["
+		info += ", Dimension:["
 		for i, dimension := range p.Dimensions {
 			if dimension.Expr != nil {
 				info += dimension.Expr.String()
@@ -42,6 +42,11 @@ func (p *IncWindowPlan) BuildExplainInfo() {
 				}
 			}
 		}
+		info += "]"
+	}
+	if p.Condition != nil {
+		info += ", filter:["
+		info += p.Condition.String()
 		info += "]"
 	}
 	info += ", funcs:["
