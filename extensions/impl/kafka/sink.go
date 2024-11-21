@@ -212,7 +212,7 @@ func (k *KafkaSink) buildMsg(ctx api.StreamContext, item api.MessageTuple, decod
 	if len(k.kc.Key) > 0 {
 		newKey := k.kc.Key
 		if dp, ok := item.(api.HasDynamicProps); ok {
-			key, ok := dp.DynamicProps("key")
+			key, ok := dp.DynamicProps(k.kc.Key)
 			if ok {
 				newKey = key
 			}
@@ -256,7 +256,7 @@ func (k *KafkaSink) parseHeaders(ctx api.StreamContext, item api.MessageTuple) (
 			value := v
 			dp, ok := item.(api.HasDynamicProps)
 			if ok {
-				nv, ok := dp.DynamicProps(k)
+				nv, ok := dp.DynamicProps(v)
 				if ok {
 					value = nv
 				}
@@ -271,7 +271,7 @@ func (k *KafkaSink) parseHeaders(ctx api.StreamContext, item api.MessageTuple) (
 		raw := k.headerTemplate
 		dp, ok := item.(api.HasDynamicProps)
 		if ok {
-			nv, ok := dp.DynamicProps("headers")
+			nv, ok := dp.DynamicProps(k.headerTemplate)
 			if ok {
 				raw = nv
 			}
