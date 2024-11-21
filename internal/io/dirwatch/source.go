@@ -19,6 +19,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -39,7 +41,8 @@ type FileDirSource struct {
 }
 
 type FileDirSourceConfig struct {
-	Path string `json:"path"`
+	Path             string   `json:"path"`
+	AllowedExtension []string `json:"allowedExtension"`
 }
 
 func (f *FileDirSource) Provision(ctx api.StreamContext, configs map[string]any) error {
@@ -55,9 +58,7 @@ func (f *FileDirSource) Provision(ctx api.StreamContext, configs map[string]any)
 		return err
 	}
 	f.watcher = watcher
-	f.rewindMeta = &FileDirSourceRewindMeta{
-		SentFile: map[string]time.Time{},
-	}
+	f.rewindMeta = &FileDirSourceRewindMeta{}
 	if err := f.watcher.Add(f.config.Path); err != nil {
 		return err
 	}
@@ -79,7 +80,7 @@ func (f *FileDirSource) Subscribe(ctx api.StreamContext, ingest api.BytesIngest,
 	f.wg.Add(2)
 	go f.startHandleTask(ctx, ingest, ingestError)
 	go f.handleFileDirNotify(ctx)
-	return nil
+	return f.readDirFile()
 }
 
 func (f *FileDirSource) handleFileDirNotify(ctx api.StreamContext) {
@@ -124,12 +125,8 @@ func (f *FileDirSource) startHandleTask(ctx api.StreamContext, ingest api.BytesI
 		select {
 		case task := <-f.taskCh:
 			switch task.taskType {
-			case WriteFile:
+			case WriteFile, CreateFile:
 				f.ingestFileContent(ctx, task.name, ingest, ingestError)
-			case CreateFile:
-				f.ingestFileContent(ctx, task.name, ingest, ingestError)
-			case RemoveFile:
-				f.handleRemove(task.name)
 			}
 		case <-ctx.Done():
 			return
@@ -138,6 +135,9 @@ func (f *FileDirSource) startHandleTask(ctx api.StreamContext, ingest api.BytesI
 }
 
 func (f *FileDirSource) ingestFileContent(ctx api.StreamContext, fileName string, ingest api.BytesIngest, ingestError api.ErrorIngest) {
+	if !checkFileExtension(fileName, f.config.AllowedExtension) {
+		return
+	}
 	willRead, modifyTime, err := f.checkFileRead(fileName)
 	if err != nil {
 		ingestError(ctx, err)
@@ -163,22 +163,16 @@ func (f *FileDirSource) checkFileRead(fileName string) (bool, time.Time, error) 
 		return false, time.Time{}, fmt.Errorf("%s is a directory", fileName)
 	}
 	fTime := fInfo.ModTime()
-	modifyTime, ok := f.rewindMeta.SentFile[fileName]
-	if !ok {
-		return true, fTime, nil
-	}
-	if fInfo.ModTime().After(modifyTime) {
+	if fTime.After(f.rewindMeta.LastModifyTime) {
 		return true, fTime, nil
 	}
 	return false, time.Time{}, nil
 }
 
-func (f *FileDirSource) handleRemove(name string) {
-	delete(f.rewindMeta.SentFile, name)
-}
-
-func (f *FileDirSource) updateRewindMeta(fileName string, modifyTime time.Time) {
-	f.rewindMeta.SentFile[fileName] = modifyTime
+func (f *FileDirSource) updateRewindMeta(_ string, modifyTime time.Time) {
+	if modifyTime.After(f.rewindMeta.LastModifyTime) {
+		f.rewindMeta.LastModifyTime = modifyTime
+	}
 }
 
 func (f *FileDirSource) GetOffset() (any, error) {
@@ -191,9 +185,7 @@ func (f *FileDirSource) Rewind(offset any) error {
 	if !ok {
 		return nil
 	}
-	f.rewindMeta = &FileDirSourceRewindMeta{
-		SentFile: map[string]time.Time{},
-	}
+	f.rewindMeta = &FileDirSourceRewindMeta{}
 	if err := json.Unmarshal(c, f.rewindMeta); err != nil {
 		return nil
 	}
@@ -202,6 +194,20 @@ func (f *FileDirSource) Rewind(offset any) error {
 
 func (f *FileDirSource) ResetOffset(input map[string]any) error {
 	return fmt.Errorf("FileDirSource ResetOffset not supported")
+}
+
+func (f *FileDirSource) readDirFile() error {
+	entries, err := os.ReadDir(f.config.Path)
+	if err != nil {
+		return err
+	}
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			fileName := entry.Name()
+			f.taskCh <- &FileSourceTask{name: filepath.Join(f.config.Path, fileName), taskType: CreateFile}
+		}
+	}
+	return nil
 }
 
 type FileSourceTask struct {
@@ -219,8 +225,20 @@ const (
 )
 
 type FileDirSourceRewindMeta struct {
-	// filename -> modify time
-	SentFile map[string]time.Time
+	LastModifyTime time.Time
+}
+
+func checkFileExtension(name string, allowedExtension []string) bool {
+	if len(allowedExtension) < 1 {
+		return true
+	}
+	fileExt := strings.TrimPrefix(filepath.Ext(name), ".")
+	for _, ext := range allowedExtension {
+		if fileExt == ext {
+			return true
+		}
+	}
+	return false
 }
 
 func GetSource() api.Source {

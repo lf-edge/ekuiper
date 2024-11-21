@@ -48,18 +48,19 @@ func TestFileDirSource(t *testing.T) {
 	f.Close()
 	offset, err := fileDirSource.GetOffset()
 	require.NoError(t, err)
-	meta := &FileDirSourceRewindMeta{SentFile: map[string]time.Time{}}
+	meta := &FileDirSourceRewindMeta{}
 	require.NoError(t, json.Unmarshal(offset.([]byte), meta))
-	require.NotEmpty(t, meta.SentFile)
+	require.True(t, meta.LastModifyTime.After(time.Time{}))
 	require.Error(t, fileDirSource.ResetOffset(nil))
 	require.NoError(t, fileDirSource.Rewind(offset))
 	require.NoError(t, os.Remove("./test.txt"))
 	time.Sleep(10 * time.Millisecond)
 	cancel()
 	fileDirSource.Close(ctx)
-	offset, err = fileDirSource.GetOffset()
-	require.NoError(t, err)
-	meta = &FileDirSourceRewindMeta{SentFile: map[string]time.Time{}}
-	require.NoError(t, json.Unmarshal(offset.([]byte), meta))
-	require.NotEmpty(t, meta.SentFile)
+}
+
+func TestCheckFileExtension(t *testing.T) {
+	require.True(t, checkFileExtension("test.txt", []string{}))
+	require.True(t, checkFileExtension("test.txt", []string{"txt", "jpg"}))
+	require.False(t, checkFileExtension("test.md", []string{"txt", "jpg"}))
 }
