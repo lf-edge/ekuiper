@@ -69,3 +69,9 @@ func TestCheckFileExtension(t *testing.T) {
 	require.True(t, checkFileExtension("test.txt", []string{"txt", "jpg"}))
 	require.False(t, checkFileExtension("test.md", []string{"txt", "jpg"}))
 }
+
+func TestRewind(t *testing.T) {
+	fileDirSource := &FileDirSource{}
+	require.Error(t, fileDirSource.Rewind(nil))
+	require.Error(t, fileDirSource.Rewind([]byte("123")))
+}
