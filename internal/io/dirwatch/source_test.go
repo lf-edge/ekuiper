@@ -31,14 +31,15 @@ func TestFileDirSource(t *testing.T) {
 	require.NoError(t, err)
 	fileDirSource := &FileDirSource{}
 	c := map[string]interface{}{
-		"path": path,
+		"path":             path,
+		"allowedExtension": []string{"txt"},
 	}
 	ctx, cancel := mockContext.NewMockContext("1", "2").WithCancel()
 	require.NoError(t, fileDirSource.Provision(ctx, c))
 	require.NoError(t, fileDirSource.Connect(ctx, nil))
-	output := make(chan []byte, 10)
-	require.NoError(t, fileDirSource.Subscribe(ctx, func(ctx api.StreamContext, payload []byte, meta map[string]any, ts time.Time) {
-		output <- payload
+	output := make(chan any, 10)
+	require.NoError(t, fileDirSource.Subscribe(ctx, func(ctx api.StreamContext, data any, meta map[string]any, ts time.Time) {
+		output <- data
 	}, func(ctx api.StreamContext, err error) {}))
 	time.Sleep(10 * time.Millisecond)
 	f, err := os.Create("./test.txt")
@@ -46,6 +47,10 @@ func TestFileDirSource(t *testing.T) {
 	_, err = f.Write([]byte("123"))
 	require.NoError(t, err)
 	f.Close()
+	got := <-output
+	gotM, ok := got.(map[string]interface{})
+	require.True(t, ok)
+	require.Equal(t, []byte("123"), gotM["content"])
 	offset, err := fileDirSource.GetOffset()
 	require.NoError(t, err)
 	meta := &FileDirSourceRewindMeta{}

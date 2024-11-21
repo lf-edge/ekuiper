@@ -40,6 +40,13 @@ type FileDirSource struct {
 	wg         *sync.WaitGroup
 }
 
+func (f *FileDirSource) Subscribe(ctx api.StreamContext, ingest api.TupleIngest, ingestError api.ErrorIngest) error {
+	f.wg.Add(2)
+	go f.startHandleTask(ctx, ingest, ingestError)
+	go f.handleFileDirNotify(ctx)
+	return f.readDirFile()
+}
+
 type FileDirSourceConfig struct {
 	Path             string   `json:"path"`
 	AllowedExtension []string `json:"allowedExtension"`
@@ -76,13 +83,6 @@ func (f *FileDirSource) Connect(ctx api.StreamContext, sch api.StatusChangeHandl
 	return nil
 }
 
-func (f *FileDirSource) Subscribe(ctx api.StreamContext, ingest api.BytesIngest, ingestError api.ErrorIngest) error {
-	f.wg.Add(2)
-	go f.startHandleTask(ctx, ingest, ingestError)
-	go f.handleFileDirNotify(ctx)
-	return f.readDirFile()
-}
-
 func (f *FileDirSource) handleFileDirNotify(ctx api.StreamContext) {
 	defer f.wg.Done()
 	for {
@@ -104,11 +104,6 @@ func (f *FileDirSource) handleFileDirNotify(ctx api.StreamContext) {
 					name:     event.Name,
 					taskType: CreateFile,
 				}
-			case event.Has(fsnotify.Remove):
-				f.taskCh <- &FileSourceTask{
-					name:     event.Name,
-					taskType: RemoveFile,
-				}
 			}
 		case err, ok := <-f.watcher.Errors:
 			if !ok {
@@ -119,7 +114,7 @@ func (f *FileDirSource) handleFileDirNotify(ctx api.StreamContext) {
 	}
 }
 
-func (f *FileDirSource) startHandleTask(ctx api.StreamContext, ingest api.BytesIngest, ingestError api.ErrorIngest) {
+func (f *FileDirSource) startHandleTask(ctx api.StreamContext, ingest api.TupleIngest, ingestError api.ErrorIngest) {
 	defer f.wg.Done()
 	for {
 		select {
@@ -134,7 +129,7 @@ func (f *FileDirSource) startHandleTask(ctx api.StreamContext, ingest api.BytesI
 	}
 }
 
-func (f *FileDirSource) ingestFileContent(ctx api.StreamContext, fileName string, ingest api.BytesIngest, ingestError api.ErrorIngest) {
+func (f *FileDirSource) ingestFileContent(ctx api.StreamContext, fileName string, ingest api.TupleIngest, ingestError api.ErrorIngest) {
 	if !checkFileExtension(fileName, f.config.AllowedExtension) {
 		return
 	}
@@ -149,7 +144,11 @@ func (f *FileDirSource) ingestFileContent(ctx api.StreamContext, fileName string
 			ingestError(ctx, fmt.Errorf("read file %s err: %v", fileName, err))
 			return
 		}
-		ingest(ctx, c, nil, time.Now())
+		message := make(map[string]interface{})
+		message["filename"] = fileName
+		message["modifyTime"] = modifyTime.Unix()
+		message["content"] = c
+		ingest(ctx, message, nil, time.Now())
 		f.updateRewindMeta(fileName, modifyTime)
 	}
 }
@@ -221,7 +220,6 @@ type FileTaskType int
 const (
 	CreateFile FileTaskType = iota
 	WriteFile
-	RemoveFile
 )
 
 type FileDirSourceRewindMeta struct {
