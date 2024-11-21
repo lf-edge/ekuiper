@@ -15,6 +15,7 @@
 package http
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
@@ -75,7 +76,8 @@ func doPull(ctx api.StreamContext, c *ClientConf, lastMD5 string) ([]map[string]
 	if err != nil {
 		return nil, "", err
 	}
-	resp, err := httpx.Send(ctx.GetLogger(), c.client, c.config.BodyType, c.config.Method, c.config.Url, headers, []byte(c.config.Body))
+	body := writeTokenIntoBody(c.tokens, []byte(c.config.Body))
+	resp, err := httpx.Send(ctx.GetLogger(), c.client, c.config.BodyType, c.config.Method, c.config.Url, headers, body)
 	if err != nil {
 		return nil, "", err
 	}
@@ -84,6 +86,22 @@ func doPull(ctx api.StreamContext, c *ClientConf, lastMD5 string) ([]map[string]
 		return nil, "", err
 	}
 	return results, newMD5, nil
+}
+
+func writeTokenIntoBody(tokens map[string]interface{}, body []byte) []byte {
+	m := make(map[string]interface{})
+	err := json.Unmarshal(body, &m)
+	if err != nil {
+		return body
+	}
+	for k, v := range tokens {
+		m[k] = v
+	}
+	newbody, err := json.Marshal(m)
+	if err != nil {
+		return body
+	}
+	return newbody
 }
 
 func GetSource() api.Source {
