@@ -91,6 +91,9 @@ func TestSourceSinkRecon(t *testing.T) {
 			"topic":    "demo",
 			"qos":      0,
 			"retained": false,
+			"properties": map[string]string{
+				"invalid": "v3",
+			},
 		})
 		assert.NoError(t, err)
 		err = server.Close()

@@ -112,6 +112,9 @@ func TestV5SourceSinkRecon(t *testing.T) {
 			"qos":             0,
 			"protocolVersion": "5",
 			"retained":        false,
+			"properties": map[string]string{
+				"prop2": "val2",
+			},
 		})
 		assert.NoError(t, err)
 	})
