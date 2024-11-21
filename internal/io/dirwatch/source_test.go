@@ -35,6 +35,7 @@ func TestFileDirSource(t *testing.T) {
 	}
 	ctx, cancel := mockContext.NewMockContext("1", "2").WithCancel()
 	require.NoError(t, fileDirSource.Provision(ctx, c))
+	require.NoError(t, fileDirSource.Connect(ctx, nil))
 	output := make(chan []byte, 10)
 	require.NoError(t, fileDirSource.Subscribe(ctx, func(ctx api.StreamContext, payload []byte, meta map[string]any, ts time.Time) {
 		output <- payload
@@ -45,13 +46,20 @@ func TestFileDirSource(t *testing.T) {
 	_, err = f.Write([]byte("123"))
 	require.NoError(t, err)
 	f.Close()
-	require.NoError(t, os.Remove("./test.txt"))
-	time.Sleep(10 * time.Millisecond)
 	offset, err := fileDirSource.GetOffset()
 	require.NoError(t, err)
 	meta := &FileDirSourceRewindMeta{SentFile: map[string]time.Time{}}
 	require.NoError(t, json.Unmarshal(offset.([]byte), meta))
-	require.Empty(t, meta.SentFile)
+	require.NotEmpty(t, meta.SentFile)
+	require.Error(t, fileDirSource.ResetOffset(nil))
+	require.NoError(t, fileDirSource.Rewind(offset))
+	require.NoError(t, os.Remove("./test.txt"))
+	time.Sleep(10 * time.Millisecond)
 	cancel()
 	fileDirSource.Close(ctx)
+	offset, err = fileDirSource.GetOffset()
+	require.NoError(t, err)
+	meta = &FileDirSourceRewindMeta{SentFile: map[string]time.Time{}}
+	require.NoError(t, json.Unmarshal(offset.([]byte), meta))
+	require.NotEmpty(t, meta.SentFile)
 }
