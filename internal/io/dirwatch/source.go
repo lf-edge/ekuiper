@@ -26,6 +26,7 @@ import (
 	"github.com/fsnotify/fsnotify"
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
 
@@ -68,6 +69,7 @@ func (f *FileDirSource) Provision(ctx api.StreamContext, configs map[string]any)
 	if err := f.watcher.Add(f.config.Path); err != nil {
 		return err
 	}
+	conf.Log.Infof("start to watch %v, rule:%v", f.config.Path, ctx.GetRuleId())
 	f.wg = &sync.WaitGroup{}
 	return nil
 }
@@ -144,11 +146,11 @@ func (f *FileDirSource) ingestFileContent(ctx api.StreamContext, fileName string
 			return
 		}
 		message := make(map[string]interface{})
-		message["filename"] = fileName
+		message["filename"] = filepath.Base(fileName)
 		message["modifyTime"] = modifyTime.Unix()
 		message["content"] = c
-		ingest(ctx, message, nil, time.Now())
 		f.updateRewindMeta(fileName, modifyTime)
+		ingest(ctx, message, nil, time.Now())
 	}
 }
 
@@ -175,17 +177,17 @@ func (f *FileDirSource) updateRewindMeta(_ string, modifyTime time.Time) {
 
 func (f *FileDirSource) GetOffset() (any, error) {
 	c, err := json.Marshal(f.rewindMeta)
-	return c, err
+	return string(c), err
 }
 
 func (f *FileDirSource) Rewind(offset any) error {
-	c, ok := offset.([]byte)
+	c, ok := offset.(string)
 	if !ok {
 		return nil
 	}
 	f.rewindMeta = &FileDirSourceRewindMeta{}
-	if err := json.Unmarshal(c, f.rewindMeta); err != nil {
-		return nil
+	if err := json.Unmarshal([]byte(c), f.rewindMeta); err != nil {
+		return err
 	}
 	return nil
 }
@@ -222,7 +224,7 @@ const (
 )
 
 type FileDirSourceRewindMeta struct {
-	LastModifyTime time.Time
+	LastModifyTime time.Time `json:"lastModifyTime"`
 }
 
 func checkFileExtension(name string, allowedExtension []string) bool {
