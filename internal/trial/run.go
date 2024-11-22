@@ -82,25 +82,6 @@ func create(def *RunDef) (*topo.Topo, error) {
 	if err != nil {
 		return nil, fmt.Errorf("fail to run rule %s: %s", def.Id, err)
 	}
-	// Try run
-	// TODO currently some static validations are done in runtime, so start to run to detect them. This adds time penalty for this API.
-	// 	In the future, we should do it in planning.
-	err = infra.SafeRun(func() error {
-		select {
-		case e := <-tp.Open():
-			if errorx.IsUnexpectedErr(e) {
-				return e
-			} else {
-				return nil
-			}
-		case <-time.After(10 * time.Millisecond):
-			return nil
-		}
-	})
-	if err != nil {
-		return nil, fmt.Errorf("fail to run rule %s: %s", def.Id, err)
-	}
-	tp.Cancel()
 	return tp, nil
 }
 

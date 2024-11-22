@@ -791,7 +791,7 @@ func parseHaving(props map[string]interface{}, sourceNames []string) (*operator.
 		return nil, err
 	} else {
 		if exp != nil {
-			return &operator.HavingOp{Condition: exp}, nil
+			return (&operator.HavingOp{Condition: exp}), nil
 		}
 	}
 	return nil, fmt.Errorf("expr %v is not a condition", m)

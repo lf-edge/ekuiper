@@ -47,6 +47,9 @@ type kafkaConf struct {
 	RequiredACKs int         `json:"requiredACKs"`
 	Key          string      `json:"key"`
 	Headers      interface{} `json:"headers"`
+
+	// write config
+	Compression string `json:"compression"`
 }
 
 func (c *kafkaConf) validate() error {
@@ -149,6 +152,7 @@ func (k *KafkaSink) buildKafkaWriter() error {
 			SASL: k.mechanism,
 			TLS:  k.tlsConfig,
 		},
+		Compression: toCompression(k.kc.Compression),
 	}
 	k.writer = w
 	return nil
@@ -208,7 +212,7 @@ func (k *KafkaSink) buildMsg(ctx api.StreamContext, item api.MessageTuple, decod
 	if len(k.kc.Key) > 0 {
 		newKey := k.kc.Key
 		if dp, ok := item.(api.HasDynamicProps); ok {
-			key, ok := dp.DynamicProps("key")
+			key, ok := dp.DynamicProps(k.kc.Key)
 			if ok {
 				newKey = key
 			}
@@ -252,7 +256,7 @@ func (k *KafkaSink) parseHeaders(ctx api.StreamContext, item api.MessageTuple) (
 			value := v
 			dp, ok := item.(api.HasDynamicProps)
 			if ok {
-				nv, ok := dp.DynamicProps(k)
+				nv, ok := dp.DynamicProps(v)
 				if ok {
 					value = nv
 				}
@@ -267,7 +271,7 @@ func (k *KafkaSink) parseHeaders(ctx api.StreamContext, item api.MessageTuple) (
 		raw := k.headerTemplate
 		dp, ok := item.(api.HasDynamicProps)
 		if ok {
-			nv, ok := dp.DynamicProps("headers")
+			nv, ok := dp.DynamicProps(k.headerTemplate)
 			if ok {
 				raw = nv
 			}
@@ -286,6 +290,20 @@ func (k *KafkaSink) parseHeaders(ctx api.StreamContext, item api.MessageTuple) (
 		return kafkaHeaders, nil
 	}
 	return nil, nil
+}
+
+func toCompression(c string) kafkago.Compression {
+	switch strings.ToLower(c) {
+	case "gzip":
+		return kafkago.Gzip
+	case "snappy":
+		return kafkago.Snappy
+	case "lz4":
+		return kafkago.Lz4
+	case "zstd":
+		return kafkago.Zstd
+	}
+	return 0
 }
 
 func GetSink() api.Sink {

@@ -28,6 +28,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/meta"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
+	"github.com/lf-edge/ekuiper/v2/pkg/validate"
 )
 
 func init() {
@@ -290,6 +291,10 @@ func connectionConfKeyHandler(w http.ResponseWriter, r *http.Request) {
 	case http.MethodDelete:
 		err = meta.DelConnectionConfKey(pluginName, confKey, language)
 	case http.MethodPut:
+		if err := validate.ValidateID(confKey); err != nil {
+			handleError(w, err, "Invalid confKey", logger)
+			return
+		}
 		v, err1 := io.ReadAll(r.Body)
 		if err1 != nil {
 			handleError(w, err1, "Invalid body", logger)

@@ -23,6 +23,7 @@ type HavingPlan struct {
 	baseLogicalPlan
 	condition  ast.Expr
 	stateFuncs []*ast.Call
+	IsIncAgg   bool
 }
 
 func (p *HavingPlan) BuildExplainInfo() {

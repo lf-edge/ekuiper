@@ -1117,19 +1117,19 @@ func TestSingleSQL(t *testing.T) {
 				{
 					{
 						"color": "blue",
-						"c":     2,
+						"c":     int64(2),
 					},
 					{
 						"color": "yellow",
-						"c":     1,
+						"c":     int64(1),
 					},
 				},
 			},
 			M: map[string]interface{}{
-				"op_6_project_0_exceptions_total":   int64(0),
-				"op_6_project_0_process_latency_us": int64(0),
-				"op_6_project_0_records_in_total":   int64(1),
-				"op_6_project_0_records_out_total":  int64(1),
+				"op_5_project_0_exceptions_total":   int64(0),
+				"op_5_project_0_process_latency_us": int64(0),
+				"op_5_project_0_records_in_total":   int64(1),
+				"op_5_project_0_records_out_total":  int64(1),
 
 				"sink_memory_0_0_exceptions_total":  int64(0),
 				"sink_memory_0_0_records_in_total":  int64(1),
@@ -1246,18 +1246,27 @@ func TestSingleSQL(t *testing.T) {
 		{
 			BufferLength: 100,
 			SendError:    true,
+			PlanOptimizeStrategy: &def.PlanOptimizeStrategy{
+				EnableIncrementalWindow: true,
+			},
 		},
 		{
 			BufferLength:       100,
 			SendError:          true,
 			Qos:                def.AtLeastOnce,
 			CheckpointInterval: cast.DurationConf(5 * time.Second),
+			PlanOptimizeStrategy: &def.PlanOptimizeStrategy{
+				EnableIncrementalWindow: true,
+			},
 		},
 		{
 			BufferLength:       100,
 			SendError:          true,
 			Qos:                def.ExactlyOnce,
 			CheckpointInterval: cast.DurationConf(5 * time.Second),
+			PlanOptimizeStrategy: &def.PlanOptimizeStrategy{
+				EnableIncrementalWindow: true,
+			},
 		},
 	}
 	for _, opt := range options {

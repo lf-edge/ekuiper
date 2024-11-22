@@ -20,6 +20,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/lf-edge/ekuiper/v2/internal/binder/function"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	store2 "github.com/lf-edge/ekuiper/v2/internal/pkg/store"
@@ -179,12 +180,13 @@ func ExplainFromLogicalPlan(lp LogicalPlan, ruleID string) (string, error) {
 			res += "\n"
 			for _, v := range p.Children() {
 				res += tmp + getExplainInfo(v, level+1)
+				res += "\n"
 			}
 		}
 		return res
 	}
 	res := getExplainInfo(lp, 0)
-	return res, nil
+	return strings.Trim(res, "\n"), nil
 }
 
 func buildOps(lp LogicalPlan, tp *topo.Topo, options *def.RuleOption, sources map[string]map[string]any, streamsFromStmt []string, index int) (node.Emitter, int, error) {
@@ -228,13 +230,39 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *def.RuleOption, sources ma
 		op = node.NewWatermarkOp(fmt.Sprintf("%d_watermark", newIndex), t.SendWatermark, t.Emitters, options)
 	case *AnalyticFuncsPlan:
 		op = Transform(&operator.AnalyticFuncsOp{Funcs: t.funcs, FieldFuncs: t.fieldFuncs}, fmt.Sprintf("%d_analytic", newIndex), options)
+	case *IncWindowPlan:
+		if t.Condition != nil {
+			wfilterOp := Transform(&operator.FilterOp{Condition: t.Condition}, fmt.Sprintf("%d_windowFilter", newIndex), options)
+			tp.AddOperator(inputs, wfilterOp)
+			inputs = []node.Emitter{wfilterOp}
+		}
+		l, i, d := convertFromDuration(t.TimeUnit, t.Length, t.Interval, t.Delay)
+		var rawInterval int
+		switch t.WType {
+		case ast.TUMBLING_WINDOW, ast.SESSION_WINDOW:
+			rawInterval = t.Length
+		case ast.HOPPING_WINDOW:
+			rawInterval = t.Interval
+		}
+		op, err = node.NewWindowIncAggOp(fmt.Sprintf("%d_inc_agg_window", newIndex), &node.WindowConfig{
+			Type:             t.WType,
+			Delay:            d,
+			Length:           l,
+			Interval:         i,
+			RawInterval:      rawInterval,
+			CountLength:      t.Length,
+			TriggerCondition: t.TriggerCondition,
+		}, t.Dimensions, t.IncAggFuncs, options)
+		if err != nil {
+			return nil, 0, err
+		}
 	case *WindowPlan:
 		if t.condition != nil {
 			wfilterOp := Transform(&operator.FilterOp{Condition: t.condition}, fmt.Sprintf("%d_windowFilter", newIndex), options)
 			tp.AddOperator(inputs, wfilterOp)
 			inputs = []node.Emitter{wfilterOp}
 		}
-		l, i, d := convertFromDuration(t)
+		l, i, d := convertFromDuration(t.timeUnit, t.length, t.interval, t.delay)
 		var rawInterval int
 		switch t.wtype {
 		case ast.TUMBLING_WINDOW, ast.SESSION_WINDOW:
@@ -273,7 +301,7 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *def.RuleOption, sources ma
 		op = Transform(&operator.AggregateOp{Dimensions: t.dimensions}, fmt.Sprintf("%d_aggregate", newIndex), options)
 	case *HavingPlan:
 		t.ExtractStateFunc()
-		op = Transform(&operator.HavingOp{Condition: t.condition, StateFuncs: t.stateFuncs}, fmt.Sprintf("%d_having", newIndex), options)
+		op = Transform((&operator.HavingOp{Condition: t.condition, StateFuncs: t.stateFuncs, IsIncAgg: t.IsIncAgg}), fmt.Sprintf("%d_having", newIndex), options)
 	case *OrderPlan:
 		op = Transform(&operator.OrderOp{SortFields: t.SortFields}, fmt.Sprintf("%d_order", newIndex), options)
 	case *ProjectPlan:
@@ -294,9 +322,9 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *def.RuleOption, sources ma
 	return op, newIndex, nil
 }
 
-func convertFromDuration(t *WindowPlan) (time.Duration, time.Duration, time.Duration) {
+func convertFromDuration(timeUnit ast.Token, length, interval int, delay int64) (time.Duration, time.Duration, time.Duration) {
 	var unit time.Duration
-	switch t.timeUnit {
+	switch timeUnit {
 	case ast.DD:
 		unit = 24 * time.Hour
 	case ast.HH:
@@ -308,7 +336,11 @@ func convertFromDuration(t *WindowPlan) (time.Duration, time.Duration, time.Dura
 	case ast.MS:
 		unit = time.Millisecond
 	}
-	return time.Duration(t.length) * unit, time.Duration(t.interval) * unit, time.Duration(t.delay) * unit
+	return time.Duration(length) * unit, time.Duration(interval) * unit, time.Duration(delay) * unit
+}
+
+func CreateLogicalPlan(stmt *ast.SelectStatement, opt *def.RuleOption, store kv.KeyValue) (lp LogicalPlan, err error) {
+	return createLogicalPlan(stmt, opt, store)
 }
 
 func createLogicalPlan(stmt *ast.SelectStatement, opt *def.RuleOption, store kv.KeyValue) (lp LogicalPlan, err error) {
@@ -335,7 +367,7 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *def.RuleOption, store kv.
 	if err != nil {
 		return nil, err
 	}
-	windowFuncFields := rewriteStmt(stmt)
+	windowFuncFields, incAggFields := rewriteStmt(stmt, opt)
 
 	for _, sInfo := range streamStmts {
 		if sInfo.stmt.StreamType == ast.TypeTable && sInfo.stmt.Options.KIND == ast.StreamKindLookup {
@@ -396,34 +428,61 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *def.RuleOption, store kv.
 			if len(children) == 0 {
 				return nil, errors.New("cannot run window for TABLE sources")
 			}
-			wp := WindowPlan{
-				wtype:       w.WindowType,
-				length:      int(w.Length.Val),
-				isEventTime: opt.IsEventTime,
-			}.Init()
-			if w.Delay != nil {
-				wp.delay = w.Delay.Val
+			if len(incAggFields) > 0 {
+				incWp := IncWindowPlan{
+					WType:            w.WindowType,
+					Length:           int(w.Length.Val),
+					Dimensions:       dimensions.GetGroups(),
+					IncAggFuncs:      incAggFields,
+					Condition:        w.Filter,
+					TriggerCondition: w.TriggerCondition,
+				}.Init()
+				if w.Length != nil {
+					incWp.Length = int(w.Length.Val)
+				}
+				if w.Interval != nil {
+					incWp.Interval = int(w.Interval.Val)
+				}
+				if w.Delay != nil {
+					incWp.Delay = w.Delay.Val
+				}
+				if w.TimeUnit != nil {
+					incWp.TimeUnit = w.TimeUnit.Val
+				}
+				incWp = incWp.Init()
+				incWp.SetChildren(children)
+				children = []LogicalPlan{incWp}
+				p = incWp
+			} else {
+				wp := WindowPlan{
+					wtype:       w.WindowType,
+					length:      int(w.Length.Val),
+					isEventTime: opt.IsEventTime,
+				}.Init()
+				if w.Delay != nil {
+					wp.delay = w.Delay.Val
+				}
+				if w.Interval != nil {
+					wp.interval = int(w.Interval.Val)
+				} else if w.WindowType == ast.COUNT_WINDOW {
+					// if no interval value is set, and it's a count window, then set interval to length value.
+					wp.interval = int(w.Length.Val)
+				}
+				if w.TimeUnit != nil {
+					wp.timeUnit = w.TimeUnit.Val
+				}
+				if w.Filter != nil {
+					wp.condition = w.Filter
+				}
+				if w.TriggerCondition != nil {
+					wp.triggerCondition = w.TriggerCondition
+				}
+				// TODO calculate limit
+				// TODO incremental aggregate
+				wp.SetChildren(children)
+				children = []LogicalPlan{wp}
+				p = wp
 			}
-			if w.Interval != nil {
-				wp.interval = int(w.Interval.Val)
-			} else if w.WindowType == ast.COUNT_WINDOW {
-				// if no interval value is set, and it's a count window, then set interval to length value.
-				wp.interval = int(w.Length.Val)
-			}
-			if w.TimeUnit != nil {
-				wp.timeUnit = w.TimeUnit.Val
-			}
-			if w.Filter != nil {
-				wp.condition = w.Filter
-			}
-			if w.TriggerCondition != nil {
-				wp.triggerCondition = w.TriggerCondition
-			}
-			// TODO calculate limit
-			// TODO incremental aggregate
-			wp.SetChildren(children)
-			children = []LogicalPlan{wp}
-			p = wp
 		}
 	}
 	if stmt.Joins != nil {
@@ -479,7 +538,7 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *def.RuleOption, store kv.
 		p.SetChildren(children)
 		children = []LogicalPlan{p}
 	}
-	if dimensions != nil {
+	if dimensions != nil && len(incAggFields) < 1 {
 		ds = dimensions.GetGroups()
 		if ds != nil && len(ds) > 0 {
 			p = AggregatePlan{
@@ -492,6 +551,7 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *def.RuleOption, store kv.
 	if stmt.Having != nil {
 		p = HavingPlan{
 			condition: stmt.Having,
+			IsIncAgg:  len(incAggFields) > 0,
 		}.Init()
 		p.SetChildren(children)
 		children = []LogicalPlan{p}
@@ -563,7 +623,7 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *def.RuleOption, store kv.
 		}
 		p = ProjectPlan{
 			fields:      fields,
-			isAggregate: xsql.WithAggFields(stmt),
+			isAggregate: xsql.WithAggFields(stmt) && len(incAggFields) < 1,
 			sendMeta:    opt.SendMetaToSink,
 			sendNil:     opt.SendNil,
 			enableLimit: enableLimit,
@@ -639,10 +699,7 @@ func extractWindowFuncFields(stmt *ast.SelectStatement) []ast.Field {
 					Name: newName,
 				}
 				windowFuncFields = append(windowFuncFields, newField)
-				// in-place rewrite
-				wf.FuncType = ast.FuncTypeScalar
-				wf.Args = []ast.Expr{newFieldRef}
-				wf.Name = "bypass"
+				rewriteIntoBypass(newFieldRef, wf)
 			}
 		}
 		return true
@@ -652,6 +709,117 @@ func extractWindowFuncFields(stmt *ast.SelectStatement) []ast.Field {
 
 // rewrite stmt will do following things:
 // 1. extract and rewrite the window function
-func rewriteStmt(stmt *ast.SelectStatement) []ast.Field {
-	return extractWindowFuncFields(stmt)
+// 2. extract and rewrite the aggregation function
+func rewriteStmt(stmt *ast.SelectStatement, opt *def.RuleOption) ([]ast.Field, []*ast.Field) {
+	windowFunctionPlanField := extractWindowFuncFields(stmt)
+	incAggWindowPlanField := rewriteIfIncAggStmt(stmt, opt)
+	return windowFunctionPlanField, incAggWindowPlanField
+}
+
+func rewriteIfIncAggStmt(stmt *ast.SelectStatement, opt *def.RuleOption) []*ast.Field {
+	if opt.PlanOptimizeStrategy == nil {
+		return nil
+	}
+	if !opt.PlanOptimizeStrategy.EnableIncrementalWindow {
+		return nil
+	}
+	if stmt.Dimensions == nil {
+		return nil
+	}
+	if stmt.Dimensions.GetWindow() == nil {
+		return nil
+	}
+	if !supportedWindowType(stmt.Dimensions.GetWindow()) {
+		return nil
+	}
+	// TODO: support join later
+	if stmt.Joins != nil {
+		return nil
+	}
+	index := 0
+	incAggFields, canIncAgg := extractNodeIncAgg(stmt.Fields, &index)
+	if !canIncAgg {
+		return nil
+	}
+	incAggHavingFields, _ := extractNodeIncAgg(stmt.Having, &index)
+	return append(incAggFields, incAggHavingFields...)
+}
+
+func extractNodeIncAgg(node ast.Node, index *int) ([]*ast.Field, bool) {
+	canIncAgg := true
+	hasAgg := false
+	ast.WalkFunc(node, func(n ast.Node) bool {
+		switch f := n.(type) {
+		case *ast.Call:
+			if f.FuncType == ast.FuncTypeAgg {
+				hasAgg = true
+				if !function.IsSupportedIncAgg(f.Name) {
+					canIncAgg = false
+					return false
+				}
+			}
+		}
+		return true
+	})
+	if !hasAgg {
+		return nil, false
+	}
+	if !canIncAgg {
+		return nil, false
+	}
+	incAggFuncFields := make([]*ast.Field, 0)
+	ast.WalkFunc(node, func(n ast.Node) bool {
+		switch aggFunc := n.(type) {
+		case *ast.Call:
+			if aggFunc.FuncType == ast.FuncTypeAgg {
+				if function.IsSupportedIncAgg(aggFunc.Name) {
+					*index++
+					newAggFunc := &ast.Call{
+						Name:     fmt.Sprintf("inc_%s", aggFunc.Name),
+						FuncType: ast.FuncTypeScalar,
+						Args:     aggFunc.Args,
+						FuncId:   *index,
+					}
+					name := fmt.Sprintf("inc_agg_col_%v", *index)
+					newField := &ast.Field{
+						Name: name,
+						Expr: newAggFunc,
+					}
+					incAggFuncFields = append(incAggFuncFields, newField)
+					newFieldRef := &ast.FieldRef{
+						StreamName: ast.DefaultStream,
+						Name:       name,
+					}
+					rewriteIntoBypass(newFieldRef, aggFunc)
+				}
+			}
+		}
+		return true
+	})
+	return incAggFuncFields, true
+}
+
+func rewriteIntoBypass(newFieldRef *ast.FieldRef, f *ast.Call) {
+	f.FuncType = ast.FuncTypeScalar
+	f.Args = []ast.Expr{newFieldRef}
+	f.Name = "bypass"
+}
+
+func supportedWindowType(window *ast.Window) bool {
+	_, ok := supportedWType[window.WindowType]
+	if !ok {
+		return false
+	}
+	if window.WindowType == ast.COUNT_WINDOW {
+		if window.Interval != nil {
+			return false
+		}
+	}
+	return true
+}
+
+var supportedWType = map[ast.WindowType]struct{}{
+	ast.COUNT_WINDOW:    {},
+	ast.SLIDING_WINDOW:  {},
+	ast.TUMBLING_WINDOW: {},
 }

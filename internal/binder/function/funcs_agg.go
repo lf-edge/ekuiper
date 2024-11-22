@@ -379,3 +379,26 @@ func registerAggFunc() {
 		check: returnNilIfHasAnyNil,
 	}
 }
+
+func registerIncAggFunc() {
+	builtins["inc_count"] = builtinFunc{
+		fType: ast.FuncTypeScalar,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			key := fmt.Sprintf("%v_inc_count", ctx.GetFuncId())
+			v, err := ctx.GetState(key)
+			if err != nil {
+				return err, false
+			}
+			var c int64
+			if v == nil {
+				c = 1
+			} else {
+				c = v.(int64) + 1
+			}
+			ctx.PutState(key, c)
+			return c, true
+		},
+		val:   ValidateOneArg,
+		check: returnNilIfHasAnyNil,
+	}
+}

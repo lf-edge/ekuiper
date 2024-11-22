@@ -239,21 +239,11 @@ func GetYamlConf(configOperatorKey, language string) (b []byte, err error) {
 	}
 }
 
-func replaceConfigurations(plgName string, cf YamlConfigurations) YamlConfigurations {
-	switch plgName {
-	case "sql":
-		for key, props := range cf {
-			replaced, newProps := replace.ReplacePropsDBURL(props)
-			if replaced {
-				cf[key] = newProps
-			}
-		}
-	default:
-		for key, props := range cf {
-			replaced, newProps := replace.ReplacePassword(props)
-			if replaced {
-				cf[key] = newProps
-			}
+func replaceConfigurations(plg string, cf YamlConfigurations) YamlConfigurations {
+	for key, props := range cf {
+		replaced, newProps := replace.ReplacePropsWithPlug(plg, props)
+		if replaced {
+			cf[key] = newProps
 		}
 	}
 	return cf
