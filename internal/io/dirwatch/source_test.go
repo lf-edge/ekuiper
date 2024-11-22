@@ -54,7 +54,7 @@ func TestFileDirSource(t *testing.T) {
 	offset, err := fileDirSource.GetOffset()
 	require.NoError(t, err)
 	meta := &FileDirSourceRewindMeta{}
-	require.NoError(t, json.Unmarshal(offset.([]byte), meta))
+	require.NoError(t, json.Unmarshal([]byte(offset.(string)), meta))
 	require.True(t, meta.LastModifyTime.After(time.Time{}))
 	require.Error(t, fileDirSource.ResetOffset(nil))
 	require.NoError(t, fileDirSource.Rewind(offset))
@@ -73,5 +73,5 @@ func TestCheckFileExtension(t *testing.T) {
 func TestRewind(t *testing.T) {
 	fileDirSource := &FileDirSource{}
 	require.Error(t, fileDirSource.Rewind(nil))
-	require.Error(t, fileDirSource.Rewind([]byte("123")))
+	require.Error(t, fileDirSource.Rewind("123"))
 }
