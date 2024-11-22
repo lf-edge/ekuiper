@@ -437,8 +437,7 @@ func (ho *HoppingWindowIncAggOp) exec(ctx api.StreamContext, errCh chan<- error)
 		select {
 		case <-ctx.Done():
 			return
-		case <-ticker.C:
-			now := timex.GetNow()
+		case now := <-ticker.C:
 			ho.currWindowList = gcIncAggWindow(ho.currWindowList, ho.Length, now)
 			ho.newIncWindow(ctx, now)
 		case task := <-ho.taskCh:
