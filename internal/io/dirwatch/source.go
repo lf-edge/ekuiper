@@ -17,7 +17,6 @@ package dirwatch
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -109,7 +108,7 @@ func (f *FileDirSource) handleFileDirNotify(ctx api.StreamContext) {
 			if !ok {
 				return
 			}
-			log.Println("error:", err)
+			ctx.GetLogger().Errorf("dirwatch err:%v", err.Error())
 		}
 	}
 }
