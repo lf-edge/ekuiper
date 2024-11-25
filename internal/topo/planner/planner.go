@@ -247,6 +247,7 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *def.RuleOption, sources ma
 			RawInterval:      rawInterval,
 			CountLength:      t.Length,
 			TriggerCondition: t.TriggerCondition,
+			TimeUnit:         t.TimeUnit,
 		}, t.Dimensions, t.IncAggFuncs, options)
 		if err != nil {
 			return nil, 0, err

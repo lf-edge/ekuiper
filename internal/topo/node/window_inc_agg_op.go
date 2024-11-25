@@ -203,10 +203,13 @@ func NewTumblingWindowIncAggOp(o *WindowIncAggOperator) *TumblingWindowIncAggOp 
 }
 
 func (to *TumblingWindowIncAggOp) exec(ctx api.StreamContext, errCh chan<- error) {
-	to.ticker = timex.GetTicker(to.Interval)
 	defer func() {
-		to.ticker.Stop()
+		if to.ticker != nil {
+			to.ticker.Stop()
+		}
 	}()
+	firstTime, firstTimer := getFirstTimer(ctx, to.windowConfig.RawInterval, to.windowConfig.TimeUnit)
+	to.currWindow = newIncAggWindow(ctx, firstTime)
 	fv, _ := xsql.NewFunctionValuersForOp(ctx)
 	for {
 		select {
@@ -226,15 +229,29 @@ func (to *TumblingWindowIncAggOp) exec(ctx api.StreamContext, errCh chan<- error
 				name := calDimension(fv, to.Dimensions, row)
 				incAggCal(ctx, name, row, to.currWindow, to.aggFields)
 			}
-		case <-to.ticker.C:
+		case now := <-firstTimer.C:
+			firstTimer.Stop()
 			if to.currWindow != nil {
-				to.emit(ctx, errCh)
+				to.emit(ctx, errCh, now)
+			}
+			to.ticker = timex.GetTicker(to.Interval)
+		default:
+		}
+		if to.ticker != nil {
+			select {
+			case <-ctx.Done():
+				return
+			case now := <-to.ticker.C:
+				if to.currWindow != nil {
+					to.emit(ctx, errCh, now)
+				}
+			default:
 			}
 		}
 	}
 }
 
-func (to *TumblingWindowIncAggOp) emit(ctx api.StreamContext, errCh chan<- error) {
+func (to *TumblingWindowIncAggOp) emit(ctx api.StreamContext, errCh chan<- error, now time.Time) {
 	results := &xsql.WindowTuples{
 		Content: make([]xsql.Row, 0),
 	}
@@ -244,7 +261,7 @@ func (to *TumblingWindowIncAggOp) emit(ctx api.StreamContext, errCh chan<- error
 		}
 		results.Content = append(results.Content, incAggRange.lastRow)
 	}
-	results.WindowRange = xsql.NewWindowRange(to.currWindow.StartTime.UnixMilli(), time.Now().UnixMilli())
+	results.WindowRange = xsql.NewWindowRange(to.currWindow.StartTime.UnixMilli(), now.UnixMilli())
 	to.currWindow = nil
 	to.Broadcast(results)
 }
