@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -183,7 +184,7 @@ func (f *FileDirSource) GetOffset() (any, error) {
 func (f *FileDirSource) Rewind(offset any) error {
 	c, ok := offset.(string)
 	if !ok {
-		return nil
+		return fmt.Errorf("fileDirSource rewind failed")
 	}
 	f.rewindMeta = &FileDirSourceRewindMeta{}
 	if err := json.Unmarshal([]byte(c), f.rewindMeta); err != nil {
@@ -201,13 +202,41 @@ func (f *FileDirSource) readDirFile() error {
 	if err != nil {
 		return err
 	}
+	files := make(FileWithTimeSlice, 0)
 	for _, entry := range entries {
 		if !entry.IsDir() {
 			fileName := entry.Name()
-			f.taskCh <- &FileSourceTask{name: filepath.Join(f.config.Path, fileName), taskType: CreateFile}
+			info, err := entry.Info()
+			if err != nil {
+				return err
+			}
+			files = append(files, FileWithTime{name: fileName, modifyTime: info.ModTime()})
 		}
 	}
+	sort.Sort(files)
+	for _, file := range files {
+		f.taskCh <- &FileSourceTask{name: filepath.Join(f.config.Path, file.name), taskType: CreateFile}
+	}
 	return nil
+}
+
+type FileWithTime struct {
+	name       string
+	modifyTime time.Time
+}
+
+type FileWithTimeSlice []FileWithTime
+
+func (f FileWithTimeSlice) Len() int {
+	return len(f)
+}
+
+func (f FileWithTimeSlice) Less(i, j int) bool {
+	return f[i].modifyTime.Before(f[j].modifyTime)
+}
+
+func (f FileWithTimeSlice) Swap(i, j int) {
+	f[i], f[j] = f[j], f[i]
 }
 
 type FileSourceTask struct {
