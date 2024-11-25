@@ -67,6 +67,23 @@ func TestSQLLookupSource(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, []map[string]any{{"a": int64(1), "b": int64(1)}}, got)
 	ls.Close(ctx)
+
+	props = map[string]interface{}{
+		"dburl":      fmt.Sprintf("mysql://root:@%v:%v/test", address, port),
+		"datasource": "t",
+		"templateSqlQueryCfg": map[string]interface{}{
+			"templateSql": "select * from t where b = {{.bid}}",
+		},
+	}
+	ls = &SqlLookupSource{}
+	require.NoError(t, ls.Provision(ctx, props))
+	require.NoError(t, ls.Connect(ctx, func(status string, message string) {
+		// do nothing
+	}))
+	got, err = ls.Lookup(ctx, []string{"a", "b"}, []string{"bid"}, []any{1})
+	require.NoError(t, err)
+	require.Equal(t, []map[string]any{{"a": int64(1), "b": int64(1)}}, got)
+	ls.Close(ctx)
 }
 
 func TestSQLLookupSourceProvisionErr(t *testing.T) {
