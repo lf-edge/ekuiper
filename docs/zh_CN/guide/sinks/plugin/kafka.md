@@ -72,6 +72,7 @@ $(PLUGINS_CUSTOM):
 | requiredACKs       | 是   | Kafka 客户端确认消息的机制，-1 代表等待 leader 确认，1 代表等待所有副本确认, 0 代表不等待确认, 默认为 -1|
 | key                | 是   | Kafka 客户端向 server 发送消息所携带的 Key 信息 |
 | headers            | 是   | Kafka 客户端向 server 发送消息所携带的 headers 信息 |
+| compression        | 是   | Kafka 客户端向 server 发送消息时是否开启压缩，仅支持 `gzip`,`snappy`,`lz4`,`zstd` |
 
 其他通用的 sink 属性也支持，请参阅[公共属性](../overview.md#公共属性)。
 
