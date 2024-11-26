@@ -135,6 +135,14 @@ func TestReplaceDuration(t *testing.T) {
 	require.Equal(t, map[string]interface{}{
 		"cacheTtl": "1s",
 	}, newProps)
+	props = map[string]interface{}{
+		"cacheTtl": float64(1000),
+	}
+	changed, newProps = ReplaceDuration(props)
+	require.True(t, changed)
+	require.Equal(t, map[string]interface{}{
+		"cacheTtl": "1s",
+	}, newProps)
 }
 
 func TestRelacePropsPlug(t *testing.T) {

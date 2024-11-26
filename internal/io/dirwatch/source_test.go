@@ -42,7 +42,7 @@ func TestFileDirSource(t *testing.T) {
 		output <- data
 	}, func(ctx api.StreamContext, err error) {}))
 	time.Sleep(10 * time.Millisecond)
-	f, err := os.Create("./test.txt")
+	f, err := os.Create("./test123.txt")
 	require.NoError(t, err)
 	_, err = f.Write([]byte("123"))
 	require.NoError(t, err)
@@ -58,7 +58,7 @@ func TestFileDirSource(t *testing.T) {
 	require.True(t, meta.LastModifyTime.After(time.Time{}))
 	require.Error(t, fileDirSource.ResetOffset(nil))
 	require.NoError(t, fileDirSource.Rewind(offset))
-	require.NoError(t, os.Remove("./test.txt"))
+	require.NoError(t, os.Remove("./test123.txt"))
 	time.Sleep(10 * time.Millisecond)
 	cancel()
 	fileDirSource.Close(ctx)
