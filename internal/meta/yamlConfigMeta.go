@@ -307,6 +307,7 @@ func AddSourceConfKey(plgName, confKey, language string, content []byte) (err er
 		return err
 	}
 
+	_, reqField = replace.ReplacePropsWithPlug(plgName, reqField)
 	cfgOps, found = ConfigManager.cfgOperators[configOperatorKey]
 	if !found {
 		cfgOps = conf.NewConfigOperatorForSource(plgName)
@@ -368,7 +369,7 @@ func AddSinkConfKey(plgName, confKey, language string, content []byte) (err erro
 	if err := validateConf(plgName, reqField, false); err != nil {
 		return err
 	}
-
+	_, reqField = replace.ReplacePropsWithPlug(plgName, reqField)
 	var cfgOps conf.ConfigOperator
 	var found bool
 
@@ -434,6 +435,7 @@ func AddConnectionConfKey(plgName, confKey, language string, reqField map[string
 	defer ConfigManager.lock.Unlock()
 
 	configOperatorKey := fmt.Sprintf(ConnectionCfgOperatorKeyTemplate, plgName)
+	_, reqField = replace.ReplacePropsWithPlug(plgName, reqField)
 	var cfgOps conf.ConfigOperator
 	var found bool
 
