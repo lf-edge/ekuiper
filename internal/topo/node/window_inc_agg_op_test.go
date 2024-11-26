@@ -355,6 +355,7 @@ func TestIncAggSlidingWindowDelay(t *testing.T) {
 
 func TestIncHoppingWindow(t *testing.T) {
 	conf.IsTesting = true
+	node.EnableAlignWindow = false
 	o := &def.RuleOption{
 		BufferLength: 10,
 	}

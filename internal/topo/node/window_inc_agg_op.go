@@ -219,14 +219,12 @@ func (to *TumblingWindowIncAggOp) exec(ctx api.StreamContext, errCh chan<- error
 			to.ticker.Stop()
 		}
 	}()
-	var firstTime time.Time
-	var firstTimer *clock.Timer
+	now := timex.GetNow()
 	if !EnableAlignWindow {
 		to.ticker = timex.GetTicker(to.Interval)
 	} else {
-		firstTime, firstTimer = getFirstTimer(ctx, to.windowConfig.RawInterval, to.windowConfig.TimeUnit)
-		to.currWindow = newIncAggWindow(ctx, firstTime)
-		to.FirstTimer = firstTimer
+		_, to.FirstTimer = getFirstTimer(ctx, to.windowConfig.RawInterval, to.windowConfig.TimeUnit)
+		to.currWindow = newIncAggWindow(ctx, now)
 	}
 	fv, _ := xsql.NewFunctionValuersForOp(ctx)
 	for {
@@ -249,12 +247,13 @@ func (to *TumblingWindowIncAggOp) exec(ctx api.StreamContext, errCh chan<- error
 			}
 		default:
 		}
-		if firstTimer != nil && EnableAlignWindow {
+		if to.FirstTimer != nil {
 			select {
 			case <-ctx.Done():
 				return
-			case now := <-firstTimer.C:
-				firstTimer.Stop()
+			case now := <-to.FirstTimer.C:
+				to.FirstTimer.Stop()
+				to.FirstTimer = nil
 				if to.currWindow != nil {
 					to.emit(ctx, errCh, now)
 				}
@@ -450,6 +449,8 @@ func (so *SlidingWindowIncAggOp) isMatchCondition(ctx api.StreamContext, fv *xsq
 
 type HoppingWindowIncAggOp struct {
 	*WindowIncAggOperator
+	FirstTimer     *clock.Timer
+	ticker         *clock.Ticker
 	Length         time.Duration
 	Interval       time.Duration
 	currWindowList []*IncAggWindow
@@ -468,18 +469,24 @@ func NewHoppingWindowIncAggOp(o *WindowIncAggOperator) *HoppingWindowIncAggOp {
 }
 
 func (ho *HoppingWindowIncAggOp) exec(ctx api.StreamContext, errCh chan<- error) {
-	now := timex.GetNow()
-	ho.newIncWindow(ctx, now)
-	ticker := timex.GetTicker(ho.Interval)
-	defer ticker.Stop()
+	defer func() {
+		if ho.ticker != nil {
+			ho.ticker.Stop()
+		}
+	}()
+	now := time.Now()
+	if !EnableAlignWindow {
+		ho.ticker = timex.GetTicker(ho.Interval)
+		ho.newIncWindow(ctx, now)
+	} else {
+		_, ho.FirstTimer = getFirstTimer(ctx, ho.windowConfig.RawInterval, ho.windowConfig.TimeUnit)
+		ho.currWindowList = append(ho.currWindowList, newIncAggWindow(ctx, now))
+	}
 	fv, _ := xsql.NewFunctionValuersForOp(ctx)
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		case now := <-ticker.C:
-			ho.currWindowList = gcIncAggWindow(ho.currWindowList, ho.Length, now)
-			ho.newIncWindow(ctx, now)
 		case task := <-ho.taskCh:
 			now := timex.GetNow()
 			ho.emit(ctx, errCh, task.window, now)
@@ -494,6 +501,30 @@ func (ho *HoppingWindowIncAggOp) exec(ctx api.StreamContext, errCh chan<- error)
 			case *xsql.Tuple:
 				ho.currWindowList = gcIncAggWindow(ho.currWindowList, ho.Length, now)
 				ho.calIncAggWindow(ctx, fv, row)
+			}
+		default:
+		}
+		if ho.FirstTimer != nil {
+			select {
+			case <-ctx.Done():
+				return
+			case now := <-ho.FirstTimer.C:
+				ho.FirstTimer.Stop()
+				ho.FirstTimer = nil
+				ho.newIncWindow(ctx, now)
+				ho.currWindowList = gcIncAggWindow(ho.currWindowList, ho.Length, now)
+				ho.ticker = timex.GetTicker(ho.Interval)
+			default:
+			}
+		}
+		if ho.ticker != nil {
+			select {
+			case <-ctx.Done():
+				return
+			case now := <-ho.ticker.C:
+				ho.currWindowList = gcIncAggWindow(ho.currWindowList, ho.Length, now)
+				ho.newIncWindow(ctx, now)
+			default:
 			}
 		}
 	}
