@@ -19,10 +19,8 @@ import (
 	"encoding/base64"
 	"fmt"
 
-	pahoMqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
-	"github.com/lf-edge/ekuiper/v2/internal/io/mqtt/client"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/util"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
@@ -36,7 +34,7 @@ type SourceConnector struct {
 	cfg   *Conf
 	props map[string]any
 
-	cli        *client.Connection
+	cli        *Connection
 	conId      string
 	eof        api.EOFIngest
 	eofPayload []byte
@@ -58,7 +56,7 @@ func (ms *SourceConnector) Provision(ctx api.StreamContext, props map[string]any
 	if cfg.Topic == "" {
 		return fmt.Errorf("topic is required")
 	}
-	_, err = client.ValidateConfig(props)
+	err = ValidateConfig(props)
 	if err != nil {
 		return err
 	}
@@ -76,7 +74,7 @@ func (ms *SourceConnector) Provision(ctx api.StreamContext, props map[string]any
 }
 
 func (ms *SourceConnector) Ping(ctx api.StreamContext, props map[string]interface{}) error {
-	cli := &client.Connection{}
+	cli := &Connection{}
 	err := cli.Provision(ctx, "test", props)
 	if err != nil {
 		return err
@@ -87,7 +85,7 @@ func (ms *SourceConnector) Ping(ctx api.StreamContext, props map[string]interfac
 
 func (ms *SourceConnector) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) error {
 	ctx.GetLogger().Infof("Connecting to mqtt server")
-	var cli *client.Connection
+	var cli *Connection
 	var err error
 	id := fmt.Sprintf("%s-%s-%s-mqtt-source", ctx.GetRuleId(), ctx.GetOpId(), ms.tpc)
 	cw, err := connection.FetchConnection(ctx, id, "mqtt", ms.props, sch)
@@ -100,7 +98,7 @@ func (ms *SourceConnector) Connect(ctx api.StreamContext, sch api.StatusChangeHa
 	if conn == nil {
 		return fmt.Errorf("mqtt client not ready: %v", err)
 	}
-	cli = conn.(*client.Connection)
+	cli = conn.(*Connection)
 	ms.cli = cli
 	return err
 }
@@ -108,26 +106,25 @@ func (ms *SourceConnector) Connect(ctx api.StreamContext, sch api.StatusChangeHa
 // Subscribe is a one time only operation for source. It connects to the mqtt broker and subscribe to the topic
 // Run open before subscribe
 func (ms *SourceConnector) Subscribe(ctx api.StreamContext, ingest api.BytesIngest, _ api.ErrorIngest) error {
-	return ms.cli.Subscribe(ms.tpc, byte(ms.cfg.Qos), func(client pahoMqtt.Client, message pahoMqtt.Message) {
+	return ms.cli.Subscribe(ctx, ms.tpc, byte(ms.cfg.Qos), func(ctx api.StreamContext, message any) {
 		ms.onMessage(ctx, message, ingest)
 	})
 }
 
-func (ms *SourceConnector) onMessage(ctx api.StreamContext, msg pahoMqtt.Message, ingest api.BytesIngest) {
-	if msg != nil {
-		ctx.GetLogger().Debugf("Received message %s from topic %s", string(msg.Payload()), msg.Topic())
-	}
+func (ms *SourceConnector) onMessage(ctx api.StreamContext, msg any, ingest api.BytesIngest) {
 	rcvTime := timex.GetNow()
-	if ms.eof != nil && ms.eofPayload != nil && bytes.Equal(ms.eofPayload, msg.Payload()) {
+	payload, meta, props := ms.cli.ParseMsg(ctx, msg)
+	if ms.eof != nil && ms.eofPayload != nil && bytes.Equal(ms.eofPayload, payload) {
 		ms.eof(ctx)
 		return
 	}
-	meta := map[string]interface{}{
-		"topic":     msg.Topic(),
-		"qos":       msg.Qos(),
-		"messageId": msg.MessageID(),
+	// extract trace id
+	if props != nil {
+		if tid, ok := props["traceparent"]; ok {
+			meta["traceId"] = tid
+		}
 	}
-	ingest(ctx, msg.Payload(), meta, rcvTime)
+	ingest(ctx, payload, meta, rcvTime)
 }
 
 func (ms *SourceConnector) Close(ctx api.StreamContext) error {

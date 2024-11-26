@@ -25,7 +25,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
-	"github.com/lf-edge/ekuiper/v2/internal/io/mqtt/client"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/v2/internal/testx"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
@@ -38,7 +37,7 @@ import (
 
 func init() {
 	testx.InitEnv("mqtt_source_connector")
-	modules.RegisterConnection("mqtt", client.CreateConnection)
+	modules.RegisterConnection("mqtt", CreateConnection)
 }
 
 func TestProvision(t *testing.T) {

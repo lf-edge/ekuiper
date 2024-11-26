@@ -118,7 +118,7 @@ func TestKafkaSinkBuildMsg(t *testing.T) {
 	d, _ := json.Marshal(item)
 	mockT := testx.MockTuple{
 		Map:      item,
-		Template: map[string]string{"a": "1", "key": "1"},
+		Template: map[string]string{"{{.a}}": "1"},
 	}
 	msg, err := ks.buildMsg(ctx, mockT, d)
 	require.NoError(t, err)
@@ -141,7 +141,7 @@ func TestKafkaSinkBuildMsg(t *testing.T) {
 	}))
 	mockT = testx.MockTuple{
 		Map:      item,
-		Template: map[string]string{"headers": "{\"a\":\"1\"}"},
+		Template: map[string]string{"{\"a\":\"{{.a}}\"}": "{\"a\":\"1\"}"},
 	}
 	msg, err = ks.buildMsg(ctx, mockT, d)
 	require.NoError(t, err)

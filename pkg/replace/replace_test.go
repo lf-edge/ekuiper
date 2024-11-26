@@ -117,3 +117,45 @@ func TestReplaceRuleJson(t *testing.T) {
 	got = ReplaceRuleJson(data, false)
 	require.Equal(t, data, got)
 }
+
+func TestReplaceDuration(t *testing.T) {
+	props := map[string]interface{}{
+		"cacheTtl": 1000,
+	}
+	changed, newProps := ReplaceDuration(props)
+	require.True(t, changed)
+	require.Equal(t, map[string]interface{}{
+		"cacheTtl": "1s",
+	}, newProps)
+	props = map[string]interface{}{
+		"cacheTtl": int64(1000),
+	}
+	changed, newProps = ReplaceDuration(props)
+	require.True(t, changed)
+	require.Equal(t, map[string]interface{}{
+		"cacheTtl": "1s",
+	}, newProps)
+}
+
+func TestRelacePropsPlug(t *testing.T) {
+	props := map[string]interface{}{
+		"cacheTtl": 1000,
+		"url":      "123",
+	}
+	changed, newProps := ReplacePropsWithPlug("", props)
+	require.True(t, changed)
+	require.Equal(t, map[string]interface{}{
+		"cacheTtl": "1s",
+		"url":      "123",
+	}, newProps)
+	props = map[string]interface{}{
+		"cacheTtl": 1000,
+		"url":      "123",
+	}
+	changed, newProps = ReplacePropsWithPlug("sql", props)
+	require.True(t, changed)
+	require.Equal(t, map[string]interface{}{
+		"cacheTtl": "1s",
+		"dburl":    "123",
+	}, newProps)
+}

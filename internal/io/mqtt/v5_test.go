@@ -15,7 +15,6 @@
 package mqtt
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -34,20 +33,21 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/model"
 )
 
-func TestSourceSinkRecon(t *testing.T) {
+func TestV5SourceSinkRecon(t *testing.T) {
 	// Create the new MQTT Server.
 	server := mqtt.New(nil)
 	// Allow all connections.
 	_ = server.AddHook(new(auth.AllowHook), nil)
 	// Create a TCP listener on a standard port.
-	tcp := listeners.NewTCP(listeners.Config{ID: "testcon", Address: ":2883"})
+	tcp := listeners.NewTCP(listeners.Config{ID: "testcon", Address: ":12883"})
 	err := server.AddListener(tcp)
 	require.NoError(t, err)
 	go func() {
 		err = server.Serve()
-		fmt.Println(err)
+		require.NoError(t, err)
 	}()
-	url := tcp.Address()
+	addr := tcp.Address()
+	url := "mqtt://127.0.0.1:12883"
 	dataDir, err := conf.GetDataLoc()
 	require.NoError(t, err)
 	require.NoError(t, store.SetupDefault(dataDir))
@@ -81,26 +81,25 @@ func TestSourceSinkRecon(t *testing.T) {
 
 	// Open and subscribe before sending data
 	mock.TestSourceConnector(t, sc, map[string]any{
-		"server":     url,
-		"datasource": "demo",
-		"qos":        0,
-		"topic":      "demo",
+		"server":          url,
+		"protocolVersion": "5",
+		"datasource":      "demo",
+		"qos":             0,
+		"topic":           "demo",
 	}, result, func() {
 		err := mock.RunBytesSinkCollect(sk, data[:1], map[string]any{
-			"server":   url,
-			"topic":    "demo",
-			"qos":      0,
-			"retained": false,
-			"properties": map[string]string{
-				"invalid": "v3",
-			},
+			"server":          url,
+			"topic":           "demo",
+			"qos":             0,
+			"protocolVersion": "5",
+			"retained":        false,
 		})
 		assert.NoError(t, err)
 		err = server.Close()
 		tcp.Close(nil)
 		assert.NoError(t, err)
 		go func() {
-			tcp := listeners.NewTCP(listeners.Config{Address: url})
+			tcp := listeners.NewTCP(listeners.Config{Address: addr})
 			err := server.AddListener(tcp)
 			require.NoError(t, err)
 			err = server.Serve()
@@ -108,10 +107,14 @@ func TestSourceSinkRecon(t *testing.T) {
 		}()
 		time.Sleep(time.Millisecond * 100)
 		err = mock.RunBytesSinkCollect(sk, data[1:], map[string]any{
-			"server":   url,
-			"topic":    "demo",
-			"qos":      0,
-			"retained": false,
+			"server":          url,
+			"topic":           "demo",
+			"qos":             0,
+			"protocolVersion": "5",
+			"retained":        false,
+			"properties": map[string]string{
+				"prop2": "val2",
+			},
 		})
 		assert.NoError(t, err)
 	})

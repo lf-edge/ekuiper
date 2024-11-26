@@ -18,12 +18,12 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
 	"github.com/lf-edge/ekuiper/v2/internal/binder"
+	"github.com/lf-edge/ekuiper/v2/internal/io/dirwatch"
 	"github.com/lf-edge/ekuiper/v2/internal/io/file"
 	"github.com/lf-edge/ekuiper/v2/internal/io/http"
 	"github.com/lf-edge/ekuiper/v2/internal/io/http/httpserver"
 	"github.com/lf-edge/ekuiper/v2/internal/io/memory"
 	"github.com/lf-edge/ekuiper/v2/internal/io/mqtt"
-	mqttCon "github.com/lf-edge/ekuiper/v2/internal/io/mqtt/client"
 	"github.com/lf-edge/ekuiper/v2/internal/io/neuron"
 	"github.com/lf-edge/ekuiper/v2/internal/io/simulator"
 	"github.com/lf-edge/ekuiper/v2/internal/io/sink"
@@ -38,6 +38,7 @@ func init() {
 	modules.RegisterSource("httppull", func() api.Source { return &http.HttpPullSource{} })
 	modules.RegisterSource("httppush", func() api.Source { return &http.HttpPushSource{} })
 	modules.RegisterSource("file", file.GetSource)
+	modules.RegisterSource("dirwatch", dirwatch.GetSource)
 	modules.RegisterSource("memory", func() api.Source { return memory.GetSource() })
 	modules.RegisterSource("neuron", neuron.GetSource)
 	modules.RegisterSource("websocket", func() api.Source { return websocket.GetSource() })
@@ -56,7 +57,7 @@ func init() {
 	modules.RegisterLookupSource("memory", memory.GetLookupSource)
 	modules.RegisterLookupSource("httppull", http.GetLookUpSource)
 
-	modules.RegisterConnection("mqtt", mqttCon.CreateConnection)
+	modules.RegisterConnection("mqtt", mqtt.CreateConnection)
 	modules.RegisterConnection("nng", nng.CreateConnection)
 	modules.RegisterConnection("httppush", httpserver.CreateConnection)
 	modules.RegisterConnection("websocket", httpserver.CreateWebsocketConnection)

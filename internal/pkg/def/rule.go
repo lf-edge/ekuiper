@@ -138,6 +138,7 @@ func GetDefaultRule(name, sql string) *Rule {
 				MaxDelay:     30000,
 				JitterFactor: 0.1,
 			},
+			PlanOptimizeStrategy: &PlanOptimizeStrategy{},
 		},
 	}
 }

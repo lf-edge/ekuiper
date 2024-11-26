@@ -21,18 +21,20 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
-	"github.com/lf-edge/ekuiper/v2/internal/io/mqtt/client"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/util"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/node/tracenode"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 )
 
 // AdConf is the advanced configuration for the mqtt sink
 type AdConf struct {
-	Tpc      string `json:"topic"`
-	Qos      byte   `json:"qos"`
-	Retained bool   `json:"retained"`
-	SelId    string `json:"connectionSelector"`
+	Tpc      string            `json:"topic"`
+	Qos      byte              `json:"qos"`
+	Retained bool              `json:"retained"`
+	SelId    string            `json:"connectionSelector"`
+	Props    map[string]string `json:"properties"`
+	PVersion string            `json:"protocolVersion"`
 }
 
 type Sink struct {
@@ -40,11 +42,11 @@ type Sink struct {
 	cw     *connection.ConnWrapper
 	adconf *AdConf
 	config map[string]interface{}
-	cli    *client.Connection
+	cli    *Connection
 }
 
-func (ms *Sink) Provision(_ api.StreamContext, ps map[string]any) error {
-	_, err := client.ValidateConfig(ps)
+func (ms *Sink) Provision(ctx api.StreamContext, ps map[string]any) error {
+	err := ValidateConfig(ps)
 	if err != nil {
 		return err
 	}
@@ -64,6 +66,9 @@ func (ms *Sink) Provision(_ api.StreamContext, ps map[string]any) error {
 	}
 	ms.config = ps
 	ms.adconf = adconf
+	if adconf.PVersion != "5" && adconf.Props != nil {
+		ctx.GetLogger().Warnf("Only mqtt v5 supports properties, ignore the properties setting")
+	}
 	return nil
 }
 
@@ -79,7 +84,7 @@ func (ms *Sink) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) erro
 	if conn == nil {
 		return fmt.Errorf("mqtt client not ready: %v", err)
 	}
-	c, ok := conn.(*client.Connection)
+	c, ok := conn.(*Connection)
 	if !ok {
 		return fmt.Errorf("connection %s should be mqtt connection", ms.adconf.SelId)
 	}
@@ -97,15 +102,32 @@ func validateMQTTSinkTopic(topic string) error {
 
 func (ms *Sink) Collect(ctx api.StreamContext, item api.RawTuple) error {
 	tpc := ms.adconf.Tpc
+	props := ms.adconf.Props
 	// If tpc supports dynamic props(template), planner will guarantee the result has the parsed dynamic props
 	if dp, ok := item.(api.HasDynamicProps); ok {
 		temp, transformed := dp.DynamicProps(tpc)
 		if transformed {
 			tpc = temp
 		}
+		for k, v := range props {
+			nv, ok := dp.DynamicProps(v)
+			if ok {
+				props[k] = nv
+			}
+		}
+	}
+	traced, _, span := tracenode.TraceInput(ctx, item, fmt.Sprintf("%s_emit", ctx.GetOpId()))
+	if traced {
+		defer span.End()
+		traceID := span.SpanContext().TraceID()
+		spanID := span.SpanContext().SpanID()
+		if props == nil {
+			props = make(map[string]string)
+		}
+		props["traceparent"] = tracenode.BuildTraceParentId(traceID, spanID)
 	}
 	ctx.GetLogger().Debugf("publishing to topic %s", tpc)
-	return ms.cli.Publish(tpc, ms.adconf.Qos, ms.adconf.Retained, item.Raw())
+	return ms.cli.Publish(ctx, tpc, ms.adconf.Qos, ms.adconf.Retained, item.Raw(), props)
 }
 
 func (ms *Sink) Close(ctx api.StreamContext) error {
@@ -117,7 +139,7 @@ func (ms *Sink) Close(ctx api.StreamContext) error {
 }
 
 func (ms *Sink) Ping(ctx api.StreamContext, props map[string]any) error {
-	cli := &client.Connection{}
+	cli := &Connection{}
 	err := cli.Provision(ctx, "test", props)
 	if err != nil {
 		return err

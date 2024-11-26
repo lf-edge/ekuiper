@@ -231,6 +231,11 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *def.RuleOption, sources ma
 	case *AnalyticFuncsPlan:
 		op = Transform(&operator.AnalyticFuncsOp{Funcs: t.funcs, FieldFuncs: t.fieldFuncs}, fmt.Sprintf("%d_analytic", newIndex), options)
 	case *IncWindowPlan:
+		if t.Condition != nil {
+			wfilterOp := Transform(&operator.FilterOp{Condition: t.Condition}, fmt.Sprintf("%d_windowFilter", newIndex), options)
+			tp.AddOperator(inputs, wfilterOp)
+			inputs = []node.Emitter{wfilterOp}
+		}
 		l, i, d := convertFromDuration(t.TimeUnit, t.Length, t.Interval, t.Delay)
 		var rawInterval int
 		switch t.WType {
@@ -427,8 +432,10 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *def.RuleOption, store kv.
 			if len(incAggFields) > 0 {
 				incWp := IncWindowPlan{
 					WType:            w.WindowType,
+					Length:           int(w.Length.Val),
 					Dimensions:       dimensions.GetGroups(),
 					IncAggFuncs:      incAggFields,
+					Condition:        w.Filter,
 					TriggerCondition: w.TriggerCondition,
 				}.Init()
 				if w.Length != nil {
@@ -804,10 +811,6 @@ func supportedWindowType(window *ast.Window) bool {
 	if !ok {
 		return false
 	}
-	// TODO: support it later
-	if window.Filter != nil {
-		return false
-	}
 	if window.WindowType == ast.COUNT_WINDOW {
 		if window.Interval != nil {
 			return false
@@ -819,5 +822,6 @@ func supportedWindowType(window *ast.Window) bool {
 var supportedWType = map[ast.WindowType]struct{}{
 	ast.COUNT_WINDOW:    {},
 	ast.SLIDING_WINDOW:  {},
+	ast.HOPPING_WINDOW:  {},
 	ast.TUMBLING_WINDOW: {},
 }

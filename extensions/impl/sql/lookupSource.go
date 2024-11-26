@@ -109,7 +109,20 @@ func (s *SqlLookupSource) Lookup(ctx api.StreamContext, fields []string, keys []
 			return nil, err
 		}
 	}
-	query := s.gen.buildQuery(fields, keys, values)
+	var query string
+	if s.conf.TemplateSqlQueryCfg == nil {
+		query = s.gen.buildQuery(fields, keys, values)
+	} else {
+		mapValue := make(map[string]any)
+		for index, key := range keys {
+			mapValue[key] = values[index]
+		}
+		sqlQuery, err := ctx.ParseTemplate(s.conf.TemplateSqlQueryCfg.TemplateSql, mapValue)
+		if err != nil {
+			return nil, err
+		}
+		query = sqlQuery
+	}
 	ctx.GetLogger().Debugf("Query is %s", query)
 	rows, err := s.conn.GetDB().Query(query)
 	failpoint.Inject("dbErr", func() {

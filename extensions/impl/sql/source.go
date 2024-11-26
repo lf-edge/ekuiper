@@ -55,10 +55,11 @@ func (s *SQLSourceConnector) Ping(ctx api.StreamContext, m map[string]any) error
 }
 
 type SQLConf struct {
-	Interval   cast.DurationConf `json:"interval"`
-	DBUrl      string            `json:"dburl"`
-	URL        string            `json:"url,omitempty"`
-	Datasource string            `json:"datasource"`
+	Interval            cast.DurationConf           `json:"interval"`
+	DBUrl               string                      `json:"dburl"`
+	URL                 string                      `json:"url,omitempty"`
+	Datasource          string                      `json:"datasource"`
+	TemplateSqlQueryCfg *sqlgen.TemplateSqlQueryCfg `json:"templateSqlQueryCfg"`
 }
 
 func init() {
