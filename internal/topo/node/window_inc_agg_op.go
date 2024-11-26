@@ -21,6 +21,7 @@ import (
 	"github.com/benbjohnson/clock"
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	topoContext "github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/state"
@@ -208,8 +209,14 @@ func (to *TumblingWindowIncAggOp) exec(ctx api.StreamContext, errCh chan<- error
 			to.ticker.Stop()
 		}
 	}()
-	firstTime, firstTimer := getFirstTimer(ctx, to.windowConfig.RawInterval, to.windowConfig.TimeUnit)
-	to.currWindow = newIncAggWindow(ctx, firstTime)
+	var firstTime time.Time
+	var firstTimer *clock.Timer
+	if conf.IsTesting {
+		to.ticker = timex.GetTicker(to.Interval)
+	} else {
+		firstTime, firstTimer = getFirstTimer(ctx, to.windowConfig.RawInterval, to.windowConfig.TimeUnit)
+		to.currWindow = newIncAggWindow(ctx, firstTime)
+	}
 	fv, _ := xsql.NewFunctionValuersForOp(ctx)
 	for {
 		select {
@@ -229,13 +236,20 @@ func (to *TumblingWindowIncAggOp) exec(ctx api.StreamContext, errCh chan<- error
 				name := calDimension(fv, to.Dimensions, row)
 				incAggCal(ctx, name, row, to.currWindow, to.aggFields)
 			}
-		case now := <-firstTimer.C:
-			firstTimer.Stop()
-			if to.currWindow != nil {
-				to.emit(ctx, errCh, now)
-			}
-			to.ticker = timex.GetTicker(to.Interval)
 		default:
+		}
+		if firstTimer != nil && !conf.IsTesting {
+			select {
+			case <-ctx.Done():
+				return
+			case now := <-firstTimer.C:
+				firstTimer.Stop()
+				if to.currWindow != nil {
+					to.emit(ctx, errCh, now)
+				}
+				to.ticker = timex.GetTicker(to.Interval)
+			default:
+			}
 		}
 		if to.ticker != nil {
 			select {
