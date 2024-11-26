@@ -22,6 +22,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/util"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/node/tracenode"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 )
@@ -115,7 +116,16 @@ func (ms *Sink) Collect(ctx api.StreamContext, item api.RawTuple) error {
 			}
 		}
 	}
-
+	traced, _, span := tracenode.TraceInput(ctx, item, fmt.Sprintf("%s_emit", ctx.GetOpId()))
+	if traced {
+		defer span.End()
+		traceID := span.SpanContext().TraceID()
+		spanID := span.SpanContext().SpanID()
+		if props == nil {
+			props = make(map[string]string)
+		}
+		props["traceparent"] = tracenode.BuildTraceParentId(traceID, spanID)
+	}
 	ctx.GetLogger().Debugf("publishing to topic %s", tpc)
 	return ms.cli.Publish(ctx, tpc, ms.adconf.Qos, ms.adconf.Retained, item.Raw(), props)
 }

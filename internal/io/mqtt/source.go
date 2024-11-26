@@ -113,12 +113,17 @@ func (ms *SourceConnector) Subscribe(ctx api.StreamContext, ingest api.BytesInge
 
 func (ms *SourceConnector) onMessage(ctx api.StreamContext, msg any, ingest api.BytesIngest) {
 	rcvTime := timex.GetNow()
-	payload, meta, _ := ms.cli.ParseMsg(ctx, msg)
+	payload, meta, props := ms.cli.ParseMsg(ctx, msg)
 	if ms.eof != nil && ms.eofPayload != nil && bytes.Equal(ms.eofPayload, payload) {
 		ms.eof(ctx)
 		return
 	}
-	// TODO property trace
+	// extract trace id
+	if props != nil {
+		if tid, ok := props["traceparent"]; ok {
+			meta["traceId"] = tid
+		}
+	}
 	ingest(ctx, payload, meta, rcvTime)
 }
 
