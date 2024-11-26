@@ -821,5 +821,6 @@ func supportedWindowType(window *ast.Window) bool {
 var supportedWType = map[ast.WindowType]struct{}{
 	ast.COUNT_WINDOW:    {},
 	ast.SLIDING_WINDOW:  {},
+	ast.HOPPING_WINDOW:  {},
 	ast.TUMBLING_WINDOW: {},
 }
