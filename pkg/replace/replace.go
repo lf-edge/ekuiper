@@ -3,6 +3,8 @@ package replace
 import (
 	"encoding/json"
 	"time"
+
+	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
 
 var (
@@ -105,15 +107,9 @@ func ReplaceDuration(props map[string]interface{}) (bool, map[string]interface{}
 	for _, replaceWord := range replaceDuration {
 		v, ok := props[replaceWord]
 		if ok {
-			intRaw, ok := v.(int)
-			if ok {
+			intRaw, err := cast.ToInt(v, cast.CONVERT_ALL)
+			if err == nil {
 				props[replaceWord] = (time.Duration(intRaw) * time.Millisecond).String()
-				changed = true
-				continue
-			}
-			int64Raw, ok := v.(int64)
-			if ok {
-				props[replaceWord] = (time.Duration(int64Raw) * time.Millisecond).String()
 				changed = true
 				continue
 			}
