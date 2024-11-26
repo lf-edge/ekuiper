@@ -21,7 +21,6 @@ import (
 	"github.com/benbjohnson/clock"
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	topoContext "github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/state"
@@ -31,12 +30,20 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
+var (
+	EnableAlignWindow bool
+)
+
+func init() {
+	EnableAlignWindow = true
+}
+
 type WindowIncAggOperator struct {
 	*defaultSinkNode
 	windowConfig *WindowConfig
 	Dimensions   ast.Dimensions
 	aggFields    []*ast.Field
-	windowExec   windowIncAggExec
+	WindowExec   windowIncAggExec
 }
 
 func NewWindowIncAggOp(name string, w *WindowConfig, dimensions ast.Dimensions, aggFields []*ast.Field, options *def.RuleOption) (*WindowIncAggOperator, error) {
@@ -51,13 +58,13 @@ func NewWindowIncAggOp(name string, w *WindowConfig, dimensions ast.Dimensions, 
 			WindowIncAggOperator: o,
 			windowSize:           w.CountLength,
 		}
-		o.windowExec = wExec
+		o.WindowExec = wExec
 	case ast.TUMBLING_WINDOW:
 		wExec := NewTumblingWindowIncAggOp(o)
-		o.windowExec = wExec
+		o.WindowExec = wExec
 	case ast.SLIDING_WINDOW:
 		wExec := NewSlidingWindowIncAggOp(o)
-		o.windowExec = wExec
+		o.WindowExec = wExec
 	}
 	return o, nil
 }
@@ -74,7 +81,7 @@ func (o *WindowIncAggOperator) Exec(ctx api.StreamContext, errCh chan<- error) {
 	go func() {
 		defer o.Close()
 		err := infra.SafeRun(func() error {
-			o.windowExec.exec(ctx, errCh)
+			o.WindowExec.exec(ctx, errCh)
 			return nil
 		})
 		if err != nil {
@@ -191,6 +198,7 @@ func (co *CountWindowIncAggOp) emit(ctx api.StreamContext, errCh chan<- error) {
 type TumblingWindowIncAggOp struct {
 	*WindowIncAggOperator
 	ticker     *clock.Ticker
+	FirstTimer *clock.Timer
 	Interval   time.Duration
 	currWindow *IncAggWindow
 }
@@ -211,11 +219,12 @@ func (to *TumblingWindowIncAggOp) exec(ctx api.StreamContext, errCh chan<- error
 	}()
 	var firstTime time.Time
 	var firstTimer *clock.Timer
-	if conf.IsTesting {
+	if !EnableAlignWindow {
 		to.ticker = timex.GetTicker(to.Interval)
 	} else {
 		firstTime, firstTimer = getFirstTimer(ctx, to.windowConfig.RawInterval, to.windowConfig.TimeUnit)
 		to.currWindow = newIncAggWindow(ctx, firstTime)
+		to.FirstTimer = firstTimer
 	}
 	fv, _ := xsql.NewFunctionValuersForOp(ctx)
 	for {
@@ -238,7 +247,7 @@ func (to *TumblingWindowIncAggOp) exec(ctx api.StreamContext, errCh chan<- error
 			}
 		default:
 		}
-		if firstTimer != nil && !conf.IsTesting {
+		if firstTimer != nil && EnableAlignWindow {
 			select {
 			case <-ctx.Done():
 				return
