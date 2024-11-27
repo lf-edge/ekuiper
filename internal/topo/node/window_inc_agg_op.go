@@ -30,9 +30,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
-var (
-	EnableAlignWindow bool
-)
+var EnableAlignWindow bool
 
 func init() {
 	EnableAlignWindow = true

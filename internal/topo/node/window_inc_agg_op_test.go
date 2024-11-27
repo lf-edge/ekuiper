@@ -408,6 +408,50 @@ func TestIncHoppingWindow(t *testing.T) {
 	op.Close()
 }
 
+func TestIncAggAlignHoppingWindow(t *testing.T) {
+	conf.IsTesting = true
+	node.EnableAlignWindow = true
+	o := &def.RuleOption{
+		BufferLength: 10,
+	}
+	kv, err := store.GetKV("stream")
+	require.NoError(t, err)
+	require.NoError(t, prepareStream())
+	sql := "select count(*) from stream group by hoppingWindow(ss,2,1)"
+	stmt, err := xsql.NewParser(strings.NewReader(sql)).Parse()
+	require.NoError(t, err)
+	p, err := planner.CreateLogicalPlan(stmt, &def.RuleOption{
+		PlanOptimizeStrategy: &def.PlanOptimizeStrategy{
+			EnableIncrementalWindow: true,
+		},
+		Qos: 0,
+	}, kv)
+	require.NoError(t, err)
+	require.NotNil(t, p)
+	incPlan := extractIncWindowPlan(p)
+	require.NotNil(t, incPlan)
+	op, err := node.NewWindowIncAggOp("1", &node.WindowConfig{
+		Type:        incPlan.WType,
+		RawInterval: 1,
+		TimeUnit:    ast.SS,
+		Length:      2 * time.Second,
+		Interval:    time.Second,
+	}, incPlan.Dimensions, incPlan.IncAggFuncs, o)
+	require.NoError(t, err)
+	output := make(chan any, 10)
+	op.AddOutput(output, "output")
+	errCh := make(chan error, 10)
+	ctx, cancel := mockContext.NewMockContext("1", "2").WithCancel()
+	defer func() {
+		cancel()
+	}()
+	op.Exec(ctx, errCh)
+	time.Sleep(10 * time.Millisecond)
+	ho, ok := op.WindowExec.(*node.HoppingWindowIncAggOp)
+	require.True(t, ok)
+	require.NotNil(t, ho.FirstTimer)
+}
+
 func extractIncWindowPlan(cur planner.LogicalPlan) *planner.IncWindowPlan {
 	switch plan := cur.(type) {
 	case *planner.IncWindowPlan:
