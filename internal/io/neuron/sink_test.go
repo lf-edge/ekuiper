@@ -76,12 +76,9 @@ func TestSink(t *testing.T) {
 	assert.NoError(t, err)
 
 	exp := []string{
-		`{"group_name":"dynamic","node_name":"dynamic","tag_name":"temperature","value":22}`,
-		`{"group_name":"dynamic","node_name":"dynamic","tag_name":"status","value":"green"}`,
-		`{"group_name":"grp","node_name":"test1","tag_name":"temperature","value":25}`,
-		`{"group_name":"grp","node_name":"test1","tag_name":"status","value":"wet"}`,
-		`{"group_name":"grp","node_name":"test1","tag_name":"temperature","value":33}`,
-		`{"group_name":"grp","node_name":"test1","tag_name":"status","value":"hot"}`,
+		`{"group_name":"dynamic","node_name":"dynamic","tags":[{"tag_name":"temperature","value":22},{"tag_name":"status","value":"green"}]}`,
+		`{"group_name":"grp","node_name":"test1","tags":[{"tag_name":"temperature","value":25},{"tag_name":"status","value":"wet"}]}`,
+		`{"group_name":"grp","node_name":"test1","tags":[{"tag_name":"temperature","value":33},{"tag_name":"status","value":"hot"}]}`,
 	}
 	var actual []string
 	ticker := time.After(5 * time.Second)
@@ -125,9 +122,7 @@ func TestSinkNoTags(t *testing.T) {
 	assert.NoError(t, err)
 
 	exp := []string{
-		`{"group_name":"dynamic","node_name":"dynamic","tag_name":"humidity","value":50}`,
-		`{"group_name":"dynamic","node_name":"dynamic","tag_name":"status","value":"green"}`,
-		`{"group_name":"dynamic","node_name":"dynamic","tag_name":"temperature","value":22}`,
+		`{"group_name":"dynamic","node_name":"dynamic","tags":[{"tag_name":"humidity","value":50},{"tag_name":"status","value":"green"},{"tag_name":"temperature","value":22}]}`,
 	}
 	var actual []string
 	ticker := time.After(5 * time.Second)
