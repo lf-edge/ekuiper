@@ -117,6 +117,7 @@ func TestIncAggAlignTumblingWindow(t *testing.T) {
 		TimeUnit:    ast.SS,
 		Interval:    time.Second,
 	}, incPlan.Dimensions, incPlan.IncAggFuncs, o)
+	require.NoError(t, err)
 	output := make(chan any, 10)
 	op.AddOutput(output, "output")
 	errCh := make(chan error, 10)
