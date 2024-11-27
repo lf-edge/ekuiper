@@ -48,8 +48,12 @@ type sink struct {
 type neuronTemplate struct {
 	GroupName string      `json:"group_name"`
 	NodeName  string      `json:"node_name"`
-	TagName   string      `json:"tag_name"`
-	Value     interface{} `json:"value"`
+	Tags      []neuronTag `json:"tags"`
+}
+
+type neuronTag struct {
+	Name  string `json:"tag_name"`
+	Value any    `json:"value"`
 }
 
 func (s *sink) Provision(_ api.StreamContext, props map[string]any) error {
@@ -150,11 +154,8 @@ func (s *sink) SendMapToNeuron(ctx api.StreamContext, tuple api.MessageTuple) er
 		NodeName:  n,
 		GroupName: g,
 	}
-	var (
-		ok  bool
-		err error
-	)
 	el := tuple.ToMap()
+	var tags []neuronTag
 	if len(s.c.Tags) == 0 {
 		if conf.IsTesting {
 			var keys []string
@@ -163,43 +164,32 @@ func (s *sink) SendMapToNeuron(ctx api.StreamContext, tuple api.MessageTuple) er
 			}
 			sort.Strings(keys)
 			for _, k := range keys {
-				t.TagName = k
-				t.Value = el[k]
-				err := doPublish(ctx, s.cli, tuple, t)
-				if err != nil {
-					return err
-				}
+				tags = append(tags, neuronTag{k, el[k]})
 			}
 		} else {
 			for k, v := range el {
-				t.TagName = k
-				t.Value = v
-				err := doPublish(ctx, s.cli, tuple, t)
-				if err != nil {
-					return err
-				}
+				tags = append(tags, neuronTag{k, v})
 			}
 		}
 	} else {
+		tags = make([]neuronTag, 0, len(s.c.Tags))
 		// Send as many tags as possible in order and drop the tag if it is invalid
 		for _, tag := range s.c.Tags {
-			t.TagName, err = ctx.ParseTemplate(tag, el)
+			n, err := ctx.ParseTemplate(tag, el)
 			if err != nil {
 				ctx.GetLogger().Errorf("Error parsing tag %s: %v", tag, err)
 				continue
 			}
-			t.Value, ok = el[t.TagName]
+			v, ok := el[n]
 			if !ok {
-				ctx.GetLogger().Errorf("Error get the value of tag %s: %v", t.TagName, err)
+				ctx.GetLogger().Errorf("Error get the value of tag %s: %v", n, err)
 				continue
 			}
-			err := doPublish(ctx, s.cli, tuple, t)
-			if err != nil {
-				return err
-			}
+			tags = append(tags, neuronTag{n, v})
 		}
 	}
-	return nil
+	t.Tags = tags
+	return doPublish(ctx, s.cli, tuple, t)
 }
 
 func doPublish(ctx api.StreamContext, cli *nng.Sock, tuple api.MessageTuple, t *neuronTemplate) error {
@@ -210,7 +200,7 @@ func doPublish(ctx api.StreamContext, cli *nng.Sock, tuple api.MessageTuple, t *
 	r = extractSpanContextIntoData(ctx, tuple, r)
 	err = cli.Send(ctx, r)
 	if err != nil {
-		return errorx.NewIOErr(fmt.Sprintf(`Error publish the tag payload %s: %v`, t.TagName, err))
+		return errorx.NewIOErr(fmt.Sprintf(`Error publish the tag payload %v: %v`, t, err))
 	}
 	ctx.GetLogger().Debugf("Send %s", r)
 	return nil
