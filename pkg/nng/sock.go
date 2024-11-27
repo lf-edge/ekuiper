@@ -97,20 +97,20 @@ func (s *Sock) Provision(ctx api.StreamContext, conId string, props map[string]a
 			if s.scHandler != nil {
 				s.scHandler(api.ConnectionConnected, "")
 			}
-			ctx.GetLogger().Infof("nano connection attached")
+			ctx.GetLogger().Infof("nng connection attached")
 		case mangos.PipeEventAttaching:
 			s.status.Store(modules.ConnectionStatus{Status: api.ConnectionConnecting})
 			if s.scHandler != nil {
 				s.scHandler(api.ConnectionConnecting, "")
 			}
-			ctx.GetLogger().Debugf("nano connection is attaching")
+			ctx.GetLogger().Debugf("nng connection is attaching")
 		case mangos.PipeEventDetached:
 			s.connected.Store(false)
 			s.status.Store(modules.ConnectionStatus{Status: api.ConnectionDisconnected})
 			if s.scHandler != nil {
 				s.scHandler(api.ConnectionDisconnected, "")
 			}
-			ctx.GetLogger().Warnf("nano connection detached")
+			ctx.GetLogger().Warnf("nng connection detached")
 		}
 	})
 	return nil
