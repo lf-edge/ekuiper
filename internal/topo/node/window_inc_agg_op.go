@@ -103,6 +103,8 @@ func (o *WindowIncAggOperator) Exec(ctx api.StreamContext, errCh chan<- error) {
 
 type windowIncAggExec interface {
 	exec(ctx api.StreamContext, errCh chan<- error)
+	PutState(ctx api.StreamContext)
+	RestoreFromState(ctx api.StreamContext) error
 }
 
 type CountWindowIncAggOp struct {
@@ -121,7 +123,7 @@ type IncAggWindow struct {
 	DimensionsIncAggRange map[string]*IncAggRange
 }
 
-func (w *IncAggWindow) generateAllFunctionState() {
+func (w *IncAggWindow) GenerateAllFunctionState() {
 	if w == nil {
 		return
 	}
@@ -164,7 +166,7 @@ func (r *IncAggRange) restoreState(ctx api.StreamContext) {
 }
 
 func (co *CountWindowIncAggOp) PutState(ctx api.StreamContext) {
-	co.CountWindowIncAggOpState.CurrWindow.generateAllFunctionState()
+	co.CountWindowIncAggOpState.CurrWindow.GenerateAllFunctionState()
 	ctx.PutState(buildStateKey(ctx), co.CountWindowIncAggOpState)
 }
 
@@ -178,7 +180,7 @@ func (co *CountWindowIncAggOp) RestoreFromState(ctx api.StreamContext) error {
 	}
 	coState, ok := s.(CountWindowIncAggOpState)
 	if !ok {
-		return fmt.Errorf("not state")
+		return fmt.Errorf("not CountWindowIncAggOpState")
 	}
 	co.CountWindowIncAggOpState = coState
 	co.CountWindowIncAggOpState.CurrWindow.restoreState(ctx)
@@ -282,7 +284,7 @@ func NewTumblingWindowIncAggOp(o *WindowIncAggOperator) *TumblingWindowIncAggOp 
 }
 
 func (to *TumblingWindowIncAggOp) PutState(ctx api.StreamContext) {
-	to.CurrWindow.generateAllFunctionState()
+	to.CurrWindow.GenerateAllFunctionState()
 	ctx.PutState(buildStateKey(ctx), to.TumblingWindowIncAggOpState)
 }
 
@@ -296,7 +298,7 @@ func (to *TumblingWindowIncAggOp) RestoreFromState(ctx api.StreamContext) error 
 	}
 	toState, ok := s.(TumblingWindowIncAggOpState)
 	if !ok {
-		return fmt.Errorf("not state")
+		return fmt.Errorf("not TumblingWindowIncAggOpState")
 	}
 	to.TumblingWindowIncAggOpState = toState
 	to.TumblingWindowIncAggOpState.CurrWindow.restoreState(ctx)
@@ -422,7 +424,7 @@ func NewSlidingWindowIncAggOp(o *WindowIncAggOperator) *SlidingWindowIncAggOp {
 
 func (so *SlidingWindowIncAggOp) PutState(ctx api.StreamContext) {
 	for index, window := range so.CurrWindowList {
-		window.generateAllFunctionState()
+		window.GenerateAllFunctionState()
 		so.CurrWindowList[index] = window
 	}
 	ctx.PutState(buildStateKey(ctx), so.SlidingWindowIncAggOpState)
@@ -438,11 +440,11 @@ func (so *SlidingWindowIncAggOp) RestoreFromState(ctx api.StreamContext) error {
 	}
 	soState, ok := s.(SlidingWindowIncAggOpState)
 	if !ok {
-		return fmt.Errorf("not state")
+		return fmt.Errorf("not SlidingWindowIncAggOpState")
 	}
 	so.SlidingWindowIncAggOpState = soState
 	for index, window := range so.CurrWindowList {
-		window.generateAllFunctionState()
+		window.GenerateAllFunctionState()
 		so.CurrWindowList[index] = window
 	}
 	now := timex.GetNow()
@@ -611,7 +613,7 @@ func NewHoppingWindowIncAggOp(o *WindowIncAggOperator) *HoppingWindowIncAggOp {
 
 func (ho *HoppingWindowIncAggOp) PutState(ctx api.StreamContext) {
 	for index, window := range ho.CurrWindowList {
-		window.generateAllFunctionState()
+		window.GenerateAllFunctionState()
 		ho.CurrWindowList[index] = window
 	}
 	ctx.PutState(buildStateKey(ctx), ho.HoppingWindowIncAggOpState)
@@ -627,7 +629,7 @@ func (ho *HoppingWindowIncAggOp) RestoreFromState(ctx api.StreamContext) error {
 	}
 	coState, ok := s.(HoppingWindowIncAggOpState)
 	if !ok {
-		return fmt.Errorf("not state")
+		return fmt.Errorf("not HoppingWindowIncAggOpState")
 	}
 	ho.HoppingWindowIncAggOpState = coState
 	for index, window := range ho.CurrWindowList {
@@ -819,5 +821,5 @@ func gcIncAggWindow(currWindowList []*IncAggWindow, windowLength time.Duration, 
 }
 
 func buildStateKey(ctx api.StreamContext) string {
-	return fmt.Sprintf("%v_%v_%v", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId())
+	return fmt.Sprintf("%v_%v_%v/state", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId())
 }

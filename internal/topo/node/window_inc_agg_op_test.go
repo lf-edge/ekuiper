@@ -38,6 +38,73 @@ func init() {
 	testx.InitEnv("node_test")
 }
 
+func TestWindowState(t *testing.T) {
+	conf.IsTesting = true
+	node.EnableAlignWindow = false
+	o := &def.RuleOption{
+		BufferLength: 10,
+	}
+	kv, err := store.GetKV("stream")
+	require.NoError(t, err)
+	require.NoError(t, prepareStream())
+	testcases := []struct {
+		sql string
+	}{
+		{
+			sql: "select count(*) from stream group by tumblingWindow(ss,1)",
+		},
+		{
+			sql: "select count(*) from stream group by slidingWindow(ss,1)",
+		},
+		{
+			sql: "select count(*) from stream group by hoppingWindow(ss,2,1)",
+		},
+	}
+	for _, tt := range testcases {
+		stmt, err := xsql.NewParser(strings.NewReader(tt.sql)).Parse()
+		require.NoError(t, err)
+		p, err := planner.CreateLogicalPlan(stmt, &def.RuleOption{
+			PlanOptimizeStrategy: &def.PlanOptimizeStrategy{
+				EnableIncrementalWindow: true,
+			},
+			Qos: 0,
+		}, kv)
+		require.NoError(t, err)
+		require.NotNil(t, p)
+		incPlan := extractIncWindowPlan(p)
+		require.NotNil(t, incPlan)
+		op, err := node.NewWindowIncAggOp("1", &node.WindowConfig{
+			Type:     incPlan.WType,
+			Interval: time.Second,
+		}, incPlan.Dimensions, incPlan.IncAggFuncs, o)
+		require.NoError(t, err)
+		require.NotNil(t, op)
+		input, _ := op.GetInput()
+		output := make(chan any, 10)
+		op.AddOutput(output, "output")
+		errCh := make(chan error, 10)
+		ctx, cancel := mockContext.NewMockContext("1", "2").WithCancel()
+		op.Exec(ctx, errCh)
+		time.Sleep(10 * time.Millisecond)
+		input <- &xsql.Tuple{Message: map[string]any{"a": int64(1)}}
+		time.Sleep(10 * time.Millisecond)
+		op.WindowExec.PutState(ctx)
+
+		op2, err := node.NewWindowIncAggOp("1", &node.WindowConfig{
+			Type:     incPlan.WType,
+			Interval: time.Second,
+		}, incPlan.Dimensions, incPlan.IncAggFuncs, o)
+		require.NoError(t, err)
+		require.NotNil(t, op2)
+		op2.Exec(ctx, errCh)
+		time.Sleep(10 * time.Millisecond)
+		require.NoError(t, op2.WindowExec.RestoreFromState(ctx))
+		cancel()
+		op.Close()
+		op2.Close()
+	}
+}
+
 func TestIncAggCountWindowState(t *testing.T) {
 	o := &def.RuleOption{
 		BufferLength: 10,
