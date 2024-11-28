@@ -3,13 +3,12 @@
 <span style="background:green;color:white;padding:1px;margin:2px">stream source</span>
 
 eKuiper has built-in support for the dirwatch data source. Read the file data in the file directory by monitoring the file directory corresponding to PATH. When a file in the corresponding file directory is created or modified, eKuiper will read the file.
-## 配置
 
 ## Configurations
 
 The connector in eKuiper can be configured with [environment variables](../../../configuration/configuration.md#environment-variable-syntax), [rest API](../../../api/restapi/configKey.md), or configuration file. This section focuses on configuring eKuiper connectors with the configuration file.
 
-eKuiper's default MQTT source configuration resides at `$ekuiper/etc/sources/dirwatch.yaml`. 
+eKuiper's default MQTT source configuration resides at `$ekuiper/etc/sources/dirwatch.yaml`.
 
 See below for a demo configuration with the global configuration and a customized `demo_conf` section.
 
