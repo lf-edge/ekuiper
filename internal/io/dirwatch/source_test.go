@@ -29,6 +29,12 @@ import (
 func TestFileDirSource(t *testing.T) {
 	path, err := os.Getwd()
 	require.NoError(t, err)
+	f, err := os.Create("./test123.txt")
+	require.NoError(t, err)
+	_, err = f.Write([]byte("123"))
+	require.NoError(t, err)
+	f.Close()
+	time.Sleep(10 * time.Millisecond)
 	fileDirSource := &FileDirSource{}
 	c := map[string]interface{}{
 		"path":             path,
@@ -42,11 +48,6 @@ func TestFileDirSource(t *testing.T) {
 		output <- data
 	}, func(ctx api.StreamContext, err error) {}))
 	time.Sleep(10 * time.Millisecond)
-	f, err := os.Create("./test123.txt")
-	require.NoError(t, err)
-	_, err = f.Write([]byte("123"))
-	require.NoError(t, err)
-	f.Close()
 	got := <-output
 	gotM, ok := got.(map[string]interface{})
 	require.True(t, ok)
