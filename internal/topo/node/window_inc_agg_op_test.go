@@ -309,7 +309,7 @@ func TestIncAggSlidingWindowDelay(t *testing.T) {
 	kv, err := store.GetKV("stream")
 	require.NoError(t, err)
 	require.NoError(t, prepareStream())
-	sql := "select count(*) from stream group by slidingWindow(ss,1,1)"
+	sql := "select count(*) from stream group by slidingWindow(ss,1,3)"
 	stmt, err := xsql.NewParser(strings.NewReader(sql)).Parse()
 	require.NoError(t, err)
 	p, err := planner.CreateLogicalPlan(stmt, &def.RuleOption{
@@ -323,9 +323,9 @@ func TestIncAggSlidingWindowDelay(t *testing.T) {
 	incPlan := extractIncWindowPlan(p)
 	require.NotNil(t, incPlan)
 	op, err := node.NewWindowIncAggOp("1", &node.WindowConfig{
-		Type:             incPlan.WType,
-		Length:           time.Second,
-		TriggerCondition: incPlan.TriggerCondition,
+		Type:   incPlan.WType,
+		Length: time.Second,
+		Delay:  3 * time.Second,
 	}, incPlan.Dimensions, incPlan.IncAggFuncs, o)
 	require.NoError(t, err)
 	require.NotNil(t, op)
@@ -335,9 +335,21 @@ func TestIncAggSlidingWindowDelay(t *testing.T) {
 	errCh := make(chan error, 10)
 	ctx, cancel := mockContext.NewMockContext("1", "2").WithCancel()
 	op.Exec(ctx, errCh)
-	time.Sleep(10 * time.Millisecond)
+	waitExecute()
 	input <- &xsql.Tuple{Message: map[string]any{"a": int64(1)}}
-	timex.Add(1100 * time.Millisecond)
+	waitExecute()
+	timex.Add(300 * time.Millisecond)
+	waitExecute()
+	input <- &xsql.Tuple{Message: map[string]any{"a": int64(2)}}
+	waitExecute()
+	timex.Add(1500 * time.Millisecond)
+	waitExecute()
+	input <- &xsql.Tuple{Message: map[string]any{"a": int64(3)}}
+	waitExecute()
+	timex.Add(1300 * time.Millisecond)
+	waitExecute()
+	timex.Add(3000 * time.Millisecond)
+
 	got := <-output
 	wt, ok := got.(*xsql.WindowTuples)
 	require.True(t, ok)
@@ -345,13 +357,39 @@ func TestIncAggSlidingWindowDelay(t *testing.T) {
 	d := wt.ToMaps()
 	require.Equal(t, []map[string]any{
 		{
-			"a":             int64(1),
+			"a":             int64(2),
+			"inc_agg_col_1": int64(2),
+		},
+	}, d)
+	got = <-output
+	wt, ok = got.(*xsql.WindowTuples)
+	require.True(t, ok)
+	require.NotNil(t, wt)
+	d = wt.ToMaps()
+	require.Equal(t, []map[string]any{
+		{
+			"a":             int64(2),
+			"inc_agg_col_1": int64(1),
+		},
+	}, d)
+	got = <-output
+	wt, ok = got.(*xsql.WindowTuples)
+	require.True(t, ok)
+	require.NotNil(t, wt)
+	d = wt.ToMaps()
+	require.Equal(t, []map[string]any{
+		{
+			"a":             int64(3),
 			"inc_agg_col_1": int64(1),
 		},
 	}, d)
 	cancel()
 	time.Sleep(10 * time.Millisecond)
 	op.Close()
+}
+
+func waitExecute() {
+	time.Sleep(20 * time.Millisecond)
 }
 
 func TestIncHoppingWindow(t *testing.T) {
