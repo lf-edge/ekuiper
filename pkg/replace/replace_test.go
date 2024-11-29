@@ -120,50 +120,69 @@ func TestReplaceRuleJson(t *testing.T) {
 
 func TestReplaceDuration(t *testing.T) {
 	props := map[string]interface{}{
-		"cacheTtl": 1000,
+		"timeout": 1000,
 	}
 	changed, newProps := ReplaceDuration(props)
 	require.True(t, changed)
 	require.Equal(t, map[string]interface{}{
-		"cacheTtl": "1s",
+		"timeout": "1s",
 	}, newProps)
 	props = map[string]interface{}{
-		"cacheTtl": int64(1000),
+		"timeout": int64(1000),
 	}
 	changed, newProps = ReplaceDuration(props)
 	require.True(t, changed)
 	require.Equal(t, map[string]interface{}{
-		"cacheTtl": "1s",
+		"timeout": "1s",
 	}, newProps)
 	props = map[string]interface{}{
-		"cacheTtl": float64(1000),
+		"timeout": float64(1000),
 	}
 	changed, newProps = ReplaceDuration(props)
 	require.True(t, changed)
 	require.Equal(t, map[string]interface{}{
-		"cacheTtl": "1s",
+		"timeout": "1s",
 	}, newProps)
 }
 
 func TestRelacePropsPlug(t *testing.T) {
 	props := map[string]interface{}{
-		"cacheTtl": 1000,
-		"url":      "123",
+		"timeout": 1000,
+		"url":     "123",
 	}
 	changed, newProps := ReplacePropsWithPlug("", props)
 	require.True(t, changed)
 	require.Equal(t, map[string]interface{}{
-		"cacheTtl": "1s",
-		"url":      "123",
+		"timeout": "1s",
+		"url":     "123",
 	}, newProps)
 	props = map[string]interface{}{
-		"cacheTtl": 1000,
-		"url":      "123",
+		"timeout": 1000,
+		"url":     "123",
 	}
 	changed, newProps = ReplacePropsWithPlug("sql", props)
 	require.True(t, changed)
 	require.Equal(t, map[string]interface{}{
-		"cacheTtl": "1s",
-		"dburl":    "123",
+		"timeout": "1s",
+		"dburl":   "123",
+	}, newProps)
+}
+
+func TestReplaceCacheTtl(t *testing.T) {
+	props := map[string]interface{}{
+		"lookup": map[string]interface{}{
+			"a":        1,
+			"cacheTtl": 100,
+		},
+		"a": "b",
+	}
+	changed, newProps := ReplacePropsWithPlug("sql", props)
+	require.True(t, changed)
+	require.Equal(t, map[string]interface{}{
+		"lookup": map[string]interface{}{
+			"a":        1,
+			"cacheTtl": "100ms",
+		},
+		"a": "b",
 	}, newProps)
 }

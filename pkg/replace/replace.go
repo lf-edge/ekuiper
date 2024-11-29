@@ -105,6 +105,25 @@ func ReplacePassword(props map[string]interface{}) (bool, map[string]interface{}
 func ReplaceDuration(props map[string]interface{}) (bool, map[string]interface{}) {
 	changed := false
 	for _, replaceWord := range replaceDuration {
+		if replaceWord == "cacheTtl" {
+			vm, ok := props["lookup"]
+			if ok {
+				lookupm, ok := vm.(map[string]interface{})
+				if ok {
+					oldValue, ok := lookupm[replaceWord]
+					if ok {
+						intRaw, err := cast.ToInt(oldValue, cast.CONVERT_ALL)
+						if err == nil {
+							lookupm[replaceWord] = (time.Duration(intRaw) * time.Millisecond).String()
+							changed = true
+							props["lookup"] = lookupm
+							continue
+						}
+					}
+
+				}
+			}
+		}
 		v, ok := props[replaceWord]
 		if ok {
 			intRaw, err := cast.ToInt(v, cast.CONVERT_ALL)

@@ -232,6 +232,13 @@ func GetYamlConf(configOperatorKey, language string) (b []byte, err error) {
 	}
 
 	cf := cfgOps.CopyConfContent()
+	for plug, props := range cf {
+		changed, newProps := replace.ReplacePropsWithPlug(plug, props)
+		if changed {
+			cf[plug] = newProps
+		}
+	}
+
 	if b, err = json.Marshal(cf); nil != err {
 		return nil, fmt.Errorf(`%s%v`, getMsg(language, source, "json_marshal_fail"), cf)
 	} else {
