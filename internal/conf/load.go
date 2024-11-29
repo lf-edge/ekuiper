@@ -65,10 +65,10 @@ func LoadConfigByName(name string, c interface{}) error {
 		return err
 	}
 	p := path.Join(dir, name)
-	return LoadConfigFromPath(p, c)
+	return LoadYamlConfigFromPath(p, c)
 }
 
-func LoadConfigFromPath(p string, c interface{}) error {
+func LoadYamlConfigFromPath(p string, c interface{}) error {
 	if cache, ok := LoadConfigCache[p]; ok {
 		return cast.MapToStruct(cache, c)
 	}

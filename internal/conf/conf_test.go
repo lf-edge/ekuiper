@@ -442,7 +442,7 @@ func TestLoad(t *testing.T) {
 	InitConf()
 	cpath, err := GetConfLoc()
 	require.NoError(t, err)
-	LoadConfigFromPath(path.Join(cpath, ConfFileName), &Config)
+	LoadYamlConfigFromPath(path.Join(cpath, ConfFileName), &Config)
 	require.Equal(t, 10, Config.Rule.RestartStrategy.Attempts)
 }
 

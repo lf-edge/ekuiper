@@ -328,7 +328,7 @@ func InitConf() {
 		},
 	}
 
-	err = LoadConfigFromPath(path.Join(cpath, ConfFileName), &kc)
+	err = LoadYamlConfigFromPath(path.Join(cpath, ConfFileName), &kc)
 	if err != nil {
 		Log.Fatal(err)
 		panic(err)

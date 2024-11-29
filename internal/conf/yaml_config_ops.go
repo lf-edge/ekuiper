@@ -399,7 +399,7 @@ func NewConfigOperatorFromSourceStorage(pluginName string) (ConfigOperator, erro
 	}
 	filePath := path.Join(dir, fileName+`.yaml`)
 	// Just ignore error if yaml not found
-	_ = LoadConfigFromPath(filePath, &c.etcCfg)
+	_ = LoadYamlConfigFromPath(filePath, &c.etcCfg)
 
 	prefix := buildKey("sources", pluginName, "")
 	dataCfg, err := getCfgKeyFromStorageByPrefix(prefix)
@@ -484,7 +484,7 @@ func NewConfigOperatorFromConnectionStorage(pluginName string) (ConfigOperator, 
 	}
 	yamlPath := path.Join(confDir, "connections/connection.yaml")
 	yamlData := make(map[string]interface{})
-	err = LoadConfigFromPath(yamlPath, &yamlData)
+	err = LoadYamlConfigFromPath(yamlPath, &yamlData)
 	if nil != err {
 		return nil, err
 	}
