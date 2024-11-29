@@ -95,7 +95,8 @@ func handleDataImportAsyncTask(rsi *configurationInfo, partial bool, stop bool) 
 		async.GlobalAsyncManager.StartTask(taskID)
 		s, err := handleConfigurationImport(subCtx, rsi, partial, stop)
 		if err != nil {
-			async.GlobalAsyncManager.TaskFailed(taskID, err)
+			b, _ := json.Marshal(s)
+			async.GlobalAsyncManager.TaskFailed(taskID, fmt.Errorf("err:%v, response:%v", err.Error(), string(b)))
 			return
 		}
 		b, _ := json.Marshal(s)
