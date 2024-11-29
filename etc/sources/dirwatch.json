@@ -1,0 +1,69 @@
+{
+  "about": {
+    "trial": true,
+    "author": {
+      "name": "EMQ",
+      "email": "contact@emqx.io",
+      "company": "EMQ Technologies Co., Ltd",
+      "website": "https://www.emqx.io"
+    },
+    "helpUrl": {},
+    "description": {
+      "en_US": "watch file directory changed",
+      "zh_CN": "监控并读取文件目录下的文件"
+    }
+  },
+  "libs": [],
+  "dataSource": {},
+  "properties": {
+    "default": [
+      {
+        "name": "path",
+        "default": "/",
+        "optional": false,
+        "control": "text",
+        "type": "text",
+        "hint": {
+          "en_US": "watched file directory",
+          "zh_CN": "监控的文件目录"
+        },
+        "label": {
+          "en_US": "path",
+          "zh_CN": "监控目录"
+        }
+      },
+      {
+        "name": "allowedExtension",
+        "default": [],
+        "optional": true,
+        "control": "text",
+        "type": "array",
+        "hint": {
+          "en_US": "watch the matched extension for files",
+          "zh_CN": "监控对应后缀的文件"
+        },
+        "label": {
+          "en_US": "allowedExtension",
+          "zh_CN": "文件后缀"
+        }
+      }
+    ]
+  },
+  "outputs": [
+    {
+      "label": {
+        "en_US": "Output",
+        "zh_CN": "输出"
+      },
+      "value": "signal"
+    }
+  ],
+  "node": {
+    "category": "source",
+    "icon": "iconPath",
+    "label": {
+      "en_US": "Dirwatch",
+      "zh_CN": "Dirwatch"
+    }
+  }
+}
