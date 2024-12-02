@@ -343,7 +343,6 @@ func (so *SlidingWindowIncAggOp) exec(ctx api.StreamContext, errCh chan<- error)
 			now := timex.GetNow()
 			window := task.window
 			so.removeDelayWindow(window)
-			so.currWindowList = append(so.currWindowList, window)
 			so.emit(ctx, errCh, window, now)
 		}
 	}
@@ -388,15 +387,18 @@ func (so *SlidingWindowIncAggOp) appendIncAggWindow(ctx api.StreamContext, errCh
 func (so *SlidingWindowIncAggOp) appendDelayIncAggWindow(ctx api.StreamContext, errCh chan<- error, fv *xsql.FunctionValuer, row *xsql.Tuple, now time.Time) {
 	name := calDimension(fv, so.Dimensions, row)
 	isMatched := so.isMatchCondition(ctx, fv, row)
+	var newDelayWindow *IncAggWindow
 	if isMatched {
-		newDelayWindow := newIncAggWindow(ctx, now)
+		newDelayWindow = newIncAggWindow(ctx, now)
 		so.delayWindowList = append(so.delayWindowList, newDelayWindow)
 	}
 	for _, incWindow := range so.delayWindowList {
-		incAggCal(ctx, name, row, incWindow, so.aggFields)
+		if incWindow.StartTime.Add(so.Length).After(now) {
+			incAggCal(ctx, name, row, incWindow, so.aggFields)
+		}
 	}
 	if isMatched {
-		t := &IncAggOpTask{window: so.delayWindowList[len(so.delayWindowList)-1]}
+		t := &IncAggOpTask{window: newDelayWindow}
 		go func(task *IncAggOpTask) {
 			after := timex.After(so.Delay)
 			select {
@@ -569,8 +571,9 @@ func incAggCal(ctx api.StreamContext, dimension string, row *xsql.Tuple, incAggW
 		dimensionsRange = newIncAggRange(ctx)
 		incAggWindow.DimensionsIncAggRange[dimension] = dimensionsRange
 	}
-	ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(dimensionsRange.fv, row, &xsql.WildcardValuer{Data: row})}
-	dimensionsRange.lastRow = row
+	cloneRow := cloneTuple(row)
+	ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(dimensionsRange.fv, cloneRow, &xsql.WildcardValuer{Data: cloneRow})}
+	dimensionsRange.lastRow = cloneRow
 	for _, aggField := range aggFields {
 		vi := ve.Eval(aggField.Expr)
 		colName := aggField.Name
