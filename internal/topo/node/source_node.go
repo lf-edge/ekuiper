@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/lf-edge/ekuiper/v2/internal/io/memory/pubsub"
@@ -98,15 +99,28 @@ func (m *SourceNode) traceStart(ctx api.StreamContext, meta map[string]any, tupl
 		traceCtx api.StreamContext
 		span     trace.Span
 	)
+	setType := false
+	opts := make([]trace.SpanStartOption, 0)
+	rawKind, ok := meta["sourceKind"]
+	if ok {
+		kind, ok := rawKind.(string)
+		if ok && kind == "neuron" {
+			opts = append(opts, trace.WithAttributes(attribute.String("span.mytype", "data-collection")))
+			setType = true
+		}
+	}
+	if !setType {
+		opts = append(opts, trace.WithAttributes(attribute.String("span.mytype", "data-processing")))
+	}
 	// If read from parent trace
 	if tid, ok := meta["traceId"]; ok {
-		traced, traceCtx, span = tracenode.StartTraceByID(ctx, tid.(string))
+		traced, traceCtx, span = tracenode.StartTraceByID(ctx, tid.(string), opts...)
 	} else {
 		strategy := tracenode.ExtractStrategy(ctx)
 		if strategy != topoContext.AlwaysTraceStrategy {
 			return
 		}
-		traced, traceCtx, span = tracenode.StartTraceBackground(ctx, ctx.GetOpId())
+		traced, traceCtx, span = tracenode.StartTraceBackground(ctx, ctx.GetOpId(), opts...)
 		meta["traceId"] = span.SpanContext().TraceID()
 	}
 	if traced {

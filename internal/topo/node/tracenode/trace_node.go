@@ -70,21 +70,21 @@ func TraceInput(ctx api.StreamContext, d any, opName string, opts ...trace.SpanS
 	return true, x, span
 }
 
-func StartTraceBackground(ctx api.StreamContext, opName string) (bool, api.StreamContext, trace.Span) {
+func StartTraceBackground(ctx api.StreamContext, opName string, opts ...trace.SpanStartOption) (bool, api.StreamContext, trace.Span) {
 	if !ctx.IsTraceEnabled() {
 		return false, nil, nil
 	}
 	if !checkCtxByStrategy(ctx, ctx) {
 		return false, nil, nil
 	}
-	spanCtx, span := tracer.GetTracer().Start(context.Background(), opName)
+	spanCtx, span := tracer.GetTracer().Start(context.Background(), opName, opts...)
 	ruleID := ctx.GetRuleId()
 	span.SetAttributes(attribute.String(RuleKey, ruleID))
 	ingestCtx := topoContext.WithContext(spanCtx)
 	return true, ingestCtx, span
 }
 
-func StartTraceByID(ctx api.StreamContext, parentId string) (bool, api.StreamContext, trace.Span) {
+func StartTraceByID(ctx api.StreamContext, parentId string, opts ...trace.SpanStartOption) (bool, api.StreamContext, trace.Span) {
 	if !ctx.IsTraceEnabled() {
 		return false, nil, nil
 	}
@@ -93,7 +93,7 @@ func StartTraceByID(ctx api.StreamContext, parentId string) (bool, api.StreamCon
 	}
 	propagator := propagation.TraceContext{}
 	traceCtx := propagator.Extract(context.Background(), propagation.MapCarrier(carrier))
-	spanCtx, span := tracer.GetTracer().Start(traceCtx, ctx.GetOpId())
+	spanCtx, span := tracer.GetTracer().Start(traceCtx, ctx.GetOpId(), opts...)
 	span.SetAttributes(attribute.String(RuleKey, ctx.GetRuleId()))
 	ingestCtx := topoContext.WithContext(spanCtx)
 	return true, ingestCtx, span
