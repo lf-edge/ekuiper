@@ -293,7 +293,6 @@ type SlidingWindowIncAggOp struct {
 	triggerCondition ast.Expr
 	Length           time.Duration
 	Delay            time.Duration
-	delayWindowList  []*IncAggWindow
 	currWindowList   []*IncAggWindow
 	taskCh           chan *IncAggOpTask
 }
@@ -309,7 +308,6 @@ func NewSlidingWindowIncAggOp(o *WindowIncAggOperator) *SlidingWindowIncAggOp {
 		Length:               o.windowConfig.Length,
 		Delay:                o.windowConfig.Delay,
 		currWindowList:       make([]*IncAggWindow, 0),
-		delayWindowList:      make([]*IncAggWindow, 0),
 		taskCh:               make(chan *IncAggOpTask, 1024),
 	}
 	return op
@@ -329,49 +327,31 @@ func (so *SlidingWindowIncAggOp) exec(ctx api.StreamContext, errCh chan<- error)
 			}
 			switch row := data.(type) {
 			case *xsql.Tuple:
-				so.currWindowList = gcIncAggWindow(so.currWindowList, so.Length, now)
-				if so.Delay > 0 {
-					so.appendDelayIncAggWindow(ctx, errCh, fv, row, now)
-					continue
-				}
+				so.currWindowList = gcIncAggWindow(so.currWindowList, so.Length+so.Delay, now)
 				so.appendIncAggWindow(ctx, errCh, fv, row, now)
 				if len(so.currWindowList) > 0 && so.isMatchCondition(ctx, fv, row) {
-					so.emit(ctx, errCh, so.currWindowList[0], now)
+					if so.Delay > 0 {
+						t := &IncAggOpTask{}
+						go func(task *IncAggOpTask) {
+							after := timex.After(so.Delay)
+							select {
+							case <-ctx.Done():
+								return
+							case <-after:
+								so.taskCh <- task
+							}
+						}(t)
+					} else {
+						so.emit(ctx, errCh, so.currWindowList[0], now)
+					}
 				}
 			}
-		case task := <-so.taskCh:
+		case <-so.taskCh:
 			now := timex.GetNow()
-			window := task.window
-			so.removeDelayWindow(window)
-			so.emit(ctx, errCh, window, now)
-		}
-	}
-}
-
-func (so *SlidingWindowIncAggOp) removeDelayWindow(window *IncAggWindow) {
-	if len(so.delayWindowList) == 0 {
-		return
-	}
-	if len(so.delayWindowList) == 1 {
-		if so.delayWindowList[0] == window {
-			so.delayWindowList = make([]*IncAggWindow, 0)
-		}
-		return
-	}
-	if so.delayWindowList[0] == window {
-		so.delayWindowList = so.delayWindowList[1:]
-		return
-	}
-	if so.delayWindowList[len(so.delayWindowList)-1] == window {
-		so.delayWindowList = so.delayWindowList[:len(so.delayWindowList)-1]
-		return
-	}
-	for index, w := range so.delayWindowList {
-		if w == window {
-			left := so.delayWindowList[:index]
-			right := so.delayWindowList[index+1:]
-			so.delayWindowList = append(left, right...)
-			return
+			so.currWindowList = gcIncAggWindow(so.currWindowList, so.Length+so.Delay, now)
+			if len(so.currWindowList) > 0 {
+				so.emit(ctx, errCh, so.currWindowList[0], now)
+			}
 		}
 	}
 }
@@ -381,33 +361,6 @@ func (so *SlidingWindowIncAggOp) appendIncAggWindow(ctx api.StreamContext, errCh
 	so.currWindowList = append(so.currWindowList, newIncAggWindow(ctx, now))
 	for _, incWindow := range so.currWindowList {
 		incAggCal(ctx, name, row, incWindow, so.aggFields)
-	}
-}
-
-func (so *SlidingWindowIncAggOp) appendDelayIncAggWindow(ctx api.StreamContext, errCh chan<- error, fv *xsql.FunctionValuer, row *xsql.Tuple, now time.Time) {
-	name := calDimension(fv, so.Dimensions, row)
-	isMatched := so.isMatchCondition(ctx, fv, row)
-	var newDelayWindow *IncAggWindow
-	if isMatched {
-		newDelayWindow = newIncAggWindow(ctx, now)
-		so.delayWindowList = append(so.delayWindowList, newDelayWindow)
-	}
-	for _, incWindow := range so.delayWindowList {
-		if incWindow.StartTime.Add(so.Length).After(now) {
-			incAggCal(ctx, name, row, incWindow, so.aggFields)
-		}
-	}
-	if isMatched {
-		t := &IncAggOpTask{window: newDelayWindow}
-		go func(task *IncAggOpTask) {
-			after := timex.After(so.Delay)
-			select {
-			case <-ctx.Done():
-				return
-			case <-after:
-				so.taskCh <- task
-			}
-		}(t)
 	}
 }
 
