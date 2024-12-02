@@ -37,12 +37,12 @@ type Connection struct {
 	status    atomic.Value
 	scHandler api.StatusChangeHandler
 	// key is the topic. Each topic will have only one connector map[string]*client.SubscriptionInfo
-	subscriptions *sync.Map
+	subscriptions sync.Map
 }
 
 func CreateConnection(_ api.StreamContext) modules.Connection {
 	return &Connection{
-		subscriptions: new(sync.Map),
+		subscriptions: sync.Map{},
 	}
 }
 
@@ -155,9 +155,7 @@ func (conn *Connection) DetachSub(ctx api.StreamContext, props map[string]any) {
 		ctx.GetLogger().Warnf("cannot find topic to unsub: %v", props)
 		return
 	}
-	if conn.subscriptions != nil {
-		conn.subscriptions.Delete(topic)
-	}
+	conn.subscriptions.Delete(topic)
 	if conn.Client != nil {
 		err = conn.Client.Unsubscribe(ctx, topic)
 		if err != nil {
