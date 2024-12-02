@@ -141,6 +141,7 @@ func extractTraceMeta(ctx api.StreamContext, data []byte) ([]byte, map[string]in
 		return rawData, nil
 	}
 	meta := make(map[string]any)
+	meta["sourceKind"] = "neuron"
 	if len(data) > NeuronTraceHeaderLen && bytes.Equal(data[:2], NeuronTraceHeader) {
 		traceID := data[NeuronTraceIDStartIndex:NeuronTraceIDEndIndex]
 		spanID := data[NeuronTraceSpanIDStartIndex:NeuronTraceSpanIDEndIndex]
