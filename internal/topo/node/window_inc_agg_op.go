@@ -72,8 +72,13 @@ func NewWindowIncAggOp(name string, w *WindowConfig, dimensions ast.Dimensions, 
 		wExec := NewTumblingWindowIncAggOp(o)
 		o.WindowExec = wExec
 	case ast.SLIDING_WINDOW:
-		wExec := NewSlidingWindowIncAggOp(o)
-		o.WindowExec = wExec
+		if options.IsEventTime {
+			wExec := NewSlidingWindowIncAggEventOp(o)
+			o.WindowExec = wExec
+		} else {
+			wExec := NewSlidingWindowIncAggOp(o)
+			o.WindowExec = wExec
+		}
 	case ast.HOPPING_WINDOW:
 		o.WindowExec = NewHoppingWindowIncAggOp(o)
 	}
@@ -123,6 +128,14 @@ type IncAggWindow struct {
 	DimensionsIncAggRange map[string]*IncAggRange
 }
 
+func (w *IncAggWindow) Clone(ctx api.StreamContext) *IncAggWindow {
+	c := &IncAggWindow{StartTime: w.StartTime, DimensionsIncAggRange: map[string]*IncAggRange{}}
+	for k, v := range w.DimensionsIncAggRange {
+		c.DimensionsIncAggRange[k] = v.Clone(ctx)
+	}
+	return c
+}
+
 func (w *IncAggWindow) GenerateAllFunctionState() {
 	if w == nil {
 		return
@@ -150,8 +163,28 @@ type IncAggRange struct {
 	Fields        map[string]interface{}
 }
 
-func (r *IncAggRange) generateFunctionState() {
+func (r *IncAggRange) Clone(ctx api.StreamContext) *IncAggRange {
+	fstore, _ := state.CreateStore("incAggWindow", 0)
+	fctx := topoContext.Background().WithMeta(ctx.GetRuleId(), ctx.GetOpId(), fstore)
+	for k, v := range r.generateFunctionState() {
+		fctx.PutState(k, v)
+	}
+	fv, _ := xsql.NewFunctionValuersForOp(fctx)
+	c := &IncAggRange{
+		fctx:    fctx.(*topoContext.DefaultContext),
+		fv:      fv,
+		LastRow: r.LastRow.Clone().(*xsql.Tuple),
+		Fields:  make(map[string]interface{}),
+	}
+	for k, v := range r.Fields {
+		c.Fields[k] = v
+	}
+	return c
+}
+
+func (r *IncAggRange) generateFunctionState() map[string]interface{} {
 	r.FunctionState = r.fctx.GetAllState()
+	return r.FunctionState
 }
 
 func (r *IncAggRange) restoreState(ctx api.StreamContext) {
