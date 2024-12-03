@@ -19,7 +19,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
-	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
+	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/message"
 )
 
@@ -32,13 +32,16 @@ func GetConverter() (message.Converter, error) {
 }
 
 func (c *Converter) Encode(ctx api.StreamContext, d any) (b []byte, err error) {
-	defer func() {
-		if err != nil {
-			err = errorx.NewWithCode(errorx.CovnerterErr, err.Error())
+	switch dt := d.(type) {
+	case map[string]any:
+		bb, ok := dt[message.DefaultField]
+		if ok {
+			return cast.ToByteA(bb, cast.CONVERT_SAMEKIND)
+		} else {
+			return nil, fmt.Errorf("field %s not exist", message.DefaultField)
 		}
-	}()
-
-	return nil, fmt.Errorf("not supported")
+	}
+	return nil, fmt.Errorf("unsupported type %v, must be a map", d)
 }
 
 func (c *Converter) Decode(ctx api.StreamContext, b []byte) (m any, err error) {
