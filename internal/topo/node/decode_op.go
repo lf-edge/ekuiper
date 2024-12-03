@@ -185,7 +185,7 @@ func (o *DecodeOp) AttachSchema(ctx api.StreamContext, dataSource string, schema
 		if err := o.sLayer.MergeSchema(ctx.GetRuleId(), dataSource, schema, isWildcard); err != nil {
 			ctx.GetLogger().Warnf("merge schema to shared stream failed, err: %v", err)
 		} else {
-			ctx.GetLogger().Infof("attach schema become %+v", o.sLayer.GetSchema())
+			ctx.GetLogger().Infof("attach schema become %d", len(o.sLayer.GetSchema()))
 			fastDecoder.ResetSchema(o.sLayer.GetSchema())
 		}
 	}
@@ -198,7 +198,7 @@ func (o *DecodeOp) DetachSchema(ctx api.StreamContext, ruleId string) {
 			ctx.GetLogger().Infof("detach schema for shared stream rule %v failed, err:%v", ruleId, err)
 		} else {
 			fastDecoder.ResetSchema(o.sLayer.GetSchema())
-			ctx.GetLogger().Infof("detach schema become %+v", o.sLayer.GetSchema())
+			ctx.GetLogger().Infof("detach schema become %d", len(o.sLayer.GetSchema()))
 		}
 	}
 }
