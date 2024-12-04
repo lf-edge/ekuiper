@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,12 +17,11 @@ package binary
 import (
 	"os"
 	"path"
-	"reflect"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
 
@@ -44,22 +43,26 @@ func TestMessageDecode(t *testing.T) {
 	}
 	conv, _ := GetConverter()
 	ctx := mockContext.NewMockContext("test", "op1")
-	for i, tt := range tests {
+	for _, tt := range tests {
 		result, err := conv.Decode(ctx, tt.payload)
-		if err != nil {
-			t.Errorf("%d decode error: %v", i, err)
-		}
-		if !reflect.DeepEqual(tt.result, result) {
-			t.Errorf("%d result mismatch:\n\nexp=%s\n\ngot=%s\n\n", i, tt.result, result)
-		}
+		require.NoError(t, err)
+		require.Equal(t, tt.result, result)
+		pp, err := conv.Encode(ctx, result)
+		require.NoError(t, err)
+		require.Equal(t, tt.payload, pp)
 	}
 }
 
 func TestError(t *testing.T) {
 	ctx := mockContext.NewMockContext("test", "op1")
-	_, err := converter.Encode(ctx, nil)
-	require.Error(t, err)
-	errWithCode, ok := err.(errorx.ErrorWithCode)
-	require.True(t, ok)
-	require.Equal(t, errorx.CovnerterErr, errWithCode.Code())
+
+	m := map[string]string{"test": "test"}
+	_, err := converter.Encode(ctx, m)
+	assert.EqualError(t, err, "unsupported type map[test:test], must be a map")
+	m2 := map[string]any{"test": "test"}
+	_, err = converter.Encode(ctx, m2)
+	assert.EqualError(t, err, "field self not exist")
+	m3 := map[string]any{"test": "test", "self": 23}
+	_, err = converter.Encode(ctx, m3)
+	assert.EqualError(t, err, "cannot convert int(23) to bytea")
 }
