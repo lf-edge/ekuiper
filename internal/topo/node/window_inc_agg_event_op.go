@@ -48,16 +48,17 @@ func (so *SlidingWindowIncAggEventOp) exec(ctx api.StreamContext, errCh chan<- e
 			switch tuple := data.(type) {
 			case *xsql.WatermarkTuple:
 				now := tuple.GetTimestamp()
-				so.CurrWindowList = gcIncAggWindow(so.CurrWindowList, so.Length, now)
 				so.emitList(ctx, errCh, now)
+				so.CurrWindowList = gcIncAggWindow(so.CurrWindowList, so.Length, now)
 			case *xsql.Tuple:
 				now := tuple.GetTimestamp()
-				so.CurrWindowList = gcIncAggWindow(so.CurrWindowList, so.Length, now)
 				if so.Delay > 0 {
 					so.appendDelayIncAggWindowInEvent(ctx, errCh, fv, tuple)
+					so.CurrWindowList = gcIncAggWindow(so.CurrWindowList, so.Length, now)
 					continue
 				}
 				so.appendIncAggWindowInEvent(ctx, errCh, fv, tuple)
+				so.CurrWindowList = gcIncAggWindow(so.CurrWindowList, so.Length, now)
 			}
 		}
 	}
@@ -67,7 +68,7 @@ func (so *SlidingWindowIncAggEventOp) emitList(ctx api.StreamContext, errCh chan
 	if len(so.EmitList) > 0 {
 		triggerIndex := -1
 		for index, window := range so.EmitList {
-			if window.StartTime.Before(triggerTS) || window.StartTime.Equal(triggerTS) {
+			if window.StartTime.Compare(triggerTS) <= 0 {
 				triggerIndex = index
 				so.emit(ctx, errCh, window, triggerTS)
 			} else {

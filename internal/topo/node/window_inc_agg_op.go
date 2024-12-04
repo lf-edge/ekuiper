@@ -796,7 +796,7 @@ func calDimension(fv *xsql.FunctionValuer, dimensions ast.Dimensions, row *xsql.
 func gcIncAggWindow(currWindowList []*IncAggWindow, windowLength time.Duration, now time.Time) []*IncAggWindow {
 	index := 0
 	for i, incAggWindow := range currWindowList {
-		if now.Sub(incAggWindow.StartTime) > windowLength {
+		if now.Sub(incAggWindow.StartTime) >= windowLength {
 			index = i + 1
 			continue
 		}
