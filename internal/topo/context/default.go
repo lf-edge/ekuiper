@@ -291,6 +291,15 @@ func (c *DefaultContext) GetCounter(key string) (int, error) {
 	}
 }
 
+func (c *DefaultContext) GetAllState() map[string]interface{} {
+	m := make(map[string]interface{})
+	c.state.Range(func(key, value interface{}) bool {
+		m[key.(string)] = value
+		return true
+	})
+	return m
+}
+
 func (c *DefaultContext) PutState(key string, value interface{}) error {
 	c.state.Store(key, value)
 	return nil
