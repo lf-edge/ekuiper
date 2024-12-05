@@ -504,7 +504,7 @@ func (so *SlidingWindowIncAggOp) exec(ctx api.StreamContext, errCh chan<- error)
 			case *xsql.Tuple:
 				so.CurrWindowList = gcIncAggWindow(so.CurrWindowList, so.Length+so.Delay, now)
 				so.appendIncAggWindow(ctx, errCh, fv, row, now)
-				if len(so.CurrWindowList) > 0 && so.isMatchCondition(ctx, fv, row) {
+				if so.isMatchCondition(ctx, fv, row) {
 					if so.Delay > 0 {
 						t := &IncAggOpTask{}
 						go func(task *IncAggOpTask) {
@@ -523,19 +523,17 @@ func (so *SlidingWindowIncAggOp) exec(ctx api.StreamContext, errCh chan<- error)
 			}
 		case <-so.taskCh:
 			now := timex.GetNow()
-			so.CurrWindowList = gcIncAggWindow(so.CurrWindowList, so.Length+so.Delay, now)
 			if len(so.CurrWindowList) > 0 {
 				so.emit(ctx, errCh, so.CurrWindowList[0], now)
 			}
+			so.CurrWindowList = gcIncAggWindow(so.CurrWindowList, so.Length+so.Delay, now)
 		}
 	}
 }
 
 func (so *SlidingWindowIncAggOp) appendIncAggWindow(ctx api.StreamContext, errCh chan<- error, fv *xsql.FunctionValuer, row *xsql.Tuple, now time.Time) {
 	name := calDimension(fv, so.Dimensions, row)
-	if so.isMatchCondition(ctx, fv, row) {
-		so.CurrWindowList = append(so.CurrWindowList, newIncAggWindow(ctx, now))
-	}
+	so.CurrWindowList = append(so.CurrWindowList, newIncAggWindow(ctx, now))
 	for _, incWindow := range so.CurrWindowList {
 		if incWindow.StartTime.Compare(now) <= 0 && incWindow.StartTime.Add(so.Length+so.Delay).After(now) {
 			incAggCal(ctx, name, row, incWindow, so.aggFields)
