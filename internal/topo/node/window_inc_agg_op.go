@@ -125,6 +125,7 @@ type CountWindowIncAggOpState struct {
 
 type IncAggWindow struct {
 	StartTime             time.Time
+	EventTime             time.Time
 	DimensionsIncAggRange map[string]*IncAggRange
 }
 
@@ -534,7 +535,9 @@ func (so *SlidingWindowIncAggOp) appendIncAggWindow(ctx api.StreamContext, errCh
 	name := calDimension(fv, so.Dimensions, row)
 	so.CurrWindowList = append(so.CurrWindowList, newIncAggWindow(ctx, now))
 	for _, incWindow := range so.CurrWindowList {
-		incAggCal(ctx, name, row, incWindow, so.aggFields)
+		if incWindow.StartTime.Compare(now) <= 0 && incWindow.StartTime.Add(so.Length).After(now) {
+			incAggCal(ctx, name, row, incWindow, so.aggFields)
+		}
 	}
 }
 

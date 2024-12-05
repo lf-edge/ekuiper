@@ -51,14 +51,11 @@ func (so *SlidingWindowIncAggEventOp) exec(ctx api.StreamContext, errCh chan<- e
 				so.emitList(ctx, errCh, now)
 				so.CurrWindowList = gcIncAggWindow(so.CurrWindowList, so.Length, now)
 			case *xsql.Tuple:
-				now := tuple.GetTimestamp()
 				if so.Delay > 0 {
 					so.appendDelayIncAggWindowInEvent(ctx, errCh, fv, tuple)
-					so.CurrWindowList = gcIncAggWindow(so.CurrWindowList, so.Length, now)
 					continue
 				}
 				so.appendIncAggWindowInEvent(ctx, errCh, fv, tuple)
-				so.CurrWindowList = gcIncAggWindow(so.CurrWindowList, so.Length, now)
 			}
 		}
 	}
@@ -68,7 +65,7 @@ func (so *SlidingWindowIncAggEventOp) emitList(ctx api.StreamContext, errCh chan
 	if len(so.EmitList) > 0 {
 		triggerIndex := -1
 		for index, window := range so.EmitList {
-			if window.StartTime.Compare(triggerTS) <= 0 {
+			if window.EventTime.Add(so.Delay).Compare(triggerTS) <= 0 {
 				triggerIndex = index
 				so.emit(ctx, errCh, window, triggerTS)
 			} else {
@@ -100,17 +97,22 @@ func (so *SlidingWindowIncAggEventOp) appendIncAggWindowInEvent(ctx api.StreamCo
 }
 
 func (so *SlidingWindowIncAggEventOp) appendDelayIncAggWindowInEvent(ctx api.StreamContext, errCh chan<- error, fv *xsql.FunctionValuer, row *xsql.Tuple) {
+	now := row.GetTimestamp()
 	name := calDimension(fv, so.Dimensions, row)
 	so.CurrWindowList = append(so.CurrWindowList, newIncAggWindow(ctx, row.GetTimestamp()))
 	for _, incWindow := range so.CurrWindowList {
-		incAggCal(ctx, name, row, incWindow, so.aggFields)
+		if incWindow.StartTime.Compare(now) <= 0 && incWindow.StartTime.Add(so.Length).After(now) {
+			incAggCal(ctx, name, row, incWindow, so.aggFields)
+		}
 	}
 	for _, incWindow := range so.EmitList {
-		incAggCal(ctx, name, row, incWindow, so.aggFields)
+		if incWindow.EventTime.Compare(now) <= 0 && incWindow.EventTime.Add(so.Delay).After(now) {
+			incAggCal(ctx, name, row, incWindow, so.aggFields)
+		}
 	}
 	if so.isMatchCondition(ctx, fv, row) {
 		emitWindow := so.CurrWindowList[0].Clone(ctx)
-		emitWindow.StartTime = row.GetTimestamp().Add(so.Delay)
+		emitWindow.EventTime = row.GetTimestamp()
 		so.EmitList = append(so.EmitList, emitWindow)
 	}
 }
