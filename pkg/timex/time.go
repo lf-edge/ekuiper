@@ -51,6 +51,10 @@ func GetTicker(duration time.Duration) *clock.Ticker {
 	return Clock.Ticker(duration)
 }
 
+func After(duration time.Duration) <-chan time.Time {
+	return Clock.After(duration)
+}
+
 func GetTimer(duration time.Duration) *clock.Timer {
 	return Clock.Timer(duration)
 }
