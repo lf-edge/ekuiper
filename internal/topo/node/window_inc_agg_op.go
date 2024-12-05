@@ -745,7 +745,9 @@ func (ho *HoppingWindowIncAggOp) emit(ctx api.StreamContext, errCh chan<- error,
 func (ho *HoppingWindowIncAggOp) calIncAggWindow(ctx api.StreamContext, fv *xsql.FunctionValuer, row *xsql.Tuple) {
 	name := calDimension(fv, ho.Dimensions, row)
 	for _, incWindow := range ho.CurrWindowList {
-		incAggCal(ctx, name, row, incWindow, ho.aggFields)
+		if incWindow.StartTime.Compare(row.GetTimestamp()) <= 0 && incWindow.StartTime.Add(ho.Length).After(row.GetTimestamp()) {
+			incAggCal(ctx, name, row, incWindow, ho.aggFields)
+		}
 	}
 }
 
