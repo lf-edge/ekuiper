@@ -87,7 +87,16 @@ func (so *SlidingWindowIncAggEventOp) emitList(ctx api.StreamContext, errCh chan
 }
 
 func (so *SlidingWindowIncAggEventOp) appendIncAggWindowInEvent(ctx api.StreamContext, errCh chan<- error, fv *xsql.FunctionValuer, row *xsql.Tuple) {
-	so.appendIncAggWindow(ctx, errCh, fv, row, row.GetTimestamp())
+	now := row.GetTimestamp()
+	name := calDimension(fv, so.Dimensions, row)
+	if so.isMatchCondition(ctx, fv, row) {
+		so.CurrWindowList = append(so.CurrWindowList, newIncAggWindow(ctx, now))
+	}
+	for _, incWindow := range so.CurrWindowList {
+		if incWindow.StartTime.Compare(now) <= 0 && incWindow.StartTime.Add(so.Length).After(now) {
+			incAggCal(ctx, name, row, incWindow, so.aggFields)
+		}
+	}
 	if so.isMatchCondition(ctx, fv, row) {
 		emitWindow := so.CurrWindowList[0].Clone(ctx)
 		emitWindow.StartTime = row.GetTimestamp()

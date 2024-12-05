@@ -533,9 +533,11 @@ func (so *SlidingWindowIncAggOp) exec(ctx api.StreamContext, errCh chan<- error)
 
 func (so *SlidingWindowIncAggOp) appendIncAggWindow(ctx api.StreamContext, errCh chan<- error, fv *xsql.FunctionValuer, row *xsql.Tuple, now time.Time) {
 	name := calDimension(fv, so.Dimensions, row)
-	so.CurrWindowList = append(so.CurrWindowList, newIncAggWindow(ctx, now))
+	if so.isMatchCondition(ctx, fv, row) {
+		so.CurrWindowList = append(so.CurrWindowList, newIncAggWindow(ctx, now))
+	}
 	for _, incWindow := range so.CurrWindowList {
-		if incWindow.StartTime.Compare(now) <= 0 && incWindow.StartTime.Add(so.Length).After(now) {
+		if incWindow.StartTime.Compare(now) <= 0 && incWindow.StartTime.Add(so.Length+so.Delay).After(now) {
 			incAggCal(ctx, name, row, incWindow, so.aggFields)
 		}
 	}
