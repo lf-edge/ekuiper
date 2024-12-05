@@ -80,7 +80,11 @@ func NewWindowIncAggOp(name string, w *WindowConfig, dimensions ast.Dimensions, 
 			o.WindowExec = wExec
 		}
 	case ast.HOPPING_WINDOW:
-		o.WindowExec = NewHoppingWindowIncAggOp(o)
+		if options.IsEventTime {
+			o.WindowExec = NewHoppingWindowIncAggEventOp(o)
+		} else {
+			o.WindowExec = NewHoppingWindowIncAggOp(o)
+		}
 	}
 	return o, nil
 }
