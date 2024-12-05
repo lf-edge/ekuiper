@@ -675,6 +675,31 @@ func TestWindow(t *testing.T) {
 				"source_demo_0_records_out_total": int64(5),
 			},
 		},
+		{
+			Name: `TestSlidingDelay`,
+			Sql:  `SELECT size,color FROM demo GROUP BY SlidingWindow(ss, 5, 1) Over (when size = 2)`,
+			R: [][]map[string]interface{}{
+				{
+					{
+						"size":  3,
+						"color": "red",
+					},
+					{
+						"size":  6,
+						"color": "blue",
+					},
+					{
+						"size":  2,
+						"color": "blue",
+					},
+					{
+						"size":  4,
+						"color": "yellow",
+					},
+				},
+			},
+			M: map[string]interface{}{},
+		},
 	}
 	HandleStream(true, streamList, t)
 	options := []*def.RuleOption{

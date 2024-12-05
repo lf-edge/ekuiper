@@ -345,7 +345,7 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 					if o.isMatchCondition(ctx, d) {
 						if o.window.Delay > 0 {
 							go func(ts time.Time) {
-								after := time.After(o.window.Delay)
+								after := timex.After(o.window.Delay)
 								select {
 								case <-after:
 									delayCh <- ts
@@ -358,7 +358,7 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 						}
 					} else {
 						// clear inputs if condition not matched
-						inputs = o.gcInputs(inputs, d.Timestamp, ctx)
+						inputs = o.gcInputs(inputs, d.Timestamp.Add(o.window.Delay), ctx)
 					}
 				case ast.SESSION_WINDOW:
 					if timeoutTicker != nil {
@@ -602,12 +602,14 @@ func (o *WindowOperator) handleInputs(ctx api.StreamContext, inputs []*xsql.Tupl
 	if nextleft < 0 {
 		return inputs[:0], inputs, content
 	}
+	ctx.GetLogger().Debugf("discard before %d", nextleft)
 	return inputs[nextleft:], inputs[:nextleft], content
 }
 
 func (o *WindowOperator) gcInputs(inputs []*xsql.Tuple, triggerTime time.Time, ctx api.StreamContext) []*xsql.Tuple {
 	var discard []*xsql.Tuple
 	inputs, discard, _ = o.handleInputs(ctx, inputs, triggerTime)
+	ctx.GetLogger().Debugf("after scan %v", inputs)
 	o.handleTraceDiscardTuple(ctx, discard)
 	return inputs
 }
