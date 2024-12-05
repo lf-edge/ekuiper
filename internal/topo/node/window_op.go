@@ -345,7 +345,7 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 					if o.isMatchCondition(ctx, d) {
 						if o.window.Delay > 0 {
 							go func(ts time.Time) {
-								after := time.After(o.window.Delay * time.Millisecond)
+								after := time.After(o.window.Delay)
 								select {
 								case <-after:
 									delayCh <- ts
