@@ -523,10 +523,10 @@ func (so *SlidingWindowIncAggOp) exec(ctx api.StreamContext, errCh chan<- error)
 			}
 		case <-so.taskCh:
 			now := timex.GetNow()
+			so.CurrWindowList = gcIncAggWindow(so.CurrWindowList, so.Length+so.Delay, now)
 			if len(so.CurrWindowList) > 0 {
 				so.emit(ctx, errCh, so.CurrWindowList[0], now)
 			}
-			so.CurrWindowList = gcIncAggWindow(so.CurrWindowList, so.Length+so.Delay, now)
 		}
 	}
 }
