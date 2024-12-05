@@ -69,8 +69,13 @@ func NewWindowIncAggOp(name string, w *WindowConfig, dimensions ast.Dimensions, 
 		}
 		o.WindowExec = wExec
 	case ast.TUMBLING_WINDOW:
-		wExec := NewTumblingWindowIncAggOp(o)
-		o.WindowExec = wExec
+		if options.IsEventTime {
+			wExec := NewTumblingWindowIncAggEventOp(o)
+			o.WindowExec = wExec
+		} else {
+			wExec := NewTumblingWindowIncAggOp(o)
+			o.WindowExec = wExec
+		}
 	case ast.SLIDING_WINDOW:
 		if options.IsEventTime {
 			wExec := NewSlidingWindowIncAggEventOp(o)

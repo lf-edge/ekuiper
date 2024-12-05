@@ -187,6 +187,23 @@ func (so *SlidingWindowIncAggEventOp) appendDelayIncAggWindowInEvent(ctx api.Str
 	}
 }
 
+type TumblingWindowIncAggEventOp struct {
+	*HoppingWindowIncAggEventOp
+	CurrWindowList        []*IncAggWindow
+	NextTriggerWindowTime time.Time
+}
+
+func NewTumblingWindowIncAggEventOp(o *WindowIncAggOperator) *TumblingWindowIncAggEventOp {
+	op := &TumblingWindowIncAggEventOp{}
+	op.HoppingWindowIncAggEventOp = NewHoppingWindowIncAggEventOp(o)
+	op.Length = o.windowConfig.Interval
+	return op
+}
+
+func (to *TumblingWindowIncAggEventOp) exec(ctx api.StreamContext, errCh chan<- error) {
+	to.HoppingWindowIncAggEventOp.exec(ctx, errCh)
+}
+
 func (o *WindowIncAggOperator) ingest(ctx api.StreamContext, item any) (any, bool) {
 	ctx.GetLogger().Debugf("receive %v", item)
 	item, processed := o.preprocess(ctx, item)
