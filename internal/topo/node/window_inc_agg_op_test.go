@@ -557,7 +557,6 @@ func TestIncHoppingWindow(t *testing.T) {
 	output := make(chan any, 10)
 	op.AddOutput(output, "output")
 	errCh := make(chan error, 10)
-	timex.Set(int64(time.Second))
 	ctx, cancel := mockContext.NewMockContext("1", "2").WithCancel()
 	op.Exec(ctx, errCh)
 	waitExecute()
