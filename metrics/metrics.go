@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package promMetrics
+package metrics
 
 import "github.com/prometheus/client_golang/prometheus"
 
@@ -25,12 +25,6 @@ const (
 )
 
 var (
-	RuleStatusCountGauge *prometheus.GaugeVec
-	RuleStatusGauge      *prometheus.GaugeVec
-	RuleCPUUsageGauge    *prometheus.GaugeVec
-)
-
-func InitServerMetrics() {
 	RuleStatusCountGauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: "kuiper",
 		Subsystem: "rule",
@@ -51,10 +45,9 @@ func InitServerMetrics() {
 		Name:      "cpu_ms",
 		Help:      "gauge of rule CPU usage",
 	}, []string{LblRuleIDType})
-}
+)
 
 func RegisterMetrics() {
-	InitServerMetrics()
 	prometheus.MustRegister(RuleStatusCountGauge)
 	prometheus.MustRegister(RuleStatusGauge)
 	prometheus.MustRegister(RuleCPUUsageGauge)
