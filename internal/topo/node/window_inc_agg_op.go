@@ -80,7 +80,11 @@ func NewWindowIncAggOp(name string, w *WindowConfig, dimensions ast.Dimensions, 
 			o.WindowExec = wExec
 		}
 	case ast.HOPPING_WINDOW:
-		o.WindowExec = NewHoppingWindowIncAggOp(o)
+		if options.IsEventTime {
+			o.WindowExec = NewHoppingWindowIncAggEventOp(o)
+		} else {
+			o.WindowExec = NewHoppingWindowIncAggOp(o)
+		}
 	}
 	return o, nil
 }
@@ -653,7 +657,7 @@ func (ho *HoppingWindowIncAggOp) exec(ctx api.StreamContext, errCh chan<- error)
 			ho.ticker.Stop()
 		}
 	}()
-	now := time.Now()
+	now := timex.GetNow()
 	if !EnableAlignWindow {
 		ho.ticker = timex.GetTicker(ho.Interval)
 		ho.newIncWindow(ctx, now)
@@ -679,7 +683,7 @@ func (ho *HoppingWindowIncAggOp) exec(ctx api.StreamContext, errCh chan<- error)
 			switch row := data.(type) {
 			case *xsql.Tuple:
 				ho.CurrWindowList = gcIncAggWindow(ho.CurrWindowList, ho.Length, now)
-				ho.calIncAggWindow(ctx, fv, row)
+				ho.calIncAggWindow(ctx, fv, row, now)
 			}
 		default:
 		}
@@ -738,10 +742,12 @@ func (ho *HoppingWindowIncAggOp) emit(ctx api.StreamContext, errCh chan<- error,
 	ho.Broadcast(results)
 }
 
-func (ho *HoppingWindowIncAggOp) calIncAggWindow(ctx api.StreamContext, fv *xsql.FunctionValuer, row *xsql.Tuple) {
+func (ho *HoppingWindowIncAggOp) calIncAggWindow(ctx api.StreamContext, fv *xsql.FunctionValuer, row *xsql.Tuple, now time.Time) {
 	name := calDimension(fv, ho.Dimensions, row)
 	for _, incWindow := range ho.CurrWindowList {
-		incAggCal(ctx, name, row, incWindow, ho.aggFields)
+		if incWindow.StartTime.Compare(now) <= 0 && incWindow.StartTime.Add(ho.Length).After(now) {
+			incAggCal(ctx, name, row, incWindow, ho.aggFields)
+		}
 	}
 }
 
