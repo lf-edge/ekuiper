@@ -17,8 +17,10 @@ package metrics
 import "github.com/prometheus/client_golang/prometheus"
 
 const (
+	LblType       = "type"
 	LblStatusType = "status"
 	LblRuleIDType = "ruleID"
+	LblOpIDType   = "opID"
 
 	LBlRuleRunning = "running"
 	LblRuleStop    = "stop"
@@ -48,6 +50,7 @@ var (
 )
 
 func RegisterMetrics() {
+	RegisterSyncCache()
 	prometheus.MustRegister(RuleStatusCountGauge)
 	prometheus.MustRegister(RuleStatusGauge)
 	prometheus.MustRegister(RuleCPUUsageGauge)
