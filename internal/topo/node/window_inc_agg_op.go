@@ -72,8 +72,13 @@ func NewWindowIncAggOp(name string, w *WindowConfig, dimensions ast.Dimensions, 
 		wExec := NewTumblingWindowIncAggOp(o)
 		o.WindowExec = wExec
 	case ast.SLIDING_WINDOW:
-		wExec := NewSlidingWindowIncAggOp(o)
-		o.WindowExec = wExec
+		if options.IsEventTime {
+			wExec := NewSlidingWindowIncAggEventOp(o)
+			o.WindowExec = wExec
+		} else {
+			wExec := NewSlidingWindowIncAggOp(o)
+			o.WindowExec = wExec
+		}
 	case ast.HOPPING_WINDOW:
 		o.WindowExec = NewHoppingWindowIncAggOp(o)
 	}
@@ -120,7 +125,16 @@ type CountWindowIncAggOpState struct {
 
 type IncAggWindow struct {
 	StartTime             time.Time
+	EventTime             time.Time
 	DimensionsIncAggRange map[string]*IncAggRange
+}
+
+func (w *IncAggWindow) Clone(ctx api.StreamContext) *IncAggWindow {
+	c := &IncAggWindow{StartTime: w.StartTime, DimensionsIncAggRange: map[string]*IncAggRange{}}
+	for k, v := range w.DimensionsIncAggRange {
+		c.DimensionsIncAggRange[k] = v.Clone(ctx)
+	}
+	return c
 }
 
 func (w *IncAggWindow) GenerateAllFunctionState() {
@@ -150,8 +164,28 @@ type IncAggRange struct {
 	Fields        map[string]interface{}
 }
 
-func (r *IncAggRange) generateFunctionState() {
+func (r *IncAggRange) Clone(ctx api.StreamContext) *IncAggRange {
+	fstore, _ := state.CreateStore("incAggWindow", 0)
+	fctx := topoContext.Background().WithMeta(ctx.GetRuleId(), ctx.GetOpId(), fstore)
+	for k, v := range r.generateFunctionState() {
+		fctx.PutState(k, v)
+	}
+	fv, _ := xsql.NewFunctionValuersForOp(fctx)
+	c := &IncAggRange{
+		fctx:    fctx.(*topoContext.DefaultContext),
+		fv:      fv,
+		LastRow: r.LastRow.Clone().(*xsql.Tuple),
+		Fields:  make(map[string]interface{}),
+	}
+	for k, v := range r.Fields {
+		c.Fields[k] = v
+	}
+	return c
+}
+
+func (r *IncAggRange) generateFunctionState() map[string]interface{} {
 	r.FunctionState = r.fctx.GetAllState()
+	return r.FunctionState
 }
 
 func (r *IncAggRange) restoreState(ctx api.StreamContext) {
@@ -470,7 +504,7 @@ func (so *SlidingWindowIncAggOp) exec(ctx api.StreamContext, errCh chan<- error)
 			case *xsql.Tuple:
 				so.CurrWindowList = gcIncAggWindow(so.CurrWindowList, so.Length+so.Delay, now)
 				so.appendIncAggWindow(ctx, errCh, fv, row, now)
-				if len(so.CurrWindowList) > 0 && so.isMatchCondition(ctx, fv, row) {
+				if so.isMatchCondition(ctx, fv, row) {
 					if so.Delay > 0 {
 						t := &IncAggOpTask{}
 						go func(task *IncAggOpTask) {
@@ -501,7 +535,9 @@ func (so *SlidingWindowIncAggOp) appendIncAggWindow(ctx api.StreamContext, errCh
 	name := calDimension(fv, so.Dimensions, row)
 	so.CurrWindowList = append(so.CurrWindowList, newIncAggWindow(ctx, now))
 	for _, incWindow := range so.CurrWindowList {
-		incAggCal(ctx, name, row, incWindow, so.aggFields)
+		if incWindow.StartTime.Compare(now) <= 0 && incWindow.StartTime.Add(so.Length+so.Delay).After(now) {
+			incAggCal(ctx, name, row, incWindow, so.aggFields)
+		}
 	}
 }
 
@@ -763,7 +799,7 @@ func calDimension(fv *xsql.FunctionValuer, dimensions ast.Dimensions, row *xsql.
 func gcIncAggWindow(currWindowList []*IncAggWindow, windowLength time.Duration, now time.Time) []*IncAggWindow {
 	index := 0
 	for i, incAggWindow := range currWindowList {
-		if now.Sub(incAggWindow.StartTime) > windowLength {
+		if now.Sub(incAggWindow.StartTime) >= windowLength {
 			index = i + 1
 			continue
 		}
