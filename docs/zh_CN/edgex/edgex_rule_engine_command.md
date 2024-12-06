@@ -218,7 +218,7 @@ curl -X POST \
   -H 'Content-Type: application/json' \
   -d '{
   "id": "rule2",
-  "sql": "SELECT avg(int8) AS avg_int8 FROM demo WHERE int8 != nil GROUP BY  TUMBLINGWINDOW(ss, 20) HAVING avg(int8) > 0",
+  "sql": "SELECT avg(int8) AS avg_int8 FROM demo WHERE isNull(int8) = false GROUP BY  TUMBLINGWINDOW(ss, 20) HAVING avg(int8) > 0",
   "actions": [
     {
       "rest": {
@@ -241,7 +241,7 @@ curl -X POST \
 
 ```shell
 {
-  "sql": "SELECT avg(int8) AS avg_int8 FROM demo WHERE int8 != nil GROUP BY  TUMBLINGWINDOW(ss, 20) HAVING avg(int8) > 0",
+  "sql": "SELECT avg(int8) AS avg_int8 FROM demo WHERE isNull(int8) = false GROUP BY  TUMBLINGWINDOW(ss, 20) HAVING avg(int8) > 0",
   "actions": [
     {
       "mqtt": {
