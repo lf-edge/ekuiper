@@ -52,7 +52,7 @@ func (ho *HoppingWindowIncAggEventOp) exec(ctx api.StreamContext, errCh chan<- e
 			case *xsql.Tuple:
 				now := tuple.GetTimestamp()
 				ho.triggerWindow(ctx, now)
-				ho.calIncAggWindow(ctx, fv, tuple)
+				ho.calIncAggWindow(ctx, fv, tuple, tuple.GetTimestamp())
 			}
 		}
 	}
