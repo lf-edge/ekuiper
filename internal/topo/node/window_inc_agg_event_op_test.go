@@ -27,6 +27,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/planner"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
+	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
 
@@ -57,9 +58,11 @@ func TestIncEventHoppingWindow(t *testing.T) {
 	incPlan := extractIncWindowPlan(p)
 	require.NotNil(t, incPlan)
 	op, err := node.NewWindowIncAggOp("1", &node.WindowConfig{
-		Type:     incPlan.WType,
-		Length:   2 * time.Second,
-		Interval: time.Second,
+		Type:        incPlan.WType,
+		Length:      2 * time.Second,
+		Interval:    time.Second,
+		RawInterval: 1,
+		TimeUnit:    ast.SS,
 	}, incPlan.Dimensions, incPlan.IncAggFuncs, o)
 	require.NoError(t, err)
 	require.NotNil(t, op)
