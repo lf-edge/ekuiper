@@ -55,7 +55,7 @@ func InitServerMetrics() {
 	}, []string{LblRuleIDType})
 }
 
-func RegisterMetrics() {
+func init() {
 	RegisterSyncCache()
 	prometheus.MustRegister(RuleStatusCountGauge)
 	prometheus.MustRegister(RuleStatusGauge)
