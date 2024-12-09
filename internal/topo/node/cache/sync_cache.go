@@ -24,6 +24,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
+	"github.com/lf-edge/ekuiper/v2/metrics"
 	"github.com/lf-edge/ekuiper/v2/pkg/kv"
 )
 
@@ -94,7 +95,15 @@ func (p *page) reset() {
 	p.L = 0
 }
 
+const (
+	syncCacheAdd   = "add"
+	syncCachePop   = "pop"
+	syncCacheFlush = "flush"
+)
+
 type SyncCache struct {
+	RuleID string
+	OpID   string
 	// cache config
 	cacheConf   *conf.SinkConf
 	maxDiskPage int
@@ -119,6 +128,8 @@ func NewSyncCache(ctx api.StreamContext, cacheConf *conf.SinkConf) (*SyncCache, 
 		ctx.GetLogger().Warnf("disk page is less than 2, so set it to 2")
 	}
 	c := &SyncCache{
+		RuleID:    ctx.GetRuleId(),
+		OpID:      ctx.GetOpId(),
 		cacheConf: cacheConf,
 		// add one more slot so that there will be at least one slot between head and tail to find out the head/tail id
 		maxDiskPage:     diskPage,
@@ -142,6 +153,7 @@ func (c *SyncCache) AddCache(ctx api.StreamContext, item any) error {
 	} else {
 		ctx.GetLogger().Debugf("added cache to disk buffer page %v", c.writeBufferPage)
 	}
+	metrics.SyncCacheCounter.WithLabelValues(syncCacheAdd, c.RuleID, c.OpID).Inc()
 	c.CacheLength++
 	ctx.GetLogger().Debugf("added cache %d", c.CacheLength)
 	return nil
@@ -229,6 +241,7 @@ func (c *SyncCache) PopCache(ctx api.StreamContext) (any, bool) {
 		ctx.GetLogger().Debugf("deleted cache: %d", c.CacheLength)
 	}
 	ctx.GetLogger().Debugf("deleted cache. CacheLength: %d, diskSize: %d, readPage: %v", c.CacheLength, c.diskSize, c.readBufferPage)
+	metrics.SyncCacheCounter.WithLabelValues(syncCachePop, c.RuleID, c.OpID).Inc()
 	return result, true
 }
 
@@ -357,5 +370,6 @@ func (c *SyncCache) Flush(ctx api.StreamContext) {
 			ctx.GetLogger().Warnf("fail to store disk cache size %v", err)
 		}
 		_ = c.store.Set("storeSig", 1)
+		metrics.SyncCacheCounter.WithLabelValues(syncCacheFlush, c.RuleID, c.OpID).Inc()
 	}
 }

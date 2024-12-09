@@ -12,13 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package promMetrics
+package metrics
 
 import "github.com/prometheus/client_golang/prometheus"
 
 const (
+	LblType       = "type"
 	LblStatusType = "status"
 	LblRuleIDType = "ruleID"
+	LblOpIDType   = "opID"
 
 	LBlRuleRunning = "running"
 	LblRuleStop    = "stop"
@@ -54,7 +56,7 @@ func InitServerMetrics() {
 }
 
 func RegisterMetrics() {
-	InitServerMetrics()
+	RegisterSyncCache()
 	prometheus.MustRegister(RuleStatusCountGauge)
 	prometheus.MustRegister(RuleStatusGauge)
 	prometheus.MustRegister(RuleCPUUsageGauge)

@@ -44,8 +44,8 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/plugin/portable/runtime"
 	"github.com/lf-edge/ekuiper/v2/internal/processor"
 	"github.com/lf-edge/ekuiper/v2/internal/server/bump"
-	"github.com/lf-edge/ekuiper/v2/internal/server/promMetrics"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/rule"
+	"github.com/lf-edge/ekuiper/v2/metrics"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
@@ -141,7 +141,7 @@ func StartUp(Version string) {
 	conf.SetupEnv()
 	conf.InitConf()
 	if conf.Config.Basic.Prometheus {
-		promMetrics.RegisterMetrics()
+		metrics.RegisterMetrics()
 	}
 
 	// Print inited modules
