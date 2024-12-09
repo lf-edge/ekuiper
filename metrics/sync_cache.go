@@ -20,7 +20,7 @@ var (
 	SyncCacheHist = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: "kuiper",
 		Subsystem: "sync_cache",
-		Name:      "hist",
+		Name:      "duration",
 		Buckets:   prometheus.ExponentialBuckets(10, 2, 20), // 10us ~ 5s
 		Help:      "hist of sync cache",
 	}, []string{LblType, LblRuleIDType, LblOpIDType})

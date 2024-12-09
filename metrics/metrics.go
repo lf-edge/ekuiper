@@ -19,8 +19,8 @@ import "github.com/prometheus/client_golang/prometheus"
 const (
 	LblType       = "type"
 	LblStatusType = "status"
-	LblRuleIDType = "ruleID"
-	LblOpIDType   = "opID"
+	LblRuleIDType = "rule"
+	LblOpIDType   = "op"
 
 	LBlRuleRunning = "running"
 	LblRuleStop    = "stop"

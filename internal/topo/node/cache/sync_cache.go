@@ -99,6 +99,8 @@ const (
 	syncCacheAdd   = "add"
 	syncCachePop   = "pop"
 	syncCacheFlush = "flush"
+	syncCacheDrop  = "drop"
+	syncCacheLoad  = "load"
 )
 
 type SyncCache struct {
@@ -128,8 +130,6 @@ func NewSyncCache(ctx api.StreamContext, cacheConf *conf.SinkConf) (*SyncCache, 
 		ctx.GetLogger().Warnf("disk page is less than 2, so set it to 2")
 	}
 	c := &SyncCache{
-		RuleID:    ctx.GetRuleId(),
-		OpID:      ctx.GetOpId(),
 		cacheConf: cacheConf,
 		// add one more slot so that there will be at least one slot between head and tail to find out the head/tail id
 		maxDiskPage:     diskPage,
@@ -138,6 +138,11 @@ func NewSyncCache(ctx api.StreamContext, cacheConf *conf.SinkConf) (*SyncCache, 
 	}
 	err := c.initStore(ctx)
 	return c, err
+}
+
+func (c *SyncCache) SetupMeta(ctx api.StreamContext) {
+	c.RuleID = ctx.GetRuleId()
+	c.OpID = ctx.GetOpId()
 }
 
 // AddCache not thread safe!
@@ -160,6 +165,11 @@ func (c *SyncCache) AddCache(ctx api.StreamContext, item any) error {
 }
 
 func (c *SyncCache) appendWriteCache(ctx api.StreamContext) error {
+	metrics.SyncCacheCounter.WithLabelValues(syncCacheFlush, c.RuleID, c.OpID).Inc()
+	start := time.Now()
+	defer func() {
+		metrics.SyncCacheHist.WithLabelValues(syncCacheFlush, c.RuleID, c.OpID).Observe(float64(time.Since(start).Microseconds()))
+	}()
 	if c.diskSize == c.maxDiskPage {
 		// disk full, replace read buffer page
 		err := c.deleteDiskPage(ctx, false)
@@ -247,6 +257,7 @@ func (c *SyncCache) PopCache(ctx api.StreamContext) (any, bool) {
 
 // loaded means whether load the page to memory or just drop
 func (c *SyncCache) deleteDiskPage(ctx api.StreamContext, loaded bool) error {
+	metrics.SyncCacheCounter.WithLabelValues(syncCacheDrop, c.RuleID, c.OpID).Inc()
 	_ = c.store.Delete(strconv.Itoa(c.diskPageHead))
 	ctx.GetLogger().Warnf("drop a read page of %d items in memory", c.readBufferPage.L)
 	c.diskPageHead++
@@ -271,6 +282,11 @@ func (c *SyncCache) deleteDiskPage(ctx api.StreamContext, loaded bool) error {
 }
 
 func (c *SyncCache) loadFromDisk(ctx api.StreamContext) error {
+	metrics.SyncCacheCounter.WithLabelValues(syncCacheLoad, c.RuleID, c.OpID).Inc()
+	start := time.Now()
+	defer func() {
+		metrics.SyncCacheHist.WithLabelValues(syncCacheLoad, c.RuleID, c.OpID).Observe(float64(time.Since(start).Microseconds()))
+	}()
 	// load page from the disk
 	ctx.GetLogger().Debugf("loading from disk %d. CacheLength: %d, diskSize: %d", c.diskPageTail, c.CacheLength, c.diskSize)
 	// caution, must create a new page instance
@@ -370,6 +386,5 @@ func (c *SyncCache) Flush(ctx api.StreamContext) {
 			ctx.GetLogger().Warnf("fail to store disk cache size %v", err)
 		}
 		_ = c.store.Set("storeSig", 1)
-		metrics.SyncCacheCounter.WithLabelValues(syncCacheFlush, c.RuleID, c.OpID).Inc()
 	}
 }
