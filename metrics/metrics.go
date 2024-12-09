@@ -27,12 +27,6 @@ const (
 )
 
 var (
-	RuleStatusCountGauge *prometheus.GaugeVec
-	RuleStatusGauge      *prometheus.GaugeVec
-	RuleCPUUsageGauge    *prometheus.GaugeVec
-)
-
-func InitServerMetrics() {
 	RuleStatusCountGauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: "kuiper",
 		Subsystem: "rule",
@@ -53,7 +47,7 @@ func InitServerMetrics() {
 		Name:      "cpu_ms",
 		Help:      "gauge of rule CPU usage",
 	}, []string{LblRuleIDType})
-}
+)
 
 func init() {
 	RegisterSyncCache()
