@@ -16,6 +16,7 @@ package file
 
 import (
 	"bufio"
+	"bytes"
 	"errors"
 	"fmt"
 	"io"
@@ -325,7 +326,7 @@ func ignoreLines(ctx api.StreamContext, reader io.Reader, decorator modules.File
 					if ignoreEndLines > 0 { // the last n line are left in the tempLines
 						slot := (ln - ignoreStartLines) % ignoreEndLines
 						if len(tempLines) <= slot { // first round
-							tempLines = append(tempLines, scanner.Bytes())
+							tempLines = append(tempLines, bytes.Clone(scanner.Bytes()))
 						} else {
 							_, err := w.Write(tempLines[slot])
 							if err != nil {
@@ -337,7 +338,7 @@ func ignoreLines(ctx api.StreamContext, reader io.Reader, decorator modules.File
 								ctx.GetLogger().Error(err)
 								break
 							}
-							tempLines[slot] = scanner.Bytes()
+							tempLines[slot] = bytes.Clone(scanner.Bytes())
 						}
 					} else {
 						_, err := w.Write(scanner.Bytes())
