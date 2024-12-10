@@ -545,9 +545,11 @@ func TestIncHoppingWindow(t *testing.T) {
 	incPlan := extractIncWindowPlan(p)
 	require.NotNil(t, incPlan)
 	op, err := node.NewWindowIncAggOp("1", &node.WindowConfig{
-		Type:     incPlan.WType,
-		Length:   2 * time.Second,
-		Interval: time.Second,
+		Type:        incPlan.WType,
+		Length:      2 * time.Second,
+		Interval:    time.Second,
+		RawInterval: 1,
+		TimeUnit:    ast.SS,
 	}, incPlan.Dimensions, incPlan.IncAggFuncs, o)
 	require.NoError(t, err)
 	require.NotNil(t, op)
@@ -557,8 +559,9 @@ func TestIncHoppingWindow(t *testing.T) {
 	errCh := make(chan error, 10)
 	ctx, cancel := mockContext.NewMockContext("1", "2").WithCancel()
 	op.Exec(ctx, errCh)
-	time.Sleep(10 * time.Millisecond)
+	waitExecute()
 	input <- &xsql.Tuple{Message: map[string]any{"a": int64(1)}}
+	waitExecute()
 	timex.Add(2200 * time.Millisecond)
 	got := <-output
 	wt, ok := got.(*xsql.WindowTuples)

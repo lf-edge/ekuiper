@@ -22,6 +22,67 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 )
 
+type HoppingWindowIncAggEventOp struct {
+	*HoppingWindowIncAggOp
+	NextTriggerWindowTime time.Time
+}
+
+func NewHoppingWindowIncAggEventOp(o *WindowIncAggOperator) *HoppingWindowIncAggEventOp {
+	op := &HoppingWindowIncAggEventOp{}
+	op.HoppingWindowIncAggOp = NewHoppingWindowIncAggOp(o)
+	return op
+}
+
+func (ho *HoppingWindowIncAggEventOp) exec(ctx api.StreamContext, errCh chan<- error) {
+	fv, _ := xsql.NewFunctionValuersForOp(ctx)
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case input := <-ho.input:
+			data, processed := ho.ingest(ctx, input)
+			if processed {
+				break
+			}
+			switch tuple := data.(type) {
+			case *xsql.WatermarkTuple:
+				now := tuple.GetTimestamp()
+				ho.emitWindow(ctx, errCh, now)
+				ho.CurrWindowList = gcIncAggWindow(ho.CurrWindowList, ho.Length, now)
+			case *xsql.Tuple:
+				now := tuple.GetTimestamp()
+				ho.triggerWindow(ctx, now)
+				ho.calIncAggWindow(ctx, fv, tuple, tuple.GetTimestamp())
+			}
+		}
+	}
+}
+
+func (ho *HoppingWindowIncAggEventOp) emitWindow(ctx api.StreamContext, errCh chan<- error, now time.Time) {
+	for _, incWindow := range ho.CurrWindowList {
+		if incWindow.StartTime.Add(ho.Length).Compare(now) <= 0 {
+			ho.emit(ctx, errCh, incWindow, incWindow.StartTime.Add(ho.Length))
+		}
+	}
+}
+
+func (ho *HoppingWindowIncAggEventOp) calIncAggWindowInEvent(ctx api.StreamContext, fv *xsql.FunctionValuer, row *xsql.Tuple) {
+	name := calDimension(fv, ho.Dimensions, row)
+	for _, incWindow := range ho.CurrWindowList {
+		if incWindow.StartTime.Compare(row.GetTimestamp()) <= 0 && incWindow.StartTime.Add(ho.Length).After(row.GetTimestamp()) {
+			incAggCal(ctx, name, row, incWindow, ho.aggFields)
+		}
+	}
+}
+
+func (ho *HoppingWindowIncAggEventOp) triggerWindow(ctx api.StreamContext, now time.Time) {
+	next := getAlignedWindowEndTime(now, ho.windowConfig.RawInterval, ho.windowConfig.TimeUnit)
+	if ho.NextTriggerWindowTime.Before(now) {
+		ho.NextTriggerWindowTime = next
+		ho.CurrWindowList = append(ho.CurrWindowList, newIncAggWindow(ctx, next.Add(-ho.Interval)))
+	}
+}
+
 type SlidingWindowIncAggEventOp struct {
 	*SlidingWindowIncAggOp
 	EmitList []*IncAggWindow
