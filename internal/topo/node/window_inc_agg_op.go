@@ -63,11 +63,16 @@ func NewWindowIncAggOp(name string, w *WindowConfig, dimensions ast.Dimensions, 
 	o.aggFields = aggFields
 	switch w.Type {
 	case ast.COUNT_WINDOW:
-		wExec := &CountWindowIncAggOp{
-			WindowIncAggOperator: o,
-			windowSize:           w.CountLength,
+		if options.IsEventTime {
+			wExec := NewCountWindowIncAggEventOp(o)
+			o.WindowExec = wExec
+		} else {
+			wExec := &CountWindowIncAggOp{
+				WindowIncAggOperator: o,
+				windowSize:           w.CountLength,
+			}
+			o.WindowExec = wExec
 		}
-		o.WindowExec = wExec
 	case ast.TUMBLING_WINDOW:
 		if options.IsEventTime {
 			wExec := NewTumblingWindowIncAggEventOp(o)
