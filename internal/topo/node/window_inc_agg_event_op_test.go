@@ -333,6 +333,7 @@ func TestIncEventCountWindow(t *testing.T) {
 		Type:        incPlan.WType,
 		CountLength: incPlan.Length,
 	}, incPlan.Dimensions, incPlan.IncAggFuncs, o)
+	require.NoError(t, err)
 	require.NotNil(t, op)
 	input, _ := op.GetInput()
 	output := make(chan any, 10)
