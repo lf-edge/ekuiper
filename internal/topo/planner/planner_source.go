@@ -188,7 +188,7 @@ func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, option
 		index++
 	}
 
-	if t.streamStmt.Options.SHARED && len(ops) > 0 {
+	if t.streamStmt.Options.SHARED {
 		// Create subtopo in the end to avoid errors in the middle
 		srcSubtopo, existed := topo.GetOrCreateSubTopo(string(t.name))
 		if !existed {

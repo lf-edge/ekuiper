@@ -113,33 +113,24 @@ func (s *State) WithTopo(topo *topo.Topo) *State {
 	return s
 }
 
-// Validate is the second level validation
-// It tries to plan and return any errors
-// Only run when creating the Rule
-func (s *State) Validate() error {
+// Validate tries to plan and return the planned topo and any errors
+// Need to cancel the topo if it is of no use because the input/output channels are set
+// Otherwise, the shared source may send to these channels and hang
+func (s *State) Validate() (*topo.Topo, error) {
 	s.Lock()
 	defer s.Unlock()
-	err := infra.SafeRun(func() error {
-		if tp, err := planner.Plan(s.Rule); err != nil {
-			return err
-		} else {
-			s.topology = tp
-		}
-		return nil
-	})
-	return err
-}
-
-func (s *State) ValidateRule() (*topo.Topo, error) {
-	s.Lock()
-	defer s.Unlock()
-	var topo *topo.Topo
-	var err error
-	infra.SafeRun(func() error {
-		topo, err = planner.Plan(s.Rule)
+	var (
+		tp  *topo.Topo
+		err error
+	)
+	err = infra.SafeRun(func() error {
+		tp, err = planner.Plan(s.Rule)
 		return err
 	})
-	return topo, err
+	if err != nil {
+		return nil, err
+	}
+	return tp, err
 }
 
 func (s *State) transit(newState RunState, err error) {
