@@ -25,12 +25,12 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 1,
+  "id": 18,
   "links": [],
   "liveNow": false,
   "panels": [
     {
-      "collapsed": true,
+      "collapsed": false,
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -107,7 +107,7 @@
       "options": {
         "legend": {
           "calcs": [
-            "lastNotNull"
+            "last"
           ],
           "displayMode": "table",
           "placement": "right",
@@ -128,7 +128,7 @@
           "exemplar": false,
           "expr": "(time() - process_start_time_seconds{instance=\"$instance\"})",
           "instant": false,
-          "legendFormat": "{{instance}}",
+          "legendFormat": "up",
           "range": true,
           "refId": "A"
         }
@@ -214,25 +214,37 @@
       },
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "ad687d3e-23e5-4418-bb75-0dfb04fb4721"
+          },
           "editorMode": "builder",
           "expr": "go_memstats_heap_sys_bytes{instance=\"$instance\"}",
-          "legendFormat": "{{instance}}-heap-sys",
+          "legendFormat": "heap-sys",
           "range": true,
           "refId": "A"
         },
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "ad687d3e-23e5-4418-bb75-0dfb04fb4721"
+          },
           "editorMode": "builder",
           "expr": "go_memstats_alloc_bytes{instance=\"$instance\"}",
           "hide": false,
-          "legendFormat": "{{instance}}-heap-alloc",
+          "legendFormat": "heap-alloc",
           "range": true,
           "refId": "B"
         },
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "ad687d3e-23e5-4418-bb75-0dfb04fb4721"
+          },
           "editorMode": "builder",
           "expr": "go_memstats_heap_inuse_bytes{instance=\"$instance\"}",
           "hide": false,
-          "legendFormat": "{{instance}}-heap-inuse",
+          "legendFormat": "heap-inuse",
           "range": true,
           "refId": "C"
         }
@@ -305,7 +317,7 @@
       "options": {
         "legend": {
           "calcs": [
-            "lastNotNull"
+            "last"
           ],
           "displayMode": "table",
           "placement": "right",
@@ -318,9 +330,13 @@
       },
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "ad687d3e-23e5-4418-bb75-0dfb04fb4721"
+          },
           "editorMode": "code",
           "expr": "irate(process_cpu_seconds_total{instance=\"$instance\"}[30s])",
-          "legendFormat": "{{instance}}",
+          "legendFormat": "cpu_usage",
           "range": true,
           "refId": "A"
         }
@@ -405,127 +421,18 @@
       },
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "ad687d3e-23e5-4418-bb75-0dfb04fb4721"
+          },
           "editorMode": "builder",
-          "expr": "go_goroutines",
-          "legendFormat": "{{instance}}",
+          "expr": "go_goroutines{instance=\"$instance\"}",
+          "legendFormat": "goroutines",
           "range": true,
           "refId": "A"
         }
       ],
       "title": "goroutines",
-      "type": "timeseries"
-    },
-    {
-      "datasource": "${DS_TEST-CLUSTER}",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "cps"
-        },
-        "overrides": [
-          {
-            "__systemRef": "hideSeriesFrom",
-            "matcher": {
-              "id": "byNames",
-              "options": {
-                "mode": "exclude",
-                "names": [
-                  "172.31.24.64:20499-total-records-in"
-                ],
-                "prefix": "All except:",
-                "readOnly": true
-              }
-            },
-            "properties": [
-              {
-                "id": "custom.hideFrom",
-                "value": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": true
-                }
-              }
-            ]
-          }
-        ]
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 17
-      },
-      "id": 29,
-      "options": {
-        "legend": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "displayMode": "table",
-          "placement": "right",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "targets": [
-        {
-          "editorMode": "builder",
-          "expr": "sum by(instance) (rate(kuiper_source_records_in_total{instance=\"$instance\"}[1m]))",
-          "legendFormat": "{{instance}}",
-          "range": true,
-          "refId": "A"
-        }
-      ],
-      "title": "Server Total Records in QPS",
       "type": "timeseries"
     },
     {
@@ -586,7 +493,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 18
+        "y": 17
       },
       "id": 31,
       "options": {
@@ -605,9 +512,13 @@
       },
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "ad687d3e-23e5-4418-bb75-0dfb04fb4721"
+          },
           "editorMode": "builder",
-          "expr": "kuiper_rule_status",
-          "legendFormat": "{{instance}}-{{ruleID}}",
+          "expr": "kuiper_rule_status{instance=\"$instance\"}",
+          "legendFormat": "{{rule}}",
           "range": true,
           "refId": "A"
         }
@@ -673,7 +584,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 18
+        "y": 17
       },
       "id": 32,
       "options": {
@@ -692,9 +603,13 @@
       },
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "ad687d3e-23e5-4418-bb75-0dfb04fb4721"
+          },
           "editorMode": "builder",
           "expr": "kuiper_rule_count",
-          "legendFormat": "{{instance}}-{{status}}",
+          "legendFormat": "{{status}}",
           "range": true,
           "refId": "A"
         }
@@ -703,101 +618,12 @@
       "type": "timeseries"
     },
     {
-      "datasource": "${DS_TEST-CLUSTER}",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "cps"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 17
-      },
-      "id": 30,
-      "options": {
-        "legend": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "displayMode": "table",
-          "placement": "right",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "targets": [
-        {
-          "datasource": "${DS_TEST-CLUSTER}",
-          "editorMode": "builder",
-          "expr": "sum by(instance) (rate(kuiper_sink_records_out_total{instance=\"$instance\"}[1m]))",
-          "legendFormat": "{{instance}}",
-          "range": true,
-          "refId": "A"
-        }
-      ],
-      "title": "Server Total Records Out QPS",
-      "type": "timeseries"
-    },
-    {
       "collapsed": false,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 18
+        "y": 25
       },
       "id": 4,
       "panels": [],
@@ -864,13 +690,15 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 18
+        "y": 26
       },
       "id": 17,
       "options": {
         "legend": {
-          "calcs": [],
-          "displayMode": "list",
+          "calcs": [
+            "last"
+          ],
+          "displayMode": "table",
           "placement": "right",
           "showLegend": true
         },
@@ -881,9 +709,13 @@
       },
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "ad687d3e-23e5-4418-bb75-0dfb04fb4721"
+          },
           "editorMode": "builder",
           "expr": "rate(kuiper_op_records_in_total{rule=\"$rule\", instance=\"$instance\"}[1m])",
-          "legendFormat": "{{instance}}-{{op}}-{{exported_instance}}",
+          "legendFormat": "{{op}}",
           "range": true,
           "refId": "A"
         }
@@ -951,13 +783,15 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 18
+        "y": 26
       },
       "id": 18,
       "options": {
         "legend": {
-          "calcs": [],
-          "displayMode": "list",
+          "calcs": [
+            "last"
+          ],
+          "displayMode": "table",
           "placement": "right",
           "showLegend": true
         },
@@ -968,9 +802,13 @@
       },
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "ad687d3e-23e5-4418-bb75-0dfb04fb4721"
+          },
           "editorMode": "builder",
           "expr": "rate(kuiper_op_records_out_total{rule=\"$rule\", instance=\"$instance\"}[1m])",
-          "legendFormat": "{{instance}}-{{op}}-{{exported_instance}}",
+          "legendFormat": "{{op}}",
           "range": true,
           "refId": "A"
         }
@@ -1037,13 +875,17 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 26
+        "y": 34
       },
       "id": 19,
       "options": {
         "legend": {
-          "calcs": [],
-          "displayMode": "list",
+          "calcs": [
+            "last",
+            "min",
+            "max"
+          ],
+          "displayMode": "table",
           "placement": "right",
           "showLegend": true
         },
@@ -1054,6 +896,10 @@
       },
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "ad687d3e-23e5-4418-bb75-0dfb04fb4721"
+          },
           "editorMode": "builder",
           "exemplar": false,
           "expr": "histogram_quantile(0.9, sum by(le, op, exported_instance, instance) (rate(kuiper_op_process_latency_us_hist_bucket{rule=\"$rule\", instance=\"$instance\"}[1m])))",
@@ -1061,103 +907,12 @@
           "hide": false,
           "instant": false,
           "interval": "",
-          "legendFormat": "{{instance}}-{{op}}-{{exported_instance}}",
+          "legendFormat": "{{op}}",
           "range": true,
           "refId": "C"
         }
       ],
       "title": "Process Latency P90",
-      "type": "timeseries"
-    },
-    {
-      "datasource": "${DS_TEST-CLUSTER}",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "left",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "µs"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 26
-      },
-      "id": 23,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "right",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "targets": [
-        {
-          "editorMode": "builder",
-          "exemplar": false,
-          "expr": "histogram_quantile(0.99, sum by(le, op, exported_instance, instance) (rate(kuiper_op_process_latency_us_hist_bucket{rule=\"$rule\", instance=\"$instance\"}[1m])))",
-          "format": "time_series",
-          "hide": false,
-          "instant": false,
-          "interval": "",
-          "legendFormat": "{{instance}}-{{op}}-{{exported_instance}}",
-          "range": true,
-          "refId": "C"
-        }
-      ],
-      "title": "Process Latency P99",
       "type": "timeseries"
     },
     {
@@ -1218,14 +973,16 @@
       "gridPos": {
         "h": 8,
         "w": 12,
-        "x": 0,
+        "x": 12,
         "y": 34
       },
       "id": 20,
       "options": {
         "legend": {
-          "calcs": [],
-          "displayMode": "list",
+          "calcs": [
+            "last"
+          ],
+          "displayMode": "table",
           "placement": "right",
           "showLegend": true
         },
@@ -1236,9 +993,13 @@
       },
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "ad687d3e-23e5-4418-bb75-0dfb04fb4721"
+          },
           "editorMode": "builder",
           "expr": "rate(kuiper_op_exceptions_total{rule=\"$rule\", instance=\"$instance\"}[1m])",
-          "legendFormat": "{{instance}}-{{op}}-{{exported_instance}}",
+          "legendFormat": "{{op}}",
           "range": true,
           "refId": "A"
         }
@@ -1324,8 +1085,10 @@
       "id": 13,
       "options": {
         "legend": {
-          "calcs": [],
-          "displayMode": "list",
+          "calcs": [
+            "last"
+          ],
+          "displayMode": "table",
           "placement": "right",
           "showLegend": true
         },
@@ -1336,9 +1099,13 @@
       },
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "ad687d3e-23e5-4418-bb75-0dfb04fb4721"
+          },
           "editorMode": "builder",
           "expr": "rate(kuiper_sink_records_in_total{rule=\"$rule\", instance=\"$instance\"}[1m])",
-          "legendFormat": "{{instance}}-{{op}}-{{exported_instance}}",
+          "legendFormat": "{{op}}",
           "range": true,
           "refId": "A"
         }
@@ -1411,8 +1178,10 @@
       "id": 14,
       "options": {
         "legend": {
-          "calcs": [],
-          "displayMode": "list",
+          "calcs": [
+            "last"
+          ],
+          "displayMode": "table",
           "placement": "right",
           "showLegend": true
         },
@@ -1423,9 +1192,13 @@
       },
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "ad687d3e-23e5-4418-bb75-0dfb04fb4721"
+          },
           "editorMode": "builder",
           "expr": "rate(kuiper_sink_records_out_total{rule=\"$rule\", instance=\"$instance\"}[1m])",
-          "legendFormat": "{{instance}}-{{op}}-{{exported_instance}}",
+          "legendFormat": "{{op}}",
           "range": true,
           "refId": "A"
         }
@@ -1497,8 +1270,12 @@
       "id": 15,
       "options": {
         "legend": {
-          "calcs": [],
-          "displayMode": "list",
+          "calcs": [
+            "last",
+            "min",
+            "max"
+          ],
+          "displayMode": "table",
           "placement": "right",
           "showLegend": true
         },
@@ -1509,6 +1286,10 @@
       },
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "ad687d3e-23e5-4418-bb75-0dfb04fb4721"
+          },
           "editorMode": "builder",
           "exemplar": false,
           "expr": "histogram_quantile(0.9, sum by(le, op, exported_instance, instance) (rate(kuiper_sink_process_latency_us_hist_bucket{rule=\"$rule\", instance=\"$instance\"}[1m])))",
@@ -1516,103 +1297,12 @@
           "hide": false,
           "instant": false,
           "interval": "",
-          "legendFormat": "{{instance}}-{{op}}-{{exported_instance}}",
+          "legendFormat": "{{op}}",
           "range": true,
           "refId": "C"
         }
       ],
       "title": "Process Latency P90",
-      "type": "timeseries"
-    },
-    {
-      "datasource": "${DS_TEST-CLUSTER}",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "left",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "µs"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 51
-      },
-      "id": 22,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "right",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "targets": [
-        {
-          "editorMode": "builder",
-          "exemplar": false,
-          "expr": "histogram_quantile(0.99, sum by(le, op, exported_instance, instance) (rate(kuiper_sink_process_latency_us_hist_bucket{rule=\"$rule\", instance=\"$instance\"}[1m])))",
-          "format": "time_series",
-          "hide": false,
-          "instant": false,
-          "interval": "",
-          "legendFormat": "{{instance}}-{{op}}-{{exported_instance}}",
-          "range": true,
-          "refId": "C"
-        }
-      ],
-      "title": "Process Latency P99",
       "type": "timeseries"
     },
     {
@@ -1673,14 +1363,16 @@
       "gridPos": {
         "h": 8,
         "w": 12,
-        "x": 0,
-        "y": 59
+        "x": 12,
+        "y": 51
       },
       "id": 16,
       "options": {
         "legend": {
-          "calcs": [],
-          "displayMode": "list",
+          "calcs": [
+            "last"
+          ],
+          "displayMode": "table",
           "placement": "right",
           "showLegend": true
         },
@@ -1691,9 +1383,13 @@
       },
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "ad687d3e-23e5-4418-bb75-0dfb04fb4721"
+          },
           "editorMode": "builder",
           "expr": "rate(kuiper_sink_exceptions_total{rule=\"$rule\", instance=\"$instance\"}[1m])",
-          "legendFormat": "{{instance}}-{{op}}-{{exported_instance}}",
+          "legendFormat": "{{op}}",
           "range": true,
           "refId": "A"
         }
@@ -1707,7 +1403,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 67
+        "y": 59
       },
       "id": 2,
       "panels": [],
@@ -1774,13 +1470,15 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 68
+        "y": 60
       },
       "id": 1,
       "options": {
         "legend": {
-          "calcs": [],
-          "displayMode": "list",
+          "calcs": [
+            "last"
+          ],
+          "displayMode": "table",
           "placement": "right",
           "showLegend": true
         },
@@ -1791,9 +1489,13 @@
       },
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "ad687d3e-23e5-4418-bb75-0dfb04fb4721"
+          },
           "editorMode": "builder",
           "expr": "rate(kuiper_source_records_in_total{rule=\"$rule\", instance=\"$instance\"}[1m])",
-          "legendFormat": "{{instance}}-{{op}}-{{exported_instance}}",
+          "legendFormat": "{{op}}",
           "range": true,
           "refId": "A"
         }
@@ -1861,13 +1563,15 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 68
+        "y": 60
       },
       "id": 5,
       "options": {
         "legend": {
-          "calcs": [],
-          "displayMode": "list",
+          "calcs": [
+            "last"
+          ],
+          "displayMode": "table",
           "placement": "right",
           "showLegend": true
         },
@@ -1878,9 +1582,13 @@
       },
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "ad687d3e-23e5-4418-bb75-0dfb04fb4721"
+          },
           "editorMode": "builder",
           "expr": "rate(kuiper_source_records_out_total{rule=\"$rule\", instance=\"$instance\"}[1m])",
-          "legendFormat": "{{instance}}-{{op}}-{{exported_instance}}",
+          "legendFormat": "{{op}}",
           "range": true,
           "refId": "A"
         }
@@ -1947,13 +1655,17 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 76
+        "y": 68
       },
       "id": 6,
       "options": {
         "legend": {
-          "calcs": [],
-          "displayMode": "list",
+          "calcs": [
+            "last",
+            "min",
+            "max"
+          ],
+          "displayMode": "table",
           "placement": "right",
           "showLegend": true
         },
@@ -1964,110 +1676,23 @@
       },
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "ad687d3e-23e5-4418-bb75-0dfb04fb4721"
+          },
           "editorMode": "builder",
           "exemplar": false,
-          "expr": "histogram_quantile(0.9, sum by(le, op, exported_instance, instance) (rate(kuiper_source_process_latency_us_hist_bucket{rule=\"$rule\", instance=\"$instance\"}[1m])))",
+          "expr": "histogram_quantile(0.9, sum by(le, op, instance) (rate(kuiper_source_process_latency_us_hist_bucket{rule=\"$rule\", instance=\"$instance\"}[1m])))",
           "format": "time_series",
           "hide": false,
           "instant": false,
           "interval": "",
-          "legendFormat": "{{instance}}-{{op}}-{{exported_instance}}",
+          "legendFormat": "{{op}}",
           "range": true,
           "refId": "C"
         }
       ],
       "title": "Process Latency P90",
-      "type": "timeseries"
-    },
-    {
-      "datasource": "${DS_TEST-CLUSTER}",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "left",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "µs"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 76
-      },
-      "id": 21,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "right",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "targets": [
-        {
-          "editorMode": "builder",
-          "exemplar": false,
-          "expr": "histogram_quantile(0.99, sum by(le, op, exported_instance, instance) (rate(kuiper_source_process_latency_us_hist_bucket{rule=\"$rule\", instance=\"$instance\"}[1m])))",
-          "format": "time_series",
-          "hide": false,
-          "instant": false,
-          "interval": "",
-          "legendFormat": "{{instance}}-{{op}}-{{exported_instance}}",
-          "range": true,
-          "refId": "C"
-        }
-      ],
-      "title": "Process Latency P99",
       "type": "timeseries"
     },
     {
@@ -2128,14 +1753,16 @@
       "gridPos": {
         "h": 8,
         "w": 12,
-        "x": 0,
-        "y": 84
+        "x": 12,
+        "y": 68
       },
       "id": 8,
       "options": {
         "legend": {
-          "calcs": [],
-          "displayMode": "list",
+          "calcs": [
+            "last"
+          ],
+          "displayMode": "table",
           "placement": "right",
           "showLegend": true
         },
@@ -2146,18 +1773,253 @@
       },
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "ad687d3e-23e5-4418-bb75-0dfb04fb4721"
+          },
           "editorMode": "builder",
           "expr": "rate(kuiper_source_exceptions_total{rule=\"$rule\", instance=\"$instance\"}[1m])",
-          "legendFormat": "{{instance}}-{{op}}-{{exported_instance}}",
+          "legendFormat": "{{op}}",
           "range": true,
           "refId": "A"
         }
       ],
       "title": "Exceptions QPS",
       "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 76
+      },
+      "id": 33,
+      "panels": [],
+      "title": "Sink Cache",
+      "type": "row"
+    },
+    {
+      "datasource": "${DS_TEST-CLUSTER}",
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "left",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "cps"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 77
+      },
+      "id": 34,
+      "options": {
+        "legend": {
+          "calcs": [
+            "last"
+          ],
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "ad687d3e-23e5-4418-bb75-0dfb04fb4721"
+          },
+          "editorMode": "builder",
+          "expr": "rate(kuiper_sync_cache_counter{instance=\"$instance\", rule=\"$rule\"}[1m])",
+          "hide": false,
+          "legendFormat": "{{type}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Sync Cache QPS",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "${DS_TEST-CLUSTER}",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "left",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "µs"
+        },
+        "overrides": [
+          {
+            "__systemRef": "hideSeriesFrom",
+            "matcher": {
+              "id": "byNames",
+              "options": {
+                "mode": "exclude",
+                "names": [
+                  "flush"
+                ],
+                "prefix": "All except:",
+                "readOnly": true
+              }
+            },
+            "properties": [
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": true
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 77
+      },
+      "id": 35,
+      "options": {
+        "legend": {
+          "calcs": [
+            "last",
+            "min",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "ad687d3e-23e5-4418-bb75-0dfb04fb4721"
+          },
+          "editorMode": "builder",
+          "exemplar": false,
+          "expr": "histogram_quantile(0.9, sum by(le, instance, type, rule) (rate(kuiper_sync_cache_duration_bucket{rule=\"$rule\", instance=\"$instance\"}[1m])))",
+          "format": "time_series",
+          "hide": false,
+          "instant": false,
+          "interval": "",
+          "legendFormat": "{{type}}",
+          "range": true,
+          "refId": "C"
+        }
+      ],
+      "title": "Sync Cache Process latency P90",
+      "type": "timeseries"
     }
   ],
-  "refresh": "",
+  "refresh": "5s",
   "schemaVersion": 38,
   "style": "dark",
   "tags": [],
@@ -2209,6 +2071,6 @@
   "timezone": "",
   "title": "kuiper panel",
   "uid": "da14abfc-1b97-4833-a86f-fad5d3147e80",
-  "version": 15,
+  "version": 1,
   "weekStart": ""
 }

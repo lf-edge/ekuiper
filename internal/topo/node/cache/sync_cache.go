@@ -24,6 +24,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
+	"github.com/lf-edge/ekuiper/v2/metrics"
 	"github.com/lf-edge/ekuiper/v2/pkg/kv"
 )
 
@@ -94,7 +95,17 @@ func (p *page) reset() {
 	p.L = 0
 }
 
+const (
+	syncCacheAdd   = "add"
+	syncCachePop   = "pop"
+	syncCacheFlush = "flush"
+	syncCacheDrop  = "drop"
+	syncCacheLoad  = "load"
+)
+
 type SyncCache struct {
+	RuleID string
+	OpID   string
 	// cache config
 	cacheConf   *conf.SinkConf
 	maxDiskPage int
@@ -129,6 +140,11 @@ func NewSyncCache(ctx api.StreamContext, cacheConf *conf.SinkConf) (*SyncCache, 
 	return c, err
 }
 
+func (c *SyncCache) SetupMeta(ctx api.StreamContext) {
+	c.RuleID = ctx.GetRuleId()
+	c.OpID = ctx.GetOpId()
+}
+
 // AddCache not thread safe!
 func (c *SyncCache) AddCache(ctx api.StreamContext, item any) error {
 	isBufferNotFull := c.writeBufferPage.append(item)
@@ -142,12 +158,18 @@ func (c *SyncCache) AddCache(ctx api.StreamContext, item any) error {
 	} else {
 		ctx.GetLogger().Debugf("added cache to disk buffer page %v", c.writeBufferPage)
 	}
+	metrics.SyncCacheCounter.WithLabelValues(syncCacheAdd, c.RuleID, c.OpID).Inc()
 	c.CacheLength++
 	ctx.GetLogger().Debugf("added cache %d", c.CacheLength)
 	return nil
 }
 
 func (c *SyncCache) appendWriteCache(ctx api.StreamContext) error {
+	metrics.SyncCacheCounter.WithLabelValues(syncCacheFlush, c.RuleID, c.OpID).Inc()
+	start := time.Now()
+	defer func() {
+		metrics.SyncCacheHist.WithLabelValues(syncCacheFlush, c.RuleID, c.OpID).Observe(float64(time.Since(start).Microseconds()))
+	}()
 	if c.diskSize == c.maxDiskPage {
 		// disk full, replace read buffer page
 		err := c.deleteDiskPage(ctx, false)
@@ -229,11 +251,13 @@ func (c *SyncCache) PopCache(ctx api.StreamContext) (any, bool) {
 		ctx.GetLogger().Debugf("deleted cache: %d", c.CacheLength)
 	}
 	ctx.GetLogger().Debugf("deleted cache. CacheLength: %d, diskSize: %d, readPage: %v", c.CacheLength, c.diskSize, c.readBufferPage)
+	metrics.SyncCacheCounter.WithLabelValues(syncCachePop, c.RuleID, c.OpID).Inc()
 	return result, true
 }
 
 // loaded means whether load the page to memory or just drop
 func (c *SyncCache) deleteDiskPage(ctx api.StreamContext, loaded bool) error {
+	metrics.SyncCacheCounter.WithLabelValues(syncCacheDrop, c.RuleID, c.OpID).Inc()
 	_ = c.store.Delete(strconv.Itoa(c.diskPageHead))
 	ctx.GetLogger().Warnf("drop a read page of %d items in memory", c.readBufferPage.L)
 	c.diskPageHead++
@@ -258,6 +282,11 @@ func (c *SyncCache) deleteDiskPage(ctx api.StreamContext, loaded bool) error {
 }
 
 func (c *SyncCache) loadFromDisk(ctx api.StreamContext) error {
+	metrics.SyncCacheCounter.WithLabelValues(syncCacheLoad, c.RuleID, c.OpID).Inc()
+	start := time.Now()
+	defer func() {
+		metrics.SyncCacheHist.WithLabelValues(syncCacheLoad, c.RuleID, c.OpID).Observe(float64(time.Since(start).Microseconds()))
+	}()
 	// load page from the disk
 	ctx.GetLogger().Debugf("loading from disk %d. CacheLength: %d, diskSize: %d", c.diskPageTail, c.CacheLength, c.diskSize)
 	// caution, must create a new page instance
