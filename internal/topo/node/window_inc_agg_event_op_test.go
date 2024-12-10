@@ -302,3 +302,75 @@ func TestIncEventTumblingWindow(t *testing.T) {
 	time.Sleep(10 * time.Millisecond)
 	op.Close()
 }
+
+func TestIncEventCountWindow(t *testing.T) {
+	conf.IsTesting = true
+	o := &def.RuleOption{
+		PlanOptimizeStrategy: &def.PlanOptimizeStrategy{
+			EnableIncrementalWindow: true,
+		},
+		IsEventTime:  true,
+		Qos:          0,
+		BufferLength: 10,
+	}
+	kv, err := store.GetKV("stream")
+	require.NoError(t, err)
+	require.NoError(t, prepareStream())
+	sql := "select count(*) from stream group by countwindow(1)"
+	stmt, err := xsql.NewParser(strings.NewReader(sql)).Parse()
+	require.NoError(t, err)
+	p, err := planner.CreateLogicalPlan(stmt, &def.RuleOption{
+		PlanOptimizeStrategy: &def.PlanOptimizeStrategy{
+			EnableIncrementalWindow: true,
+		},
+		Qos: 0,
+	}, kv)
+	require.NoError(t, err)
+	require.NotNil(t, p)
+	incPlan := extractIncWindowPlan(p)
+	require.NotNil(t, incPlan)
+	op, err := node.NewWindowIncAggOp("1", &node.WindowConfig{
+		Type:        incPlan.WType,
+		CountLength: incPlan.Length,
+	}, incPlan.Dimensions, incPlan.IncAggFuncs, o)
+	require.NotNil(t, op)
+	input, _ := op.GetInput()
+	output := make(chan any, 10)
+	op.AddOutput(output, "output")
+	errCh := make(chan error, 10)
+	ctx, cancel := mockContext.NewMockContext("1", "2").WithCancel()
+	op.Exec(ctx, errCh)
+	waitExecute()
+	now := time.Now()
+	input <- &xsql.Tuple{Message: map[string]any{"a": int64(1)}, Timestamp: now}
+	input <- &xsql.Tuple{Message: map[string]any{"a": int64(2)}, Timestamp: now.Add(time.Second)}
+	input <- &xsql.WatermarkTuple{Timestamp: now.Add(500 * time.Millisecond)}
+	waitExecute()
+	got1 := <-output
+	wt, ok := got1.(*xsql.WindowTuples)
+	require.True(t, ok)
+	require.NotNil(t, wt)
+	d := wt.ToMaps()
+	require.Equal(t, []map[string]any{
+		{
+			"a":             int64(1),
+			"inc_agg_col_1": int64(1),
+		},
+	}, d)
+	input <- &xsql.WatermarkTuple{Timestamp: now.Add(1500 * time.Millisecond)}
+	waitExecute()
+	got2 := <-output
+	wt, ok = got2.(*xsql.WindowTuples)
+	require.True(t, ok)
+	require.NotNil(t, wt)
+	d = wt.ToMaps()
+	require.Equal(t, []map[string]any{
+		{
+			"a":             int64(2),
+			"inc_agg_col_1": int64(1),
+		},
+	}, d)
+	cancel()
+	waitExecute()
+	op.Close()
+}

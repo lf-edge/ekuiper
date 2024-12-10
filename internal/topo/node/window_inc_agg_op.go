@@ -121,17 +121,6 @@ type windowIncAggExec interface {
 	RestoreFromState(ctx api.StreamContext) error
 }
 
-type CountWindowIncAggOp struct {
-	*WindowIncAggOperator
-	windowSize int
-	CountWindowIncAggOpState
-}
-
-type CountWindowIncAggOpState struct {
-	CurrWindow     *IncAggWindow
-	CurrWindowSize int
-}
-
 type IncAggWindow struct {
 	StartTime             time.Time
 	EventTime             time.Time
@@ -206,6 +195,17 @@ func (r *IncAggRange) restoreState(ctx api.StreamContext) {
 	fv, _ := xsql.NewFunctionValuersForOp(fctx)
 	r.fctx = fctx.(*topoContext.DefaultContext)
 	r.fv = fv
+}
+
+type CountWindowIncAggOp struct {
+	*WindowIncAggOperator
+	windowSize int
+	CountWindowIncAggOpState
+}
+
+type CountWindowIncAggOpState struct {
+	CurrWindow     *IncAggWindow
+	CurrWindowSize int
 }
 
 func (co *CountWindowIncAggOp) PutState(ctx api.StreamContext) {
