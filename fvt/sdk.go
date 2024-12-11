@@ -89,6 +89,19 @@ func (sdk *SDK) RestartRule(ruleId string) (resp *http.Response, err error) {
 	return http.Post(sdk.baseUrl.JoinPath("rules", ruleId, "restart").String(), ContentTypeJson, nil)
 }
 
+func (sdk *SDK) StopRule(ruleId string) (resp *http.Response, err error) {
+	return http.Post(sdk.baseUrl.JoinPath("rules", ruleId, "stop").String(), ContentTypeJson, nil)
+}
+
+func (sdk *SDK) UpdateRule(name, ruleJson string) (resp *http.Response, err error) {
+	req, err := http.NewRequest(http.MethodPut, sdk.baseUrl.JoinPath("rules", name).String(), bytes.NewBufferString(ruleJson))
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	return sdk.httpClient.Do(req)
+}
+
 func (sdk *SDK) DeleteRule(name string) (resp *http.Response, err error) {
 	req, err := http.NewRequest(http.MethodDelete, sdk.baseUrl.JoinPath("rules", name).String(), nil)
 	if err != nil {

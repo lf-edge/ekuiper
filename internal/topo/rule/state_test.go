@@ -103,7 +103,7 @@ func TestAPIs(t *testing.T) {
 	assert.Equal(t, Stopped, st.currentState)
 	// Update rule
 	st.Rule = def.GetDefaultRule("testAPI", "select abc from demo where a > 3")
-	e = st.Validate()
+	_, e = st.Validate()
 	assert.NoError(t, e)
 	e = st.Start()
 	assert.NoError(t, e)
