@@ -24,10 +24,10 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
-	"github.com/lf-edge/ekuiper/v2/internal/server/promMetrics"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/planner"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/rule"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
+	"github.com/lf-edge/ekuiper/v2/metrics"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 	"github.com/lf-edge/ekuiper/v2/pkg/replace"
@@ -480,6 +480,6 @@ func getRuleState(name string) (rule.RunState, error) {
 
 func deleteRuleMetrics(name string) {
 	if conf.Config != nil && conf.Config.Basic.Prometheus {
-		promMetrics.RemoveRuleStatus(name)
+		metrics.RemoveRuleStatus(name)
 	}
 }

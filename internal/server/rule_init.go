@@ -26,8 +26,8 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/schedule"
-	"github.com/lf-edge/ekuiper/v2/internal/server/promMetrics"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/rule"
+	"github.com/lf-edge/ekuiper/v2/metrics"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
@@ -150,10 +150,10 @@ func handleAllRuleStatusMetrics(rs []ruleWrapper) {
 				stopCount++
 				v = RuleStopped
 			}
-			promMetrics.SetRuleStatus(id, int(v))
+			metrics.SetRuleStatus(id, int(v))
 		}
-		promMetrics.SetRuleStatusCountGauge(true, runningCount)
-		promMetrics.SetRuleStatusCountGauge(false, stopCount)
+		metrics.SetRuleStatusCountGauge(true, runningCount)
+		metrics.SetRuleStatusCountGauge(false, stopCount)
 	}
 }
 
@@ -272,7 +272,7 @@ func StartCPUProfiling(ctx context.Context, cpuProfile Profiler) error {
 						continue
 					}
 					for labelValue, t := range ruleUsage.Stats {
-						promMetrics.SetRuleCPUUsageGauge(labelValue, t)
+						metrics.SetRuleCPUUsageGauge(labelValue, t)
 					}
 				}
 			}

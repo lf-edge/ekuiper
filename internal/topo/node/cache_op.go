@@ -69,6 +69,7 @@ func (s *CacheOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 	if len(s.outputs) > 1 {
 		infra.DrainError(ctx, fmt.Errorf("cache op should have only 1 output but got %+v", s.outputs), errCh)
 	}
+	s.cache.SetupMeta(ctx)
 	s.prepareExec(ctx, errCh, "op")
 	go func() {
 		err := infra.SafeRun(func() error {
