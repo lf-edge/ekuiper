@@ -15,6 +15,7 @@
 package node
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
@@ -84,25 +85,71 @@ func (ho *HoppingWindowIncAggEventOp) triggerWindow(ctx api.StreamContext, now t
 }
 
 type SlidingWindowIncAggEventOp struct {
-	*SlidingWindowIncAggOp
+	op *SlidingWindowIncAggOp
+	SlidingWindowIncAggEventOpState
+}
+
+type SlidingWindowIncAggEventOpState struct {
+	SlidingWindowIncAggOpState
 	EmitList []*IncAggWindow
 }
 
 func NewSlidingWindowIncAggEventOp(o *WindowIncAggOperator) *SlidingWindowIncAggEventOp {
 	op := &SlidingWindowIncAggEventOp{}
-	op.SlidingWindowIncAggOp = NewSlidingWindowIncAggOp(o)
+	op.op = NewSlidingWindowIncAggOp(o)
+	op.CurrWindowList = make([]*IncAggWindow, 0)
 	op.EmitList = make([]*IncAggWindow, 0)
 	return op
 }
 
+func (so *SlidingWindowIncAggEventOp) PutState(ctx api.StreamContext) {
+	for index, window := range so.CurrWindowList {
+		window.GenerateAllFunctionState()
+		so.CurrWindowList[index] = window
+	}
+	for index, window := range so.EmitList {
+		window.GenerateAllFunctionState()
+		so.EmitList[index] = window
+	}
+	ctx.PutState(buildStateKey(ctx), so.SlidingWindowIncAggEventOpState)
+}
+
+func (so *SlidingWindowIncAggEventOp) RestoreFromState(ctx api.StreamContext) error {
+	s, err := ctx.GetState(buildStateKey(ctx))
+	if err != nil {
+		return err
+	}
+	if s == nil {
+		return nil
+	}
+	soState, ok := s.(SlidingWindowIncAggEventOpState)
+	if !ok {
+		return fmt.Errorf("not SlidingWindowIncAggEventOpState")
+	}
+	so.SlidingWindowIncAggEventOpState = soState
+	for index, window := range so.CurrWindowList {
+		window.GenerateAllFunctionState()
+		so.CurrWindowList[index] = window
+	}
+	for index, window := range so.EmitList {
+		window.GenerateAllFunctionState()
+		so.EmitList[index] = window
+	}
+	return nil
+}
+
 func (so *SlidingWindowIncAggEventOp) exec(ctx api.StreamContext, errCh chan<- error) {
+	if err := so.RestoreFromState(ctx); err != nil {
+		errCh <- err
+		return
+	}
 	fv, _ := xsql.NewFunctionValuersForOp(ctx)
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		case input := <-so.input:
-			data, processed := so.ingest(ctx, input)
+		case input := <-so.op.input:
+			data, processed := so.op.ingest(ctx, input)
 			if processed {
 				break
 			}
@@ -110,13 +157,16 @@ func (so *SlidingWindowIncAggEventOp) exec(ctx api.StreamContext, errCh chan<- e
 			case *xsql.WatermarkTuple:
 				now := tuple.GetTimestamp()
 				so.emitList(ctx, errCh, now)
-				so.CurrWindowList = gcIncAggWindow(so.CurrWindowList, so.Length, now)
+				so.CurrWindowList = gcIncAggWindow(so.CurrWindowList, so.op.Length, now)
+				so.PutState(ctx)
 			case *xsql.Tuple:
-				if so.Delay > 0 {
+				if so.op.Delay > 0 {
 					so.appendDelayIncAggWindowInEvent(ctx, errCh, fv, tuple)
+					so.PutState(ctx)
 					continue
 				}
 				so.appendIncAggWindowInEvent(ctx, errCh, fv, tuple)
+				so.PutState(ctx)
 			}
 		}
 	}
@@ -126,9 +176,9 @@ func (so *SlidingWindowIncAggEventOp) emitList(ctx api.StreamContext, errCh chan
 	if len(so.EmitList) > 0 {
 		triggerIndex := -1
 		for index, window := range so.EmitList {
-			if window.EventTime.Add(so.Delay).Compare(triggerTS) <= 0 {
+			if window.EventTime.Add(so.op.Delay).Compare(triggerTS) <= 0 {
 				triggerIndex = index
-				so.emit(ctx, errCh, window, triggerTS)
+				so.op.emit(ctx, errCh, window, triggerTS)
 			} else {
 				break
 			}
@@ -149,16 +199,16 @@ func (so *SlidingWindowIncAggEventOp) emitList(ctx api.StreamContext, errCh chan
 
 func (so *SlidingWindowIncAggEventOp) appendIncAggWindowInEvent(ctx api.StreamContext, errCh chan<- error, fv *xsql.FunctionValuer, row *xsql.Tuple) {
 	now := row.GetTimestamp()
-	name := calDimension(fv, so.Dimensions, row)
-	if so.isMatchCondition(ctx, fv, row) {
+	name := calDimension(fv, so.op.Dimensions, row)
+	if so.op.isMatchCondition(ctx, fv, row) {
 		so.CurrWindowList = append(so.CurrWindowList, newIncAggWindow(ctx, now))
 	}
 	for _, incWindow := range so.CurrWindowList {
-		if incWindow.StartTime.Compare(now) <= 0 && incWindow.StartTime.Add(so.Length).After(now) {
-			incAggCal(ctx, name, row, incWindow, so.aggFields)
+		if incWindow.StartTime.Compare(now) <= 0 && incWindow.StartTime.Add(so.op.Length).After(now) {
+			incAggCal(ctx, name, row, incWindow, so.op.aggFields)
 		}
 	}
-	if so.isMatchCondition(ctx, fv, row) {
+	if so.op.isMatchCondition(ctx, fv, row) {
 		emitWindow := so.CurrWindowList[0].Clone(ctx)
 		emitWindow.StartTime = row.GetTimestamp()
 		so.EmitList = append(so.EmitList, emitWindow)
@@ -168,19 +218,19 @@ func (so *SlidingWindowIncAggEventOp) appendIncAggWindowInEvent(ctx api.StreamCo
 
 func (so *SlidingWindowIncAggEventOp) appendDelayIncAggWindowInEvent(ctx api.StreamContext, errCh chan<- error, fv *xsql.FunctionValuer, row *xsql.Tuple) {
 	now := row.GetTimestamp()
-	name := calDimension(fv, so.Dimensions, row)
+	name := calDimension(fv, so.op.Dimensions, row)
 	so.CurrWindowList = append(so.CurrWindowList, newIncAggWindow(ctx, row.GetTimestamp()))
 	for _, incWindow := range so.CurrWindowList {
-		if incWindow.StartTime.Compare(now) <= 0 && incWindow.StartTime.Add(so.Length).After(now) {
-			incAggCal(ctx, name, row, incWindow, so.aggFields)
+		if incWindow.StartTime.Compare(now) <= 0 && incWindow.StartTime.Add(so.op.Length).After(now) {
+			incAggCal(ctx, name, row, incWindow, so.op.aggFields)
 		}
 	}
 	for _, incWindow := range so.EmitList {
-		if incWindow.EventTime.Compare(now) <= 0 && incWindow.EventTime.Add(so.Delay).After(now) {
-			incAggCal(ctx, name, row, incWindow, so.aggFields)
+		if incWindow.EventTime.Compare(now) <= 0 && incWindow.EventTime.Add(so.op.Delay).After(now) {
+			incAggCal(ctx, name, row, incWindow, so.op.aggFields)
 		}
 	}
-	if so.isMatchCondition(ctx, fv, row) {
+	if so.op.isMatchCondition(ctx, fv, row) {
 		emitWindow := so.CurrWindowList[0].Clone(ctx)
 		emitWindow.EventTime = row.GetTimestamp()
 		so.EmitList = append(so.EmitList, emitWindow)

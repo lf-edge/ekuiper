@@ -45,6 +45,7 @@ func init() {
 	gob.Register(CountWindowIncAggOpState{})
 	gob.Register(TumblingWindowIncAggOpState{})
 	gob.Register(SlidingWindowIncAggOpState{})
+	gob.Register(SlidingWindowIncAggEventOpState{})
 }
 
 type WindowIncAggOperator struct {
@@ -524,6 +525,7 @@ func (so *SlidingWindowIncAggOp) exec(ctx api.StreamContext, errCh chan<- error)
 						so.emit(ctx, errCh, so.CurrWindowList[0], now)
 					}
 				}
+				so.PutState(ctx)
 			}
 		case <-so.taskCh:
 			now := timex.GetNow()
@@ -531,6 +533,7 @@ func (so *SlidingWindowIncAggOp) exec(ctx api.StreamContext, errCh chan<- error)
 			if len(so.CurrWindowList) > 0 {
 				so.emit(ctx, errCh, so.CurrWindowList[0], now)
 			}
+			so.PutState(ctx)
 		}
 	}
 }
@@ -674,6 +677,7 @@ func (ho *HoppingWindowIncAggOp) exec(ctx api.StreamContext, errCh chan<- error)
 			now := timex.GetNow()
 			ho.emit(ctx, errCh, task.window, now)
 			ho.CurrWindowList = gcIncAggWindow(ho.CurrWindowList, ho.Length, now)
+			ho.PutState(ctx)
 		case input := <-ho.input:
 			now := timex.GetNow()
 			data, processed := ho.commonIngest(ctx, input)
@@ -685,6 +689,7 @@ func (ho *HoppingWindowIncAggOp) exec(ctx api.StreamContext, errCh chan<- error)
 				ho.CurrWindowList = gcIncAggWindow(ho.CurrWindowList, ho.Length, now)
 				ho.calIncAggWindow(ctx, fv, row, now)
 			}
+			ho.PutState(ctx)
 		default:
 		}
 		if ho.FirstTimer != nil {
@@ -698,6 +703,7 @@ func (ho *HoppingWindowIncAggOp) exec(ctx api.StreamContext, errCh chan<- error)
 				ho.newIncWindow(ctx, now)
 				ho.CurrWindowList = gcIncAggWindow(ho.CurrWindowList, ho.Length, now)
 				ho.ticker = timex.GetTicker(ho.Interval)
+				ho.PutState(ctx)
 			default:
 			}
 		}
@@ -708,6 +714,7 @@ func (ho *HoppingWindowIncAggOp) exec(ctx api.StreamContext, errCh chan<- error)
 			case now := <-ho.ticker.C:
 				ho.CurrWindowList = gcIncAggWindow(ho.CurrWindowList, ho.Length, now)
 				ho.newIncWindow(ctx, now)
+				ho.PutState(ctx)
 			default:
 			}
 		}
