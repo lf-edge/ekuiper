@@ -73,6 +73,7 @@ func (s *CacheOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 		infra.DrainError(ctx, fmt.Errorf("cache op init store error:%v", err), errCh)
 		return
 	}
+	s.cache.SetupMeta(ctx)
 	s.prepareExec(ctx, errCh, "op")
 	go func() {
 		err := infra.SafeRun(func() error {
