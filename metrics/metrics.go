@@ -21,9 +21,12 @@ const (
 	LblStatusType = "status"
 	LblRuleIDType = "rule"
 	LblOpIDType   = "op"
+	LblIOType     = "io"
 
 	LBlRuleRunning = "running"
 	LblRuleStop    = "stop"
+	LblSourceIO    = "source"
+	LblSinkIO      = "sink"
 )
 
 var (

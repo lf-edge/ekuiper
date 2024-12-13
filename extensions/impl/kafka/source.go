@@ -30,12 +30,15 @@ import (
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/util"
+	"github.com/lf-edge/ekuiper/v2/metrics"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cert"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 type KafkaSource struct {
+	ruleID    string
+	opID      string
 	reader    *kafkago.Reader
 	offset    int64
 	tlsConfig *tls.Config
@@ -127,6 +130,8 @@ func (k *KafkaSource) Provision(ctx api.StreamContext, configs map[string]any) e
 		return err
 	}
 	k.mechanism = mechanism
+	k.ruleID = ctx.GetRuleId()
+	k.opID = ctx.GetOpId()
 	conf.Log.Infof("kafka source got configured.")
 	return nil
 }
@@ -193,6 +198,7 @@ func (k *KafkaSource) Subscribe(ctx api.StreamContext, ingest api.BytesIngest, i
 			ingestError(ctx, err)
 			continue
 		}
+		KafkaCounter.WithLabelValues(LblMessage, metrics.LblSourceIO, k.ruleID, k.opID).Inc()
 		ingest(ctx, msg.Value, nil, timex.GetNow())
 	}
 }
