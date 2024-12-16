@@ -767,3 +767,20 @@ func TestDecodeField(t *testing.T) {
 		})
 	}
 }
+
+func TestIssue3441(t *testing.T) {
+	originSchema := map[string]*ast.JsonStreamField{
+		"id": nil,
+	}
+	f := NewFastJsonConverter(originSchema)
+	data := `{"id":1795292668348461056}`
+	ctx := mockContext.NewMockContext("test", "op1")
+	m, err := f.Decode(ctx, []byte(data))
+	require.NoError(t, err)
+	require.Equal(t, map[string]interface{}{"id": int64(1795292668348461056)}, m)
+
+	data = `{"id":17952926683484.44}`
+	m, err = f.Decode(ctx, []byte(data))
+	require.NoError(t, err)
+	require.Equal(t, map[string]interface{}{"id": 17952926683484.44}, m)
+}

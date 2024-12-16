@@ -17,6 +17,7 @@ package json
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 	"sync"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
@@ -85,6 +86,13 @@ func (f *FastJsonConverter) DecodeField(_ api.StreamContext, b []byte, field str
 		case fastjson.TypeString:
 			return vv.String(), nil
 		case fastjson.TypeNumber:
+			if !isFloat64(vv.String()) {
+				i64, err := vv.Int64()
+				if err != nil {
+					return nil, err
+				}
+				return i64, nil
+			}
 			return vv.Float64()
 		case fastjson.TypeTrue, fastjson.TypeFalse:
 			return vv.Bool()
@@ -340,6 +348,13 @@ func (f *FastJsonConverter) checkSchema(key, typ string, schema map[string]*ast.
 
 func (f *FastJsonConverter) extractNumberValue(name string, v *fastjson.Value, field *ast.JsonStreamField) (interface{}, error) {
 	if field == nil {
+		if !isFloat64(v.String()) {
+			i64, err := v.Int64()
+			if err != nil {
+				return nil, err
+			}
+			return i64, nil
+		}
 		f64, err := v.Float64()
 		if err != nil {
 			return nil, err
@@ -453,4 +468,8 @@ func getType(t *ast.JsonStreamField) string {
 	} else {
 		return t.Type
 	}
+}
+
+func isFloat64(v string) bool {
+	return strings.Contains(v, ".")
 }
