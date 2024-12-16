@@ -47,6 +47,7 @@ func (ho *HoppingWindowIncAggEventOp) PutState(ctx api.StreamContext) {
 	}
 	ctx.PutState(buildStateKey(ctx), ho.HoppingWindowIncAggEventOpState)
 }
+
 func (ho *HoppingWindowIncAggEventOp) RestoreFromState(ctx api.StreamContext) error {
 	s, err := ctx.GetState(buildStateKey(ctx))
 	if err != nil {
@@ -91,9 +92,18 @@ func (ho *HoppingWindowIncAggEventOp) exec(ctx api.StreamContext, errCh chan<- e
 			case *xsql.Tuple:
 				now := tuple.GetTimestamp()
 				ho.triggerWindow(ctx, now)
-				ho.op.calIncAggWindow(ctx, fv, tuple, tuple.GetTimestamp())
+				ho.calIncAggWindow(ctx, fv, tuple, tuple.GetTimestamp())
 				ho.PutState(ctx)
 			}
+		}
+	}
+}
+
+func (ho *HoppingWindowIncAggEventOp) calIncAggWindow(ctx api.StreamContext, fv *xsql.FunctionValuer, row *xsql.Tuple, now time.Time) {
+	name := calDimension(fv, ho.op.Dimensions, row)
+	for _, incWindow := range ho.CurrWindowList {
+		if incWindow.StartTime.Compare(now) <= 0 && incWindow.StartTime.Add(ho.op.Length).After(now) {
+			incAggCal(ctx, name, row, incWindow, ho.op.aggFields)
 		}
 	}
 }
