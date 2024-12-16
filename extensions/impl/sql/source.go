@@ -289,7 +289,7 @@ func buildScanValueByColumnType(ctx api.StreamContext, colName, colType string, 
 		}
 		return new(int64)
 	default:
-		ctx.GetLogger().Infof("sql source meet column %v unknown columnType:%v", colName, colType)
+		ctx.GetLogger().Debugf("sql source meet column %v unknown columnType:%v", colName, colType)
 		return nil
 	}
 }

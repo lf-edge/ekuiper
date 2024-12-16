@@ -24,10 +24,10 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
-	"github.com/lf-edge/ekuiper/v2/internal/server/promMetrics"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/planner"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/rule"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
+	"github.com/lf-edge/ekuiper/v2/metrics"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 	"github.com/lf-edge/ekuiper/v2/pkg/replace"
@@ -113,7 +113,7 @@ func (rr *RuleRegistry) CreateRule(name, ruleJson string) (id string, err error)
 	// create state and save
 	rs := rule.NewState(r)
 	// Validate the topo
-	err = rs.Validate()
+	tp, err := rs.Validate()
 	if err != nil {
 		return r.Id, err
 	}
@@ -124,6 +124,7 @@ func (rr *RuleRegistry) CreateRule(name, ruleJson string) (id string, err error)
 	}
 	// Start the rule asyncly
 	if r.Triggered {
+		rs.WithTopo(tp)
 		go func() {
 			panicOrError := infra.SafeRun(func() error {
 				// Start the rule which runs async
@@ -133,6 +134,8 @@ func (rr *RuleRegistry) CreateRule(name, ruleJson string) (id string, err error)
 				logger.Errorf("Rule %s start failed: %s", r.Id, panicOrError)
 			}
 		}()
+	} else if tp != nil {
+		tp.Cancel()
 	}
 	return r.Id, nil
 }
@@ -174,7 +177,7 @@ func (rr *RuleRegistry) UpdateRule(ruleId, ruleJson string) error {
 	oldRule := rs.Rule
 	rs.Rule = r
 	// validateRule only check plan is valid, topology shouldn't be changed before ruleState stop
-	newTopo, err := rs.ValidateRule()
+	newTopo, err := rs.Validate()
 	if err != nil {
 		rs.Rule = oldRule
 		return err
@@ -189,6 +192,8 @@ func (rr *RuleRegistry) UpdateRule(ruleId, ruleJson string) error {
 		if err2 != nil {
 			return err2
 		}
+	} else if newTopo != nil {
+		newTopo.Cancel()
 	}
 	return err1
 }
@@ -475,6 +480,6 @@ func getRuleState(name string) (rule.RunState, error) {
 
 func deleteRuleMetrics(name string) {
 	if conf.Config != nil && conf.Config.Basic.Prometheus {
-		promMetrics.RemoveRuleStatus(name)
+		metrics.RemoveRuleStatus(name)
 	}
 }

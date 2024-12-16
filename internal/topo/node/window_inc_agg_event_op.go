@@ -237,6 +237,21 @@ func (so *SlidingWindowIncAggEventOp) appendDelayIncAggWindowInEvent(ctx api.Str
 	}
 }
 
+type TumblingWindowIncAggEventOp struct {
+	*HoppingWindowIncAggEventOp
+}
+
+func NewTumblingWindowIncAggEventOp(o *WindowIncAggOperator) *TumblingWindowIncAggEventOp {
+	op := &TumblingWindowIncAggEventOp{}
+	op.HoppingWindowIncAggEventOp = NewHoppingWindowIncAggEventOp(o)
+	op.Length = o.windowConfig.Interval
+	return op
+}
+
+func (to *TumblingWindowIncAggEventOp) exec(ctx api.StreamContext, errCh chan<- error) {
+	to.HoppingWindowIncAggEventOp.exec(ctx, errCh)
+}
+
 func (o *WindowIncAggOperator) ingest(ctx api.StreamContext, item any) (any, bool) {
 	ctx.GetLogger().Debugf("receive %v", item)
 	item, processed := o.preprocess(ctx, item)
@@ -255,4 +270,79 @@ func (o *WindowIncAggOperator) ingest(ctx api.StreamContext, item any) (any, boo
 	}
 	// watermark tuple should return
 	return item, false
+}
+
+type CountWindowIncAggEventOp struct {
+	*CountWindowIncAggOp
+	EmitList []*IncAggWindow
+}
+
+func NewCountWindowIncAggEventOp(o *WindowIncAggOperator) *CountWindowIncAggEventOp {
+	op := &CountWindowIncAggEventOp{
+		CountWindowIncAggOp: &CountWindowIncAggOp{
+			WindowIncAggOperator: o,
+			windowSize:           o.windowConfig.CountLength,
+		},
+	}
+	op.EmitList = make([]*IncAggWindow, 0)
+	return op
+}
+
+func (co *CountWindowIncAggEventOp) exec(ctx api.StreamContext, errCh chan<- error) {
+	fv, _ := xsql.NewFunctionValuersForOp(ctx)
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case input := <-co.input:
+			data, processed := co.ingest(ctx, input)
+			if processed {
+				break
+			}
+			switch tuple := data.(type) {
+			case *xsql.WatermarkTuple:
+				now := tuple.GetTimestamp()
+				var index int
+				for i, window := range co.EmitList {
+					if window.StartTime.Compare(now) <= 0 {
+						co.emitWindow(ctx, errCh, window, now)
+						index = i
+					} else {
+						break
+					}
+				}
+				if index == len(co.EmitList)-1 {
+					co.EmitList = make([]*IncAggWindow, 0)
+				} else {
+					co.EmitList = co.EmitList[index+1:]
+				}
+			case *xsql.Tuple:
+				now := tuple.GetTimestamp()
+				if co.CurrWindow == nil {
+					co.CurrWindow = newIncAggWindow(ctx, now)
+				}
+				name := calDimension(fv, co.Dimensions, tuple)
+				incAggCal(ctx, name, tuple, co.CurrWindow, co.aggFields)
+				co.CurrWindowSize++
+				if co.CurrWindowSize >= co.windowSize {
+					co.EmitList = append(co.EmitList, co.CurrWindow)
+					co.CurrWindow = nil
+				}
+			}
+		}
+	}
+}
+
+func (co *CountWindowIncAggEventOp) emitWindow(ctx api.StreamContext, errCh chan<- error, window *IncAggWindow, now time.Time) {
+	results := &xsql.WindowTuples{
+		Content: make([]xsql.Row, 0),
+	}
+	for _, incAggRange := range window.DimensionsIncAggRange {
+		for name, value := range incAggRange.Fields {
+			incAggRange.LastRow.Set(name, value)
+		}
+		results.Content = append(results.Content, incAggRange.LastRow)
+	}
+	results.WindowRange = xsql.NewWindowRange(window.StartTime.UnixMilli(), now.UnixMilli())
+	co.Broadcast(results)
 }

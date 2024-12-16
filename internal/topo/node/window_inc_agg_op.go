@@ -64,14 +64,24 @@ func NewWindowIncAggOp(name string, w *WindowConfig, dimensions ast.Dimensions, 
 	o.aggFields = aggFields
 	switch w.Type {
 	case ast.COUNT_WINDOW:
-		wExec := &CountWindowIncAggOp{
-			WindowIncAggOperator: o,
-			windowSize:           w.CountLength,
+		if options.IsEventTime {
+			wExec := NewCountWindowIncAggEventOp(o)
+			o.WindowExec = wExec
+		} else {
+			wExec := &CountWindowIncAggOp{
+				WindowIncAggOperator: o,
+				windowSize:           w.CountLength,
+			}
+			o.WindowExec = wExec
 		}
-		o.WindowExec = wExec
 	case ast.TUMBLING_WINDOW:
-		wExec := NewTumblingWindowIncAggOp(o)
-		o.WindowExec = wExec
+		if options.IsEventTime {
+			wExec := NewTumblingWindowIncAggEventOp(o)
+			o.WindowExec = wExec
+		} else {
+			wExec := NewTumblingWindowIncAggOp(o)
+			o.WindowExec = wExec
+		}
 	case ast.SLIDING_WINDOW:
 		if options.IsEventTime {
 			wExec := NewSlidingWindowIncAggEventOp(o)
@@ -115,17 +125,6 @@ type windowIncAggExec interface {
 	exec(ctx api.StreamContext, errCh chan<- error)
 	PutState(ctx api.StreamContext)
 	RestoreFromState(ctx api.StreamContext) error
-}
-
-type CountWindowIncAggOp struct {
-	*WindowIncAggOperator
-	windowSize int
-	CountWindowIncAggOpState
-}
-
-type CountWindowIncAggOpState struct {
-	CurrWindow     *IncAggWindow
-	CurrWindowSize int
 }
 
 type IncAggWindow struct {
@@ -202,6 +201,17 @@ func (r *IncAggRange) restoreState(ctx api.StreamContext) {
 	fv, _ := xsql.NewFunctionValuersForOp(fctx)
 	r.fctx = fctx.(*topoContext.DefaultContext)
 	r.fv = fv
+}
+
+type CountWindowIncAggOp struct {
+	*WindowIncAggOperator
+	windowSize int
+	CountWindowIncAggOpState
+}
+
+type CountWindowIncAggOpState struct {
+	CurrWindow     *IncAggWindow
+	CurrWindowSize int
 }
 
 func (co *CountWindowIncAggOp) PutState(ctx api.StreamContext) {
