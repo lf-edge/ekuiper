@@ -24,24 +24,61 @@ import (
 )
 
 type HoppingWindowIncAggEventOp struct {
-	*HoppingWindowIncAggOp
+	op *HoppingWindowIncAggOp
+	HoppingWindowIncAggEventOpState
+}
+
+type HoppingWindowIncAggEventOpState struct {
+	CurrWindowList        []*IncAggWindow
 	NextTriggerWindowTime time.Time
 }
 
 func NewHoppingWindowIncAggEventOp(o *WindowIncAggOperator) *HoppingWindowIncAggEventOp {
 	op := &HoppingWindowIncAggEventOp{}
-	op.HoppingWindowIncAggOp = NewHoppingWindowIncAggOp(o)
+	op.op = NewHoppingWindowIncAggOp(o)
+	op.HoppingWindowIncAggEventOpState.CurrWindowList = make([]*IncAggWindow, 0)
 	return op
 }
 
+func (ho *HoppingWindowIncAggEventOp) PutState(ctx api.StreamContext) {
+	for index, window := range ho.CurrWindowList {
+		window.GenerateAllFunctionState()
+		ho.CurrWindowList[index] = window
+	}
+	ctx.PutState(buildStateKey(ctx), ho.HoppingWindowIncAggEventOpState)
+}
+func (ho *HoppingWindowIncAggEventOp) RestoreFromState(ctx api.StreamContext) error {
+	s, err := ctx.GetState(buildStateKey(ctx))
+	if err != nil {
+		return err
+	}
+	if s == nil {
+		return nil
+	}
+	coState, ok := s.(HoppingWindowIncAggEventOpState)
+	if !ok {
+		return fmt.Errorf("not HoppingWindowIncAggEventOpState")
+	}
+	ho.HoppingWindowIncAggEventOpState = coState
+	for index, window := range ho.CurrWindowList {
+		window.restoreState(ctx)
+		ho.CurrWindowList[index] = window
+	}
+	return nil
+}
+
 func (ho *HoppingWindowIncAggEventOp) exec(ctx api.StreamContext, errCh chan<- error) {
+	if err := ho.RestoreFromState(ctx); err != nil {
+		errCh <- err
+		return
+	}
 	fv, _ := xsql.NewFunctionValuersForOp(ctx)
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		case input := <-ho.input:
-			data, processed := ho.ingest(ctx, input)
+		case input := <-ho.op.input:
+			data, processed := ho.op.ingest(ctx, input)
 			if processed {
 				break
 			}
@@ -49,11 +86,13 @@ func (ho *HoppingWindowIncAggEventOp) exec(ctx api.StreamContext, errCh chan<- e
 			case *xsql.WatermarkTuple:
 				now := tuple.GetTimestamp()
 				ho.emitWindow(ctx, errCh, now)
-				ho.CurrWindowList = gcIncAggWindow(ho.CurrWindowList, ho.Length, now)
+				ho.CurrWindowList = gcIncAggWindow(ho.CurrWindowList, ho.op.Length, now)
+				ho.PutState(ctx)
 			case *xsql.Tuple:
 				now := tuple.GetTimestamp()
 				ho.triggerWindow(ctx, now)
-				ho.calIncAggWindow(ctx, fv, tuple, tuple.GetTimestamp())
+				ho.op.calIncAggWindow(ctx, fv, tuple, tuple.GetTimestamp())
+				ho.PutState(ctx)
 			}
 		}
 	}
@@ -61,26 +100,26 @@ func (ho *HoppingWindowIncAggEventOp) exec(ctx api.StreamContext, errCh chan<- e
 
 func (ho *HoppingWindowIncAggEventOp) emitWindow(ctx api.StreamContext, errCh chan<- error, now time.Time) {
 	for _, incWindow := range ho.CurrWindowList {
-		if incWindow.StartTime.Add(ho.Length).Compare(now) <= 0 {
-			ho.emit(ctx, errCh, incWindow, incWindow.StartTime.Add(ho.Length))
+		if incWindow.StartTime.Add(ho.op.Length).Compare(now) <= 0 {
+			ho.op.emit(ctx, errCh, incWindow, incWindow.StartTime.Add(ho.op.Length))
 		}
 	}
 }
 
 func (ho *HoppingWindowIncAggEventOp) calIncAggWindowInEvent(ctx api.StreamContext, fv *xsql.FunctionValuer, row *xsql.Tuple) {
-	name := calDimension(fv, ho.Dimensions, row)
+	name := calDimension(fv, ho.op.Dimensions, row)
 	for _, incWindow := range ho.CurrWindowList {
-		if incWindow.StartTime.Compare(row.GetTimestamp()) <= 0 && incWindow.StartTime.Add(ho.Length).After(row.GetTimestamp()) {
-			incAggCal(ctx, name, row, incWindow, ho.aggFields)
+		if incWindow.StartTime.Compare(row.GetTimestamp()) <= 0 && incWindow.StartTime.Add(ho.op.Length).After(row.GetTimestamp()) {
+			incAggCal(ctx, name, row, incWindow, ho.op.aggFields)
 		}
 	}
 }
 
 func (ho *HoppingWindowIncAggEventOp) triggerWindow(ctx api.StreamContext, now time.Time) {
-	next := getAlignedWindowEndTime(now, ho.windowConfig.RawInterval, ho.windowConfig.TimeUnit)
+	next := getAlignedWindowEndTime(now, ho.op.windowConfig.RawInterval, ho.op.windowConfig.TimeUnit)
 	if ho.NextTriggerWindowTime.Before(now) {
 		ho.NextTriggerWindowTime = next
-		ho.CurrWindowList = append(ho.CurrWindowList, newIncAggWindow(ctx, next.Add(-ho.Interval)))
+		ho.CurrWindowList = append(ho.CurrWindowList, newIncAggWindow(ctx, next.Add(-ho.op.Interval)))
 	}
 }
 
@@ -244,7 +283,7 @@ type TumblingWindowIncAggEventOp struct {
 func NewTumblingWindowIncAggEventOp(o *WindowIncAggOperator) *TumblingWindowIncAggEventOp {
 	op := &TumblingWindowIncAggEventOp{}
 	op.HoppingWindowIncAggEventOp = NewHoppingWindowIncAggEventOp(o)
-	op.Length = o.windowConfig.Interval
+	op.op.Length = o.windowConfig.Interval
 	return op
 }
 
@@ -273,13 +312,19 @@ func (o *WindowIncAggOperator) ingest(ctx api.StreamContext, item any) (any, boo
 }
 
 type CountWindowIncAggEventOp struct {
-	*CountWindowIncAggOp
-	EmitList []*IncAggWindow
+	op *CountWindowIncAggOp
+	CountWindowIncAggEventOpState
+}
+
+type CountWindowIncAggEventOpState struct {
+	CurrWindow     *IncAggWindow
+	CurrWindowSize int
+	EmitList       []*IncAggWindow
 }
 
 func NewCountWindowIncAggEventOp(o *WindowIncAggOperator) *CountWindowIncAggEventOp {
 	op := &CountWindowIncAggEventOp{
-		CountWindowIncAggOp: &CountWindowIncAggOp{
+		op: &CountWindowIncAggOp{
 			WindowIncAggOperator: o,
 			windowSize:           o.windowConfig.CountLength,
 		},
@@ -289,13 +334,17 @@ func NewCountWindowIncAggEventOp(o *WindowIncAggOperator) *CountWindowIncAggEven
 }
 
 func (co *CountWindowIncAggEventOp) exec(ctx api.StreamContext, errCh chan<- error) {
+	if err := co.RestoreFromState(ctx); err != nil {
+		errCh <- err
+		return
+	}
 	fv, _ := xsql.NewFunctionValuersForOp(ctx)
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		case input := <-co.input:
-			data, processed := co.ingest(ctx, input)
+		case input := <-co.op.input:
+			data, processed := co.op.ingest(ctx, input)
 			if processed {
 				break
 			}
@@ -316,18 +365,20 @@ func (co *CountWindowIncAggEventOp) exec(ctx api.StreamContext, errCh chan<- err
 				} else {
 					co.EmitList = co.EmitList[index+1:]
 				}
+				co.PutState(ctx)
 			case *xsql.Tuple:
 				now := tuple.GetTimestamp()
 				if co.CurrWindow == nil {
 					co.CurrWindow = newIncAggWindow(ctx, now)
 				}
-				name := calDimension(fv, co.Dimensions, tuple)
-				incAggCal(ctx, name, tuple, co.CurrWindow, co.aggFields)
+				name := calDimension(fv, co.op.Dimensions, tuple)
+				incAggCal(ctx, name, tuple, co.CurrWindow, co.op.aggFields)
 				co.CurrWindowSize++
-				if co.CurrWindowSize >= co.windowSize {
+				if co.CurrWindowSize >= co.op.windowSize {
 					co.EmitList = append(co.EmitList, co.CurrWindow)
 					co.CurrWindow = nil
 				}
+				co.PutState(ctx)
 			}
 		}
 	}
@@ -344,5 +395,27 @@ func (co *CountWindowIncAggEventOp) emitWindow(ctx api.StreamContext, errCh chan
 		results.Content = append(results.Content, incAggRange.LastRow)
 	}
 	results.WindowRange = xsql.NewWindowRange(window.StartTime.UnixMilli(), now.UnixMilli())
-	co.Broadcast(results)
+	co.op.Broadcast(results)
+}
+
+func (co *CountWindowIncAggEventOp) PutState(ctx api.StreamContext) {
+	co.CurrWindow.GenerateAllFunctionState()
+	ctx.PutState(buildStateKey(ctx), co.CountWindowIncAggEventOpState)
+}
+
+func (co *CountWindowIncAggEventOp) RestoreFromState(ctx api.StreamContext) error {
+	s, err := ctx.GetState(buildStateKey(ctx))
+	if err != nil {
+		return err
+	}
+	if s == nil {
+		return nil
+	}
+	coState, ok := s.(CountWindowIncAggEventOpState)
+	if !ok {
+		return fmt.Errorf("not CountWindowIncAggEventOpState")
+	}
+	co.CountWindowIncAggEventOpState = coState
+	co.CurrWindow.restoreState(ctx)
+	return nil
 }
