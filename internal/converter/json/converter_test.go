@@ -23,6 +23,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
@@ -769,6 +770,7 @@ func TestDecodeField(t *testing.T) {
 }
 
 func TestIssue3441(t *testing.T) {
+	conf.IsTesting = false
 	originSchema := map[string]*ast.JsonStreamField{
 		"id": nil,
 	}
