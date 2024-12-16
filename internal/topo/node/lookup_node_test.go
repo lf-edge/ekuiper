@@ -23,6 +23,7 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/lookup"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
@@ -341,6 +342,7 @@ func TestLookup(t *testing.T) {
 }
 
 func TestLookupInner(t *testing.T) {
+	conf.IsTesting = true
 	tests := []struct {
 		name   string
 		input  any
@@ -608,6 +610,7 @@ func TestLookupInner(t *testing.T) {
 }
 
 func TestLookupPayload(t *testing.T) {
+	conf.IsTesting = true
 	tests := []struct {
 		name   string
 		input  any

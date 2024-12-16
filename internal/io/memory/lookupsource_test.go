@@ -131,6 +131,7 @@ func TestUpdateLookup(t *testing.T) {
 }
 
 func TestLookup(t *testing.T) {
+	conf.IsTesting = true
 	contextLogger := conf.Log.WithField("rule", "test2")
 	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
 	ls := GetLookupSource().(api.LookupSource)
