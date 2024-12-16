@@ -59,11 +59,6 @@ func (f *FastJsonConverter) Decode(ctx api.StreamContext, b []byte) (m any, err 
 	}()
 	f.RLock()
 	defer f.RUnlock()
-	if f.schema == nil {
-		var r any
-		err = json.Unmarshal(b, &r)
-		return r, err
-	}
 	return f.decodeWithSchema(b, f.schema)
 }
 
