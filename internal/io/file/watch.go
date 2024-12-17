@@ -21,6 +21,7 @@ import (
 
 func (fs *Source) Subscribe(ctx api.StreamContext, ingest api.TupleIngest, ingestError api.ErrorIngest) error {
 	fs.Load(ctx, ingest, ingestError)
+	ctx.GetLogger().Infof("file watch loaded initially")
 	if fs.isDir {
 		watcher, err := fsnotify.NewWatcher()
 		if err != nil {
@@ -40,6 +41,7 @@ func (fs *Source) Subscribe(ctx api.StreamContext, ingest api.TupleIngest, inges
 					switch {
 					//case event.Has(fsnotify.Write):
 					case event.Has(fsnotify.Create):
+						ctx.GetLogger().Debugf("file watch receive creat event")
 						fs.parseFile(ctx, event.Name, ingest, ingestError)
 					}
 				case err = <-watcher.Errors:
@@ -48,6 +50,7 @@ func (fs *Source) Subscribe(ctx api.StreamContext, ingest api.TupleIngest, inges
 			}
 		}()
 	} else {
+		ctx.GetLogger().Infof("file watch exit")
 		fs.eof(ctx)
 	}
 	return nil

@@ -124,10 +124,6 @@ func TestSourceConnectorCompare(t *testing.T, r api.Source, props map[string]any
 	}
 	go func() {
 		switch ss := r.(type) {
-		case api.BytesSource:
-			err = ss.Subscribe(ctx, ingestBytes, ingestErr)
-		case api.TupleSource:
-			err = ss.Subscribe(ctx, ingestTuples, ingestErr)
 		case api.PullBytesSource, api.PullTupleSource:
 			switch ss := r.(type) {
 			case api.PullBytesSource:
@@ -153,6 +149,10 @@ func TestSourceConnectorCompare(t *testing.T, r api.Source, props map[string]any
 					}
 				}
 			}()
+		case api.BytesSource:
+			err = ss.Subscribe(ctx, ingestBytes, ingestErr)
+		case api.TupleSource:
+			err = ss.Subscribe(ctx, ingestTuples, ingestErr)
 		default:
 			panic("wrong source type")
 		}
@@ -168,10 +168,11 @@ func TestSourceConnectorCompare(t *testing.T, r api.Source, props map[string]any
 		wg.Wait()
 		close(finished)
 	}()
+	time.Sleep(5 * time.Second)
 	select {
 	case <-ctx.Done():
 	case <-finished:
-		cancel()
+		//cancel()
 	case <-ticker:
 		cancel()
 		assert.Fail(t, "timeout")
