@@ -30,28 +30,6 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
-type FileWrapper struct {
-	f *Source
-}
-
-func (f *FileWrapper) Provision(ctx api.StreamContext, configs map[string]any) error {
-	return f.f.Provision(ctx, configs)
-}
-
-func (f FileWrapper) Close(ctx api.StreamContext) error {
-	return f.f.Close(ctx)
-}
-
-func (f FileWrapper) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) error {
-	return f.f.Connect(ctx, sch)
-}
-
-func (f FileWrapper) Subscribe(ctx api.StreamContext, ingest api.TupleIngest, ingestError api.ErrorIngest) error {
-	return f.f.Subscribe(ctx, ingest, ingestError)
-}
-
-var _ api.TupleSource = &FileWrapper{}
-
 func TestWatchLinesFile(t *testing.T) {
 	path, err := os.Getwd()
 	if err != nil {
@@ -72,14 +50,14 @@ func TestWatchLinesFile(t *testing.T) {
 	meta := map[string]any{
 		"file": filepath.Join(path, "test.lines.copy"),
 	}
-	mc := timex.Clock
+	timex.Set(123456)
 	exp := []api.MessageTuple{
-		model.NewDefaultRawTuple([]byte("{\"id\": 1,\"name\": \"John Doe\"}"), meta, mc.Now()),
-		model.NewDefaultRawTuple([]byte("{\"id\": 2,\"name\": \"Jane Doe\"}"), meta, mc.Now()),
-		model.NewDefaultRawTuple([]byte("{\"id\": 3,\"name\": \"John Smith\"}"), meta, mc.Now()),
-		model.NewDefaultRawTuple([]byte("[{\"id\": 4,\"name\": \"John Smith\"},{\"id\": 5,\"name\": \"John Smith\"}]"), meta, mc.Now()),
+		model.NewDefaultRawTuple([]byte("{\"id\": 1,\"name\": \"John Doe\"}"), meta, timex.GetNow()),
+		model.NewDefaultRawTuple([]byte("{\"id\": 2,\"name\": \"Jane Doe\"}"), meta, timex.GetNow()),
+		model.NewDefaultRawTuple([]byte("{\"id\": 3,\"name\": \"John Smith\"}"), meta, timex.GetNow()),
+		model.NewDefaultRawTuple([]byte("[{\"id\": 4,\"name\": \"John Smith\"},{\"id\": 5,\"name\": \"John Smith\"}]"), meta, timex.GetNow()),
 	}
-	r := &FileWrapper{f: &Source{}}
+	r := &WatchWrapper{f: &Source{}}
 	mock.TestSourceConnector(t, r, map[string]any{
 		"path":            path,
 		"fileType":        "lines",
@@ -102,14 +80,14 @@ func TestWatchDir(t *testing.T) {
 	meta := map[string]any{
 		"file": filepath.Join(wpath, "test.lines.copy"),
 	}
-	mc := timex.Clock
+	timex.Set(654321)
 	exp := []api.MessageTuple{
-		model.NewDefaultRawTuple([]byte("{\"id\": 1,\"name\": \"John Doe\"}"), meta, mc.Now()),
-		model.NewDefaultRawTuple([]byte("{\"id\": 2,\"name\": \"Jane Doe\"}"), meta, mc.Now()),
-		model.NewDefaultRawTuple([]byte("{\"id\": 3,\"name\": \"John Smith\"}"), meta, mc.Now()),
-		model.NewDefaultRawTuple([]byte("[{\"id\": 4,\"name\": \"John Smith\"},{\"id\": 5,\"name\": \"John Smith\"}]"), meta, mc.Now()),
+		model.NewDefaultRawTuple([]byte("{\"id\": 1,\"name\": \"John Doe\"}"), meta, timex.GetNow()),
+		model.NewDefaultRawTuple([]byte("{\"id\": 2,\"name\": \"Jane Doe\"}"), meta, timex.GetNow()),
+		model.NewDefaultRawTuple([]byte("{\"id\": 3,\"name\": \"John Smith\"}"), meta, timex.GetNow()),
+		model.NewDefaultRawTuple([]byte("[{\"id\": 4,\"name\": \"John Smith\"},{\"id\": 5,\"name\": \"John Smith\"}]"), meta, timex.GetNow()),
 	}
-	r := &FileWrapper{f: &Source{}}
+	r := &WatchWrapper{f: &Source{}}
 	go func() {
 		time.Sleep(100 * time.Millisecond)
 		src, err := os.Open(filepath.Join(path, "test", "test.lines"))

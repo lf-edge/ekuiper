@@ -33,6 +33,7 @@ type StreamReader interface {
 // InfoNode explain the node itself. Mainly used for planner to decide the split of source/sink
 type InfoNode interface {
 	Info() NodeInfo
+	TransformType() api.Source
 }
 
 type NodeInfo struct {

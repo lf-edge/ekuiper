@@ -168,11 +168,10 @@ func TestSourceConnectorCompare(t *testing.T, r api.Source, props map[string]any
 		wg.Wait()
 		close(finished)
 	}()
-	time.Sleep(5 * time.Second)
 	select {
 	case <-ctx.Done():
 	case <-finished:
-		//cancel()
+		cancel()
 	case <-ticker:
 		cancel()
 		assert.Fail(t, "timeout")

@@ -382,6 +382,15 @@ func (fs *Source) Info() (i model.NodeInfo) {
 	return
 }
 
+// TransformType must call after provision
+func (fs *Source) TransformType() api.Source {
+	// If interval is not set, use watch source
+	if fs.config.Interval == 0 {
+		return &WatchWrapper{f: fs}
+	}
+	return fs
+}
+
 func GetSource() api.Source {
 	return &Source{}
 }
@@ -390,7 +399,6 @@ var (
 	// ingest possibly []byte and tuple
 	_ api.PullTupleSource = &Source{}
 	// if interval is not set, it uses inotify
-	_ api.TupleSource = &Source{}
-	_ api.Bounded     = &Source{}
-	_ model.InfoNode  = &Source{}
+	_ api.Bounded    = &Source{}
+	_ model.InfoNode = &Source{}
 )
