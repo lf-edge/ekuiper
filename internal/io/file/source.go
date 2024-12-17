@@ -164,6 +164,10 @@ func (fs *Source) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) er
 // For batch source, it ingest the whole file, thus it need a reader node to coordinate and read the content into lines/array
 func (fs *Source) Pull(ctx api.StreamContext, _ time.Time, ingest api.TupleIngest, ingestError api.ErrorIngest) {
 	fs.Load(ctx, ingest, ingestError)
+	if fs.config.Interval == 0 && fs.eof != nil {
+		fs.eof(ctx)
+		ctx.GetLogger().Debug("All tuples sent")
+	}
 }
 
 func (fs *Source) SetEofIngest(eof api.EOFIngest) {
@@ -172,7 +176,6 @@ func (fs *Source) SetEofIngest(eof api.EOFIngest) {
 
 func (fs *Source) Close(ctx api.StreamContext) error {
 	ctx.GetLogger().Infof("Close file source")
-	// do nothing
 	return nil
 }
 
@@ -214,10 +217,6 @@ func (fs *Source) Load(ctx api.StreamContext, ingest api.TupleIngest, ingestErro
 		}
 	} else {
 		fs.parseFile(ctx, fs.file, ingest, ingestError)
-	}
-	if fs.config.Interval == 0 && fs.eof != nil {
-		fs.eof(ctx)
-		ctx.GetLogger().Debug("All tuples sent")
 	}
 }
 
@@ -390,6 +389,8 @@ func GetSource() api.Source {
 var (
 	// ingest possibly []byte and tuple
 	_ api.PullTupleSource = &Source{}
-	_ api.Bounded         = &Source{}
-	_ model.InfoNode      = &Source{}
+	// if interval is not set, it uses inotify
+	_ api.TupleSource = &Source{}
+	_ api.Bounded     = &Source{}
+	_ model.InfoNode  = &Source{}
 )
