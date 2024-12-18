@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
@@ -130,6 +131,7 @@ func TestCache(t *testing.T) {
 		CleanCacheAtStop: false,
 	})
 	assert.NoError(t, err)
+	require.NoError(t, s.InitStore(ctx))
 	// prepare data
 	tuples := make([]any, 15)
 	for i := 0; i < 15; i++ {
@@ -234,6 +236,7 @@ func TestCacheCase2(t *testing.T) {
 		ResendInterval:       cast.DurationConf(10 * time.Millisecond),
 	})
 	assert.NoError(t, err)
+	require.NoError(t, s.InitStore(ctx))
 	// prepare data
 	tuples := make([]any, 15)
 	for i := 0; i < 15; i++ {
@@ -337,6 +340,7 @@ func TestCacheInit(t *testing.T) {
 		CleanCacheAtStop:     false,
 	})
 	assert.NoError(t, err)
+	require.NoError(t, s.InitStore(ctx))
 	// prepare data
 	tuples := make([]any, 10)
 	for i := 0; i < 10; i++ {
@@ -361,6 +365,7 @@ func TestCacheInit(t *testing.T) {
 		CleanCacheAtStop:     false,
 	})
 	assert.NoError(t, err)
+	require.NoError(t, s.InitStore(ctx))
 	r, _ := s.PopCache(ctx)
 	assert.Equal(t, 3, s.CacheLength, "cache length after pop")
 	assert.Equal(t, &xsql.RawTuple{
@@ -380,6 +385,7 @@ func TestCacheInit(t *testing.T) {
 		CleanCacheAtStop:     false,
 	})
 	assert.NoError(t, err)
+	require.NoError(t, s.InitStore(ctx))
 	r, _ = s.PopCache(ctx)
 	assert.Equal(t, 2, s.CacheLength, "cache length after pop")
 	assert.Equal(t, &xsql.RawTuple{
