@@ -159,6 +159,24 @@ eKuiper is predefined in the Grafana panel to help users more clearly and intuit
 https://github.com/lf-edge/ekuiper/blob/master/metrics/metrics.json
 ```
 
+Install eKuiper Dashboard
+
+Before introducing the eKuiper monitoring panel to grafana, you need to ensure that grafana has configured prometheus as a data source, and that prometheus has collected eKuiper monitoring data.
+
+![New dashboard in grafana](./resources/import.png)
+
+Copy metrics json into the text box and click Load.
+
+![Load metrics in grafana](./resources/paste.png)
+
+Set the Dashboard name and set the corresponding prometheus data source.
+
+![Import Dashboard in grafana](./resources/import-2.png)
+
+After we introduce the panel, we can view the corresponding eKuiper instance and the metrics associated with the corresponding rules in the instance in the selection bar on the page.
+
+![Pick metrics in grafana](./resources/pick.png)
+
 You can view the historical status of the rule through the following panel. 1 means the rule is running, 0 means the rule is suspended normally, and -1 means the rule exited abnormally. The metric is `kuiper_rule_status`.
 
 ![rule status](./resources/ruleStatus.png)

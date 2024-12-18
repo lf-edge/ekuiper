@@ -159,6 +159,24 @@ eKuiper 预定义了在 Grafana 面板用于帮助用户更加清晰直观的从
 https://github.com/lf-edge/ekuiper/blob/master/metrics/metrics.json
 ```
 
+安装 eKuiper 面板
+
+在将 eKuiper 监控面板引入到 grafana 前，需要确保该 grafana 已经配置了 prometheus 作为数据源，并且该 prometheus 已经采集了 eKuiper 的监控数据。
+
+![New dashboard in grafana](./resources/import.png)
+
+将 metrics json 复制到文本框中，点击 Load
+
+![Load metrics in grafana](./resources/paste.png)
+
+设置好 Dashboard 名称并且设置对应的 prometheus 数据源
+
+![Import Dashboard in grafana](./resources/import-2.png)
+
+当我们将面板引入后，我们可以通过在页面上的选择栏中，查看对应的 eKuiper 实例和该实例内对应的规则所关联的 metrics
+
+![Pick metrics in grafana](./resources/pick.png)
+
 你可以通过以下面板查看规则的历史状态，1 代表规则正在运行，0 代表规则正常暂停，-1 代表规则异常退出，指标名为 `kuiper_rule_status`。
 
 ![rule status](./resources/ruleStatus.png)
