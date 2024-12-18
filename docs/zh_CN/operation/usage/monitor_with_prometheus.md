@@ -173,6 +173,10 @@ https://github.com/lf-edge/ekuiper/blob/master/metrics/metrics.json
 
 ![Import Dashboard in grafana](./resources/import-2.png)
 
+当我们将面板引入后，我们可以通过在页面上的选择栏中，查看对应的 eKuiper 实例和该实例内对应的规则所关联的 metrics
+
+![Pick metrics in grafana](./resources/pick.png)
+
 你可以通过以下面板查看规则的历史状态，1 代表规则正在运行，0 代表规则正常暂停，-1 代表规则异常退出，指标名为 `kuiper_rule_status`。
 
 ![rule status](./resources/ruleStatus.png)
