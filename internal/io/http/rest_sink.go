@@ -65,6 +65,7 @@ func (r *RestSink) Collect(ctx api.StreamContext, item api.RawTuple) error {
 	headers := r.config.Headers
 	bodyType := r.config.BodyType
 	method := r.config.Method
+	formData := r.config.FormData
 	u := r.config.Url
 
 	if dp, ok := item.(api.HasDynamicProps); ok {
@@ -93,6 +94,14 @@ func (r *RestSink) Collect(ctx api.StreamContext, item api.RawTuple) error {
 		if ok {
 			u = nu
 		}
+		if bodyType == "formdata" {
+			for k, v := range formData {
+				nv, ok := dp.DynamicProps(v)
+				if ok {
+					formData[k] = nv
+				}
+			}
+		}
 	}
 
 	switch r.config.Compression {
@@ -108,7 +117,7 @@ func (r *RestSink) Collect(ctx api.StreamContext, item api.RawTuple) error {
 		headers["Content-Encoding"] = "gzip"
 	}
 
-	resp, err := httpx.Send(ctx.GetLogger(), r.client, bodyType, method, u, headers, item.Raw())
+	resp, err := httpx.SendWithFormData(ctx.GetLogger(), r.client, bodyType, method, u, headers, formData, r.config.FileFieldName, item.Raw())
 	failpoint.Inject("recoverAbleErr", func() {
 		err = errors.New("connection reset by peer")
 	})
@@ -123,10 +132,10 @@ func (r *RestSink) Collect(ctx api.StreamContext, item api.RawTuple) error {
 				method,
 				u, string(item.Raw())))
 		}
-		return fmt.Errorf(`rest sink fails to send out the data:err=%s recoverAble=%v method=%s path="%s" request_body="%s"`,
+		return fmt.Errorf(`rest sink fails to send out the data:err=%s recoverAble=%v method=%s path="%s"`,
 			originErr.Error(),
 			recoverAble,
-			method, u, string(item.Raw()))
+			method, u)
 	} else {
 		logger.Debugf("rest sink got response %v", resp)
 		_, b, err := r.parseResponse(ctx, resp, "", r.config.DebugResp, false)
