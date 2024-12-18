@@ -1,4 +1,4 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -39,4 +39,7 @@ func TestPropsConf(t *testing.T) {
 	vin, ok := SC.Get("vin")
 	require.True(t, ok)
 	require.Equal(t, "value2", vin)
+	sf, ok := SC.Get("snowflake")
+	require.True(t, ok)
+	require.Equal(t, 19, len(sf))
 }

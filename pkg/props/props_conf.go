@@ -15,15 +15,21 @@
 package props
 
 import (
+	"fmt"
 	"os"
 	"strconv"
 	"strings"
 	"sync"
 
+	"github.com/bwmarrin/snowflake"
+
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
-var SC = &StaticConf{props: map[string]string{}}
+var (
+	SC     = &StaticConf{props: map[string]string{}}
+	sfnode *snowflake.Node
+)
 
 type StaticConf struct {
 	sync.RWMutex
@@ -47,6 +53,16 @@ func (s *StaticConf) Get(propName string) (string, bool) {
 	switch propName {
 	case "et":
 		return strconv.FormatInt(timex.GetNowInMilli(), 10), true
+	case "snowflake":
+		if sfnode == nil {
+			var err error
+			sfnode, err = snowflake.NewNode(1)
+			if err != nil {
+				fmt.Printf("fail to create new snowflake node: %v\n", err)
+				return "", false
+			}
+		}
+		return sfnode.Generate().String(), true
 	default:
 		s.RLock()
 		defer s.RUnlock()
