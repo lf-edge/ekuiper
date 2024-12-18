@@ -125,8 +125,11 @@ func NewSyncCache(ctx api.StreamContext, cacheConf *conf.SinkConf) (*SyncCache, 
 		writeBufferPage: newPage(cacheConf.BufferPageSize),
 		readBufferPage:  newPage(cacheConf.BufferPageSize),
 	}
-	err := c.initStore(ctx)
-	return c, err
+	return c, nil
+}
+
+func (c *SyncCache) InitStore(ctx api.StreamContext) error {
+	return c.initStore(ctx)
 }
 
 // AddCache not thread safe!
