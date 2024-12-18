@@ -519,7 +519,7 @@ func TestIncAggSlidingWindowDelay(t *testing.T) {
 }
 
 func waitExecute() {
-	time.Sleep(20 * time.Millisecond)
+	time.Sleep(50 * time.Millisecond)
 }
 
 func TestIncHoppingWindow(t *testing.T) {
