@@ -70,6 +70,10 @@ func (s *CacheOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 		infra.DrainError(ctx, fmt.Errorf("cache op should have only 1 output but got %+v", s.outputs), errCh)
 	}
 	s.cache.SetupMeta(ctx)
+	if err := s.cache.InitStore(ctx); err != nil {
+		infra.DrainError(ctx, fmt.Errorf("cache op init store error:%v", err), errCh)
+		return
+	}
 	s.prepareExec(ctx, errCh, "op")
 	go func() {
 		err := infra.SafeRun(func() error {
@@ -105,7 +109,7 @@ func (s *CacheOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 					s.send()
 					s.span = nil
 					s.onProcessEnd(ctx)
-					l := int64(len(s.input) + s.cache.CacheLength)
+					l := int64(len(s.input)) + int64(s.cache.CacheLength)
 					if s.currItem != nil {
 						l += 1
 					}
