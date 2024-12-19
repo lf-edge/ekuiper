@@ -46,7 +46,7 @@ func (n *SwitchNode) GetEmitter(outputIndex int) Emitter {
 // AddOutput SwitchNode overrides the defaultSinkNode's AddOutput to add output to the outputNodes
 // SwitchNode itself has multiple outlets defined by the outputNodes.
 // This default function will add the output to the first outlet
-func (n *SwitchNode) AddOutput(output chan<- interface{}, name string) error {
+func (n *SwitchNode) AddOutput(output chan interface{}, name string) error {
 	if len(n.outputNodes) == 0 { // should never happen
 		return fmt.Errorf("no output node is available")
 	}

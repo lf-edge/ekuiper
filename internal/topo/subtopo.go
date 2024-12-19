@@ -62,7 +62,7 @@ type SrcSubTopo struct {
 	cancel context.CancelFunc
 }
 
-func (s *SrcSubTopo) AddOutput(output chan<- interface{}, name string) error {
+func (s *SrcSubTopo) AddOutput(output chan interface{}, name string) error {
 	return s.tail.AddOutput(output, name)
 }
 
