@@ -24,6 +24,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 	"github.com/lf-edge/ekuiper/v2/pkg/message"
+	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 // EncodeOp converts tuple to raw bytes according to the FORMAT property
@@ -82,7 +83,7 @@ func tupleCopy(ctx api.StreamContext, converter message.Converter, st any, messa
 	if err != nil {
 		return []any{err}
 	} else {
-		r := &xsql.RawTuple{Rawdata: raw}
+		r := &xsql.RawTuple{Rawdata: raw, Timestamp: timex.GetNow()}
 		if input, ok := st.(xsql.HasTracerCtx); ok {
 			r.SetTracerCtx(input.GetTracerCtx())
 		}
