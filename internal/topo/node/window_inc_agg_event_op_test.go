@@ -591,8 +591,9 @@ func TestIncEventCountWindowState(t *testing.T) {
 	waitExecute()
 	now := time.Now()
 	input <- &xsql.Tuple{Message: map[string]any{"a": int64(1)}, Timestamp: now}
+	waitExecute()
 	input <- &xsql.Tuple{Message: map[string]any{"a": int64(2)}, Timestamp: now.Add(time.Second)}
-
+	waitExecute()
 	op2, err := node.NewWindowIncAggOp("1", &node.WindowConfig{
 		Type:        incPlan.WType,
 		CountLength: incPlan.Length,
