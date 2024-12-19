@@ -30,6 +30,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
+	"github.com/lf-edge/ekuiper/v2/pkg/model"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
@@ -55,6 +56,9 @@ func NewSourceNode(ctx api.StreamContext, name string, ss api.Source, props map[
 		return nil, err
 	}
 	ctx.GetLogger().Infof("provision source %s with props %+v", name, props)
+	if sit, ok := ss.(model.InfoNode); ok {
+		ss = sit.TransformType()
+	}
 	cc := &sourceConf{}
 	err = cast.MapToStruct(props, cc)
 	if err != nil {
