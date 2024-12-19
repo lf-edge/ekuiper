@@ -69,9 +69,9 @@ func TestJSON(t *testing.T) {
 					&xsql.Tuple{Emitter: "test", Message: map[string]interface{}{"a": 3.0, "b": 4.0, "sourceConf": "hello"}, Timestamp: time.UnixMilli(111), Metadata: map[string]any{"topic": "demo", "qos": 1}},
 				},
 				{errors.New("go through error")},
-				{errors.New("invalid character ':' after top-level value")},
-				{errors.New("only map[string]any inside a list is supported but got: hello")},
-				{errors.New("unsupported decode result: hello")},
+				{errors.New(`unexpected tail: ":1,\"b\":2},{\"a\":3,\"b\":4,\"sourceConf\":\"hello\"}]"`)},
+				{errors.New(`value doesn't contain object; it contains string`)},
+				{errors.New(`only map[string]interface{} and []map[string]interface{} is supported`)},
 				{errors.New("unsupported data received: invalid")},
 			}
 			timex.Add(2 * time.Second)

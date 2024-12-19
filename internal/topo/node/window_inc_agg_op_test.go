@@ -298,8 +298,9 @@ func TestIncAggTumblingWindow(t *testing.T) {
 	errCh := make(chan error, 10)
 	ctx, cancel := mockContext.NewMockContext("1", "2").WithCancel()
 	op.Exec(ctx, errCh)
-	time.Sleep(10 * time.Millisecond)
+	waitExecute()
 	input <- &xsql.Tuple{Message: map[string]any{"a": int64(1)}}
+	waitExecute()
 	timex.Add(1100 * time.Millisecond)
 	got := <-output
 	wt, ok := got.(*xsql.WindowTuples)

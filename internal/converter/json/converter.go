@@ -17,6 +17,7 @@ package json
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 	"sync"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
@@ -30,13 +31,26 @@ import (
 type FastJsonConverter struct {
 	sync.RWMutex
 	schema map[string]*ast.JsonStreamField
+	FastJsonConverterConf
 }
 
-func NewFastJsonConverter(schema map[string]*ast.JsonStreamField) *FastJsonConverter {
+type FastJsonConverterConf struct {
+	UseInt64 bool `json:"useInt64ForWholeNumber"`
+}
+
+func NewFastJsonConverter(schema map[string]*ast.JsonStreamField, props map[string]any) *FastJsonConverter {
 	f := &FastJsonConverter{
 		schema: schema,
 	}
+	f.setupProps(props)
 	return f
+}
+
+func (f *FastJsonConverter) setupProps(props map[string]any) {
+	if props == nil {
+		return
+	}
+	cast.MapToStruct(props, &f.FastJsonConverterConf)
 }
 
 func (f *FastJsonConverter) ResetSchema(schema map[string]*ast.JsonStreamField) {
@@ -57,11 +71,6 @@ func (f *FastJsonConverter) Decode(ctx api.StreamContext, b []byte) (m any, err 
 	}()
 	f.RLock()
 	defer f.RUnlock()
-	if f.schema == nil {
-		var r any
-		err = json.Unmarshal(b, &r)
-		return r, err
-	}
 	return f.decodeWithSchema(b, f.schema)
 }
 
@@ -85,7 +94,7 @@ func (f *FastJsonConverter) DecodeField(_ api.StreamContext, b []byte, field str
 		case fastjson.TypeString:
 			return vv.String(), nil
 		case fastjson.TypeNumber:
-			return vv.Float64()
+			return f.extractNumber(vv)
 		case fastjson.TypeTrue, fastjson.TypeFalse:
 			return vv.Bool()
 		}
@@ -340,11 +349,7 @@ func (f *FastJsonConverter) checkSchema(key, typ string, schema map[string]*ast.
 
 func (f *FastJsonConverter) extractNumberValue(name string, v *fastjson.Value, field *ast.JsonStreamField) (interface{}, error) {
 	if field == nil {
-		f64, err := v.Float64()
-		if err != nil {
-			return nil, err
-		}
-		return f64, nil
+		return f.extractNumber(v)
 	}
 	switch {
 	case field.Type == "float", field.Type == "datetime":
@@ -420,6 +425,21 @@ func (f *FastJsonConverter) extractBooleanFromValue(name string, v *fastjson.Val
 	return nil, fmt.Errorf("%v has wrong type:%v, expect:%v", name, v.Type().String(), getType(field))
 }
 
+func (f *FastJsonConverter) extractNumber(v *fastjson.Value) (any, error) {
+	if f.UseInt64 && !isFloat64(v.String()) {
+		i64, err := v.Int64()
+		if err != nil {
+			return nil, err
+		}
+		return i64, nil
+	}
+	f64, err := v.Float64()
+	if err != nil {
+		return nil, err
+	}
+	return f64, nil
+}
+
 func getBooleanFromValue(value *fastjson.Value) (interface{}, error) {
 	typ := value.Type()
 	switch typ {
@@ -453,4 +473,8 @@ func getType(t *ast.JsonStreamField) string {
 	} else {
 		return t.Type
 	}
+}
+
+func isFloat64(v string) bool {
+	return strings.Contains(v, ".")
 }

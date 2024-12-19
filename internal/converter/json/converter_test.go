@@ -162,7 +162,7 @@ func TestFastJsonConverterWithSchema(t *testing.T) {
 	}
 	ctx := mockContext.NewMockContext("test", "op1")
 	for _, tc := range testcases {
-		f := NewFastJsonConverter(tc.schema)
+		f := NewFastJsonConverter(tc.schema, nil)
 		v, err := f.Decode(ctx, tc.payload)
 		require.NoError(t, err)
 		require.Equal(t, v, tc.require)
@@ -173,7 +173,7 @@ func TestFastJsonConverterWithSchema(t *testing.T) {
 		arrayRequire := []map[string]interface{}{
 			tc.require,
 		}
-		f := NewFastJsonConverter(tc.schema)
+		f := NewFastJsonConverter(tc.schema, nil)
 		v, err := f.Decode(ctx, arrayPayload)
 		require.NoError(t, err)
 		require.Equal(t, v, arrayRequire)
@@ -333,7 +333,7 @@ func TestFastJsonConverterWithSchemaError(t *testing.T) {
 	}
 	ctx := mockContext.NewMockContext("test", "op1")
 	for _, tc := range testcases {
-		f := NewFastJsonConverter(tc.schema)
+		f := NewFastJsonConverter(tc.schema, nil)
 		_, err := f.Decode(ctx, tc.payload)
 		require.Error(t, err)
 		require.Equal(t, err.Error(), tc.err.Error())
@@ -344,7 +344,7 @@ func TestFastJsonEncode(t *testing.T) {
 	a := make(map[string]int)
 	a["a"] = 1
 	ctx := mockContext.NewMockContext("test", "op1")
-	f := NewFastJsonConverter(nil)
+	f := NewFastJsonConverter(nil, nil)
 	v, err := f.Encode(ctx, a)
 	require.NoError(t, err)
 	require.Equal(t, v, []byte(`{"a":1}`))
@@ -377,7 +377,7 @@ func TestArrayWithArray(t *testing.T) {
 		},
 	}
 	ctx := mockContext.NewMockContext("test", "op1")
-	f := NewFastJsonConverter(schema)
+	f := NewFastJsonConverter(schema, nil)
 	v, err := f.Decode(ctx, payload)
 	require.NoError(t, err)
 	require.Equal(t, v, map[string]interface{}{
@@ -558,7 +558,7 @@ func TestTypeNull(t *testing.T) {
 		arrayRequire := []map[string]interface{}{
 			tc.require,
 		}
-		f := NewFastJsonConverter(tc.schema)
+		f := NewFastJsonConverter(tc.schema, nil)
 		v, err := f.Decode(ctx, arrayPayload)
 		require.NoError(t, err)
 		require.Equal(t, v, arrayRequire)
@@ -568,7 +568,7 @@ func TestTypeNull(t *testing.T) {
 		arrayRequire := []map[string]interface{}{
 			tc.require,
 		}
-		f := NewFastJsonConverter(tc.schema)
+		f := NewFastJsonConverter(tc.schema, nil)
 		v, err := f.Decode(ctx, arrayPayload)
 		require.NoError(t, err)
 		require.Equal(t, v, arrayRequire)
@@ -585,7 +585,7 @@ func TestConvertBytea(t *testing.T) {
 		},
 	}
 	ctx := mockContext.NewMockContext("test", "op1")
-	f := NewFastJsonConverter(schema)
+	f := NewFastJsonConverter(schema, nil)
 	v, err := f.Decode(ctx, []byte(payload))
 	require.NoError(t, err)
 	require.Equal(t, v, map[string]interface{}{
@@ -601,7 +601,7 @@ func TestConvertBytea(t *testing.T) {
 			},
 		},
 	}
-	f = NewFastJsonConverter(schema)
+	f = NewFastJsonConverter(schema, nil)
 	v, err = f.Decode(ctx, []byte(payload))
 	require.NoError(t, err)
 	require.Equal(t, v, map[string]interface{}{
@@ -613,7 +613,7 @@ func TestSchemaless(t *testing.T) {
 	originSchema := map[string]*ast.JsonStreamField{
 		"a": nil,
 	}
-	f := NewFastJsonConverter(originSchema)
+	f := NewFastJsonConverter(originSchema, nil)
 	testcases := []struct {
 		data   map[string]interface{}
 		expect map[string]interface{}
@@ -664,7 +664,7 @@ func TestIssue(t *testing.T) {
 	originSchema := map[string]*ast.JsonStreamField{
 		"results": nil,
 	}
-	f := NewFastJsonConverter(originSchema)
+	f := NewFastJsonConverter(originSchema, nil)
 	data := `{
     "results": [
         {
@@ -704,7 +704,7 @@ func TestIssue(t *testing.T) {
 	schmema2 := map[string]*ast.JsonStreamField{
 		"others": nil,
 	}
-	f2 := NewFastJsonConverter(schmema2)
+	f2 := NewFastJsonConverter(schmema2, nil)
 	m, err = f2.Decode(context.Background(), []byte(data))
 	require.NoError(t, err)
 	require.Len(t, m, 0)
@@ -754,7 +754,7 @@ func TestDecodeField(t *testing.T) {
 		},
 	}
 	ctx := mockContext.NewMockContext("test", "op1")
-	f := NewFastJsonConverter(nil)
+	f := NewFastJsonConverter(nil, nil)
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
 			field, err := f.DecodeField(ctx, tc.payload, "id")
@@ -766,4 +766,21 @@ func TestDecodeField(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestIssue3441(t *testing.T) {
+	originSchema := map[string]*ast.JsonStreamField{
+		"id": nil,
+	}
+	f := NewFastJsonConverter(originSchema, map[string]any{"useInt64ForWholeNumber": true})
+	data := `{"id":1795292668348461056}`
+	ctx := mockContext.NewMockContext("test", "op1")
+	m, err := f.Decode(ctx, []byte(data))
+	require.NoError(t, err)
+	require.Equal(t, map[string]interface{}{"id": int64(1795292668348461056)}, m)
+
+	data = `{"id":17952926683484.44}`
+	m, err = f.Decode(ctx, []byte(data))
+	require.NoError(t, err)
+	require.Equal(t, map[string]interface{}{"id": 17952926683484.44}, m)
 }

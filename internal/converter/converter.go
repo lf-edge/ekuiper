@@ -33,7 +33,7 @@ import (
 
 func init() {
 	modules.RegisterConverter(message.FormatJson, func(_ api.StreamContext, _ string, schema map[string]*ast.JsonStreamField, props map[string]any) (message.Converter, error) {
-		return json.NewFastJsonConverter(schema), nil
+		return json.NewFastJsonConverter(schema, props), nil
 	})
 	modules.RegisterConverter(message.FormatXML, func(ctx api.StreamContext, schemaId string, logicalSchema map[string]*ast.JsonStreamField, props map[string]any) (message.Converter, error) {
 		return xml.NewXMLConverter(), nil

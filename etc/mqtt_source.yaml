@@ -14,6 +14,7 @@ default:
   #connectionSelector: mqtt.mqtt_conf1
   #kubeedgeVersion: 
   #kubeedgeModelFile: ""
+  #useInt64ForWholeNumber: true
 
 # demo_conf: #Conf_key
 #   qos: 0

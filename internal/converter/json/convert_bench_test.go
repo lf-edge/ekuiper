@@ -15,6 +15,7 @@
 package json
 
 import (
+	"encoding/json"
 	"os"
 	"testing"
 
@@ -106,9 +107,38 @@ func benchmarkByFiles(filePath string, b *testing.B, schema map[string]*ast.Json
 	if err != nil {
 		b.Fatal(err)
 	}
-	f := NewFastJsonConverter(schema)
+	f := NewFastJsonConverter(schema, nil)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		f.Decode(ctx, payload)
+	}
+}
+
+func BenchmarkNativeFloatParse(b *testing.B) {
+	m := make(map[string]interface{})
+	data := `{"id":1.2}`
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		json.Unmarshal([]byte(data), &m)
+	}
+}
+
+func BenchmarkFloatParse(b *testing.B) {
+	ctx := mockContext.NewMockContext("test", "test")
+	f := NewFastJsonConverter(nil, map[string]any{"useInt64ForWholeNumber": true})
+	data := `{"id":1.2}`
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		f.Decode(ctx, []byte(data))
+	}
+}
+
+func BenchmarkIntParse(b *testing.B) {
+	ctx := mockContext.NewMockContext("test", "test")
+	f := NewFastJsonConverter(nil, map[string]any{"useInt64ForWholeNumber": true})
+	data := `{"id":1}`
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		f.Decode(ctx, []byte(data))
 	}
 }
