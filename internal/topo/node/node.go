@@ -175,8 +175,7 @@ func (o *defaultNode) doBroadcast(val any) {
 				// read the oldest to drop.
 				oldest := <-out
 				// record the error and stop propagating to avoid infinite loop
-				// TODO get a unique id for the message
-				o.onErrorOpt(o.ctx, fmt.Errorf("buffer full, drop message %v from %s to %s", oldest, o.name, name), false)
+				o.onErrorOpt(o.ctx, fmt.Errorf("buffer full, drop message %v from %s to %s", xsql.GetId(oldest), o.name, name), false)
 			}
 		}
 	}
@@ -325,7 +324,7 @@ func (o *defaultNode) onError(ctx api.StreamContext, err error) {
 
 // onError do the common works(metric, trace) after throwing an error
 func (o *defaultNode) onErrorOpt(ctx api.StreamContext, err error, sendOut bool) {
-	ctx.GetLogger().Errorf("Operation %s error: %s", ctx.GetOpId(), err)
+	ctx.GetLogger().Errorf("Operation %s error %v", ctx.GetOpId(), err)
 	if sendOut && o.sendError {
 		o.Broadcast(err)
 	}

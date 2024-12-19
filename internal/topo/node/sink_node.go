@@ -120,15 +120,15 @@ func (s *SinkNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 							})
 						} else if s.resendInterval > 0 {
 							if !errorx.IsIOError(err) {
-								ctx.GetLogger().Errorf("no io error %v, drop %v", err, data)
+								ctx.GetLogger().Errorf("no io error %v, drop %v", err, xsql.GetId(data))
 							} else {
 								ticker := timex.GetTicker(s.resendInterval)
 								defer ticker.Stop()
 								for err != nil && errorx.IsIOError(err) {
-									ctx.GetLogger().Debugf("wait resending %v", data)
+									ctx.GetLogger().Debugf("wait resending %v", xsql.GetId(data))
 									select {
 									case <-ctx.Done():
-										ctx.GetLogger().Infof("rule stop, exit retry for %v", data)
+										ctx.GetLogger().Infof("rule stop, exit retry for %v", xsql.GetId(data))
 										return nil
 									case <-ticker.C:
 										err = s.doCollect(ctx, s.sink, data)
@@ -136,7 +136,7 @@ func (s *SinkNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 									}
 								}
 								if err == nil {
-									ctx.GetLogger().Debugf("resend success %v", data)
+									ctx.GetLogger().Debugf("resend success %v", xsql.GetId(data))
 									s.onSend(ctx, data)
 								} else {
 									ctx.GetLogger().Debugf("no io error %v", err)
