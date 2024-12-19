@@ -76,7 +76,7 @@ func TestIncEventHoppingWindowState(t *testing.T) {
 	now := time.Time{}.Add(3100 * time.Millisecond)
 	input <- &xsql.Tuple{Message: map[string]any{"a": int64(1)}, Timestamp: now}
 	input <- &xsql.Tuple{Message: map[string]any{"a": int64(2)}, Timestamp: now.Add(time.Second)}
-
+	waitExecute()
 	op2, err := node.NewWindowIncAggOp("1", &node.WindowConfig{
 		Type:        incPlan.WType,
 		Length:      2 * time.Second,
@@ -104,6 +104,7 @@ func TestIncEventHoppingWindowState(t *testing.T) {
 			"inc_agg_col_1": int64(2),
 		},
 	}, d)
+	waitExecute()
 	got2 := <-output2
 	wt, ok = got2.(*xsql.WindowTuples)
 	require.True(t, ok)
