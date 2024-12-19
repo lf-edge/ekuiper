@@ -234,7 +234,7 @@ func (m *mockSrc) SetQos(qos def.Qos) {
 	panic("implement me")
 }
 
-func (m *mockSrc) AddOutput(c chan<- interface{}, s string) error {
+func (m *mockSrc) AddOutput(c chan interface{}, s string) error {
 	m.outputs = append(m.outputs, c)
 	return nil
 }
@@ -285,12 +285,12 @@ func (m *mockOp) RemoveOutput(s string) error {
 	return nil
 }
 
-func (m *mockOp) AddOutput(c chan<- interface{}, s string) error {
+func (m *mockOp) AddOutput(c chan interface{}, s string) error {
 	m.outputs = append(m.outputs, c)
 	return nil
 }
 
-func (m *mockOp) GetInput() (chan<- any, string) {
+func (m *mockOp) GetInput() (chan any, string) {
 	return m.ch, m.name
 }
 

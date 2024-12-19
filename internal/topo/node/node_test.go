@@ -24,9 +24,9 @@ import (
 
 func TestOutputs(t *testing.T) {
 	n := newDefaultNode("test", &def.RuleOption{})
-	err := n.AddOutput(make(chan<- any), "rule.1_test")
+	err := n.AddOutput(make(chan any), "rule.1_test")
 	assert.NoError(t, err)
-	err = n.AddOutput(make(chan<- any), "rule.2_test")
+	err = n.AddOutput(make(chan any), "rule.2_test")
 	assert.NoError(t, err)
 	err = n.RemoveOutput("rule.1")
 	assert.NoError(t, err)
