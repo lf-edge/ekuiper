@@ -28,7 +28,8 @@ import (
 
 type RestSink struct {
 	*ClientConf
-	noHeaderTemplate bool
+	noHeaderTemplate   bool
+	noFormdataTemplate bool
 }
 
 var bodyTypeFormat = map[string]string{
@@ -62,11 +63,11 @@ func (r *RestSink) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) e
 
 func (r *RestSink) Collect(ctx api.StreamContext, item api.RawTuple) error {
 	logger := ctx.GetLogger()
-	headers := r.config.Headers
 	bodyType := r.config.BodyType
 	method := r.config.Method
-	formData := r.config.FormData
 	u := r.config.Url
+	headers := r.config.Headers
+	formData := r.config.FormData
 
 	if dp, ok := item.(api.HasDynamicProps); ok {
 		if !r.noHeaderTemplate {
@@ -94,11 +95,16 @@ func (r *RestSink) Collect(ctx api.StreamContext, item api.RawTuple) error {
 		if ok {
 			u = nu
 		}
-		if bodyType == "formdata" {
-			for k, v := range formData {
+		if bodyType == "formdata" && !r.noFormdataTemplate {
+			r.noFormdataTemplate = true
+			formData = make(map[string]string, len(r.config.FormData))
+			for k, v := range r.config.FormData {
 				nv, ok := dp.DynamicProps(v)
 				if ok {
 					formData[k] = nv
+					r.noFormdataTemplate = false
+				} else {
+					formData[k] = v
 				}
 			}
 		}
@@ -126,11 +132,11 @@ func (r *RestSink) Collect(ctx api.StreamContext, item api.RawTuple) error {
 		recoverAble := errorx.IsRecoverAbleError(originErr)
 		if recoverAble {
 			logger.Errorf("rest sink meet error:%v, recoverAble:%v, ruleID:%v", originErr.Error(), recoverAble, ctx.GetRuleId())
-			return errorx.NewIOErr(fmt.Sprintf(`rest sink fails to send out the data:err=%s recoverAble=%v method=%s path="%s" request_body="%s"`,
+			return errorx.NewIOErr(fmt.Sprintf(`rest sink fails to send out the data:err=%s recoverAble=%v method=%s path="%s"`,
 				originErr.Error(),
 				recoverAble,
 				method,
-				u, string(item.Raw())))
+				u))
 		}
 		return fmt.Errorf(`rest sink fails to send out the data:err=%s recoverAble=%v method=%s path="%s"`,
 			originErr.Error(),
