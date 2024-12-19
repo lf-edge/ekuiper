@@ -135,12 +135,3 @@ func GetFuncType(funcName string) ast.FuncType {
 	}
 	return ast.FuncTypeUnknown
 }
-
-var supportedIncAggFunc = map[string]struct{}{
-	"count": {},
-}
-
-func IsSupportedIncAgg(name string) bool {
-	_, ok := supportedIncAggFunc[name]
-	return ok
-}
