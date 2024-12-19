@@ -23,12 +23,12 @@ import (
 )
 
 type Emitter interface {
-	AddOutput(chan<- interface{}, string) error
+	AddOutput(chan any, string) error
 	RemoveOutput(string) error
 }
 
 type Collector interface {
-	GetInput() (chan<- interface{}, string)
+	GetInput() (chan any, string)
 }
 
 type TopNode interface {
