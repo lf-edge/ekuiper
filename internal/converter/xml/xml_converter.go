@@ -22,6 +22,8 @@ import (
 
 	"github.com/beevik/etree"
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
 )
 
 const xmlValue = "@value"
@@ -141,7 +143,13 @@ func covertToEncodingXml(d any) ([]byte, error) {
 	return xmlData, err
 }
 
-func (x *XMLConverter) Decode(ctx api.StreamContext, b []byte) (any, error) {
+func (x *XMLConverter) Decode(ctx api.StreamContext, b []byte) (got any, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			conf.Log.Errorf("xml decode panic, err:%v data:%v", r, string(b))
+			err = fmt.Errorf("xml decode panic: %v", r)
+		}
+	}()
 	return decodeXML(b)
 }
 
@@ -159,7 +167,14 @@ func decodeXML(b []byte) (any, error) {
 	if err != nil {
 		return nil, err
 	}
-	v := result.(map[string]interface{})[xmlValue].([]interface{})
+	mm, ok := result.(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("invalid xml data:%v", string(b))
+	}
+	v, ok := mm[xmlValue].([]interface{})
+	if !ok {
+		return nil, fmt.Errorf("invalid xml data:%v", string(b))
+	}
 	if len(v) == 1 {
 		return v[0], nil
 	}

@@ -141,3 +141,10 @@ func TestDecodeEncodeXML(t *testing.T) {
 		})
 	}
 }
+
+func TestInvalidXmlData(t *testing.T) {
+	converter := NewXMLConverter()
+	ctx := mockContext.NewMockContext("1", "2")
+	_, err := converter.Decode(ctx, []byte("123"))
+	require.Error(t, err)
+}
