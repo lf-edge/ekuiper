@@ -23,6 +23,7 @@ import (
 	"github.com/pingcap/failpoint"
 
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/httpx"
+	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 )
 
@@ -63,6 +64,7 @@ func (r *RestSink) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) e
 
 func (r *RestSink) Collect(ctx api.StreamContext, item api.RawTuple) error {
 	logger := ctx.GetLogger()
+	logger.Infof("sending %v", xsql.GetId(item))
 	bodyType := r.config.BodyType
 	method := r.config.Method
 	u := r.config.Url
@@ -168,6 +170,7 @@ func (r *RestSink) Collect(ctx api.StreamContext, item api.RawTuple) error {
 			logger.Infof("Response raw content: %s\n", b)
 		}
 	}
+	ctx.GetLogger().Infof("send success %v", xsql.GetId(item))
 	return nil
 }
 
