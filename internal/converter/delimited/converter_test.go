@@ -212,3 +212,30 @@ func TestError(t *testing.T) {
 	require.True(t, ok)
 	require.Equal(t, errorx.CovnerterErr, errWithCode.Code())
 }
+
+func BenchmarkList(b *testing.B) {
+	ctx := mockContext.NewMockContext("test", "op1")
+	c, err := NewConverter(map[string]any{
+		"hasHeader": true,
+	})
+	require.NoError(b, err)
+	data := make([]map[string]any, 300)
+	for i := 0; i < 300; i++ {
+		data[i] = map[string]any{
+			"ts":     int64(333333333333 + i),
+			"speed":  60.3,
+			"speed2": 23.4,
+			"speed3": 25.4,
+			"brake":  true,
+			"intt1":  20,
+			"intt2":  int64(3444),
+			"intt3":  int64(4433),
+		}
+	}
+	for i := 0; i < b.N; i++ {
+		_, err := c.Encode(ctx, data)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+}
