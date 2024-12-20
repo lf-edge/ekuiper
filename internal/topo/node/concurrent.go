@@ -60,6 +60,10 @@ func merge(ctx api.StreamContext, node *defaultSinkNode, sendInterval time.Durat
 			select {
 			case data := <-ch:
 				for _, d := range data {
+					if derr, ok := d.(error); ok {
+						node.onError(ctx, derr)
+						continue
+					}
 					dd, processed := node.commonIngest(ctx, d)
 					if processed {
 						continue
