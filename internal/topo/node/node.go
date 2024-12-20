@@ -304,7 +304,7 @@ func (o *defaultNode) onError(ctx api.StreamContext, err error) {
 // onError do the common works(metric, trace) after throwing an error
 func (o *defaultNode) onErrorOpt(ctx api.StreamContext, err error, sendOut bool) {
 	ctx.GetLogger().Errorf("Operation %s error: %s", ctx.GetOpId(), err)
-	if sendOut {
+	if sendOut && o.sendError {
 		o.Broadcast(err)
 	}
 	o.statManager.IncTotalExceptions(err.Error())
