@@ -222,6 +222,11 @@ func TestExplainPushAlias(t *testing.T) {
 			explain: `{"op":"ProjectPlan_0","info":"Fields:[ stream.a1 ]"}
 	{"op":"DataSourcePlan_1","info":"StreamName: stream, StreamFields:[ a ], ColAliasMapping:[ a:a1 ]"}`,
 		},
+		{
+			sql: `select a as a1, * from stream`,
+			explain: `{"op":"ProjectPlan_0","info":"Fields:[ $$alias.a1,aliasRef:stream.a, * ]"}
+	{"op":"DataSourcePlan_1","info":"StreamName: stream, StreamFields:[ a, b ]"}`,
+		},
 	}
 	for _, tc := range testcases {
 		stmt, err := xsql.NewParser(strings.NewReader(tc.sql)).Parse()

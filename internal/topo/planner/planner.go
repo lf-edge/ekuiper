@@ -870,7 +870,16 @@ func rewriteIfPushdownAlias(stmt *ast.SelectStatement, opt *def.RuleOption) map[
 }
 
 func hasWildcard(stmt *ast.SelectStatement) bool {
-	return false
+	wildcard := false
+	ast.WalkFunc(stmt, func(n ast.Node) bool {
+		switch n.(type) {
+		case *ast.Wildcard:
+			wildcard = true
+			return false
+		}
+		return true
+	})
+	return wildcard
 }
 
 func searchColumnUsedCount(stmt *ast.SelectStatement, colName string) int {
