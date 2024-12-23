@@ -78,7 +78,7 @@ func TestWindowFuncApplyCollection(t *testing.T) {
 		{
 			data: data1,
 			op: &WindowFuncOperator{
-				WindowFuncField: ast.Field{
+				WindowFuncField: &ast.Field{
 					Name: "row_number",
 					Expr: &ast.Call{
 						Name: "row_number",
@@ -128,7 +128,7 @@ func TestWindowFuncApplyCollection(t *testing.T) {
 		{
 			data: data2,
 			op: &WindowFuncOperator{
-				WindowFuncField: ast.Field{
+				WindowFuncField: &ast.Field{
 					Name: "row_number",
 					Expr: &ast.Call{
 						Name: "row_number",
