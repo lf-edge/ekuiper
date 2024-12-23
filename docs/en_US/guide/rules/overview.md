@@ -175,6 +175,8 @@ See the table below for a detailed explanation of each rule behavior:
 | cronDatetimeRange  | lists of struct      | Specify the effective time period of the Scheduled Rule, which is only valid when `cron` is specified. When this `cronDatetimeRange` is specified, the Scheduled Rule will only take effect within the time range specified. Please see [Scheduled Rule](#Scheduled Rule) for detailed configuration items                                        |
 | enableRuleTracer   | bool: false          | Specify whether the rule enables rule-level data tracing                                                                                                                                                                                                                                                                                          |
 
+| planOptimizeStrategy | struct | Specify whether the rule turns on the corresponding optimization |
+
 For detail about `qos` and `checkpointInterval`, please check [state and fault tolerance](./state_and_fault_tolerance.md).
 
 The rule options can be defined globally in `etc/kuiper.yaml` under the `rules` section. The options defined in the rule json will override the global setting.
@@ -230,6 +232,16 @@ When a periodic rule is stopped by [stop rule](../../api/restapi/rules.md#stop-a
 #### Phase run rules
 
 When `cronDatetimeRange` is configured but `cron` and `duration` are empty, the rule will run according to the time period specified by `cronDatetimeRange` until the time period is exceeded.
+
+### Rule optimization switch
+
+The rule optimization switch `planOptimizeStrategy` can control whether the rule enables specific rule optimization:
+
+The configuration items of `planOptimizeStrategy` are as follows:
+
+| option name | type and default value | description |
+|-------|--------|-------------------------------- ----------|
+| enableIncrementalWindow | bool: false | Enable incremental calculation when the rule contains both a time window and an aggregate function that supports incremental calculation |
 
 ## View Rule Status
 
