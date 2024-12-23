@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ type ErrorWithCode interface {
 }
 
 func IsRecoverAbleError(err error) bool {
-	if strings.Contains(err.Error(), "connection reset by peer") {
+	if strings.Contains(err.Error(), "connection reset by peer") || strings.Contains(err.Error(), "No connection could be made") {
 		return true
 	}
 	if urlErr, ok := err.(*url.Error); ok {
