@@ -121,7 +121,7 @@ func (f *FastJsonConverter) decodeWithSchema(b []byte, schema map[string]*ast.Js
 			if err != nil {
 				return nil, err
 			}
-			subMap, err := f.decodeObject(obj, schema)
+			subMap, err := f.decodeObject(obj, schema, false)
 			if err != nil {
 				return nil, err
 			}
@@ -133,19 +133,9 @@ func (f *FastJsonConverter) decodeWithSchema(b []byte, schema map[string]*ast.Js
 		if err != nil {
 			return nil, err
 		}
-		m, err := f.decodeObject(obj, schema)
+		m, err := f.decodeObject(obj, schema, true)
 		if err != nil {
 			return nil, err
-		}
-		// replace outer object
-		if len(f.ColAliasMapping) > 0 {
-			for colName, aliasName := range f.ColAliasMapping {
-				v, ok := m[colName]
-				if ok {
-					delete(m, colName)
-					m[aliasName] = v
-				}
-			}
 		}
 		return m, nil
 	}
@@ -170,7 +160,7 @@ func (f *FastJsonConverter) decodeArray(array []*fastjson.Value, field *ast.Json
 			if field != nil {
 				props = field.Properties
 			}
-			subMap, err := f.decodeObject(childObj, props)
+			subMap, err := f.decodeObject(childObj, props, false)
 			if err != nil {
 				return nil, err
 			}
@@ -225,7 +215,7 @@ func (f *FastJsonConverter) decodeArray(array []*fastjson.Value, field *ast.Json
 	return vs, nil
 }
 
-func (f *FastJsonConverter) decodeObject(obj *fastjson.Object, schema map[string]*ast.JsonStreamField) (map[string]interface{}, error) {
+func (f *FastJsonConverter) decodeObject(obj *fastjson.Object, schema map[string]*ast.JsonStreamField, isOuter bool) (map[string]interface{}, error) {
 	m := make(map[string]interface{})
 	var err error
 	obj.Visit(func(k []byte, v *fastjson.Value) {
@@ -253,13 +243,23 @@ func (f *FastJsonConverter) decodeObject(obj *fastjson.Object, schema map[string
 			if schema != nil && schema[key] != nil {
 				props = schema[key].Properties
 			}
-			childMap, err2 := f.decodeObject(childObj, props)
+			childMap, err2 := f.decodeObject(childObj, props, false)
 			if err2 != nil {
 				err = err2
 				return
 			}
 			if childMap != nil {
-				m[key] = childMap
+				set := false
+				if isOuter && len(f.ColAliasMapping) > 0 {
+					alias, ok := f.ColAliasMapping[key]
+					if ok {
+						set = true
+						m[alias] = childMap
+					}
+				}
+				if !set {
+					m[key] = childMap
+				}
 			}
 		case fastjson.TypeArray:
 			add, valid := f.checkSchema(key, "array", schema)
@@ -285,7 +285,17 @@ func (f *FastJsonConverter) decodeObject(obj *fastjson.Object, schema map[string
 				return
 			}
 			if subList != nil {
-				m[key] = subList
+				set := false
+				if isOuter && len(f.ColAliasMapping) > 0 {
+					alias, ok := f.ColAliasMapping[key]
+					if ok {
+						set = true
+						m[alias] = subList
+					}
+				}
+				if !set {
+					m[key] = subList
+				}
 			}
 		case fastjson.TypeString:
 			if schema != nil {
@@ -300,7 +310,17 @@ func (f *FastJsonConverter) decodeObject(obj *fastjson.Object, schema map[string
 				return
 			}
 			if v != nil {
-				m[key] = v
+				set := false
+				if isOuter && len(f.ColAliasMapping) > 0 {
+					alias, ok := f.ColAliasMapping[key]
+					if ok {
+						set = true
+						m[alias] = v
+					}
+				}
+				if !set {
+					m[key] = v
+				}
 			}
 		case fastjson.TypeNumber:
 			if schema != nil {
@@ -315,7 +335,17 @@ func (f *FastJsonConverter) decodeObject(obj *fastjson.Object, schema map[string
 				return
 			}
 			if v != nil {
-				m[key] = v
+				set := false
+				if isOuter && len(f.ColAliasMapping) > 0 {
+					alias, ok := f.ColAliasMapping[key]
+					if ok {
+						set = true
+						m[alias] = v
+					}
+				}
+				if !set {
+					m[key] = v
+				}
 			}
 		case fastjson.TypeTrue, fastjson.TypeFalse:
 			if schema != nil {
@@ -330,7 +360,17 @@ func (f *FastJsonConverter) decodeObject(obj *fastjson.Object, schema map[string
 				return
 			}
 			if v != nil {
-				m[key] = v
+				set := false
+				if isOuter && len(f.ColAliasMapping) > 0 {
+					alias, ok := f.ColAliasMapping[key]
+					if ok {
+						set = true
+						m[alias] = v
+					}
+				}
+				if !set {
+					m[key] = v
+				}
 			}
 		}
 	})
