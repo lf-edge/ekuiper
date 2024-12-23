@@ -22,7 +22,7 @@ import (
 )
 
 func NewZstdCompressor() (*zstdCompressor, error) {
-	zstdWriter, err := zstd.NewWriter(nil, zstd.WithWindowSize(32<<10))
+	zstdWriter, err := zstd.NewWriter(nil, zstd.WithWindowSize(4<<20))
 	if err != nil {
 		return nil, err
 	}
