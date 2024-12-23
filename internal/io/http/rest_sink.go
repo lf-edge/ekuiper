@@ -28,6 +28,7 @@ import (
 
 type RestSink struct {
 	*ClientConf
+	noHeaderTemplate bool
 }
 
 var bodyTypeFormat = map[string]string{
@@ -68,10 +69,17 @@ func (r *RestSink) Collect(ctx api.StreamContext, item api.RawTuple) error {
 	u := r.config.Url
 
 	if dp, ok := item.(api.HasDynamicProps); ok {
-		for k, v := range headers {
-			nv, ok := dp.DynamicProps(v)
-			if ok {
-				headers[k] = nv
+		if !r.noHeaderTemplate {
+			r.noHeaderTemplate = true
+			for k, v := range r.config.Headers {
+				headers = make(map[string]string, len(r.config.Headers))
+				nv, ok := dp.DynamicProps(v)
+				if ok {
+					headers[k] = nv
+					r.noHeaderTemplate = false
+				} else {
+					headers[k] = v
+				}
 			}
 		}
 		nb, ok := dp.DynamicProps(bodyType)
