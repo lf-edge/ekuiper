@@ -15,6 +15,7 @@
 package planner
 
 import (
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 )
 
@@ -22,7 +23,7 @@ type pushProjectionPlan struct{}
 
 // pushProjectionPlan inject Projection Plan between the shared Datasource and its father only if the Plan have windowPlan
 // We use Projection to remove the unused column before windowPlan in order to reduce memory consuming
-func (pp *pushProjectionPlan) optimize(plan LogicalPlan) (LogicalPlan, error) {
+func (pp *pushProjectionPlan) optimize(plan LogicalPlan, _ *def.RuleOption) (LogicalPlan, error) {
 	if pp.searchJoinPlan(plan) {
 		return plan, nil
 	}
@@ -30,7 +31,7 @@ func (pp *pushProjectionPlan) optimize(plan LogicalPlan) (LogicalPlan, error) {
 		ctx := &searchCtx{
 			find: make([]*sharedSource, 0),
 		}
-		pp.searchSharedDataSource(ctx, plan, nil)
+		searchSharedDataSource(ctx, plan, nil)
 		if len(ctx.find) > 0 {
 			pp.pushProjection(ctx)
 		}
@@ -68,31 +69,6 @@ func (pp *pushProjectionPlan) searchJoinPlan(plan LogicalPlan) bool {
 	return false
 }
 
-type searchCtx struct {
-	find []*sharedSource
-}
-
-type sharedSource struct {
-	ds     *DataSourcePlan
-	father LogicalPlan
-}
-
-func (pp *pushProjectionPlan) searchSharedDataSource(ctx *searchCtx, plan, father LogicalPlan) {
-	switch ds := plan.(type) {
-	case *DataSourcePlan:
-		if ds.streamStmt.Options.SHARED {
-			ctx.find = append(ctx.find, &sharedSource{
-				ds:     ds,
-				father: father,
-			})
-		}
-	default:
-	}
-	for _, child := range plan.Children() {
-		pp.searchSharedDataSource(ctx, child, plan)
-	}
-}
-
 func (pp *pushProjectionPlan) pushProjection(ctx *searchCtx) {
 	for _, search := range ctx.find {
 		p := ProjectPlan{
@@ -125,4 +101,82 @@ func buildFields(ds *DataSourcePlan) []ast.Field {
 
 func (pp *pushProjectionPlan) name() string {
 	return "push_projection"
+}
+
+type pushAliasDecode struct{}
+
+func (p *pushAliasDecode) optimize(plan LogicalPlan, option *def.RuleOption) (LogicalPlan, error) {
+	if option.PlanOptimizeStrategy == nil {
+		return plan, nil
+	}
+	if !option.PlanOptimizeStrategy.EnableAliasPushdown {
+		return plan, nil
+	}
+	ctx := &searchCtx{
+		find:               make([]*sharedSource, 0),
+		noSharedDatasource: make([]*DataSourcePlan, 0),
+	}
+	searchSharedDataSource(ctx, plan, nil)
+	if len(ctx.find) > 0 {
+		return plan, nil
+	}
+	searchNoSharedDatasource(ctx, plan)
+	if len(ctx.noSharedDatasource) < 1 {
+		return plan, nil
+	}
+	for _, ds := range ctx.noSharedDatasource {
+		if len(ds.streamFields) > 0 {
+			for col, alias := range ds.colAliasMapping {
+				v, ok := ds.streamFields[alias]
+				if ok {
+					ds.streamFields[col] = v
+					delete(ds.streamFields, alias)
+				}
+			}
+		}
+	}
+	return plan, nil
+}
+
+func (p *pushAliasDecode) name() string {
+	return "push_alias"
+}
+
+type searchCtx struct {
+	find               []*sharedSource
+	noSharedDatasource []*DataSourcePlan
+}
+
+type sharedSource struct {
+	ds     *DataSourcePlan
+	father LogicalPlan
+}
+
+func searchSharedDataSource(ctx *searchCtx, plan, father LogicalPlan) {
+	switch ds := plan.(type) {
+	case *DataSourcePlan:
+		if ds.streamStmt.Options.SHARED {
+			ctx.find = append(ctx.find, &sharedSource{
+				ds:     ds,
+				father: father,
+			})
+		}
+	default:
+	}
+	for _, child := range plan.Children() {
+		searchSharedDataSource(ctx, child, plan)
+	}
+}
+
+func searchNoSharedDatasource(ctx *searchCtx, plan LogicalPlan) {
+	switch ds := plan.(type) {
+	case *DataSourcePlan:
+		if !ds.streamStmt.Options.SHARED {
+			ctx.noSharedDatasource = append(ctx.noSharedDatasource, ds)
+		}
+	default:
+	}
+	for _, child := range plan.Children() {
+		searchNoSharedDatasource(ctx, child)
+	}
 }

@@ -14,16 +14,19 @@
 
 package planner
 
+import "github.com/lf-edge/ekuiper/v2/internal/pkg/def"
+
 var optRuleList = []logicalOptRule{
 	&columnPruner{},
 	&predicatePushDown{},
 	&pushProjectionPlan{},
+	&pushAliasDecode{},
 }
 
-func optimize(p LogicalPlan) (LogicalPlan, error) {
+func optimize(p LogicalPlan, options *def.RuleOption) (LogicalPlan, error) {
 	var err error
 	for _, rule := range optRuleList {
-		p, err = rule.optimize(p)
+		p, err = rule.optimize(p, options)
 		if err != nil {
 			return nil, err
 		}

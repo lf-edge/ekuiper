@@ -35,7 +35,8 @@ type FastJsonConverter struct {
 }
 
 type FastJsonConverterConf struct {
-	UseInt64 bool `json:"useInt64ForWholeNumber"`
+	UseInt64        bool              `json:"useInt64ForWholeNumber"`
+	ColAliasMapping map[string]string `json:"colAliasMapping"`
 }
 
 func NewFastJsonConverter(schema map[string]*ast.JsonStreamField, props map[string]any) *FastJsonConverter {
@@ -135,6 +136,16 @@ func (f *FastJsonConverter) decodeWithSchema(b []byte, schema map[string]*ast.Js
 		m, err := f.decodeObject(obj, schema)
 		if err != nil {
 			return nil, err
+		}
+		// replace outer object
+		if len(f.ColAliasMapping) > 0 {
+			for colName, aliasName := range f.ColAliasMapping {
+				v, ok := m[colName]
+				if ok {
+					delete(m, colName)
+					m[aliasName] = v
+				}
+			}
 		}
 		return m, nil
 	}

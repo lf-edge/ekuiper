@@ -46,6 +46,7 @@ type RuleOption struct {
 
 type PlanOptimizeStrategy struct {
 	EnableIncrementalWindow bool `json:"enableIncrementalWindow,omitempty" yaml:"enableIncrementalWindow,omitempty"`
+	EnableAliasPushdown     bool `json:"enableAliasPushdown,omitempty" yaml:"enableAliasPushdown,omitempty"`
 }
 
 type RestartStrategy struct {

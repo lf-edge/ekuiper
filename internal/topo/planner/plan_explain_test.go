@@ -207,3 +207,34 @@ func TestSupportedWindowType(t *testing.T) {
 		require.Equal(t, tc.ok, supportedWindowType(tc.w))
 	}
 }
+
+func TestExplainPushAlias(t *testing.T) {
+	kv, err := store.GetKV("stream")
+	require.NoError(t, err)
+	require.NoError(t, prepareStream())
+
+	testcases := []struct {
+		sql     string
+		explain string
+	}{
+		{
+			sql: `select a as a1 from stream`,
+			explain: `{"op":"ProjectPlan_0","info":"Fields:[ stream.a1 ]"}
+	{"op":"DataSourcePlan_1","info":"StreamName: stream, StreamFields:[ a ], ColAliasMapping:[ a:a1 ]"}`,
+		},
+	}
+	for _, tc := range testcases {
+		stmt, err := xsql.NewParser(strings.NewReader(tc.sql)).Parse()
+		require.NoError(t, err)
+		p, err := createLogicalPlan(stmt, &def.RuleOption{
+			PlanOptimizeStrategy: &def.PlanOptimizeStrategy{
+				EnableAliasPushdown: true,
+			},
+			Qos: 0,
+		}, kv)
+		require.NoError(t, err)
+		explain, err := ExplainFromLogicalPlan(p, "")
+		require.NoError(t, err)
+		require.Equal(t, tc.explain, explain, tc.sql)
+	}
+}

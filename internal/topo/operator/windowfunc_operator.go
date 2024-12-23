@@ -25,7 +25,7 @@ import (
 )
 
 type WindowFuncOperator struct {
-	WindowFuncField ast.Field
+	WindowFuncField *ast.Field
 }
 
 type windowFuncHandle interface {
