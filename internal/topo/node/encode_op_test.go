@@ -24,6 +24,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
+	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 func TestEncodeJSON(t *testing.T) {
@@ -49,7 +50,7 @@ func TestEncodeJSON(t *testing.T) {
 					&xsql.Tuple{Message: map[string]any{"name": "tom", "age": 21}},
 				},
 			},
-			out: &xsql.RawTuple{Rawdata: []byte(`[{"age":20,"name":"joe"},{"age":21,"name":"tom"}]`)},
+			out: &xsql.RawTuple{Rawdata: []byte(`[{"age":20,"name":"joe"},{"age":21,"name":"tom"}]`), Timestamp: timex.GetNow()},
 		},
 		{
 			name: "unknown type",
@@ -74,12 +75,12 @@ func TestEncodeJSON(t *testing.T) {
 					{"name": "tom", "age": 21},
 				},
 				Content: []api.MessageTuple{
-					&xsql.Tuple{Message: map[string]any{"name": "joe", "age": 20}},
-					&xsql.Tuple{Message: map[string]any{"name": "tom", "age": 21}},
+					&xsql.Tuple{Message: map[string]any{"name": "joe", "age": 20}, Timestamp: timex.GetNow()},
+					&xsql.Tuple{Message: map[string]any{"name": "tom", "age": 21}, Timestamp: timex.GetNow()},
 				},
 				Props: map[string]string{"{{.a}}": "1"},
 			},
-			out: &xsql.RawTuple{Rawdata: []byte(`[{"age":20,"name":"joe"},{"age":21,"name":"tom"}]`), Props: map[string]string{"{{.a}}": "1"}},
+			out: &xsql.RawTuple{Rawdata: []byte(`[{"age":20,"name":"joe"},{"age":21,"name":"tom"}]`), Props: map[string]string{"{{.a}}": "1"}, Timestamp: timex.GetNow()},
 		},
 	}
 	ctx := mockContext.NewMockContext("test1", "encode_test")
