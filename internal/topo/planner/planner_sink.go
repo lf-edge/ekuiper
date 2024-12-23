@@ -170,15 +170,6 @@ func findTemplateProps(props map[string]any) []string {
 func splitSink(tp *topo.Topo, s api.Sink, sinkName string, options *def.RuleOption, sc *node.SinkConf, templates []string) ([]node.TopNode, error) {
 	index := 0
 	result := make([]node.TopNode, 0)
-	// Batch enabled
-	if sc.BatchSize > 0 || sc.LingerInterval > 0 {
-		batchOp, err := node.NewBatchOp(fmt.Sprintf("%s_%d_batch", sinkName, index), options, sc.BatchSize, time.Duration(sc.LingerInterval))
-		if err != nil {
-			return nil, err
-		}
-		index++
-		result = append(result, batchOp)
-	}
 	// Transform enabled
 	// Currently, the row to map is done here and is required. TODO: eliminate map and this could become optional
 	transformOp, err := node.NewTransformOp(fmt.Sprintf("%s_%d_transform", sinkName, index), options, sc, templates)
@@ -195,6 +186,15 @@ func splitSink(tp *topo.Topo, s api.Sink, sinkName string, options *def.RuleOpti
 		}
 		index++
 		result = append(result, encodeOp)
+		// Batch enabled
+		if sc.BatchSize > 0 || sc.LingerInterval > 0 {
+			batchOp, err := node.NewBatchOp(fmt.Sprintf("%s_%d_batch", sinkName, index), options, sc.BatchSize, time.Duration(sc.LingerInterval))
+			if err != nil {
+				return nil, err
+			}
+			index++
+			result = append(result, batchOp)
+		}
 		_, isStreamWriter := s.(model.StreamWriter)
 		if !isStreamWriter && sc.Compression != "" {
 			compressOp, err := node.NewCompressOp(fmt.Sprintf("%s_%d_compress", sinkName, index), options, sc.Compression)
@@ -212,6 +212,16 @@ func splitSink(tp *topo.Topo, s api.Sink, sinkName string, options *def.RuleOpti
 			}
 			index++
 			result = append(result, encryptOp)
+		}
+	} else {
+		// Batch enabled
+		if sc.BatchSize > 0 || sc.LingerInterval > 0 {
+			batchOp, err := node.NewBatchOp(fmt.Sprintf("%s_%d_batch", sinkName, index), options, sc.BatchSize, time.Duration(sc.LingerInterval))
+			if err != nil {
+				return nil, err
+			}
+			index++
+			result = append(result, batchOp)
 		}
 	}
 	// Caching
