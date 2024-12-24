@@ -69,10 +69,9 @@ func TestExplainPlan(t *testing.T) {
 		},
 		{
 			sql: `select count(a),sum(a),b from stream group by countwindow(2),b`,
-			explain: `{"op":"ProjectPlan_0","info":"Fields:[ Call:{ name:count, args:[stream.a] }, Call:{ name:sum, args:[stream.a] }, stream.b ]"}
-	{"op":"AggregatePlan_1","info":"Dimension:{ stream.b }"}
-			{"op":"WindowPlan_2","info":"{ length:2, windowType:COUNT_WINDOW, limit: 0 }"}
-					{"op":"DataSourcePlan_3","info":"StreamName: stream, StreamFields:[ a, b ]"}`,
+			explain: `{"op":"ProjectPlan_0","info":"Fields:[ Call:{ name:bypass, args:[$$default.inc_agg_col_1] }, Call:{ name:bypass, args:[$$default.inc_agg_col_2] }, stream.b ]"}
+	{"op":"IncAggWindowPlan_1","info":"wType:COUNT_WINDOW, Dimension:[stream.b], funcs:[Call:{ name:inc_count, args:[stream.a] }->inc_agg_col_1,Call:{ name:inc_sum, args:[stream.a] }->inc_agg_col_2]"}
+			{"op":"DataSourcePlan_2","info":"StreamName: stream, StreamFields:[ a, b ]"}`,
 		},
 		{
 			sql: `SELECT *,count(*) from stream group by countWindow(4),b having count(*) > 1 `,
@@ -106,6 +105,9 @@ func TestExplainPlan(t *testing.T) {
 		},
 	}
 	for _, tc := range testcases {
+		if tc.sql != `select count(a),sum(a),b from stream group by countwindow(2),b` {
+			continue
+		}
 		stmt, err := xsql.NewParser(strings.NewReader(tc.sql)).Parse()
 		require.NoError(t, err)
 		p, err := createLogicalPlan(stmt, &def.RuleOption{

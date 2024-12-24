@@ -49,18 +49,60 @@ func TestIncAggFunction(t *testing.T) {
 			args2:    []interface{}{3},
 			output2:  float64(2),
 		},
+		{
+			funcName: "inc_max",
+			args1:    []interface{}{1},
+			output1:  int64(1),
+			args2:    []interface{}{3},
+			output2:  int64(3),
+		},
+		{
+			funcName: "inc_min",
+			args1:    []interface{}{3},
+			output1:  int64(3),
+			args2:    []interface{}{1},
+			output2:  int64(1),
+		},
+		{
+			funcName: "inc_sum",
+			args1:    []interface{}{3},
+			output1:  float64(3),
+			args2:    []interface{}{1},
+			output2:  float64(4),
+		},
+		{
+			funcName: "inc_merge_agg",
+			args1:    []interface{}{map[string]interface{}{"a": 1}},
+			output1:  map[string]interface{}{"a": 1},
+			args2:    []interface{}{map[string]interface{}{"b": 2}},
+			output2:  map[string]interface{}{"a": 1, "b": 2},
+		},
+		{
+			funcName: "inc_collect",
+			args1:    []interface{}{1},
+			output1:  []interface{}{1},
+			args2:    []interface{}{2},
+			output2:  []interface{}{1, 2},
+		},
+		{
+			funcName: "inc_last_value",
+			args1:    []interface{}{1, true},
+			output1:  1,
+			args2:    []interface{}{2, true},
+			output2:  2,
+		},
 	}
 	for index, tc := range testcases {
 		ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
 		tempStore, _ := state.CreateStore(tc.funcName, def.AtMostOnce)
 		fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), index)
 		f, ok := builtins[tc.funcName]
-		require.True(t, ok)
+		require.True(t, ok, tc.funcName)
 		got1, ok := f.exec(fctx, tc.args1)
-		require.True(t, ok)
-		require.Equal(t, tc.output1, got1)
+		require.True(t, ok, tc.funcName)
+		require.Equal(t, tc.output1, got1, tc.funcName)
 		got2, ok := f.exec(fctx, tc.args2)
-		require.True(t, ok)
-		require.Equal(t, tc.output2, got2)
+		require.True(t, ok, tc.funcName)
+		require.Equal(t, tc.output2, got2, tc.funcName)
 	}
 }
