@@ -368,7 +368,7 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *def.RuleOption, store kv.
 	if err != nil {
 		return nil, err
 	}
-	windowFuncFields, incAggFields := rewriteStmt(stmt, opt)
+	rewriteRes := rewriteStmt(stmt, opt)
 
 	for _, sInfo := range streamStmts {
 		if sInfo.stmt.StreamType == ast.TypeTable && sInfo.stmt.Options.KIND == ast.StreamKindLookup {
@@ -377,13 +377,15 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *def.RuleOption, store kv.
 			}
 			lookupTableChildren[string(sInfo.stmt.Name)] = sInfo.stmt.Options
 		} else {
+
 			p = DataSourcePlan{
-				name:         sInfo.stmt.Name,
-				streamStmt:   sInfo.stmt,
-				streamFields: sInfo.schema.ToJsonSchema(),
-				isSchemaless: sInfo.schema == nil,
-				iet:          opt.IsEventTime,
-				allMeta:      opt.SendMetaToSink,
+				name:            sInfo.stmt.Name,
+				streamStmt:      sInfo.stmt,
+				streamFields:    sInfo.schema.ToJsonSchema(),
+				isSchemaless:    sInfo.schema == nil,
+				iet:             opt.IsEventTime,
+				allMeta:         opt.SendMetaToSink,
+				colAliasMapping: rewriteRes.dsColAliasMapping[sInfo.stmt.Name],
 			}.Init()
 			if sInfo.stmt.StreamType == ast.TypeStream {
 				children = append(children, p)
@@ -429,12 +431,12 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *def.RuleOption, store kv.
 			if len(children) == 0 {
 				return nil, errors.New("cannot run window for TABLE sources")
 			}
-			if len(incAggFields) > 0 {
+			if len(rewriteRes.incAggFields) > 0 {
 				incWp := IncWindowPlan{
 					WType:            w.WindowType,
 					Length:           int(w.Length.Val),
 					Dimensions:       dimensions.GetGroups(),
-					IncAggFuncs:      incAggFields,
+					IncAggFuncs:      rewriteRes.incAggFields,
 					Condition:        w.Filter,
 					TriggerCondition: w.TriggerCondition,
 				}.Init()
@@ -539,7 +541,7 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *def.RuleOption, store kv.
 		p.SetChildren(children)
 		children = []LogicalPlan{p}
 	}
-	if dimensions != nil && len(incAggFields) < 1 {
+	if dimensions != nil && len(rewriteRes.incAggFields) < 1 {
 		ds = dimensions.GetGroups()
 		if ds != nil && len(ds) > 0 {
 			p = AggregatePlan{
@@ -552,13 +554,13 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *def.RuleOption, store kv.
 	if stmt.Having != nil {
 		p = HavingPlan{
 			condition: stmt.Having,
-			IsIncAgg:  len(incAggFields) > 0,
+			IsIncAgg:  len(rewriteRes.incAggFields) > 0,
 		}.Init()
 		p.SetChildren(children)
 		children = []LogicalPlan{p}
 	}
-	if len(windowFuncFields) > 0 {
-		for _, wf := range windowFuncFields {
+	if len(rewriteRes.windowFuncFields) > 0 {
+		for _, wf := range rewriteRes.windowFuncFields {
 			p = WindowFuncPlan{
 				windowFuncField: wf,
 			}.Init()
@@ -624,7 +626,7 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *def.RuleOption, store kv.
 		}
 		p = ProjectPlan{
 			fields:      fields,
-			isAggregate: xsql.WithAggFields(stmt) && len(incAggFields) < 1,
+			isAggregate: xsql.WithAggFields(stmt) && len(rewriteRes.incAggFields) < 1,
 			sendMeta:    opt.SendMetaToSink,
 			sendNil:     opt.SendNil,
 			enableLimit: enableLimit,
@@ -649,7 +651,7 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *def.RuleOption, store kv.
 		p.SetChildren(children)
 	}
 
-	return optimize(p)
+	return optimize(p, opt)
 }
 
 // extractSRFMapping extracts the set-returning-function in the field
@@ -678,8 +680,8 @@ func Transform(op node.UnOperation, name string, options *def.RuleOption) *node.
 	return unaryOperator
 }
 
-func extractWindowFuncFields(stmt *ast.SelectStatement) []ast.Field {
-	windowFuncFields := make([]ast.Field, 0)
+func extractWindowFuncFields(stmt *ast.SelectStatement) []*ast.Field {
+	windowFuncFields := make([]*ast.Field, 0)
 	windowFunctionCount := 0
 	ast.WalkFunc(stmt.Fields, func(n ast.Node) bool {
 		switch wf := n.(type) {
@@ -699,7 +701,7 @@ func extractWindowFuncFields(stmt *ast.SelectStatement) []ast.Field {
 				newFieldRef := &ast.FieldRef{
 					Name: newName,
 				}
-				windowFuncFields = append(windowFuncFields, newField)
+				windowFuncFields = append(windowFuncFields, &newField)
 				rewriteIntoBypass(newFieldRef, wf)
 			}
 		}
@@ -708,13 +710,21 @@ func extractWindowFuncFields(stmt *ast.SelectStatement) []ast.Field {
 	return windowFuncFields
 }
 
+type rewriteResult struct {
+	windowFuncFields  []*ast.Field
+	incAggFields      []*ast.Field
+	dsColAliasMapping map[ast.StreamName]map[string]string
+}
+
 // rewrite stmt will do following things:
 // 1. extract and rewrite the window function
 // 2. extract and rewrite the aggregation function
-func rewriteStmt(stmt *ast.SelectStatement, opt *def.RuleOption) ([]ast.Field, []*ast.Field) {
-	windowFunctionPlanField := extractWindowFuncFields(stmt)
-	incAggWindowPlanField := rewriteIfIncAggStmt(stmt, opt)
-	return windowFunctionPlanField, incAggWindowPlanField
+func rewriteStmt(stmt *ast.SelectStatement, opt *def.RuleOption) rewriteResult {
+	result := rewriteResult{}
+	result.windowFuncFields = extractWindowFuncFields(stmt)
+	result.incAggFields = rewriteIfIncAggStmt(stmt, opt)
+	result.dsColAliasMapping = rewriteIfPushdownAlias(stmt, opt)
+	return result
 }
 
 func rewriteIfIncAggStmt(stmt *ast.SelectStatement, opt *def.RuleOption) []*ast.Field {
@@ -824,4 +834,74 @@ var supportedWType = map[ast.WindowType]struct{}{
 	ast.SLIDING_WINDOW:  {},
 	ast.HOPPING_WINDOW:  {},
 	ast.TUMBLING_WINDOW: {},
+}
+
+func rewriteIfPushdownAlias(stmt *ast.SelectStatement, opt *def.RuleOption) map[ast.StreamName]map[string]string {
+	if opt.PlanOptimizeStrategy == nil {
+		return nil
+	}
+	if !opt.PlanOptimizeStrategy.EnableAliasPushdown {
+		return nil
+	}
+	if hasWildcard(stmt) {
+		return nil
+	}
+	dsColAliasMapping := make(map[ast.StreamName]map[string]string)
+	for index, field := range stmt.Fields {
+		afr, ok := field.Expr.(*ast.FieldRef)
+		if ok && afr.IsAlias() && afr.Expression != nil {
+			cfr, ok := afr.Expression.(*ast.FieldRef)
+			if ok && cfr.IsColumn() && cfr.Name == field.Name {
+				columnUsed := searchColumnUsedCount(stmt, field.Name)
+				if columnUsed == 1 {
+					newField := buildField(afr.Name, cfr.StreamName)
+					stmt.Fields[index] = newField
+					v, ok := dsColAliasMapping[cfr.StreamName]
+					if !ok {
+						v = make(map[string]string)
+					}
+					v[cfr.Name] = afr.Name
+					dsColAliasMapping[cfr.StreamName] = v
+				}
+			}
+		}
+	}
+	return dsColAliasMapping
+}
+
+func hasWildcard(stmt *ast.SelectStatement) bool {
+	wildcard := false
+	ast.WalkFunc(stmt, func(n ast.Node) bool {
+		switch n.(type) {
+		case *ast.Wildcard:
+			wildcard = true
+			return false
+		}
+		return true
+	})
+	return wildcard
+}
+
+func searchColumnUsedCount(stmt *ast.SelectStatement, colName string) int {
+	count := 0
+	ast.WalkFunc(stmt, func(n ast.Node) bool {
+		fr, ok := n.(*ast.FieldRef)
+		if ok && fr.IsColumn() {
+			if fr.Name == colName {
+				count++
+			}
+		}
+		return true
+	})
+	return count
+}
+
+func buildField(colName string, streamName ast.StreamName) ast.Field {
+	return ast.Field{
+		Name: colName,
+		Expr: &ast.FieldRef{
+			Name:       colName,
+			StreamName: streamName,
+		},
+	}
 }

@@ -41,6 +41,8 @@ type DataSourcePlan struct {
 	iet             bool
 	timestampFormat string
 	timestampField  string
+	// col -> alias
+	colAliasMapping map[string]string
 	// intermediate status
 	isWildCard  bool
 	fields      map[string]*ast.JsonStreamField
@@ -107,6 +109,21 @@ func (p *DataSourcePlan) BuildExplainInfo() {
 		keys := make([]string, 0, len(p.streamFields))
 		for k := range p.streamFields {
 			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+		for i := 0; i < len(keys); i++ {
+			info += keys[i]
+			if i != len(keys)-1 {
+				info += ", "
+			}
+		}
+		info += " ]"
+	}
+	if len(p.colAliasMapping) > 0 {
+		info += ", ColAliasMapping:[ "
+		keys := make([]string, 0)
+		for col, alias := range p.colAliasMapping {
+			keys = append(keys, col+":"+alias)
 		}
 		sort.Strings(keys)
 		for i := 0; i < len(keys); i++ {
@@ -357,6 +374,12 @@ func markPruneJSONStreamField(cur interface{}, field *ast.JsonStreamField) {
 }
 
 func (p *DataSourcePlan) getField(name string, strict bool) (*ast.JsonStreamField, error) {
+	for col, alias := range p.colAliasMapping {
+		if name == alias {
+			name = col
+			break
+		}
+	}
 	if !p.isSchemaless {
 		r, ok := p.streamFields[name]
 		if !ok {

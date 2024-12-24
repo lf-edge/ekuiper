@@ -20,7 +20,7 @@ import (
 
 type WindowFuncPlan struct {
 	baseLogicalPlan
-	windowFuncField ast.Field
+	windowFuncField *ast.Field
 }
 
 func (p WindowFuncPlan) Init() *WindowFuncPlan {

@@ -14,14 +14,16 @@
 
 package planner
 
+import "github.com/lf-edge/ekuiper/v2/internal/pkg/def"
+
 type logicalOptRule interface {
-	optimize(LogicalPlan) (LogicalPlan, error)
+	optimize(LogicalPlan, *def.RuleOption) (LogicalPlan, error)
 	name() string
 }
 
 type predicatePushDown struct{}
 
-func (r *predicatePushDown) optimize(lp LogicalPlan) (LogicalPlan, error) {
+func (r *predicatePushDown) optimize(lp LogicalPlan, _ *def.RuleOption) (LogicalPlan, error) {
 	_, p := lp.PushDownPredicate(nil)
 	return p, nil
 }
@@ -32,7 +34,7 @@ func (r *predicatePushDown) name() string {
 
 type columnPruner struct{}
 
-func (r *columnPruner) optimize(lp LogicalPlan) (LogicalPlan, error) {
+func (r *columnPruner) optimize(lp LogicalPlan, _ *def.RuleOption) (LogicalPlan, error) {
 	err := lp.PruneColumns(nil)
 	return lp, err
 }

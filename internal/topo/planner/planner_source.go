@@ -121,6 +121,10 @@ func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, option
 		index++
 		ops = append(ops, op)
 	}
+	if len(t.colAliasMapping) > 0 {
+		props["colAliasMapping"] = t.colAliasMapping
+	}
+
 	// Need to check after source has provisioned, so do not put it before provision
 	featureSet, err := checkFeatures(ss, sp, props)
 	if err != nil {
