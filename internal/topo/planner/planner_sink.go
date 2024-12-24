@@ -199,7 +199,7 @@ func splitSink(tp *topo.Topo, s api.Sink, sinkName string, options *def.RuleOpti
 		result = append(result, encodeOp)
 		// Batch enabled
 		if !sinkInfo.HasBatch && (sc.BatchSize > 0 || sc.LingerInterval > 0) {
-			batchOp, err := node.NewBatchOp(fmt.Sprintf("%s_%d_batch", sinkName, index), options, sc.BatchSize, time.Duration(sc.LingerInterval))
+			batchOp, err := node.NewBatchOp(fmt.Sprintf("%s_%d_batch", sinkName, index), options, sc.BatchSize, time.Duration(sc.LingerInterval), sc.HasHeader)
 			if err != nil {
 				return nil, err
 			}
@@ -227,7 +227,7 @@ func splitSink(tp *topo.Topo, s api.Sink, sinkName string, options *def.RuleOpti
 	} else {
 		// Batch enabled
 		if !sinkInfo.HasBatch && (sc.BatchSize > 0 || sc.LingerInterval > 0) {
-			batchOp, err := node.NewBatchOp(fmt.Sprintf("%s_%d_batch", sinkName, index), options, sc.BatchSize, time.Duration(sc.LingerInterval))
+			batchOp, err := node.NewBatchOp(fmt.Sprintf("%s_%d_batch", sinkName, index), options, sc.BatchSize, time.Duration(sc.LingerInterval), sc.HasHeader)
 			if err != nil {
 				return nil, err
 			}
