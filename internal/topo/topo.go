@@ -104,6 +104,10 @@ func (s *Topo) GetName() string {
 // Cancel may be called multiple times so must be idempotent
 func (s *Topo) Cancel() {
 	s.hasOpened.Store(false)
+	if s.coordinator.IsActivated() {
+		notify := s.coordinator.ForceSaveState()
+		<-notify
+	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	// completion signal

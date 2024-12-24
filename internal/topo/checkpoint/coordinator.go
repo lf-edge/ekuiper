@@ -21,6 +21,7 @@ import (
 	"github.com/benbjohnson/clock"
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
@@ -89,6 +90,7 @@ func (s *checkpointStore) getLatest() *completedCheckpoint {
 }
 
 type Coordinator struct {
+	toBeClean               int
 	tasksToTrigger          []Responder
 	tasksToWaitFor          []Responder
 	sinkTasks               []SinkTask
@@ -103,6 +105,9 @@ type Coordinator struct {
 	store                   api.Store
 	ctx                     api.StreamContext
 	activated               bool
+
+	inForceSaveState     bool
+	forceSaveStateNotify chan any
 }
 
 func NewCoordinator(ruleId string, sources []StreamTask, operators []NonSourceTask, sinks []SinkTask, qos def.Qos, store api.Store, interval time.Duration, ctx api.StreamContext) *Coordinator {
@@ -142,12 +147,13 @@ func NewCoordinator(ruleId string, sources []StreamTask, operators []NonSourceTa
 		completedCheckpoints: &checkpointStore{
 			maxNum: 3,
 		},
-		ruleId:         ruleId,
-		signal:         signal,
-		baseInterval:   interval,
-		store:          store,
-		ctx:            ctx,
-		cleanThreshold: 100,
+		ruleId:               ruleId,
+		signal:               signal,
+		baseInterval:         interval,
+		store:                store,
+		ctx:                  ctx,
+		cleanThreshold:       100,
+		forceSaveStateNotify: make(chan any, 2),
 	}
 }
 
@@ -172,36 +178,22 @@ func (c *Coordinator) Activate() error {
 	go func() {
 		err := infra.SafeRun(func() error {
 			c.activated = true
-			toBeClean := 0
 			for {
 				select {
 				case n := <-tc:
-					// trigger checkpoint
-					// TODO pose max attempt and min pause check for consequent pendingCheckpoints
-
-					// TODO Check if all tasks are running
-
-					// Create a pending checkpoint
-					checkpointId := cast.TimeToUnixMilli(n)
-					checkpoint := newPendingCheckpoint(checkpointId, c.tasksToWaitFor)
-					logger.Debugf("Create checkpoint %d", checkpointId)
-					c.pendingCheckpoints.Store(checkpointId, checkpoint)
-					// Let the sources send out a barrier
-					for _, r := range c.tasksToTrigger {
-						go func(t Responder) {
-							if err := t.TriggerCheckpoint(checkpointId); err != nil {
-								logger.Infof("Fail to trigger checkpoint for source %s with error %v, cancel it", t.GetName(), err)
-								c.cancel(checkpointId)
-							}
-						}(r)
+					if c.inForceSaveState {
+						continue
 					}
-					toBeClean++
-					if toBeClean >= c.cleanThreshold {
-						c.store.Clean()
-						toBeClean = 0
-					}
+					c.saveState(n, logger)
 				case s := <-c.signal:
 					switch s.Message {
+					case ForceSaveState:
+						if c.inForceSaveState {
+							c.RejectDuplicatedForceSaveState()
+							continue
+						}
+						c.inForceSaveState = true
+						c.saveState(time.Now(), logger)
 					case STOP:
 						logger.Debug("Stop checkpoint scheduler")
 						if c.ticker != nil {
@@ -215,6 +207,9 @@ func (c *Coordinator) Activate() error {
 							checkpoint.ack(s.OpId)
 							if checkpoint.isFullyAck() {
 								c.complete(s.CheckpointId)
+								if c.inForceSaveState {
+									c.FinishForceSaveState()
+								}
 							}
 						} else {
 							logger.Debugf("Receive ack from %s for non existing checkpoint %d", s.OpId, s.CheckpointId)
@@ -222,6 +217,9 @@ func (c *Coordinator) Activate() error {
 					case DEC:
 						logger.Debugf("Receive dec from %s for checkpoint %d, cancel it", s.OpId, s.CheckpointId)
 						c.cancel(s.CheckpointId)
+						if c.inForceSaveState {
+							c.FinishForceSaveState()
+						}
 					}
 				case <-c.ctx.Done():
 					logger.Info("Cancelling coordinator....")
@@ -238,12 +236,57 @@ func (c *Coordinator) Activate() error {
 	return nil
 }
 
+func (c *Coordinator) saveState(n time.Time, logger api.Logger) {
+	conf.Log.Infof("trigger force save state")
+	// trigger checkpoint
+	// TODO pose max attempt and min pause check for consequent pendingCheckpoints
+
+	// TODO Check if all tasks are running
+
+	// Create a pending checkpoint
+	checkpointId := cast.TimeToUnixMilli(n)
+	checkpoint := newPendingCheckpoint(checkpointId, c.tasksToWaitFor)
+	logger.Debugf("Create checkpoint %d", checkpointId)
+	c.pendingCheckpoints.Store(checkpointId, checkpoint)
+	// Let the sources send out a barrier
+	for _, r := range c.tasksToTrigger {
+		go func(t Responder) {
+			if err := t.TriggerCheckpoint(checkpointId); err != nil {
+				logger.Infof("Fail to trigger checkpoint for source %s with error %v, cancel it", t.GetName(), err)
+				c.cancel(checkpointId)
+			}
+		}(r)
+	}
+	c.toBeClean++
+	if c.toBeClean >= c.cleanThreshold {
+		c.store.Clean()
+		c.toBeClean = 0
+	}
+}
+
 func (c *Coordinator) Deactivate() error {
 	if c.ticker != nil {
 		c.ticker.Stop()
 	}
 	c.signal <- &Signal{Message: STOP}
 	return nil
+}
+
+func (c *Coordinator) ForceSaveState() chan any {
+	c.signal <- &Signal{Message: ForceSaveState}
+	conf.Log.Infof("start to force save state")
+	return c.forceSaveStateNotify
+}
+
+func (c *Coordinator) FinishForceSaveState() {
+	c.inForceSaveState = false
+	conf.Log.Infof("finish force save state")
+	c.forceSaveStateNotify <- struct{}{}
+}
+
+func (c *Coordinator) RejectDuplicatedForceSaveState() {
+	conf.Log.Infof("reject duplicated force save state")
+	c.forceSaveStateNotify <- struct{}{}
 }
 
 func (c *Coordinator) cancel(checkpointId int64) {
@@ -295,5 +338,8 @@ func (c *Coordinator) GetLatest() int64 {
 }
 
 func (c *Coordinator) IsActivated() bool {
+	if c == nil {
+		return false
+	}
 	return c.activated
 }
