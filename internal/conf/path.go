@@ -164,12 +164,16 @@ func relativePath(subdir string) (dir string, err error) {
 }
 
 func ProcessPath(p string) (string, error) {
-	if abs, err := filepath.Abs(p); err != nil {
-		return "", nil
-	} else {
-		if _, err := os.Stat(abs); os.IsNotExist(err) {
+	abs := p
+	var err error
+	if !filepath.IsAbs(p) {
+		abs, err = GetLoc(p)
+		if err != nil {
 			return "", err
 		}
-		return abs, nil
 	}
+	if _, err := os.Stat(abs); os.IsNotExist(err) {
+		return "", err
+	}
+	return abs, nil
 }
