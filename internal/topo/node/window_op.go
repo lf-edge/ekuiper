@@ -569,7 +569,7 @@ func (o *WindowOperator) handleInputs(ctx api.StreamContext, inputs []*xsql.Tupl
 	content := make([]xsql.Row, 0, len(inputs))
 	// Sync table
 	left := right.Add(-length).Add(-delta)
-	log.Warnf("triggerTime: %d, length: %d, delta: %d, leftmost: %d", right.UnixMilli(), length, delta, left.UnixMilli())
+	log.Debugf("triggerTime: %d, length: %d, delta: %d, leftmost: %d", right.UnixMilli(), length, delta, left.UnixMilli())
 	nextleft := -1
 	// Assume the inputs are sorted by timestamp
 	for i, tuple := range inputs {
@@ -610,7 +610,7 @@ func (o *WindowOperator) handleInputs(ctx api.StreamContext, inputs []*xsql.Tupl
 func (o *WindowOperator) gcInputs(inputs []*xsql.Tuple, triggerTime time.Time, ctx api.StreamContext) []*xsql.Tuple {
 	var discard []*xsql.Tuple
 	inputs, discard, _ = o.handleInputs(ctx, inputs, triggerTime)
-	ctx.GetLogger().Warnf("after scan %v", inputs)
+	ctx.GetLogger().Debugf("after scan %v", inputs)
 	o.handleTraceDiscardTuple(ctx, discard)
 	return inputs
 }
