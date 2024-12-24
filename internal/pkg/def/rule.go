@@ -42,7 +42,7 @@ type RuleOption struct {
 	CronDatetimeRange         []schedule.DatetimeRange `json:"cronDatetimeRange,omitempty" yaml:"cronDatetimeRange,omitempty"`
 	PlanOptimizeStrategy      *PlanOptimizeStrategy    `json:"planOptimizeStrategy,omitempty" yaml:"planOptimizeStrategy,omitempty"`
 	NotifySub                 bool                     `json:"notifySub,omitempty" yaml:"notifySub,omitempty"`
-	EnableSaveStateBeforeStop bool                     `json:"enableSaveStateBeforeStop" yaml:"enableSaveStateBeforeStop"`
+	EnableSaveStateBeforeStop bool                     `json:"enableSaveStateBeforeStop,omitempty" yaml:"enableSaveStateBeforeStop,omitempty"`
 }
 
 type PlanOptimizeStrategy struct {
