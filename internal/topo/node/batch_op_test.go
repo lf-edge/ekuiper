@@ -70,7 +70,7 @@ func TestRun(t *testing.T) {
 	mc := mockclock.GetMockClock()
 	for i, tc := range testcases {
 		t.Run(fmt.Sprintf("testcase %d", i), func(t *testing.T) {
-			op, err := NewBatchOp("test", &def.RuleOption{BufferLength: 10, SendError: true}, tc.batchSize, tc.lingerInterval)
+			op, err := NewBatchOp("test", &def.RuleOption{BufferLength: 10, SendError: true}, tc.batchSize, tc.lingerInterval, false)
 			if len(tc.err) > 0 {
 				assert.Error(t, err)
 				assert.Equal(t, tc.err, err.Error())
@@ -102,7 +102,7 @@ func TestRun(t *testing.T) {
 }
 
 func TestBatchOpSendEmpty(t *testing.T) {
-	op, err := NewBatchOp("test", &def.RuleOption{BufferLength: 10, SendError: true}, 0, time.Second)
+	op, err := NewBatchOp("test", &def.RuleOption{BufferLength: 10, SendError: true}, 0, time.Second, false)
 	require.NoError(t, err)
 	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/topo/node/injectPanic", "return(true)")
 	op.send(mockContext.NewMockContext("1", "2"))
