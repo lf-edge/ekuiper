@@ -105,7 +105,11 @@ func (s *Topo) GetName() string {
 func (s *Topo) Cancel() {
 	s.hasOpened.Store(false)
 	if s.coordinator.IsActivated() {
-		notify := s.coordinator.ForceSaveState()
+		notify, err := s.coordinator.ForceSaveState()
+		if err != nil {
+			conf.Log.Infof("rule %v duplicated cancel", s.name)
+			return
+		}
 		<-notify
 	}
 	s.mu.Lock()

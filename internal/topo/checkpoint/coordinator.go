@@ -15,13 +15,14 @@
 package checkpoint
 
 import (
+	"fmt"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/benbjohnson/clock"
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
@@ -106,7 +107,7 @@ type Coordinator struct {
 	ctx                     api.StreamContext
 	activated               bool
 
-	inForceSaveState     bool
+	inForceSaveState     atomic.Bool
 	forceSaveStateNotify chan any
 }
 
@@ -181,18 +182,18 @@ func (c *Coordinator) Activate() error {
 			for {
 				select {
 				case n := <-tc:
-					if c.inForceSaveState {
+					if c.inForceSaveState.Load() {
 						continue
 					}
 					c.saveState(n, logger)
 				case s := <-c.signal:
 					switch s.Message {
 					case ForceSaveState:
-						if c.inForceSaveState {
+						if c.inForceSaveState.Load() {
 							c.RejectDuplicatedForceSaveState()
 							continue
 						}
-						c.inForceSaveState = true
+						c.inForceSaveState.Store(true)
 						c.saveState(time.Now(), logger)
 					case STOP:
 						logger.Debug("Stop checkpoint scheduler")
@@ -207,7 +208,7 @@ func (c *Coordinator) Activate() error {
 							checkpoint.ack(s.OpId)
 							if checkpoint.isFullyAck() {
 								c.complete(s.CheckpointId)
-								if c.inForceSaveState {
+								if c.inForceSaveState.Load() {
 									c.FinishForceSaveState()
 								}
 							}
@@ -217,7 +218,7 @@ func (c *Coordinator) Activate() error {
 					case DEC:
 						logger.Debugf("Receive dec from %s for checkpoint %d, cancel it", s.OpId, s.CheckpointId)
 						c.cancel(s.CheckpointId)
-						if c.inForceSaveState {
+						if c.inForceSaveState.Load() {
 							c.FinishForceSaveState()
 						}
 					}
@@ -237,7 +238,6 @@ func (c *Coordinator) Activate() error {
 }
 
 func (c *Coordinator) saveState(n time.Time, logger api.Logger) {
-	conf.Log.Infof("trigger force save state")
 	// trigger checkpoint
 	// TODO pose max attempt and min pause check for consequent pendingCheckpoints
 
@@ -272,20 +272,20 @@ func (c *Coordinator) Deactivate() error {
 	return nil
 }
 
-func (c *Coordinator) ForceSaveState() chan any {
+func (c *Coordinator) ForceSaveState() (chan any, error) {
+	if c.inForceSaveState.Load() {
+		return nil, fmt.Errorf("duplicated force save state")
+	}
 	c.signal <- &Signal{Message: ForceSaveState}
-	conf.Log.Infof("start to force save state")
-	return c.forceSaveStateNotify
+	return c.forceSaveStateNotify, nil
 }
 
 func (c *Coordinator) FinishForceSaveState() {
-	c.inForceSaveState = false
-	conf.Log.Infof("finish force save state")
+	c.inForceSaveState.Store(false)
 	c.forceSaveStateNotify <- struct{}{}
 }
 
 func (c *Coordinator) RejectDuplicatedForceSaveState() {
-	conf.Log.Infof("reject duplicated force save state")
 	c.forceSaveStateNotify <- struct{}{}
 }
 
