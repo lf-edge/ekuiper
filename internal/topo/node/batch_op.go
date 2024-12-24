@@ -37,10 +37,12 @@ type BatchOp struct {
 	// configs
 	batchSize      int
 	lingerInterval time.Duration
+	hasHeader      bool
 	// state
 	buffer    *xsql.WindowTuples
 	rawBuffer bytes.Buffer
 	rawTuple  *xsql.RawTuple
+	rawHeader []byte
 
 	nextLink    trace.Link
 	nextSpanCtx context.Context
@@ -49,13 +51,14 @@ type BatchOp struct {
 	currIndex   int
 }
 
-func NewBatchOp(name string, rOpt *def.RuleOption, batchSize int, lingerInterval time.Duration) (*BatchOp, error) {
+func NewBatchOp(name string, rOpt *def.RuleOption, batchSize int, lingerInterval time.Duration, hasHeader bool) (*BatchOp, error) {
 	if batchSize < 1 && lingerInterval < 1 {
 		return nil, fmt.Errorf("either batchSize or lingerInterval should be larger than 0")
 	}
 	o := &BatchOp{
 		defaultSinkNode: newDefaultSinkNode(name, rOpt),
 		batchSize:       batchSize,
+		hasHeader:       hasHeader,
 		lingerInterval:  lingerInterval,
 		currIndex:       0,
 		rowHandle:       make(map[xsql.Row]trace.Span),
@@ -124,6 +127,15 @@ func (b *BatchOp) ingest(ctx api.StreamContext, item any, checkSize bool) {
 		// b.handleTraceIngest(ctx, input)
 		b.rawTuple = input
 		b.rawBuffer.Write(input.Raw())
+		if b.hasHeader && b.rawHeader == nil {
+			newlineIndex := bytes.IndexByte(input.Raw(), '\n')
+			if newlineIndex != -1 {
+				b.rawHeader = input.Raw()[:newlineIndex]
+				ctx.GetLogger().Infof("Get new header")
+			} else {
+				ctx.GetLogger().Infof("No header found")
+			}
+		}
 	case xsql.Row:
 		b.handleTraceIngest(ctx, input)
 		b.buffer.AddTuple(input)
@@ -168,6 +180,9 @@ func (b *BatchOp) send(ctx api.StreamContext) {
 		b.rawTuple = nil
 		b.rawBuffer.Reset()
 		b.currIndex = 0
+		if b.hasHeader {
+			b.rawBuffer.Write(b.rawHeader)
+		}
 	} else {
 		return
 	}
