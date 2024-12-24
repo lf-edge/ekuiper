@@ -104,7 +104,7 @@ func (s *Topo) GetName() string {
 // Cancel may be called multiple times so must be idempotent
 func (s *Topo) Cancel() {
 	s.hasOpened.Store(false)
-	if s.coordinator.IsActivated() {
+	if s.coordinator.IsActivated() && s.options.EnableSaveStateBeforeStop {
 		notify, err := s.coordinator.ForceSaveState()
 		if err != nil {
 			conf.Log.Infof("rule %v duplicated cancel", s.name)
@@ -322,6 +322,7 @@ func (s *Topo) enableCheckpoint(ctx api.StreamContext) error {
 		for _, r := range s.sinks {
 			sinks = append(sinks, r)
 		}
+
 		c := checkpoint.NewCoordinator(s.name, sources, ops, sinks, s.options.Qos, s.store, time.Duration(s.options.CheckpointInterval), s.ctx)
 		s.coordinator = c
 	}
@@ -369,7 +370,6 @@ func (s *Topo) GetMetricsV2() map[string]map[string]any {
 		}
 		allMetrics[sn.GetName()] = sinkMetrics
 	}
-
 	return allMetrics
 }
 
