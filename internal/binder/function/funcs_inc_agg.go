@@ -102,6 +102,9 @@ func registerIncAggFunc() {
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			arg0, err := cast.ToFloat64(args[0], cast.CONVERT_ALL)
+			if err != nil {
+				return err, false
+			}
 			result, err := incrementalSum(ctx, arg0)
 			if err != nil {
 				return err, false
