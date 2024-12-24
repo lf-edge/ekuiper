@@ -17,7 +17,6 @@ package httpx
 import (
 	"bytes"
 	"crypto/tls"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -123,37 +122,6 @@ func SendWithFormData(logger api.Logger, client *http.Client, bodyType string, m
 	}
 	logger.Debugf("do request: %#v", req)
 	return client.Do(req)
-}
-
-func convertToMap(v interface{}, sendSingle bool) (map[string]interface{}, error) {
-	switch t := v.(type) {
-	case []byte:
-		r := make(map[string]interface{})
-		if err := json.Unmarshal(t, &r); err != nil {
-			if sendSingle {
-				return nil, fmt.Errorf("fail to decode content: %v", err)
-			} else {
-				r["result"] = string(t)
-			}
-		}
-		return r, nil
-	case map[string]interface{}:
-		return t, nil
-	case []map[string]interface{}:
-		r := make(map[string]interface{})
-		if sendSingle {
-			return nil, fmt.Errorf("invalid content: %v", t)
-		} else {
-			j, err := json.Marshal(t)
-			if err != nil {
-				return nil, err
-			}
-			r["result"] = string(j)
-		}
-		return r, nil
-	default:
-		return nil, fmt.Errorf("invalid content: %v", v)
-	}
 }
 
 func IsValidUrl(uri string) bool {
