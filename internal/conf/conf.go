@@ -220,6 +220,8 @@ type KuiperConf struct {
 	Portable struct {
 		PythonBin   string            `yaml:"pythonBin"`
 		InitTimeout cast.DurationConf `yaml:"initTimeout"`
+		SendTimeout time.Duration     `yaml:"sendTimeout"`
+		RecvTimeout time.Duration     `yaml:"recvTimeout"`
 	}
 	Connection struct {
 		BackoffMaxElapsedDuration cast.DurationConf `yaml:"backoffMaxElapsedDuration"`
@@ -410,6 +412,12 @@ func InitConf() {
 	}
 	if Config.Portable.InitTimeout <= 0 {
 		Config.Portable.InitTimeout = 5000
+	}
+	if Config.Portable.SendTimeout <= 0 {
+		Config.Portable.SendTimeout = 60 * time.Second
+	}
+	if Config.Portable.RecvTimeout <= 0 {
+		Config.Portable.RecvTimeout = 60 * time.Second
 	}
 	if Config.Source == nil {
 		Config.Source = &SourceConf{}
