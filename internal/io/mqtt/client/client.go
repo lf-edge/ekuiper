@@ -17,6 +17,7 @@ package client
 import (
 	"crypto/tls"
 	"fmt"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -41,7 +42,8 @@ type Connection struct {
 	scHandler api.StatusChangeHandler
 	conf      *ConnectionConfig
 	// key is the topic. Each topic will have only one connector
-	subscriptions map[string]*subscriptionInfo
+	subscriptions sync.Map
+	//subscriptions map[string]*subscriptionInfo
 }
 
 type ConnectionConfig struct {
@@ -61,7 +63,7 @@ type subscriptionInfo struct {
 
 func CreateConnection(_ api.StreamContext) modules.Connection {
 	return &Connection{
-		subscriptions: make(map[string]*subscriptionInfo),
+		subscriptions: sync.Map{},
 	}
 }
 
@@ -129,12 +131,17 @@ func (conn *Connection) onConnect(_ pahoMqtt.Client) {
 		conn.logger.Warnf("sc handler has not set yet")
 	}
 	conn.logger.Infof("The connection to mqtt broker is established")
-	for topic, info := range conn.subscriptions {
-		err := conn.Subscribe(topic, info.Qos, info.Handler)
-		if err != nil { // should never happen. If happens because of connection, it will retry later
-			conn.logger.Errorf("Failed to subscribe topic %s: %v", topic, err)
+	conn.subscriptions.Range(func(key, value any) bool {
+		topic, ok1 := key.(string)
+		info, ok2 := value.(*subscriptionInfo)
+		if ok1 && ok2 {
+			err := conn.Subscribe(topic, info.Qos, info.Handler)
+			if err != nil { // should never happen. If happens because of connection, it will retry later
+				conn.logger.Errorf("Failed to subscribe topic %s: %v", topic, err)
+			}
 		}
-	}
+		return true
+	})
 }
 
 func (conn *Connection) onConnectLost(_ pahoMqtt.Client, err error) {
@@ -159,7 +166,7 @@ func (conn *Connection) DetachSub(ctx api.StreamContext, props map[string]any) {
 	if err != nil {
 		return
 	}
-	delete(conn.subscriptions, topic)
+	conn.subscriptions.Delete(topic)
 	conn.Client.Unsubscribe(topic)
 }
 
@@ -190,10 +197,10 @@ func (conn *Connection) Publish(topic string, qos byte, retained bool, payload a
 }
 
 func (conn *Connection) Subscribe(topic string, qos byte, callback pahoMqtt.MessageHandler) error {
-	conn.subscriptions[topic] = &subscriptionInfo{
+	conn.subscriptions.Store(topic, &subscriptionInfo{
 		Qos:     qos,
 		Handler: callback,
-	}
+	})
 	token := conn.Client.Subscribe(topic, qos, callback)
 	return handleToken(token)
 }
