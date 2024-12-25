@@ -189,10 +189,6 @@ func (c *Coordinator) Activate() error {
 				case s := <-c.signal:
 					switch s.Message {
 					case ForceSaveState:
-						if c.inForceSaveState.Load() {
-							c.RejectDuplicatedForceSaveState()
-							continue
-						}
 						c.inForceSaveState.Store(true)
 						c.saveState(time.Now(), logger)
 					case STOP:
@@ -285,10 +281,6 @@ func (c *Coordinator) FinishForceSaveState() {
 	c.forceSaveStateNotify <- struct{}{}
 }
 
-func (c *Coordinator) RejectDuplicatedForceSaveState() {
-	c.forceSaveStateNotify <- struct{}{}
-}
-
 func (c *Coordinator) cancel(checkpointId int64) {
 	logger := c.ctx.GetLogger()
 	if checkpoint, ok := c.pendingCheckpoints.Load(checkpointId); ok {
@@ -342,4 +334,8 @@ func (c *Coordinator) IsActivated() bool {
 		return false
 	}
 	return c.activated
+}
+
+func (c *Coordinator) ActiveForceSaveState() {
+	c.inForceSaveState.Store(true)
 }

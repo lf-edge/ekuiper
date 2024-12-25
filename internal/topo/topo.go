@@ -102,13 +102,13 @@ func (s *Topo) GetName() string {
 }
 
 // Cancel may be called multiple times so must be idempotent
-func (s *Topo) Cancel() {
+func (s *Topo) Cancel() error {
 	s.hasOpened.Store(false)
 	if s.coordinator.IsActivated() && s.options.EnableSaveStateBeforeStop {
 		notify, err := s.coordinator.ForceSaveState()
 		if err != nil {
 			conf.Log.Infof("rule %v duplicated cancel", s.name)
-			return
+			return fmt.Errorf("rule %v duplicated cancel", s.name)
 		}
 		<-notify
 	}
@@ -126,6 +126,7 @@ func (s *Topo) Cancel() {
 			rt.Close(s.ctx, s.name, s.runId)
 		}
 	}
+	return nil
 }
 
 func (s *Topo) AddSrc(src node.DataSourceNode) *Topo {

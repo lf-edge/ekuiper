@@ -1936,4 +1936,12 @@ func TestRuleDumpState(t *testing.T) {
 	time.Sleep(20 * time.Millisecond)
 	tp.Cancel()
 	tp.WaitClose()
+
+	tp2, err := planner.Plan(rule)
+	require.NoError(t, err)
+	tp2.Open()
+	time.Sleep(20 * time.Millisecond)
+	tp2.GetCoordinator().ActiveForceSaveState()
+	err = tp2.Cancel()
+	require.Error(t, err)
 }
