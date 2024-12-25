@@ -18,6 +18,7 @@ import (
 	"fmt"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/pingcap/failpoint"
 
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
@@ -163,6 +164,9 @@ func registerIncAggFunc() {
 }
 
 func incrementalLastValue(ctx api.FunctionContext, arg interface{}, ignoreNil bool) (interface{}, error) {
+	failpoint.Inject("inc_err", func() {
+		failpoint.Return(nil, fmt.Errorf("inc err"))
+	})
 	key := fmt.Sprintf("%v_inc_last_value", ctx.GetFuncId())
 	v, err := ctx.GetState(key)
 	if err != nil {
@@ -181,6 +185,9 @@ func incrementalLastValue(ctx api.FunctionContext, arg interface{}, ignoreNil bo
 }
 
 func incrementalCollect(ctx api.FunctionContext, arg interface{}) ([]interface{}, error) {
+	failpoint.Inject("inc_err", func() {
+		failpoint.Return(nil, fmt.Errorf("inc err"))
+	})
 	key := fmt.Sprintf("%v_inc_collect", ctx.GetFuncId())
 	var listV []interface{}
 	v, err := ctx.GetState(key)
@@ -201,6 +208,9 @@ func incrementalCollect(ctx api.FunctionContext, arg interface{}) ([]interface{}
 }
 
 func incrementalMerge(ctx api.FunctionContext, arg map[string]interface{}) (map[string]interface{}, error) {
+	failpoint.Inject("inc_err", func() {
+		failpoint.Return(nil, fmt.Errorf("inc err"))
+	})
 	key := fmt.Sprintf("%v_inc_merge_agg", ctx.GetFuncId())
 	var mv map[string]interface{}
 	v, err := ctx.GetState(key)
@@ -223,6 +233,9 @@ func incrementalMerge(ctx api.FunctionContext, arg map[string]interface{}) (map[
 }
 
 func incrementalMin(ctx api.FunctionContext, arg interface{}) (interface{}, error) {
+	failpoint.Inject("inc_err", func() {
+		failpoint.Return(nil, fmt.Errorf("inc err"))
+	})
 	key := fmt.Sprintf("%v_inc_min", ctx.GetFuncId())
 	v, err := ctx.GetState(key)
 	if err != nil {
@@ -247,6 +260,9 @@ func incrementalMin(ctx api.FunctionContext, arg interface{}) (interface{}, erro
 }
 
 func incrementalMax(ctx api.FunctionContext, arg interface{}) (interface{}, error) {
+	failpoint.Inject("inc_err", func() {
+		failpoint.Return(nil, fmt.Errorf("inc err"))
+	})
 	key := fmt.Sprintf("%v_inc_max", ctx.GetFuncId())
 	v, err := ctx.GetState(key)
 	if err != nil {
@@ -271,6 +287,9 @@ func incrementalMax(ctx api.FunctionContext, arg interface{}) (interface{}, erro
 }
 
 func incrementalCount(ctx api.FunctionContext, arg interface{}) (int64, error) {
+	failpoint.Inject("inc_err", func() {
+		failpoint.Return(0, fmt.Errorf("inc err"))
+	})
 	key := fmt.Sprintf("%v_inc_count", ctx.GetFuncId())
 	v, err := ctx.GetState(key)
 	if err != nil {
@@ -287,6 +306,9 @@ func incrementalCount(ctx api.FunctionContext, arg interface{}) (int64, error) {
 }
 
 func incrementalSum(ctx api.FunctionContext, arg float64) (float64, error) {
+	failpoint.Inject("inc_err", func() {
+		failpoint.Return(0, fmt.Errorf("inc err"))
+	})
 	key := fmt.Sprintf("%v_inc_sum", ctx.GetFuncId())
 	v, err := ctx.GetState(key)
 	if err != nil {

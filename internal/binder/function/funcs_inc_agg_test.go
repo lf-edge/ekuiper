@@ -17,6 +17,7 @@ package function
 import (
 	"testing"
 
+	"github.com/pingcap/failpoint"
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
@@ -104,5 +105,61 @@ func TestIncAggFunction(t *testing.T) {
 		got2, ok := f.exec(fctx, tc.args2)
 		require.True(t, ok, tc.funcName)
 		require.Equal(t, tc.output2, got2, tc.funcName)
+	}
+}
+
+func TestIncAggFunctionErr(t *testing.T) {
+	contextLogger := conf.Log.WithField("rule", "testExec")
+	registerIncAggFunc()
+	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/binder/function/inc_err", `return(true)`)
+	defer failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/binder/function/inc_err")
+	testcases := []struct {
+		funcName string
+		args1    []interface{}
+	}{
+		{
+			funcName: "inc_count",
+			args1:    []interface{}{1},
+		},
+		{
+			funcName: "inc_avg",
+			args1:    []interface{}{1},
+		},
+		{
+			funcName: "inc_max",
+			args1:    []interface{}{1},
+		},
+		{
+			funcName: "inc_min",
+			args1:    []interface{}{3},
+		},
+		{
+			funcName: "inc_sum",
+			args1:    []interface{}{3},
+		},
+		{
+			funcName: "inc_merge_agg",
+			args1:    []interface{}{map[string]interface{}{"a": 1}},
+		},
+		{
+			funcName: "inc_collect",
+			args1:    []interface{}{1},
+		},
+		{
+			funcName: "inc_last_value",
+			args1:    []interface{}{1, true},
+		},
+	}
+	for index, tc := range testcases {
+		ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+		tempStore, _ := state.CreateStore(tc.funcName, def.AtMostOnce)
+		fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), index)
+		f, ok := builtins[tc.funcName]
+		require.True(t, ok, tc.funcName)
+		got, ok := f.exec(fctx, tc.args1)
+		require.False(t, ok, tc.funcName)
+		err, isErr := got.(error)
+		require.True(t, isErr)
+		require.Error(t, err)
 	}
 }
