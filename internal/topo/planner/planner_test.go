@@ -2570,6 +2570,9 @@ func Test_createLogicalPlan(t *testing.T) {
 				Qos:                0,
 				CheckpointInterval: 0,
 				SendError:          true,
+				PlanOptimizeStrategy: &def.PlanOptimizeStrategy{
+					EnableAliasRefCal: true,
+				},
 			}, kv)
 			if tt.err != "" {
 				assert.EqualError(t, err, tt.err)

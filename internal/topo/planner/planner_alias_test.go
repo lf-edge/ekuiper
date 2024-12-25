@@ -253,6 +253,9 @@ func TestPlannerAlias(t *testing.T) {
 			Qos:                0,
 			CheckpointInterval: 0,
 			SendError:          true,
+			PlanOptimizeStrategy: &def.PlanOptimizeStrategy{
+				EnableAliasRefCal: true,
+			},
 		}, kv)
 		if !reflect.DeepEqual(tt.p, p) {
 			t.Errorf("%d. %q\n\nstmt mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, render.AsCode(tt.p), render.AsCode(p))

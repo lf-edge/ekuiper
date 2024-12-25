@@ -1248,6 +1248,7 @@ func TestSingleSQL(t *testing.T) {
 			SendError:    true,
 			PlanOptimizeStrategy: &def.PlanOptimizeStrategy{
 				EnableIncrementalWindow: true,
+				EnableAliasRefCal:       true,
 			},
 		},
 		{
@@ -1257,6 +1258,7 @@ func TestSingleSQL(t *testing.T) {
 			CheckpointInterval: cast.DurationConf(5 * time.Second),
 			PlanOptimizeStrategy: &def.PlanOptimizeStrategy{
 				EnableIncrementalWindow: true,
+				EnableAliasRefCal:       true,
 			},
 		},
 		{
@@ -1266,6 +1268,7 @@ func TestSingleSQL(t *testing.T) {
 			CheckpointInterval: cast.DurationConf(5 * time.Second),
 			PlanOptimizeStrategy: &def.PlanOptimizeStrategy{
 				EnableIncrementalWindow: true,
+				EnableAliasRefCal:       true,
 			},
 		},
 	}
@@ -1861,12 +1864,18 @@ func TestAliasSQL(t *testing.T) {
 			SendError:          true,
 			Qos:                def.AtLeastOnce,
 			CheckpointInterval: cast.DurationConf(5 * time.Second),
+			PlanOptimizeStrategy: &def.PlanOptimizeStrategy{
+				EnableAliasRefCal: true,
+			},
 		},
 		{
 			BufferLength:       100,
 			SendError:          true,
 			Qos:                def.ExactlyOnce,
 			CheckpointInterval: cast.DurationConf(5 * time.Second),
+			PlanOptimizeStrategy: &def.PlanOptimizeStrategy{
+				EnableAliasRefCal: true,
+			},
 		},
 	}
 	for _, opt := range options {

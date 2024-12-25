@@ -111,6 +111,7 @@ func TestExplainPlan(t *testing.T) {
 		p, err := createLogicalPlan(stmt, &def.RuleOption{
 			PlanOptimizeStrategy: &def.PlanOptimizeStrategy{
 				EnableIncrementalWindow: true,
+				EnableAliasRefCal:       true,
 			},
 			Qos: 0,
 		}, kv)
