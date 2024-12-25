@@ -43,7 +43,6 @@ type Connection struct {
 	conf      *ConnectionConfig
 	// key is the topic. Each topic will have only one connector
 	subscriptions sync.Map
-	//subscriptions map[string]*subscriptionInfo
 }
 
 type ConnectionConfig struct {
