@@ -33,7 +33,7 @@ jobs:
     strategy:
       matrix:
         golang:
-          - 1.23.1
+          - 1.23.4
         arch: ${{fromJson(needs.prepare.outputs.arch)}}
         os:
           - debian
@@ -81,7 +81,7 @@ jobs:
         fetch-depth: 0
     - uses: actions/setup-go@v5
       with:
-        go-version: '1.23.1'
+        go-version: '1.23.4'
     - name: prepare
       run: |
         brew install zip unzip gnu-sed zmq
@@ -119,7 +119,7 @@ jobs:
             - "-slim-python"
             - "-full"
             golang:
-              - 1.23.1
+              - 1.23.4
 
     steps:
     - uses: actions/checkout@v4
@@ -213,7 +213,7 @@ jobs:
           - [ debian, "slim" ]
           - [ alpine, "alpine" ]
         golang:
-          - 1.23.1
+          - 1.23.4
         exclude:
           - arch: linux/arm/v7
           - os: [ alpine,"alpine" ]
