@@ -106,10 +106,6 @@ func decorateStmt(s *ast.SelectStatement, store kv.KeyValue) ([]*streamInfo, []*
 	}
 	// bind alias field expressions
 	for _, f := range aliasFields {
-		streamName := ast.DefaultStream
-		if fRef, ok := f.Expr.(*ast.FieldRef); ok {
-			streamName = fRef.StreamName
-		}
 		ar, err := ast.NewAliasRef(f.Expr)
 		if err != nil {
 			walkErr = err
@@ -120,24 +116,9 @@ func decorateStmt(s *ast.SelectStatement, store kv.KeyValue) ([]*streamInfo, []*
 				AliasRef:   ar,
 			}
 			walkErr = fieldsMap.save(f.AName, ast.AliasStream, ar)
-			for _, subF := range s.Fields {
-				if f.AName == subF.AName {
-					continue
-				}
-				ast.WalkFunc(&subF, func(node ast.Node) bool {
-					switch fr := node.(type) {
-					case *ast.FieldRef:
-						if fr.Name == f.AName && fr.StreamName == streamName {
-							fr.StreamName = ast.AliasStream
-							fr.AliasRef = ar
-						}
-						return false
-					}
-					return true
-				})
-			}
 		}
 	}
+
 	// Bind field ref for alias AND set StreamName for all field ref
 	ast.WalkFunc(s, func(n ast.Node) bool {
 		switch f := n.(type) {
