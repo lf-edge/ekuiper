@@ -22,7 +22,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"sync"
 	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
@@ -42,7 +41,6 @@ type SourceConfig struct {
 	Path             string            `json:"path"`
 	Interval         cast.DurationConf `json:"interval"`
 	IsTable          bool              `json:"isTable"`
-	Parallel         bool              `json:"parallel"`
 	SendInterval     cast.DurationConf `json:"sendInterval"`
 	ActionAfterRead  int               `json:"actionAfterRead"`
 	MoveTo           string            `json:"moveTo"`
@@ -181,39 +179,18 @@ func (fs *Source) Close(ctx api.StreamContext) error {
 
 func (fs *Source) Load(ctx api.StreamContext, ingest api.TupleIngest, ingestError api.ErrorIngest) {
 	if fs.isDir {
-		ctx.GetLogger().Debugf("Monitor dir %s", fs.file)
+		ctx.GetLogger().Debugf("Load dir %s", fs.file)
 		entries, err := os.ReadDir(fs.file)
 		// may be just forget to put in the file
 		if err != nil {
 			ingestError(ctx, err)
 		}
-		if fs.config.Parallel {
-			var wg sync.WaitGroup
-			for _, entry := range entries {
-				if entry.IsDir() {
-					continue
-				}
-				wg.Add(1)
-				go func(file string) {
-					e := infra.SafeRun(func() error {
-						defer wg.Done()
-						fs.parseFile(ctx, file, ingest, ingestError)
-						return nil
-					})
-					if e != nil {
-						ingestError(ctx, e)
-					}
-				}(filepath.Join(fs.file, entry.Name()))
+		for _, entry := range entries {
+			if entry.IsDir() {
+				continue
 			}
-			wg.Wait()
-		} else {
-			for _, entry := range entries {
-				if entry.IsDir() {
-					continue
-				}
-				file := filepath.Join(fs.file, entry.Name())
-				fs.parseFile(ctx, file, ingest, ingestError)
-			}
+			file := filepath.Join(fs.file, entry.Name())
+			fs.parseFile(ctx, file, ingest, ingestError)
 		}
 	} else {
 		fs.parseFile(ctx, fs.file, ingest, ingestError)
