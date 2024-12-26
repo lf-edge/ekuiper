@@ -17,6 +17,7 @@ package file
 import (
 	"bufio"
 	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -49,6 +50,8 @@ type SourceConfig struct {
 	IgnoreEndLines   int               `json:"ignoreEndLines"`
 	// Only use for planning
 	Decompression string `json:"decompression"`
+	// state
+	rewindMeta *FileDirSourceRewindMeta
 }
 
 // Source load data from file system.
@@ -63,6 +66,8 @@ type Source struct {
 	// attach to a reader
 	decorator modules.FileStreamDecorator
 	eof       api.EOFIngest
+	// rewind support state
+	rewindMeta *FileDirSourceRewindMeta
 }
 
 func (fs *Source) Provision(ctx api.StreamContext, props map[string]any) error {
@@ -150,6 +155,7 @@ func (fs *Source) Provision(ctx api.StreamContext, props map[string]any) error {
 		}
 		fs.decorator = decorator
 	}
+	fs.rewindMeta = &FileDirSourceRewindMeta{}
 	return nil
 }
 
@@ -216,12 +222,20 @@ func (fs *Source) Load(ctx api.StreamContext, ingest api.TupleIngest, ingestErro
 				ctx.GetLogger().Errorf("get file info for %s error: %v", fileName, err)
 				continue
 			}
-			files = append(files, WithTime{name: fileName, modifyTime: info.ModTime()})
+			path := filepath.Join(fs.file, fileName)
+			willRead, _, err := fs.checkFileRead(path)
+			if err != nil {
+				ingestError(ctx, err)
+				return
+			}
+			if willRead {
+				files = append(files, WithTime{name: path, modifyTime: info.ModTime()})
+			}
 		}
 		sort.Sort(files)
 		for _, entry := range files {
-			file := filepath.Join(fs.file, entry.name)
-			fs.parseFile(ctx, file, ingest, ingestError)
+			fs.parseFile(ctx, entry.name, ingest, ingestError)
+			fs.updateRewindMeta(entry.name, entry.modifyTime)
 		}
 	} else {
 		fs.parseFile(ctx, fs.file, ingest, ingestError)
@@ -399,6 +413,54 @@ func (fs *Source) TransformType() api.Source {
 	return fs
 }
 
+/// Rewind support
+
+type FileDirSourceRewindMeta struct {
+	LastModifyTime time.Time `json:"lastModifyTime"`
+}
+
+func (fs *Source) GetOffset() (any, error) {
+	c, err := json.Marshal(fs.rewindMeta)
+	return string(c), err
+}
+
+func (fs *Source) Rewind(offset any) error {
+	c, ok := offset.(string)
+	if !ok {
+		return fmt.Errorf("fileDirSource rewind failed")
+	}
+	fs.rewindMeta = &FileDirSourceRewindMeta{}
+	if err := json.Unmarshal([]byte(c), fs.rewindMeta); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (fs *Source) ResetOffset(_ map[string]any) error {
+	return fmt.Errorf("File source ResetOffset not supported")
+}
+
+func (fs *Source) checkFileRead(fileName string) (bool, time.Time, error) {
+	fInfo, err := os.Stat(fileName)
+	if err != nil {
+		return false, time.Time{}, err
+	}
+	if fInfo.IsDir() {
+		return false, time.Time{}, fmt.Errorf("%s is a directory", fileName)
+	}
+	fTime := fInfo.ModTime()
+	if fTime.After(fs.rewindMeta.LastModifyTime) {
+		return true, fTime, nil
+	}
+	return false, time.Time{}, nil
+}
+
+func (fs *Source) updateRewindMeta(_ string, modifyTime time.Time) {
+	if modifyTime.After(fs.rewindMeta.LastModifyTime) {
+		fs.rewindMeta.LastModifyTime = modifyTime
+	}
+}
+
 func GetSource() api.Source {
 	return &Source{}
 }
@@ -409,4 +471,5 @@ var (
 	// if interval is not set, it uses inotify
 	_ api.Bounded    = &Source{}
 	_ model.InfoNode = &Source{}
+	_ api.Rewindable = &Source{}
 )
