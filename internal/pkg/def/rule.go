@@ -47,14 +47,14 @@ type RuleOption struct {
 type PlanOptimizeStrategy struct {
 	EnableIncrementalWindow bool `json:"enableIncrementalWindow,omitempty" yaml:"enableIncrementalWindow,omitempty"`
 	EnableAliasPushdown     bool `json:"enableAliasPushdown,omitempty" yaml:"enableAliasPushdown,omitempty"`
-	EnableAliasRefCal       bool `json:"enableAliasRefCal,omitempty" yaml:"enableAliasRefCal,omitempty"`
+	DisableAliasRefCal      bool `json:"disableAliasRefCal,omitempty" yaml:"disableAliasRefCal,omitempty"`
 }
 
 func (p *PlanOptimizeStrategy) IsAliasRefCalEnable() bool {
 	if p == nil {
-		return false
+		return true
 	}
-	return p.EnableAliasRefCal
+	return !p.DisableAliasRefCal
 }
 
 type RestartStrategy struct {
@@ -148,9 +148,7 @@ func GetDefaultRule(name, sql string) *Rule {
 				MaxDelay:     30000,
 				JitterFactor: 0.1,
 			},
-			PlanOptimizeStrategy: &PlanOptimizeStrategy{
-				EnableAliasRefCal: true,
-			},
+			PlanOptimizeStrategy: &PlanOptimizeStrategy{},
 		},
 	}
 }
