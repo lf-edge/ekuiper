@@ -99,7 +99,7 @@ require (
 	gopkg.in/ini.v1 v1.67.0
 	gopkg.in/yaml.v3 v3.0.1
 	modernc.org/ql v1.4.7
-	modernc.org/sqlite v1.33.1
+	modernc.org/sqlite v1.29.10
 	sqlflow.org/gohive v0.0.0-20240730014249-8960223660e2
 	sqlflow.org/gomaxcompute v0.0.0-20210805062559-c14ae028b44c
 )
@@ -254,7 +254,7 @@ require (
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0 // indirect
 	github.com/kataras/go-events v0.0.3 // indirect
-	github.com/klauspost/cpuid/v2 v2.2.5 // indirect
+	github.com/klauspost/cpuid/v2 v2.2.7 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
 	github.com/lestrrat-go/strftime v1.1.0 // indirect
 	github.com/lufia/plan9stats v0.0.0-20211012122336-39d0f177ccd0 // indirect
@@ -360,21 +360,21 @@ require (
 	gopkg.in/jcmturner/rpc.v1 v1.1.0 // indirect
 	gopkg.in/src-d/go-errors.v1 v1.0.0 // indirect
 	howett.net/plist v0.0.0-20181124034731-591f970eefbb // indirect
-	modernc.org/b v1.0.4 // indirect
-	modernc.org/db v1.0.8 // indirect
-	modernc.org/file v1.0.7 // indirect
+	modernc.org/b v1.1.0 // indirect
+	modernc.org/db v1.0.10 // indirect
+	modernc.org/file v1.0.8 // indirect
 	modernc.org/fileutil v1.3.0 // indirect
-	modernc.org/gc/v3 v3.0.0-20240801135723-a856999a2e4a // indirect
-	modernc.org/golex v1.0.5 // indirect
-	modernc.org/internal v1.0.7 // indirect
-	modernc.org/libc v1.60.1 // indirect
-	modernc.org/lldb v1.0.4 // indirect
+	modernc.org/gc/v3 v3.0.0-20240304020402-f0dba7c97c2b // indirect
+	modernc.org/golex v1.1.0 // indirect
+	modernc.org/internal v1.1.0 // indirect
+	modernc.org/libc v1.50.9 // indirect
+	modernc.org/lldb v1.0.8 // indirect
 	modernc.org/mathutil v1.6.0 // indirect
 	modernc.org/memory v1.8.0 // indirect
 	modernc.org/sortutil v1.2.0 // indirect
 	modernc.org/strutil v1.2.0 // indirect
 	modernc.org/token v1.1.0 // indirect
-	modernc.org/zappy v1.0.5 // indirect
+	modernc.org/zappy v1.1.0 // indirect
 	nhooyr.io/websocket v1.8.17 // indirect
 )
 
