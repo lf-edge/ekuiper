@@ -140,6 +140,8 @@ portable:
   pythonBin: python
   # control init timeout. If the init time is longer than this value, the plugin will be terminated.
   initTimeout: 60s
+  sendTimeout: 5s
+  recvTimeout: 5s
 
 openTelemetry:
   serviceName: kuiperd-service
