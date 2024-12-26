@@ -414,10 +414,10 @@ func InitConf() {
 		Config.Portable.InitTimeout = 5000
 	}
 	if Config.Portable.SendTimeout <= 0 {
-		Config.Portable.SendTimeout = 60 * time.Second
+		Config.Portable.SendTimeout = 5 * time.Second
 	}
 	if Config.Portable.RecvTimeout <= 0 {
-		Config.Portable.RecvTimeout = 60 * time.Second
+		Config.Portable.RecvTimeout = 5 * time.Second
 	}
 	if Config.Source == nil {
 		Config.Source = &SourceConf{}
