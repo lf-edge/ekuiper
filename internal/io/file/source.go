@@ -22,6 +22,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sort"
 	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
@@ -152,7 +153,7 @@ func (fs *Source) Provision(ctx api.StreamContext, props map[string]any) error {
 	return nil
 }
 
-func (fs *Source) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) error {
+func (fs *Source) Connect(_ api.StreamContext, sch api.StatusChangeHandler) error {
 	sch(api.ConnectionConnected, "")
 	return nil
 }
@@ -177,6 +178,25 @@ func (fs *Source) Close(ctx api.StreamContext) error {
 	return nil
 }
 
+type WithTime struct {
+	name       string
+	modifyTime time.Time
+}
+
+type WithTimeSlice []WithTime
+
+func (f WithTimeSlice) Len() int {
+	return len(f)
+}
+
+func (f WithTimeSlice) Less(i, j int) bool {
+	return f[i].modifyTime.Before(f[j].modifyTime)
+}
+
+func (f WithTimeSlice) Swap(i, j int) {
+	f[i], f[j] = f[j], f[i]
+}
+
 func (fs *Source) Load(ctx api.StreamContext, ingest api.TupleIngest, ingestError api.ErrorIngest) {
 	if fs.isDir {
 		ctx.GetLogger().Debugf("Load dir %s", fs.file)
@@ -185,11 +205,22 @@ func (fs *Source) Load(ctx api.StreamContext, ingest api.TupleIngest, ingestErro
 		if err != nil {
 			ingestError(ctx, err)
 		}
+		files := make(WithTimeSlice, 0, len(entries))
 		for _, entry := range entries {
 			if entry.IsDir() {
 				continue
 			}
-			file := filepath.Join(fs.file, entry.Name())
+			fileName := entry.Name()
+			info, err := entry.Info()
+			if err != nil {
+				ctx.GetLogger().Errorf("get file info for %s error: %v", fileName, err)
+				continue
+			}
+			files = append(files, WithTime{name: fileName, modifyTime: info.ModTime()})
+		}
+		sort.Sort(files)
+		for _, entry := range files {
+			file := filepath.Join(fs.file, entry.name)
 			fs.parseFile(ctx, file, ingest, ingestError)
 		}
 	} else {
