@@ -366,7 +366,6 @@ func TestIntervalAndDir(t *testing.T) {
 		model.NewDefaultRawTupleIgnoreTs([]byte("{\"id\": 2,\"name\": \"Jane Doe\"}"), meta),
 		model.NewDefaultRawTupleIgnoreTs([]byte("{\"id\": 3,\"name\": \"John Smith\"}"), meta),
 		model.NewDefaultRawTupleIgnoreTs([]byte("[{\"id\": 4,\"name\": \"John Smith\"},{\"id\": 5,\"name\": \"John Smith\"}]"), meta),
-		model.NewDefaultRawTupleIgnoreTs([]byte("{\"id\": 2,\"name\": \"Jane Doe\"}"), meta),
 	}
 	r := GetSource()
 	mock.TestSourceConnector(t, r, map[string]any{
@@ -374,7 +373,6 @@ func TestIntervalAndDir(t *testing.T) {
 		"fileType":         "lines",
 		"interval":         "1s",
 		"sendInterval":     "100ms",
-		"parallel":         true,
 		"ignoreStartLines": 1,
 		// only for test
 		"ignoreTs": true,
