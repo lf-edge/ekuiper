@@ -15,7 +15,6 @@
 package node
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"time"
@@ -38,9 +37,7 @@ type BatchOp struct {
 	batchSize      int
 	lingerInterval time.Duration
 	// state
-	buffer    *xsql.WindowTuples
-	rawBuffer bytes.Buffer
-	rawTuple  *xsql.RawTuple
+	buffer *xsql.WindowTuples
 
 	nextLink    trace.Link
 	nextSpanCtx context.Context
@@ -120,10 +117,6 @@ func (b *BatchOp) ingest(ctx api.StreamContext, item any, checkSize bool) {
 	}
 	b.onProcessStart(ctx, data)
 	switch input := data.(type) {
-	case *xsql.RawTuple:
-		// b.handleTraceIngest(ctx, input)
-		b.rawTuple = input
-		b.rawBuffer.Write(input.Raw())
 	case xsql.Row:
 		b.handleTraceIngest(ctx, input)
 		b.buffer.AddTuple(input)
@@ -148,29 +141,20 @@ func (b *BatchOp) ingest(ctx api.StreamContext, item any, checkSize bool) {
 }
 
 func (b *BatchOp) send(ctx api.StreamContext) {
-	if b.buffer.Len() > 0 {
-		failpoint.Inject("injectPanic", func() {
-			panic("shouldn't send message when empty")
-		})
-		b.handleTraceEmitTuple(ctx, b.buffer)
-		b.Broadcast(b.buffer)
-		b.onSend(ctx, b.buffer)
-		// Reset buffer
-		b.buffer = &xsql.WindowTuples{
-			Content: make([]xsql.Row, 0, b.batchSize),
-		}
-		b.currIndex = 0
-	} else if b.rawTuple != nil && b.rawBuffer.Len() > 0 {
-		b.rawTuple.Replace(b.rawBuffer.Bytes())
-		b.Broadcast(b.rawTuple)
-		b.onSend(ctx, b.rawTuple)
-		// Reset buffer
-		b.rawTuple = nil
-		b.rawBuffer.Reset()
-		b.currIndex = 0
-	} else {
+	if b.buffer.Len() < 1 {
 		return
 	}
+	failpoint.Inject("injectPanic", func() {
+		panic("shouldn't send message when empty")
+	})
+	b.handleTraceEmitTuple(ctx, b.buffer)
+	b.Broadcast(b.buffer)
+	b.onSend(ctx, b.buffer)
+	// Reset buffer
+	b.buffer = &xsql.WindowTuples{
+		Content: make([]xsql.Row, 0, b.batchSize),
+	}
+	b.currIndex = 0
 }
 
 func (b *BatchOp) runWithBatchSize(ctx api.StreamContext, errCh chan<- error) {
