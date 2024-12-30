@@ -1,4 +1,4 @@
-// Copyright 2023 carlclone@gmail.com.
+// Copyright 2023-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ func BenchmarkCompressor(b *testing.B) {
 
 	for _, c := range compressors {
 		b.Run(c, func(b *testing.B) {
-			wc, err := GetCompressor(c)
+			wc, err := GetCompressor(c, nil)
 			if err != nil {
 				b.Fatal(err)
 			}
@@ -64,7 +64,7 @@ func BenchmarkDecompressor(b *testing.B) {
 	}
 
 	for _, c := range compressors {
-		wc, err := GetCompressor(c)
+		wc, err := GetCompressor(c, nil)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -103,7 +103,7 @@ func TestCompressionRatio(t *testing.T) {
 	compressors := []string{ZLIB, GZIP, FLATE, ZSTD}
 
 	for _, c := range compressors {
-		wc, err := GetCompressor(c)
+		wc, err := GetCompressor(c, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -120,6 +120,7 @@ func TestGetCompressor(t *testing.T) {
 		name          string
 		compressor    string
 		expectedError bool
+		props         map[string]any
 	}{
 		{
 			name:          "valid compressor zlib",
@@ -146,11 +147,23 @@ func TestGetCompressor(t *testing.T) {
 			compressor:    "invalid",
 			expectedError: true,
 		},
+		{
+			name:          "zstd with window size",
+			compressor:    "zstd",
+			props:         map[string]any{"windowSize": 4 << 20},
+			expectedError: false,
+		},
+		{
+			name:          "zstd with invalid window size",
+			compressor:    "zstd",
+			props:         map[string]any{"windowSize": "4MB"},
+			expectedError: true,
+		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			compr, err := GetCompressor(tc.compressor)
+			compr, err := GetCompressor(tc.compressor, tc.props)
 			if tc.expectedError && err == nil {
 				t.Errorf("expected error but got nil")
 			}
@@ -182,7 +195,7 @@ func TestCompressAndDecompress(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			for _, name := range []string{ZLIB, GZIP, FLATE, ZSTD} {
-				compr, err := GetCompressor(name)
+				compr, err := GetCompressor(name, nil)
 				if err != nil {
 					t.Fatalf("get compressor failed: %v", err)
 				}

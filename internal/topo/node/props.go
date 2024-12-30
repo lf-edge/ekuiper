@@ -24,22 +24,23 @@ import (
 )
 
 type SinkConf struct {
-	Concurrency    int               `json:"concurrency"`
-	Omitempty      bool              `json:"omitIfEmpty"`
-	SendSingle     bool              `json:"sendSingle"`
-	DataTemplate   string            `json:"dataTemplate"`
-	Format         string            `json:"format"`
-	SchemaId       string            `json:"schemaId"`
-	Delimiter      string            `json:"delimiter"`
-	BufferLength   int               `json:"bufferLength"`
-	Fields         []string          `json:"fields"`
-	DataField      string            `json:"dataField"`
-	BatchSize      int               `json:"batchSize"`
-	LingerInterval cast.DurationConf `json:"lingerInterval"`
-	Compression    string            `json:"compression"`
-	Encryption     string            `json:"encryption"`
-	EncProps       map[string]any    `json:"encProps"`
-	HasHeader      bool              `json:"hasHeader"`
+	Concurrency      int               `json:"concurrency"`
+	Omitempty        bool              `json:"omitIfEmpty"`
+	SendSingle       bool              `json:"sendSingle"`
+	DataTemplate     string            `json:"dataTemplate"`
+	Format           string            `json:"format"`
+	SchemaId         string            `json:"schemaId"`
+	Delimiter        string            `json:"delimiter"`
+	BufferLength     int               `json:"bufferLength"`
+	Fields           []string          `json:"fields"`
+	DataField        string            `json:"dataField"`
+	BatchSize        int               `json:"batchSize"`
+	LingerInterval   cast.DurationConf `json:"lingerInterval"`
+	Compression      string            `json:"compression"`
+	CompressionProps map[string]any    `json:"compressionProps"`
+	Encryption       string            `json:"encryption"`
+	EncProps         map[string]any    `json:"encProps"`
+	HasHeader        bool              `json:"hasHeader"`
 	conf.SinkConf
 }
 

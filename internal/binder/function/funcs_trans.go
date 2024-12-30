@@ -58,7 +58,7 @@ func (c *compressFunc) Exec(ctx api.FunctionContext, args []any) (any, bool) {
 		}
 	} else {
 		ctx.GetLogger().Infof("creating compressor %s", arg1)
-		c.compressor, err = compressor.GetCompressor(arg1)
+		c.compressor, err = compressor.GetCompressor(arg1, nil)
 		if err != nil {
 			return err, false
 		}
