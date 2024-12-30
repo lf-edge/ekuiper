@@ -197,7 +197,7 @@ func splitSink(tp *topo.Topo, s api.Sink, sinkName string, options *def.RuleOpti
 		}
 		_, isStreamWriter := s.(model.StreamWriter)
 		if !isStreamWriter && sc.Compression != "" {
-			compressOp, err := node.NewCompressOp(fmt.Sprintf("%s_%d_compress", sinkName, index), options, sc.Compression)
+			compressOp, err := node.NewCompressOp(fmt.Sprintf("%s_%d_compress", sinkName, index), options, sc.Compression, sc.CompressionProps)
 			if err != nil {
 				return nil, err
 			}
