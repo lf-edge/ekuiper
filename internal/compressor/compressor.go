@@ -1,4 +1,4 @@
-// Copyright 2023 EMQ Technologies Co., Ltd.
+// Copyright 2023-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,13 +21,13 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/message"
 )
 
-type CompressorInstantiator func(name string) (message.Compressor, error)
+type CompressorInstantiator func(name string, props map[string]any) (message.Compressor, error)
 
 var compressors = map[string]CompressorInstantiator{}
 
-func GetCompressor(name string) (message.Compressor, error) {
+func GetCompressor(name string, props map[string]any) (message.Compressor, error) {
 	if instantiator, ok := compressors[name]; ok {
-		return instantiator(name)
+		return instantiator(name, props)
 	}
 	return nil, fmt.Errorf("unsupported compressor: %s", name)
 }

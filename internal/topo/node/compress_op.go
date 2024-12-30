@@ -30,8 +30,8 @@ type CompressOp struct {
 	tool message.Compressor
 }
 
-func NewCompressOp(name string, rOpt *def.RuleOption, compressMethod string) (*CompressOp, error) {
-	dc, err := compressor.GetCompressor(compressMethod)
+func NewCompressOp(name string, rOpt *def.RuleOption, compressMethod string, compressProps map[string]any) (*CompressOp, error) {
+	dc, err := compressor.GetCompressor(compressMethod, compressProps)
 	if err != nil {
 		return nil, fmt.Errorf("get compressor %s fail with error: %v", compressMethod, err)
 	}
