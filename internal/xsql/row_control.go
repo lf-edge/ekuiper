@@ -28,4 +28,7 @@ func (t *WatermarkTuple) IsWatermark() bool {
 	return true
 }
 
-type EOFTuple int
+type (
+	EOFTuple      int
+	BatchEOFTuple time.Time
+)

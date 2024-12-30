@@ -170,8 +170,9 @@ func findTemplateProps(props map[string]any) []string {
 func splitSink(tp *topo.Topo, s api.Sink, sinkName string, options *def.RuleOption, sc *node.SinkConf, templates []string) ([]node.TopNode, error) {
 	index := 0
 	result := make([]node.TopNode, 0)
+	batchEnabled := sc.BatchSize > 0 || sc.LingerInterval > 0
 	// Batch enabled
-	if sc.BatchSize > 0 || sc.LingerInterval > 0 {
+	if batchEnabled {
 		batchOp, err := node.NewBatchOp(fmt.Sprintf("%s_%d_batch", sinkName, index), options, sc.BatchSize, time.Duration(sc.LingerInterval))
 		if err != nil {
 			return nil, err
@@ -187,14 +188,25 @@ func splitSink(tp *topo.Topo, s api.Sink, sinkName string, options *def.RuleOpti
 	}
 	index++
 	result = append(result, transformOp)
-	// Encode will convert the result to []byte
-	if _, ok := s.(api.BytesCollector); ok {
-		encodeOp, err := node.NewEncodeOp(tp.GetContext(), fmt.Sprintf("%s_%d_encode", sinkName, index), options, sc)
+	if batchEnabled {
+		batchWriterOp, err := node.NewBatchWriterOp(tp.GetContext(), fmt.Sprintf("%s_%d_batchWriter", sinkName, index), options, sc)
 		if err != nil {
 			return nil, err
 		}
 		index++
-		result = append(result, encodeOp)
+		result = append(result, batchWriterOp)
+	}
+	// Encode will convert the result to []byte
+	if _, ok := s.(api.BytesCollector); ok {
+		if !batchEnabled {
+			encodeOp, err := node.NewEncodeOp(tp.GetContext(), fmt.Sprintf("%s_%d_encode", sinkName, index), options, sc)
+			if err != nil {
+				return nil, err
+			}
+			index++
+			result = append(result, encodeOp)
+		}
+
 		_, isStreamWriter := s.(model.StreamWriter)
 		if !isStreamWriter && sc.Compression != "" {
 			compressOp, err := node.NewCompressOp(fmt.Sprintf("%s_%d_compress", sinkName, index), options, sc.Compression, sc.CompressionProps)
