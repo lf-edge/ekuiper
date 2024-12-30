@@ -16,6 +16,7 @@ package delimited
 
 import (
 	"bytes"
+	"encoding/binary"
 	"fmt"
 	"sort"
 	"strconv"
@@ -29,10 +30,9 @@ import (
 )
 
 type Converter struct {
-	Delimiter  string   `json:"delimiter"`
-	Cols       []string `json:"fields"`
-	HasHeader  bool     `json:"hasHeader"`
-	sendHeader bool
+	Delimiter string   `json:"delimiter"`
+	Cols      []string `json:"fields"`
+	HasHeader bool     `json:"hasHeader"`
 }
 
 func NewConverter(props map[string]any) (message.Converter, error) {
@@ -64,12 +64,12 @@ func (c *Converter) Encode(ctx api.StreamContext, d any) (b []byte, err error) {
 			}
 			sort.Strings(keys)
 			c.Cols = keys
-			if len(c.Cols) > 0 && c.HasHeader && !c.sendHeader {
-				c.sendHeader = true
+			if len(c.Cols) > 0 && c.HasHeader {
 				hb := []byte(strings.Join(c.Cols, c.Delimiter))
+				sb.WriteString(c.Delimiter)
+				_ = binary.Write(sb, binary.BigEndian, uint32(len(hb)))
 				sb.Write(hb)
-				sb.WriteString("\n")
-				ctx.GetLogger().Debugf("header %s", hb)
+				ctx.GetLogger().Infof("delimiter header %s", hb)
 			}
 		}
 		for i, v := range c.Cols {
@@ -79,7 +79,6 @@ func (c *Converter) Encode(ctx api.StreamContext, d any) (b []byte, err error) {
 			p, _ := cast.ToString(m[v], cast.CONVERT_ALL)
 			sb.WriteString(p)
 		}
-		sb.Write([]byte("\n"))
 		return sb.Bytes(), nil
 	case []map[string]any:
 		sb := &bytes.Buffer{}
