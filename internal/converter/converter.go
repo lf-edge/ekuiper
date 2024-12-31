@@ -65,3 +65,14 @@ func GetOrCreateConverter(ctx api.StreamContext, format string, schemaId string,
 	}
 	return nil, fmt.Errorf("format type %s not supported", t)
 }
+
+func GetConvertWriter(ctx api.StreamContext, format string, schemaId string, props map[string]any) (message.ConvertWriter, error) {
+	if cw, ok := modules.ConvertWriters[format]; ok {
+		return cw(ctx, schemaId, props)
+	}
+	c, err := GetOrCreateConverter(ctx, format, schemaId, nil, props)
+	if err != nil {
+		return nil, err
+	}
+	return NewStackWriter(ctx, c)
+}

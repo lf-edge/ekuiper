@@ -39,6 +39,15 @@ func IsFormatSupported(format string) bool {
 	return ok
 }
 
+// ConvertWriters are sink converter to use together with batch
+var ConvertWriters = map[string]ConvertWriterProvider{}
+
+type ConvertWriterProvider func(ctx api.StreamContext, schemaId string, props map[string]any) (message.ConvertWriter, error)
+
+func RegisterWriterConverter(name string, provider ConvertWriterProvider) {
+	ConvertWriters[name] = provider
+}
+
 // Merger is used to merge multiple frames. It is currently called by rate limiter only
 type Merger interface {
 	// Merging is called when read in a new frame

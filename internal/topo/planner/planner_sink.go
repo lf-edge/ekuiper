@@ -181,6 +181,16 @@ func splitSink(tp *topo.Topo, s api.Sink, sinkName string, options *def.RuleOpti
 	default:
 		sinkInfo = model.SinkInfo{}
 	}
+	batchEnabled := sc.BatchSize > 0 || sc.LingerInterval > 0
+	// Batch enabled
+	if batchEnabled {
+		batchOp, err := node.NewBatchOp(fmt.Sprintf("%s_%d_batch", sinkName, index), options, sc.BatchSize, time.Duration(sc.LingerInterval))
+		if err != nil {
+			return nil, err
+		}
+		index++
+		result = append(result, batchOp)
+	}
 	// Transform enabled
 	// Currently, the row to map is done here and is required. TODO: eliminate map and this could become optional
 	transformOp, err := node.NewTransformOp(fmt.Sprintf("%s_%d_transform", sinkName, index), options, sc, templates)
@@ -189,23 +199,25 @@ func splitSink(tp *topo.Topo, s api.Sink, sinkName string, options *def.RuleOpti
 	}
 	index++
 	result = append(result, transformOp)
-	// Encode will convert the result to []byte
-	if _, ok := s.(api.BytesCollector); ok {
-		encodeOp, err := node.NewEncodeOp(tp.GetContext(), fmt.Sprintf("%s_%d_encode", sinkName, index), options, sc)
+	if batchEnabled {
+		batchWriterOp, err := node.NewBatchWriterOp(tp.GetContext(), fmt.Sprintf("%s_%d_batchWriter", sinkName, index), options, sc)
 		if err != nil {
 			return nil, err
 		}
 		index++
-		result = append(result, encodeOp)
-		// Batch enabled
-		if !sinkInfo.HasBatch && (sc.BatchSize > 0 || sc.LingerInterval > 0) {
-			batchOp, err := node.NewBatchOp(fmt.Sprintf("%s_%d_batch", sinkName, index), options, sc.BatchSize, time.Duration(sc.LingerInterval), sc.HasHeader)
+		result = append(result, batchWriterOp)
+	}
+	// Encode will convert the result to []byte
+	if _, ok := s.(api.BytesCollector); ok {
+		if !batchEnabled {
+			encodeOp, err := node.NewEncodeOp(tp.GetContext(), fmt.Sprintf("%s_%d_encode", sinkName, index), options, sc)
 			if err != nil {
 				return nil, err
 			}
 			index++
-			result = append(result, batchOp)
+			result = append(result, encodeOp)
 		}
+
 		_, isStreamWriter := s.(model.StreamWriter)
 		if !sinkInfo.HasCompress && !isStreamWriter && sc.Compression != "" {
 			compressOp, err := node.NewCompressOp(fmt.Sprintf("%s_%d_compress", sinkName, index), options, sc.Compression)
@@ -223,16 +235,6 @@ func splitSink(tp *topo.Topo, s api.Sink, sinkName string, options *def.RuleOpti
 			}
 			index++
 			result = append(result, encryptOp)
-		}
-	} else {
-		// Batch enabled
-		if !sinkInfo.HasBatch && (sc.BatchSize > 0 || sc.LingerInterval > 0) {
-			batchOp, err := node.NewBatchOp(fmt.Sprintf("%s_%d_batch", sinkName, index), options, sc.BatchSize, time.Duration(sc.LingerInterval), sc.HasHeader)
-			if err != nil {
-				return nil, err
-			}
-			index++
-			result = append(result, batchOp)
 		}
 	}
 	// Caching

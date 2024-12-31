@@ -70,7 +70,7 @@ func TestRun(t *testing.T) {
 	mc := mockclock.GetMockClock()
 	for i, tc := range testcases {
 		t.Run(fmt.Sprintf("testcase %d", i), func(t *testing.T) {
-			op, err := NewBatchOp("test", &def.RuleOption{BufferLength: 10, SendError: true}, tc.batchSize, tc.lingerInterval, false)
+			op, err := NewBatchOp("test", &def.RuleOption{BufferLength: 10, SendError: true}, tc.batchSize, tc.lingerInterval)
 			if len(tc.err) > 0 {
 				assert.Error(t, err)
 				assert.Equal(t, tc.err, err.Error())
@@ -93,18 +93,26 @@ func TestRun(t *testing.T) {
 				mc.Add(30 * time.Millisecond)
 			}
 			op.input <- xsql.EOFTuple(0)
-			r := <-out
-			w, ok := r.(*xsql.WindowTuples)
-			assert.True(t, ok)
-			assert.Equal(t, tc.expectItems, len(w.Content))
+			count := 0
+		loop:
+			for r := range out {
+				switch r.(type) {
+				case xsql.BatchEOFTuple:
+					assert.Equal(t, tc.expectItems, count)
+					count = 0
+					break loop
+				default:
+					count++
+				}
+			}
 		})
 	}
 }
 
 func TestBatchOpSendEmpty(t *testing.T) {
-	op, err := NewBatchOp("test", &def.RuleOption{BufferLength: 10, SendError: true}, 0, time.Second, false)
+	op, err := NewBatchOp("test", &def.RuleOption{BufferLength: 10, SendError: true}, 0, time.Second)
 	require.NoError(t, err)
 	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/topo/node/injectPanic", "return(true)")
-	op.send(mockContext.NewMockContext("1", "2"))
+	op.sendBatchEnd(mockContext.NewMockContext("1", "2"))
 	failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/topo/node/injectPanic")
 }

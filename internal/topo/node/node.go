@@ -269,7 +269,7 @@ func (o *defaultSinkNode) commonIngest(ctx api.StreamContext, item any) (any, bo
 			o.Broadcast(d)
 		}
 		return nil, true
-	case *xsql.WatermarkTuple, xsql.EOFTuple:
+	case *xsql.WatermarkTuple, xsql.EOFTuple, xsql.BatchEOFTuple:
 		o.Broadcast(d)
 		return nil, true
 	}
