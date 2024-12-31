@@ -12,46 +12,61 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package converter
+package delimited
 
 import (
 	"bytes"
+	"strings"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
 	"github.com/lf-edge/ekuiper/v2/pkg/message"
 )
 
-type StackWriter struct {
+type CsvWriter struct {
 	// The internal writer. When flushing, create a new one.
-	converter message.Converter
+	converter *Converter
 	buffer    *bytes.Buffer
+	header    string
 }
 
-func NewStackWriter(_ api.StreamContext, converter message.Converter) (message.ConvertWriter, error) {
-	return &StackWriter{
-		converter: converter,
+func NewCsvWriter(_ api.StreamContext, props map[string]any) (message.ConvertWriter, error) {
+	c, err := NewConverter(props)
+	if err != nil {
+		return nil, err
+	}
+	cc := c.(*Converter)
+	// Header are now creating by batch writer
+	cc.HasHeader = false
+	return &CsvWriter{
+		converter: cc,
 		buffer:    bytes.NewBuffer(nil),
 	}, nil
 }
 
-func (w *StackWriter) New(ctx api.StreamContext) error {
-	ctx.GetLogger().Debugf("new stack writer")
+func (w *CsvWriter) New(ctx api.StreamContext) error {
+	ctx.GetLogger().Debugf("new csv writer")
 	w.buffer.Reset()
+	w.header = ""
 	return nil
 }
 
-func (w *StackWriter) Write(ctx api.StreamContext, d any) error {
-	ctx.GetLogger().Debugf("stack writer write")
+func (w *CsvWriter) Write(ctx api.StreamContext, d any) error {
+	ctx.GetLogger().Debugf("csv writer write")
 	result, err := w.converter.Encode(ctx, d)
 	if err != nil {
 		return err
 	}
+	if w.header == "" {
+		w.header = strings.Join(w.converter.Cols, w.converter.Delimiter)
+		w.buffer.WriteString(w.header)
+	}
+	w.buffer.WriteString("\n")
 	w.buffer.Write(result)
 	return nil
 }
 
-func (w *StackWriter) Flush(ctx api.StreamContext) ([]byte, error) {
-	ctx.GetLogger().Debugf("stack writer flush")
+func (w *CsvWriter) Flush(ctx api.StreamContext) ([]byte, error) {
+	ctx.GetLogger().Debugf("csv writer flush")
 	return w.buffer.Bytes(), nil
 }
