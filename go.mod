@@ -106,8 +106,6 @@ require (
 
 require github.com/utahta/go-cronowriter v1.2.0
 
-require github.com/opentracing-contrib/go-stdlib v1.1.0 // indirect
-
 require (
 	cel.dev/expr v0.15.0 // indirect
 	cloud.google.com/go v0.115.1 // indirect
@@ -303,7 +301,7 @@ require (
 	github.com/planetscale/vtprotobuf v0.6.1-0.20240319094008-0393e58bdf10 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c // indirect
-	github.com/prometheus/client_model v0.6.1
+	github.com/prometheus/client_model v0.6.1 // indirect
 	github.com/prometheus/common v0.59.1
 	github.com/prometheus/procfs v0.15.1 // indirect
 	github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475 // indirect
