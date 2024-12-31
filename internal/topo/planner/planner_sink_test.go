@@ -73,15 +73,15 @@ func TestSinkPlan(t *testing.T) {
 				Sources: []string{"source_src1"},
 				Edges: map[string][]any{
 					"source_src1": {
-						"op_log_0_0_transform",
+						"op_log_0_0_batch",
 					},
-					"op_log_0_0_transform": {
-						"op_log_0_1_encode",
+					"op_log_0_0_batch": {
+						"op_log_0_1_transform",
 					},
-					"op_log_0_1_encode": {
-						"op_log_0_2_batch",
+					"op_log_0_1_transform": {
+						"op_log_0_2_batchWriter",
 					},
-					"op_log_0_2_batch": {
+					"op_log_0_2_batchWriter": {
 						"sink_log_0",
 					},
 				},
@@ -104,15 +104,15 @@ func TestSinkPlan(t *testing.T) {
 				Sources: []string{"source_src1"},
 				Edges: map[string][]any{
 					"source_src1": {
-						"op_log_0_0_transform",
+						"op_log_0_0_batch",
 					},
-					"op_log_0_0_transform": {
-						"op_log_0_1_encode",
+					"op_log_0_0_batch": {
+						"op_log_0_1_transform",
 					},
-					"op_log_0_1_encode": {
-						"op_log_0_2_batch",
+					"op_log_0_1_transform": {
+						"op_log_0_2_batchWriter",
 					},
-					"op_log_0_2_batch": {
+					"op_log_0_2_batchWriter": {
 						"op_log_0_3_compress",
 					},
 					"op_log_0_3_compress": {
