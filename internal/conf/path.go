@@ -40,6 +40,7 @@ const (
 	dataDir       = "data"
 	logDir        = "log"
 	pluginsDir    = "plugins"
+	metricsDir    = "metrics"
 	KuiperBaseKey = "KuiperBaseKey"
 )
 
@@ -64,6 +65,10 @@ func GetConfLoc() (s string, err error) {
 
 func GetLogLoc() (string, error) {
 	return GetLoc(logDir)
+}
+
+func GetMetricsLoc() (string, error) {
+	return GetLoc(metricsDir)
 }
 
 func GetDataLoc() (s string, err error) {

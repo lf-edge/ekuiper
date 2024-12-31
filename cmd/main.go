@@ -34,6 +34,7 @@ var (
 	dataPath     string
 	logPath      string
 	pluginsPath  string
+	metricsPath  string
 )
 
 func init() {
@@ -43,6 +44,7 @@ func init() {
 	fs.StringVar(&dataPath, "data", "", "data indicates the path of data dir")
 	fs.StringVar(&logPath, "log", "", "log indicates the path of log dir")
 	fs.StringVar(&pluginsPath, "plugins", "", "plugins indicates the path of plugins dir")
+	fs.StringVar(&pluginsPath, "metrics", "", "metrics indicates the path of metrics dir")
 	_ = fs.Parse(os.Args[1:])
 
 	if len(loadFileType) > 0 {
@@ -61,6 +63,9 @@ func init() {
 	}
 	if len(pluginsPath) > 0 {
 		conf.PathConfig.Dirs["plugins"] = pluginsPath
+	}
+	if len(pluginsPath) > 0 {
+		conf.PathConfig.Dirs["metrics"] = metricsPath
 	}
 }
 
