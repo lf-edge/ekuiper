@@ -43,6 +43,9 @@ func init() {
 	modules.RegisterConverter(message.FormatUrlEncoded, func(_ api.StreamContext, _ string, _ map[string]*ast.JsonStreamField, props map[string]any) (message.Converter, error) {
 		return urlencoded.NewConverter(props)
 	})
+	modules.RegisterWriterConverter(message.FormatDelimited, func(ctx api.StreamContext, avscPath string, props map[string]any) (message.ConvertWriter, error) {
+		return delimited.NewCsvWriter(ctx, props)
+	})
 }
 
 func GetOrCreateConverter(ctx api.StreamContext, format string, schemaId string, schema map[string]*ast.JsonStreamField, props map[string]any) (c message.Converter, err error) {
