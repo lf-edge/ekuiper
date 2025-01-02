@@ -171,41 +171,65 @@ func (m *MetricsDumpManager) dumpMetricsFile(startTime time.Time, endTime time.T
 }
 
 func (m *MetricsDumpManager) dumpMetricsFileIntoZip(filenames []string) (string, error) {
+	openMetricsFile, err := m.writeOpenMetricsIntoFile(filenames)
+	if err != nil {
+		return "", err
+	}
+	defer os.Remove(openMetricsFile)
 	zipFilePath := filepath.Join(os.TempDir(), "metrics.zip")
 	zipFile, err := os.Create(zipFilePath)
 	if err != nil {
-		panic(err)
+		return "", err
 	}
 	defer zipFile.Close()
 	zipWriter := zip.NewWriter(zipFile)
 	defer zipWriter.Close()
-	for _, filename := range filenames {
-		fileToZip, err := os.Open(filepath.Join(m.metricsPath, filename))
-		if err != nil {
-			return "", err
-		}
-		defer fileToZip.Close()
-		info, err := fileToZip.Stat()
-		if err != nil {
-			return "", err
-		}
-		header, err := zip.FileInfoHeader(info)
-		if err != nil {
-			return "", err
-		}
-		header.Name = filepath.Base(filename)
-		header.Method = zip.Deflate
-		writer, err := zipWriter.CreateHeader(header)
-		if err != nil {
-			return "", err
-		}
-		_, err = io.Copy(writer, fileToZip)
-		if err != nil {
-			return "", err
-		}
+	of, err := os.Open(openMetricsFile)
+	if err != nil {
+		return "", err
+	}
+	defer of.Close()
+	info, err := of.Stat()
+	if err != nil {
+		return "", err
+	}
+	header, err := zip.FileInfoHeader(info)
+	if err != nil {
+		return "", err
+	}
+	header.Name = filepath.Base(of.Name())
+	header.Method = zip.Deflate
+	writer, err := zipWriter.CreateHeader(header)
+	if err != nil {
+		return "", err
+	}
+	_, err = io.Copy(writer, of)
+	if err != nil {
+		return "", err
 	}
 	zipWriter.Flush()
 	return zipFilePath, nil
+}
+
+func (m *MetricsDumpManager) writeOpenMetricsIntoFile(filenames []string) (string, error) {
+	f, err := os.CreateTemp(os.TempDir(), "metrics.log.*")
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+	for _, rf := range filenames {
+		reader, err := os.Open(filepath.Join(m.metricsPath, rf))
+		if err != nil {
+			return "", err
+		}
+		_, err = io.Copy(f, reader)
+		if err != nil {
+			return "", err
+		}
+		reader.Close()
+	}
+	_, err = f.WriteString(OpenMetricsEOF)
+	return f.Name(), err
 }
 
 func (m *MetricsDumpManager) extractFileTime(fileName string) (time.Time, error) {
