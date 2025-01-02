@@ -193,7 +193,7 @@ func initMetricsFolder() error {
 		return err
 	}
 	if _, err := os.Stat(mPath); os.IsNotExist(err) {
-		err := os.Mkdir(mPath, 0755)
+		err := os.Mkdir(mPath, 0o755)
 		if err != nil {
 			return err
 		}
