@@ -68,7 +68,11 @@ func GetLogLoc() (string, error) {
 }
 
 func GetMetricsLoc() (string, error) {
-	return GetLoc(metricsDir)
+	logPath, err := GetLogLoc()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(logPath, metricsDir), nil
 }
 
 func GetDataLoc() (s string, err error) {
@@ -181,4 +185,18 @@ func ProcessPath(p string) (string, error) {
 		return "", err
 	}
 	return abs, nil
+}
+
+func initMetricsFolder() error {
+	mPath, err := GetLoc(metricsDir)
+	if err != nil {
+		return err
+	}
+	if _, err := os.Stat(mPath); os.IsNotExist(err) {
+		err := os.Mkdir(mPath, 0755) // 0755 是文件夹权限
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

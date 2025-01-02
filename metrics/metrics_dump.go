@@ -26,6 +26,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	io_prometheus_client "github.com/prometheus/client_model/go"
 	"github.com/prometheus/common/expfmt"
 	"github.com/utahta/go-cronowriter"
 
@@ -136,11 +137,11 @@ func (m *MetricsDumpManager) dumpMetrics() error {
 	for _, mf := range mfs {
 		for index, metric := range mf.Metric {
 			metric.TimestampMs = &now
+			metric.Label = append(metric.Label, &io_prometheus_client.LabelPair{Name: stringToPtr("instance"), Value: stringToPtr("local")})
 			mf.Metric[index] = metric
 		}
 		expfmt.MetricFamilyToText(m.writer, mf)
 	}
-	m.writer.Write([]byte(OpenMetricsEOF))
 	conf.Log.Info("dump metrics success")
 	return nil
 }
@@ -228,4 +229,8 @@ func (m *MetricsDumpManager) extractFileTime(fileName string) (time.Time, error)
 
 func isFileIncludeMetricsTime(fileTime, metricsTime time.Time) bool {
 	return fileTime.Before(metricsTime) && fileTime.Add(time.Hour).After(metricsTime)
+}
+
+func stringToPtr(a string) *string {
+	return &a
 }

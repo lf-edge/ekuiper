@@ -315,6 +315,9 @@ func SetConsoleAndFileLog(consoleLog, fileLog bool) error {
 }
 
 func InitConf() {
+	if err := initMetricsFolder(); err != nil {
+		Log.Fatalf("init metrics folder failed: %v", err)
+	}
 	cpath, err := GetConfLoc()
 	if err != nil {
 		panic(err)
