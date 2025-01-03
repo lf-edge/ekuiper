@@ -37,7 +37,6 @@ build_prepare:
 	@mkdir -p $(BUILD_PATH)/$(PACKAGE_NAME)/plugins/portable
 	@mkdir -p $(BUILD_PATH)/$(PACKAGE_NAME)/plugins/wasm
 	@mkdir -p $(BUILD_PATH)/$(PACKAGE_NAME)/log
-	@mkdir -p $(BUILD_PATH)/$(PACKAGE_NAME)/metrics
 
 	@cp -r etc/* $(BUILD_PATH)/$(PACKAGE_NAME)/etc
 

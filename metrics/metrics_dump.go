@@ -61,6 +61,10 @@ func (m *MetricsDumpManager) Init(ctx context.Context) error {
 	if !conf.Config.Basic.MetricsDumpConfig.Enable {
 		return nil
 	}
+	return m.init(ctx)
+}
+
+func (m *MetricsDumpManager) init(ctx context.Context) error {
 	m.enabeld = true
 	metricsPath, err := conf.GetMetricsLoc()
 	if err != nil {
@@ -100,16 +104,29 @@ func (m *MetricsDumpManager) gcOldMetrics() error {
 			continue
 		}
 		fileName := f.Name()
-		fileTime, err := m.extractFileTime(fileName)
+		needGC, err := m.needGCFile(fileName, gcTime)
 		if err != nil {
 			continue
 		}
-		if fileTime.Before(gcTime) {
+		if needGC {
 			filePath := filepath.Join(m.metricsPath, fileName)
 			os.Remove(filePath)
 		}
 	}
 	return nil
+}
+
+func (m *MetricsDumpManager) needGCFile(filename string, gcTime time.Time) (bool, error) {
+	fileTime, err := m.extractFileTime(filename)
+	if err != nil {
+		return false, err
+	}
+	if fileTime.Before(gcTime) {
+		filePath := filepath.Join(m.metricsPath, filename)
+		os.Remove(filePath)
+		return true, nil
+	}
+	return false, nil
 }
 
 func (m *MetricsDumpManager) dumpMetricsJob(ctx context.Context) {
@@ -142,7 +159,6 @@ func (m *MetricsDumpManager) dumpMetrics() error {
 		}
 		expfmt.MetricFamilyToText(m.writer, mf)
 	}
-	conf.Log.Info("dump metrics success")
 	return nil
 }
 
