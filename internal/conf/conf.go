@@ -196,6 +196,7 @@ type KuiperConf struct {
 		AesKey                  string            `yaml:"aesKey"`
 		GracefulShutdownTimeout cast.DurationConf `yaml:"gracefulShutdownTimeout"`
 		EnableResourceProfiling bool              `yaml:"enableResourceProfiling"`
+		MetricsDumpConfig       MetricsDumpConfig `yaml:"metricsDumpConfig"`
 	}
 	Rule   def.RuleOption
 	Sink   *SinkConf
@@ -229,6 +230,11 @@ type KuiperConf struct {
 	OpenTelemetry OpenTelemetry `yaml:"openTelemetry"`
 
 	AesKey []byte
+}
+
+type MetricsDumpConfig struct {
+	Enable           bool          `yaml:"enable"`
+	RetainedDuration time.Duration `yaml:"retainedDuration"`
 }
 
 type OpenTelemetry struct {
@@ -309,6 +315,9 @@ func SetConsoleAndFileLog(consoleLog, fileLog bool) error {
 }
 
 func InitConf() {
+	if err := initMetricsFolder(); err != nil {
+		Log.Fatalf("init metrics folder failed: %v", err)
+	}
 	cpath, err := GetConfLoc()
 	if err != nil {
 		panic(err)
@@ -422,6 +431,11 @@ func InitConf() {
 	if Config.Source == nil {
 		Config.Source = &SourceConf{}
 	}
+
+	if Config.Basic.MetricsDumpConfig.RetainedDuration < 1 {
+		Config.Basic.MetricsDumpConfig.RetainedDuration = 6 * time.Hour
+	}
+
 	_ = Config.Source.Validate()
 	if Config.Sink == nil {
 		Config.Sink = &SinkConf{}

@@ -45,6 +45,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/processor"
 	"github.com/lf-edge/ekuiper/v2/internal/server/bump"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/rule"
+	"github.com/lf-edge/ekuiper/v2/metrics"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
@@ -240,6 +241,7 @@ func StartUp(Version string) {
 		}
 	}
 	go runScheduleRuleChecker(serverCtx)
+	metrics.InitMetricsDumpJob(serverCtx)
 	async.InitManager()
 
 	// Start rest service

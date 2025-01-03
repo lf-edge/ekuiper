@@ -185,7 +185,7 @@
           <hashTree>
             <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Response Assertion" enabled="true">
               <collectionProp name="Asserion.test_strings">
-                <stringProp name="-1330865597">kuiper_op_exceptions_total{instance=&quot;0&quot;,op=&quot;3_project&quot;,rule=&quot;rule1&quot;,type=&quot;op&quot;} 0</stringProp>
+                <stringProp name="-1330865597">kuiper_op_exceptions_total{op=&quot;3_project&quot;,op_instance=&quot;0&quot;,rule=&quot;rule1&quot;,type=&quot;op&quot;} 0</stringProp>
               </collectionProp>
               <stringProp name="Assertion.custom_message"></stringProp>
               <stringProp name="Assertion.test_field">Assertion.response_data</stringProp>
@@ -195,7 +195,7 @@
             <hashTree/>
             <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Response Assertion" enabled="true">
               <collectionProp name="Asserion.test_strings">
-                <stringProp name="1715983233">kuiper_op_records_in_total{instance=&quot;0&quot;,op=&quot;3_project&quot;,rule=&quot;rule1&quot;,type=&quot;op&quot;} 0</stringProp>
+                <stringProp name="1715983233">kuiper_op_records_in_total{op=&quot;3_project&quot;,op_instance=&quot;0&quot;,rule=&quot;rule1&quot;,type=&quot;op&quot;} 0</stringProp>
               </collectionProp>
               <stringProp name="Assertion.custom_message"></stringProp>
               <stringProp name="Assertion.test_field">Assertion.response_data</stringProp>
@@ -205,7 +205,7 @@
             <hashTree/>
             <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Response Assertion" enabled="true">
               <collectionProp name="Asserion.test_strings">
-                <stringProp name="-361127178">kuiper_op_records_out_total{instance=&quot;0&quot;,op=&quot;3_project&quot;,rule=&quot;rule1&quot;,type=&quot;op&quot;} 0</stringProp>
+                <stringProp name="-361127178">kuiper_op_records_out_total{op=&quot;3_project&quot;,op_instance=&quot;0&quot;,rule=&quot;rule1&quot;,type=&quot;op&quot;} 0</stringProp>
               </collectionProp>
               <stringProp name="Assertion.custom_message"></stringProp>
               <stringProp name="Assertion.test_field">Assertion.response_data</stringProp>
@@ -215,8 +215,8 @@
             <hashTree/>
             <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Response Assertion" enabled="true">
               <collectionProp name="Asserion.test_strings">
-                <stringProp name="813175053">kuiper_sink_exceptions_total{instance=&quot;0&quot;,op=&quot;log_0&quot;,rule=&quot;rule1&quot;,type=&quot;sink&quot;} 0
-kuiper_sink_exceptions_total{instance=&quot;0&quot;,op=&quot;mqtt_1&quot;,rule=&quot;rule1&quot;,type=&quot;sink&quot;} 0</stringProp>
+                <stringProp name="813175053">kuiper_sink_exceptions_total{op=&quot;log_0&quot;,op_instance=&quot;0&quot;,rule=&quot;rule1&quot;,type=&quot;sink&quot;} 0
+kuiper_sink_exceptions_total{op=&quot;mqtt_1&quot;,op_instance=&quot;0&quot;,rule=&quot;rule1&quot;,type=&quot;sink&quot;} 0</stringProp>
               </collectionProp>
               <stringProp name="Assertion.custom_message"></stringProp>
               <stringProp name="Assertion.test_field">Assertion.response_data</stringProp>
@@ -226,7 +226,7 @@ kuiper_sink_exceptions_total{instance=&quot;0&quot;,op=&quot;mqtt_1&quot;,rule=&
             <hashTree/>
             <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Response Assertion" enabled="true">
               <collectionProp name="Asserion.test_strings">
-                <stringProp name="-1898324257">kuiper_source_exceptions_total{instance=&quot;0&quot;,op=&quot;demo&quot;,rule=&quot;rule1&quot;,type=&quot;source&quot;} 0</stringProp>
+                <stringProp name="-1898324257">kuiper_source_exceptions_total{op=&quot;demo&quot;,op_instance=&quot;0&quot;,rule=&quot;rule1&quot;,type=&quot;source&quot;} 0</stringProp>
               </collectionProp>
               <stringProp name="Assertion.custom_message"></stringProp>
               <stringProp name="Assertion.test_field">Assertion.response_data</stringProp>
