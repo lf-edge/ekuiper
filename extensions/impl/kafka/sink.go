@@ -33,8 +33,6 @@ import (
 )
 
 type KafkaSink struct {
-	ruleID         string
-	opID           string
 	writer         *kafkago.Writer
 	kc             *kafkaConf
 	tlsConfig      *tls.Config
@@ -107,8 +105,6 @@ func (k *KafkaSink) Provision(ctx api.StreamContext, configs map[string]any) err
 	k.mechanism = mechanism
 	k.tlsConfig = tlsConfig
 	k.kc = c
-	k.ruleID = ctx.GetRuleId()
-	k.opID = ctx.GetOpId()
 	err = k.setHeaders()
 	if err != nil {
 		return err
@@ -181,18 +177,18 @@ func (k *KafkaSink) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) 
 func (k *KafkaSink) Collect(ctx api.StreamContext, item api.MessageTuple) (err error) {
 	defer func() {
 		if err != nil {
-			KafkaCounter.WithLabelValues(LblException, metrics.LblSinkIO, k.ruleID, k.opID).Inc()
+			KafkaCounter.WithLabelValues(LblException, metrics.LblSinkIO, ctx.GetRuleId(), ctx.GetOpId()).Inc()
 		}
 	}()
 	msgs, err := k.collect(ctx, item)
 	if err != nil {
 		return err
 	}
-	KafkaCounter.WithLabelValues(LblRequest, metrics.LblSinkIO, k.ruleID, k.opID).Inc()
-	KafkaCounter.WithLabelValues(LblMessage, metrics.LblSinkIO, k.ruleID, k.opID).Add(float64(len(msgs)))
+	KafkaCounter.WithLabelValues(LblRequest, metrics.LblSinkIO, ctx.GetRuleId(), ctx.GetOpId()).Inc()
+	KafkaCounter.WithLabelValues(LblMessage, metrics.LblSinkIO, ctx.GetRuleId(), ctx.GetOpId()).Add(float64(len(msgs)))
 	start := time.Now()
 	defer func() {
-		KafkaHist.WithLabelValues(LblRequest, metrics.LblSinkIO, k.ruleID, k.ruleID).Observe(float64(time.Since(start).Microseconds()))
+		KafkaHist.WithLabelValues(LblRequest, metrics.LblSinkIO, ctx.GetRuleId(), ctx.GetOpId()).Observe(float64(time.Since(start).Microseconds()))
 	}()
 	return k.writer.WriteMessages(ctx, msgs...)
 }
@@ -200,7 +196,7 @@ func (k *KafkaSink) Collect(ctx api.StreamContext, item api.MessageTuple) (err e
 func (k *KafkaSink) CollectList(ctx api.StreamContext, items api.MessageTupleList) (err error) {
 	defer func() {
 		if err != nil {
-			KafkaCounter.WithLabelValues(LblException, metrics.LblSinkIO, k.ruleID, k.opID).Inc()
+			KafkaCounter.WithLabelValues(LblException, metrics.LblSinkIO, ctx.GetRuleId(), ctx.GetOpId()).Inc()
 		}
 	}()
 	allMsgs := make([]kafkago.Message, 0)
@@ -212,11 +208,11 @@ func (k *KafkaSink) CollectList(ctx api.StreamContext, items api.MessageTupleLis
 		allMsgs = append(allMsgs, msgs...)
 		return true
 	})
-	KafkaCounter.WithLabelValues(LblMessage, metrics.LblSinkIO, k.ruleID, k.opID).Add(float64(len(allMsgs)))
-	KafkaCounter.WithLabelValues(LblRequest, metrics.LblSinkIO, k.ruleID, k.opID).Inc()
+	KafkaCounter.WithLabelValues(LblMessage, metrics.LblSinkIO, ctx.GetRuleId(), ctx.GetOpId()).Add(float64(len(allMsgs)))
+	KafkaCounter.WithLabelValues(LblRequest, metrics.LblSinkIO, ctx.GetRuleId(), ctx.GetOpId()).Inc()
 	start := time.Now()
 	defer func() {
-		KafkaHist.WithLabelValues(LblRequest, metrics.LblSinkIO, k.ruleID, k.ruleID).Observe(float64(time.Since(start).Microseconds()))
+		KafkaHist.WithLabelValues(LblRequest, metrics.LblSinkIO, ctx.GetRuleId(), ctx.GetOpId()).Observe(float64(time.Since(start).Microseconds()))
 	}()
 	return k.writer.WriteMessages(ctx, allMsgs...)
 }

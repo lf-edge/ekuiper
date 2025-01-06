@@ -34,8 +34,6 @@ import (
 )
 
 type SQLSinkConnector struct {
-	ruleID        string
-	opID          string
 	config        *sqlSinkConfig
 	cw            *connection.ConnWrapper
 	conn          *client.SQLConnection
@@ -127,8 +125,6 @@ func (s *SQLSinkConnector) Provision(ctx api.StreamContext, configs map[string]a
 	}
 	s.config = c
 	s.props = configs
-	s.ruleID = ctx.GetRuleId()
-	s.opID = ctx.GetOpId()
 	return nil
 }
 
@@ -160,10 +156,10 @@ func (s *SQLSinkConnector) Close(ctx api.StreamContext) error {
 func (s *SQLSinkConnector) Collect(ctx api.StreamContext, item api.MessageTuple) (err error) {
 	defer func() {
 		if err != nil {
-			SQLCounter.WithLabelValues(LblException, metrics.LblSinkIO, s.ruleID, s.opID).Inc()
+			SQLCounter.WithLabelValues(LblException, metrics.LblSinkIO, ctx.GetRuleId(), ctx.GetOpId()).Inc()
 		}
 	}()
-	SQLCounter.WithLabelValues(LblRequest, metrics.LblSinkIO, s.ruleID, s.opID).Inc()
+	SQLCounter.WithLabelValues(LblRequest, metrics.LblSinkIO, ctx.GetRuleId(), ctx.GetOpId()).Inc()
 	return s.collect(ctx, item.ToMap())
 }
 
@@ -189,10 +185,10 @@ func (s *SQLSinkConnector) collect(ctx api.StreamContext, item map[string]any) (
 func (s *SQLSinkConnector) CollectList(ctx api.StreamContext, items api.MessageTupleList) (err error) {
 	defer func() {
 		if err != nil {
-			SQLCounter.WithLabelValues(LblException, metrics.LblSinkIO, s.ruleID, s.opID).Inc()
+			SQLCounter.WithLabelValues(LblException, metrics.LblSinkIO, ctx.GetRuleId(), ctx.GetOpId()).Inc()
 		}
 	}()
-	SQLCounter.WithLabelValues(LblRequest, metrics.LblSinkIO, s.ruleID, s.opID).Inc()
+	SQLCounter.WithLabelValues(LblRequest, metrics.LblSinkIO, ctx.GetRuleId(), ctx.GetOpId()).Inc()
 	return s.collectList(ctx, items.ToMaps())
 }
 
@@ -287,7 +283,7 @@ func (s *SQLSinkConnector) save(ctx api.StreamContext, table string, data map[st
 func (s *SQLSinkConnector) writeToDB(ctx api.StreamContext, sqlStr string) error {
 	ctx.GetLogger().Debugf(sqlStr)
 	if s.needReconnect {
-		SQLCounter.WithLabelValues(LblReconn, metrics.LblSinkIO, s.ruleID, s.opID).Inc()
+		SQLCounter.WithLabelValues(LblReconn, metrics.LblSinkIO, ctx.GetRuleId(), ctx.GetOpId()).Inc()
 		err := s.conn.Reconnect()
 		if err != nil {
 			return errorx.NewIOErr(err.Error())
@@ -302,7 +298,7 @@ func (s *SQLSinkConnector) writeToDB(ctx api.StreamContext, sqlStr string) error
 		s.needReconnect = true
 		return errorx.NewIOErr(err.Error())
 	}
-	SQLHist.WithLabelValues(LblRequest, metrics.LblSinkIO, s.ruleID, s.opID).Observe(float64(time.Since(start).Microseconds()))
+	SQLHist.WithLabelValues(LblRequest, metrics.LblSinkIO, ctx.GetRuleId(), ctx.GetOpId()).Observe(float64(time.Since(start).Microseconds()))
 	s.needReconnect = false
 	d, err := r.RowsAffected()
 	if err != nil {
