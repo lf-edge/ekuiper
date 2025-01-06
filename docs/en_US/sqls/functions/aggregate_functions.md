@@ -93,6 +93,7 @@ The last_value function is used to retrieve the value of the last row in a group
 merge_agg(*)
 merge_agg(col)
 ```
+
 Supports incremental calculations.
 Concatenate values from the group into a single value.
 It concatenates multiple objects by generating an object containing the union of their keys,
@@ -101,7 +102,7 @@ It does not operate recursively; only the top-level object structure is merged.
 
 If the parameter is a column,
 the result will be an object containing the union of the keys of all the objects in the column.
-If the column contains only non-object values, the result will be an empty object. 
+If the column contains only non-object values, the result will be an empty object.
 
 ### Examples
 
