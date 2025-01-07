@@ -40,6 +40,7 @@ const (
 	dataDir       = "data"
 	logDir        = "log"
 	pluginsDir    = "plugins"
+	metricsDir    = "metrics"
 	KuiperBaseKey = "KuiperBaseKey"
 )
 
@@ -64,6 +65,14 @@ func GetConfLoc() (s string, err error) {
 
 func GetLogLoc() (string, error) {
 	return GetLoc(logDir)
+}
+
+func GetMetricsLoc() (string, error) {
+	logPath, err := GetLogLoc()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(logPath, metricsDir), nil
 }
 
 func GetDataLoc() (s string, err error) {
@@ -176,4 +185,18 @@ func ProcessPath(p string) (string, error) {
 		return "", err
 	}
 	return abs, nil
+}
+
+func InitMetricsFolder() error {
+	mPath, err := GetLoc(metricsDir)
+	if err != nil {
+		return err
+	}
+	if _, err := os.Stat(mPath); os.IsNotExist(err) {
+		err := os.Mkdir(mPath, 0o755)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
