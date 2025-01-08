@@ -12,7 +12,7 @@ as expressions only in the following:
 avg(col)
 ```
 
-The average of the values in a group. The null values will be ignored.
+The average of the values in a group. The null values will be ignored. Supports incremental calculations.
 
 ## COUNT
 
@@ -21,7 +21,7 @@ count(*)
 count(col)
 ```
 
-The number of items in a group. The null values will be ignored.
+The number of items in a group. The null values will be ignored. Supports incremental calculations.
 
 ## MAX
 
@@ -29,7 +29,7 @@ The number of items in a group. The null values will be ignored.
 max(col)
 ```
 
-The maximum value in a group. The null values will be ignored.
+The maximum value in a group. The null values will be ignored. Supports incremental calculations.
 
 ## MIN
 
@@ -37,7 +37,7 @@ The maximum value in a group. The null values will be ignored.
 min(col)
 ```
 
-The minimum value in a group. The null values will be ignored.
+The minimum value in a group. The null values will be ignored. Supports incremental calculations.
 
 ## SUM
 
@@ -45,7 +45,7 @@ The minimum value in a group. The null values will be ignored.
 sum(col)
 ```
 
-The sum of all the values in a group. The null values will be ignored.
+The sum of all the values in a group. The null values will be ignored. Supports incremental calculations.
 
 ## COLLECT
 
@@ -54,7 +54,7 @@ collect(*)
 collect(col)
 ```
 
-Returns an array with all columns or the whole record (when the parameter is *) values from the group.
+Returns an array with all columns or the whole record (when the parameter is *) values from the group. Supports incremental calculations.
 
 ### Examples
 
@@ -85,7 +85,7 @@ last_value(*, true)
 last_value(col, false)
 ```
 
-The last_value function is used to retrieve the value of the last row in a group for the specified column(s) or the entire message. It has two parameters, the first of which specifies the column(s) or the entire message, and the second of which specifies whether to ignore null values. If the second parameter is true, the function will only return the last non-null value. If there are no non-null values, the function will return null. If the second parameter is false, the function will return the last value, regardless of whether it is null or not.
+The last_value function is used to retrieve the value of the last row in a group for the specified column(s) or the entire message. It has two parameters, the first of which specifies the column(s) or the entire message, and the second of which specifies whether to ignore null values. If the second parameter is true, the function will only return the last non-null value. If there are no non-null values, the function will return null. If the second parameter is false, the function will return the last value, regardless of whether it is null or not. Supports incremental calculations.
 
 ## MERGE_AGG
 
@@ -94,6 +94,7 @@ merge_agg(*)
 merge_agg(col)
 ```
 
+Supports incremental calculations.
 Concatenate values from the group into a single value.
 It concatenates multiple objects by generating an object containing the union of their keys,
 taking the second object's value when there are duplicate keys.
