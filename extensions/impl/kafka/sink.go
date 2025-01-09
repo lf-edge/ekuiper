@@ -26,6 +26,7 @@ import (
 	kafkago "github.com/segmentio/kafka-go"
 	"github.com/segmentio/kafka-go/sasl"
 
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/util"
 	"github.com/lf-edge/ekuiper/v2/metrics"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
@@ -40,18 +41,26 @@ type KafkaSink struct {
 	headerTemplate string
 	saslConf       *saslConf
 	mechanism      sasl.Mechanism
+	LastStats      kafkago.WriterStats
 }
 
 type kafkaConf struct {
-	Brokers      string      `json:"brokers"`
-	Topic        string      `json:"topic"`
-	MaxAttempts  int         `json:"maxAttempts"`
-	RequiredACKs int         `json:"requiredACKs"`
-	Key          string      `json:"key"`
-	Headers      interface{} `json:"headers"`
+	Brokers      string          `json:"brokers"`
+	Topic        string          `json:"topic"`
+	MaxAttempts  int             `json:"maxAttempts"`
+	RequiredACKs int             `json:"requiredACKs"`
+	Key          string          `json:"key"`
+	Headers      interface{}     `json:"headers"`
+	WriterConf   kafkaWriterConf `json:"writerConf"`
 
 	// write config
 	Compression string `json:"compression"`
+}
+
+type kafkaWriterConf struct {
+	BatchSize    int           `json:"batchSize"`
+	BatchTimeout time.Duration `json:"batchTimeout"`
+	BatchBytes   int64         `json:"batchBytes"`
 }
 
 func (c *kafkaConf) validate() error {
@@ -65,10 +74,7 @@ func (c *kafkaConf) validate() error {
 }
 
 func (k *KafkaSink) Provision(ctx api.StreamContext, configs map[string]any) error {
-	c := &kafkaConf{
-		RequiredACKs: -1,
-		MaxAttempts:  1,
-	}
+	c := getDefaultKafkaConf()
 	err := cast.MapToStruct(configs, c)
 	failpoint.Inject("kafkaErr", func(val failpoint.Value) {
 		err = mockKakfaSourceErr(val.(int), castConfErr)
@@ -149,7 +155,9 @@ func (k *KafkaSink) buildKafkaWriter() error {
 		AllowAutoTopicCreation: true,
 		MaxAttempts:            k.kc.MaxAttempts,
 		RequiredAcks:           kafkago.RequiredAcks(k.kc.RequiredACKs),
-		BatchSize:              1,
+		BatchSize:              k.kc.WriterConf.BatchSize,
+		BatchBytes:             k.kc.WriterConf.BatchBytes,
+		BatchTimeout:           k.kc.WriterConf.BatchTimeout,
 		Transport: &kafkago.Transport{
 			SASL: k.mechanism,
 			TLS:  k.tlsConfig,
@@ -176,29 +184,20 @@ func (k *KafkaSink) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) 
 
 func (k *KafkaSink) Collect(ctx api.StreamContext, item api.MessageTuple) (err error) {
 	defer func() {
-		if err != nil {
-			KafkaCounter.WithLabelValues(LblException, metrics.LblSinkIO, ctx.GetRuleId(), ctx.GetOpId()).Inc()
-		}
+		KafkaCounter.WithLabelValues(LblMessage, metrics.LblSinkIO, metrics.GetStatusValue(err), ctx.GetRuleId(), ctx.GetOpId()).Inc()
 	}()
 	msgs, err := k.collect(ctx, item)
 	if err != nil {
 		return err
 	}
-	KafkaCounter.WithLabelValues(LblRequest, metrics.LblSinkIO, ctx.GetRuleId(), ctx.GetOpId()).Inc()
-	KafkaCounter.WithLabelValues(LblMessage, metrics.LblSinkIO, ctx.GetRuleId(), ctx.GetOpId()).Add(float64(len(msgs)))
 	start := time.Now()
 	defer func() {
-		KafkaHist.WithLabelValues(LblRequest, metrics.LblSinkIO, ctx.GetRuleId(), ctx.GetOpId()).Observe(float64(time.Since(start).Microseconds()))
+		KafkaDurationHist.WithLabelValues(LblWriteMsgs, metrics.LblSinkIO, ctx.GetRuleId(), ctx.GetOpId()).Observe(float64(time.Since(start).Microseconds()))
 	}()
 	return k.writer.WriteMessages(ctx, msgs...)
 }
 
 func (k *KafkaSink) CollectList(ctx api.StreamContext, items api.MessageTupleList) (err error) {
-	defer func() {
-		if err != nil {
-			KafkaCounter.WithLabelValues(LblException, metrics.LblSinkIO, ctx.GetRuleId(), ctx.GetOpId()).Inc()
-		}
-	}()
 	allMsgs := make([]kafkago.Message, 0)
 	items.RangeOfTuples(func(index int, tuple api.MessageTuple) bool {
 		msgs, err := k.collect(ctx, tuple)
@@ -208,13 +207,14 @@ func (k *KafkaSink) CollectList(ctx api.StreamContext, items api.MessageTupleLis
 		allMsgs = append(allMsgs, msgs...)
 		return true
 	})
-	KafkaCounter.WithLabelValues(LblMessage, metrics.LblSinkIO, ctx.GetRuleId(), ctx.GetOpId()).Add(float64(len(allMsgs)))
-	KafkaCounter.WithLabelValues(LblRequest, metrics.LblSinkIO, ctx.GetRuleId(), ctx.GetOpId()).Inc()
 	start := time.Now()
 	defer func() {
-		KafkaHist.WithLabelValues(LblRequest, metrics.LblSinkIO, ctx.GetRuleId(), ctx.GetOpId()).Observe(float64(time.Since(start).Microseconds()))
+		conf.Log.Infof("send kafka cost %v", time.Since(start).String())
+		KafkaDurationHist.WithLabelValues(LblWriteMsgs, metrics.LblSinkIO, ctx.GetRuleId(), ctx.GetOpId()).Observe(float64(time.Since(start).Microseconds()))
 	}()
-	return k.writer.WriteMessages(ctx, allMsgs...)
+	err = k.writer.WriteMessages(ctx, allMsgs...)
+	KafkaCounter.WithLabelValues(LblMessage, metrics.LblSinkIO, metrics.GetStatusValue(err), ctx.GetRuleId(), ctx.GetOpId()).Add(float64(len(allMsgs)))
+	return err
 }
 
 func (k *KafkaSink) collect(ctx api.StreamContext, item api.MessageTuple) ([]kafkago.Message, error) {
@@ -338,3 +338,16 @@ var (
 	_ api.TupleCollector = &KafkaSink{}
 	_ util.PingableConn  = &KafkaSink{}
 )
+
+func getDefaultKafkaConf() *kafkaConf {
+	c := &kafkaConf{
+		RequiredACKs: -1,
+		MaxAttempts:  1,
+		WriterConf: kafkaWriterConf{
+			BatchSize:    100,
+			BatchTimeout: time.Millisecond,
+			BatchBytes:   1048576,
+		},
+	}
+	return c
+}
