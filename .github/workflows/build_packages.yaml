@@ -352,11 +352,11 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - uses: actions/download-artifact@v1
+    - uses: actions/download-artifact@v3
       with:
         name: packages
         path: _packages
-    - uses: actions/download-artifact@v1
+    - uses: actions/download-artifact@v3
       with:
         name: plugins
         path: _plugins
