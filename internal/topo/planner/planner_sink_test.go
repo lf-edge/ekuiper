@@ -1,4 +1,4 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -257,7 +257,7 @@ func TestSinkPlan(t *testing.T) {
 			assert.NoError(t, err)
 			tp.AddSrc(n)
 			inputs := []node.Emitter{n}
-			err = buildActions(tp, c.rule, inputs, 1)
+			err = buildActions(tp, c.rule, inputs, 1, nil)
 			assert.NoError(t, err)
 			assert.Equal(t, c.topo, tp.GetTopo())
 		})
@@ -348,7 +348,7 @@ func TestSinkPlanError(t *testing.T) {
 			assert.NoError(t, err)
 			tp.AddSrc(n)
 			inputs := []node.Emitter{n}
-			err = buildActions(tp, c.rule, inputs, 1)
+			err = buildActions(tp, c.rule, inputs, 1, nil)
 			assert.Error(t, err)
 			assert.Equal(t, c.err, err.Error())
 		})

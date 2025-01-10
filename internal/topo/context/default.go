@@ -1,4 +1,4 @@
-// Copyright 2022-2024 EMQ Technologies Co., Ltd.
+// Copyright 2022-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -245,6 +245,30 @@ func (c *DefaultContext) WithInstance(instanceId int) api.StreamContext {
 		instanceId:     instanceId,
 		ruleId:         c.ruleId,
 		opId:           c.opId,
+		ctx:            c.ctx,
+		state:          c.state,
+		isTraceEnabled: c.isTraceEnabled,
+		strategy:       c.strategy,
+	}
+}
+
+func (c *DefaultContext) WithRuleId(ruleId string) api.StreamContext {
+	return &DefaultContext{
+		instanceId:     c.instanceId,
+		ruleId:         ruleId,
+		opId:           c.opId,
+		ctx:            c.ctx,
+		state:          c.state,
+		isTraceEnabled: c.isTraceEnabled,
+		strategy:       c.strategy,
+	}
+}
+
+func (c *DefaultContext) WithOpId(opId string) api.StreamContext {
+	return &DefaultContext{
+		instanceId:     c.instanceId,
+		ruleId:         c.ruleId,
+		opId:           opId,
 		ctx:            c.ctx,
 		state:          c.state,
 		isTraceEnabled: c.isTraceEnabled,
