@@ -1,4 +1,4 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,7 +22,9 @@ import (
 
 	"github.com/lf-edge/ekuiper/v2/internal/converter"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
+	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 	"github.com/lf-edge/ekuiper/v2/pkg/message"
 )
@@ -38,12 +40,13 @@ type BatchWriterOp struct {
 	lastRow any
 }
 
-func NewBatchWriterOp(ctx api.StreamContext, name string, rOpt *def.RuleOption, sc *SinkConf) (*BatchWriterOp, error) {
-	c, err := converter.GetConvertWriter(ctx, sc.Format, sc.SchemaId, nil)
+func NewBatchWriterOp(ctx api.StreamContext, name string, rOpt *def.RuleOption, schema map[string]*ast.JsonStreamField, sc *SinkConf) (*BatchWriterOp, error) {
+	nctx := ctx.(*context.DefaultContext).WithOpId(name)
+	c, err := converter.GetConvertWriter(nctx, sc.Format, sc.SchemaId, schema, nil)
 	if err != nil {
 		return nil, err
 	}
-	err = c.New(ctx)
+	err = c.New(nctx)
 	if err != nil {
 		return nil, fmt.Errorf("writer fail to initialize new file: %s", err)
 	}

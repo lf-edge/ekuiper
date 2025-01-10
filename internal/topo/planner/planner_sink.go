@@ -26,13 +26,14 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/topo"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node/conf"
+	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/model"
 )
 
 // SinkPlanner is the planner for sink node. It transforms logical sink plan to multiple physical nodes.
 // It will split the sink plan into multiple sink nodes according to its sink configurations.
 
-func buildActions(tp *topo.Topo, rule *def.Rule, inputs []node.Emitter, streamCount int) error {
+func buildActions(tp *topo.Topo, rule *def.Rule, inputs []node.Emitter, streamCount int, schema map[string]*ast.JsonStreamField) error {
 	for i, m := range rule.Actions {
 		for name, action := range m {
 			props, ok := action.(map[string]any)
@@ -44,7 +45,7 @@ func buildActions(tp *topo.Topo, rule *def.Rule, inputs []node.Emitter, streamCo
 				return err
 			}
 			sinkName := fmt.Sprintf("%s_%d", name, i)
-			cn, err := SinkToComp(tp, name, sinkName, props, rule, streamCount)
+			cn, err := SinkToComp(tp, name, sinkName, props, rule, streamCount, schema)
 			if err != nil {
 				return err
 			}
@@ -75,7 +76,7 @@ func PlanSinkOps(tp *topo.Topo, inputs []node.Emitter, cn node.CompNode) {
 	}
 }
 
-func SinkToComp(tp *topo.Topo, sinkType string, sinkName string, props map[string]any, rule *def.Rule, streamCount int) (node.CompNode, error) {
+func SinkToComp(tp *topo.Topo, sinkType string, sinkName string, props map[string]any, rule *def.Rule, streamCount int, schema map[string]*ast.JsonStreamField) (node.CompNode, error) {
 	s, _ := io.Sink(sinkType)
 	if s == nil {
 		return nil, fmt.Errorf("sink %s is not defined", sinkType)
@@ -94,7 +95,7 @@ func SinkToComp(tp *topo.Topo, sinkType string, sinkName string, props map[strin
 	}
 	templates := findTemplateProps(props)
 	// Split sink node
-	sinkOps, err := splitSink(tp, s, sinkName, rule.Options, commonConf, templates)
+	sinkOps, err := splitSink(tp, s, sinkName, rule.Options, commonConf, templates, schema)
 	if err != nil {
 		return nil, err
 	}
@@ -171,7 +172,7 @@ func findTemplateProps(props map[string]any) []string {
 }
 
 // Split sink node according to the sink configuration. Return the new input emitters.
-func splitSink(tp *topo.Topo, s api.Sink, sinkName string, options *def.RuleOption, sc *node.SinkConf, templates []string) ([]node.TopNode, error) {
+func splitSink(tp *topo.Topo, s api.Sink, sinkName string, options *def.RuleOption, sc *node.SinkConf, templates []string, schema map[string]*ast.JsonStreamField) ([]node.TopNode, error) {
 	index := 0
 	result := make([]node.TopNode, 0)
 	var sinkInfo model.SinkInfo
@@ -200,7 +201,7 @@ func splitSink(tp *topo.Topo, s api.Sink, sinkName string, options *def.RuleOpti
 	index++
 	result = append(result, transformOp)
 	if batchEnabled {
-		batchWriterOp, err := node.NewBatchWriterOp(tp.GetContext(), fmt.Sprintf("%s_%d_batchWriter", sinkName, index), options, sc)
+		batchWriterOp, err := node.NewBatchWriterOp(tp.GetContext(), fmt.Sprintf("%s_%d_batchWriter", sinkName, index), options, schema, sc)
 		if err != nil {
 			return nil, err
 		}
