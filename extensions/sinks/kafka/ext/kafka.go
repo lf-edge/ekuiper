@@ -135,6 +135,7 @@ func (m *kafkaSink) buildKafkaWriter() error {
 			TLS:  m.tlsConfig,
 		},
 	}
+	conf.Log.Infof("kafka writer batchSize:%v, batchTimeout:%v", m.kc.WriterConf.BatchSize, m.kc.WriterConf.BatchTimeout.String())
 	m.writer = w
 	return nil
 }
