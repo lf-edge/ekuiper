@@ -1,4 +1,4 @@
-// Copyright 2021-2024 EMQ Technologies Co., Ltd.
+// Copyright 2021-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@ package server
 import (
 	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 	"sync"
@@ -208,6 +210,7 @@ func (rr *RuleRegistry) DeleteRule(name string) error {
 		}
 		deleteRuleMetrics(name)
 	}
+	deleteRuleData(name)
 	return err
 }
 
@@ -481,5 +484,20 @@ func getRuleState(name string) (rule.RunState, error) {
 func deleteRuleMetrics(name string) {
 	if conf.Config != nil && conf.Config.Basic.Prometheus {
 		promMetrics.RemoveRuleStatus(name)
+	}
+}
+
+func deleteRuleData(name string) {
+	dataLoc, err := conf.GetDataLoc()
+	if err != nil {
+		conf.Log.Errorf("delete rule data error: %v", err)
+		return
+	}
+	ruleDataPath := filepath.Join(dataLoc, "rule_"+name)
+	err = os.RemoveAll(ruleDataPath)
+	if err != nil {
+		conf.Log.Errorf("delete rule data error: %v", err)
+	} else {
+		conf.Log.Infof("delete rule data: %s", ruleDataPath)
 	}
 }
