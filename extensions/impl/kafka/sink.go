@@ -44,6 +44,11 @@ type KafkaSink struct {
 	LastStats      kafkago.WriterStats
 }
 
+func (k *KafkaSink) ConfigureBatch(batchSize int, lingerInterval time.Duration) {
+	k.kc.WriterConf.BatchSize = batchSize
+	k.kc.WriterConf.BatchTimeout = lingerInterval
+}
+
 type kafkaConf struct {
 	Brokers      string          `json:"brokers"`
 	Topic        string          `json:"topic"`
@@ -58,8 +63,8 @@ type kafkaConf struct {
 }
 
 type kafkaWriterConf struct {
-	BatchSize    int           `json:"batchSize"`
-	BatchTimeout time.Duration `json:"batchTimeout"`
+	BatchSize    int           `json:"-"`
+	BatchTimeout time.Duration `json:"-"`
 	BatchBytes   int64         `json:"batchBytes"`
 }
 
