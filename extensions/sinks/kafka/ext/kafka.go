@@ -112,6 +112,15 @@ func (m *kafkaSink) Configure(props map[string]interface{}) error {
 	return m.buildKafkaWriter()
 }
 
+func (m *kafkaSink) ConfigureBatch(batchSize int, lingerInterval time.Duration) {
+	if batchSize > 0 {
+		m.kc.WriterConf.BatchSize = batchSize
+	}
+	if lingerInterval > 0 {
+		m.kc.WriterConf.BatchTimeout = lingerInterval
+	}
+}
+
 func (m *kafkaSink) buildKafkaWriter() error {
 	mechanism, err := m.sc.GetMechanism()
 	if err != nil {

@@ -72,14 +72,15 @@ type MergeableTopo interface {
 }
 
 type defaultNode struct {
-	name        string
-	concurrency int
-	sendError   bool
-	statManager metric.StatManager
-	ctx         api.StreamContext
-	qos         api.Qos
-	outputMu    sync.RWMutex
-	outputs     map[string]chan<- any
+	name                     string
+	disableBufferFullDiscard bool
+	concurrency              int
+	sendError                bool
+	statManager              metric.StatManager
+	ctx                      api.StreamContext
+	qos                      api.Qos
+	outputMu                 sync.RWMutex
+	outputs                  map[string]chan<- any
 }
 
 func newDefaultNode(name string, options *api.RuleOption) *defaultNode {
@@ -88,10 +89,11 @@ func newDefaultNode(name string, options *api.RuleOption) *defaultNode {
 		c = 1
 	}
 	return &defaultNode{
-		name:        name,
-		outputs:     make(map[string]chan<- any),
-		concurrency: c,
-		sendError:   options.SendError,
+		name:                     name,
+		outputs:                  make(map[string]chan<- any),
+		disableBufferFullDiscard: options.DisableBufferFullDiscard,
+		concurrency:              c,
+		sendError:                options.SendError,
 	}
 }
 
@@ -145,14 +147,23 @@ func (o *defaultNode) doBroadcast(val interface{}) {
 	l := len(o.outputs)
 	c := 0
 	for name, out := range o.outputs {
-		select {
-		case out <- val:
-			// do nothing
-		case <-o.ctx.Done():
-			// rule stop so stop waiting
-		default:
-			o.statManager.IncTotalExceptions(fmt.Sprintf("buffer full, drop message from %s to %s", o.name, name))
-			o.ctx.GetLogger().Debugf("drop message from %s to %s", o.name, name)
+		if o.disableBufferFullDiscard {
+			select {
+			case out <- val:
+				// do nothing
+			case <-o.ctx.Done():
+				// rule stop so stop waiting
+			}
+		} else {
+			select {
+			case out <- val:
+				// do nothing
+			case <-o.ctx.Done():
+				// rule stop so stop waiting
+			default:
+				o.statManager.IncTotalExceptions(fmt.Sprintf("buffer full, drop message from %s to %s", o.name, name))
+				o.ctx.GetLogger().Debugf("drop message from %s to %s", o.name, name)
+			}
 		}
 		c++
 		if c == l {

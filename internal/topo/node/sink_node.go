@@ -35,18 +35,19 @@ import (
 )
 
 type SinkConf struct {
-	Concurrency    int      `json:"concurrency"`
-	Omitempty      bool     `json:"omitIfEmpty"`
-	SendSingle     bool     `json:"sendSingle"`
-	DataTemplate   string   `json:"dataTemplate"`
-	Format         string   `json:"format"`
-	SchemaId       string   `json:"schemaId"`
-	Delimiter      string   `json:"delimiter"`
-	BufferLength   int      `json:"bufferLength"`
-	Fields         []string `json:"fields"`
-	DataField      string   `json:"dataField"`
-	BatchSize      int      `json:"batchSize"`
-	LingerInterval int      `json:"lingerInterval"`
+	Concurrency              int      `json:"concurrency"`
+	Omitempty                bool     `json:"omitIfEmpty"`
+	SendSingle               bool     `json:"sendSingle"`
+	DataTemplate             string   `json:"dataTemplate"`
+	Format                   string   `json:"format"`
+	SchemaId                 string   `json:"schemaId"`
+	Delimiter                string   `json:"delimiter"`
+	BufferLength             int      `json:"bufferLength"`
+	Fields                   []string `json:"fields"`
+	DataField                string   `json:"dataField"`
+	BatchSize                int      `json:"batchSize"`
+	LingerInterval           int      `json:"lingerInterval"`
+	DisableBufferFullDiscard bool     `json:"disableBufferFullDiscard,omitempty" yaml:"disableBufferFullDiscard,omitempty"`
 	conf.SinkConf
 }
 
@@ -85,6 +86,10 @@ func (m *SinkNode) Close(ctx api.StreamContext) {
 		m.wg.Done()
 	}
 }
+
+const (
+	DisableBufferFullDiscard = "disableBufferFullDiscard"
+)
 
 func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 	m.ctx = ctx
@@ -200,10 +205,16 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 							ctx.GetLogger().Debugf("receive empty in sink")
 							return
 						}
-						select {
-						case dataCh <- outs:
-						default:
-							ctx.GetLogger().Warnf("sink node %s instance %d buffer is full, drop data %v", m.name, instance, outs)
+						if sconf.DisableBufferFullDiscard {
+							select {
+							case dataCh <- outs:
+							}
+						} else {
+							select {
+							case dataCh <- outs:
+							default:
+								ctx.GetLogger().Warnf("sink node %s instance %d buffer is full, drop data %v", m.name, instance, outs)
+							}
 						}
 						if resendCh != nil {
 							select {

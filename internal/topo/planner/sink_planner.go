@@ -16,6 +16,7 @@ package planner
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/lf-edge/ekuiper/internal/binder/io"
 	"github.com/lf-edge/ekuiper/internal/conf"
@@ -44,23 +45,32 @@ func buildActions(tp *topo.Topo, rule *api.Rule, inputs []api.Emitter) error {
 			}
 			// Split sink node
 			sinkName := fmt.Sprintf("%s_%d", name, i)
-			newInputs, err := splitSink(tp, inputs, sinkName, rule.Options, commonConf)
+			newInputs, err := splitSink(s, tp, inputs, sinkName, rule.Options, commonConf)
 			if err != nil {
 				return err
 			}
-			if s != nil {
-				if err = s.Configure(props); err != nil {
-					return err
-				}
+			if err = s.Configure(props); err != nil {
+				return err
 			}
-			tp.AddSink(newInputs, node.NewSinkNode(sinkName, name, props))
+			tp.AddSink(newInputs, node.NewSinkNode(sinkName, name, fulfillProps(rule, props)))
 		}
 	}
 	return nil
 }
 
+func fulfillProps(rule *api.Rule, props map[string]any) map[string]any {
+	if rule.Options != nil && rule.Options.DisableBufferFullDiscard {
+		props[node.DisableBufferFullDiscard] = true
+	}
+	return props
+}
+
 // Split sink node according to the sink configuration. Return the new input emitters.
-func splitSink(tp *topo.Topo, inputs []api.Emitter, sinkName string, options *api.RuleOption, sc *node.SinkConf) ([]api.Emitter, error) {
+func splitSink(sink api.Sink, tp *topo.Topo, inputs []api.Emitter, sinkName string, options *api.RuleOption, sc *node.SinkConf) ([]api.Emitter, error) {
+	if bas, ok := sink.(api.BatchAbleSink); ok {
+		bas.ConfigureBatch(sc.BatchSize, time.Duration(sc.LingerInterval))
+		return inputs, nil
+	}
 	index := 0
 	newInputs := inputs
 	// Batch enabled
