@@ -94,20 +94,24 @@ jobs:
     - name: upload dist
       run: |
         cd frontend/docs/.vitepress/
-        pip3 install coscmd
-        coscmd config -a ${{ secrets.TENCENT_COS_ID }} -s ${{ secrets.TENCENT_COS_KEY }} -b ekuiper-org-1302406139 -r ap-hongkong
-        coscmd delete -r -f docs/en/${VERSION} || true
-        coscmd delete -r -f docs/zh/${VERSION} || true
-        coscmd config -a ${{ secrets.TENCENT_COS_ID }} -s ${{ secrets.TENCENT_COS_KEY }} -b ekuiper-org-1302406139 -e cos.accelerate.myqcloud.com
-        coscmd upload -r dist/ /docs/
+        wget https://obs-community.obs.cn-north-1.myhuaweicloud.com/obsutil/current/obsutil_linux_amd64.tar.gz
+        tar -xzvf obsutil_linux_amd64.tar.gz
+        mkdir obsutil
+        cp $(find . -name "obsutil_linux_amd64_*")/* obsutil/
+        chmod 755 obsutil/obsutil
+        ./obsutil/obsutil config -i=${{ secrets.HUAWEI_COMMUNITY_CI_ID }} -k=${{ secrets.HUAWEI_COMMUNITY_CI_SECRET }} -e=obs.ap-southeast-1.myhuaweicloud.com
+        ./obsutil/obsutil rm -r -f obs://ekuiper.org/docs/en/${VERSION} || true
+        ./obsutil/obsutil rm -r -f obs://ekuiper.org/docs/zh/${VERSION} || true
+        ./obsutil/obsutil cp -r -f -flat dist/ obs://ekuiper.org/docs/
 
-    - name: refresh cdn cache
-      run: |
-        pip3 install tccli
-        tccli configure set secretId ${{ secrets.TENCENT_COS_ID }}
-        tccli configure set secretKey ${{ secrets.TENCENT_COS_KEY }}
-        tccli configure set region ap-hongkong
-        tccli cdn PurgePathCache --Paths '["https://ekuiper.org/docs/", "https://ekuiper-docs.emqx.net/"]' --FlushType delete
+    - name: Refresh Huawei CDN
+      uses: Swilder-M/refresh-huawei-cdn@master
+      with:
+        access_key_id: ${{ secrets.HUAWEI_COMMUNITY_CI_ID }}
+        access_key_secret: ${{ secrets.HUAWEI_COMMUNITY_CI_SECRET }}
+        file_paths:
+            https://ekuiper.org/docs/
+            https://ekuiper-static.emqx.net/
 
     - name: update search index
       uses: Swilder-M/docsearch-scraper-simple@next
