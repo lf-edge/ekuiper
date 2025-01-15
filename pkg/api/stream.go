@@ -136,6 +136,11 @@ type LookupSource interface {
 	Closable
 }
 
+type BatchAbleSink interface {
+	Sink
+	ConfigureBatch(batchSize int, lingerDuration time.Duration)
+}
+
 type Sink interface {
 	// Open Should be sync function for normal case. The container will run it in go func
 	Open(ctx StreamContext) error
@@ -171,20 +176,21 @@ type Rewindable interface {
 }
 
 type RuleOption struct {
-	Debug              bool             `json:"debug" yaml:"debug"`
-	LogFilename        string           `json:"logFilename" yaml:"logFilename"`
-	IsEventTime        bool             `json:"isEventTime" yaml:"isEventTime"`
-	LateTol            int64            `json:"lateTolerance" yaml:"lateTolerance"`
-	Concurrency        int              `json:"concurrency" yaml:"concurrency"`
-	BufferLength       int              `json:"bufferLength" yaml:"bufferLength"`
-	SendMetaToSink     bool             `json:"sendMetaToSink" yaml:"sendMetaToSink"`
-	SendError          bool             `json:"sendError" yaml:"sendError"`
-	Qos                Qos              `json:"qos" yaml:"qos"`
-	CheckpointInterval int              `json:"checkpointInterval" yaml:"checkpointInterval"`
-	RestartStrategy    *RestartStrategy `json:"restartStrategy" yaml:"restartStrategy"`
-	Cron               string           `json:"cron" yaml:"cron"`
-	Duration           string           `json:"duration" yaml:"duration"`
-	CronDatetimeRange  []DatetimeRange  `json:"cronDatetimeRange" yaml:"cronDatetimeRange"`
+	Debug                    bool             `json:"debug" yaml:"debug"`
+	LogFilename              string           `json:"logFilename" yaml:"logFilename"`
+	IsEventTime              bool             `json:"isEventTime" yaml:"isEventTime"`
+	LateTol                  int64            `json:"lateTolerance" yaml:"lateTolerance"`
+	Concurrency              int              `json:"concurrency" yaml:"concurrency"`
+	BufferLength             int              `json:"bufferLength" yaml:"bufferLength"`
+	SendMetaToSink           bool             `json:"sendMetaToSink" yaml:"sendMetaToSink"`
+	SendError                bool             `json:"sendError" yaml:"sendError"`
+	Qos                      Qos              `json:"qos" yaml:"qos"`
+	CheckpointInterval       int              `json:"checkpointInterval" yaml:"checkpointInterval"`
+	RestartStrategy          *RestartStrategy `json:"restartStrategy" yaml:"restartStrategy"`
+	Cron                     string           `json:"cron" yaml:"cron"`
+	Duration                 string           `json:"duration" yaml:"duration"`
+	CronDatetimeRange        []DatetimeRange  `json:"cronDatetimeRange" yaml:"cronDatetimeRange"`
+	DisableBufferFullDiscard bool             `json:"disableBufferFullDiscard,omitempty" yaml:"disableBufferFullDiscard,omitempty"`
 }
 
 type DatetimeRange struct {
