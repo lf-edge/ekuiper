@@ -37,9 +37,6 @@ func (t *Server) CreatePlugin(arg *model.PluginDesc, reply *string) error {
 	// define according to the build tag
 	err = t.doRegister(pt, p)
 	if err != nil {
-		return err
-	}
-	if err != nil {
 		return fmt.Errorf("Create plugin error: %s", err)
 	} else {
 		*reply = fmt.Sprintf("Plugin %s is created.", p.GetName())
