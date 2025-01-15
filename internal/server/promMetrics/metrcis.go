@@ -14,7 +14,11 @@
 
 package promMetrics
 
-import "github.com/prometheus/client_golang/prometheus"
+import (
+	"github.com/prometheus/client_golang/prometheus"
+
+	"github.com/lf-edge/ekuiper/metrics"
+)
 
 const (
 	LblStatusType = "status"
@@ -47,6 +51,7 @@ func InitServerMetrics() {
 
 func RegisterMetrics() {
 	InitServerMetrics()
+	metrics.RegisterSyncCacheMetrics()
 	prometheus.MustRegister(RuleStatusCountGauge)
 	prometheus.MustRegister(RuleStatusGauge)
 }
