@@ -1,4 +1,4 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -146,7 +146,7 @@ func (r *RestSink) Collect(ctx api.StreamContext, item api.RawTuple) error {
 			method, u)
 	} else {
 		logger.Debugf("rest sink got response %v", resp)
-		_, b, err := r.parseResponse(ctx, resp, "", r.config.DebugResp, false)
+		_, b, err := r.parseResponse(ctx, resp, "", r.config.DebugResp, true)
 		// do not record response body error as it is not an error in the sink action.
 		if err != nil && !strings.HasPrefix(err.Error(), BODY_ERR) {
 			if strings.HasPrefix(err.Error(), BODY_ERR) {
