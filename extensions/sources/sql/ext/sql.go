@@ -148,6 +148,7 @@ func (m *sqlsource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple,
 				consumer <- api.NewDefaultSourceTupleWithTime(data, nil, rcvTime)
 				rcvTime = conf.GetNow()
 			}
+			rows.Close()
 		case <-ctx.Done():
 			return
 		}

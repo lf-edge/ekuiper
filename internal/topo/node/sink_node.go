@@ -194,7 +194,7 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 							return
 						}
 						m.statManager.IncTotalRecordsIn()
-						m.statManager.SetBufferLength(bufferLen(dataCh, dataOutCh, c, rq))
+						m.statManager.SetBufferLength(bufferLen(m.input, dataCh, dataOutCh, c, rq))
 						outs := itemToMap(data)
 						if sconf.Omitempty && (data == nil || len(outs) == 0) {
 							ctx.GetLogger().Debugf("receive empty in sink")
@@ -215,7 +215,7 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 					}
 					normalQ := func(data []map[string]interface{}) {
 						m.statManager.ProcessTimeStart()
-						m.statManager.SetBufferLength(bufferLen(dataCh, dataOutCh, c, rq))
+						m.statManager.SetBufferLength(bufferLen(m.input, dataCh, dataOutCh, c, rq))
 						ctx.GetLogger().Debugf("sending data: %v", data)
 						err := doCollectMaps(ctx, sink, sconf, data, m.statManager, false)
 						if sconf.EnableCache {
@@ -231,14 +231,14 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 								// Always ack for the normal queue as fail items are handled by the resend queue
 								select {
 								case c.Ack <- true:
-									m.statManager.SetBufferLength(bufferLen(dataCh, dataOutCh, c, rq) - 1)
+									m.statManager.SetBufferLength(bufferLen(m.input, dataCh, dataOutCh, c, rq) - 1)
 								case <-ctx.Done():
 								}
 							} else {
 								select {
 								case c.Ack <- ack:
 									if ack { // -1 because the signal length is changed async, just calculate it here
-										m.statManager.SetBufferLength(bufferLen(dataCh, dataOutCh, c, rq) - 1)
+										m.statManager.SetBufferLength(bufferLen(m.input, dataCh, dataOutCh, c, rq) - 1)
 									}
 								case <-ctx.Done():
 								}
@@ -249,7 +249,7 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 
 					resendQ := func(data []map[string]interface{}) {
 						ctx.GetLogger().Debugf("resend data: %v", data)
-						m.statManager.SetBufferLength(bufferLen(dataCh, dataOutCh, c, rq))
+						m.statManager.SetBufferLength(bufferLen(m.input, dataCh, dataOutCh, c, rq))
 						if sconf.ResendIndicatorField != "" {
 							for _, item := range data {
 								item[sconf.ResendIndicatorField] = true
@@ -260,7 +260,7 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 						select {
 						case rq.Ack <- ack:
 							if ack {
-								m.statManager.SetBufferLength(bufferLen(dataCh, dataOutCh, c, rq) - 1)
+								m.statManager.SetBufferLength(bufferLen(m.input, dataCh, dataOutCh, c, rq) - 1)
 							}
 						case <-ctx.Done():
 						}
@@ -358,8 +358,8 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 	}()
 }
 
-func bufferLen(dataCh chan []map[string]interface{}, dataOutCh <-chan []map[string]interface{}, c *cache.SyncCache, rq *cache.SyncCache) int64 {
-	l := len(dataCh)
+func bufferLen(input chan any, dataCh chan []map[string]interface{}, dataOutCh <-chan []map[string]interface{}, c *cache.SyncCache, rq *cache.SyncCache) int64 {
+	l := len(dataCh) + len(input)
 	if dataCh != dataOutCh {
 		l += len(dataOutCh)
 	}
