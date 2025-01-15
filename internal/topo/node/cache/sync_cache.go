@@ -21,9 +21,19 @@ import (
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/store"
+	"github.com/lf-edge/ekuiper/metrics"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/infra"
 	"github.com/lf-edge/ekuiper/pkg/kv"
+)
+
+const (
+	addLbl   = "add"
+	sendLbl  = "send"
+	delLbl   = "del"
+	ackLbl   = "ack"
+	loadLbl  = "load"
+	flushLbl = "flush"
 )
 
 // page Rotates storage for in memory cache
@@ -92,6 +102,8 @@ func (p *page) reset() {
 }
 
 type SyncCache struct {
+	ruleID string
+	opID   string
 	// The input data to the cache
 	in      <-chan []map[string]interface{}
 	Out     chan []map[string]interface{}
@@ -119,6 +131,8 @@ type SyncCache struct {
 func NewSyncCacheWithExitChanel(ctx api.StreamContext, in <-chan []map[string]interface{}, errCh chan<- error, cacheConf *conf.SinkConf, bufferLength int, exitCh chan<- struct{}) *SyncCache {
 	c := NewSyncCache(ctx, in, errCh, cacheConf, bufferLength)
 	c.exitCh = exitCh
+	c.ruleID = ctx.GetRuleId()
+	c.opID = ctx.GetOpId()
 	return c
 }
 
@@ -171,6 +185,7 @@ func (c *SyncCache) run(ctx api.StreamContext) {
 				c.send(ctx)
 			}
 		case isSuccess := <-c.Ack:
+			metrics.SyncCacheOpCnter.WithLabelValues(ackLbl, c.ruleID, c.opID).Inc()
 			// only send the next sink after receiving an ack
 			ctx.GetLogger().Debugf("cache ack")
 			if isSuccess {
@@ -194,6 +209,7 @@ func (c *SyncCache) run(ctx api.StreamContext) {
 }
 
 func (c *SyncCache) send(ctx api.StreamContext) {
+	metrics.SyncCacheOpCnter.WithLabelValues(sendLbl, c.ruleID, c.opID).Inc()
 	if c.CacheLength > 1 && c.cacheConf.ResendInterval > 0 {
 		time.Sleep(time.Duration(c.cacheConf.ResendInterval) * time.Millisecond)
 	}
@@ -215,6 +231,7 @@ func (c *SyncCache) send(ctx api.StreamContext) {
 
 // addCache not thread safe!
 func (c *SyncCache) addCache(ctx api.StreamContext, item []map[string]interface{}) {
+	metrics.SyncCacheOpCnter.WithLabelValues(addLbl, c.ruleID, c.opID).Inc()
 	isNotFull := c.appendMemCache(item)
 	if !isNotFull {
 		if c.diskBufferPage == nil {
@@ -227,6 +244,10 @@ func (c *SyncCache) addCache(ctx api.StreamContext, item []map[string]interface{
 				c.loadFromDisk(ctx)
 				ctx.GetLogger().Debug("disk full, remove the last page")
 			}
+			start := time.Now()
+			defer func() {
+				metrics.SyncCacheDurationHist.WithLabelValues(flushLbl, c.ruleID, c.opID).Observe(float64(time.Since(start).Microseconds()))
+			}()
 			err := c.store.Set(strconv.Itoa(c.diskPageTail), c.diskBufferPage)
 			if err != nil {
 				ctx.GetLogger().Errorf("fail to store disk cache %v", err)
@@ -258,6 +279,7 @@ func (c *SyncCache) addCache(ctx api.StreamContext, item []map[string]interface{
 
 // deleteCache not thread safe!
 func (c *SyncCache) deleteCache(ctx api.StreamContext) {
+	metrics.SyncCacheOpCnter.WithLabelValues(delLbl, c.ruleID, c.opID).Inc()
 	ctx.GetLogger().Debugf("deleting cache. CacheLength: %d, diskSize: %d", c.CacheLength, c.diskSize)
 	if len(c.memCache) == 0 {
 		ctx.GetLogger().Debug("mem cache is empty")
@@ -282,6 +304,11 @@ func (c *SyncCache) deleteCache(ctx api.StreamContext) {
 }
 
 func (c *SyncCache) loadFromDisk(ctx api.StreamContext) {
+	metrics.SyncCacheOpCnter.WithLabelValues(loadLbl, c.ruleID, c.opID).Inc()
+	start := time.Now()
+	defer func() {
+		metrics.SyncCacheDurationHist.WithLabelValues(loadLbl, c.ruleID, c.opID).Observe(float64(time.Since(start).Microseconds()))
+	}()
 	// load page from the disk
 	ctx.GetLogger().Debugf("loading from disk %d. CacheLength: %d, diskSize: %d", c.diskPageTail, c.CacheLength, c.diskSize)
 	hotPage := newPage(c.cacheConf.BufferPageSize)
