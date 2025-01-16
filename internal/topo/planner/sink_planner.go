@@ -16,7 +16,6 @@ package planner
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/lf-edge/ekuiper/internal/binder/io"
 	"github.com/lf-edge/ekuiper/internal/conf"
@@ -67,8 +66,7 @@ func fulfillProps(rule *api.Rule, props map[string]any) map[string]any {
 
 // Split sink node according to the sink configuration. Return the new input emitters.
 func splitSink(sink api.Sink, tp *topo.Topo, inputs []api.Emitter, sinkName string, options *api.RuleOption, sc *node.SinkConf) ([]api.Emitter, error) {
-	if bas, ok := sink.(api.BatchAbleSink); ok {
-		bas.ConfigureBatch(sc.BatchSize, time.Duration(sc.LingerInterval))
+	if _, ok := sink.(api.BatchAbleSink); ok {
 		return inputs, nil
 	}
 	index := 0
