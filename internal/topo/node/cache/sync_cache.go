@@ -28,12 +28,13 @@ import (
 )
 
 const (
-	addLbl   = "add"
-	sendLbl  = "send"
-	delLbl   = "del"
-	ackLbl   = "ack"
-	loadLbl  = "load"
-	flushLbl = "flush"
+	addLbl    = "add"
+	sendLbl   = "send"
+	delLbl    = "del"
+	ackLbl    = "ack"
+	loadLbl   = "load"
+	flushLbl  = "flush"
+	lengthLbl = "len"
 )
 
 // page Rotates storage for in memory cache
@@ -184,6 +185,7 @@ func (c *SyncCache) run(ctx api.StreamContext) {
 			if c.sendStatus == 0 {
 				c.send(ctx)
 			}
+			metrics.SyncCacheGauge.WithLabelValues(lengthLbl, c.ruleID, c.opID).Set(float64(c.CacheLength))
 		case isSuccess := <-c.Ack:
 			metrics.SyncCacheOpCnter.WithLabelValues(ackLbl, c.ruleID, c.opID).Inc()
 			// only send the next sink after receiving an ack
@@ -201,6 +203,7 @@ func (c *SyncCache) run(ctx api.StreamContext) {
 			if c.sendStatus == 0 {
 				c.send(ctx)
 			}
+			metrics.SyncCacheGauge.WithLabelValues(lengthLbl, c.ruleID, c.opID).Set(float64(c.CacheLength))
 		case <-ctx.Done():
 			ctx.GetLogger().Infof("sink node %s instance cache %d done", ctx.GetOpId(), ctx.GetInstanceId())
 			return
