@@ -328,7 +328,7 @@ func getDefaultKafkaConf() *kafkaConf {
 		BatchSize: 5000,
 		// send batch ASAP
 		BatchTimeout: time.Microsecond,
-		BatchBytes:   1048576, // 1 MB
+		BatchBytes:   10 * 1048576, // 1 MB
 	}
 	return c
 }
