@@ -44,7 +44,7 @@ func buildActions(tp *topo.Topo, rule *api.Rule, inputs []api.Emitter) error {
 			}
 			// Split sink node
 			sinkName := fmt.Sprintf("%s_%d", name, i)
-			newInputs, err := splitSink(s, tp, inputs, sinkName, rule.Options, commonConf)
+			newInputs, err := splitSink(tp, inputs, sinkName, rule.Options, commonConf)
 			if err != nil {
 				return err
 			}
@@ -65,10 +65,7 @@ func fulfillProps(rule *api.Rule, props map[string]any) map[string]any {
 }
 
 // Split sink node according to the sink configuration. Return the new input emitters.
-func splitSink(sink api.Sink, tp *topo.Topo, inputs []api.Emitter, sinkName string, options *api.RuleOption, sc *node.SinkConf) ([]api.Emitter, error) {
-	if _, ok := sink.(api.BatchAbleSink); ok {
-		return inputs, nil
-	}
+func splitSink(tp *topo.Topo, inputs []api.Emitter, sinkName string, options *api.RuleOption, sc *node.SinkConf) ([]api.Emitter, error) {
 	index := 0
 	newInputs := inputs
 	// Batch enabled

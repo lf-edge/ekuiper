@@ -136,11 +136,6 @@ type LookupSource interface {
 	Closable
 }
 
-type BatchAbleSink interface {
-	Sink
-	ConfigureBatch(batchSize int, lingerDuration time.Duration) error
-}
-
 type Sink interface {
 	// Open Should be sync function for normal case. The container will run it in go func
 	Open(ctx StreamContext) error

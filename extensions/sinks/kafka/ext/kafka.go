@@ -47,11 +47,11 @@ type sinkConf struct {
 }
 
 type kafkaConf struct {
-	MaxAttempts  int             `json:"maxAttempts"`
-	RequiredACKs int             `json:"requiredACKs"`
-	Key          string          `json:"key"`
-	Headers      interface{}     `json:"headers"`
-	WriterConf   kafkaWriterConf `json:"writerConf"`
+	kafkaWriterConf
+	MaxAttempts  int         `json:"maxAttempts"`
+	RequiredACKs int         `json:"requiredACKs"`
+	Key          string      `json:"key"`
+	Headers      interface{} `json:"headers"`
 }
 
 type kafkaWriterConf struct {
@@ -101,7 +101,7 @@ func (m *kafkaSink) Configure(props map[string]interface{}) error {
 	}
 	m.tlsConfig = tlsConfig
 	kc := getDefaultKafkaConf()
-	if err := cast.MapToStruct(props, kc); err != nil {
+	if err := kc.configure(props); err != nil {
 		return err
 	}
 	m.kc = kc
@@ -110,22 +110,6 @@ func (m *kafkaSink) Configure(props map[string]interface{}) error {
 		return fmt.Errorf("set kafka header failed, err:%v", err)
 	}
 	return m.buildKafkaWriter()
-}
-
-func (m *kafkaSink) ConfigureBatch(batchSize int, lingerInterval time.Duration) error {
-	changed := false
-	if batchSize > 0 {
-		m.kc.WriterConf.BatchSize = batchSize
-		changed = true
-	}
-	if lingerInterval > 0 {
-		m.kc.WriterConf.BatchTimeout = lingerInterval
-		changed = true
-	}
-	if changed {
-		return m.buildKafkaWriter()
-	}
-	return nil
 }
 
 func (m *kafkaSink) buildKafkaWriter() error {
@@ -143,15 +127,15 @@ func (m *kafkaSink) buildKafkaWriter() error {
 		AllowAutoTopicCreation: true,
 		MaxAttempts:            m.kc.MaxAttempts,
 		RequiredAcks:           kafkago.RequiredAcks(m.kc.RequiredACKs),
-		BatchSize:              m.kc.WriterConf.BatchSize,
-		BatchBytes:             m.kc.WriterConf.BatchBytes,
-		BatchTimeout:           m.kc.WriterConf.BatchTimeout,
+		BatchSize:              m.kc.BatchSize,
+		BatchBytes:             m.kc.BatchBytes,
+		BatchTimeout:           m.kc.BatchTimeout,
 		Transport: &kafkago.Transport{
 			SASL: mechanism,
 			TLS:  m.tlsConfig,
 		},
 	}
-	conf.Log.Infof("kafka writer batchSize:%v, batchTimeout:%v", m.kc.WriterConf.BatchSize, m.kc.WriterConf.BatchTimeout.String())
+	conf.Log.Infof("kafka writer batchSize:%v, batchTimeout:%v", m.kc.BatchSize, m.kc.BatchTimeout.String())
 	m.writer = w
 	return nil
 }
@@ -339,11 +323,22 @@ func getDefaultKafkaConf() *kafkaConf {
 	c := &kafkaConf{
 		RequiredACKs: -1,
 		MaxAttempts:  1,
-		WriterConf: kafkaWriterConf{
-			BatchSize:    5000,
-			BatchTimeout: 200 * time.Millisecond,
-			BatchBytes:   1048576 * 10, // 10MB
-		},
+	}
+	c.kafkaWriterConf = kafkaWriterConf{
+		BatchSize: 5000,
+		// send batch ASAP
+		BatchTimeout: time.Millisecond,
+		BatchBytes:   1048576 * 10, // 10MB
 	}
 	return c
+}
+
+func (kc *kafkaConf) configure(props map[string]interface{}) error {
+	if err := cast.MapToStruct(props, kc); err != nil {
+		return err
+	}
+	if err := cast.MapToStruct(props, &kc.kafkaWriterConf); err != nil {
+		return err
+	}
+	return nil
 }
