@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -94,7 +94,7 @@ func TestAnalyticFuncs(t *testing.T) {
 			}, {
 				"$$a_lag_0": "a1", "$$a_lag_1": "b2",
 			}, {
-				"$$a_lag_0": "a1", "$$a_lag_1": interface{}(nil),
+				"$$a_lag_0": "a1", "$$a_lag_1": "b2",
 			}},
 		},
 		{ // 1 changed test
@@ -163,9 +163,9 @@ func TestAnalyticFuncs(t *testing.T) {
 				}, {
 					"$$a_changed_col_0": nil, "$$a_had_changed_0": true, "$$a_lag_1": "b1",
 				}, {
-					"$$a_changed_col_0": nil, "$$a_had_changed_0": false, "$$a_lag_1": nil,
+					"$$a_changed_col_0": nil, "$$a_had_changed_0": false, "$$a_lag_1": "b1",
 				}, {
-					"$$a_changed_col_0": nil, "$$a_had_changed_0": true, "$$a_lag_1": nil,
+					"$$a_changed_col_0": nil, "$$a_had_changed_0": true, "$$a_lag_1": "b1",
 				},
 			},
 		},
