@@ -17,7 +17,6 @@ package node
 import (
 	"fmt"
 	"sync"
-	"time"
 
 	"github.com/lf-edge/ekuiper/internal/binder/io"
 	"github.com/lf-edge/ekuiper/internal/conf"
@@ -555,11 +554,6 @@ func resendDataToSink(ctx api.StreamContext, sink api.Sink, outData interface{},
 	}
 }
 
-type batchConf struct {
-	BatchSize      int           `json:"batchSize"`
-	LingerInterval time.Duration `json:"lingerInterval"`
-}
-
 func getSink(name string, action map[string]interface{}) (api.Sink, error) {
 	var (
 		s   api.Sink
@@ -571,11 +565,6 @@ func getSink(name string, action map[string]interface{}) (api.Sink, error) {
 		err = s.Configure(newAction)
 		if err != nil {
 			return nil, err
-		}
-		if bas, ok := s.(api.BatchAbleSink); ok {
-			bc := batchConf{}
-			cast.MapToStruct(newAction, &bc)
-			bas.ConfigureBatch(bc.BatchSize, bc.LingerInterval)
 		}
 		return s, nil
 	} else {
