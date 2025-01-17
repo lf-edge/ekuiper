@@ -556,8 +556,8 @@ func resendDataToSink(ctx api.StreamContext, sink api.Sink, outData interface{},
 }
 
 type batchConf struct {
-	BatchSize      int           `json:"batchSize"`
-	LingerInterval time.Duration `json:"lingerInterval"`
+	BatchSize      int `json:"batchSize"`
+	LingerInterval int `json:"lingerInterval"`
 }
 
 func getSink(name string, action map[string]interface{}) (api.Sink, error) {
@@ -575,7 +575,7 @@ func getSink(name string, action map[string]interface{}) (api.Sink, error) {
 		if bas, ok := s.(api.BatchAbleSink); ok {
 			bc := batchConf{}
 			cast.MapToStruct(newAction, &bc)
-			bas.ConfigureBatch(bc.BatchSize, bc.LingerInterval)
+			bas.ConfigureBatch(bc.BatchSize, time.Duration(bc.LingerInterval)*time.Millisecond)
 		}
 		return s, nil
 	} else {

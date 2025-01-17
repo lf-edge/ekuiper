@@ -109,7 +109,7 @@ func (m *kafkaSink) Configure(props map[string]interface{}) error {
 	if err := m.setHeaders(); err != nil {
 		return fmt.Errorf("set kafka header failed, err:%v", err)
 	}
-	return m.buildKafkaWriter()
+	return nil
 }
 
 func (m *kafkaSink) ConfigureBatch(batchSize int, lingerInterval time.Duration) {
@@ -155,6 +155,11 @@ func (m *kafkaSink) Open(ctx api.StreamContext) error {
 }
 
 func (m *kafkaSink) Collect(ctx api.StreamContext, item interface{}) error {
+	if m.writer == nil {
+		if err := m.buildKafkaWriter(); err != nil {
+			return err
+		}
+	}
 	logger := ctx.GetLogger()
 	logger.Debugf("kafka sink receive %s", item)
 	var messages []kafkago.Message
@@ -230,7 +235,10 @@ func (m *kafkaSink) Collect(ctx api.StreamContext, item interface{}) error {
 }
 
 func (m *kafkaSink) Close(ctx api.StreamContext) error {
-	return m.writer.Close()
+	if m.writer != nil {
+		return m.writer.Close()
+	}
+	return nil
 }
 
 func GetSink() api.Sink {
