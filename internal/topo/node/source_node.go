@@ -90,7 +90,7 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 				}
 			}
 			bl := 102400
-			if c, ok := props["bufferLength"]; ok {
+			if c, ok := props["bufferlength"]; ok {
 				if t, err := cast.ToInt(c, cast.STRICT); err != nil || t <= 0 {
 					logger.Warnf("invalid type for bufferLength property, should be positive integer but found %t", c)
 				} else {

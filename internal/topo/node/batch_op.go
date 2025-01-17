@@ -138,6 +138,7 @@ func (b *BatchOp) send() {
 		Content: make([]xsql.Row, 0, b.batchSize),
 	}
 	b.currIndex = 0
+	b.statManager.SetBufferLength(int64(len(b.input) + b.currIndex))
 }
 
 func (b *BatchOp) runWithBatchSize(ctx api.StreamContext) {

@@ -81,7 +81,7 @@ func newPrometheusMetrics() *PrometheusMetrics {
 		processLatencyHist := prometheus.NewHistogramVec(prometheus.HistogramOpts{
 			Name:    prefix + "_" + ProcessLatencyUsHist,
 			Help:    "Histograms of process latency in millisecond of " + prefix,
-			Buckets: prometheus.ExponentialBuckets(10, 2, 20), // 10us ~ 5s
+			Buckets: prometheus.ExponentialBuckets(10, 2, 25), // 10us ~ 160s
 		}, labelNames)
 		bufferLength := prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Name: prefix + "_" + BufferLength,
