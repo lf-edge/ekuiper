@@ -575,7 +575,9 @@ func getSink(name string, action map[string]interface{}) (api.Sink, error) {
 		if bas, ok := s.(api.BatchAbleSink); ok {
 			bc := batchConf{}
 			cast.MapToStruct(newAction, &bc)
-			bas.ConfigureBatch(bc.BatchSize, time.Duration(bc.LingerInterval)*time.Millisecond)
+			if err := bas.ConfigureBatch(bc.BatchSize, time.Duration(bc.LingerInterval)*time.Millisecond); err != nil {
+				return nil, err
+			}
 		}
 		return s, nil
 	} else {

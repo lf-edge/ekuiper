@@ -138,7 +138,7 @@ type LookupSource interface {
 
 type BatchAbleSink interface {
 	Sink
-	ConfigureBatch(batchSize int, lingerDuration time.Duration)
+	ConfigureBatch(batchSize int, lingerDuration time.Duration) error
 }
 
 type Sink interface {
