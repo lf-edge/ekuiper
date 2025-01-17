@@ -1,4 +1,4 @@
-// Copyright 2023 EMQ Technologies Co., Ltd.
+// Copyright 2023-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,9 +18,10 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/shirou/gopsutil/process"
+	"github.com/shirou/gopsutil/v3/process"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 )
 
 type Metrics struct {
@@ -28,11 +29,19 @@ type Metrics struct {
 }
 
 func NewMetrics() *Metrics {
-	kProcess, err := process.NewProcess(int32(os.Getpid()))
+	var (
+		kp *process.Process
+		e  error
+	)
+	// Maybe panic in android, so add to safe run.
+	err := infra.SafeRun(func() error {
+		kp, e = process.NewProcess(int32(os.Getpid()))
+		return e
+	})
 	if err != nil {
 		conf.Log.Warnf("Can not initialize process for ekuiperd : %v", err)
 	}
-	return &Metrics{kp: kProcess}
+	return &Metrics{kp: kp}
 }
 
 func (m *Metrics) GetCpuUsage() string {
