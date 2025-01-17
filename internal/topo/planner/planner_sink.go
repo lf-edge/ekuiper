@@ -166,27 +166,17 @@ func findTemplateProps(props map[string]any) []string {
 	return result
 }
 
-type BatchsinkAble interface {
-	ConfigureBatch(batchSize int, lingerInterval time.Duration)
-}
-
 // Split sink node according to the sink configuration. Return the new input emitters.
 func splitSink(tp *topo.Topo, s api.Sink, sinkName string, options *def.RuleOption, sc *node.SinkConf, templates []string) ([]node.TopNode, error) {
 	index := 0
 	result := make([]node.TopNode, 0)
-	// Batch enabled
-	bs, ok := s.(BatchsinkAble)
-	if ok {
-		bs.ConfigureBatch(sc.BatchSize, time.Duration(sc.LingerInterval))
-	} else {
-		if sc.BatchSize > 0 || sc.LingerInterval > 0 {
-			batchOp, err := node.NewBatchOp(fmt.Sprintf("%s_%d_batch", sinkName, index), options, sc.BatchSize, time.Duration(sc.LingerInterval))
-			if err != nil {
-				return nil, err
-			}
-			index++
-			result = append(result, batchOp)
+	if sc.BatchSize > 0 || sc.LingerInterval > 0 {
+		batchOp, err := node.NewBatchOp(fmt.Sprintf("%s_%d_batch", sinkName, index), options, sc.BatchSize, time.Duration(sc.LingerInterval))
+		if err != nil {
+			return nil, err
 		}
+		index++
+		result = append(result, batchOp)
 	}
 	// Transform enabled
 	// Currently, the row to map is done here and is required. TODO: eliminate map and this could become optional
