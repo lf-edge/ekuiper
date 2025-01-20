@@ -94,7 +94,7 @@ jobs:
     - name: upload dist
       run: |
         cd frontend/docs/.vitepress/
-        wget https://obs-community.obs.cn-north-1.myhuaweicloud.com/obsutil/current/obsutil_linux_amd64.tar.gz
+        wget https://obs-community-intl.obs.ap-southeast-1.myhuaweicloud.com/obsutil/current/obsutil_linux_amd64.tar.gz
         tar -xzvf obsutil_linux_amd64.tar.gz
         mkdir obsutil
         cp $(find . -name "obsutil_linux_amd64_*")/* obsutil/
