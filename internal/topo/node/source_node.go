@@ -64,6 +64,22 @@ func NewSourceNode(name string, st ast.StreamType, op UnOperation, options *ast.
 	}
 }
 
+func extractBufferLength(props map[string]any, originValue int) int {
+	if c, ok := props["bufferLength"]; ok {
+		t, err := cast.ToInt(c, cast.STRICT)
+		if err == nil {
+			return t
+		}
+	}
+	if c, ok := props["bufferlength"]; ok {
+		t, err := cast.ToInt(c, cast.STRICT)
+		if err == nil {
+			return t
+		}
+	}
+	return originValue
+}
+
 func (m *SourceNode) SetProps(props map[string]interface{}) {
 	m.props = props
 }
@@ -90,14 +106,7 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 				}
 			}
 			bl := 102400
-			if c, ok := props["bufferlength"]; ok {
-				if t, err := cast.ToInt(c, cast.STRICT); err != nil || t <= 0 {
-					logger.Warnf("invalid type for bufferLength property, should be positive integer but found %t", c)
-				} else {
-					bl = t
-				}
-			}
-			m.bufferLength = bl
+			m.bufferLength = extractBufferLength(props, bl)
 			if m.streamType == ast.TypeTable {
 				props["isTable"] = true
 			}
