@@ -65,6 +65,9 @@ func NewSourceNode(name string, st ast.StreamType, op UnOperation, options *ast.
 }
 
 func extractBufferLength(props map[string]any, originValue int) int {
+	if props == nil {
+		return originValue
+	}
 	if c, ok := props["bufferLength"]; ok {
 		t, err := cast.ToInt(c, cast.STRICT)
 		if err == nil {
