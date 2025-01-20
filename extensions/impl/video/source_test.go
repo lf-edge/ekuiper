@@ -1,4 +1,4 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -91,7 +91,7 @@ func TestPull(t *testing.T) {
 }
 
 func TestPullError(t *testing.T) {
-	exp := errors.New("read frame failed, err:exit status 1")
+	exp := errors.New("read frame failed, err:exit status 8")
 	r := GetSource()
 	mock.TestSourceConnector(t, r, map[string]any{
 		"url":      "https://gcwbndtxy.liveplay.myqcloud.com/gcwbnd/xiongmao24_2_td.m3u8",
