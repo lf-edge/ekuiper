@@ -1,4 +1,4 @@
-// Copyright 2021-2024 EMQ Technologies Co., Ltd.
+// Copyright 2021-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -44,6 +44,11 @@ type ConvertWriter interface {
 	New(ctx api.StreamContext) error
 	Write(ctx api.StreamContext, d any) error
 	Flush(ctx api.StreamContext) ([]byte, error)
+}
+
+type ColWriter interface {
+	ConvertWriter
+	ColWrite(ctx api.StreamContext, d any) error
 }
 
 // PartialDecoder decodes a field partially
