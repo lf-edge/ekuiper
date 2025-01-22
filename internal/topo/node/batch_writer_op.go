@@ -35,16 +35,24 @@ import (
 // Output: RawTuple
 type BatchWriterOp struct {
 	*defaultSinkNode
-	writer message.ConvertWriter
+	writer   message.ConvertWriter
+	columnar bool
 	// save lastRow to get the props
 	lastRow any
 }
 
 func NewBatchWriterOp(ctx api.StreamContext, name string, rOpt *def.RuleOption, schema map[string]*ast.JsonStreamField, sc *SinkConf) (*BatchWriterOp, error) {
 	nctx := ctx.(*context.DefaultContext).WithOpId(name)
-	c, err := converter.GetConvertWriter(nctx, sc.Format, sc.SchemaId, schema, nil)
+	c, err := converter.GetConvertWriter(nctx, sc.Format, sc.SchemaId, sc.BatchColumnar, schema, nil)
 	if err != nil {
 		return nil, err
+	}
+	if sc.BatchColumnar {
+		cw, ok := c.(message.ColWriter)
+		if !ok {
+			return nil, fmt.Errorf("format %s does not suppor columnar writer", sc.Format)
+		}
+		c = cw
 	}
 	err = c.New(nctx)
 	if err != nil {
@@ -53,6 +61,7 @@ func NewBatchWriterOp(ctx api.StreamContext, name string, rOpt *def.RuleOption, 
 	return &BatchWriterOp{
 		defaultSinkNode: newDefaultSinkNode(name, rOpt),
 		writer:          c,
+		columnar:        sc.BatchColumnar,
 	}, nil
 }
 
@@ -103,7 +112,12 @@ func (o *BatchWriterOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 						}
 					case xsql.Row:
 						o.onProcessStart(ctx, data)
-						e := o.writer.Write(ctx, dt.ToMap())
+						var e error
+						if o.columnar {
+							e = o.writer.(message.ColWriter).ColWrite(ctx, dt.ToMap())
+						} else {
+							e = o.writer.Write(ctx, dt.ToMap())
+						}
 						if e != nil {
 							o.onError(ctx, e)
 						}
@@ -112,7 +126,12 @@ func (o *BatchWriterOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 						count++
 					case xsql.Collection:
 						o.onProcessStart(ctx, data)
-						e := o.writer.Write(ctx, dt.ToMaps())
+						var e error
+						if o.columnar {
+							e = o.writer.(message.ColWriter).ColWrite(ctx, dt.ToMaps())
+						} else {
+							e = o.writer.Write(ctx, dt.ToMaps())
+						}
 						if e != nil {
 							o.onError(ctx, e)
 						}
