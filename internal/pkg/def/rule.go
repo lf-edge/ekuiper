@@ -42,7 +42,7 @@ type RuleOption struct {
 	CronDatetimeRange        []schedule.DatetimeRange `json:"cronDatetimeRange,omitempty" yaml:"cronDatetimeRange,omitempty"`
 	PlanOptimizeStrategy     *PlanOptimizeStrategy    `json:"planOptimizeStrategy,omitempty" yaml:"planOptimizeStrategy,omitempty"`
 	NotifySub                bool                     `json:"notifySub,omitempty" yaml:"notifySub,omitempty"`
-	DisableBufferFullDiscard bool                     `json:"disableBufferFullDiscard" yaml:"disableBufferFullDiscard"`
+	DisableBufferFullDiscard bool                     `json:"disableBufferFullDiscard,omitempty" yaml:"disableBufferFullDiscard,omitempty"`
 }
 
 type PlanOptimizeStrategy struct {
