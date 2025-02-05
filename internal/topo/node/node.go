@@ -154,6 +154,7 @@ func (o *defaultNode) doBroadcast(val any) {
 		if o.disableBufferFullDiscard {
 			select {
 			case out <- val:
+				continue
 			case <-o.ctx.Done():
 				return
 			}
