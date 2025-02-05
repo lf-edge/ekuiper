@@ -1,4 +1,4 @@
-// Copyright 2021-2024 EMQ Technologies Co., Ltd.
+// Copyright 2021-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,28 +16,30 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 	"os"
 	"time"
 
-	"github.com/edgexfoundry/go-mod-core-contracts/v3/common"
-	"github.com/edgexfoundry/go-mod-core-contracts/v3/dtos"
-	"github.com/edgexfoundry/go-mod-messaging/v3/messaging"
-	"github.com/edgexfoundry/go-mod-messaging/v3/pkg/types"
+	"github.com/edgexfoundry/go-mod-core-contracts/v4/common"
+	"github.com/edgexfoundry/go-mod-core-contracts/v4/dtos"
+	"github.com/edgexfoundry/go-mod-messaging/v4/messaging"
+	"github.com/edgexfoundry/go-mod-messaging/v4/pkg/types"
 )
 
 var msgConfig1 = types.MessageBusConfig{
 	Broker: types.HostInfo{
 		Host:     "127.0.0.1",
-		Port:     6379,
-		Protocol: "redis",
+		Port:     1883,
+		Protocol: "tcp",
 	},
-	Type: messaging.Redis,
+	Optional: map[string]string{
+		"ClientId": "0001_client_id",
+	},
+	Type: messaging.MQTT,
 }
 
-func pubEventClientRedis() {
+func pubDefault() {
 	if msgClient, err := messaging.NewMessageClient(msgConfig1); err != nil {
 		log.Fatal(err)
 	} else {
@@ -77,20 +79,14 @@ func pubEventClientRedis() {
 				}
 
 				fmt.Printf("readings: %v\n", testEvent.Readings)
-				data, err := json.Marshal(testEvent)
-				if err != nil {
-					fmt.Printf("unexpected error MarshalEvent %v", err)
-				} else {
-					fmt.Println(string(data))
-				}
 
-				env := types.NewMessageEnvelope(data, context.Background())
+				env := types.NewMessageEnvelope(testEvent, context.Background())
 				env.ContentType = "application/json"
 
 				if e := msgClient.Publish(env, "events"); e != nil {
 					log.Fatal(e)
 				} else {
-					fmt.Printf("Pub successful: %s\n", data)
+					fmt.Printf("Pub successful: %v\n", env)
 				}
 				time.Sleep(1500 * time.Millisecond)
 			}
@@ -121,14 +117,7 @@ func pubArrayMessage() {
 		}
 		testEvent.Readings[len(testEvent.Readings)-1].Value = "[3.14, 3.1415, 3.1415926]"
 
-		data, err := json.Marshal(testEvent)
-		if err != nil {
-			fmt.Printf("unexpected error MarshalEvent %v", err)
-		} else {
-			fmt.Println(string(data))
-		}
-
-		env := types.NewMessageEnvelope(data, context.Background())
+		env := types.NewMessageEnvelope(testEvent, context.Background())
 		env.ContentType = "application/json"
 
 		if e := msgClient.Publish(env, "events"); e != nil {
@@ -167,20 +156,13 @@ func pubToMQTT(host string) {
 			fmt.Printf("Add reading error for Humidity: %v\n", 20)
 		}
 
-		data, err := json.Marshal(testEvent)
-		if err != nil {
-			fmt.Printf("unexpected error MarshalEvent %v", err)
-		} else {
-			fmt.Println(string(data))
-		}
-
-		env := types.NewMessageEnvelope(data, context.Background())
+		env := types.NewMessageEnvelope(testEvent, context.Background())
 		env.ContentType = "application/json"
 
 		if e := msgClient.Publish(env, "events"); e != nil {
 			log.Fatal(e)
 		} else {
-			fmt.Printf("pubToAnother successful: %s\n", data)
+			fmt.Printf("pubToAnother successful: %v\n", env)
 		}
 		time.Sleep(1500 * time.Millisecond)
 	}
@@ -213,20 +195,13 @@ func pubMetaSource() {
 
 				testEvent.AddBinaryReading("raw", []byte("Hello World"), "application/text")
 
-				data, err := json.Marshal(testEvent)
-				if err != nil {
-					fmt.Printf("unexpected error MarshalEvent %v", err)
-				} else {
-					fmt.Println(string(data))
-				}
-
-				env := types.NewMessageEnvelope(data, context.Background())
+				env := types.NewMessageEnvelope(testEvent, context.Background())
 				env.ContentType = "application/json"
 
 				if e := msgClient.Publish(env, "events"); e != nil {
 					log.Fatal(e)
 				} else {
-					fmt.Printf("Pub successful: %s\n", data)
+					fmt.Printf("Pub successful: %v\n", env)
 				}
 				time.Sleep(1500 * time.Millisecond)
 			}
@@ -237,7 +212,7 @@ func pubMetaSource() {
 
 func main() {
 	if len(os.Args) == 1 {
-		pubEventClientRedis()
+		pubDefault()
 	} else if len(os.Args) == 2 {
 		if v := os.Args[1]; v == "meta" {
 			pubMetaSource()

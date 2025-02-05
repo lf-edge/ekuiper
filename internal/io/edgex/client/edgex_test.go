@@ -1,4 +1,4 @@
-// Copyright 2022-2024 EMQ Technologies Co., Ltd.
+// Copyright 2022-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/edgexfoundry/go-mod-messaging/v3/pkg/types"
+	"github.com/edgexfoundry/go-mod-messaging/v4/pkg/types"
 )
 
 func TestEdgex_CfgValidate(t *testing.T) {
@@ -64,15 +64,7 @@ func TestEdgex_CfgValidate(t *testing.T) {
 				"port":     6379,
 				"type":     "redis",
 			},
-			wantErr: false,
-			expConf: types.MessageBusConfig{
-				Broker: types.HostInfo{
-					Host:     "edgex-redis",
-					Port:     6379,
-					Protocol: "redis",
-				},
-				Type: "redis",
-			},
+			wantErr: true,
 		},
 		{
 			name: "config not case sensitive",
@@ -125,10 +117,10 @@ func TestEdgex_CfgValidate(t *testing.T) {
 			expConf: types.MessageBusConfig{
 				Broker: types.HostInfo{
 					Host:     "localhost",
-					Port:     6379,
-					Protocol: "redis",
+					Port:     1883,
+					Protocol: "tcp",
 				},
-				Type: "redis",
+				Type: "mqtt",
 				Optional: map[string]string{
 					"ClientId": "client1",
 					"Username": "user1",

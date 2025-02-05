@@ -242,9 +242,9 @@ For most of scripts, you can just start JMeter by default way, such as ``bin/jme
   - Create 3 rules which all select from the stream just created with different where filter. They should share the same mqtt source instance.
   - Send data to the stream. Make sure all 3 rules receive the exact same copy of data but conduct different filter by checking the result.
   - The result data will be sent back to MQTT broker again and compared with `select_condition_iot_data.txt`, `select_condition_iot_data2.txt` and `select_condition_iot_data3.txt` respectively.
-  
 
-- [Connection selector test](edgex_redis_share_connection_sink_rule.jmx)
+
+- [Connection selector test](edgex_share_connection_sink_rule.jmx)
 
 The test script is used for testing [eKuiper EdgeX connection selector](../docs/en_US/rules/sources/edgex.md#connectionselector). To run the script,
 
@@ -258,7 +258,8 @@ The test script is used for testing [eKuiper EdgeX connection selector](../docs/
         port: 6379
         type: redis
     ```
-  * modify the jmeter [script](edgex_redis_share_connection_sink_rule.jmx), make sure the ``redis_srv`` is set to the right redis address  
+  * modify the jmeter [script](edgex_share_connection_sink_rule.jmx), make sure the ``redis_srv`` is set to the right
+    redis address
 
 - An EdgeX message bus publish/subscribe tool should be compiled and run during running test.
 

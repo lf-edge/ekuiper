@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,8 +15,9 @@
 package conf
 
 import (
-	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestConSelector_ReadCfgFromYaml(t *testing.T) {
@@ -46,17 +47,20 @@ func TestConSelector_ReadCfgFromYaml(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "edgex redisMsgBus",
+			name: "edgex mqttMsgBus",
 			fields: fields{
-				ConnSelectorStr: "edgex.redismsgbus",
+				ConnSelectorStr: "edgex.mqttmsgbus",
 				Type:            "edgex",
-				CfgKey:          "redisMsgBus",
+				CfgKey:          "mqttMsgBus",
 			},
 			wantProps: map[string]interface{}{
-				"protocol": "redis",
-				"port":     6379,
+				"protocol": "tcp",
+				"port":     1883,
 				"server":   "127.0.0.1",
-				"type":     "redis",
+				"type":     "mqtt",
+				"optional": map[string]any{
+					"KeepAlive": "50",
+				},
 			},
 			wantErr: false,
 		},
@@ -73,9 +77,7 @@ func TestConSelector_ReadCfgFromYaml(t *testing.T) {
 				t.Errorf("ReadCfgFromYaml() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(gotProps, tt.wantProps) {
-				t.Errorf("ReadCfgFromYaml() gotProps = %v, want %v", gotProps, tt.wantProps)
-			}
+			require.Equal(t, tt.wantProps, gotProps)
 		})
 	}
 }

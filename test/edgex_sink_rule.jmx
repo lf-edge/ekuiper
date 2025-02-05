@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright 2023 EMQ Technologies Co., Ltd.
+  ~ Copyright 2025 EMQ Technologies Co., Ltd.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
   ~ limitations under the License.
   -->
 
-<jmeterTestPlan version="1.2" properties="4.0" jmeter="4.0 r1823414">
+<jmeterTestPlan version="1.2" properties="5.0" jmeter="5.3">
   <hashTree>
     <TestPlan guiclass="TestPlanGui" testclass="TestPlan" testname="Test Plan" enabled="true">
       <stringProp name="TestPlan.comments"></stringProp>
@@ -110,7 +110,7 @@
                 <elementProp name="" elementType="HTTPArgument">
                   <boolProp name="HTTPArgument.always_encode">false</boolProp>
                   <stringProp name="Argument.value">{&#xd;
-&quot;sql&quot; : &quot;create stream demo () WITH (FORMAT=\&quot;JSON\&quot;, TYPE=\&quot;edgex\&quot;,Conf_key=\&quot;redis_conf\&quot;)&quot;&#xd;
+                      &quot;sql&quot; : &quot;create stream demo () WITH (FORMAT=\&quot;JSON\&quot;, TYPE=\&quot;edgex\&quot;,Conf_key=\&quot;mqtt_conf\&quot;)&quot;&#xd;
 }</stringProp>
                   <stringProp name="Argument.metadata">=</stringProp>
                 </elementProp>
@@ -154,10 +154,10 @@
   &quot;actions&quot;: [&#xd;
     {&#xd;
       &quot;edgex&quot;: {&#xd;
-        &quot;protocol&quot;: &quot;redis&quot;,&#xd;
+                      &quot;protocol&quot;: &quot;tcp&quot;,&#xd;
         &quot;host&quot;: &quot;127.0.0.1&quot;,&#xd;
-        &quot;port&quot;: 6379,&#xd;
-        &quot;type&quot;: &quot;redis&quot;,&#xd;
+                      &quot;port&quot;: 1883,&#xd;
+                      &quot;type&quot;: &quot;mqtt&quot;,&#xd;
         &quot;topic&quot;: &quot;result&quot;,&#xd;
         &quot;metadata&quot;: &quot;metadt&quot;,&#xd;
         &quot;contentType&quot;: &quot;application/json&quot;&#xd;
@@ -403,7 +403,7 @@
             <collectionProp name="Arguments.arguments">
               <elementProp name="" elementType="Argument">
                 <stringProp name="Argument.name"></stringProp>
-                <stringProp name="Argument.value">redis</stringProp>
+                  <stringProp name="Argument.value">mqtt</stringProp>
                 <stringProp name="Argument.metadata">=</stringProp>
               </elementProp>
               <elementProp name="" elementType="Argument">
