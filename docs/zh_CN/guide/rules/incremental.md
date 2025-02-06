@@ -29,15 +29,15 @@
 
 ```txt
 {"op":"ProjectPlan_0","info":"Fields:[ Call:{ name:count, args:[*] } ]"}
-	{"op":"WindowPlan_1","info":"{ length:4, windowType:COUNT_WINDOW, limit: 0 }"}
-			{"op":"DataSourcePlan_2","info":"StreamName: demo"}
+    {"op":"WindowPlan_1","info":"{ length:4, windowType:COUNT_WINDOW, limit: 0 }"}
+            {"op":"DataSourcePlan_2","info":"StreamName: demo"}
 ```
 
 通过上述查询计划，我们可以了解到上述规则在实际运行时，会将数据缓存在内存中，等窗口结束后再进行计算，这可能会导致内存消耗过大。
 
 我们可以通过在 `options` 中启用增量计算，以以下规则为例:
 
-```json 
+```json
 {
   "id": "rule",
   "sql": "SELECT count(*) from demo group by countwindow(4)",
@@ -59,8 +59,8 @@
 
 ```txt
 {"op":"ProjectPlan_0","info":"Fields:[ Call:{ name:bypass, args:[$$default.inc_agg_col_1] } ]"}
-	{"op":"IncAggWindowPlan_1","info":"wType:COUNT_WINDOW, funcs:[Call:{ name:inc_count, args:[*] }->inc_agg_col_1]"}
-			{"op":"DataSourcePlan_2","info":"StreamName: demo, StreamFields:[ inc_agg_col_1 ]"}
+    {"op":"IncAggWindowPlan_1","info":"wType:COUNT_WINDOW, funcs:[Call:{ name:inc_count, args:[*] }->inc_agg_col_1]"}
+            {"op":"DataSourcePlan_2","info":"StreamName: demo, StreamFields:[ inc_agg_col_1 ]"}
 ```
 
 通过上述查询计划，可以发现在该规则运行时，它的计划从 `WindowPlan` 改变为了 `IncAggWindowPlan`, 这代表了数据进入该窗口后会直接进行计算，而非缓存在内存内。
@@ -91,8 +91,8 @@
 
 ```txt
 {"op":"ProjectPlan_0","info":"Fields:[ Call:{ name:count, args:[*] }, Call:{ name:stddev, args:[demo.a] } ]"}
-	{"op":"WindowPlan_1","info":"{ length:4, windowType:COUNT_WINDOW, limit: 0 }"}
-			{"op":"DataSourcePlan_2","info":"StreamName: demo"}
+    {"op":"WindowPlan_1","info":"{ length:4, windowType:COUNT_WINDOW, limit: 0 }"}
+            {"op":"DataSourcePlan_2","info":"StreamName: demo"}
 ```
 
 可以看到由于 `stddev` 是一个不支持增量计算的聚合函数，所以这个规则的查询计划中并没有打开增量计算。
