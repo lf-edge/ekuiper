@@ -47,8 +47,9 @@ type defaultNode struct {
 	outputs     map[string]chan<- any
 	opsWg       *sync.WaitGroup
 	// tracing state
-	span    trace.Span
-	spanCtx api.StreamContext
+	span                     trace.Span
+	spanCtx                  api.StreamContext
+	disableBufferFullDiscard bool
 }
 
 func newDefaultNode(name string, options *def.RuleOption) *defaultNode {
@@ -57,10 +58,11 @@ func newDefaultNode(name string, options *def.RuleOption) *defaultNode {
 		c = 1
 	}
 	return &defaultNode{
-		name:        name,
-		outputs:     make(map[string]chan<- any),
-		concurrency: c,
-		sendError:   options.SendError,
+		name:                     name,
+		outputs:                  make(map[string]chan<- any),
+		concurrency:              c,
+		sendError:                options.SendError,
+		disableBufferFullDiscard: options.DisableBufferFullDiscard,
 	}
 }
 
@@ -138,14 +140,23 @@ func (o *defaultNode) doBroadcast(val any) {
 		if vt, ok := val.(xsql.HasTracerCtx); ok && vt.GetTracerCtx() == nil {
 			vt.SetTracerCtx(o.spanCtx)
 		}
-		select {
-		case out <- val:
-			// do nothing
-		case <-o.ctx.Done():
-			// rule stop so stop waiting
-		default:
-			// record the error and stop propogating to avoid infinite loop
-			o.onErrorOpt(o.ctx, fmt.Errorf("buffer full, drop message from %s to %s", o.name, name), false)
+		if o.disableBufferFullDiscard {
+			select {
+			case out <- val:
+				continue
+			case <-o.ctx.Done():
+				return
+			}
+		} else {
+			select {
+			case out <- val:
+				// do nothing
+			case <-o.ctx.Done():
+				// rule stop so stop waiting
+			default:
+				// record the error and stop propogating to avoid infinite loop
+				o.onErrorOpt(o.ctx, fmt.Errorf("buffer full, drop message from %s to %s", o.name, name), false)
+			}
 		}
 		c++
 		if c == l {

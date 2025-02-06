@@ -1244,20 +1244,23 @@ func TestSingleSQL(t *testing.T) {
 	HandleStream(true, streamList, t)
 	options := []*def.RuleOption{
 		{
-			BufferLength: 100,
-			SendError:    true,
+			BufferLength:             100,
+			SendError:                true,
+			DisableBufferFullDiscard: true,
 		},
 		{
-			BufferLength:       100,
-			SendError:          true,
-			Qos:                def.AtLeastOnce,
-			CheckpointInterval: cast.DurationConf(5 * time.Second),
+			BufferLength:             100,
+			SendError:                true,
+			Qos:                      def.AtLeastOnce,
+			CheckpointInterval:       cast.DurationConf(5 * time.Second),
+			DisableBufferFullDiscard: true,
 		},
 		{
-			BufferLength:       100,
-			SendError:          true,
-			Qos:                def.ExactlyOnce,
-			CheckpointInterval: cast.DurationConf(5 * time.Second),
+			BufferLength:             100,
+			SendError:                true,
+			Qos:                      def.ExactlyOnce,
+			CheckpointInterval:       cast.DurationConf(5 * time.Second),
+			DisableBufferFullDiscard: true,
 		},
 	}
 	for _, opt := range options {
