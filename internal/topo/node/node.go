@@ -47,8 +47,9 @@ type defaultNode struct {
 	outputs     map[string]chan any
 	opsWg       *sync.WaitGroup
 	// tracing state
-	span    trace.Span
-	spanCtx api.StreamContext
+	span                     trace.Span
+	spanCtx                  api.StreamContext
+	disableBufferFullDiscard bool
 }
 
 func newDefaultNode(name string, options *def.RuleOption) *defaultNode {
@@ -57,10 +58,11 @@ func newDefaultNode(name string, options *def.RuleOption) *defaultNode {
 		c = 1
 	}
 	return &defaultNode{
-		name:        name,
-		outputs:     make(map[string]chan any),
-		concurrency: c,
-		sendError:   options.SendError,
+		name:                     name,
+		outputs:                  make(map[string]chan any),
+		concurrency:              c,
+		sendError:                options.SendError,
+		disableBufferFullDiscard: options.DisableBufferFullDiscard,
 	}
 }
 
@@ -147,6 +149,15 @@ func (o *defaultNode) doBroadcast(val any) {
 		// If has set ctx in the node impl, do not override it
 		if vt, ok := val.(xsql.HasTracerCtx); ok && vt.GetTracerCtx() == nil {
 			vt.SetTracerCtx(o.spanCtx)
+		}
+		// wait buffer consume if buffer full
+		if o.disableBufferFullDiscard {
+			select {
+			case out <- val:
+				continue
+			case <-o.ctx.Done():
+				return
+			}
 		}
 		// Try to send the latest one. If full, read the oldest one and retry
 	forlabel:

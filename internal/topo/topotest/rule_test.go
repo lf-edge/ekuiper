@@ -1249,6 +1249,7 @@ func TestSingleSQL(t *testing.T) {
 			PlanOptimizeStrategy: &def.PlanOptimizeStrategy{
 				EnableIncrementalWindow: true,
 			},
+			DisableBufferFullDiscard: true,
 		},
 		{
 			BufferLength:       100,
@@ -1258,6 +1259,7 @@ func TestSingleSQL(t *testing.T) {
 			PlanOptimizeStrategy: &def.PlanOptimizeStrategy{
 				EnableIncrementalWindow: true,
 			},
+			DisableBufferFullDiscard: true,
 		},
 		{
 			BufferLength:       100,
@@ -1267,6 +1269,7 @@ func TestSingleSQL(t *testing.T) {
 			PlanOptimizeStrategy: &def.PlanOptimizeStrategy{
 				EnableIncrementalWindow: true,
 			},
+			DisableBufferFullDiscard: true,
 		},
 	}
 	for _, opt := range options {
