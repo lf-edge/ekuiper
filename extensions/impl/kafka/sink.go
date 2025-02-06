@@ -58,7 +58,7 @@ type kafkaConf struct {
 }
 
 type kafkaWriterConf struct {
-	BatchSize    int           `json:"-"`
+	BatchSize    int           `json:"batchSize"`
 	BatchTimeout time.Duration `json:"-"`
 	BatchBytes   int64         `json:"batchBytes"`
 }
