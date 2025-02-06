@@ -332,6 +332,10 @@ This section configures the portable plugin runtime.
       pythonBin: python
       # control init timeout in ms. If the init time is longer than this value, the plugin will be terminated.
       initTimeout: 5000
+      # set the timeout for plugin message sending in milliseconds.
+      sendTimeout: 5000
+      # set the timeout for plugin message receiving in milliseconds.
+      recvTimeout: 5000
 ```
 
 ## Ruleset Provision

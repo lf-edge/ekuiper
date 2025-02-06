@@ -319,6 +319,10 @@ SQL 中的 [get_keyed_state](../sqls/functions/other_functions.md#getkeyedstate)
       pythonBin: python
       # 控制插件初始化超时时间，单位为毫秒。eKuiper portable 插件运行时会等待插件初始化以完成握手，若超时则终止插件进程
       initTimeout: 5000
+      # 控制插件发送消息的超时时间，单位为毫秒
+      sendTimeout: 5000
+      # 控制插件接收消息的超时时间，单位为毫秒
+      recvTimeout: 5000
 ```
 
 ## 初始化规则集
