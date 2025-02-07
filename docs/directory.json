@@ -127,6 +127,10 @@
           "path": "guide/rules/state_and_fault_tolerance"
         },
         {
+          "title": "增量计算",
+          "path": "guide/rules/incremental"
+        },
+        {
           "title": "序列化",
           "path": "guide/serialization/serialization",
           "collapsed": true,
@@ -897,6 +901,10 @@
         {
           "title": "State and Fault Tolerance",
           "path": "guide/rules/state_and_fault_tolerance"
+        },
+        {
+          "title": "Incremental Calculation",
+          "path": "guide/rules/incremental"
         },
         {
           "title": "Serialization",
