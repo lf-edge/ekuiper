@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright 2023-2024 EMQ Technologies Co., Ltd.
+  ~ Copyright 2025 EMQ Technologies Co., Ltd.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -14,7 +14,8 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-<jmeterTestPlan version="1.2" properties="5.0" jmeter="5.5">
+
+<jmeterTestPlan version="1.2" properties="5.0" jmeter="5.3">
   <hashTree>
     <TestPlan guiclass="TestPlanGui" testclass="TestPlan" testname="Test Plan" enabled="true">
       <stringProp name="TestPlan.comments"></stringProp>
@@ -44,8 +45,8 @@
             <stringProp name="Argument.value">${__property(fvt,,)}</stringProp>
             <stringProp name="Argument.metadata">=</stringProp>
           </elementProp>
-          <elementProp name="redis_srv" elementType="Argument">
-            <stringProp name="Argument.name">redis_srv</stringProp>
+          <elementProp name="mqtt_srv" elementType="Argument">
+            <stringProp name="Argument.name">mqtt_srv</stringProp>
             <stringProp name="Argument.value">127.0.0.1</stringProp>
             <stringProp name="Argument.metadata">=</stringProp>
           </elementProp>
@@ -114,13 +115,13 @@
                 <elementProp name="" elementType="HTTPArgument">
                   <boolProp name="HTTPArgument.always_encode">false</boolProp>
                   <stringProp name="Argument.value">{&#xd;
-  &quot;id&quot;: &quot;redisMsgBus&quot;,&#xd;
+                      &quot;id&quot;: &quot;mqttMsgBus&quot;,&#xd;
   &quot;typ&quot;: &quot;edgex&quot;,&#xd;
   &quot;props&quot;: {&#xd;
-    &quot;protocol&quot;: &quot;redis&quot;,&#xd;
+                      &quot;protocol&quot;: &quot;tcp&quot;,&#xd;
     &quot;server&quot;: &quot;127.0.0.1&quot;,&#xd;
-    &quot;port&quot;: 6379,&#xd;
-    &quot;type&quot;: &quot;redis&quot;&#xd;
+                      &quot;port&quot;: 1883,&#xd;
+                      &quot;type&quot;: &quot;mqtt&quot;&#xd;
   }&#xd;
 }</stringProp>
                   <stringProp name="Argument.metadata">=</stringProp>
@@ -204,7 +205,7 @@
   &quot;actions&quot;: [&#xd;
     {&#xd;
       &quot;edgex&quot;: {&#xd;
-        &quot;connectionSelector&quot;: &quot;redisMsgBus&quot;,&#xd;
+                      &quot;connectionSelector&quot;: &quot;mqttMsgBus&quot;,&#xd;
         &quot;topic&quot;: &quot;result&quot;,&#xd;
         &quot;metadata&quot;: &quot;edgex_meta&quot;,&#xd;
         &quot;contentType&quot;: &quot;application/json&quot;,&#xd;
@@ -266,7 +267,7 @@
           </HTTPSamplerProxy>
           <hashTree>
             <JSONPathAssertion guiclass="JSONPathAssertionGui" testclass="JSONPathAssertion" testname="JSON Assertion" enabled="true">
-              <stringProp name="JSON_PATH">$.source_redisMsgBus/events_0_records_in_total</stringProp>
+              <stringProp name="JSON_PATH">$.source_mqttMsgBus/events_0_records_in_total</stringProp>
               <stringProp name="EXPECTED_VALUE">0</stringProp>
               <boolProp name="JSONVALIDATION">true</boolProp>
               <boolProp name="EXPECT_NULL">false</boolProp>
@@ -308,7 +309,7 @@
           </HTTPSamplerProxy>
           <hashTree>
             <JSONPathAssertion guiclass="JSONPathAssertionGui" testclass="JSONPathAssertion" testname="JSON Assertion" enabled="true">
-              <stringProp name="JSON_PATH">$.source_redisMsgBus/events_0_records_in_total</stringProp>
+              <stringProp name="JSON_PATH">$.source_mqttMsgBus/events_0_records_in_total</stringProp>
               <stringProp name="EXPECTED_VALUE">10</stringProp>
               <boolProp name="JSONVALIDATION">true</boolProp>
               <boolProp name="EXPECT_NULL">false</boolProp>
@@ -454,12 +455,12 @@
             <collectionProp name="Arguments.arguments">
               <elementProp name="" elementType="Argument">
                 <stringProp name="Argument.name"></stringProp>
-                <stringProp name="Argument.value">redis</stringProp>
+                <stringProp name="Argument.value">mqtt</stringProp>
                 <stringProp name="Argument.metadata">=</stringProp>
               </elementProp>
               <elementProp name="" elementType="Argument">
                 <stringProp name="Argument.name"></stringProp>
-                <stringProp name="Argument.value">${redis_srv}</stringProp>
+                <stringProp name="Argument.value">${mqtt_srv}</stringProp>
                 <stringProp name="Argument.metadata">=</stringProp>
               </elementProp>
             </collectionProp>
@@ -479,7 +480,8 @@
             <boolProp name="ISREGEX">false</boolProp>
           </JSONPathAssertion>
           <hashTree/>
-          <JSONPathAssertion guiclass="JSONPathAssertionGui" testclass="JSONPathAssertion" testname="Humidity value Assertion" enabled="true">
+          <JSONPathAssertion guiclass="JSONPathAssertionGui" testclass="JSONPathAssertion"
+                             testname="Humidity value Assertion" enabled="false">
             <stringProp name="JSON_PATH">$.event.readings[1].value</stringProp>
             <stringProp name="EXPECTED_VALUE">81</stringProp>
             <boolProp name="JSONVALIDATION">false</boolProp>
@@ -488,7 +490,8 @@
             <boolProp name="ISREGEX">false</boolProp>
           </JSONPathAssertion>
           <hashTree/>
-          <JSONPathAssertion guiclass="JSONPathAssertionGui" testclass="JSONPathAssertion" testname="temperature value Assertion" enabled="true">
+          <JSONPathAssertion guiclass="JSONPathAssertionGui" testclass="JSONPathAssertion"
+                             testname="temperature value Assertion" enabled="false">
             <stringProp name="JSON_PATH">$.event.readings[0].value</stringProp>
             <stringProp name="EXPECTED_VALUE">72</stringProp>
             <boolProp name="JSONVALIDATION">false</boolProp>

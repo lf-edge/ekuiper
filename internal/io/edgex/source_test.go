@@ -1,4 +1,4 @@
-// Copyright 2021-2024 EMQ Technologies Co., Ltd.
+// Copyright 2021-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,10 +21,11 @@ import (
 	"reflect"
 	"testing"
 
-	v3 "github.com/edgexfoundry/go-mod-core-contracts/v3/common"
-	"github.com/edgexfoundry/go-mod-core-contracts/v3/dtos"
-	"github.com/edgexfoundry/go-mod-core-contracts/v3/models"
-	"github.com/edgexfoundry/go-mod-messaging/v3/pkg/types"
+	v4 "github.com/edgexfoundry/go-mod-core-contracts/v4/common"
+	"github.com/edgexfoundry/go-mod-core-contracts/v4/dtos"
+	"github.com/edgexfoundry/go-mod-core-contracts/v4/models"
+	"github.com/edgexfoundry/go-mod-messaging/v4/pkg/types"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 )
@@ -32,29 +33,29 @@ import (
 var (
 	es      = &Source{}
 	typeMap = map[string]string{
-		"b1":  v3.ValueTypeBool,
-		"i1":  v3.ValueTypeInt8,
-		"i2":  v3.ValueTypeInt16,
-		"i3":  v3.ValueTypeInt32,
-		"i4":  v3.ValueTypeInt64,
-		"i5":  v3.ValueTypeUint8,
-		"i6":  v3.ValueTypeUint16,
-		"i7":  v3.ValueTypeUint32,
-		"s1":  v3.ValueTypeString,
-		"f1":  v3.ValueTypeFloat32,
-		"f2":  v3.ValueTypeFloat64,
-		"i8":  v3.ValueTypeUint64,
-		"ba":  v3.ValueTypeBoolArray,
-		"ia1": v3.ValueTypeInt8Array,
-		"ia2": v3.ValueTypeInt16Array,
-		"ia3": v3.ValueTypeInt32Array,
-		"ia4": v3.ValueTypeInt64Array,
-		"ia5": v3.ValueTypeUint8Array,
-		"ia6": v3.ValueTypeUint16Array,
-		"ia7": v3.ValueTypeUint32Array,
-		"ia8": v3.ValueTypeUint64Array,
-		"fa1": v3.ValueTypeFloat32Array,
-		"fa2": v3.ValueTypeFloat64Array,
+		"b1":  v4.ValueTypeBool,
+		"i1":  v4.ValueTypeInt8,
+		"i2":  v4.ValueTypeInt16,
+		"i3":  v4.ValueTypeInt32,
+		"i4":  v4.ValueTypeInt64,
+		"i5":  v4.ValueTypeUint8,
+		"i6":  v4.ValueTypeUint16,
+		"i7":  v4.ValueTypeUint32,
+		"s1":  v4.ValueTypeString,
+		"f1":  v4.ValueTypeFloat32,
+		"f2":  v4.ValueTypeFloat64,
+		"i8":  v4.ValueTypeUint64,
+		"ba":  v4.ValueTypeBoolArray,
+		"ia1": v4.ValueTypeInt8Array,
+		"ia2": v4.ValueTypeInt16Array,
+		"ia3": v4.ValueTypeInt32Array,
+		"ia4": v4.ValueTypeInt64Array,
+		"ia5": v4.ValueTypeUint8Array,
+		"ia6": v4.ValueTypeUint16Array,
+		"ia7": v4.ValueTypeUint32Array,
+		"ia8": v4.ValueTypeUint64Array,
+		"fa1": v4.ValueTypeFloat32Array,
+		"fa2": v4.ValueTypeFloat64Array,
 	}
 )
 
@@ -205,6 +206,41 @@ func TestGetValue_Float(t *testing.T) {
 	}
 }
 
+func TestGetValue_String(t *testing.T) {
+	testEvent := models.Event{DeviceName: "test"}
+
+	r1 := models.SimpleReading{
+		BaseReading: models.BaseReading{
+			ResourceName: "str",
+			ValueType:    v4.ValueTypeString,
+		},
+		Value: "\"hello\"",
+	}
+	testEvent.Readings = append(testEvent.Readings, r1)
+
+	r2 := models.SimpleReading{
+		BaseReading: models.BaseReading{
+			ResourceName: "strArr",
+			ValueType:    v4.ValueTypeStringArray,
+		},
+		Value: "[\"strArr\"]",
+	}
+	testEvent.Readings = append(testEvent.Readings, r2)
+
+	dtoe := dtos.FromEventModelToDTO(testEvent)
+	for i, r := range dtoe.Readings {
+		if v, e := es.getValue(r, conf.Log); e != nil {
+			t.Errorf("%s", e)
+		} else {
+			if i == 0 {
+				assert.Equal(t, "\"hello\"", v)
+			} else {
+				assert.Equal(t, []string{"strArr"}, v)
+			}
+		}
+	}
+}
+
 func expectPi(t *testing.T, expected interface{}) {
 	if v1, ok := expected.(float64); ok {
 		if !almostEqual(v1, 3.14) {
@@ -330,7 +366,7 @@ func TestPrintConf(t *testing.T) {
 
 func TestGetValue_Binary(t *testing.T) {
 	ev := []byte("Hello World")
-	r1 := dtos.BaseReading{ResourceName: "bin", ValueType: v3.ValueTypeBinary, BinaryReading: dtos.BinaryReading{MediaType: "application/text", BinaryValue: ev}}
+	r1 := dtos.BaseReading{ResourceName: "bin", ValueType: v4.ValueTypeBinary, BinaryReading: dtos.BinaryReading{MediaType: "application/text", BinaryValue: ev}}
 	if v, e := es.getValue(r1, conf.Log); e != nil {
 		t.Errorf("%s", e)
 	} else if !reflect.DeepEqual(ev, v) {

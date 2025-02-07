@@ -1,4 +1,4 @@
-// Copyright 2021-2024 EMQ Technologies Co., Ltd.
+// Copyright 2021-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,11 +15,12 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 
-	"github.com/edgexfoundry/go-mod-messaging/v3/messaging"
-	"github.com/edgexfoundry/go-mod-messaging/v3/pkg/types"
+	"github.com/edgexfoundry/go-mod-messaging/v4/messaging"
+	"github.com/edgexfoundry/go-mod-messaging/v4/pkg/types"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 )
@@ -56,50 +57,8 @@ func subEventsFromMQTT(host string) {
 						return
 					case env := <-messages:
 						count++
-						fmt.Printf("%s\n", env.Payload)
-						if count == 1 {
-							return
-						}
-					}
-				}
-			}
-		}
-	}
-}
-
-func subEventsFromRedis(host string) {
-	msgConfig1 := types.MessageBusConfig{
-		Broker: types.HostInfo{
-			Host:     host,
-			Port:     6379,
-			Protocol: "redis",
-		},
-		Type: messaging.Redis,
-	}
-
-	if msgClient, err := messaging.NewMessageClient(msgConfig1); err != nil {
-		conf.Log.Fatal(err)
-	} else {
-		if ec := msgClient.Connect(); ec != nil {
-			conf.Log.Fatal(ec)
-		} else {
-			// log.Infof("The connection to edgex messagebus is established successfully.")
-			messages := make(chan types.MessageEnvelope)
-			topics := []types.TopicChannel{{Topic: "result", Messages: messages}}
-			err := make(chan error)
-			if e := msgClient.Subscribe(topics, err); e != nil {
-				// log.Errorf("Failed to subscribe to edgex messagebus topic %s.\n", e)
-				conf.Log.Fatal(e)
-			} else {
-				count := 0
-				for {
-					select {
-					case e1 := <-err:
-						conf.Log.Errorf("%s\n", e1)
-						return
-					case env := <-messages:
-						count++
-						fmt.Printf("%s\n", env.Payload)
+						r, _ := json.Marshal(env.Payload)
+						fmt.Printf("%s\n", r)
 						if count == 1 {
 							return
 						}
@@ -116,7 +75,7 @@ func main() {
 			subEventsFromMQTT(os.Args[2])
 		}
 		if v := os.Args[1]; v == "redis" {
-			subEventsFromRedis(os.Args[2])
+			panic("edgex v4 does not support redis")
 		}
 	}
 }

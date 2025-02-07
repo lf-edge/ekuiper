@@ -1,4 +1,4 @@
-// Copyright 2021-2024 EMQ Technologies Co., Ltd.
+// Copyright 2021-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,14 +16,13 @@ package edgex
 
 import (
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"reflect"
 
-	v3 "github.com/edgexfoundry/go-mod-core-contracts/v3/common"
-	"github.com/edgexfoundry/go-mod-core-contracts/v3/dtos"
-	"github.com/edgexfoundry/go-mod-core-contracts/v3/dtos/requests"
-	"github.com/edgexfoundry/go-mod-messaging/v3/pkg/types"
+	v4 "github.com/edgexfoundry/go-mod-core-contracts/v4/common"
+	"github.com/edgexfoundry/go-mod-core-contracts/v4/dtos"
+	"github.com/edgexfoundry/go-mod-core-contracts/v4/dtos/requests"
+	"github.com/edgexfoundry/go-mod-messaging/v4/pkg/types"
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
@@ -170,10 +169,10 @@ func (ems *EdgexMsgBusSink) produceEvents(ctx api.StreamContext, item any) (*dto
 					continue
 				}
 				switch vt {
-				case v3.ValueTypeBinary:
+				case v4.ValueTypeBinary:
 					// default media type
 					event.AddBinaryReading(k1, vv.([]byte), "application/text")
-				case v3.ValueTypeObject:
+				case v4.ValueTypeObject:
 					event.AddObjectReading(k1, vv)
 				default:
 					err = event.AddSimpleReading(k1, vt, vv)
@@ -201,33 +200,33 @@ func getValueType(v any) (string, any, error) {
 	k := vt.Kind()
 	switch k {
 	case reflect.Bool:
-		return v3.ValueTypeBool, v, nil
+		return v4.ValueTypeBool, v, nil
 	case reflect.String:
-		return v3.ValueTypeString, v, nil
+		return v4.ValueTypeString, v, nil
 	case reflect.Uint8:
-		return v3.ValueTypeUint8, v, nil
+		return v4.ValueTypeUint8, v, nil
 	case reflect.Uint16:
-		return v3.ValueTypeUint16, v, nil
+		return v4.ValueTypeUint16, v, nil
 	case reflect.Uint32:
-		return v3.ValueTypeUint32, v, nil
+		return v4.ValueTypeUint32, v, nil
 	case reflect.Uint64:
-		return v3.ValueTypeUint64, v, nil
+		return v4.ValueTypeUint64, v, nil
 	case reflect.Uint:
-		return v3.ValueTypeUint64, uint64(v.(uint)), nil
+		return v4.ValueTypeUint64, uint64(v.(uint)), nil
 	case reflect.Int8:
-		return v3.ValueTypeInt8, v, nil
+		return v4.ValueTypeInt8, v, nil
 	case reflect.Int16:
-		return v3.ValueTypeInt16, v, nil
+		return v4.ValueTypeInt16, v, nil
 	case reflect.Int32:
-		return v3.ValueTypeInt32, v, nil
+		return v4.ValueTypeInt32, v, nil
 	case reflect.Int64:
-		return v3.ValueTypeInt64, v, nil
+		return v4.ValueTypeInt64, v, nil
 	case reflect.Int:
-		return v3.ValueTypeInt64, int64(v.(int)), nil
+		return v4.ValueTypeInt64, int64(v.(int)), nil
 	case reflect.Float32:
-		return v3.ValueTypeFloat32, v, nil
+		return v4.ValueTypeFloat32, v, nil
 	case reflect.Float64:
-		return v3.ValueTypeFloat64, v, nil
+		return v4.ValueTypeFloat64, v, nil
 	case reflect.Slice:
 		switch arrayValue := v.(type) {
 		case []any:
@@ -246,7 +245,7 @@ func getValueType(v any) (string, any, error) {
 						}
 						result[i] = temp
 					}
-					return v3.ValueTypeBoolArray, result, nil
+					return v4.ValueTypeBoolArray, result, nil
 				case reflect.String:
 					result := make([]string, len(arrayValue))
 					for i, av := range arrayValue {
@@ -256,7 +255,7 @@ func getValueType(v any) (string, any, error) {
 						}
 						result[i] = temp
 					}
-					return v3.ValueTypeStringArray, result, nil
+					return v4.ValueTypeStringArray, result, nil
 				case reflect.Int8:
 					result := make([]int8, len(arrayValue))
 					for i, av := range arrayValue {
@@ -266,7 +265,7 @@ func getValueType(v any) (string, any, error) {
 						}
 						result[i] = temp
 					}
-					return v3.ValueTypeInt8Array, result, nil
+					return v4.ValueTypeInt8Array, result, nil
 				case reflect.Int16:
 					result := make([]int16, len(arrayValue))
 					for i, av := range arrayValue {
@@ -276,7 +275,7 @@ func getValueType(v any) (string, any, error) {
 						}
 						result[i] = temp
 					}
-					return v3.ValueTypeInt16Array, result, nil
+					return v4.ValueTypeInt16Array, result, nil
 				case reflect.Int32:
 					result := make([]int32, len(arrayValue))
 					for i, av := range arrayValue {
@@ -286,17 +285,17 @@ func getValueType(v any) (string, any, error) {
 						}
 						result[i] = temp
 					}
-					return v3.ValueTypeInt32Array, result, nil
+					return v4.ValueTypeInt32Array, result, nil
 				case reflect.Int64, reflect.Int:
 					result := make([]int64, len(arrayValue))
 					for i, av := range arrayValue {
-						temp, ok := av.(int64)
-						if !ok {
+						temp, err := cast.ToInt64(av, cast.CONVERT_SAMEKIND)
+						if err != nil {
 							return "", nil, fmt.Errorf("unable to cast value to []int64 for %v", v)
 						}
 						result[i] = temp
 					}
-					return v3.ValueTypeInt64Array, result, nil
+					return v4.ValueTypeInt64Array, result, nil
 				case reflect.Uint8:
 					result := make([]uint8, len(arrayValue))
 					for i, av := range arrayValue {
@@ -306,7 +305,7 @@ func getValueType(v any) (string, any, error) {
 						}
 						result[i] = temp
 					}
-					return v3.ValueTypeUint8Array, result, nil
+					return v4.ValueTypeUint8Array, result, nil
 				case reflect.Uint16:
 					result := make([]uint16, len(arrayValue))
 					for i, av := range arrayValue {
@@ -316,7 +315,7 @@ func getValueType(v any) (string, any, error) {
 						}
 						result[i] = temp
 					}
-					return v3.ValueTypeUint16Array, result, nil
+					return v4.ValueTypeUint16Array, result, nil
 				case reflect.Uint32:
 					result := make([]uint32, len(arrayValue))
 					for i, av := range arrayValue {
@@ -326,17 +325,17 @@ func getValueType(v any) (string, any, error) {
 						}
 						result[i] = temp
 					}
-					return v3.ValueTypeUint32Array, result, nil
+					return v4.ValueTypeUint32Array, result, nil
 				case reflect.Uint64, reflect.Uint:
 					result := make([]uint64, len(arrayValue))
 					for i, av := range arrayValue {
-						temp, ok := av.(uint64)
-						if !ok {
+						temp, err := cast.ToUint64(av, cast.CONVERT_SAMEKIND)
+						if err != nil {
 							return "", nil, fmt.Errorf("unable to cast value to []uint64 for %v", v)
 						}
 						result[i] = temp
 					}
-					return v3.ValueTypeUint64Array, result, nil
+					return v4.ValueTypeUint64Array, result, nil
 				case reflect.Float32:
 					result := make([]float32, len(arrayValue))
 					for i, av := range arrayValue {
@@ -346,7 +345,7 @@ func getValueType(v any) (string, any, error) {
 						}
 						result[i] = temp
 					}
-					return v3.ValueTypeFloat64Array, result, nil
+					return v4.ValueTypeFloat32Array, result, nil
 				case reflect.Float64:
 					result := make([]float64, len(arrayValue))
 					for i, av := range arrayValue {
@@ -356,83 +355,83 @@ func getValueType(v any) (string, any, error) {
 						}
 						result[i] = temp
 					}
-					return v3.ValueTypeFloat64Array, result, nil
+					return v4.ValueTypeFloat64Array, result, nil
 				}
 			} else { // default to string array
-				return v3.ValueTypeStringArray, []string{}, nil
+				return v4.ValueTypeStringArray, []string{}, nil
 			}
 		case []byte:
-			return v3.ValueTypeBinary, v, nil
+			return v4.ValueTypeBinary, v, nil
 		}
 	}
-	return v3.ValueTypeObject, v, nil
+	return v4.ValueTypeObject, v, nil
 }
 
 func getValueByType(v any, vt string) (any, error) {
 	switch vt {
-	case v3.ValueTypeBool:
+	case v4.ValueTypeBool:
 		return cast.ToBool(v, cast.CONVERT_SAMEKIND)
-	case v3.ValueTypeInt8:
+	case v4.ValueTypeInt8:
 		return cast.ToInt8(v, cast.CONVERT_SAMEKIND)
-	case v3.ValueTypeInt16:
+	case v4.ValueTypeInt16:
 		return cast.ToInt16(v, cast.CONVERT_SAMEKIND)
-	case v3.ValueTypeInt32:
+	case v4.ValueTypeInt32:
 		return cast.ToInt32(v, cast.CONVERT_SAMEKIND)
-	case v3.ValueTypeInt64:
+	case v4.ValueTypeInt64:
 		return cast.ToInt64(v, cast.CONVERT_SAMEKIND)
-	case v3.ValueTypeUint8:
+	case v4.ValueTypeUint8:
 		return cast.ToUint8(v, cast.CONVERT_SAMEKIND)
-	case v3.ValueTypeUint16:
+	case v4.ValueTypeUint16:
 		return cast.ToUint16(v, cast.CONVERT_SAMEKIND)
-	case v3.ValueTypeUint32:
+	case v4.ValueTypeUint32:
 		return cast.ToUint32(v, cast.CONVERT_SAMEKIND)
-	case v3.ValueTypeUint64:
+	case v4.ValueTypeUint64:
 		return cast.ToUint64(v, cast.CONVERT_SAMEKIND)
-	case v3.ValueTypeFloat32:
+	case v4.ValueTypeFloat32:
 		return cast.ToFloat32(v, cast.CONVERT_SAMEKIND)
-	case v3.ValueTypeFloat64:
+	case v4.ValueTypeFloat64:
 		return cast.ToFloat64(v, cast.CONVERT_SAMEKIND)
-	case v3.ValueTypeString:
+	case v4.ValueTypeString:
 		return cast.ToString(v, cast.CONVERT_SAMEKIND)
-	case v3.ValueTypeBoolArray:
+	case v4.ValueTypeBoolArray:
 		return cast.ToBoolSlice(v, cast.CONVERT_SAMEKIND)
-	case v3.ValueTypeInt8Array:
+	case v4.ValueTypeInt8Array:
 		return cast.ToTypedSlice(v, func(input any, sn cast.Strictness) (any, error) {
 			return cast.ToInt8(input, sn)
 		}, "int8", cast.CONVERT_SAMEKIND)
-	case v3.ValueTypeInt16Array:
+	case v4.ValueTypeInt16Array:
 		return cast.ToTypedSlice(v, func(input any, sn cast.Strictness) (any, error) {
 			return cast.ToInt16(input, sn)
 		}, "int16", cast.CONVERT_SAMEKIND)
-	case v3.ValueTypeInt32Array:
+	case v4.ValueTypeInt32Array:
 		return cast.ToTypedSlice(v, func(input any, sn cast.Strictness) (any, error) {
 			return cast.ToInt32(input, sn)
 		}, "int32", cast.CONVERT_SAMEKIND)
-	case v3.ValueTypeInt64Array:
+	case v4.ValueTypeInt64Array:
 		return cast.ToInt64Slice(v, cast.CONVERT_SAMEKIND)
-	case v3.ValueTypeUint8Array:
+	case v4.ValueTypeUint8Array:
 		return cast.ToTypedSlice(v, func(input any, sn cast.Strictness) (any, error) {
 			return cast.ToUint8(input, sn)
 		}, "uint8", cast.CONVERT_SAMEKIND)
-	case v3.ValueTypeUint16Array:
+	case v4.ValueTypeUint16Array:
 		return cast.ToTypedSlice(v, func(input any, sn cast.Strictness) (any, error) {
 			return cast.ToUint16(input, sn)
 		}, "uint16", cast.CONVERT_SAMEKIND)
-	case v3.ValueTypeUint32Array:
+	case v4.ValueTypeUint32Array:
 		return cast.ToTypedSlice(v, func(input any, sn cast.Strictness) (any, error) {
 			return cast.ToUint32(input, sn)
 		}, "uint32", cast.CONVERT_SAMEKIND)
-	case v3.ValueTypeUint64Array:
+	case v4.ValueTypeUint64Array:
 		return cast.ToUint64Slice(v, cast.CONVERT_SAMEKIND)
-	case v3.ValueTypeFloat32Array:
+	case v4.ValueTypeFloat32Array:
 		return cast.ToTypedSlice(v, func(input any, sn cast.Strictness) (any, error) {
 			return cast.ToFloat32(input, sn)
 		}, "float32", cast.CONVERT_SAMEKIND)
-	case v3.ValueTypeFloat64Array:
+	case v4.ValueTypeFloat64Array:
 		return cast.ToFloat64Slice(v, cast.CONVERT_SAMEKIND, cast.FORCE_CONVERT)
-	case v3.ValueTypeStringArray:
+	case v4.ValueTypeStringArray:
 		return cast.ToStringSlice(v, cast.CONVERT_SAMEKIND)
-	case v3.ValueTypeBinary:
+	case v4.ValueTypeBinary:
 		var (
 			bv  []byte
 			err error
@@ -448,7 +447,7 @@ func getValueByType(v any, vt string) (any, error) {
 			return nil, fmt.Errorf("fail to decode binary value from %v: not binary type", vv)
 		}
 		return bv, nil
-	case v3.ValueTypeObject:
+	case v4.ValueTypeObject:
 		return v, nil
 	default:
 		return nil, fmt.Errorf("unsupported type %v", vt)
@@ -486,20 +485,13 @@ func (ems *EdgexMsgBusSink) doCollect(ctx api.StreamContext, item any) error {
 		return fmt.Errorf("Failed to convert to EdgeX event: %s.", err.Error())
 	}
 	var (
-		data  []byte
+		req   any
 		topic string
 	)
 	if ems.c.MessageType == MessageTypeRequest {
-		req := requests.NewAddEventRequest(*evt)
-		data, _, err = req.Encode()
-		if err != nil {
-			return fmt.Errorf("unexpected error encode event %v", err)
-		}
+		req = requests.NewAddEventRequest(*evt)
 	} else {
-		data, err = json.Marshal(evt)
-		if err != nil {
-			return fmt.Errorf("unexpected error MarshalEvent %v", err)
-		}
+		req = *evt
 	}
 
 	if ems.topic == "" { // dynamic topic
@@ -508,7 +500,7 @@ func (ems *EdgexMsgBusSink) doCollect(ctx api.StreamContext, item any) error {
 		topic = ems.topic
 	}
 
-	env := types.NewMessageEnvelope(data, ctx)
+	env := types.NewMessageEnvelope(req, ctx)
 	env.ContentType = "application/json"
 	if pk, ok := ems.sendParams["contentType"]; ok {
 		if v, ok := pk.(string); ok {
@@ -683,6 +675,7 @@ func (m *meta) createEvent() *dtos.Event {
 	if m.tags != nil {
 		event.Tags = m.tags
 	}
+	event.ApiVersion = "v4"
 	return &event
 }
 

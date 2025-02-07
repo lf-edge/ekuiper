@@ -1,10 +1,10 @@
 #Global Edgex configurations
 default:
-  protocol: redis
-  server: edgex-redis
-  port: 6379
-  topic: rules-events
-  type: redis
+  protocol: tcp
+  server: edgex-mqtt-broker
+  port: 1883
+  topic: edgex/rules-events
+  type: mqtt
   # Could be 'event' or 'request'.
   # If the message is from app service, the message type is an event;
   # Otherwise, if it is from the message bus directly, it should be a request
@@ -25,23 +25,6 @@ default:
 #    KeyPEMBlock:
 #    SkipCertVerify: true/false
 
-#Override the global configurations
-redis_conf: #Conf_key
-  protocol: redis
-  server: localhost
-  port: 6379
-  topic: events
-  type: redis
-  messageType: event
-
-application_conf: #Conf_key
-  protocol: tcp
-  server: localhost
-  port: 5571
-  topic: application
-  type: zero
-  messageType: request
-
 mqtt_conf: #Conf_key
   protocol: tcp
   server: 127.0.0.1
@@ -56,4 +39,4 @@ share_conf: #Conf_key
   server: 127.0.0.1
   port: 1883
   topic: events
-  connectionSelector: redisMsgBus
+  connectionSelector: mqttMsgBus

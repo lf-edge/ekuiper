@@ -1,4 +1,4 @@
-// Copyright 2021-2024 EMQ Technologies Co., Ltd.
+// Copyright 2021-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,9 +20,10 @@ import (
 	"reflect"
 	"testing"
 
-	v3 "github.com/edgexfoundry/go-mod-core-contracts/v3/common"
-	"github.com/edgexfoundry/go-mod-core-contracts/v3/dtos"
+	v4 "github.com/edgexfoundry/go-mod-core-contracts/v4/common"
+	"github.com/edgexfoundry/go-mod-core-contracts/v4/dtos"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/testx"
@@ -57,7 +58,7 @@ func compareEvent(expected, actual *dtos.Event) bool {
 
 func compareReading(expected, actual dtos.BaseReading) bool {
 	if (expected.Id == actual.Id || (expected.Id == "" && actual.Id != "")) && expected.ProfileName == actual.ProfileName && expected.DeviceName == actual.DeviceName && (expected.Origin == actual.Origin || (expected.Origin == 0 && actual.Origin > 0)) && expected.ResourceName == actual.ResourceName && expected.Value == actual.Value && expected.ValueType == actual.ValueType {
-		if expected.ValueType == v3.ValueTypeObject {
+		if expected.ValueType == v4.ValueTypeObject {
 			if !reflect.DeepEqual(expected.ObjectValue, actual.ObjectValue) {
 				return false
 			}
@@ -222,7 +223,7 @@ func TestProduceEvents(t1 *testing.T) {
 						ProfileName:   "ekuiperProfile",
 						Id:            "12",
 						Origin:        14,
-						ValueType:     v3.ValueTypeInt64,
+						ValueType:     v4.ValueTypeInt64,
 						SimpleReading: dtos.SimpleReading{Value: "100"},
 					},
 					{
@@ -231,7 +232,7 @@ func TestProduceEvents(t1 *testing.T) {
 						ProfileName:   "ekuiperProfile",
 						Id:            "22",
 						Origin:        24,
-						ValueType:     v3.ValueTypeFloat64,
+						ValueType:     v4.ValueTypeFloat64,
 						SimpleReading: dtos.SimpleReading{Value: "5.000000e+01"},
 					},
 				},
@@ -266,7 +267,7 @@ func TestProduceEvents(t1 *testing.T) {
 						SimpleReading: dtos.SimpleReading{Value: "1.000000e+02"},
 						DeviceName:    "demo",
 						ProfileName:   "demoProfile",
-						ValueType:     v3.ValueTypeFloat64,
+						ValueType:     v4.ValueTypeFloat64,
 					},
 				},
 			},
@@ -290,14 +291,14 @@ func TestProduceEvents(t1 *testing.T) {
 						SimpleReading: dtos.SimpleReading{Value: "5.000000e+01"},
 						DeviceName:    "ekuiper",
 						ProfileName:   "ekuiperProfile",
-						ValueType:     v3.ValueTypeFloat64,
+						ValueType:     v4.ValueTypeFloat64,
 					},
 					{
 						ResourceName:  "h1",
 						SimpleReading: dtos.SimpleReading{Value: "1.000000e+02"},
 						DeviceName:    "ekuiper",
 						ProfileName:   "ekuiperProfile",
-						ValueType:     v3.ValueTypeFloat64,
+						ValueType:     v4.ValueTypeFloat64,
 					},
 				},
 			},
@@ -321,28 +322,28 @@ func TestProduceEvents(t1 *testing.T) {
 						SimpleReading: dtos.SimpleReading{Value: "newmeta"},
 						DeviceName:    "ekuiper",
 						ProfileName:   "ekuiperProfile",
-						ValueType:     v3.ValueTypeString,
+						ValueType:     v4.ValueTypeString,
 					},
 					{
 						ResourceName:  "h1",
 						SimpleReading: dtos.SimpleReading{Value: "true"},
 						DeviceName:    "ekuiper",
 						ProfileName:   "ekuiperProfile",
-						ValueType:     v3.ValueTypeBool,
+						ValueType:     v4.ValueTypeBool,
 					},
 					{
 						ResourceName:  "sa",
 						SimpleReading: dtos.SimpleReading{Value: "[1, 2, 3, 4]"},
 						DeviceName:    "ekuiper",
 						ProfileName:   "ekuiperProfile",
-						ValueType:     v3.ValueTypeStringArray,
+						ValueType:     v4.ValueTypeStringArray,
 					},
 					{
 						ResourceName:  "fa",
 						SimpleReading: dtos.SimpleReading{Value: "[1.100000e+00, 2.200000e+00, 3.300000e+00, 4.400000e+00]"},
 						DeviceName:    "ekuiper",
 						ProfileName:   "ekuiperProfile",
-						ValueType:     v3.ValueTypeFloat64Array,
+						ValueType:     v4.ValueTypeFloat64Array,
 					},
 				},
 			},
@@ -401,7 +402,7 @@ func TestProduceEvents(t1 *testing.T) {
 						ProfileName:   "demoProfile",
 						ResourceName:  "meta1",
 						SimpleReading: dtos.SimpleReading{Value: "newmeta"},
-						ValueType:     v3.ValueTypeString,
+						ValueType:     v4.ValueTypeString,
 					},
 					{
 						ResourceName:  "sa",
@@ -410,7 +411,7 @@ func TestProduceEvents(t1 *testing.T) {
 						DeviceName:    "test device name1",
 						Id:            "12",
 						Origin:        14,
-						ValueType:     v3.ValueTypeBinary,
+						ValueType:     v4.ValueTypeBinary,
 					},
 				},
 			},
@@ -441,7 +442,7 @@ func TestProduceEvents(t1 *testing.T) {
 						ProfileName:  "ekuiperProfile",
 						Id:           "12",
 						Origin:       14,
-						ValueType:    v3.ValueTypeObject,
+						ValueType:    v4.ValueTypeObject,
 						ObjectReading: dtos.ObjectReading{ObjectValue: map[string]interface{}{
 							"a": float64(1),
 							"b": "sttt",
@@ -469,7 +470,7 @@ func TestProduceEvents(t1 *testing.T) {
 						ProfileName:  "ekuiperProfile",
 						Id:           "",
 						Origin:       0,
-						ValueType:    v3.ValueTypeObject,
+						ValueType:    v4.ValueTypeObject,
 						ObjectReading: dtos.ObjectReading{ObjectValue: map[string]interface{}{
 							"a": float64(1),
 							"b": "sttt",
@@ -500,5 +501,493 @@ func TestProduceEvents(t1 *testing.T) {
 		} else if t.error == "" && !compareEvent(t.expected, result) {
 			t1.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, t.input, t.expected, result)
 		}
+	}
+}
+
+func TestReadingTypes(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    map[string]any
+		expected *dtos.Event
+	}{
+		{ // 0
+			name: "primitive",
+			input: map[string]any{
+				"auint8":   uint8(1),
+				"auint16":  uint16(1),
+				"auint32":  uint32(1),
+				"auint64":  uint64(1),
+				"auint":    uint(1),
+				"aint8":    int8(1),
+				"aint16":   int16(1),
+				"aint32":   int32(1),
+				"afloat32": float32(1.0),
+				"bin":      []byte("byte"),
+			},
+			expected: &dtos.Event{
+				Id:          "",
+				DeviceName:  "ekuiper",
+				ProfileName: "ekuiperProfile",
+				SourceName:  "ruleTest",
+				Readings: []dtos.BaseReading{
+					{
+						ResourceName:  "auint8",
+						DeviceName:    "ekuiper",
+						ProfileName:   "ekuiperProfile",
+						ValueType:     v4.ValueTypeUint8,
+						SimpleReading: dtos.SimpleReading{Value: "1"},
+					},
+					{
+						ResourceName:  "auint16",
+						DeviceName:    "ekuiper",
+						ProfileName:   "ekuiperProfile",
+						ValueType:     v4.ValueTypeUint16,
+						SimpleReading: dtos.SimpleReading{Value: "1"},
+					},
+					{
+						ResourceName:  "auint32",
+						DeviceName:    "ekuiper",
+						ProfileName:   "ekuiperProfile",
+						ValueType:     v4.ValueTypeUint32,
+						SimpleReading: dtos.SimpleReading{Value: "1"},
+					},
+					{
+						ResourceName:  "auint64",
+						DeviceName:    "ekuiper",
+						ProfileName:   "ekuiperProfile",
+						ValueType:     v4.ValueTypeUint64,
+						SimpleReading: dtos.SimpleReading{Value: "1"},
+					},
+					{
+						ResourceName:  "auint",
+						DeviceName:    "ekuiper",
+						ProfileName:   "ekuiperProfile",
+						ValueType:     v4.ValueTypeUint64,
+						SimpleReading: dtos.SimpleReading{Value: "1"},
+					},
+					{
+						ResourceName:  "aint8",
+						DeviceName:    "ekuiper",
+						ProfileName:   "ekuiperProfile",
+						ValueType:     v4.ValueTypeInt8,
+						SimpleReading: dtos.SimpleReading{Value: "1"},
+					},
+					{
+						ResourceName:  "aint16",
+						DeviceName:    "ekuiper",
+						ProfileName:   "ekuiperProfile",
+						ValueType:     v4.ValueTypeInt16,
+						SimpleReading: dtos.SimpleReading{Value: "1"},
+					},
+					{
+						ResourceName:  "aint32",
+						DeviceName:    "ekuiper",
+						ProfileName:   "ekuiperProfile",
+						ValueType:     v4.ValueTypeInt32,
+						SimpleReading: dtos.SimpleReading{Value: "1"},
+					},
+					{
+						ResourceName:  "afloat32",
+						DeviceName:    "ekuiper",
+						ProfileName:   "ekuiperProfile",
+						ValueType:     v4.ValueTypeFloat32,
+						SimpleReading: dtos.SimpleReading{Value: "1.000000e+00"},
+					},
+					{
+						ResourceName:  "bin",
+						DeviceName:    "ekuiper",
+						ProfileName:   "ekuiperProfile",
+						ValueType:     v4.ValueTypeBinary,
+						BinaryReading: dtos.BinaryReading{BinaryValue: []byte("byte"), MediaType: "application/text"},
+					},
+				},
+			},
+		},
+		{ // 0
+			name: "slice",
+			input: map[string]any{
+				"abool":    []any{true},
+				"auint8":   []any{uint8(1)},
+				"auint16":  []any{uint16(1)},
+				"auint32":  []any{uint32(1)},
+				"auint64":  []any{uint64(1)},
+				"auint":    []any{uint(1)},
+				"aint8":    []any{int8(1)},
+				"aint16":   []any{int16(1)},
+				"aint32":   []any{int32(1)},
+				"aint64":   []any{int64(1)},
+				"aint":     []any{1},
+				"afloat32": []any{float32(1.0)},
+				"astring":  []any{"test"},
+			},
+			expected: &dtos.Event{
+				Id:          "",
+				DeviceName:  "ekuiper",
+				ProfileName: "ekuiperProfile",
+				SourceName:  "ruleTest",
+				Readings: []dtos.BaseReading{
+					{
+						ResourceName:  "abool",
+						DeviceName:    "ekuiper",
+						ProfileName:   "ekuiperProfile",
+						ValueType:     v4.ValueTypeBoolArray,
+						SimpleReading: dtos.SimpleReading{Value: "[true]"},
+					},
+					{
+						ResourceName:  "auint8",
+						DeviceName:    "ekuiper",
+						ProfileName:   "ekuiperProfile",
+						ValueType:     v4.ValueTypeUint8Array,
+						SimpleReading: dtos.SimpleReading{Value: "[1]"},
+					},
+					{
+						ResourceName:  "auint16",
+						DeviceName:    "ekuiper",
+						ProfileName:   "ekuiperProfile",
+						ValueType:     v4.ValueTypeUint16Array,
+						SimpleReading: dtos.SimpleReading{Value: "[1]"},
+					},
+					{
+						ResourceName:  "auint32",
+						DeviceName:    "ekuiper",
+						ProfileName:   "ekuiperProfile",
+						ValueType:     v4.ValueTypeUint32Array,
+						SimpleReading: dtos.SimpleReading{Value: "[1]"},
+					},
+					{
+						ResourceName:  "auint64",
+						DeviceName:    "ekuiper",
+						ProfileName:   "ekuiperProfile",
+						ValueType:     v4.ValueTypeUint64Array,
+						SimpleReading: dtos.SimpleReading{Value: "[1]"},
+					},
+					{
+						ResourceName:  "auint",
+						DeviceName:    "ekuiper",
+						ProfileName:   "ekuiperProfile",
+						ValueType:     v4.ValueTypeUint64Array,
+						SimpleReading: dtos.SimpleReading{Value: "[1]"},
+					},
+					{
+						ResourceName:  "aint8",
+						DeviceName:    "ekuiper",
+						ProfileName:   "ekuiperProfile",
+						ValueType:     v4.ValueTypeInt8Array,
+						SimpleReading: dtos.SimpleReading{Value: "[1]"},
+					},
+					{
+						ResourceName:  "aint16",
+						DeviceName:    "ekuiper",
+						ProfileName:   "ekuiperProfile",
+						ValueType:     v4.ValueTypeInt16Array,
+						SimpleReading: dtos.SimpleReading{Value: "[1]"},
+					},
+					{
+						ResourceName:  "aint32",
+						DeviceName:    "ekuiper",
+						ProfileName:   "ekuiperProfile",
+						ValueType:     v4.ValueTypeInt32Array,
+						SimpleReading: dtos.SimpleReading{Value: "[1]"},
+					},
+					{
+						ResourceName:  "aint64",
+						DeviceName:    "ekuiper",
+						ProfileName:   "ekuiperProfile",
+						ValueType:     v4.ValueTypeInt64Array,
+						SimpleReading: dtos.SimpleReading{Value: "[1]"},
+					},
+					{
+						ResourceName:  "aint",
+						DeviceName:    "ekuiper",
+						ProfileName:   "ekuiperProfile",
+						ValueType:     v4.ValueTypeInt64Array,
+						SimpleReading: dtos.SimpleReading{Value: "[1]"},
+					},
+					{
+						ResourceName:  "afloat32",
+						DeviceName:    "ekuiper",
+						ProfileName:   "ekuiperProfile",
+						ValueType:     v4.ValueTypeFloat32Array,
+						SimpleReading: dtos.SimpleReading{Value: "[1.000000e+00]"},
+					},
+					{
+						ResourceName:  "astring",
+						DeviceName:    "ekuiper",
+						ProfileName:   "ekuiperProfile",
+						ValueType:     v4.ValueTypeStringArray,
+						SimpleReading: dtos.SimpleReading{Value: "[test]"},
+					},
+				},
+			},
+		},
+		{
+			name: "primitive with meta",
+			input: map[string]any{
+				"meta": map[string]any{
+					"abool":    map[string]any{"valueType": v4.ValueTypeBool},
+					"astr":     map[string]any{"valueType": v4.ValueTypeString},
+					"auint8":   map[string]any{"valueType": v4.ValueTypeUint8},
+					"auint16":  map[string]any{"valueType": v4.ValueTypeUint16},
+					"auint32":  map[string]any{"valueType": v4.ValueTypeUint32},
+					"auint64":  map[string]any{"valueType": v4.ValueTypeUint64},
+					"aint8":    map[string]any{"valueType": v4.ValueTypeInt8},
+					"aint16":   map[string]any{"valueType": v4.ValueTypeInt16},
+					"aint32":   map[string]any{"valueType": v4.ValueTypeInt32},
+					"aint64":   map[string]any{"valueType": v4.ValueTypeInt64},
+					"afloat32": map[string]any{"valueType": v4.ValueTypeFloat32},
+					"afloat64": map[string]any{"valueType": v4.ValueTypeFloat64},
+					"bin":      map[string]any{"valueType": v4.ValueTypeBinary},
+				},
+				"abool":    false,
+				"astr":     "hello",
+				"auint8":   1,
+				"auint16":  1,
+				"auint32":  1,
+				"auint64":  1,
+				"aint8":    1,
+				"aint16":   1,
+				"aint32":   1,
+				"aint64":   1,
+				"afloat32": 1,
+				"afloat64": 1,
+				"bin":      "byte",
+			},
+			expected: &dtos.Event{
+				Id:          "",
+				DeviceName:  "ekuiper",
+				ProfileName: "ekuiperProfile",
+				SourceName:  "ruleTest",
+				Readings: []dtos.BaseReading{
+					{
+						ResourceName:  "abool",
+						DeviceName:    "ekuiper",
+						ProfileName:   "ekuiperProfile",
+						ValueType:     v4.ValueTypeBool,
+						SimpleReading: dtos.SimpleReading{Value: "false"},
+					},
+					{
+						ResourceName:  "astr",
+						DeviceName:    "ekuiper",
+						ProfileName:   "ekuiperProfile",
+						ValueType:     v4.ValueTypeString,
+						SimpleReading: dtos.SimpleReading{Value: "hello"},
+					},
+					{
+						ResourceName:  "auint8",
+						DeviceName:    "ekuiper",
+						ProfileName:   "ekuiperProfile",
+						ValueType:     v4.ValueTypeUint8,
+						SimpleReading: dtos.SimpleReading{Value: "1"},
+					},
+					{
+						ResourceName:  "auint16",
+						DeviceName:    "ekuiper",
+						ProfileName:   "ekuiperProfile",
+						ValueType:     v4.ValueTypeUint16,
+						SimpleReading: dtos.SimpleReading{Value: "1"},
+					},
+					{
+						ResourceName:  "auint32",
+						DeviceName:    "ekuiper",
+						ProfileName:   "ekuiperProfile",
+						ValueType:     v4.ValueTypeUint32,
+						SimpleReading: dtos.SimpleReading{Value: "1"},
+					},
+					{
+						ResourceName:  "auint64",
+						DeviceName:    "ekuiper",
+						ProfileName:   "ekuiperProfile",
+						ValueType:     v4.ValueTypeUint64,
+						SimpleReading: dtos.SimpleReading{Value: "1"},
+					},
+					{
+						ResourceName:  "aint8",
+						DeviceName:    "ekuiper",
+						ProfileName:   "ekuiperProfile",
+						ValueType:     v4.ValueTypeInt8,
+						SimpleReading: dtos.SimpleReading{Value: "1"},
+					},
+					{
+						ResourceName:  "aint16",
+						DeviceName:    "ekuiper",
+						ProfileName:   "ekuiperProfile",
+						ValueType:     v4.ValueTypeInt16,
+						SimpleReading: dtos.SimpleReading{Value: "1"},
+					},
+					{
+						ResourceName:  "aint32",
+						DeviceName:    "ekuiper",
+						ProfileName:   "ekuiperProfile",
+						ValueType:     v4.ValueTypeInt32,
+						SimpleReading: dtos.SimpleReading{Value: "1"},
+					},
+					{
+						ResourceName:  "aint64",
+						DeviceName:    "ekuiper",
+						ProfileName:   "ekuiperProfile",
+						ValueType:     v4.ValueTypeInt64,
+						SimpleReading: dtos.SimpleReading{Value: "1"},
+					},
+					{
+						ResourceName:  "afloat32",
+						DeviceName:    "ekuiper",
+						ProfileName:   "ekuiperProfile",
+						ValueType:     v4.ValueTypeFloat32,
+						SimpleReading: dtos.SimpleReading{Value: "1.000000e+00"},
+					},
+					{
+						ResourceName:  "afloat64",
+						DeviceName:    "ekuiper",
+						ProfileName:   "ekuiperProfile",
+						ValueType:     v4.ValueTypeFloat64,
+						SimpleReading: dtos.SimpleReading{Value: "1.000000e+00"},
+					},
+					{
+						ResourceName:  "bin",
+						DeviceName:    "ekuiper",
+						ProfileName:   "ekuiperProfile",
+						ValueType:     v4.ValueTypeBinary,
+						BinaryReading: dtos.BinaryReading{BinaryValue: []byte("byte"), MediaType: "application/text"},
+					},
+				},
+			},
+		},
+		{
+			name: "slice with meta",
+			input: map[string]any{
+				"meta": map[string]any{
+					"abool":    map[string]any{"valueType": v4.ValueTypeBoolArray},
+					"astring":  map[string]any{"valueType": v4.ValueTypeStringArray},
+					"auint8":   map[string]any{"valueType": v4.ValueTypeUint8Array},
+					"auint16":  map[string]any{"valueType": v4.ValueTypeUint16Array},
+					"auint32":  map[string]any{"valueType": v4.ValueTypeUint32Array},
+					"auint64":  map[string]any{"valueType": v4.ValueTypeUint64Array},
+					"aint8":    map[string]any{"valueType": v4.ValueTypeInt8Array},
+					"aint16":   map[string]any{"valueType": v4.ValueTypeInt16Array},
+					"aint32":   map[string]any{"valueType": v4.ValueTypeInt32Array},
+					"aint64":   map[string]any{"valueType": v4.ValueTypeInt64Array},
+					"afloat32": map[string]any{"valueType": v4.ValueTypeFloat32Array},
+					"afloat64": map[string]any{"valueType": v4.ValueTypeFloat64Array},
+				},
+				"abool":    []any{true},
+				"auint8":   []any{1},
+				"auint16":  []any{1},
+				"auint32":  []any{1},
+				"auint64":  []any{1},
+				"aint8":    []any{1},
+				"aint16":   []any{1},
+				"aint32":   []any{1},
+				"aint64":   []any{1},
+				"afloat32": []any{1},
+				"afloat64": []any{1},
+				"astring":  []any{"test"},
+			},
+			expected: &dtos.Event{
+				Id:          "",
+				DeviceName:  "ekuiper",
+				ProfileName: "ekuiperProfile",
+				SourceName:  "ruleTest",
+				Readings: []dtos.BaseReading{
+					{
+						ResourceName:  "abool",
+						DeviceName:    "ekuiper",
+						ProfileName:   "ekuiperProfile",
+						ValueType:     v4.ValueTypeBoolArray,
+						SimpleReading: dtos.SimpleReading{Value: "[true]"},
+					},
+					{
+						ResourceName:  "auint8",
+						DeviceName:    "ekuiper",
+						ProfileName:   "ekuiperProfile",
+						ValueType:     v4.ValueTypeUint8Array,
+						SimpleReading: dtos.SimpleReading{Value: "[1]"},
+					},
+					{
+						ResourceName:  "auint16",
+						DeviceName:    "ekuiper",
+						ProfileName:   "ekuiperProfile",
+						ValueType:     v4.ValueTypeUint16Array,
+						SimpleReading: dtos.SimpleReading{Value: "[1]"},
+					},
+					{
+						ResourceName:  "auint32",
+						DeviceName:    "ekuiper",
+						ProfileName:   "ekuiperProfile",
+						ValueType:     v4.ValueTypeUint32Array,
+						SimpleReading: dtos.SimpleReading{Value: "[1]"},
+					},
+					{
+						ResourceName:  "auint64",
+						DeviceName:    "ekuiper",
+						ProfileName:   "ekuiperProfile",
+						ValueType:     v4.ValueTypeUint64Array,
+						SimpleReading: dtos.SimpleReading{Value: "[1]"},
+					},
+					{
+						ResourceName:  "aint8",
+						DeviceName:    "ekuiper",
+						ProfileName:   "ekuiperProfile",
+						ValueType:     v4.ValueTypeInt8Array,
+						SimpleReading: dtos.SimpleReading{Value: "[1]"},
+					},
+					{
+						ResourceName:  "aint16",
+						DeviceName:    "ekuiper",
+						ProfileName:   "ekuiperProfile",
+						ValueType:     v4.ValueTypeInt16Array,
+						SimpleReading: dtos.SimpleReading{Value: "[1]"},
+					},
+					{
+						ResourceName:  "aint32",
+						DeviceName:    "ekuiper",
+						ProfileName:   "ekuiperProfile",
+						ValueType:     v4.ValueTypeInt32Array,
+						SimpleReading: dtos.SimpleReading{Value: "[1]"},
+					},
+					{
+						ResourceName:  "aint64",
+						DeviceName:    "ekuiper",
+						ProfileName:   "ekuiperProfile",
+						ValueType:     v4.ValueTypeInt64Array,
+						SimpleReading: dtos.SimpleReading{Value: "[1]"},
+					},
+					{
+						ResourceName:  "afloat32",
+						DeviceName:    "ekuiper",
+						ProfileName:   "ekuiperProfile",
+						ValueType:     v4.ValueTypeFloat32Array,
+						SimpleReading: dtos.SimpleReading{Value: "[1.000000e+00]"},
+					},
+					{
+						ResourceName:  "afloat64",
+						DeviceName:    "ekuiper",
+						ProfileName:   "ekuiperProfile",
+						ValueType:     v4.ValueTypeFloat64Array,
+						SimpleReading: dtos.SimpleReading{Value: "[1.000000e+00]"},
+					},
+					{
+						ResourceName:  "astring",
+						DeviceName:    "ekuiper",
+						ProfileName:   "ekuiperProfile",
+						ValueType:     v4.ValueTypeStringArray,
+						SimpleReading: dtos.SimpleReading{Value: "[test]"},
+					},
+				},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			ems := EdgexMsgBusSink{}
+			err := ems.Provision(ctx, map[string]any{"metadata": "meta"})
+			require.NoError(t, err)
+			if ems.c.SourceName == "" {
+				ems.c.SourceName = "ruleTest"
+			}
+			result, err := ems.produceEvents(ctx, test.input)
+			require.NoError(t, err)
+			assert.True(t, compareEvent(test.expected, result))
+		})
 	}
 }

@@ -1,4 +1,4 @@
-// Copyright 2022-2024 EMQ Technologies Co., Ltd.
+// Copyright 2022-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,8 +18,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/edgexfoundry/go-mod-messaging/v3/messaging"
-	"github.com/edgexfoundry/go-mod-messaging/v3/pkg/types"
+	"github.com/edgexfoundry/go-mod-messaging/v4/messaging"
+	"github.com/edgexfoundry/go-mod-messaging/v4/pkg/types"
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
@@ -116,9 +116,9 @@ func printConf(mbconf types.MessageBusConfig) {
 func (es *Client) CfgValidate(props map[string]interface{}) error {
 	edgeAddr := "localhost"
 	c := &EdgexConf{
-		Protocol: "redis",
-		Port:     6379,
-		Type:     messaging.Redis,
+		Protocol: "tcp",
+		Port:     1883,
+		Type:     messaging.MQTT,
 		Optional: nil,
 	}
 
@@ -148,7 +148,7 @@ func (es *Client) CfgValidate(props map[string]interface{}) error {
 		edgeAddr = c.Server
 	}
 
-	if c.Type != messaging.MQTT && c.Type != messaging.Redis &&
+	if c.Type != messaging.MQTT &&
 		c.Type != messaging.NatsCore && c.Type != messaging.NatsJetStream {
 		return fmt.Errorf("specified wrong type value %s", c.Type)
 	}
