@@ -26,11 +26,15 @@ import (
 	kafkago "github.com/segmentio/kafka-go"
 	"github.com/segmentio/kafka-go/sasl"
 
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/util"
 	"github.com/lf-edge/ekuiper/v2/metrics"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cert"
+)
+
+const (
+	LblKafka = "kafka"
+	LblMsg   = "msg"
 )
 
 type KafkaSink struct {
@@ -184,7 +188,7 @@ func (k *KafkaSink) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) 
 
 func (k *KafkaSink) Collect(ctx api.StreamContext, item api.MessageTuple) (err error) {
 	defer func() {
-		KafkaCounter.WithLabelValues(LblMessage, metrics.LblSinkIO, metrics.GetStatusValue(err), ctx.GetRuleId(), ctx.GetOpId()).Inc()
+		metrics.IOCounter.WithLabelValues(LblKafka, metrics.LblSinkIO, metrics.GetStatusValue(err), ctx.GetRuleId(), ctx.GetOpId()).Inc()
 	}()
 	msgs, err := k.collect(ctx, item)
 	if err != nil {
@@ -192,8 +196,9 @@ func (k *KafkaSink) Collect(ctx api.StreamContext, item api.MessageTuple) (err e
 	}
 	start := time.Now()
 	defer func() {
-		KafkaDurationHist.WithLabelValues(LblWriteMsgs, metrics.LblSinkIO, ctx.GetRuleId(), ctx.GetOpId()).Observe(float64(time.Since(start).Microseconds()))
+		metrics.IODurationHist.WithLabelValues(LblKafka, metrics.LblSinkIO, ctx.GetRuleId(), ctx.GetOpId()).Observe(float64(time.Since(start).Microseconds()))
 	}()
+	metrics.IOCounter.WithLabelValues(LblKafka, metrics.LblSinkIO, metrics.GetStatusValue(err), ctx.GetRuleId(), ctx.GetOpId()).Add(float64(len(msgs)))
 	return k.writer.WriteMessages(ctx, msgs...)
 }
 
@@ -209,11 +214,10 @@ func (k *KafkaSink) CollectList(ctx api.StreamContext, items api.MessageTupleLis
 	})
 	start := time.Now()
 	defer func() {
-		conf.Log.Infof("send kafka cost %v", time.Since(start).String())
-		KafkaDurationHist.WithLabelValues(LblWriteMsgs, metrics.LblSinkIO, ctx.GetRuleId(), ctx.GetOpId()).Observe(float64(time.Since(start).Microseconds()))
+		metrics.IODurationHist.WithLabelValues(LblKafka, metrics.LblSinkIO, ctx.GetRuleId(), ctx.GetOpId()).Observe(float64(time.Since(start).Microseconds()))
 	}()
 	err = k.writer.WriteMessages(ctx, allMsgs...)
-	KafkaCounter.WithLabelValues(LblMessage, metrics.LblSinkIO, metrics.GetStatusValue(err), ctx.GetRuleId(), ctx.GetOpId()).Add(float64(len(allMsgs)))
+	metrics.IOCounter.WithLabelValues(LblKafka, metrics.LblSinkIO, metrics.GetStatusValue(err), ctx.GetRuleId(), ctx.GetOpId()).Add(float64(len(allMsgs)))
 	return err
 }
 
