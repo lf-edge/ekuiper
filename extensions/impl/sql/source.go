@@ -35,6 +35,14 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
 
+const (
+	LblSql       = "sql"
+	LblReq       = "req"
+	LblReconn    = "reconn"
+	LblException = "exception"
+	LblRecv      = "recv"
+)
+
 type SQLSourceConnector struct {
 	id            string
 	conf          *SQLConf
@@ -127,19 +135,19 @@ func (s *SQLSourceConnector) Close(ctx api.StreamContext) error {
 }
 
 func (s *SQLSourceConnector) Pull(ctx api.StreamContext, recvTime time.Time, ingest api.TupleIngest, ingestError api.ErrorIngest) {
-	SQLCounter.WithLabelValues(LblRequest, metrics.LblSourceIO, ctx.GetRuleId(), ctx.GetOpId()).Inc()
+	metrics.IOCounter.WithLabelValues(LblSql, metrics.LblSourceIO, LblReq, ctx.GetRuleId(), ctx.GetOpId()).Inc()
 	s.queryData(ctx, recvTime, ingest, ingestError)
 }
 
 func (s *SQLSourceConnector) queryData(ctx api.StreamContext, rcvTime time.Time, ingest api.TupleIngest, ingestError api.ErrorIngest) {
 	logger := ctx.GetLogger()
 	if s.needReconnect {
-		SQLCounter.WithLabelValues(LblReconn, metrics.LblSourceIO, ctx.GetRuleId(), ctx.GetOpId()).Inc()
+		metrics.IOCounter.WithLabelValues(LblSql, metrics.LblSourceIO, LblReconn, ctx.GetRuleId(), ctx.GetOpId()).Inc()
 		err := s.conn.Reconnect()
 		if err != nil {
 			logger.Errorf("reconnect db error %v", err)
 			ingestError(ctx, err)
-			SQLCounter.WithLabelValues(LblException, metrics.LblSourceIO, ctx.GetRuleId(), ctx.GetOpId()).Inc()
+			metrics.IOCounter.WithLabelValues(LblSql, metrics.LblSourceIO, LblException, ctx.GetRuleId(), ctx.GetOpId()).Inc()
 			return
 		}
 	}
@@ -150,7 +158,7 @@ func (s *SQLSourceConnector) queryData(ctx api.StreamContext, rcvTime time.Time,
 	if err != nil {
 		logger.Errorf("Get sql query error %v", err)
 		ingestError(ctx, err)
-		SQLCounter.WithLabelValues(LblException, metrics.LblSourceIO, ctx.GetRuleId(), ctx.GetOpId()).Inc()
+		metrics.IOCounter.WithLabelValues(LblSql, metrics.LblSourceIO, LblException, ctx.GetRuleId(), ctx.GetOpId()).Inc()
 		return
 	}
 	logger.Debugf("Query the database with %s", query)
@@ -159,12 +167,12 @@ func (s *SQLSourceConnector) queryData(ctx api.StreamContext, rcvTime time.Time,
 	failpoint.Inject("QueryErr", func() {
 		err = errors.New("QueryErr")
 	})
-	SQLHist.WithLabelValues(LblRequest, metrics.LblSourceIO, ctx.GetRuleId(), ctx.GetOpId()).Observe(float64(time.Since(start).Microseconds()))
+	metrics.IODurationHist.WithLabelValues(LblSql, metrics.LblSourceIO, ctx.GetRuleId(), ctx.GetOpId()).Observe(float64(time.Since(start).Microseconds()))
 	if err != nil {
 		logger.Errorf("query sql error %v", err)
 		s.needReconnect = true
 		ingestError(ctx, err)
-		SQLCounter.WithLabelValues(LblException, metrics.LblSourceIO, ctx.GetRuleId(), ctx.GetOpId()).Inc()
+		metrics.IOCounter.WithLabelValues(LblSql, metrics.LblSourceIO, LblException, ctx.GetRuleId(), ctx.GetOpId()).Inc()
 		return
 	} else if s.needReconnect {
 		s.needReconnect = false
@@ -177,7 +185,7 @@ func (s *SQLSourceConnector) queryData(ctx api.StreamContext, rcvTime time.Time,
 	if err != nil {
 		logger.Errorf("query %v row ColumnTypes error %v", query, err)
 		ingestError(ctx, err)
-		SQLCounter.WithLabelValues(LblException, metrics.LblSourceIO, ctx.GetRuleId(), ctx.GetOpId()).Inc()
+		metrics.IOCounter.WithLabelValues(LblSql, metrics.LblSourceIO, LblException, ctx.GetRuleId(), ctx.GetOpId()).Inc()
 		return
 	}
 	for rows.Next() {
@@ -191,12 +199,13 @@ func (s *SQLSourceConnector) queryData(ctx api.StreamContext, rcvTime time.Time,
 		if err != nil {
 			logger.Errorf("Run sql scan(%s) error %v", query, err)
 			ingestError(ctx, err)
-			SQLCounter.WithLabelValues(LblException, metrics.LblSourceIO, ctx.GetRuleId(), ctx.GetOpId()).Inc()
+			metrics.IOCounter.WithLabelValues(LblSql, metrics.LblSourceIO, LblException, ctx.GetRuleId(), ctx.GetOpId()).Inc()
 			return
 		}
 		scanIntoMap(data, columns, cols)
 		s.Query.UpdateMaxIndexValue(data)
 		ingest(ctx, data, nil, rcvTime)
+		metrics.IOCounter.WithLabelValues(LblSql, metrics.LblSourceIO, LblRecv, ctx.GetRuleId(), ctx.GetOpId()).Inc()
 	}
 }
 
