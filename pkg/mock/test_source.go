@@ -16,7 +16,6 @@ package mock
 
 import (
 	"fmt"
-	"log"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -83,7 +82,7 @@ func TestSourceConnectorCompare(t *testing.T, r api.Source, props map[string]any
 	)
 	wg.Add(1)
 	ingestErr := func(ctx api.StreamContext, err error) {
-		log.Println(err)
+		ctx.GetLogger().Error(err)
 		e = err
 		limit--
 		if limit == 0 {

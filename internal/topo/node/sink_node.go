@@ -44,19 +44,19 @@ type SinkNode struct {
 	resendOut chan<- any
 }
 
+// Caching:
+// 1. Set cache settings to enable diskCache
+// 2. Set resendInterval and bufferLength will use bufferLength as the memory cache
+// 3. By default, drop if it cannot sends out.
 func newSinkNode(ctx api.StreamContext, name string, rOpt def.RuleOption, eoflimit int, sc *conf.SinkConf, isRetry bool) *SinkNode {
 	// set collect retry according to cache setting
 	retry := time.Duration(sc.ResendInterval)
-	if !sc.EnableCache && !isRetry {
-		retry = 0
-	} else if retry <= 0 {
+	if (sc.EnableCache || isRetry) && retry <= 0 {
 		// default retry interval to 100ms
 		retry = 100 * time.Millisecond
 	}
 	// Sink input channel as buffer
-	if isRetry || (sc.EnableCache && !sc.ResendAlterQueue) {
-		rOpt.BufferLength = sc.MemoryCacheThreshold
-	}
+	rOpt.BufferLength = sc.MemoryCacheThreshold
 	ctx.GetLogger().Infof("create sink node %s with isRetry %v, resendInterval %d, bufferLength %d", name, isRetry, retry, rOpt.BufferLength)
 	return &SinkNode{
 		defaultSinkNode: newDefaultSinkNode(name, &rOpt),
@@ -103,16 +103,28 @@ func (s *SinkNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 								}
 							})
 						} else if s.resendInterval > 0 {
-							for err != nil && errorx.IsIOError(err) {
-								timex.Sleep(s.resendInterval)
-								err = s.doCollect(ctx, s.sink, data)
-								ctx.GetLogger().Debugf("resending, got err? %v", err)
-								s.statManager.SetBufferLength(int64(len(s.input)))
-							}
-							if err == nil {
-								s.onSend(ctx, data)
+							if !errorx.IsIOError(err) {
+								ctx.GetLogger().Errorf("no io error %v, drop %v", err, data)
 							} else {
-								ctx.GetLogger().Errorf("resend error %v", err)
+								ticker := timex.GetTicker(s.resendInterval)
+								defer ticker.Stop()
+								for err != nil && errorx.IsIOError(err) {
+									ctx.GetLogger().Debugf("wait resending %v", data)
+									select {
+									case <-ctx.Done():
+										ctx.GetLogger().Infof("rule stop, exit retry for %v", data)
+										return nil
+									case <-ticker.C:
+										err = s.doCollect(ctx, s.sink, data)
+										s.statManager.SetBufferLength(int64(len(s.input)))
+									}
+								}
+								if err == nil {
+									ctx.GetLogger().Debugf("resend success %v", data)
+									s.onSend(ctx, data)
+								} else {
+									ctx.GetLogger().Debugf("no io error %v", err)
+								}
 							}
 						}
 					} else {

@@ -12,25 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package node
+package path
 
 import (
-	"testing"
+	"path/filepath"
 
-	"github.com/stretchr/testify/assert"
-
-	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 )
 
-func TestOutputs(t *testing.T) {
-	n := newDefaultNode("test", &def.RuleOption{})
-	err := n.AddOutput(make(chan any), "rule.1_test")
-	assert.NoError(t, err)
-	err = n.AddOutput(make(chan any), "rule.2_test")
-	assert.NoError(t, err)
-	err = n.RemoveOutput("rule.1")
-	assert.NoError(t, err)
-	err = n.RemoveOutput("rule.4")
-	assert.NoError(t, err)
-	assert.Equal(t, 1, len(n.outputs))
+func AbsPath(ctx api.StreamContext, path string) string {
+	if filepath.IsAbs(path) {
+		return path
+	}
+	return filepath.Join(ctx.GetRootPath(), path)
 }

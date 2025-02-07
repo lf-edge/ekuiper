@@ -17,12 +17,13 @@ package file
 import (
 	"bufio"
 	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
-	"sync"
+	"sort"
 	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
@@ -42,7 +43,6 @@ type SourceConfig struct {
 	Path             string            `json:"path"`
 	Interval         cast.DurationConf `json:"interval"`
 	IsTable          bool              `json:"isTable"`
-	Parallel         bool              `json:"parallel"`
 	SendInterval     cast.DurationConf `json:"sendInterval"`
 	ActionAfterRead  int               `json:"actionAfterRead"`
 	MoveTo           string            `json:"moveTo"`
@@ -50,6 +50,8 @@ type SourceConfig struct {
 	IgnoreEndLines   int               `json:"ignoreEndLines"`
 	// Only use for planning
 	Decompression string `json:"decompression"`
+	// state
+	rewindMeta *FileDirSourceRewindMeta
 }
 
 // Source load data from file system.
@@ -64,6 +66,8 @@ type Source struct {
 	// attach to a reader
 	decorator modules.FileStreamDecorator
 	eof       api.EOFIngest
+	// rewind support state
+	rewindMeta *FileDirSourceRewindMeta
 }
 
 func (fs *Source) Provision(ctx api.StreamContext, props map[string]any) error {
@@ -151,10 +155,11 @@ func (fs *Source) Provision(ctx api.StreamContext, props map[string]any) error {
 		}
 		fs.decorator = decorator
 	}
+	fs.rewindMeta = &FileDirSourceRewindMeta{}
 	return nil
 }
 
-func (fs *Source) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) error {
+func (fs *Source) Connect(_ api.StreamContext, sch api.StatusChangeHandler) error {
 	sch(api.ConnectionConnected, "")
 	return nil
 }
@@ -179,41 +184,58 @@ func (fs *Source) Close(ctx api.StreamContext) error {
 	return nil
 }
 
+type WithTime struct {
+	name       string
+	modifyTime time.Time
+}
+
+type WithTimeSlice []WithTime
+
+func (f WithTimeSlice) Len() int {
+	return len(f)
+}
+
+func (f WithTimeSlice) Less(i, j int) bool {
+	return f[i].modifyTime.Before(f[j].modifyTime)
+}
+
+func (f WithTimeSlice) Swap(i, j int) {
+	f[i], f[j] = f[j], f[i]
+}
+
 func (fs *Source) Load(ctx api.StreamContext, ingest api.TupleIngest, ingestError api.ErrorIngest) {
 	if fs.isDir {
-		ctx.GetLogger().Debugf("Monitor dir %s", fs.file)
+		ctx.GetLogger().Debugf("Load dir %s", fs.file)
 		entries, err := os.ReadDir(fs.file)
 		// may be just forget to put in the file
 		if err != nil {
 			ingestError(ctx, err)
 		}
-		if fs.config.Parallel {
-			var wg sync.WaitGroup
-			for _, entry := range entries {
-				if entry.IsDir() {
-					continue
-				}
-				wg.Add(1)
-				go func(file string) {
-					e := infra.SafeRun(func() error {
-						defer wg.Done()
-						fs.parseFile(ctx, file, ingest, ingestError)
-						return nil
-					})
-					if e != nil {
-						ingestError(ctx, e)
-					}
-				}(filepath.Join(fs.file, entry.Name()))
+		files := make(WithTimeSlice, 0, len(entries))
+		for _, entry := range entries {
+			if entry.IsDir() {
+				continue
 			}
-			wg.Wait()
-		} else {
-			for _, entry := range entries {
-				if entry.IsDir() {
-					continue
-				}
-				file := filepath.Join(fs.file, entry.Name())
-				fs.parseFile(ctx, file, ingest, ingestError)
+			fileName := entry.Name()
+			info, err := entry.Info()
+			if err != nil {
+				ctx.GetLogger().Errorf("get file info for %s error: %v", fileName, err)
+				continue
 			}
+			path := filepath.Join(fs.file, fileName)
+			willRead, _, err := fs.checkFileRead(path)
+			if err != nil {
+				ingestError(ctx, err)
+				return
+			}
+			if willRead {
+				files = append(files, WithTime{name: path, modifyTime: info.ModTime()})
+			}
+		}
+		sort.Sort(files)
+		for _, entry := range files {
+			fs.parseFile(ctx, entry.name, ingest, ingestError)
+			fs.updateRewindMeta(entry.name, entry.modifyTime)
 		}
 	} else {
 		fs.parseFile(ctx, fs.file, ingest, ingestError)
@@ -391,6 +413,54 @@ func (fs *Source) TransformType() api.Source {
 	return fs
 }
 
+/// Rewind support
+
+type FileDirSourceRewindMeta struct {
+	LastModifyTime time.Time `json:"lastModifyTime"`
+}
+
+func (fs *Source) GetOffset() (any, error) {
+	c, err := json.Marshal(fs.rewindMeta)
+	return string(c), err
+}
+
+func (fs *Source) Rewind(offset any) error {
+	c, ok := offset.(string)
+	if !ok {
+		return fmt.Errorf("fileDirSource rewind failed")
+	}
+	fs.rewindMeta = &FileDirSourceRewindMeta{}
+	if err := json.Unmarshal([]byte(c), fs.rewindMeta); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (fs *Source) ResetOffset(_ map[string]any) error {
+	return fmt.Errorf("File source ResetOffset not supported")
+}
+
+func (fs *Source) checkFileRead(fileName string) (bool, time.Time, error) {
+	fInfo, err := os.Stat(fileName)
+	if err != nil {
+		return false, time.Time{}, err
+	}
+	if fInfo.IsDir() {
+		return false, time.Time{}, fmt.Errorf("%s is a directory", fileName)
+	}
+	fTime := fInfo.ModTime()
+	if fTime.After(fs.rewindMeta.LastModifyTime) {
+		return true, fTime, nil
+	}
+	return false, time.Time{}, nil
+}
+
+func (fs *Source) updateRewindMeta(_ string, modifyTime time.Time) {
+	if modifyTime.After(fs.rewindMeta.LastModifyTime) {
+		fs.rewindMeta.LastModifyTime = modifyTime
+	}
+}
+
 func GetSource() api.Source {
 	return &Source{}
 }
@@ -401,4 +471,5 @@ var (
 	// if interval is not set, it uses inotify
 	_ api.Bounded    = &Source{}
 	_ model.InfoNode = &Source{}
+	_ api.Rewindable = &Source{}
 )

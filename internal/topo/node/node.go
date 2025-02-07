@@ -44,11 +44,12 @@ type defaultNode struct {
 	ctrlCh      chan<- error
 	qos         def.Qos
 	outputMu    sync.RWMutex
-	outputs     map[string]chan<- any
+	outputs     map[string]chan any
 	opsWg       *sync.WaitGroup
 	// tracing state
-	span    trace.Span
-	spanCtx api.StreamContext
+	span                     trace.Span
+	spanCtx                  api.StreamContext
+	disableBufferFullDiscard bool
 }
 
 func newDefaultNode(name string, options *def.RuleOption) *defaultNode {
@@ -57,14 +58,15 @@ func newDefaultNode(name string, options *def.RuleOption) *defaultNode {
 		c = 1
 	}
 	return &defaultNode{
-		name:        name,
-		outputs:     make(map[string]chan<- any),
-		concurrency: c,
-		sendError:   options.SendError,
+		name:                     name,
+		outputs:                  make(map[string]chan any),
+		concurrency:              c,
+		sendError:                options.SendError,
+		disableBufferFullDiscard: options.DisableBufferFullDiscard,
 	}
 }
 
-func (o *defaultNode) AddOutput(output chan<- any, name string) error {
+func (o *defaultNode) AddOutput(output chan any, name string) error {
 	o.outputMu.Lock()
 	defer o.outputMu.Unlock()
 	o.outputs[name] = output
@@ -130,32 +132,48 @@ func (o *defaultNode) BroadcastCustomized(val any, broadcastFunc func(val any)) 
 func (o *defaultNode) doBroadcast(val any) {
 	o.outputMu.RLock()
 	defer o.outputMu.RUnlock()
-	l := len(o.outputs)
-	c := 0
+	first := true
 	for name, out := range o.outputs {
+		// Only copy when there are many outputs to save one copy time
+		if !first {
+			switch vt := val.(type) {
+			case xsql.Collection:
+				val = vt.Clone()
+			case xsql.Row:
+				val = vt.Clone()
+			}
+		}
+		first = false
+
 		// Fallback to set the context when sending out so that all children have the same parent ctx
 		// If has set ctx in the node impl, do not override it
 		if vt, ok := val.(xsql.HasTracerCtx); ok && vt.GetTracerCtx() == nil {
 			vt.SetTracerCtx(o.spanCtx)
 		}
-		select {
-		case out <- val:
-			// do nothing
-		case <-o.ctx.Done():
-			// rule stop so stop waiting
-		default:
-			// record the error and stop propogating to avoid infinite loop
-			o.onErrorOpt(o.ctx, fmt.Errorf("buffer full, drop message from %s to %s", o.name, name), false)
+		// wait buffer consume if buffer full
+		if o.disableBufferFullDiscard {
+			select {
+			case out <- val:
+				continue
+			case <-o.ctx.Done():
+				return
+			}
 		}
-		c++
-		if c == l {
-			break
-		}
-		switch vt := val.(type) {
-		case xsql.Collection:
-			val = vt.Clone()
-		case xsql.Row:
-			val = vt.Clone()
+		// Try to send the latest one. If full, read the oldest one and retry
+	forlabel:
+		for {
+			select {
+			case out <- val:
+				break forlabel
+			case <-o.ctx.Done():
+				return
+			default:
+				// read the oldest to drop.
+				oldest := <-out
+				// record the error and stop propagating to avoid infinite loop
+				// TODO get a unique id for the message
+				o.onErrorOpt(o.ctx, fmt.Errorf("buffer full, drop message %v from %s to %s", oldest, o.name, name), false)
+			}
 		}
 	}
 }
@@ -178,7 +196,7 @@ func newDefaultSinkNode(name string, options *def.RuleOption) *defaultSinkNode {
 	}
 }
 
-func (o *defaultSinkNode) GetInput() (chan<- any, string) {
+func (o *defaultSinkNode) GetInput() (chan any, string) {
 	return o.input, o.name
 }
 
@@ -304,7 +322,7 @@ func (o *defaultNode) onError(ctx api.StreamContext, err error) {
 // onError do the common works(metric, trace) after throwing an error
 func (o *defaultNode) onErrorOpt(ctx api.StreamContext, err error, sendOut bool) {
 	ctx.GetLogger().Errorf("Operation %s error: %s", ctx.GetOpId(), err)
-	if sendOut {
+	if sendOut && o.sendError {
 		o.Broadcast(err)
 	}
 	o.statManager.IncTotalExceptions(err.Error())

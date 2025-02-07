@@ -196,6 +196,7 @@ type KuiperConf struct {
 		AesKey                  string            `yaml:"aesKey"`
 		GracefulShutdownTimeout cast.DurationConf `yaml:"gracefulShutdownTimeout"`
 		EnableResourceProfiling bool              `yaml:"enableResourceProfiling"`
+		MetricsDumpConfig       MetricsDumpConfig `yaml:"metricsDumpConfig"`
 	}
 	Rule   def.RuleOption
 	Sink   *SinkConf
@@ -220,6 +221,8 @@ type KuiperConf struct {
 	Portable struct {
 		PythonBin   string            `yaml:"pythonBin"`
 		InitTimeout cast.DurationConf `yaml:"initTimeout"`
+		SendTimeout time.Duration     `yaml:"sendTimeout"`
+		RecvTimeout time.Duration     `yaml:"recvTimeout"`
 	}
 	Connection struct {
 		BackoffMaxElapsedDuration cast.DurationConf `yaml:"backoffMaxElapsedDuration"`
@@ -227,6 +230,11 @@ type KuiperConf struct {
 	OpenTelemetry OpenTelemetry `yaml:"openTelemetry"`
 
 	AesKey []byte
+}
+
+type MetricsDumpConfig struct {
+	Enable           bool          `yaml:"enable"`
+	RetainedDuration time.Duration `yaml:"retainedDuration"`
 }
 
 type OpenTelemetry struct {
@@ -411,9 +419,20 @@ func InitConf() {
 	if Config.Portable.InitTimeout <= 0 {
 		Config.Portable.InitTimeout = 5000
 	}
+	if Config.Portable.SendTimeout <= 0 {
+		Config.Portable.SendTimeout = 5 * time.Second
+	}
+	if Config.Portable.RecvTimeout <= 0 {
+		Config.Portable.RecvTimeout = 5 * time.Second
+	}
 	if Config.Source == nil {
 		Config.Source = &SourceConf{}
 	}
+
+	if Config.Basic.MetricsDumpConfig.RetainedDuration < 1 {
+		Config.Basic.MetricsDumpConfig.RetainedDuration = 6 * time.Hour
+	}
+
 	_ = Config.Source.Validate()
 	if Config.Sink == nil {
 		Config.Sink = &SinkConf{}

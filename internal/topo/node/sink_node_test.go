@@ -42,7 +42,8 @@ func TestNewSinkNode(t *testing.T) {
 		{
 			name: "normal sink",
 			sc: &conf.SinkConf{
-				ResendInterval: cast.DurationConf(100 * time.Millisecond),
+				ResendInterval:       0,
+				MemoryCacheThreshold: 1024,
 			},
 			isRetry:        false,
 			resendInterval: 0,
@@ -64,7 +65,7 @@ func TestNewSinkNode(t *testing.T) {
 			sc: &conf.SinkConf{
 				ResendInterval:       cast.DurationConf(100 * time.Millisecond),
 				EnableCache:          true,
-				MemoryCacheThreshold: 10,
+				MemoryCacheThreshold: 1024,
 				ResendAlterQueue:     true,
 			},
 			isRetry: false,

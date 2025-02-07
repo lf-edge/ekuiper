@@ -66,6 +66,9 @@ basic:
     backoffMaxElapsedDuration: 3m
   # enableResourceProfiling indicates whether to enable resource profiling for eKuiper. If it is enabled, the cpu usage of the rule will be recorded.
   enableResourceProfiling: false
+  metricsDumpConfig:
+    enable: false
+    retainedDuration: 6h
 
 # The default options for all rules. Each rule can override this setting by defining its own option
 rule:
@@ -140,6 +143,8 @@ portable:
   pythonBin: python
   # control init timeout. If the init time is longer than this value, the plugin will be terminated.
   initTimeout: 60s
+  sendTimeout: 5s
+  recvTimeout: 5s
 
 openTelemetry:
   serviceName: kuiperd-service

@@ -1,4 +1,0 @@
-default:
-  path: /example
-  allowedExtension:
-    - txt

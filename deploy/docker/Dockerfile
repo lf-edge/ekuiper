@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-ARG GO_VERSION=1.23.1
+ARG GO_VERSION=1.23.4
 FROM ghcr.io/lf-edge/ekuiper/base:$GO_VERSION-alpine AS builder
 
 COPY . /go/kuiper

@@ -52,7 +52,7 @@ func NewDedupTriggerNode(name string, options *def.RuleOption, aliasName string,
 		defaultSinkNode: &defaultSinkNode{
 			input: make(chan interface{}, options.BufferLength),
 			defaultNode: &defaultNode{
-				outputs:   make(map[string]chan<- interface{}),
+				outputs:   make(map[string]chan any),
 				name:      name,
 				sendError: options.SendError,
 			},
