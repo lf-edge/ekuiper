@@ -111,6 +111,18 @@ func (t *TransformOp) Worker(ctx api.StreamContext, item any) []any {
 	}
 	var result []any
 	if t.sendSingle {
+		props, err := t.calculateProps(outs)
+		if err != nil {
+			result = append(result, err)
+		} else {
+			bs, err := t.doTransform(outs)
+			if err != nil {
+				result = append(result, err)
+			} else {
+				result = append(result, toSinkTuple(ctx, spanCtx, bs, props))
+			}
+		}
+	} else {
 		result = make([]any, 0, len(outs))
 		for _, out := range outs {
 			props, err := t.calculateProps(out)
@@ -119,18 +131,6 @@ func (t *TransformOp) Worker(ctx api.StreamContext, item any) []any {
 				continue
 			}
 			bs, err := t.doTransform(out)
-			if err != nil {
-				result = append(result, err)
-			} else {
-				result = append(result, toSinkTuple(ctx, spanCtx, bs, props))
-			}
-		}
-	} else {
-		props, err := t.calculateProps(outs)
-		if err != nil {
-			result = append(result, err)
-		} else {
-			bs, err := t.doTransform(outs)
 			if err != nil {
 				result = append(result, err)
 			} else {
