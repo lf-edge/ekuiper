@@ -98,6 +98,7 @@ func TestV5SourceSinkRecon(t *testing.T) {
 		err = server.Close()
 		tcp.Close(nil)
 		assert.NoError(t, err)
+		time.Sleep(time.Millisecond * 100)
 		go func() {
 			tcp := listeners.NewTCP(listeners.Config{Address: addr})
 			err := server.AddListener(tcp)
@@ -105,7 +106,7 @@ func TestV5SourceSinkRecon(t *testing.T) {
 			err = server.Serve()
 			require.NoError(t, err)
 		}()
-		time.Sleep(time.Millisecond * 100)
+		time.Sleep(time.Millisecond * 500)
 		err = mock.RunBytesSinkCollect(sk, data[1:], map[string]any{
 			"server":          url,
 			"topic":           "demo",
