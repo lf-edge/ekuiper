@@ -31,7 +31,7 @@ func TestRuleSuite(t *testing.T) {
 	suite.Run(t, new(RuleTestSuite))
 }
 
-func (s *RuleTestSuite) TestRule() {
+func (s *RuleTestSuite) TestRuleDisableBufferFullDiscard() {
 	topic := "test1"
 	subCh := pubsub.CreateSub(topic, nil, topic, 1024)
 	defer pubsub.CloseSourceConsumerChannel(topic, topic)
@@ -40,19 +40,19 @@ func (s *RuleTestSuite) TestRule() {
 			"a": float64(1),
 		},
 		{
-			"a": float64(1),
+			"a": float64(2),
 		},
 		{
-			"a": float64(1),
+			"a": float64(3),
 		},
 		{
-			"a": float64(1),
+			"a": float64(4),
 		},
 		{
-			"a": float64(1),
+			"a": float64(5),
 		},
 		{
-			"a": float64(1),
+			"a": float64(6),
 		},
 	}
 	conf := map[string]any{
