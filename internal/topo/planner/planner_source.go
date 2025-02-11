@@ -35,6 +35,7 @@ func transformSourceNode(ctx api.StreamContext, t *DataSourcePlan, mockSourcesPr
 	mockProps, isMock := mockSourcesProp[string(t.name)]
 	if isMock {
 		t.streamStmt.Options.TYPE = "simulator"
+		t.inRuleTest = true
 	}
 	strType := t.streamStmt.Options.TYPE
 	if strType == "" {
@@ -192,7 +193,7 @@ func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, option
 		index++
 	}
 
-	if t.streamStmt.Options.SHARED {
+	if t.streamStmt.Options.SHARED && !t.inRuleTest {
 		// Create subtopo in the end to avoid errors in the middle
 		srcSubtopo, existed := topo.GetOrCreateSubTopo(string(t.name))
 		if !existed {

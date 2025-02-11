@@ -25,17 +25,52 @@ import (
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/io/http/httpserver"
+	"github.com/lf-edge/ekuiper/v2/internal/io/simulator"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/v2/internal/processor"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/node"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
+
+func TestTrialRuleSharedStream(t *testing.T) {
+	ip := "127.0.0.1"
+	port := 10092
+	httpserver.InitGlobalServerManager(ip, port, nil)
+	defer httpserver.ShutDown()
+	connection.InitConnectionManager4Test()
+	conf.IsTesting = true
+	conf.InitConf()
+	dataDir, err := conf.GetDataLoc()
+	require.NoError(t, err)
+	require.NoError(t, store.SetupDefault(dataDir))
+	p := processor.NewStreamProcessor()
+	p.ExecStmt("DROP STREAM sharedemo876")
+
+	_, err = p.ExecStmt("CREATE STREAM sharedemo876 () WITH (DATASOURCE=\"sharedemo876\", SHARED=\"TRUE\")")
+	require.NoError(t, err)
+	defer p.ExecStmt("DROP STREAM sharedemo876")
+
+	mockDef1 := `{"id":"sharedrule876","sql":"select * from sharedemo876","mockSource":{"sharedemo876":{"data":[{"name":"demo876","value":1}],"interval":100,"loop":false}},"sinkProps":{"sendSingle":true}}`
+	id, err := TrialManager.CreateRule(mockDef1)
+	require.NoError(t, err)
+	require.Equal(t, "sharedrule876", id)
+	tp, ok := TrialManager.runs["sharedrule876"]
+	require.True(t, ok)
+	srcNodes := tp.topo.GetSourceNodes()
+	require.Len(t, srcNodes, 1)
+	srcNode, ok := srcNodes[0].(*node.SourceNode)
+	require.True(t, ok)
+	_, ok = srcNode.GetSource().(*simulator.SimulatorSource)
+	require.True(t, ok)
+}
 
 // Run two test rules in parallel. Rerun one of the rules
 func TestTrialRule(t *testing.T) {
 	ip := "127.0.0.1"
 	port := 10091
 	httpserver.InitGlobalServerManager(ip, port, nil)
+	defer httpserver.ShutDown()
 	connection.InitConnectionManager4Test()
 	conf.IsTesting = true
 	conf.InitConf()

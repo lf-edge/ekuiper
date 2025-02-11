@@ -216,6 +216,11 @@ func (m *SourceNode) ingestEof(ctx api.StreamContext) {
 	m.Broadcast(xsql.EOFTuple(0))
 }
 
+// GetSource only used for test
+func (m *SourceNode) GetSource() api.Source {
+	return m.s
+}
+
 const (
 	OffsetKey = "$$offset"
 )
