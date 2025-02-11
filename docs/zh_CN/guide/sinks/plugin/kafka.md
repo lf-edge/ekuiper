@@ -54,25 +54,25 @@ $(PLUGINS_CUSTOM):
 
 ## 属性
 
-| 属性名称               | 是否可选 | 说明                             |
-|--------------------|------|--------------------------------|
-| brokers            | 否    | broker地址列表 ,用 "," 分割           |
-| topic              | 否    | kafka 主题                       |
-| saslAuthType       | 否    | sasl 认证类型 , 支持none，plain，scram |
-| saslUserName       | 是    | sasl 用户名                       |
-| saslPassword       | 是    | sasl 密码                        |
-| insecureSkipVerify | 是   | 是否忽略 SSL 验证                  |
-| certificationPath  | 是   | Kafka 客户端 ssl 验证的 crt 文件路径       |
-| privateKeyPath     | 是   | Kafka 客户端 ssl 验证的 key 文件路径       |
-| rootCaPath         | 是   | Kafka 客户端 ssl 验证的 ca 证书文件路径    |
-| certficationRaw    | 是   | Kafka 客户端 ssl 验证，经过 base64 编码过的的 crt 原文,  如果同时定义了 `certificationPath` 将会先用该参数。      |
-| privateKeyRaw      | 是   | Kafka 客户端 ssl 验证，经过 base64 编码过的的 key 原文,  如果同时定义了 `privateKeyPath` 将会先用该参数。      |
+| 属性名称               | 是否可选 | 说明                                                                            |
+|--------------------|------|-------------------------------------------------------------------------------|
+| brokers            | 否    | broker地址列表 ,用 "," 分割                                                          |
+| topic              | 否    | kafka 主题                                                                      |
+| saslAuthType       | 否    | sasl 认证类型 , 支持none，plain，scram                                                |
+| saslUserName       | 是    | sasl 用户名                                                                      |
+| saslPassword       | 是    | sasl 密码                                                                       |
+| insecureSkipVerify | 是   | 是否忽略 SSL 验证                                                                   |
+| certificationPath  | 是   | Kafka 客户端 ssl 验证的 crt 文件路径                                                    |
+| privateKeyPath     | 是   | Kafka 客户端 ssl 验证的 key 文件路径                                                    |
+| rootCaPath         | 是   | Kafka 客户端 ssl 验证的 ca 证书文件路径                                                   |
+| certficationRaw    | 是   | Kafka 客户端 ssl 验证，经过 base64 编码过的的 crt 原文,  如果同时定义了 `certificationPath` 将会先用该参数。 |
+| privateKeyRaw      | 是   | Kafka 客户端 ssl 验证，经过 base64 编码过的的 key 原文,  如果同时定义了 `privateKeyPath` 将会先用该参数。   |
 | rootCARaw          | 是   | Kafka 客户端 ssl 验证，经过 base64 编码过的的 ca 原文,  如果同时定义了 `rootCAPath` 将会先用该参数。        |
-| maxAttempts        | 是   | Kafka 客户端向 server 发送消息的重试次数，默认为1  |
-| requiredACKs       | 是   | Kafka 客户端确认消息的机制，-1 代表等待 leader 确认，1 代表等待所有副本确认, 0 代表不等待确认, 默认为 -1|
-| key                | 是   | Kafka 客户端向 server 发送消息所携带的 Key 信息 |
-| headers            | 是   | Kafka 客户端向 server 发送消息所携带的 headers 信息 |
-| compression        | 是   | Kafka 客户端向 server 发送消息时是否开启压缩，仅支持 `gzip`,`snappy`,`lz4`,`zstd` |
+| maxAttempts        | 是   | Kafka 客户端向 server 发送消息的重试次数，默认为1                                              |
+| requiredACKs       | 是   | Kafka 客户端确认消息的机制，1 代表等待 leader 确认，-1 代表等待所有副本确认, 0 代表不等待确认, 默认为 1             |
+| key                | 是   | Kafka 客户端向 server 发送消息所携带的 Key 信息                                             |
+| headers            | 是   | Kafka 客户端向 server 发送消息所携带的 headers 信息                                         |
+| compression        | 是   | Kafka 客户端向 server 发送消息时是否开启压缩，仅支持 `gzip`,`snappy`,`lz4`,`zstd`                |
 
 其他通用的 sink 属性也支持，请参阅[公共属性](../overview.md#公共属性)。
 
