@@ -87,7 +87,7 @@ eKuiper 连接器可以通过[环境变量](../../../configuration/configuration
 
 ```yaml
 default:
-  # 文件的类型，支持 json， csv 和 lines
+  # 文件的类型，支持 raw, json， csv 和 lines
   fileType: json
   # 文件以 eKuiper 为根目录的目录或文件的绝对路径。
   # 请勿在此处包含文件名。文件名应在流数据源中定义
@@ -96,8 +96,6 @@ default:
   interval: 0
   # 读取后，两条数据发送的间隔时间
   sendInterval: 0
-  # 是否并行读取目录中的文件
-  parallel: false
   # 文件读取后的操作
   # 0: 文件保持不变
   # 1: 删除文件
@@ -119,17 +117,15 @@ default:
 
 ### 文件类型和路径
 
-- **`fileType`**：定义文件的类型，可选值为 `json`、`csv` 和 `lines`。
+- **`fileType`**：定义文件的类型，可选值为 `raw`、`json`、`csv` 和 `lines`。其中，`raw` 类型会读入整个文件的二进制数据，一般需要配合流格式
+  binary 使用。
 - **`path`**：指定文件的目录，相对于 eKuiper 根目录的相对路径或绝对路径。注意：这里不要包含文件名，文件名应在流数据源中定义。
 
 ### 读取和发送间隔
 
-- **`interval`**：设置文件读取之间的间隔，单位为毫秒。如果设置为0，文件只读取一次。
+- **`interval`**：设置文件读取之间的间隔，单位为毫秒。如果设置为0，文件只读取一次。在 v2.1.0 之后，设置为 0
+  会监控指定的文件或文件夹。当文件更新或文件夹增加新文件时，会读取新的版本。
 - **`sendInterval`**：读取后，两条数据发送的间隔时间，单位为毫秒。
-
-### 并行处理
-
-- **`parallel`**：确定目录中的文件是否应并行读取。如果设置为 `true`，目录中的文件将并行读取。
 
 ### 读后操作
 
@@ -231,3 +227,81 @@ create stream linesFileDemo () WITH (FORMAT="JSON", TYPE="file", CONF_KEY="jsonl
 ```
 
 此命令将创建一个名为 `linesFileDemo` 的流，并从源文件拉取以行分隔的 JSON 数据。
+
+## 教程：监控文件夹
+
+在许多物联网和数据处理场景中，我们需要实时监控某个文件夹中的文件变化，例如新文件的创建、文件的修改等。例如，监控摄像头的截图文件并同步到云端。通过
+eKuiper，我们可以轻松地监控文件夹中的文件变化，并对这些变化进行实时处理和分析。本教程将指导你如何配置 eKuiper
+来监控文件夹，并创建相应的流和规则来处理文件变化事件。我们将监控 `data/watch` 文件夹，并将其中新建的图片文件读入规则并通过
+MQTT 上传云端。
+
+### 配置监控选项
+
+通过如下 REST API 创建 ConfKey `watch`，供创建流时使用。
+
+```http request
+####
+PUT http://{{host}}/metadata/sources/file/confKeys/watch
+Content-Type: application/json
+
+{
+  "interval": 0,
+  "fileType": "raw",
+  "path": "data"
+}
+```
+
+- interval: 0 表示不采取定时拉取的方式，而是通过 inotify 监控。
+- fileType: raw 文件类型表示将读入二进制的文件内容。一般流格式需要配置成 binary
+- path: 文件读取的根目录。流定义时可配置相对此根目录的具体的文件或文件夹。
+
+若需要读取文件后自动删除文件或移动文件，可增加 actionAfterRead 相关配置。
+
+### 创建文件流
+
+通过 REST API 创建名为 watch 的文件流。
+
+```http request
+POST http://{{host}}/streams
+Content-Type: application/json
+
+{
+  "sql": "CREATE STREAM watch() WITH (TYPE=\"file\",FORMAT=\"binary\",DATASOURCE=\"watch\",CONF_KEY=\"watch\", SHARED=\"true\");"
+}
+```
+
+其中，
+
+- CONF_KEY 配置为上个步骤创建的 watch
+- DATASOURCE 配置需要监控的文件夹。与 CONF_KEY 中配置的 path 组成完整路径为 `data/watch`
+- 格式配置为 binary
+
+### 监控并传输规则
+
+通过 REST API 创建名为 ruleWatch 的规则。该规则通过 `self` 读取完整的二进制数据并发送到 MQTT。
+
+```http request
+POST http://{{host}}/rules
+Content-Type: application/json
+
+{
+  "id": "ruleWatch",
+  "name": "Watch image folder and pass through the raw binary data of image to MQTT",
+  "sql": "SELECT self FROM watch",
+  "actions": [
+    {
+      "mqtt": {
+        "server": "tcp://127.0.0.1:1883",
+        "topic": "result",
+        "sendSingle": true,
+        "format": "binary"
+      }
+    }
+  ]
+}
+```
+
+### 测试
+
+订阅 MQTT topic `result`，然后往 `data/watch` 目录中放入图像文件。观察 MQTT 是否收到图像的二进制数据。注意：MQTT broker
+通常有传输大小限制，测试时需要使用小的图像文件或者调大 MQTT broker 的限制。

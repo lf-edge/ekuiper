@@ -85,7 +85,7 @@ The configure file for the file source is located at  `/etc/sources/file.yaml`.
 
 ```yaml
 default:
-  # The type of the file, could be json, csv and lines
+  # The type of the file, could be raw, json, csv and lines
   fileType: json
   # The directory of the file relative to kuiper root or an absolute path.
   # Do not include the file name here. The file name should be defined in the stream data source
@@ -94,8 +94,6 @@ default:
   interval: 0
   # The sending interval between each event in millisecond
   sendInterval: 0
-  # Read the files in a directory in parallel or not
-  parallel: false
   # After read
   # 0: keep the file
   # 1: delete the file
@@ -117,17 +115,16 @@ default:
 
 ### File Type & Path
 
-- **`fileType`**: Defines the type of file. Supported values are `json`, `csv`, and `lines`.
+- **`fileType`**: Defines the type of file. Supported values are `raw`, `json`, `csv`, and `lines`. Among them, `raw`
+  type will read the binary data of the whole file. Usually, the stream format should be binary to for such file type.
 - **`path`**: Specifies the directory of the file, either relative to the Kuiper root or an absolute path. Note: Do not include the file name here. The file name should be defined in the stream data source.
 
 ### Reading & Sending Intervals
 
-- **`interval`**: Sets the interval, in milliseconds, between file reads. If set to 0, the file is read only once.
+- **`interval`**: Sets the interval, in milliseconds, between file reads. If set to 0, the file is read only once. Since
+  v2.1.0, interval 0 means monitor changed the specified file or folder. Once change happens, the changed file will be
+  read.
 - **`sendInterval`**: Determines the interval, in milliseconds, between sending each event.
-
-### Parallel Processing
-
-- **`parallel`**: Determines if the files in a directory should be read in parallel. If set to `true`, files in a directory are read in parallel.
 
 ### Post-Read Actions
 
@@ -235,3 +232,87 @@ create stream linesFileDemo () WITH (FORMAT="JSON", TYPE="file", CONF_KEY="jsonl
 ```
 
 This command configures a stream named `linesFileDemo` to process line-separated JSON data from the source file.
+
+## Tutorial: Monitoring a Folder
+
+In many IoT and data processing scenarios, we need to monitor file changes in a specific folder in real time, such as
+the creation of new files or modification of existing files. For example, monitoring screenshot files from a camera and
+synchronizing them to the cloud. With eKuiper, we can easily monitor file changes in a folder and process and analyze
+these changes in real time. This tutorial will guide you on how to configure eKuiper to monitor a folder and create
+corresponding streams and rules to handle file change events. We will monitor the `data/watch` folder and upload newly
+created image files to the cloud via MQTT.
+
+### Configuring Monitoring Options
+
+Create a ConfKey named `watch` using the following REST API for use when creating a stream.
+
+```http request
+PUT http://{{host}}/metadata/sources/file/confKeys/watch
+Content-Type: application/json
+
+{
+  "interval": 0,
+  "fileType": "raw",
+  "path": "data"
+}
+```
+
+- **interval**: 0 means that we do not use periodic polling but instead use inotify for monitoring.
+- **fileType**: The `raw` file type indicates that the file content will be read as binary. Generally, the stream format
+  needs to be configured as `binary`.
+- **path**: The root directory for file reading. The stream definition can configure specific files or folders relative
+  to this root directory.
+
+If you need to automatically delete or move files after reading them, you can add the `actionAfterRead` configuration.
+
+### Creating a File Stream
+
+Use the REST API to create a file stream named `watch`.
+
+```http request
+POST http://{{host}}/streams
+Content-Type: application/json
+
+{
+  "sql": "CREATE STREAM watch() WITH (TYPE=\"file\",FORMAT=\"binary\",DATASOURCE=\"watch\",CONF_KEY=\"watch\", SHARED=\"true\");"
+}
+```
+
+Where:
+
+- **CONF_KEY** is set to the `watch` created in the previous step.
+- **DATASOURCE** is configured to the folder to be monitored. Combined with the `path` configured in CONF_KEY, the full
+  path is `data/watch`.
+- The format is configured as `binary`.
+
+### Monitoring and Transmission Rule
+
+Use the REST API to create a rule named `ruleWatch`. This rule reads the complete binary data through `self` and sends
+it to MQTT.
+
+```http request
+POST http://{{host}}/rules
+Content-Type: application/json
+
+{
+  "id": "ruleWatch",
+  "name": "Watch image folder and pass through the raw binary data of image to MQTT",
+  "sql": "SELECT self FROM watch",
+  "actions": [
+    {
+      "mqtt": {
+        "server": "tcp://127.0.0.1:1883",
+        "topic": "result",
+        "sendSingle": true,
+        "format": "binary"
+      }
+    }
+  ]
+}
+```
+
+### Testing
+
+Subscribe to the MQTT topic `result`, then place image files into the `data/watch` directory. Observe whether the MQTT
+receives the binary data of the images. Note: MQTT brokers usually have a size limit for transmission, so you need to
+use small image files or increase the size limit of the MQTT broker during testing.
