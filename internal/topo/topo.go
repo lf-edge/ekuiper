@@ -79,6 +79,11 @@ func NewWithNameAndOptions(name string, options *def.RuleOption) (*Topo, error) 
 	return tp, nil
 }
 
+// GetSourceNodes only for test
+func (s *Topo) GetSourceNodes() []node.DataSourceNode {
+	return s.sources
+}
+
 func (s *Topo) SetStreams(streams []string) {
 	if s == nil {
 		return

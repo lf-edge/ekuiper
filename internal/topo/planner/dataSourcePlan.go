@@ -46,6 +46,8 @@ type DataSourcePlan struct {
 	fields      map[string]*ast.JsonStreamField
 	metaMap     map[string]string
 	pruneFields []string
+	// inRuleTest means whether in the rule test mode
+	inRuleTest bool
 }
 
 func (p DataSourcePlan) Init() *DataSourcePlan {
