@@ -345,7 +345,7 @@ var (
 
 func getDefaultKafkaConf() *kafkaConf {
 	c := &kafkaConf{
-		RequiredACKs: -1,
+		RequiredACKs: 1,
 		MaxAttempts:  1,
 	}
 	c.kafkaWriterConf = kafkaWriterConf{
