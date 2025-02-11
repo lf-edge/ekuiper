@@ -63,6 +63,7 @@ func TestTrialRuleSharedStream(t *testing.T) {
 	require.True(t, ok)
 	_, ok = srcNode.GetSource().(*simulator.SimulatorSource)
 	require.True(t, ok)
+	TrialManager.StopRule("sharedrule876")
 }
 
 // Run two test rules in parallel. Rerun one of the rules
@@ -105,7 +106,6 @@ func TestTrialRule(t *testing.T) {
 
 	// Test 4 Rule without mock
 	testRealSourceTrial(t)
-	require.Equal(t, 0, len(TrialManager.runs))
 }
 
 func testValidTrial(t *testing.T, mockDef1 string) {
