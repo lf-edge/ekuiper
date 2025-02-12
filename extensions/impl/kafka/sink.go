@@ -213,6 +213,7 @@ func (k *KafkaSink) Collect(ctx api.StreamContext, item api.MessageTuple) (err e
 	}()
 	err = k.writer.WriteMessages(ctx, msgs...)
 	k.handleErrMsgs(ctx, err, len(msgs))
+	k.updateMetrics(ctx)
 	return err
 }
 
@@ -233,6 +234,7 @@ func (k *KafkaSink) CollectList(ctx api.StreamContext, items api.MessageTupleLis
 	}()
 	err = k.writer.WriteMessages(ctx, allMsgs...)
 	k.handleErrMsgs(ctx, err, len(allMsgs))
+	k.updateMetrics(ctx)
 	return err
 }
 
