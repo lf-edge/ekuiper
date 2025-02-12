@@ -50,7 +50,7 @@ type KafkaSink struct {
 	saslConf         *saslConf
 	mechanism        sasl.Mechanism
 	LastStats        kafkago.WriterStats
-	LastCollectStats KafkaCollectStats
+	LastCollectStats *KafkaCollectStats
 }
 
 type KafkaCollectStats struct {
@@ -188,7 +188,7 @@ func (k *KafkaSink) Close(ctx api.StreamContext) error {
 }
 
 func (k *KafkaSink) ResetStats() {
-	k.LastCollectStats = KafkaCollectStats{}
+	k.LastCollectStats = &KafkaCollectStats{}
 }
 
 func (k *KafkaSink) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) error {

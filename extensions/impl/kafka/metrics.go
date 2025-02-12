@@ -37,6 +37,7 @@ var (
 		Subsystem: "kafka_sink",
 		Name:      "collect_duration_hist",
 		Help:      "Sink Historgram Duration of IO",
+		Buckets:   prometheus.ExponentialBuckets(10, 2, 20), // 10us ~ 5s
 	}, []string{metrics.LblType, LblTarget, metrics.LblRuleIDType, metrics.LblOpIDType})
 )
 

@@ -29,6 +29,7 @@ var (
 		Subsystem: "io",
 		Name:      "duration_hist",
 		Help:      "Historgram Duration of IO",
+		Buckets:   prometheus.ExponentialBuckets(10, 2, 20), // 10us ~ 5s
 	}, []string{LblType, LblIOType, LblRuleIDType, LblOpIDType})
 )
 

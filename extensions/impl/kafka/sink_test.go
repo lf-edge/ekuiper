@@ -85,6 +85,7 @@ func TestKafkaSink(t *testing.T) {
 	mockT := testx.MockTuple{
 		Map: map[string]any{"1": 1},
 	}
+	ks.ResetStats()
 	msgs, err := ks.collect(ctx, mockT)
 	require.Len(t, msgs, 1)
 	require.NoError(t, err)
