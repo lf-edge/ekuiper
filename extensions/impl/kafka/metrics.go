@@ -12,28 +12,36 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package metrics
+package kafka
 
-import "github.com/prometheus/client_golang/prometheus"
+import (
+	"github.com/prometheus/client_golang/prometheus"
+
+	"github.com/lf-edge/ekuiper/v2/metrics"
+)
+
+const (
+	LblTarget = "target"
+)
 
 var (
-	IOCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+	KafkaSinkCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: "kuiper",
-		Subsystem: "io",
+		Subsystem: "kafka_sink",
 		Name:      "counter",
-		Help:      "counter of IO",
-	}, []string{LblType, LblIOType, LblStatusType, LblRuleIDType, LblOpIDType})
+		Help:      "counter of Kafka Sink IO",
+	}, []string{metrics.LblType, LblTarget, metrics.LblRuleIDType, metrics.LblOpIDType})
 
-	IODurationHist = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+	KafkaSinkCollectDurationHist = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: "kuiper",
-		Subsystem: "io",
-		Name:      "duration_hist",
-		Help:      "Historgram Duration of IO",
+		Subsystem: "kafka_sink",
+		Name:      "collect_duration_hist",
+		Help:      "Sink Historgram Duration of IO",
 		Buckets:   prometheus.ExponentialBuckets(10, 2, 20), // 10us ~ 5s
-	}, []string{LblType, LblIOType, LblRuleIDType, LblOpIDType})
+	}, []string{metrics.LblType, LblTarget, metrics.LblRuleIDType, metrics.LblOpIDType})
 )
 
 func init() {
-	prometheus.MustRegister(IOCounter)
-	prometheus.MustRegister(IODurationHist)
+	prometheus.MustRegister(KafkaSinkCounter)
+	prometheus.MustRegister(KafkaSinkCollectDurationHist)
 }
