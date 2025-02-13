@@ -108,6 +108,7 @@ func TestKafkaSinkBuildMsg(t *testing.T) {
 		"key": "{{.a}}",
 	}
 	ks := &KafkaSink{}
+	ks.ResetStats()
 	ctx := mockContext.NewMockContext("1", "2")
 	require.NoError(t, ks.Provision(ctx, configs))
 	require.NoError(t, ks.Connect(ctx, func(status string, message string) {
@@ -136,6 +137,7 @@ func TestKafkaSinkBuildMsg(t *testing.T) {
 		"headers": "{\"a\":\"{{.a}}\"}",
 	}
 	ks = &KafkaSink{}
+	ks.ResetStats()
 	require.NoError(t, ks.Provision(ctx, configs))
 	require.NoError(t, ks.Connect(ctx, func(status string, message string) {
 		// do nothing
