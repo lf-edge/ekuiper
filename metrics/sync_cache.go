@@ -18,8 +18,17 @@ import "github.com/prometheus/client_golang/prometheus"
 
 const (
 	LblType       = "type"
+	LblStatusType = "status"
 	LblRuleIDType = "rule"
 	LblOpIDType   = "op"
+	LblIOType     = "io"
+
+	LBlRuleRunning = "running"
+	LblRuleStop    = "stop"
+	LblSourceIO    = "source"
+	LblSinkIO      = "sink"
+	LblException   = "err"
+	LblSuccess     = "success"
 )
 
 var (
