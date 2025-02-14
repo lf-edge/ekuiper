@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -136,4 +136,26 @@ func (m MockTuple) Value(key, table string) (any, bool) {
 
 func (m MockTuple) ToMap() map[string]any {
 	return m.Map
+}
+
+type MockRawTuple struct {
+	Content  []byte
+	Template map[string]string
+}
+
+func (m *MockRawTuple) DynamicProps(template string) (string, bool) {
+	r, ok := m.Template[template]
+	return r, ok
+}
+
+func (m *MockRawTuple) AllProps() map[string]string {
+	return m.Template
+}
+
+func (m *MockRawTuple) Raw() []byte {
+	return m.Content
+}
+
+func (m *MockRawTuple) Replace(newContent []byte) {
+	m.Content = newContent
 }

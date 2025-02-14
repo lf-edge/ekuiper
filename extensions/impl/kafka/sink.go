@@ -1,4 +1,4 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -30,6 +30,8 @@ import (
 	"github.com/lf-edge/ekuiper/v2/metrics"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cert"
+	"github.com/lf-edge/ekuiper/v2/pkg/model"
+	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 const (
@@ -51,6 +53,16 @@ type KafkaSink struct {
 	mechanism        sasl.Mechanism
 	LastStats        kafkago.WriterStats
 	LastCollectStats *KafkaCollectStats
+	msgQ             chan *kafkago.Message
+	messages         []kafkago.Message
+	currIndex        int
+}
+
+func (k *KafkaSink) Info() model.SinkInfo {
+	return model.SinkInfo{
+		HasCompress: true,
+		HasBatch:    true,
+	}
 }
 
 type KafkaCollectStats struct {
@@ -61,12 +73,13 @@ type KafkaCollectStats struct {
 
 type kafkaConf struct {
 	kafkaWriterConf
-	Brokers      string      `json:"brokers"`
-	Topic        string      `json:"topic"`
-	MaxAttempts  int         `json:"maxAttempts"`
-	RequiredACKs int         `json:"requiredACKs"`
-	Key          string      `json:"key"`
-	Headers      interface{} `json:"headers"`
+	Brokers        string        `json:"brokers"`
+	Topic          string        `json:"topic"`
+	MaxAttempts    int           `json:"maxAttempts"`
+	RequiredACKs   int           `json:"requiredACKs"`
+	Key            string        `json:"key"`
+	Headers        interface{}   `json:"headers"`
+	LingerInterval time.Duration `json:"lingerInterval"`
 
 	// write config
 	Compression string `json:"compression"`
@@ -130,6 +143,18 @@ func (k *KafkaSink) Provision(ctx api.StreamContext, configs map[string]any) err
 	if err != nil {
 		return err
 	}
+	k.LastCollectStats = &KafkaCollectStats{}
+	k.msgQ = make(chan *kafkago.Message, 2*k.kc.BatchSize)
+	// run batch
+	switch {
+	case k.kc.BatchSize > 0 && k.kc.LingerInterval > 0:
+		k.runWithTickerAndBatchSize(ctx)
+	case k.kc.BatchSize > 0 && k.kc.LingerInterval == 0:
+		k.runWithBatchSize(ctx)
+	case k.kc.BatchSize == 0 && k.kc.LingerInterval > 0:
+		k.runWithTicker(ctx)
+	}
+
 	return nil
 }
 
@@ -187,10 +212,6 @@ func (k *KafkaSink) Close(ctx api.StreamContext) error {
 	return k.writer.Close()
 }
 
-func (k *KafkaSink) ResetStats() {
-	k.LastCollectStats = &KafkaCollectStats{}
-}
-
 func (k *KafkaSink) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) error {
 	err := k.buildKafkaWriter()
 	if err != nil {
@@ -201,74 +222,113 @@ func (k *KafkaSink) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) 
 	return err
 }
 
-func (k *KafkaSink) Collect(ctx api.StreamContext, item api.MessageTuple) (err error) {
-	k.ResetStats()
-	msgs, err := k.collect(ctx, item)
-	if err != nil {
-		return err
-	}
-	start := time.Now()
-	defer func() {
-		metrics.IODurationHist.WithLabelValues(LblKafka, metrics.LblSinkIO, ctx.GetRuleId(), ctx.GetOpId()).Observe(float64(time.Since(start).Microseconds()))
-	}()
-	err = k.writer.WriteMessages(ctx, msgs...)
-	k.handleErrMsgs(ctx, err, len(msgs))
-	k.updateMetrics(ctx)
-	return err
-}
-
-func (k *KafkaSink) CollectList(ctx api.StreamContext, items api.MessageTupleList) (err error) {
-	k.ResetStats()
-	allMsgs := make([]kafkago.Message, 0)
-	items.RangeOfTuples(func(index int, tuple api.MessageTuple) bool {
-		msgs, err := k.collect(ctx, tuple)
-		if err != nil {
-			return false
+func (k *KafkaSink) runWithTickerAndBatchSize(ctx api.StreamContext) {
+	ctx.GetLogger().Infof("kafka sink batch run with batchSize %d, batchInterval %v", k.kc.BatchSize, k.kc.LingerInterval)
+	ticker := timex.GetTicker(k.kc.LingerInterval)
+	go func() {
+		defer func() {
+			ticker.Stop()
+		}()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case d := <-k.msgQ:
+				k.ingest(ctx, d, true)
+			case <-ticker.C:
+				k.send(ctx)
+			}
 		}
-		allMsgs = append(allMsgs, msgs...)
-		return true
-	})
+	}()
+}
+
+func (k *KafkaSink) runWithBatchSize(ctx api.StreamContext) {
+	ctx.GetLogger().Infof("kafka sink batch run with batchSize only %d, batchInterval %v", k.kc.BatchSize, k.kc.LingerInterval)
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case d := <-k.msgQ:
+				k.ingest(ctx, d, true)
+			}
+		}
+	}()
+}
+
+func (k *KafkaSink) runWithTicker(ctx api.StreamContext) {
+	ctx.GetLogger().Infof("kafka sink batch run with batchSize %d, batchInterval only %v", k.kc.BatchSize, k.kc.LingerInterval)
+	ticker := timex.GetTicker(k.kc.LingerInterval)
+	go func() {
+		defer func() {
+			ticker.Stop()
+		}()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case d := <-k.msgQ:
+				k.ingest(ctx, d, false)
+			case <-ticker.C:
+				k.send(ctx)
+			}
+		}
+	}()
+}
+
+func (k *KafkaSink) ingest(ctx api.StreamContext, d *kafkago.Message, checkSize bool) {
+	k.messages = append(k.messages, *d)
+	k.currIndex++
+	if checkSize && k.currIndex >= k.kc.BatchSize {
+		k.send(ctx)
+	}
+}
+
+func (k *KafkaSink) send(ctx api.StreamContext) {
 	start := time.Now()
 	defer func() {
 		metrics.IODurationHist.WithLabelValues(LblKafka, metrics.LblSinkIO, ctx.GetRuleId(), ctx.GetOpId()).Observe(float64(time.Since(start).Microseconds()))
 	}()
-	err = k.writer.WriteMessages(ctx, allMsgs...)
-	k.handleErrMsgs(ctx, err, len(allMsgs))
+	err := k.writer.WriteMessages(ctx, k.messages...)
+	k.handleErrMsgs(ctx, err, len(k.messages))
 	k.updateMetrics(ctx)
-	return err
+	k.messages = make([]kafkago.Message, 0, k.kc.BatchSize/4)
+	k.currIndex = 0
 }
 
-func (k *KafkaSink) collect(ctx api.StreamContext, item api.MessageTuple) ([]kafkago.Message, error) {
+func (k *KafkaSink) Collect(ctx api.StreamContext, item api.RawTuple) error {
+	return k.collect(ctx, item)
+}
+
+func (k *KafkaSink) collect(ctx api.StreamContext, item api.RawTuple) error {
 	start := time.Now()
 	defer func() {
 		collectDuration := time.Since(start)
 		k.LastCollectStats.TotalCollectMsgDuration += collectDuration
 		KafkaSinkCollectDurationHist.WithLabelValues(LblCollect, LblMsg, ctx.GetRuleId(), ctx.GetOpId()).Observe(float64(collectDuration.Microseconds()))
 	}()
-	ds, err := json.Marshal(item.ToMap())
-	if err != nil {
-		return nil, err
-	}
-	unmarshalDuration := time.Since(start)
+	unmarshalDuration := time.Duration(0)
 	k.LastCollectStats.TotalUnmarshalMsgDuration += unmarshalDuration
 	KafkaSinkCollectDurationHist.WithLabelValues(LblUnmarshal, LblMsg, ctx.GetRuleId(), ctx.GetOpId()).Observe(float64(unmarshalDuration.Microseconds()))
-	var messages []kafkago.Message
-	msg, err := k.buildMsg(ctx, item, ds)
+	msg, err := k.buildMsg(ctx, item)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	messages = append(messages, msg)
-	return messages, nil
+	select {
+	case <-ctx.Done():
+	case k.msgQ <- &msg:
+	}
+	return nil
 }
 
-func (k *KafkaSink) buildMsg(ctx api.StreamContext, item api.MessageTuple, decodedBytes []byte) (kafkago.Message, error) {
+func (k *KafkaSink) buildMsg(ctx api.StreamContext, item api.RawTuple) (kafkago.Message, error) {
 	start := time.Now()
 	defer func() {
 		buildDuration := time.Since(start)
 		k.LastCollectStats.TotalBuildMsgDuration += buildDuration
 		KafkaSinkCollectDurationHist.WithLabelValues(lblBuild, LblMsg, ctx.GetRuleId(), ctx.GetOpId()).Observe(float64(buildDuration.Microseconds()))
 	}()
-	msg := kafkago.Message{Value: decodedBytes}
+	msg := kafkago.Message{Value: item.Raw()}
 	if len(k.kc.Key) > 0 {
 		newKey := k.kc.Key
 		if dp, ok := item.(api.HasDynamicProps); ok {
@@ -309,7 +369,7 @@ func (k *KafkaSink) setHeaders() error {
 	}
 }
 
-func (k *KafkaSink) parseHeaders(ctx api.StreamContext, item api.MessageTuple) ([]kafkago.Header, error) {
+func (k *KafkaSink) parseHeaders(ctx api.StreamContext, item api.RawTuple) ([]kafkago.Header, error) {
 	if len(k.headersMap) > 0 {
 		var kafkaHeaders []kafkago.Header
 		for k, v := range k.headersMap {
@@ -393,14 +453,15 @@ func GetSink() api.Sink {
 }
 
 var (
-	_ api.TupleCollector = &KafkaSink{}
+	_ api.BytesCollector = &KafkaSink{}
 	_ util.PingableConn  = &KafkaSink{}
+	_ model.SinkInfoNode = &KafkaSink{}
 )
 
 func getDefaultKafkaConf() *kafkaConf {
 	c := &kafkaConf{
 		RequiredACKs: 1,
-		MaxAttempts:  1,
+		MaxAttempts:  3,
 	}
 	c.kafkaWriterConf = kafkaWriterConf{
 		BatchSize:    100,

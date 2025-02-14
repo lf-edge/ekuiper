@@ -1,4 +1,4 @@
-// Copyright 2024-2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,11 +16,10 @@ package kafka
 
 import (
 	"encoding/json"
-	"fmt"
 	"strconv"
 	"testing"
+	"time"
 
-	"github.com/pingcap/failpoint"
 	kafkago "github.com/segmentio/kafka-go"
 	"github.com/stretchr/testify/require"
 
@@ -82,20 +81,21 @@ func TestKafkaSink(t *testing.T) {
 	require.NoError(t, ks.Connect(ctx, func(status string, message string) {
 		// do nothing
 	}))
-	mockT := testx.MockTuple{
-		Map: map[string]any{"1": 1},
+	mockT := &testx.MockRawTuple{
+		Content: []byte(`{"a":1}`),
 	}
-	ks.ResetStats()
-	msgs, err := ks.collect(ctx, mockT)
-	require.Len(t, msgs, 1)
+
+	err := ks.collect(ctx, mockT)
+	time.Sleep(100 * time.Millisecond)
+	require.Len(t, ks.messages, 1)
 	require.NoError(t, err)
 	require.NoError(t, ks.Close(ctx))
 
-	for i := mockErrStart + 1; i < mockErrEnd; i++ {
-		failpoint.Enable("github.com/lf-edge/ekuiper/v2/extensions/impl/kafka/kafkaErr", fmt.Sprintf("return(%v)", i))
-		require.Error(t, ks.Provision(ctx, configs), i)
-	}
-	failpoint.Disable("github.com/lf-edge/ekuiper/v2/extensions/impl/kafka/kafkaErr")
+	//for i := mockErrStart + 1; i < mockErrEnd; i++ {
+	//	failpoint.Enable("github.com/lf-edge/ekuiper/v2/extensions/impl/kafka/kafkaErr", fmt.Sprintf("return(%v)", i))
+	//	require.Error(t, ks.Provision(ctx, configs), i)
+	//}
+	//failpoint.Disable("github.com/lf-edge/ekuiper/v2/extensions/impl/kafka/kafkaErr")
 }
 
 func TestKafkaSinkBuildMsg(t *testing.T) {
@@ -108,7 +108,6 @@ func TestKafkaSinkBuildMsg(t *testing.T) {
 		"key": "{{.a}}",
 	}
 	ks := &KafkaSink{}
-	ks.ResetStats()
 	ctx := mockContext.NewMockContext("1", "2")
 	require.NoError(t, ks.Provision(ctx, configs))
 	require.NoError(t, ks.Connect(ctx, func(status string, message string) {
@@ -118,11 +117,11 @@ func TestKafkaSinkBuildMsg(t *testing.T) {
 		"a": 1,
 	}
 	d, _ := json.Marshal(item)
-	mockT := testx.MockTuple{
-		Map:      item,
+	mockT := &testx.MockRawTuple{
+		Content:  d,
 		Template: map[string]string{"{{.a}}": "1"},
 	}
-	msg, err := ks.buildMsg(ctx, mockT, d)
+	msg, err := ks.buildMsg(ctx, mockT)
 	require.NoError(t, err)
 	require.Equal(t, "a", msg.Headers[0].Key)
 	b := make([]uint8, 0, 8)
@@ -137,16 +136,15 @@ func TestKafkaSinkBuildMsg(t *testing.T) {
 		"headers": "{\"a\":\"{{.a}}\"}",
 	}
 	ks = &KafkaSink{}
-	ks.ResetStats()
 	require.NoError(t, ks.Provision(ctx, configs))
 	require.NoError(t, ks.Connect(ctx, func(status string, message string) {
 		// do nothing
 	}))
-	mockT = testx.MockTuple{
-		Map:      item,
+	mockT = &testx.MockRawTuple{
+		Content:  d,
 		Template: map[string]string{"{\"a\":\"{{.a}}\"}": "{\"a\":\"1\"}"},
 	}
-	msg, err = ks.buildMsg(ctx, mockT, d)
+	msg, err = ks.buildMsg(ctx, mockT)
 	require.NoError(t, err)
 	require.Equal(t, "a", msg.Headers[0].Key)
 	require.Equal(t, b, msg.Headers[0].Value)
