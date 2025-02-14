@@ -1,4 +1,4 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -170,7 +170,14 @@ func findTemplateProps(props map[string]any) []string {
 func splitSink(tp *topo.Topo, s api.Sink, sinkName string, options *def.RuleOption, sc *node.SinkConf, templates []string) ([]node.TopNode, error) {
 	index := 0
 	result := make([]node.TopNode, 0)
-	if sc.BatchSize > 0 || sc.LingerInterval > 0 {
+	var sinkInfo model.SinkInfo
+	switch st := s.(type) {
+	case model.SinkInfoNode:
+		sinkInfo = st.Info()
+	default:
+		sinkInfo = model.SinkInfo{}
+	}
+	if !sinkInfo.HasBatch && (sc.BatchSize > 0 || sc.LingerInterval > 0) {
 		batchOp, err := node.NewBatchOp(fmt.Sprintf("%s_%d_batch", sinkName, index), options, sc.BatchSize, time.Duration(sc.LingerInterval))
 		if err != nil {
 			return nil, err
@@ -195,7 +202,7 @@ func splitSink(tp *topo.Topo, s api.Sink, sinkName string, options *def.RuleOpti
 		index++
 		result = append(result, encodeOp)
 		_, isStreamWriter := s.(model.StreamWriter)
-		if !isStreamWriter && sc.Compression != "" {
+		if !sinkInfo.HasCompress && !isStreamWriter && sc.Compression != "" {
 			compressOp, err := node.NewCompressOp(fmt.Sprintf("%s_%d_compress", sinkName, index), options, sc.Compression)
 			if err != nil {
 				return nil, err
