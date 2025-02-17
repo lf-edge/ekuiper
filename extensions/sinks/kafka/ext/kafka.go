@@ -26,19 +26,35 @@ import (
 	"github.com/lf-edge/ekuiper/extensions/kafka"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/cert"
+	"github.com/lf-edge/ekuiper/metrics"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
-	"github.com/lf-edge/ekuiper/pkg/errorx"
+)
+
+const (
+	lblBuild     = "build"
+	LblTransform = "transform"
+	LblCollect   = "collect"
+	LblReq       = "req"
+	LblKafka     = "kafka"
+	LblMsg       = "msg"
 )
 
 type kafkaSink struct {
-	writer         *kafkago.Writer
-	c              *sinkConf
-	kc             *kafkaConf
-	tlsConfig      *tls.Config
-	sc             kafka.SaslConf
-	headersMap     map[string]string
-	headerTemplate string
+	writer           *kafkago.Writer
+	c                *sinkConf
+	kc               *kafkaConf
+	tlsConfig        *tls.Config
+	sc               kafka.SaslConf
+	headersMap       map[string]string
+	headerTemplate   string
+	LastCollectStats *KafkaCollectStats
+}
+
+type KafkaCollectStats struct {
+	TotalBuildMsgDuration     time.Duration
+	TotalTransformMsgDuration time.Duration
+	TotalCollectMsgDuration   time.Duration
 }
 
 type sinkConf struct {
@@ -58,6 +74,10 @@ type kafkaWriterConf struct {
 	BatchSize    int           `json:"batchSize"`
 	BatchTimeout time.Duration `json:"batchTimeout"`
 	BatchBytes   int64         `json:"batchBytes"`
+}
+
+func (m *kafkaSink) ResetStats() {
+	m.LastCollectStats = &KafkaCollectStats{}
 }
 
 func (m *kafkaSink) Ping(_ string, props map[string]interface{}) error {
@@ -137,6 +157,7 @@ func (m *kafkaSink) buildKafkaWriter() error {
 	}
 	conf.Log.Infof("kafka writer batchSize:%v, batchTimeout:%v", m.kc.BatchSize, m.kc.BatchTimeout.String())
 	m.writer = w
+	m.ResetStats()
 	return nil
 }
 
@@ -145,16 +166,26 @@ func (m *kafkaSink) Open(ctx api.StreamContext) error {
 	return nil
 }
 
-func (m *kafkaSink) Collect(ctx api.StreamContext, item interface{}) error {
+func (m *kafkaSink) Collect(ctx api.StreamContext, item interface{}) (err error) {
+	defer func() {
+		if err == nil {
+			KafkaSinkCounter.WithLabelValues(metrics.LblSuccess, LblReq, ctx.GetRuleId(), ctx.GetOpId()).Inc()
+		} else {
+			KafkaSinkCounter.WithLabelValues(metrics.LblException, LblReq, ctx.GetRuleId(), ctx.GetOpId()).Inc()
+		}
+	}()
+	m.ResetStats()
 	logger := ctx.GetLogger()
 	logger.Debugf("kafka sink receive %s", item)
-	var messages []kafkago.Message
+	start := time.Now()
+	messages := make([]kafkago.Message, 0, 1)
 	switch d := item.(type) {
 	case []map[string]interface{}:
+		messages = make([]kafkago.Message, 0, len(d))
 		for _, msg := range d {
-			decodedBytes, _, err := ctx.TransformOutput(msg)
+			decodedBytes, err := m.transform(ctx, msg)
 			if err != nil {
-				return fmt.Errorf("kafka sink transform data error: %v", err)
+				return err
 			}
 			kafkaMsg, err := m.buildMsg(ctx, msg, decodedBytes)
 			if err != nil {
@@ -164,9 +195,9 @@ func (m *kafkaSink) Collect(ctx api.StreamContext, item interface{}) error {
 			messages = append(messages, kafkaMsg)
 		}
 	case map[string]interface{}:
-		decodedBytes, _, err := ctx.TransformOutput(d)
+		decodedBytes, err := m.transform(ctx, d)
 		if err != nil {
-			return fmt.Errorf("kafka sink transform data error: %v", err)
+			return err
 		}
 		msg, err := m.buildMsg(ctx, item, decodedBytes)
 		if err != nil {
@@ -177,47 +208,37 @@ func (m *kafkaSink) Collect(ctx api.StreamContext, item interface{}) error {
 	default:
 		return fmt.Errorf("unrecognized format of %s", item)
 	}
+	cDuration := time.Since(start)
+	m.LastCollectStats.TotalCollectMsgDuration += cDuration
+	KafkaSinkCollectDurationHist.WithLabelValues(LblCollect, LblReq, ctx.GetRuleId(), ctx.GetOpId()).Observe(float64(cDuration.Microseconds()))
+	m.updateMetrics(ctx)
+	writeStart := time.Now()
+	defer func() {
+		metrics.IODurationHist.WithLabelValues(LblKafka, metrics.LblSinkIO, ctx.GetRuleId(), ctx.GetOpId()).Observe(float64(time.Since(writeStart).Microseconds()))
+	}()
+	return m.sendMsgs(ctx, messages)
+}
+
+func (m *kafkaSink) sendMsgs(ctx api.StreamContext, messages []kafkago.Message) error {
 	err := m.writer.WriteMessages(ctx, messages...)
 	if err != nil {
 		conf.Log.Errorf("kafka sink error: %v", err)
-	} else {
-		conf.Log.Debug("sink kafka success")
 	}
-	switch err := err.(type) {
-	case kafkago.Error:
-		if err.Temporary() {
-			return errorx.NewIOErr(fmt.Sprintf(`kafka sink fails to send out the data . %v`, err.Error()))
-		} else {
-			return err
-		}
-	case kafkago.WriteErrors:
-		count := 0
-		for i := range messages {
-			switch err := err[i].(type) {
-			case nil:
-				continue
+	m.handleErr(ctx, err, len(messages))
+	return err
+}
 
-			case kafkago.Error:
-				if err.Temporary() {
-					count++
-					continue
-				}
-			default:
-				if strings.Contains(err.Error(), "kafka.(*Client).Produce:") {
-					return errorx.NewIOErr(fmt.Sprintf(`kafka sink fails to send out the data . %v`, err.Error()))
-				}
-			}
-		}
-		if count > 0 {
-			return errorx.NewIOErr(fmt.Sprintf(`kafka sink fails to send out the data . %v`, err.Error()))
-		} else {
-			return err
-		}
-	case nil:
-		return nil
-	default:
-		return errorx.NewIOErr(fmt.Sprintf(`kafka sink fails to send out the data: %v`, err.Error()))
+func (m *kafkaSink) transform(ctx api.StreamContext, msg map[string]any) ([]byte, error) {
+	start := time.Now()
+	defer func() {
+		tDuration := time.Since(start)
+		m.LastCollectStats.TotalTransformMsgDuration += tDuration
+	}()
+	decodedBytes, _, err := ctx.TransformOutput(msg)
+	if err != nil {
+		return nil, fmt.Errorf("kafka sink transform data error: %v", err)
 	}
+	return decodedBytes, nil
 }
 
 func (m *kafkaSink) Close(ctx api.StreamContext) error {
@@ -229,6 +250,11 @@ func GetSink() api.Sink {
 }
 
 func (m *kafkaSink) buildMsg(ctx api.StreamContext, item interface{}, decodedBytes []byte) (kafkago.Message, error) {
+	start := time.Now()
+	defer func() {
+		buildDuration := time.Since(start)
+		m.LastCollectStats.TotalBuildMsgDuration += buildDuration
+	}()
 	msg := kafkago.Message{Value: decodedBytes}
 	if len(m.kc.Key) > 0 {
 		newKey, err := ctx.ParseTemplate(m.kc.Key, item)
@@ -341,4 +367,24 @@ func (kc *kafkaConf) configure(props map[string]interface{}) error {
 		return err
 	}
 	return nil
+}
+
+func (m *kafkaSink) handleErr(ctx api.StreamContext, err error, count int) {
+	if err == nil {
+		KafkaSinkCounter.WithLabelValues(metrics.LblSuccess, LblMsg, ctx.GetRuleId(), ctx.GetOpId()).Add(float64(count))
+		return
+	}
+	switch wErrors := err.(type) {
+	case kafkago.WriteErrors:
+		KafkaSinkCounter.WithLabelValues(metrics.LblException, LblMsg, ctx.GetRuleId(), ctx.GetOpId()).Add(float64(wErrors.Count()))
+		KafkaSinkCounter.WithLabelValues(metrics.LblSuccess, LblMsg, ctx.GetRuleId(), ctx.GetOpId()).Add(float64(count - wErrors.Count()))
+	default:
+		KafkaSinkCounter.WithLabelValues(metrics.LblException, LblMsg, ctx.GetRuleId(), ctx.GetOpId()).Add(float64(count))
+	}
+}
+
+func (m *kafkaSink) updateMetrics(ctx api.StreamContext) {
+	KafkaSinkCollectDurationHist.WithLabelValues(lblBuild, LblReq, ctx.GetRuleId(), ctx.GetOpId()).Observe(float64(m.LastCollectStats.TotalBuildMsgDuration.Microseconds()))
+	KafkaSinkCollectDurationHist.WithLabelValues(LblTransform, LblReq, ctx.GetRuleId(), ctx.GetOpId()).Observe(float64(m.LastCollectStats.TotalTransformMsgDuration.Microseconds()))
+	KafkaSinkCollectDurationHist.WithLabelValues(LblCollect, LblReq, ctx.GetRuleId(), ctx.GetOpId()).Observe(float64(m.LastCollectStats.TotalCollectMsgDuration.Microseconds()))
 }
