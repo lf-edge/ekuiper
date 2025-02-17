@@ -68,6 +68,9 @@ type kafkaConf struct {
 	RequiredACKs int         `json:"requiredACKs"`
 	Key          string      `json:"key"`
 	Headers      interface{} `json:"headers"`
+
+	// write config
+	Compression string `json:"compression"`
 }
 
 type kafkaWriterConf struct {
@@ -154,6 +157,7 @@ func (m *kafkaSink) buildKafkaWriter() error {
 			SASL: mechanism,
 			TLS:  m.tlsConfig,
 		},
+		Compression: toCompression(m.kc.Compression),
 	}
 	conf.Log.Infof("kafka writer batchSize:%v, batchTimeout:%v", m.kc.BatchSize, m.kc.BatchTimeout.String())
 	m.writer = w
@@ -387,4 +391,18 @@ func (m *kafkaSink) updateMetrics(ctx api.StreamContext) {
 	KafkaSinkCollectDurationHist.WithLabelValues(lblBuild, LblReq, ctx.GetRuleId(), ctx.GetOpId()).Observe(float64(m.LastCollectStats.TotalBuildMsgDuration.Microseconds()))
 	KafkaSinkCollectDurationHist.WithLabelValues(LblTransform, LblReq, ctx.GetRuleId(), ctx.GetOpId()).Observe(float64(m.LastCollectStats.TotalTransformMsgDuration.Microseconds()))
 	KafkaSinkCollectDurationHist.WithLabelValues(LblCollect, LblReq, ctx.GetRuleId(), ctx.GetOpId()).Observe(float64(m.LastCollectStats.TotalCollectMsgDuration.Microseconds()))
+}
+
+func toCompression(c string) kafkago.Compression {
+	switch strings.ToLower(c) {
+	case "gzip":
+		return kafkago.Gzip
+	case "snappy":
+		return kafkago.Snappy
+	case "lz4":
+		return kafkago.Lz4
+	case "zstd":
+		return kafkago.Zstd
+	}
+	return 0
 }
