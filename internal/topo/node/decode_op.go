@@ -1,4 +1,4 @@
-// Copyright 2021-2024 EMQ Technologies Co., Ltd.
+// Copyright 2021-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -41,6 +41,8 @@ type DecodeOp struct {
 	// This is for first level decode, add the payload field to schema to make sure it is decoded
 	forPayload     bool
 	additionSchema string
+	// hint for map allocation
+	hint int
 }
 
 type dconf struct {
@@ -253,7 +255,7 @@ func transTuple(d *xsql.Tuple, result any) []any {
 	case []map[string]any:
 		rr := make([]any, len(r))
 		for i, v := range r {
-			dd := cloneTuple(d)
+			dd := cloneTuple(d, 0)
 			tupleAppend(dd, v)
 			rr[i] = dd
 		}
@@ -262,7 +264,7 @@ func transTuple(d *xsql.Tuple, result any) []any {
 		rr := make([]any, len(r))
 		for i, v := range r {
 			if vc, ok := v.(map[string]any); ok {
-				dd := cloneTuple(d)
+				dd := cloneTuple(d, 0)
 				tupleAppend(dd, vc)
 				rr[i] = dd
 			} else {
@@ -311,7 +313,7 @@ func (o *DecodeOp) PayloadBatchDecodeWorker(ctx api.StreamContext, item any) []a
 		if !ok {
 			return []any{fmt.Errorf("payload batch field is not array: %v", batch)}
 		}
-		r := cloneTuple(d)
+		r := cloneTuple(d, o.hint)
 		for _, val := range batchVal {
 			var vv xsql.Valuer
 			switch vt := val.(type) {
@@ -343,6 +345,7 @@ func (o *DecodeOp) PayloadBatchDecodeWorker(ctx api.StreamContext, item any) []a
 			mergeTuple(ctx, r, val)
 			mergeTuple(ctx, r, result)
 		}
+		o.hint = len(r.Message)
 		return []any{r}
 	default:
 		return []any{fmt.Errorf("unsupported data received: %v", d)}
@@ -357,7 +360,7 @@ func mergeTuple(ctx api.StreamContext, d *xsql.Tuple, result any) {
 		for k, v := range r {
 			d.Message[k] = v
 		}
-	case []map[string]interface{}:
+	case []map[string]any:
 		for _, m := range r {
 			for k, v := range m {
 				d.Message[k] = v
@@ -389,8 +392,11 @@ func toTupleFromRawTuple(ctx api.StreamContext, v map[string]any, d *xsql.RawTup
 	return t
 }
 
-func cloneTuple(d *xsql.Tuple) *xsql.Tuple {
-	m := make(map[string]any, len(d.Message))
+func cloneTuple(d *xsql.Tuple, hint int) *xsql.Tuple {
+	if hint == 0 {
+		hint = len(d.Message)
+	}
+	m := make(map[string]any, hint)
 	for k, v := range d.Message {
 		m[k] = v
 	}
