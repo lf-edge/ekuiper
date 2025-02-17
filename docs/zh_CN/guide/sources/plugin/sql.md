@@ -185,3 +185,42 @@ CREATE TABLE alertTable() WITH (DATASOURCE="tableName", CONF_KEY="sqlite_config"
 * cache: bool 值，表示是否启用缓存。
 * cacheTtl: 缓存的生存时间，单位是秒。
 * cacheMissingKey：是否对空值进行缓存。
+
+### 使用 TemplateSQL 构造查询表的查询
+
+在 sql lookup 配置中同样支持使用 template SQL 来自定义查询表在数据库中的查询:
+
+```yaml
+sqlite_config:
+  url: example.db
+  templateSqlQueryCfg:
+    templateSql: select * from t limit 100;
+```
+
+通过这个配置，我们可以做到提前将一些计算下推到数据库中进行计算，如下例子:
+
+对于如下规则:
+
+```json
+{
+    "id": "rule1",
+    "sql": "SELECT demo.a, sqlookup.aid from demo inner join sqllookup on demo.b = sqllookup.bid",
+    "actions": [
+        {
+            "log": {
+            }
+        }
+    ]
+}
+```
+
+我们可以给 sqllookup 的定义如下配置:
+
+```yaml
+sqlite3_lookup:
+  url: example.db
+  templateSqlQueryCfg:
+    templateSql: select aid from t limit where b2 + 1 = {{.bid}};
+```
+
+通过以上操作，我们将 sql lookup 查询时将 demo.b 等于 sqllookup.b2 +1 的等值计算下推到了数据库层面，对于一些 eKuiper 并不支持的等值计算操作，我们可以通过该方式实现。
