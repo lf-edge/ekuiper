@@ -1,19 +1,9 @@
 {
-  "__inputs": [
-    {
-      "name": "DS_TEST-CLUSTER",
-      "label": "test-cluster",
-      "description": "",
-      "type": "datasource",
-      "pluginId": "prometheus",
-      "pluginName": "Prometheus"
-    }
-  ],
   "annotations": {
     "list": [
       {
         "builtIn": 1,
-        "datasource": "${DS_TEST-CLUSTER}",
+        "datasource": "PC96415006F908B67",
         "enable": true,
         "hide": true,
         "iconColor": "rgba(0, 211, 255, 1)",
@@ -25,10 +15,8 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 19,
-  "links": [
-
-  ],
+  "id": 138,
+  "links": [],
   "liveNow": false,
   "panels": [
     {
@@ -40,20 +28,19 @@
         "y": 0
       },
       "id": 24,
-      "panels": [
-
-      ],
+      "panels": [],
       "title": "Server",
       "type": "row"
     },
     {
-      "datasource": "${DS_TEST-CLUSTER}",
+      "datasource": "PC96415006F908B67",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
           },
           "custom": {
+            "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "",
@@ -67,6 +54,7 @@
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
@@ -83,9 +71,7 @@
               "mode": "off"
             }
           },
-          "mappings": [
-
-          ],
+          "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -101,9 +87,7 @@
           },
           "unit": "s"
         },
-        "overrides": [
-
-        ]
+        "overrides": []
       },
       "gridPos": {
         "h": 8,
@@ -128,7 +112,7 @@
       },
       "targets": [
         {
-          "datasource": "${DS_TEST-CLUSTER}",
+          "datasource": "PC96415006F908B67",
           "editorMode": "code",
           "exemplar": false,
           "expr": "(time() - process_start_time_seconds{instance=\"$instance\"})",
@@ -142,13 +126,14 @@
       "type": "timeseries"
     },
     {
-      "datasource": "${DS_TEST-CLUSTER}",
+      "datasource": "PC96415006F908B67",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
           },
           "custom": {
+            "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "",
@@ -162,6 +147,7 @@
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
@@ -178,9 +164,7 @@
               "mode": "off"
             }
           },
-          "mappings": [
-
-          ],
+          "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -196,9 +180,7 @@
           },
           "unit": "decbytes"
         },
-        "overrides": [
-
-        ]
+        "overrides": []
       },
       "gridPos": {
         "h": 8,
@@ -223,7 +205,7 @@
       },
       "targets": [
         {
-          "datasource": "${DS_TEST-CLUSTER}",
+          "datasource": "PC96415006F908B67",
           "editorMode": "builder",
           "expr": "go_memstats_heap_sys_bytes{instance=\"$instance\"}",
           "legendFormat": "heap-sys",
@@ -231,7 +213,7 @@
           "refId": "A"
         },
         {
-          "datasource": "${DS_TEST-CLUSTER}",
+          "datasource": "PC96415006F908B67",
           "editorMode": "builder",
           "expr": "go_memstats_alloc_bytes{instance=\"$instance\"}",
           "hide": false,
@@ -240,7 +222,7 @@
           "refId": "B"
         },
         {
-          "datasource": "${DS_TEST-CLUSTER}",
+          "datasource": "PC96415006F908B67",
           "editorMode": "builder",
           "expr": "go_memstats_heap_inuse_bytes{instance=\"$instance\"}",
           "hide": false,
@@ -253,13 +235,14 @@
       "type": "timeseries"
     },
     {
-      "datasource": "${DS_TEST-CLUSTER}",
+      "datasource": "PC96415006F908B67",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
           },
           "custom": {
+            "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "",
@@ -273,6 +256,7 @@
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
@@ -289,9 +273,7 @@
               "mode": "off"
             }
           },
-          "mappings": [
-
-          ],
+          "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -307,9 +289,7 @@
           },
           "unit": "percentunit"
         },
-        "overrides": [
-
-        ]
+        "overrides": []
       },
       "gridPos": {
         "h": 8,
@@ -334,7 +314,7 @@
       },
       "targets": [
         {
-          "datasource": "${DS_TEST-CLUSTER}",
+          "datasource": "PC96415006F908B67",
           "editorMode": "code",
           "expr": "irate(process_cpu_seconds_total{instance=\"$instance\"}[30s])",
           "legendFormat": "cpu_usage",
@@ -346,13 +326,14 @@
       "type": "timeseries"
     },
     {
-      "datasource": "${DS_TEST-CLUSTER}",
+      "datasource": "PC96415006F908B67",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
           },
           "custom": {
+            "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "",
@@ -366,6 +347,7 @@
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
@@ -382,9 +364,7 @@
               "mode": "off"
             }
           },
-          "mappings": [
-
-          ],
+          "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -399,9 +379,7 @@
             ]
           }
         },
-        "overrides": [
-
-        ]
+        "overrides": []
       },
       "gridPos": {
         "h": 8,
@@ -426,7 +404,7 @@
       },
       "targets": [
         {
-          "datasource": "${DS_TEST-CLUSTER}",
+          "datasource": "PC96415006F908B67",
           "editorMode": "builder",
           "expr": "go_goroutines{instance=\"$instance\"}",
           "legendFormat": "goroutines",
@@ -438,13 +416,14 @@
       "type": "timeseries"
     },
     {
-      "datasource": "${DS_TEST-CLUSTER}",
+      "datasource": "PC96415006F908B67",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
           },
           "custom": {
+            "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "",
@@ -458,6 +437,7 @@
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
@@ -474,9 +454,7 @@
               "mode": "off"
             }
           },
-          "mappings": [
-
-          ],
+          "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -492,9 +470,7 @@
           },
           "unit": "ops"
         },
-        "overrides": [
-
-        ]
+        "overrides": []
       },
       "gridPos": {
         "h": 8,
@@ -521,7 +497,7 @@
       },
       "targets": [
         {
-          "datasource": "${DS_TEST-CLUSTER}",
+          "datasource": "PC96415006F908B67",
           "editorMode": "builder",
           "expr": "rate(go_gc_duration_seconds_count{instance=\"$instance\"}[1m])",
           "legendFormat": "{{instance}}",
@@ -541,20 +517,19 @@
         "y": 25
       },
       "id": 38,
-      "panels": [
-
-      ],
+      "panels": [],
       "title": "Rule Status",
       "type": "row"
     },
     {
-      "datasource": "${DS_TEST-CLUSTER}",
+      "datasource": "PC96415006F908B67",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
           },
           "custom": {
+            "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "",
@@ -568,6 +543,7 @@
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
@@ -584,9 +560,7 @@
               "mode": "off"
             }
           },
-          "mappings": [
-
-          ],
+          "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -601,9 +575,7 @@
             ]
           }
         },
-        "overrides": [
-
-        ]
+        "overrides": []
       },
       "gridPos": {
         "h": 8,
@@ -628,7 +600,7 @@
       },
       "targets": [
         {
-          "datasource": "${DS_TEST-CLUSTER}",
+          "datasource": "PC96415006F908B67",
           "editorMode": "builder",
           "expr": "kuiper_rule_status{instance=\"$instance\"}",
           "legendFormat": "{{ruleID}}-{{rule}}",
@@ -640,13 +612,14 @@
       "type": "timeseries"
     },
     {
-      "datasource": "${DS_TEST-CLUSTER}",
+      "datasource": "PC96415006F908B67",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
           },
           "custom": {
+            "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "",
@@ -660,6 +633,7 @@
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
@@ -676,9 +650,7 @@
               "mode": "off"
             }
           },
-          "mappings": [
-
-          ],
+          "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -693,9 +665,7 @@
             ]
           }
         },
-        "overrides": [
-
-        ]
+        "overrides": []
       },
       "gridPos": {
         "h": 8,
@@ -720,7 +690,7 @@
       },
       "targets": [
         {
-          "datasource": "${DS_TEST-CLUSTER}",
+          "datasource": "PC96415006F908B67",
           "editorMode": "builder",
           "expr": "kuiper_rule_count{instance=\"$instance\"}",
           "legendFormat": "{{status}}",
@@ -740,14 +710,12 @@
         "y": 34
       },
       "id": 2,
-      "panels": [
-
-      ],
+      "panels": [],
       "title": "Source Panel",
       "type": "row"
     },
     {
-      "datasource": "${DS_TEST-CLUSTER}",
+      "datasource": "PC96415006F908B67",
       "description": "",
       "fieldConfig": {
         "defaults": {
@@ -755,6 +723,7 @@
             "mode": "palette-classic"
           },
           "custom": {
+            "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "",
@@ -768,6 +737,7 @@
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
@@ -784,9 +754,7 @@
               "mode": "off"
             }
           },
-          "mappings": [
-
-          ],
+          "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -802,9 +770,7 @@
           },
           "unit": "cps"
         },
-        "overrides": [
-
-        ]
+        "overrides": []
       },
       "gridPos": {
         "h": 8,
@@ -816,7 +782,8 @@
       "options": {
         "legend": {
           "calcs": [
-            "last"
+            "last",
+            "max"
           ],
           "displayMode": "table",
           "placement": "right",
@@ -829,7 +796,7 @@
       },
       "targets": [
         {
-          "datasource": "${DS_TEST-CLUSTER}",
+          "datasource": "PC96415006F908B67",
           "editorMode": "builder",
           "expr": "rate(kuiper_source_records_in_total{rule=\"$rule\", instance=\"$instance\"}[1m])",
           "legendFormat": "{{op}}",
@@ -841,7 +808,7 @@
       "type": "timeseries"
     },
     {
-      "datasource": "${DS_TEST-CLUSTER}",
+      "datasource": "PC96415006F908B67",
       "description": "",
       "fieldConfig": {
         "defaults": {
@@ -849,6 +816,7 @@
             "mode": "palette-classic"
           },
           "custom": {
+            "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "",
@@ -862,6 +830,7 @@
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
@@ -878,9 +847,7 @@
               "mode": "off"
             }
           },
-          "mappings": [
-
-          ],
+          "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -896,9 +863,7 @@
           },
           "unit": "cps"
         },
-        "overrides": [
-
-        ]
+        "overrides": []
       },
       "gridPos": {
         "h": 8,
@@ -910,7 +875,8 @@
       "options": {
         "legend": {
           "calcs": [
-            "last"
+            "last",
+            "max"
           ],
           "displayMode": "table",
           "placement": "right",
@@ -923,7 +889,7 @@
       },
       "targets": [
         {
-          "datasource": "${DS_TEST-CLUSTER}",
+          "datasource": "PC96415006F908B67",
           "editorMode": "builder",
           "expr": "rate(kuiper_source_records_out_total{rule=\"$rule\", instance=\"$instance\"}[1m])",
           "legendFormat": "{{op}}",
@@ -935,13 +901,14 @@
       "type": "timeseries"
     },
     {
-      "datasource": "${DS_TEST-CLUSTER}",
+      "datasource": "PC96415006F908B67",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
           },
           "custom": {
+            "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "",
@@ -955,6 +922,7 @@
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
@@ -971,9 +939,7 @@
               "mode": "off"
             }
           },
-          "mappings": [
-
-          ],
+          "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -989,9 +955,7 @@
           },
           "unit": "µs"
         },
-        "overrides": [
-
-        ]
+        "overrides": []
       },
       "gridPos": {
         "h": 8,
@@ -1018,7 +982,7 @@
       },
       "targets": [
         {
-          "datasource": "${DS_TEST-CLUSTER}",
+          "datasource": "PC96415006F908B67",
           "editorMode": "builder",
           "exemplar": false,
           "expr": "histogram_quantile(0.9, sum by(le, op, instance) (rate(kuiper_source_process_latency_us_hist_bucket{rule=\"$rule\", instance=\"$instance\"}[1m])))",
@@ -1035,13 +999,14 @@
       "type": "timeseries"
     },
     {
-      "datasource": "${DS_TEST-CLUSTER}",
+      "datasource": "PC96415006F908B67",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
           },
           "custom": {
+            "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "",
@@ -1055,6 +1020,7 @@
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
@@ -1071,9 +1037,7 @@
               "mode": "off"
             }
           },
-          "mappings": [
-
-          ],
+          "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -1089,9 +1053,7 @@
           },
           "unit": "cps"
         },
-        "overrides": [
-
-        ]
+        "overrides": []
       },
       "gridPos": {
         "h": 8,
@@ -1116,7 +1078,7 @@
       },
       "targets": [
         {
-          "datasource": "${DS_TEST-CLUSTER}",
+          "datasource": "PC96415006F908B67",
           "editorMode": "builder",
           "expr": "rate(kuiper_source_exceptions_total{rule=\"$rule\", instance=\"$instance\"}[1m])",
           "legendFormat": "{{op}}",
@@ -1136,14 +1098,12 @@
         "y": 51
       },
       "id": 3,
-      "panels": [
-
-      ],
+      "panels": [],
       "title": "Sink Panel",
       "type": "row"
     },
     {
-      "datasource": "${DS_TEST-CLUSTER}",
+      "datasource": "PC96415006F908B67",
       "description": "",
       "fieldConfig": {
         "defaults": {
@@ -1151,6 +1111,7 @@
             "mode": "palette-classic"
           },
           "custom": {
+            "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "",
@@ -1164,6 +1125,7 @@
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
@@ -1180,9 +1142,7 @@
               "mode": "off"
             }
           },
-          "mappings": [
-
-          ],
+          "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -1198,9 +1158,7 @@
           },
           "unit": "cps"
         },
-        "overrides": [
-
-        ]
+        "overrides": []
       },
       "gridPos": {
         "h": 8,
@@ -1212,7 +1170,8 @@
       "options": {
         "legend": {
           "calcs": [
-            "last"
+            "last",
+            "max"
           ],
           "displayMode": "table",
           "placement": "right",
@@ -1225,7 +1184,7 @@
       },
       "targets": [
         {
-          "datasource": "${DS_TEST-CLUSTER}",
+          "datasource": "PC96415006F908B67",
           "editorMode": "builder",
           "expr": "rate(kuiper_sink_records_in_total{rule=\"$rule\", instance=\"$instance\"}[1m])",
           "legendFormat": "{{op}}",
@@ -1237,7 +1196,7 @@
       "type": "timeseries"
     },
     {
-      "datasource": "${DS_TEST-CLUSTER}",
+      "datasource": "PC96415006F908B67",
       "description": "",
       "fieldConfig": {
         "defaults": {
@@ -1245,6 +1204,7 @@
             "mode": "palette-classic"
           },
           "custom": {
+            "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "",
@@ -1258,6 +1218,7 @@
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
@@ -1274,9 +1235,7 @@
               "mode": "off"
             }
           },
-          "mappings": [
-
-          ],
+          "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -1292,9 +1251,7 @@
           },
           "unit": "cps"
         },
-        "overrides": [
-
-        ]
+        "overrides": []
       },
       "gridPos": {
         "h": 8,
@@ -1306,7 +1263,8 @@
       "options": {
         "legend": {
           "calcs": [
-            "last"
+            "last",
+            "max"
           ],
           "displayMode": "table",
           "placement": "right",
@@ -1319,7 +1277,7 @@
       },
       "targets": [
         {
-          "datasource": "${DS_TEST-CLUSTER}",
+          "datasource": "PC96415006F908B67",
           "editorMode": "builder",
           "expr": "rate(kuiper_sink_records_out_total{rule=\"$rule\", instance=\"$instance\"}[1m])",
           "legendFormat": "{{op}}",
@@ -1331,13 +1289,14 @@
       "type": "timeseries"
     },
     {
-      "datasource": "${DS_TEST-CLUSTER}",
+      "datasource": "PC96415006F908B67",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
           },
           "custom": {
+            "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "",
@@ -1351,6 +1310,7 @@
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
@@ -1367,9 +1327,7 @@
               "mode": "off"
             }
           },
-          "mappings": [
-
-          ],
+          "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -1385,9 +1343,7 @@
           },
           "unit": "µs"
         },
-        "overrides": [
-
-        ]
+        "overrides": []
       },
       "gridPos": {
         "h": 8,
@@ -1414,7 +1370,7 @@
       },
       "targets": [
         {
-          "datasource": "${DS_TEST-CLUSTER}",
+          "datasource": "PC96415006F908B67",
           "editorMode": "builder",
           "exemplar": false,
           "expr": "histogram_quantile(0.9, sum by(le, op, exported_instance, instance) (rate(kuiper_sink_process_latency_us_hist_bucket{rule=\"$rule\", instance=\"$instance\"}[1m])))",
@@ -1431,13 +1387,14 @@
       "type": "timeseries"
     },
     {
-      "datasource": "${DS_TEST-CLUSTER}",
+      "datasource": "PC96415006F908B67",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
           },
           "custom": {
+            "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "",
@@ -1451,6 +1408,7 @@
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
@@ -1467,9 +1425,7 @@
               "mode": "off"
             }
           },
-          "mappings": [
-
-          ],
+          "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -1485,9 +1441,7 @@
           },
           "unit": "cps"
         },
-        "overrides": [
-
-        ]
+        "overrides": []
       },
       "gridPos": {
         "h": 8,
@@ -1512,7 +1466,7 @@
       },
       "targets": [
         {
-          "datasource": "${DS_TEST-CLUSTER}",
+          "datasource": "PC96415006F908B67",
           "editorMode": "builder",
           "expr": "rate(kuiper_sink_exceptions_total{rule=\"$rule\", instance=\"$instance\"}[1m])",
           "legendFormat": "{{op}}",
@@ -1532,14 +1486,12 @@
         "y": 68
       },
       "id": 4,
-      "panels": [
-
-      ],
+      "panels": [],
       "title": "Operator Panel",
       "type": "row"
     },
     {
-      "datasource": "${DS_TEST-CLUSTER}",
+      "datasource": "PC96415006F908B67",
       "description": "",
       "fieldConfig": {
         "defaults": {
@@ -1547,6 +1499,7 @@
             "mode": "palette-classic"
           },
           "custom": {
+            "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "",
@@ -1560,6 +1513,7 @@
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
@@ -1576,9 +1530,7 @@
               "mode": "off"
             }
           },
-          "mappings": [
-
-          ],
+          "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -1594,9 +1546,7 @@
           },
           "unit": "cps"
         },
-        "overrides": [
-
-        ]
+        "overrides": []
       },
       "gridPos": {
         "h": 8,
@@ -1608,7 +1558,8 @@
       "options": {
         "legend": {
           "calcs": [
-            "last"
+            "last",
+            "max"
           ],
           "displayMode": "table",
           "placement": "right",
@@ -1621,7 +1572,7 @@
       },
       "targets": [
         {
-          "datasource": "${DS_TEST-CLUSTER}",
+          "datasource": "PC96415006F908B67",
           "editorMode": "builder",
           "expr": "rate(kuiper_op_records_in_total{rule=\"$rule\", instance=\"$instance\"}[1m])",
           "legendFormat": "{{op}}",
@@ -1633,7 +1584,7 @@
       "type": "timeseries"
     },
     {
-      "datasource": "${DS_TEST-CLUSTER}",
+      "datasource": "PC96415006F908B67",
       "description": "",
       "fieldConfig": {
         "defaults": {
@@ -1641,6 +1592,7 @@
             "mode": "palette-classic"
           },
           "custom": {
+            "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "",
@@ -1654,6 +1606,7 @@
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
@@ -1670,9 +1623,7 @@
               "mode": "off"
             }
           },
-          "mappings": [
-
-          ],
+          "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -1688,9 +1639,7 @@
           },
           "unit": "cps"
         },
-        "overrides": [
-
-        ]
+        "overrides": []
       },
       "gridPos": {
         "h": 8,
@@ -1702,7 +1651,8 @@
       "options": {
         "legend": {
           "calcs": [
-            "last"
+            "last",
+            "max"
           ],
           "displayMode": "table",
           "placement": "right",
@@ -1715,7 +1665,7 @@
       },
       "targets": [
         {
-          "datasource": "${DS_TEST-CLUSTER}",
+          "datasource": "PC96415006F908B67",
           "editorMode": "builder",
           "expr": "rate(kuiper_op_records_out_total{rule=\"$rule\", instance=\"$instance\"}[1m])",
           "legendFormat": "{{op}}",
@@ -1727,13 +1677,14 @@
       "type": "timeseries"
     },
     {
-      "datasource": "${DS_TEST-CLUSTER}",
+      "datasource": "PC96415006F908B67",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
           },
           "custom": {
+            "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "",
@@ -1747,6 +1698,7 @@
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
@@ -1763,9 +1715,7 @@
               "mode": "off"
             }
           },
-          "mappings": [
-
-          ],
+          "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -1781,9 +1731,7 @@
           },
           "unit": "µs"
         },
-        "overrides": [
-
-        ]
+        "overrides": []
       },
       "gridPos": {
         "h": 8,
@@ -1810,7 +1758,7 @@
       },
       "targets": [
         {
-          "datasource": "${DS_TEST-CLUSTER}",
+          "datasource": "PC96415006F908B67",
           "editorMode": "builder",
           "exemplar": false,
           "expr": "histogram_quantile(0.9, sum by(le, op, exported_instance, instance) (rate(kuiper_op_process_latency_us_hist_bucket{rule=\"$rule\", instance=\"$instance\"}[1m])))",
@@ -1827,13 +1775,14 @@
       "type": "timeseries"
     },
     {
-      "datasource": "${DS_TEST-CLUSTER}",
+      "datasource": "PC96415006F908B67",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
           },
           "custom": {
+            "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "",
@@ -1847,6 +1796,7 @@
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
@@ -1863,9 +1813,7 @@
               "mode": "off"
             }
           },
-          "mappings": [
-
-          ],
+          "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -1881,9 +1829,7 @@
           },
           "unit": "cps"
         },
-        "overrides": [
-
-        ]
+        "overrides": []
       },
       "gridPos": {
         "h": 8,
@@ -1908,7 +1854,7 @@
       },
       "targets": [
         {
-          "datasource": "${DS_TEST-CLUSTER}",
+          "datasource": "PC96415006F908B67",
           "editorMode": "builder",
           "expr": "rate(kuiper_op_exceptions_total{rule=\"$rule\", instance=\"$instance\"}[1m])",
           "legendFormat": "{{op}}",
@@ -1918,238 +1864,6 @@
       ],
       "title": "Exceptions QPS",
       "type": "timeseries"
-    },
-    {
-      "collapsed": true,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 85
-      },
-      "id": 33,
-      "panels": [
-        {
-          "datasource": "${DS_TEST-CLUSTER}",
-          "description": "",
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "palette-classic"
-              },
-              "custom": {
-                "axisCenteredZero": false,
-                "axisColorMode": "text",
-                "axisLabel": "",
-                "axisPlacement": "left",
-                "barAlignment": 0,
-                "drawStyle": "line",
-                "fillOpacity": 0,
-                "gradientMode": "none",
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                },
-                "lineInterpolation": "linear",
-                "lineWidth": 1,
-                "pointSize": 5,
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "showPoints": "auto",
-                "spanNulls": false,
-                "stacking": {
-                  "group": "A",
-                  "mode": "none"
-                },
-                "thresholdsStyle": {
-                  "mode": "off"
-                }
-              },
-              "mappings": [
-
-              ],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  },
-                  {
-                    "color": "red",
-                    "value": 80
-                  }
-                ]
-              },
-              "unit": "cps"
-            },
-            "overrides": [
-
-            ]
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 0,
-            "y": 86
-          },
-          "id": 34,
-          "options": {
-            "legend": {
-              "calcs": [
-                "last"
-              ],
-              "displayMode": "table",
-              "placement": "right",
-              "showLegend": true
-            },
-            "tooltip": {
-              "mode": "single",
-              "sort": "none"
-            }
-          },
-          "targets": [
-            {
-              "datasource": "${DS_TEST-CLUSTER}",
-              "editorMode": "builder",
-              "expr": "rate(kuiper_sync_cache_counter{instance=\"$instance\", rule=\"$rule\"}[1m])",
-              "hide": false,
-              "legendFormat": "{{type}}",
-              "range": true,
-              "refId": "A"
-            }
-          ],
-          "title": "Sync Cache QPS",
-          "type": "timeseries"
-        },
-        {
-          "datasource": "${DS_TEST-CLUSTER}",
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "palette-classic"
-              },
-              "custom": {
-                "axisCenteredZero": false,
-                "axisColorMode": "text",
-                "axisLabel": "",
-                "axisPlacement": "left",
-                "barAlignment": 0,
-                "drawStyle": "line",
-                "fillOpacity": 0,
-                "gradientMode": "none",
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                },
-                "lineInterpolation": "linear",
-                "lineWidth": 1,
-                "pointSize": 5,
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "showPoints": "auto",
-                "spanNulls": false,
-                "stacking": {
-                  "group": "A",
-                  "mode": "none"
-                },
-                "thresholdsStyle": {
-                  "mode": "off"
-                }
-              },
-              "mappings": [
-
-              ],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  },
-                  {
-                    "color": "red",
-                    "value": 80
-                  }
-                ]
-              },
-              "unit": "µs"
-            },
-            "overrides": [
-              {
-                "__systemRef": "hideSeriesFrom",
-                "matcher": {
-                  "id": "byNames",
-                  "options": {
-                    "mode": "exclude",
-                    "names": [
-                      "flush"
-                    ],
-                    "prefix": "All except:",
-                    "readOnly": true
-                  }
-                },
-                "properties": [
-                  {
-                    "id": "custom.hideFrom",
-                    "value": {
-                      "legend": false,
-                      "tooltip": false,
-                      "viz": true
-                    }
-                  }
-                ]
-              }
-            ]
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 12,
-            "y": 86
-          },
-          "id": 35,
-          "options": {
-            "legend": {
-              "calcs": [
-                "last",
-                "min",
-                "max"
-              ],
-              "displayMode": "table",
-              "placement": "right",
-              "showLegend": true
-            },
-            "tooltip": {
-              "mode": "single",
-              "sort": "none"
-            }
-          },
-          "targets": [
-            {
-              "datasource": "${DS_TEST-CLUSTER}",
-              "editorMode": "builder",
-              "exemplar": false,
-              "expr": "histogram_quantile(0.9, sum by(le, instance, type, rule) (rate(kuiper_sync_cache_duration_bucket{rule=\"$rule\", instance=\"$instance\"}[1m])))",
-              "format": "time_series",
-              "hide": false,
-              "instant": false,
-              "interval": "",
-              "legendFormat": "{{type}}",
-              "range": true,
-              "refId": "C"
-            }
-          ],
-          "title": "Sync Cache Process latency P90",
-          "type": "timeseries"
-        }
-      ],
-      "title": "Sink Cache",
-      "type": "row"
     },
     {
       "collapsed": false,
@@ -2165,7 +1879,10 @@
       "type": "row"
     },
     {
-      "datasource": "${DS_TEST-CLUSTER}",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PC96415006F908B67"
+      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2246,7 +1963,7 @@
       },
       "targets": [
         {
-          "datasource": "${DS_TEST-CLUSTER}",
+          "datasource": "PC96415006F908B67",
           "disableTextWrap": false,
           "editorMode": "builder",
           "exemplar": false,
@@ -2263,7 +1980,10 @@
           "useBackend": false
         },
         {
-          "datasource": "${DS_TEST-CLUSTER}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PC96415006F908B67"
+          },
           "disableTextWrap": false,
           "editorMode": "builder",
           "expr": "histogram_quantile(0.95, sum by(le) (rate(kuiper_io_duration_hist_bucket{instance=\"$instance\", rule=\"$rule\", io=\"sink\", type=\"kafka\"}[1m])))",
@@ -2281,7 +2001,10 @@
       "type": "timeseries"
     },
     {
-      "datasource": "${DS_TEST-CLUSTER}",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PC96415006F908B67"
+      },
       "description": "",
       "fieldConfig": {
         "defaults": {
@@ -2362,7 +2085,7 @@
       },
       "targets": [
         {
-          "datasource": "${DS_TEST-CLUSTER}",
+          "datasource": "PC96415006F908B67",
           "disableTextWrap": false,
           "editorMode": "builder",
           "expr": "rate(kuiper_kafka_sink_counter{instance=\"$instance\", rule=\"$rule\"}[1m])",
@@ -2377,32 +2100,258 @@
       ],
       "title": "Operation QPS",
       "type": "timeseries"
+    },
+    {
+      "collapsed": true,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 94
+      },
+      "id": 33,
+      "panels": [
+        {
+          "datasource": "PC96415006F908B67",
+          "description": "",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "left",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 0,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green"
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "cps"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 95
+          },
+          "id": 34,
+          "options": {
+            "legend": {
+              "calcs": [
+                "last"
+              ],
+              "displayMode": "table",
+              "placement": "right",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            }
+          },
+          "targets": [
+            {
+              "datasource": "PC96415006F908B67",
+              "editorMode": "builder",
+              "expr": "rate(kuiper_sync_cache_counter{instance=\"$instance\", rule=\"$rule\"}[1m])",
+              "hide": false,
+              "legendFormat": "{{type}}",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "Sync Cache QPS",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "PC96415006F908B67",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "left",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 0,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green"
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "µs"
+            },
+            "overrides": [
+              {
+                "__systemRef": "hideSeriesFrom",
+                "matcher": {
+                  "id": "byNames",
+                  "options": {
+                    "mode": "exclude",
+                    "names": [
+                      "flush"
+                    ],
+                    "prefix": "All except:",
+                    "readOnly": true
+                  }
+                },
+                "properties": [
+                  {
+                    "id": "custom.hideFrom",
+                    "value": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": true
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 95
+          },
+          "id": 35,
+          "options": {
+            "legend": {
+              "calcs": [
+                "last",
+                "min",
+                "max"
+              ],
+              "displayMode": "table",
+              "placement": "right",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            }
+          },
+          "targets": [
+            {
+              "datasource": "PC96415006F908B67",
+              "editorMode": "builder",
+              "exemplar": false,
+              "expr": "histogram_quantile(0.9, sum by(le, instance, type, rule) (rate(kuiper_sync_cache_duration_bucket{rule=\"$rule\", instance=\"$instance\"}[1m])))",
+              "format": "time_series",
+              "hide": false,
+              "instant": false,
+              "interval": "",
+              "legendFormat": "{{type}}",
+              "range": true,
+              "refId": "C"
+            }
+          ],
+          "title": "Sync Cache Process latency P90",
+          "type": "timeseries"
+        }
+      ],
+      "title": "Sink Cache",
+      "type": "row"
     }
   ],
   "refresh": "5s",
-  "schemaVersion": 38,
-  "style": "dark",
-  "tags": [
-
-  ],
+  "schemaVersion": 39,
+  "tags": [],
   "templating": {
     "list": [
       {
         "current": {
-          "selected": true,
-          "text": "localhost:20499",
-          "value": "localhost:20499"
+          "selected": false,
+          "text": "192.168.62.76:8085",
+          "value": "192.168.62.76:8085"
         },
-        "datasource": "${DS_TEST-CLUSTER}",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "PC96415006F908B67"
+        },
         "definition": "label_values(instance)",
         "hide": 0,
         "includeAll": false,
         "label": "instance",
         "multi": false,
         "name": "instance",
-        "options": [
-
-        ],
+        "options": [],
         "query": {
           "query": "label_values(instance)",
           "refId": "PrometheusVariableQueryEditor-VariableQuery"
@@ -2416,19 +2365,20 @@
       {
         "current": {
           "selected": false,
-          "text": "rule2",
-          "value": "rule2"
+          "text": "rule_1cf7",
+          "value": "rule_1cf7"
         },
-        "datasource": "${DS_TEST-CLUSTER}",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "PC96415006F908B67"
+        },
         "definition": "label_values(rule)",
         "hide": 0,
         "includeAll": false,
         "label": "rule",
         "multi": false,
         "name": "rule",
-        "options": [
-
-        ],
+        "options": [],
         "query": {
           "query": "label_values(rule)",
           "refId": "PrometheusVariableQueryEditor-VariableQuery"
@@ -2442,15 +2392,13 @@
     ]
   },
   "time": {
-    "from": "now-5m",
+    "from": "now-1h",
     "to": "now"
   },
-  "timepicker": {
-
-  },
+  "timepicker": {},
   "timezone": "",
   "title": "kuiper panel",
   "uid": "da14abfc-1b97-4833-a86f-fad5d3147e80",
-  "version": 7,
+  "version": 8,
   "weekStart": ""
 }
