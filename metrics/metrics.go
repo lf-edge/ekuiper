@@ -17,13 +17,6 @@ package metrics
 import "github.com/prometheus/client_golang/prometheus"
 
 var (
-	IOCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Namespace: "kuiper",
-		Subsystem: "io",
-		Name:      "counter",
-		Help:      "counter of IO",
-	}, []string{LblType, LblIOType, LblStatusType, LblRuleIDType, LblOpIDType})
-
 	IODurationHist = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: "kuiper",
 		Subsystem: "io",
@@ -34,6 +27,5 @@ var (
 )
 
 func init() {
-	prometheus.MustRegister(IOCounter)
 	prometheus.MustRegister(IODurationHist)
 }
