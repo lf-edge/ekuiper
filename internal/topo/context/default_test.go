@@ -23,6 +23,7 @@ import (
 	"reflect"
 	"runtime/pprof"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
@@ -31,6 +32,43 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/state"
 )
+
+func TestStateIncr(t *testing.T) {
+	data, err := conf.GetDataLoc()
+	if err != nil {
+		t.Error(err)
+	}
+	err = store.SetupDefault(data)
+	if err != nil {
+		t.Error(err)
+	}
+	var (
+		i      = 0
+		ruleId = "testStateRule"
+		value1 = 10
+	)
+	// initialization
+	cStore, err := state.CreateStore(ruleId, def.AtLeastOnce)
+	if err != nil {
+		t.Errorf("Get store for rule %s error: %s", ruleId, err)
+		return
+	}
+	ctx := Background().WithMeta("testStateRule", "op1", cStore).(*DefaultContext)
+	defer cleanStateData()
+	// Do state function
+	for j := 0; j < value1; j++ {
+		go ctx.IncrCounter("key1", 1)
+	}
+	<-time.After(time.Second)
+	v, err := ctx.GetCounter("key1")
+	if err != nil {
+		t.Errorf("%d.Get counter error: %s", i, err)
+		return
+	}
+	if !reflect.DeepEqual(value1, v) {
+		t.Errorf("%d.Get counter\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, value1, v)
+	}
+}
 
 func TestState(t *testing.T) {
 	data, err := conf.GetDataLoc()
