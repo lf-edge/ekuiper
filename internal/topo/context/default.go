@@ -266,14 +266,20 @@ func (c *DefaultContext) WithCancel() (api.StreamContext, context.CancelFunc) {
 }
 
 func (c *DefaultContext) IncrCounter(key string, amount int) error {
-	if v, ok := c.state.Load(key); ok {
-		if vi, err := cast.ToInt(v, cast.STRICT); err != nil {
-			return fmt.Errorf("state[%s] must be an int", key)
+	for {
+		if v, ok := c.state.Load(key); ok {
+			if vi, err := cast.ToInt(v, cast.STRICT); err != nil {
+				return fmt.Errorf("state[%s] must be an int", key)
+			} else {
+				if c.state.CompareAndSwap(key, vi, vi+amount) {
+					break
+				}
+			}
 		} else {
-			c.state.Store(key, vi+amount)
+			if _, loaded := c.state.LoadOrStore(key, amount); !loaded {
+				break
+			}
 		}
-	} else {
-		c.state.Store(key, amount)
 	}
 	return nil
 }
@@ -286,7 +292,7 @@ func (c *DefaultContext) GetCounter(key string) (int, error) {
 			return vi, nil
 		}
 	} else {
-		c.state.Store(key, 0)
+		c.state.CompareAndSwap(key, nil, 0)
 		return 0, nil
 	}
 }
