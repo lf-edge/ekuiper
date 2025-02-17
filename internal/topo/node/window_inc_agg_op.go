@@ -1,4 +1,4 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -774,7 +774,7 @@ func incAggCal(ctx api.StreamContext, dimension string, row *xsql.Tuple, incAggW
 		dimensionsRange = newIncAggRange(ctx)
 		incAggWindow.DimensionsIncAggRange[dimension] = dimensionsRange
 	}
-	cloneRow := cloneTuple(row)
+	cloneRow := cloneTuple(row, len(row.Message))
 	ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(dimensionsRange.fv, cloneRow, &xsql.WildcardValuer{Data: cloneRow})}
 	dimensionsRange.LastRow = cloneRow
 	for _, aggField := range aggFields {
