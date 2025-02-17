@@ -1,4 +1,4 @@
-// Copyright 2022-2024 EMQ Technologies Co., Ltd.
+// Copyright 2022-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -481,7 +481,7 @@ func (t *Tuple) ToMap() map[string]interface{} {
 		return t.Message
 	}
 	if t.cachedMap == nil { // clone the message
-		m := make(map[string]interface{})
+		m := make(map[string]any, len(t.Message))
 		for k, v := range t.Message {
 			m[k] = v
 		}
@@ -545,7 +545,7 @@ func (t *Tuple) Pick(allWildcard bool, cols [][]string, wildcardEmitters map[str
 	}
 	if !allWildcard {
 		if len(cols) > 0 {
-			pickedMap := make(map[string]interface{})
+			pickedMap := make(map[string]any, len(cols))
 			for _, colTab := range cols {
 				if colTab[1] == "" || colTab[1] == string(ast.DefaultStream) || colTab[1] == t.Emitter {
 					if v, ok := t.Message.Value(colTab[0], colTab[1]); ok {
