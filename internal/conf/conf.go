@@ -1,4 +1,4 @@
-// Copyright 2023-2024 EMQ Technologies Co., Ltd.
+// Copyright 2023-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -187,6 +187,9 @@ type KuiperConf struct {
 		RestTls                 *TlsConf          `yaml:"restTls"`
 		Prometheus              bool              `yaml:"prometheus"`
 		PrometheusPort          int               `yaml:"prometheusPort"`
+		Pprof                   bool              `yaml:"pprof"`
+		PprofIp                 string            `yaml:"pprofIp"`
+		PprofPort               int               `yaml:"pprofPort"`
 		PluginHosts             string            `yaml:"pluginHosts"`
 		Authentication          bool              `yaml:"authentication"`
 		IgnoreCase              bool              `yaml:"ignoreCase"`
