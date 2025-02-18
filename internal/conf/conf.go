@@ -187,6 +187,9 @@ type KuiperConf struct {
 		RestTls                 *TlsConf          `yaml:"restTls"`
 		Prometheus              bool              `yaml:"prometheus"`
 		PrometheusPort          int               `yaml:"prometheusPort"`
+		Pprof                   bool              `yaml:"pprof"`
+		PprofIp                 string            `yaml:"pprofIp"`
+		PprofPort               int               `yaml:"pprofPort"`
 		PluginHosts             string            `yaml:"pluginHosts"`
 		Authentication          bool              `yaml:"authentication"`
 		IgnoreCase              bool              `yaml:"ignoreCase"`
