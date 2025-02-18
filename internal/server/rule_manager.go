@@ -175,6 +175,12 @@ func (rr *RuleRegistry) UpdateRule(ruleId, ruleJson string) error {
 	if !ok {
 		return errorx.NewWithCode(errorx.NOT_FOUND, fmt.Sprintf("Rule %s is not found in registry, please check if it is created", ruleId))
 	}
+	if r.Id != ruleId {
+		_, ok = registry.load(r.Id)
+		if ok {
+			return errorx.NewWithCode(errorx.PlanError, fmt.Sprintf("Rule with id %s is already exists", r.Id))
+		}
+	}
 	// Try plan with the new json. If err, revert to old rule
 	oldRule := rs.Rule
 	rs.Rule = r
@@ -185,7 +191,20 @@ func (rr *RuleRegistry) UpdateRule(ruleId, ruleJson string) error {
 		return err
 	}
 	// Validate successful, save to db
-	err1 := rr.update(r.Id, ruleJson)
+	var err1 error
+	if r.Id != ruleId {
+		rs, err1 = rr.delete(ruleId)
+		if err1 == nil {
+			err1 = rr.save(r.Id, ruleJson, rs)
+		}
+	} else {
+		err1 = rr.update(r.Id, ruleJson)
+	}
+
+	if rs == nil {
+		return fmt.Errorf("rule state %s is nil", r.Id)
+	}
+
 	// ReRun the rule
 	rs.Stop()
 	rs.WithTopo(newTopo)

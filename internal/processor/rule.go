@@ -1,4 +1,4 @@
-// Copyright 2021-2024 EMQ Technologies Co., Ltd.
+// Copyright 2021-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -158,9 +158,6 @@ func (p *RuleProcessor) GetRuleByJson(id, ruleJson string) (*def.Rule, error) {
 	// validation
 	if rule.Id == "" {
 		return nil, fmt.Errorf("Missing rule id.")
-	}
-	if id != "" && rule.Id != "" && id != rule.Id {
-		return nil, fmt.Errorf("RuleId is not consistent with rule id.")
 	}
 	if err := validateRuleID(rule.Id); err != nil {
 		return nil, err
