@@ -190,3 +190,42 @@ The cache configuration lies in the `sql.yaml`.
 * cache: bool value to indicate whether to enable cache.
 * cacheTtl: the time to live of the cache in seconds.
 * cacheMissingKey: whether to cache nil value for a key.
+
+### Using TemplateSQL for Lookup Tables
+
+In the SQL lookup configuration, it is also supported to use template SQL to customize the query for tables in the database:
+
+```yaml
+sqlite_config:
+  url: example.db
+  templateSqlQueryCfg:
+    templateSql: select * from t limit 100;
+```
+
+Through this configuration, we can achieve the pre-calculation pushdown to the database level, as shown in the following example:
+
+For the following rule:
+
+```json
+{
+    "id": "rule1",
+    "sql": "SELECT demo.a, sqlookup.aid from demo inner join sqllookup on demo.b = sqllookup.bid",
+    "actions": [
+        {
+            "log": {
+            }
+        }
+    ]
+}
+```
+
+We can define the sqllookup with the following configuration:
+
+```yaml
+sqlite3_lookup:
+  url: example.db
+  templateSqlQueryCfg:
+    templateSql: select aid from t limit where b2 + 1 = {{.bid}};
+```
+
+Through the above operation, we have pushed down the equivalence calculation where demo.b equals sqllookup.b2 + 1 to the database level during the SQL lookup query. For some equivalence calculation operations not supported by eKuiper, we can achieve them in this way.
