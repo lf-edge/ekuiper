@@ -76,7 +76,7 @@ func (m *MetricsDumpManager) init(ctx context.Context) error {
 	m.metricsPath = metricsPath
 	w := cronowriter.MustNew(fmt.Sprintf("%s/metrics.", m.metricsPath) + `%Y%m%d-%H` + `.log`)
 	m.writer = w
-	m.retainedDuration = conf.Config.Basic.MetricsDumpConfig.RetainedDuration
+	m.retainedDuration = conf.Config.Basic.MetricsDumpConfig.RetainedDurationD
 	m.regex = regexp.MustCompile(`^metrics\.(\d{4})(\d{2})(\d{2})-(\d{2})\.log$`)
 	go m.gcOldMetricsJob(ctx)
 	go m.dumpMetricsJob(ctx)

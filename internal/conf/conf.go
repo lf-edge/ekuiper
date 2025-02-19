@@ -382,9 +382,11 @@ func InitConf() {
 	if Config.Source == nil {
 		Config.Source = &SourceConf{}
 	}
-	if Config.Basic.MetricsDumpConfig.RetainedDuration < 1 {
-		Config.Basic.MetricsDumpConfig.RetainedDuration = 6 * time.Hour
+	if Config.Basic.MetricsDumpConfig.RetainedDuration == "" {
+		Config.Basic.MetricsDumpConfig.RetainedDuration = "72h"
 	}
+	Config.Basic.MetricsDumpConfig.RetainedDurationD, _ = time.ParseDuration(Config.Basic.MetricsDumpConfig.RetainedDuration)
+
 	if Config.Basic.CfgStorageType == "" {
 		Config.Basic.CfgStorageType = "file"
 	}
@@ -524,6 +526,7 @@ func InitMetricsFolder() error {
 }
 
 type MetricsDumpConfig struct {
-	Enable           bool          `yaml:"enable"`
-	RetainedDuration time.Duration `yaml:"retainedDuration"`
+	Enable            bool          `yaml:"enable"`
+	RetainedDuration  string        `yaml:"retainedDuration"`
+	RetainedDurationD time.Duration `yaml:"-"`
 }
