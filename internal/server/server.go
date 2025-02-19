@@ -43,6 +43,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/server/promMetrics"
 	"github.com/lf-edge/ekuiper/internal/topo/connection/factory"
 	"github.com/lf-edge/ekuiper/internal/topo/rule"
+	"github.com/lf-edge/ekuiper/metrics"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/cast"
@@ -136,6 +137,7 @@ func StartUp(Version string) {
 	createPaths()
 	conf.InitConf()
 	factory.InitClientsFactory()
+	serverCtx, serverCancel := context.WithCancel(context.Background())
 
 	undo, _ := maxprocs.Set(maxprocs.Logger(conf.Log.Infof))
 	defer undo()
@@ -156,6 +158,7 @@ func StartUp(Version string) {
 	rulesetProcessor = processor.NewRulesetProcessor(ruleProcessor, streamProcessor)
 	ruleMigrationProcessor = NewRuleMigrationProcessor(ruleProcessor, streamProcessor)
 	sysMetrics = NewMetrics()
+	metrics.InitMetricsDumpJob(serverCtx)
 
 	// register all extensions
 	for k, v := range components {
@@ -254,6 +257,7 @@ func StartUp(Version string) {
 		conf.Log.Info("eKuiper stopped by Stop request")
 	}
 	exit <- struct{}{}
+	serverCancel()
 	conf.Log.Info("start to stop rest server")
 	ctx, cancel := context.WithTimeout(context.TODO(), 3*time.Second)
 	defer cancel()

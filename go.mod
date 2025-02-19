@@ -35,6 +35,8 @@ require (
 	github.com/pebbe/zmq4 v1.2.11
 	github.com/pingcap/failpoint v0.0.0-20240528011301-b51a646c7c86
 	github.com/prometheus/client_golang v1.19.1
+	github.com/prometheus/client_model v0.6.1
+	github.com/prometheus/common v0.53.0
 	github.com/redis/go-redis/v9 v9.5.1
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/second-state/WasmEdge-go v0.13.4
@@ -43,6 +45,7 @@ require (
 	github.com/stretchr/testify v1.9.0
 	github.com/ugorji/go/codec v1.2.12
 	github.com/urfave/cli v1.22.15
+	github.com/utahta/go-cronowriter v1.2.0
 	github.com/valyala/fastjson v1.6.4
 	github.com/yisaer/file-rotatelogs v0.0.0-20240606072000-fe792f3c4e04
 	go.nanomsg.org/mangos/v3 v3.4.2
@@ -263,8 +266,6 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c // indirect
 	github.com/prestodb/presto-go-client v0.0.0-20240426182841-905ac40a1783 // indirect
-	github.com/prometheus/client_model v0.6.1 // indirect
-	github.com/prometheus/common v0.53.0 // indirect
 	github.com/prometheus/procfs v0.15.0 // indirect
 	github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
