@@ -43,6 +43,7 @@ const (
 	ErrorLogLevel = "error"
 	FatalLogLevel = "fatal"
 	PanicLogLevel = "panic"
+	metricsDir    = "metrics"
 )
 
 var (
@@ -168,31 +169,32 @@ func (s *syslogConf) Validate() error {
 
 type KuiperConf struct {
 	Basic struct {
-		LogLevel            string      `yaml:"logLevel"`
-		Debug               bool        `yaml:"debug"`
-		ConsoleLog          bool        `yaml:"consoleLog"`
-		FileLog             bool        `yaml:"fileLog"`
-		LogDisableTimestamp bool        `yaml:"logDisableTimestamp"`
-		Syslog              *syslogConf `yaml:"syslog"`
-		RotateTime          int         `yaml:"rotateTime"`
-		MaxAge              int         `yaml:"maxAge"`
-		RotateSize          int64       `yaml:"rotateSize"`
-		RotateCount         int         `yaml:"rotateCount"`
-		TimeZone            string      `yaml:"timezone"`
-		Ip                  string      `yaml:"ip"`
-		Port                int         `yaml:"port"`
-		RestIp              string      `yaml:"restIp"`
-		RestPort            int         `yaml:"restPort"`
-		RestTls             *tlsConf    `yaml:"restTls"`
-		Prometheus          bool        `yaml:"prometheus"`
-		PrometheusPort      int         `yaml:"prometheusPort"`
-		PluginHosts         string      `yaml:"pluginHosts"`
-		Authentication      bool        `yaml:"authentication"`
-		IgnoreCase          bool        `yaml:"ignoreCase"`
-		SQLConf             *SQLConf    `yaml:"sql"`
-		RulePatrolInterval  string      `yaml:"rulePatrolInterval"`
-		CfgStorageType      string      `yaml:"cfgStorageType"`
-		EnableOpenZiti      bool        `yaml:"enableOpenZiti"`
+		LogLevel            string            `yaml:"logLevel"`
+		Debug               bool              `yaml:"debug"`
+		ConsoleLog          bool              `yaml:"consoleLog"`
+		FileLog             bool              `yaml:"fileLog"`
+		LogDisableTimestamp bool              `yaml:"logDisableTimestamp"`
+		Syslog              *syslogConf       `yaml:"syslog"`
+		RotateTime          int               `yaml:"rotateTime"`
+		MaxAge              int               `yaml:"maxAge"`
+		RotateSize          int64             `yaml:"rotateSize"`
+		RotateCount         int               `yaml:"rotateCount"`
+		TimeZone            string            `yaml:"timezone"`
+		Ip                  string            `yaml:"ip"`
+		Port                int               `yaml:"port"`
+		RestIp              string            `yaml:"restIp"`
+		RestPort            int               `yaml:"restPort"`
+		RestTls             *tlsConf          `yaml:"restTls"`
+		Prometheus          bool              `yaml:"prometheus"`
+		PrometheusPort      int               `yaml:"prometheusPort"`
+		PluginHosts         string            `yaml:"pluginHosts"`
+		Authentication      bool              `yaml:"authentication"`
+		IgnoreCase          bool              `yaml:"ignoreCase"`
+		SQLConf             *SQLConf          `yaml:"sql"`
+		RulePatrolInterval  string            `yaml:"rulePatrolInterval"`
+		CfgStorageType      string            `yaml:"cfgStorageType"`
+		EnableOpenZiti      bool              `yaml:"enableOpenZiti"`
+		MetricsDumpConfig   MetricsDumpConfig `yaml:"metricsDumpConfig"`
 	}
 	Rule   api.RuleOption
 	Sink   *SinkConf
@@ -380,6 +382,11 @@ func InitConf() {
 	if Config.Source == nil {
 		Config.Source = &SourceConf{}
 	}
+	if Config.Basic.MetricsDumpConfig.RetainedDuration == "" {
+		Config.Basic.MetricsDumpConfig.RetainedDuration = "72h"
+	}
+	Config.Basic.MetricsDumpConfig.RetainedDurationD, _ = time.ParseDuration(Config.Basic.MetricsDumpConfig.RetainedDuration)
+
 	if Config.Basic.CfgStorageType == "" {
 		Config.Basic.CfgStorageType = "file"
 	}
@@ -494,4 +501,32 @@ func isLogOutdated(name string, now time.Time, maxDuration time.Duration) bool {
 		return true
 	}
 	return false
+}
+
+func GetMetricsLoc() (string, error) {
+	logPath, err := GetLogLoc()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(logPath, metricsDir), nil
+}
+
+func InitMetricsFolder() error {
+	mPath, err := GetLoc(metricsDir)
+	if err != nil {
+		return err
+	}
+	if _, err := os.Stat(mPath); os.IsNotExist(err) {
+		err := os.Mkdir(mPath, 0o755)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+type MetricsDumpConfig struct {
+	Enable            bool          `yaml:"enable"`
+	RetainedDuration  string        `yaml:"retainedDuration"`
+	RetainedDurationD time.Duration `yaml:"-"`
 }
