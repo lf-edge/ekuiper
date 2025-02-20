@@ -39,11 +39,13 @@ jobs:
           - debian
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 0
-    - uses: docker/setup-qemu-action@v2
-    - uses: docker/setup-buildx-action@v2
+    - uses: docker/setup-qemu-action@v3
+      with:
+        image: tonistiigi/binfmt:qemu-v7.0.0-28
+    - uses: docker/setup-buildx-action@v3
     - name: build
       if: matrix.os == 'debian'
       run: |
@@ -57,69 +59,52 @@ jobs:
     - name: create sha file
       run: |
         cd _packages && for var in $(ls); do sudo bash -c "echo $(sha256sum $var | awk '{print $1}') > $var.sha256"; done && cd -
-    - uses: actions/upload-artifact@v3
+    - name: Set artifact name
+      id: artifact_name
+      env:
+        ARCH: ${{ matrix.arch }}
+        REF: ${{ github.ref_name }}
+      run: |
+        arch=$(echo $ARCH | sed -r 's|linux/([a-z]*)(/.*)*|\1|g')
+        ref=$(echo ${REF/\//-})
+        artifact_name="kuiper-${ref}-${{ matrix.os }}-${arch}"
+        echo "artifact_name=$artifact_name" >> $GITHUB_OUTPUT
+    - uses: actions/upload-artifact@v4
       with:
-        name: packages
+        name: ${{ steps.artifact_name.outputs.artifact_name }}
         path: _packages/
 
   build-on-mac:
     runs-on: macos-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 0
-    - uses: actions/setup-go@v3
+    - uses: actions/setup-go@v5
       with:
         go-version: '1.22.8'
     - name: prepare
       run: |
-          brew install curl zip unzip gnu-sed pkg-config zmq
-          echo "/usr/local/bin:$PATH" >> ~/.bashrc
+        brew install curl zip unzip gnu-sed pkg-config zmq
+        echo "/usr/local/bin:$PATH" >> ~/.bashrc
     - name: build
       run: |
         make pkg
         cd _packages && for var in $(ls); do openssl dgst -sha256 $var | awk '{print $2}' > $var.sha256; done && cd -
-    - uses: actions/upload-artifact@v3
+    - name: Set artifact name
+      id: artifact_name
+      env:
+        REF: ${{ github.ref_name }}
+      run: |
+        arch=$(echo $ARCH | sed -r 's|linux/([a-z]*)(/.*)*|\1|g')
+        ref=$(echo ${REF/\//-})
+        artifact_name="kuiper-${ref}-darwin-${arch}"
+        echo "artifact_name=$artifact_name" >> $GITHUB_OUTPUT
+    - uses: actions/upload-artifact@v4
       with:
-        name: packages
+        name: ${{ steps.artifact_name.outputs.artifact_name }}
         path: _packages/
-
-  #  build-for-android:
-  #    runs-on: ubuntu-latest
-  #
-  #    steps:
-  #      - uses: actions/checkout@v3
-  #        with:
-  #          fetch-depth: 0
-  #      - uses: actions/setup-go@v3
-  #        with:
-  #          go-version: '1.22.1'
-  #      - uses: nttld/setup-ndk@v1
-  #        id: setup-ndk
-  #        with:
-  #          ndk-version: r24
-  #          add-to-path: false
-  #      - name: prepare
-  #        run: |
-  #          cp -r etc app
-  #          cd app
-  #          sudo apt-get update && sudo apt-get install libgl1-mesa-dev xorg-dev
-  #          go install fyne.io/fyne/v2/cmd/fyne@latest
-  #      - name: build
-  #        run: |
-  #          ver=$(git describe --tags --always | sed 's/^v//g')
-  #          cd app
-  #          cp -r etc app
-  #          fyne package -os android/arm64 -name kuiper-$ver -metadata version=$ver -release -appID github.com.lfedge.ekuiper -icon icon.png || true
-  #          mkdir -p ../_packages
-  #          # The version name will be modified by fyne package, convert . and - to _
-  #          mv kuiper* ../_packages/
-  #          cd ../_packages && for var in $(ls); do echo $(sha256sum $var | awk '{print $1}') > $var.sha256; done && cd -
-  #      - uses: actions/upload-artifact@v3
-  #        with:
-  #          name: packages
-  #          path: _packages/
 
   build-docker-images:
     runs-on: ubuntu-latest
@@ -139,17 +124,17 @@ jobs:
               - 1.22.8
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 0
-    - uses: docker/setup-buildx-action@v2
-    - uses: docker/setup-qemu-action@v2
+    - uses: docker/setup-buildx-action@v3
+    - uses: docker/setup-qemu-action@v3
       with:
-        image: tonistiigi/binfmt:latest
+        image: tonistiigi/binfmt:qemu-v7.0.0-28
         platforms: all
     - name: Build single platform image
       if: endsWith( matrix.suffix, 'python') == false
-      uses: docker/build-push-action@v3
+      uses: docker/build-push-action@v6
       with:
         context: .
         platforms: linux/amd64
@@ -168,7 +153,7 @@ jobs:
             docker logs ekuiper
             exit 1
         fi
-    - uses: docker/metadata-action@v4
+    - uses: docker/metadata-action@v5
       id: meta
       with:
         images: docker.io/lfedge/ekuiper
@@ -191,7 +176,7 @@ jobs:
       run: sed -i -r "s|([ \t]*version=).*|\1'${GITHUB_REF#refs/tags/}',|1" sdk/python/setup.py
     - name: Build multi platform image
       if: contains(fromJSON('["release", "workflow_dispatch"]'), github.event_name)
-      uses: docker/build-push-action@v3
+      uses: docker/build-push-action@v6
       with:
         context: .
         platforms: linux/amd64,linux/arm64,linux/arm/v7
@@ -244,13 +229,13 @@ jobs:
             plugin: sinks/tdengine
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 0
-    - uses: docker/setup-buildx-action@v2
-    - uses: docker/setup-qemu-action@v2
+    - uses: docker/setup-buildx-action@v3
+    - uses: docker/setup-qemu-action@v3
       with:
-        image: tonistiigi/binfmt:latest
+        image: tonistiigi/binfmt:qemu-v7.0.0-28
         platforms: all
     - name: build plugins
       run: |
@@ -261,7 +246,7 @@ jobs:
             ghcr.io/lf-edge/ekuiper/base:${{ matrix.golang }}-${{ matrix.os[0] }} \
             bash -euc "git config --global --add safe.directory /ekuiper && make ${{ matrix.plugin }}"
     - name: Build ekuiper image
-      uses: docker/build-push-action@v3
+      uses: docker/build-push-action@v6
       if: matrix.arch == 'linux/amd64'
       with:
         context: .
@@ -307,25 +292,39 @@ jobs:
         fi
         docker logs ${container_id}
         [ $plugin_name = $(curl ${ip_address}:9081/plugins/${plugin_type}/${plugin_name} | jq '.name'| sed 's/\"//g' ) ] || exit 1
-    - uses: actions/upload-artifact@v3
+    - name: Set artifact name
+      id: artifact_name
+      env:
+        PLUGIN: ${{ matrix.plugin }}
+        ARCH: ${{ matrix.arch }}
+        REF: ${{ github.ref_name }}
+      run: |
+        plugin_type=$(echo ${PLUGIN%%/*})
+        plugin_name=$(echo ${PLUGIN##*/})
+        arch=$(echo $ARCH | sed -r 's|linux/([a-z]*)(/.*)*|\1|g')
+        ref=$(echo ${REF/\//-})
+        
+        artifact_name="plugin-${ref}-${{ matrix.os[0] }}-${plugin_type}-${plugin_name}-${arch}"
+        echo "artifact_name=$artifact_name" >> $GITHUB_OUTPUT
+    - uses: actions/upload-artifact@v4
       with:
-        name: plugins
+        name: ${{ steps.artifact_name.outputs.artifact_name }}
         path: _plugins/
 
   build-kubernetes-tool:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 0
-    - uses: docker/setup-buildx-action@v2
-    - uses: docker/setup-qemu-action@v2
+    - uses: docker/setup-buildx-action@v3
+    - uses: docker/setup-qemu-action@v3
       with:
-        image: tonistiigi/binfmt:latest
+        image: tonistiigi/binfmt:qemu-v7.0.0-28
         platforms: all
     - name: Build single platform image
-      uses: docker/build-push-action@v3
+      uses: docker/build-push-action@v6
       with:
         context: .
         platforms: linux/amd64
@@ -338,7 +337,7 @@ jobs:
         docker run -d --name kuiper-kubernetes-tool docker.io/lfedge/ekuiper-kubernetes-tool
         sleep 5
         if [[ "$(docker logs kuiper-kubernetes-tool)" != *"Kuiper kubernetes tool is started successfully!"*  ]]; then exit 1; fi
-    - uses: docker/metadata-action@v4
+    - uses: docker/metadata-action@v5
       id: meta
       with:
         images: docker.io/lfedge/ekuiper-kubernetes-tool
@@ -355,8 +354,11 @@ jobs:
       with:
         username: ${{ secrets.DOCKER_HUB_USER }}
         password: ${{ secrets.DOCKER_HUB_TOKEN }}
+    - name: Update version for setup.py
+      if: github.event_name == 'release'
+      run: sed -i -r "s|([ \t]*version=).*|\1'${GITHUB_REF#refs/tags/}',|1" sdk/python/setup.py
     - name: Build multi platform image
-      uses: docker/build-push-action@v3
+      uses: docker/build-push-action@v6
       with:
         context: .
         platforms: linux/amd64,linux/arm64,linux/arm/v7,linux/386
@@ -371,19 +373,20 @@ jobs:
     needs:
     - build
     - build-on-mac
-      #    - build-for-android
     - build-plugins
 
     steps:
-    - uses: actions/checkout@v3
-    - uses: actions/download-artifact@v3
+    - uses: actions/checkout@v4
+    - uses: actions/download-artifact@v4
       with:
-        name: packages
+        pattern: kuiper-*
         path: _packages
-    - uses: actions/download-artifact@v3
+        merge-multiple: true
+    - uses: actions/download-artifact@v4
       with:
-        name: plugins
+        pattern: plugin-*
         path: _plugins
+        merge-multiple: true
     - name: check packages
       run: |
         cd _packages && for var in $( ls |grep -v sha256); do
@@ -417,9 +420,6 @@ jobs:
           -X POST \
           -d "{\"repo\":\"lf-edge/ekuiper\", \"tag\": \"${{ github.ref_name }}\" }" \
           ${{ secrets.EMQX_IO_RELEASE_API }}
-    - uses: geekyeggo/delete-artifact@v2
+    - uses: geekyeggo/delete-artifact@v5
       with:
-        name: packages
-    - uses: geekyeggo/delete-artifact@v2
-      with:
-        name: plugins
+        name: "*"
