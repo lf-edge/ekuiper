@@ -1,4 +1,4 @@
-// Copyright 2021-2024 EMQ Technologies Co., Ltd.
+// Copyright 2021-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -186,8 +186,8 @@ func (rr *RuleRegistry) UpdateRule(ruleId, ruleJson string) error {
 	err1 := rr.update(r.Id, ruleJson)
 	// ReRun the rule
 	rs.Stop()
-	rs.WithTopo(newTopo)
 	if r.Triggered {
+		rs.WithTopo(newTopo)
 		err2 := rs.Start()
 		if err2 != nil {
 			return err2
@@ -219,6 +219,14 @@ func (rr *RuleRegistry) StartRule(name string) error {
 		err := rr.updateTrigger(name, true)
 		if err != nil {
 			conf.Log.Warnf("start rule update db status error: %s", err.Error())
+		}
+		if !rs.HasTopo() {
+			// Validate and create the topo
+			tp, err := rs.Validate()
+			if err != nil {
+				return err
+			}
+			rs.WithTopo(tp)
 		}
 		return rs.Start()
 	}

@@ -1,4 +1,4 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -111,6 +111,10 @@ func (s *State) WithTopo(topo *topo.Topo) *State {
 	s.topology = topo
 	s.topoGraph = s.topology.GetTopo()
 	return s
+}
+
+func (s *State) HasTopo() bool {
+	return s.topology != nil
 }
 
 // Validate tries to plan and return the planned topo and any errors
