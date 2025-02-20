@@ -41,6 +41,9 @@ const (
 	LblReq       = "req"
 	LblKafka     = "kafka"
 	LblMsg       = "msg"
+	LblQueueIn   = "queue-in"
+	LblIngest    = "ingest"
+	LblSend      = "send"
 )
 
 type KafkaSink struct {
@@ -279,6 +282,7 @@ func (k *KafkaSink) runWithTicker(ctx api.StreamContext) {
 }
 
 func (k *KafkaSink) ingest(ctx api.StreamContext, d *kafkago.Message, checkSize bool) {
+	KafkaSinkCounter.WithLabelValues(LblIngest, LblMsg, k.ruleID, k.opID).Inc()
 	k.messages = append(k.messages, *d)
 	k.currIndex++
 	if checkSize && k.currIndex >= k.kc.BatchSize {
@@ -287,6 +291,7 @@ func (k *KafkaSink) ingest(ctx api.StreamContext, d *kafkago.Message, checkSize 
 }
 
 func (k *KafkaSink) send(ctx api.StreamContext) {
+	KafkaSinkCounter.WithLabelValues(LblSend, LblMsg, k.ruleID, k.opID).Inc()
 	start := time.Now()
 	defer func() {
 		metrics.IODurationHist.WithLabelValues(LblKafka, metrics.LblSinkIO, k.ruleID, k.opID).Observe(float64(time.Since(start).Microseconds()))
@@ -306,9 +311,11 @@ func (k *KafkaSink) collect(ctx api.StreamContext, item api.RawTuple) error {
 	if err != nil {
 		return err
 	}
+	KafkaSinkCounter.WithLabelValues(LblCollect, LblMsg, k.ruleID, k.opID).Inc()
 	select {
 	case <-ctx.Done():
 	case k.msgQ <- &msg:
+		KafkaSinkCounter.WithLabelValues(LblQueueIn, LblMsg, k.ruleID, k.opID).Inc()
 	}
 	return nil
 }
@@ -446,7 +453,7 @@ func getDefaultKafkaConf() *kafkaConf {
 	c.kafkaWriterConf = kafkaWriterConf{
 		BatchSize:    100,
 		BatchTimeout: time.Microsecond,
-		BatchBytes:   10485760, // 10MB
+		BatchBytes:   1048576, // 1MB
 	}
 	return c
 }
