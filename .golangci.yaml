@@ -1,12 +1,15 @@
 run:
   timeout: 10m
-  skip-dirs:
+  build-tags:
+    - edgex
+  go: '1.22'
+
+issues:
+  exclude-dirs:
     - internal/plugin/wasm
     - extensions/functions/tfLite
     - extensions/functions/labelImage
     - internal/pkg/httpx/httptestx
-  build-tags:
-    - edgex
 
 linters:
   disable-all: true
@@ -25,5 +28,3 @@ linters-settings:
       - standard
       - default
       - prefix(github.com/lf-edge/ekuiper)
-  staticcheck:
-    go: '1.22'
