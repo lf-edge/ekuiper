@@ -19,7 +19,6 @@ package server
 import (
 	"net/http"
 	_ "net/http/pprof"
-	"os"
 
 	"github.com/Rookiecom/cpuprofile"
 
@@ -47,7 +46,6 @@ func (p pprofComp) serve() {
 			if err := http.ListenAndServe(addr, nil); err != nil {
 				conf.Log.Errorf("pprof start error: %s", err)
 			}
-			os.Exit(0)
 		}()
 	}
 }
