@@ -27,6 +27,7 @@ import (
 	"github.com/segmentio/kafka-go/sasl"
 
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/util"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/node/metric"
 	"github.com/lf-edge/ekuiper/v2/metrics"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cert"
@@ -60,6 +61,17 @@ type KafkaSink struct {
 	currIndex      int
 	ruleID         string
 	opID           string
+	statManager    metric.StatManager
+}
+
+func (k *KafkaSink) setStatManager(ctx api.StreamContext) {
+	m := ctx.Value("$statManager")
+	if m != nil {
+		sm, ok := m.(metric.StatManager)
+		if ok {
+			k.statManager = sm
+		}
+	}
 }
 
 func (k *KafkaSink) Info() model.SinkInfo {
@@ -224,6 +236,7 @@ func (k *KafkaSink) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) 
 	} else {
 		sch(api.ConnectionConnected, "")
 	}
+	k.setStatManager(ctx)
 	return err
 }
 
@@ -291,7 +304,7 @@ func (k *KafkaSink) ingest(ctx api.StreamContext, d *kafkago.Message, checkSize 
 }
 
 func (k *KafkaSink) send(ctx api.StreamContext) {
-	KafkaSinkCounter.WithLabelValues(LblSend, LblMsg, k.ruleID, k.opID).Inc()
+	KafkaSinkCounter.WithLabelValues(LblSend, LblReq, k.ruleID, k.opID).Inc()
 	start := time.Now()
 	defer func() {
 		metrics.IODurationHist.WithLabelValues(LblKafka, metrics.LblSinkIO, k.ruleID, k.opID).Observe(float64(time.Since(start).Microseconds()))
@@ -411,13 +424,21 @@ func (k *KafkaSink) handleErrMsgs(ctx api.StreamContext, err error, count int) {
 		KafkaSinkCounter.WithLabelValues(metrics.LblSuccess, LblMsg, k.ruleID, k.opID).Add(float64(count))
 		return
 	}
+	errorCount := 0
 	KafkaSinkCounter.WithLabelValues(metrics.LblException, LblReq, k.ruleID, k.opID).Inc()
 	switch wErrors := err.(type) {
 	case kafkago.WriteErrors:
+		errorCount = wErrors.Count()
 		KafkaSinkCounter.WithLabelValues(metrics.LblException, LblMsg, k.ruleID, k.opID).Add(float64(wErrors.Count()))
 		KafkaSinkCounter.WithLabelValues(metrics.LblSuccess, LblMsg, k.ruleID, k.opID).Add(float64(count - wErrors.Count()))
 	default:
+		errorCount = count
 		KafkaSinkCounter.WithLabelValues(metrics.LblException, LblMsg, k.ruleID, k.opID).Add(float64(count))
+	}
+	if errorCount > 0 && k.statManager != nil {
+		for i := 0; i < count; i++ {
+			k.statManager.IncTotalExceptions(err.Error())
+		}
 	}
 }
 
@@ -451,7 +472,7 @@ func getDefaultKafkaConf() *kafkaConf {
 		MaxAttempts:  3,
 	}
 	c.kafkaWriterConf = kafkaWriterConf{
-		BatchSize:    100,
+		BatchSize:    1,
 		BatchTimeout: time.Microsecond,
 		BatchBytes:   1048576, // 1MB
 	}

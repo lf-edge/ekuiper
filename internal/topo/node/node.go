@@ -50,6 +50,7 @@ type defaultNode struct {
 	span                     trace.Span
 	spanCtx                  api.StreamContext
 	disableBufferFullDiscard bool
+	isStatManagerHostBySink  bool
 }
 
 func newDefaultNode(name string, options *def.RuleOption) *defaultNode {
@@ -325,7 +326,9 @@ func (o *defaultNode) onErrorOpt(ctx api.StreamContext, err error, sendOut bool)
 	if sendOut && o.sendError {
 		o.Broadcast(err)
 	}
-	o.statManager.IncTotalExceptions(err.Error())
+	if !o.isStatManagerHostBySink {
+		o.statManager.IncTotalExceptions(err.Error())
+	}
 	if o.span != nil {
 		o.span.RecordError(err)
 		o.span.SetStatus(codes.Error, err.Error())
