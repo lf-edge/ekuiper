@@ -13,7 +13,7 @@ on:
 
 jobs:
   prepare:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     outputs:
       arch: ${{ steps.arch.outputs.arch }}
 
@@ -27,7 +27,7 @@ jobs:
           fi
 
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs: prepare
 
     strategy:
@@ -107,7 +107,7 @@ jobs:
         path: _packages/
 
   build-docker-images:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     strategy:
         fail-fast: false
@@ -184,7 +184,7 @@ jobs:
         file: deploy/docker/Dockerfile${{ matrix.suffix }}
 
   build-plugins:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs: prepare
 
     strategy:
@@ -304,7 +304,7 @@ jobs:
           path: _plugins/
 
   build-kubernetes-tool:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
     - uses: actions/checkout@v4
@@ -360,7 +360,7 @@ jobs:
         file: deploy/docker/Dockerfile-kubernetes-tool
 
   release:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     needs:
     - build
