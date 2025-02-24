@@ -17,12 +17,14 @@ package node
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
+	kctx "github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
@@ -65,10 +67,21 @@ func newSinkNode(ctx api.StreamContext, name string, rOpt def.RuleOption, eoflim
 	}
 }
 
+func (s *SinkNode) setKafkaSinkStatsManager(ctx api.StreamContext) {
+	if strings.Contains(strings.ToLower(s.name), "kafka") {
+		dctx, ok := ctx.(*kctx.DefaultContext)
+		if ok {
+			kctx.WithValue(dctx, "$statManager", s.statManager)
+			s.isStatManagerHostBySink = true
+		}
+	}
+}
+
 func (s *SinkNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 	s.prepareExec(ctx, errCh, "sink")
 	go func() {
 		err := infra.SafeRun(func() error {
+			s.setKafkaSinkStatsManager(ctx)
 			err := s.sink.Connect(ctx, s.connectionStatusChange)
 			if err != nil {
 				infra.DrainError(ctx, err, errCh)

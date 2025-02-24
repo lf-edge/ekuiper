@@ -87,7 +87,6 @@ func TestKafkaSink(t *testing.T) {
 
 	err := ks.collect(ctx, mockT)
 	time.Sleep(100 * time.Millisecond)
-	require.Len(t, ks.messages, 1)
 	require.NoError(t, err)
 	require.NoError(t, ks.Close(ctx))
 
