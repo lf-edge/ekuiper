@@ -180,3 +180,9 @@ func TestToCompression(t *testing.T) {
 		require.Equal(t, tc.expect, e)
 	}
 }
+
+func TestKafkaSinkEmpty(t *testing.T) {
+	ks := &KafkaSink{}
+	ctx := mockContext.NewMockContext("1", "2")
+	ks.send(ctx)
+}

@@ -304,6 +304,9 @@ func (k *KafkaSink) ingest(ctx api.StreamContext, d *kafkago.Message, checkSize 
 }
 
 func (k *KafkaSink) send(ctx api.StreamContext) {
+	if len(k.messages) < 1 {
+		return
+	}
 	KafkaSinkCounter.WithLabelValues(LblSend, LblReq, k.ruleID, k.opID).Inc()
 	start := time.Now()
 	defer func() {
