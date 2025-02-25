@@ -1,4 +1,4 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -70,8 +70,8 @@ func (r *RestSink) Collect(ctx api.StreamContext, item api.RawTuple) error {
 	if dp, ok := item.(api.HasDynamicProps); ok {
 		if !r.noHeaderTemplate {
 			r.noHeaderTemplate = true
+			headers = make(map[string]string, len(r.config.Headers))
 			for k, v := range r.config.Headers {
-				headers = make(map[string]string, len(r.config.Headers))
 				nv, ok := dp.DynamicProps(v)
 				if ok {
 					headers[k] = nv
