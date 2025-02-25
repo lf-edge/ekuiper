@@ -15,11 +15,15 @@
 package main
 
 import (
-	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"testing"
 
-	"github.com/lf-edge/ekuiper/v2/extensions/impl/kafka"
+	"github.com/stretchr/testify/require"
 )
 
-func Kafka() api.Source { return kafka.GetSource() }
+func TestKafka(t *testing.T) {
+	kfka := Kafka()
+	require.NotNil(t, kfka);
 
-func KafkaLookup() api.Source { return kafka.GetSource() }
+	kfkaLookup := KafkaLookup()
+	require.NotNil(t, kfkaLookup);
+}
