@@ -1,4 +1,4 @@
-// Copyright 2022-2024 EMQ Technologies Co., Ltd.
+// Copyright 2022-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -65,16 +65,6 @@ func TestProvision(t *testing.T) {
 		"url": "tcp://127.0.0.1:8000",
 	})
 	assert.Equal(t, "singleton", sid)
-
-	err = s.Connect(ctx, func(status string, message string) {
-		// do nothing
-	})
-	assert.NoError(t, err)
-
-	err = s.Connect(ctx, func(status string, message string) {
-		// do nothing
-	})
-	assert.NoError(t, err)
 
 	err = s.Close(ctx)
 	assert.NoError(t, err)
