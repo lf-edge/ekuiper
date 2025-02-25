@@ -1,4 +1,4 @@
-// Copyright 2021-2024 EMQ Technologies Co., Ltd.
+// Copyright 2021-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"strconv"
 	"testing"
 
 	v3 "github.com/edgexfoundry/go-mod-core-contracts/v3/common"
@@ -483,22 +484,24 @@ func TestProduceEvents(t1 *testing.T) {
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 	for i, t := range tests {
-		ems := EdgexMsgBusSink{}
-		err := ems.Provision(ctx, t.conf)
-		if err != nil {
-			t1.Errorf("%d: configure error %v", i, err)
-			continue
-		}
-		if ems.c.SourceName == "" {
-			ems.c.SourceName = "ruleTest"
-		}
-		var payload []map[string]interface{}
-		json.Unmarshal([]byte(t.input), &payload)
-		result, err := ems.produceEvents(ctx, payload)
-		if !reflect.DeepEqual(t.error, testx.Errstring(err)) {
-			t1.Errorf("%d. %q: error mismatch:\n  exp=%s\n  got=%s\n\n", i, t.input, t.error, err)
-		} else if t.error == "" && !compareEvent(t.expected, result) {
-			t1.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, t.input, t.expected, result)
-		}
+		t1.Run(strconv.Itoa(i), func(t1 *testing.T) {
+			ems := EdgexMsgBusSink{}
+			err := ems.Provision(ctx, t.conf)
+			if err != nil {
+				t1.Errorf("%d: configure error %v", i, err)
+				return
+			}
+			if ems.c.SourceName == "" {
+				ems.c.SourceName = "ruleTest"
+			}
+			var payload []map[string]interface{}
+			json.Unmarshal([]byte(t.input), &payload)
+			result, err := ems.produceEvents(ctx, payload)
+			if !reflect.DeepEqual(t.error, testx.Errstring(err)) {
+				t1.Errorf("%d. %q: error mismatch:\n  exp=%s\n  got=%s\n\n", i, t.input, t.error, err)
+			} else if t.error == "" && !compareEvent(t.expected, result) {
+				t1.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, t.input, t.expected, result)
+			}
+		})
 	}
 }
