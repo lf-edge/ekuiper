@@ -1,4 +1,4 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package nng
 import (
 	"fmt"
 	"net/url"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -40,8 +41,11 @@ type SockConf struct {
 
 type Sock struct {
 	mangos.Socket
-	url       string
-	id        string
+	url string
+	id  string
+	// a ont-time signal to inform the sock is connected at the first time. later connection status are handled below
+	ready chan struct{}
+	// connection status through lifecycle
 	scHandler api.StatusChangeHandler
 	connected atomic.Bool
 	status    atomic.Value
@@ -89,9 +93,15 @@ func (s *Sock) Provision(ctx api.StreamContext, conId string, props map[string]a
 	s.url = c.Url
 	s.id = conId
 	s.Socket = sock
+	s.ready = make(chan struct{})
+	var once sync.Once
 	sock.SetPipeEventHook(func(ev mangos.PipeEvent, p mangos.Pipe) {
 		switch ev {
 		case mangos.PipeEventAttached:
+			once.Do(func() {
+				ctx.GetLogger().Infof("nng connection is ready")
+				close(s.ready)
+			})
 			s.connected.Store(true)
 			s.status.Store(modules.ConnectionStatus{Status: api.ConnectionConnected})
 			if s.scHandler != nil {
@@ -128,6 +138,8 @@ func (s *Sock) Dial(ctx api.StreamContext) error {
 	}); err != nil {
 		return fmt.Errorf("please make sure nng server side has started and configured, can't dial: %s", err.Error())
 	}
+	// make it block until first connected
+	<-s.ready
 	return nil
 }
 

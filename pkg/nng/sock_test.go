@@ -1,4 +1,4 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -82,10 +82,6 @@ func TestConStatus(t *testing.T) {
 		"url": "ipc:///tmp/testconstatus.ipc",
 	})
 	require.NoError(t, err)
-	c.SetStatusChangeHandler(ctx, scRecorder)
-	err = c.Dial(ctx)
-	require.NoError(t, err)
-	defer c.Close(ctx)
 	st := c.Status(ctx)
 	require.Equal(t, modules.ConnectionStatus{Status: api.ConnectionConnecting}, st)
 	// Connect
@@ -93,6 +89,10 @@ func TestConStatus(t *testing.T) {
 	require.NoError(t, err)
 	err = sock.Listen("ipc:///tmp/testconstatus.ipc")
 	require.NoError(t, err)
+	c.SetStatusChangeHandler(ctx, scRecorder)
+	err = c.Dial(ctx)
+	require.NoError(t, err)
+	defer c.Close(ctx)
 	retry := 10
 	for i := 0; i < retry; i++ {
 		time.Sleep(100 * time.Millisecond)
@@ -139,4 +139,26 @@ func TestConStatus(t *testing.T) {
 	} else {
 		require.FailNow(t, "failed to connect")
 	}
+}
+
+func TestSend(t *testing.T) {
+	ctx := mockContext.NewMockContext("testConStatus", "test")
+	c := CreateConnection(ctx).(*Sock)
+	err := c.Provision(ctx, "testsend", map[string]any{
+		"url": "ipc:///tmp/testsend.ipc",
+	})
+	require.NoError(t, err)
+	// let the connection ready after 100 ms
+	go func() {
+		time.Sleep(100 * time.Millisecond)
+		sock, err := pair.NewSocket()
+		require.NoError(t, err)
+		err = sock.Listen("ipc:///tmp/testsend.ipc")
+		require.NoError(t, err)
+	}()
+	err = c.Dial(ctx)
+	require.NoError(t, err)
+	defer c.Close(ctx)
+	err = c.Send(ctx, []byte("test"))
+	require.NoError(t, err)
 }
