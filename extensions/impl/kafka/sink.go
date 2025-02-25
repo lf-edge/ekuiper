@@ -351,7 +351,7 @@ func getDefaultKafkaConf() *kafkaConf {
 	c.kafkaWriterConf = kafkaWriterConf{
 		BatchSize:    100,
 		BatchTimeout: time.Microsecond,
-		BatchBytes:   10485760, // 10MB
+		BatchBytes:   1048576, // 1 MB
 	}
 	return c
 }
