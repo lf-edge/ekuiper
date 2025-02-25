@@ -237,30 +237,22 @@ func getValueType(v any) (string, any, error) {
 				}
 				switch kt.Kind() {
 				case reflect.Bool:
-					result := make([]bool, len(arrayValue))
-					for i, av := range arrayValue {
-						temp, ok := av.(bool)
-						if !ok {
-							return "", nil, fmt.Errorf("unable to cast value to []bool for %v", v)
-						}
-						result[i] = temp
+					result, err := cast.ToBoolSlice(arrayValue, cast.CONVERT_SAMEKIND)
+					if err != nil {
+						return "", nil, fmt.Errorf("unable to cast value to []bool for %v", v)
 					}
 					return v4.ValueTypeBoolArray, result, nil
 				case reflect.String:
-					result := make([]string, len(arrayValue))
-					for i, av := range arrayValue {
-						temp, ok := av.(string)
-						if !ok {
-							return "", nil, fmt.Errorf("unable to cast value to []string for %v", v)
-						}
-						result[i] = temp
+					result, err := cast.ToStringSlice(arrayValue, cast.CONVERT_SAMEKIND)
+					if err != nil {
+						return "", nil, fmt.Errorf("unable to cast value to []string for %v", v)
 					}
 					return v4.ValueTypeStringArray, result, nil
 				case reflect.Int8:
 					result := make([]int8, len(arrayValue))
 					for i, av := range arrayValue {
-						temp, ok := av.(int8)
-						if !ok {
+						temp, err := cast.ToInt8(av, cast.CONVERT_SAMEKIND)
+						if err != nil {
 							return "", nil, fmt.Errorf("unable to cast value to []int8 for %v", v)
 						}
 						result[i] = temp
@@ -269,8 +261,8 @@ func getValueType(v any) (string, any, error) {
 				case reflect.Int16:
 					result := make([]int16, len(arrayValue))
 					for i, av := range arrayValue {
-						temp, ok := av.(int16)
-						if !ok {
+						temp, err := cast.ToInt16(av, cast.CONVERT_SAMEKIND)
+						if err != nil {
 							return "", nil, fmt.Errorf("unable to cast value to []int16 for %v", v)
 						}
 						result[i] = temp
@@ -279,8 +271,8 @@ func getValueType(v any) (string, any, error) {
 				case reflect.Int32:
 					result := make([]int32, len(arrayValue))
 					for i, av := range arrayValue {
-						temp, ok := av.(int32)
-						if !ok {
+						temp, err := cast.ToInt32(av, cast.CONVERT_SAMEKIND)
+						if err != nil {
 							return "", nil, fmt.Errorf("unable to cast value to []int32 for %v", v)
 						}
 						result[i] = temp
@@ -299,8 +291,8 @@ func getValueType(v any) (string, any, error) {
 				case reflect.Uint8:
 					result := make([]uint8, len(arrayValue))
 					for i, av := range arrayValue {
-						temp, ok := av.(uint8)
-						if !ok {
+						temp, err := cast.ToUint8(av, cast.CONVERT_SAMEKIND)
+						if err != nil {
 							return "", nil, fmt.Errorf("unable to cast value to []uint8 for %v", v)
 						}
 						result[i] = temp
@@ -309,8 +301,8 @@ func getValueType(v any) (string, any, error) {
 				case reflect.Uint16:
 					result := make([]uint16, len(arrayValue))
 					for i, av := range arrayValue {
-						temp, ok := av.(uint16)
-						if !ok {
+						temp, err := cast.ToUint16(av, cast.CONVERT_SAMEKIND)
+						if err != nil {
 							return "", nil, fmt.Errorf("unable to cast value to []uint16 for %v", v)
 						}
 						result[i] = temp
@@ -319,8 +311,8 @@ func getValueType(v any) (string, any, error) {
 				case reflect.Uint32:
 					result := make([]uint32, len(arrayValue))
 					for i, av := range arrayValue {
-						temp, ok := av.(uint32)
-						if !ok {
+						temp, err := cast.ToUint32(av, cast.CONVERT_SAMEKIND)
+						if err != nil {
 							return "", nil, fmt.Errorf("unable to cast value to []uint32 for %v", v)
 						}
 						result[i] = temp
@@ -339,8 +331,8 @@ func getValueType(v any) (string, any, error) {
 				case reflect.Float32:
 					result := make([]float32, len(arrayValue))
 					for i, av := range arrayValue {
-						temp, ok := av.(float32)
-						if !ok {
+						temp, err := cast.ToFloat32(av, cast.CONVERT_SAMEKIND)
+						if err != nil {
 							return "", nil, fmt.Errorf("unable to cast value to []float32 for %v", v)
 						}
 						result[i] = temp
@@ -349,8 +341,8 @@ func getValueType(v any) (string, any, error) {
 				case reflect.Float64:
 					result := make([]float64, len(arrayValue))
 					for i, av := range arrayValue {
-						temp, ok := av.(float64)
-						if !ok {
+						temp, err := cast.ToFloat64(av, cast.CONVERT_SAMEKIND)
+						if err != nil {
 							return "", nil, fmt.Errorf("unable to cast value to []float64 for %v", v)
 						}
 						result[i] = temp

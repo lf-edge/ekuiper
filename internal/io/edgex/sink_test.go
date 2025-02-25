@@ -619,6 +619,7 @@ func TestReadingTypes(t *testing.T) {
 				"aint":     []any{1},
 				"afloat32": []any{float32(1.0)},
 				"astring":  []any{"test"},
+				"invalid":  []any{true, "test", true},
 			},
 			expected: &dtos.Event{
 				Id:          "",
