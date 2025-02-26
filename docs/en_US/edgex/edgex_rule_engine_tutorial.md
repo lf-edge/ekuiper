@@ -38,9 +38,19 @@ EdgeX uses [message bus](https://github.com/edgexfoundry/go-mod-messaging) to ex
 
 ![](./arch_light.png)
 
-## Migrate to EdgeX V2
+## Migration
 
-Since eKuiper v1.2.1, we will only support EdgeX v2(Ireland and later). There are several breaking changes to migrate to the new combintion.
+Since eKuiper v2.1.0, we will only support EdgeX v4. The major changes are:
+
+1. Redis is not supported anymore. Default message bus is MQTT now.
+
+### Migrate from v2 to v3
+
+Since eKuiper v1.11, we only supports EdgeX v3.
+
+### Migrate from v1 to v2
+
+Since eKuiper v1.2.1, we only supports EdgeX v2. There are several breaking changes to migrate to the new combination.
 
 1. EdgeX source does not rely on `Core contract Service` anymore. Users can remove the `serviceServer` property in the `edgex.yaml` configuration.
 2. [Breaking changes in metadata](./edgex_meta.md#breaking-changes-from-edgex-v1). For example, metadata `Device` is now renamed to `DeviceName`.
@@ -80,59 +90,28 @@ d4b236a7b561   redis:6.2.4-alpine                                              "
 #### Connection reuse
 
 When eKuiper gets data from messageBus and send back the processed result, user needs to specify the connection info separately when creating the source and sink.
-Since `eKuiper 1.4.0` and `EdgeX Jakarta`, there is a new feature that user can specify the connection info in a fixed place and then source and sink can make a reference to it.
 
-- `redis` messageBus: this is especially useful when EdgeX use `secure` mode, in which case the client credentials will be injected into that share place automatically when services bootstrap.
+- `mqtt` messageBus: this is especially useful when EdgeX use `secure` mode, in which case the client credentials will
+  be injected into that share place automatically when services bootstrap.
 In order to use this feature, users need do some modifications on the target `docker-compose` file's `rulesengine` service part
-add these in `environment` part and make sure the image is `1.4.0` or later.
+  add these in `environment` part.
 
   ```yaml
   environment:
-      CONNECTION__EDGEX__REDISMSGBUS__PORT: 6379
-      CONNECTION__EDGEX__REDISMSGBUS__PROTOCOL: redis
-      CONNECTION__EDGEX__REDISMSGBUS__SERVER: edgex-redis
-      CONNECTION__EDGEX__REDISMSGBUS__TYPE: redis
-      EDGEX__DEFAULT__CONNECTIONSELECTOR: edgex.redisMsgBus
-  ```
-
-- `mqtt/zeromq` messageBus: adjust the parameters accordingly and specify the client credentials if have.
-  There is a `mqtt` message bus example, make sure the connection info exists in `etc/connections/connection.yaml`, for [more info](../guide/sources/builtin/edgex.md#connectionselector) please check this.
-
-  ```yaml
-  environment:
-      CONNECTION__EDGEX__MQTTMSGBUS__PORT: 1883
+      CONNECTION__EDGEX__MQTTMSGBUS__OPTIONAL__CLIENTID: kuiper-rules-engine
+      CONNECTION__EDGEX__MQTTMSGBUS__OPTIONAL__KEEPALIVE: "500"
+      CONNECTION__EDGEX__MQTTMSGBUS__PORT: "1883"
       CONNECTION__EDGEX__MQTTMSGBUS__PROTOCOL: tcp
-      CONNECTION__EDGEX__MQTTMSGBUS__SERVER: edgex-mqtt
+      CONNECTION__EDGEX__MQTTMSGBUS__SERVER: edgex-mqtt-broker
       CONNECTION__EDGEX__MQTTMSGBUS__TYPE: mqtt
-      CONNECTION__EDGEX__MQTTMSGBUS__OPTIONAL__USERNAME: username
-      CONNECTION__EDGEX__MQTTMSGBUS__OPTIONAL__PASSWORD: password
-      EDGEX__DEFAULT__CONNECTIONSELECTOR: edgex.mqttMsgBus
   ```
 
 After these modifications and eKuiper starts up, please read [this](../guide/sinks/builtin/edgex.md#connection-reuse-publish-example) to learn how to refer to the connection info
 
-#### Use Redis as KV storage
-
-Since `1.4.0`, eKuiper supports redis to store the KV metadata, user can make some modifications on the target `docker-compose` file's `rulesengine` service part to apply this change.
-Users can add these in `environment` part and make sure the image is `1.4.0` or later.
-
-  ```yaml
-  environment:
-    KUIPER__STORE__TYPE: redis
-    KUIPER__STORE__REDIS__HOST: edgex-redis
-    KUIPER__STORE__REDIS__PORT: 6379
-    KUIPER__STORE__REDIS__PASSWORD: ""
-  ```
-
-*Note*: This feature only works when redis in `no-secty` mode
-
 #### Run with native
 
-For performance reason, reader probably wants to run eKuiper with native approach. But you may find
-that [EdgeX cannot be used](https://github.com/lf-edge/ekuiper/issues/596) with the downloaded eKuiper binary packages.
-It's because that EdgeX message bus relies on `zeromq` library. If `zeromq` library cannot be found in the library
-search path, it cannot be started. So it will have those eKuiper users who do not want to use EdgeX install the `zeromq`
-library as well. For this reason, the default downloaded eKuiper package **<u>does NOT have embedded support</u>**
+For performance reason, reader probably wants to run eKuiper with native approach. The default downloaded eKuiper
+package **<u>does NOT have embedded support</u>**
 for `EdgeX`. If reader wants to support `EdgeX` in native packages, you can either make a native package by running
 command `make pkg_with_edgex`, or just copy the binary package from docker container.
 
@@ -183,9 +162,11 @@ Now the stream is created. But you may be curious about how eKuiper knows the me
 #Global Edgex configurations
 default:
   protocol: tcp
-  server: localhost
-  port: 5566
-  topic: events
+  server: edgex-mqtt-broker
+  port: 1883
+  topic: edgex/rules-events
+  type: mqtt
+  messageType: event
 .....
 ```
 
