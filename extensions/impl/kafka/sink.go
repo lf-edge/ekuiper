@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/pingcap/failpoint"
@@ -26,21 +27,40 @@ import (
 	"github.com/segmentio/kafka-go/sasl"
 
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/util"
+	"github.com/lf-edge/ekuiper/v2/metrics"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cert"
 )
 
+const (
+	lblBuild     = "build"
+	LblUnmarshal = "unmarshal"
+	LblCollect   = "collect"
+	LblReq       = "req"
+	LblKafka     = "kafka"
+	LblMsg       = "msg"
+)
+
 type KafkaSink struct {
-	writer         *kafkago.Writer
-	kc             *kafkaConf
-	tlsConfig      *tls.Config
-	headersMap     map[string]string
-	headerTemplate string
-	saslConf       *saslConf
-	mechanism      sasl.Mechanism
+	writer           *kafkago.Writer
+	kc               *kafkaConf
+	tlsConfig        *tls.Config
+	headersMap       map[string]string
+	headerTemplate   string
+	saslConf         *saslConf
+	mechanism        sasl.Mechanism
+	LastStats        kafkago.WriterStats
+	LastCollectStats *KafkaCollectStats
+}
+
+type KafkaCollectStats struct {
+	TotalBuildMsgDuration     time.Duration
+	TotalUnmarshalMsgDuration time.Duration
+	TotalCollectMsgDuration   time.Duration
 }
 
 type kafkaConf struct {
+	kafkaWriterConf
 	Brokers      string      `json:"brokers"`
 	Topic        string      `json:"topic"`
 	MaxAttempts  int         `json:"maxAttempts"`
@@ -50,6 +70,12 @@ type kafkaConf struct {
 
 	// write config
 	Compression string `json:"compression"`
+}
+
+type kafkaWriterConf struct {
+	BatchSize    int           `json:"batchSize"`
+	BatchTimeout time.Duration `json:"-"`
+	BatchBytes   int64         `json:"batchBytes"`
 }
 
 func (c *kafkaConf) validate() error {
@@ -63,11 +89,8 @@ func (c *kafkaConf) validate() error {
 }
 
 func (k *KafkaSink) Provision(ctx api.StreamContext, configs map[string]any) error {
-	c := &kafkaConf{
-		RequiredACKs: -1,
-		MaxAttempts:  1,
-	}
-	err := cast.MapToStruct(configs, c)
+	c := getDefaultKafkaConf()
+	err := c.configure(configs)
 	failpoint.Inject("kafkaErr", func(val failpoint.Value) {
 		err = mockKakfaSourceErr(val.(int), castConfErr)
 	})
@@ -147,7 +170,9 @@ func (k *KafkaSink) buildKafkaWriter() error {
 		AllowAutoTopicCreation: true,
 		MaxAttempts:            k.kc.MaxAttempts,
 		RequiredAcks:           kafkago.RequiredAcks(k.kc.RequiredACKs),
-		BatchSize:              1,
+		BatchSize:              k.kc.BatchSize,
+		BatchBytes:             k.kc.BatchBytes,
+		BatchTimeout:           k.kc.BatchTimeout,
 		Transport: &kafkago.Transport{
 			SASL: k.mechanism,
 			TLS:  k.tlsConfig,
@@ -162,6 +187,10 @@ func (k *KafkaSink) Close(ctx api.StreamContext) error {
 	return k.writer.Close()
 }
 
+func (k *KafkaSink) ResetStats() {
+	k.LastCollectStats = &KafkaCollectStats{}
+}
+
 func (k *KafkaSink) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) error {
 	err := k.buildKafkaWriter()
 	if err != nil {
@@ -172,15 +201,24 @@ func (k *KafkaSink) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) 
 	return err
 }
 
-func (k *KafkaSink) Collect(ctx api.StreamContext, item api.MessageTuple) error {
+func (k *KafkaSink) Collect(ctx api.StreamContext, item api.MessageTuple) (err error) {
+	k.ResetStats()
 	msgs, err := k.collect(ctx, item)
 	if err != nil {
 		return err
 	}
-	return k.writer.WriteMessages(ctx, msgs...)
+	start := time.Now()
+	defer func() {
+		metrics.IODurationHist.WithLabelValues(LblKafka, metrics.LblSinkIO, ctx.GetRuleId(), ctx.GetOpId()).Observe(float64(time.Since(start).Microseconds()))
+	}()
+	err = k.writer.WriteMessages(ctx, msgs...)
+	k.handleErrMsgs(ctx, err, len(msgs))
+	k.updateMetrics(ctx)
+	return err
 }
 
-func (k *KafkaSink) CollectList(ctx api.StreamContext, items api.MessageTupleList) error {
+func (k *KafkaSink) CollectList(ctx api.StreamContext, items api.MessageTupleList) (err error) {
+	k.ResetStats()
 	allMsgs := make([]kafkago.Message, 0)
 	items.RangeOfTuples(func(index int, tuple api.MessageTuple) bool {
 		msgs, err := k.collect(ctx, tuple)
@@ -190,14 +228,30 @@ func (k *KafkaSink) CollectList(ctx api.StreamContext, items api.MessageTupleLis
 		allMsgs = append(allMsgs, msgs...)
 		return true
 	})
-	return k.writer.WriteMessages(ctx, allMsgs...)
+	start := time.Now()
+	defer func() {
+		metrics.IODurationHist.WithLabelValues(LblKafka, metrics.LblSinkIO, ctx.GetRuleId(), ctx.GetOpId()).Observe(float64(time.Since(start).Microseconds()))
+	}()
+	err = k.writer.WriteMessages(ctx, allMsgs...)
+	k.handleErrMsgs(ctx, err, len(allMsgs))
+	k.updateMetrics(ctx)
+	return err
 }
 
 func (k *KafkaSink) collect(ctx api.StreamContext, item api.MessageTuple) ([]kafkago.Message, error) {
+	start := time.Now()
+	defer func() {
+		collectDuration := time.Since(start)
+		k.LastCollectStats.TotalCollectMsgDuration += collectDuration
+		KafkaSinkCollectDurationHist.WithLabelValues(LblCollect, LblMsg, ctx.GetRuleId(), ctx.GetOpId()).Observe(float64(collectDuration.Microseconds()))
+	}()
 	ds, err := json.Marshal(item.ToMap())
 	if err != nil {
 		return nil, err
 	}
+	unmarshalDuration := time.Since(start)
+	k.LastCollectStats.TotalUnmarshalMsgDuration += unmarshalDuration
+	KafkaSinkCollectDurationHist.WithLabelValues(LblUnmarshal, LblMsg, ctx.GetRuleId(), ctx.GetOpId()).Observe(float64(unmarshalDuration.Microseconds()))
 	var messages []kafkago.Message
 	msg, err := k.buildMsg(ctx, item, ds)
 	if err != nil {
@@ -208,6 +262,12 @@ func (k *KafkaSink) collect(ctx api.StreamContext, item api.MessageTuple) ([]kaf
 }
 
 func (k *KafkaSink) buildMsg(ctx api.StreamContext, item api.MessageTuple, decodedBytes []byte) (kafkago.Message, error) {
+	start := time.Now()
+	defer func() {
+		buildDuration := time.Since(start)
+		k.LastCollectStats.TotalBuildMsgDuration += buildDuration
+		KafkaSinkCollectDurationHist.WithLabelValues(lblBuild, LblMsg, ctx.GetRuleId(), ctx.GetOpId()).Observe(float64(buildDuration.Microseconds()))
+	}()
 	msg := kafkago.Message{Value: decodedBytes}
 	if len(k.kc.Key) > 0 {
 		newKey := k.kc.Key
@@ -292,6 +352,28 @@ func (k *KafkaSink) parseHeaders(ctx api.StreamContext, item api.MessageTuple) (
 	return nil, nil
 }
 
+func (k *KafkaSink) updateMetrics(ctx api.StreamContext) {
+	KafkaSinkCollectDurationHist.WithLabelValues(lblBuild, LblReq, ctx.GetRuleId(), ctx.GetOpId()).Observe(float64(k.LastCollectStats.TotalBuildMsgDuration.Microseconds()))
+	KafkaSinkCollectDurationHist.WithLabelValues(LblUnmarshal, LblReq, ctx.GetRuleId(), ctx.GetOpId()).Observe(float64(k.LastCollectStats.TotalUnmarshalMsgDuration.Microseconds()))
+	KafkaSinkCollectDurationHist.WithLabelValues(LblCollect, LblReq, ctx.GetRuleId(), ctx.GetOpId()).Observe(float64(k.LastCollectStats.TotalCollectMsgDuration.Microseconds()))
+}
+
+func (k *KafkaSink) handleErrMsgs(ctx api.StreamContext, err error, count int) {
+	if err == nil {
+		KafkaSinkCounter.WithLabelValues(metrics.LblSuccess, LblReq, ctx.GetRuleId(), ctx.GetOpId()).Inc()
+		KafkaSinkCounter.WithLabelValues(metrics.LblSuccess, LblMsg, ctx.GetRuleId(), ctx.GetOpId()).Add(float64(count))
+		return
+	}
+	KafkaSinkCounter.WithLabelValues(metrics.LblException, LblReq, ctx.GetRuleId(), ctx.GetOpId()).Inc()
+	switch wErrors := err.(type) {
+	case kafkago.WriteErrors:
+		KafkaSinkCounter.WithLabelValues(metrics.LblException, LblMsg, ctx.GetRuleId(), ctx.GetOpId()).Add(float64(wErrors.Count()))
+		KafkaSinkCounter.WithLabelValues(metrics.LblSuccess, LblMsg, ctx.GetRuleId(), ctx.GetOpId()).Add(float64(count - wErrors.Count()))
+	default:
+		KafkaSinkCounter.WithLabelValues(metrics.LblException, LblMsg, ctx.GetRuleId(), ctx.GetOpId()).Add(float64(count))
+	}
+}
+
 func toCompression(c string) kafkago.Compression {
 	switch strings.ToLower(c) {
 	case "gzip":
@@ -314,3 +396,26 @@ var (
 	_ api.TupleCollector = &KafkaSink{}
 	_ util.PingableConn  = &KafkaSink{}
 )
+
+func getDefaultKafkaConf() *kafkaConf {
+	c := &kafkaConf{
+		RequiredACKs: -1,
+		MaxAttempts:  1,
+	}
+	c.kafkaWriterConf = kafkaWriterConf{
+		BatchSize:    100,
+		BatchTimeout: time.Microsecond,
+		BatchBytes:   1048576, // 1 MB
+	}
+	return c
+}
+
+func (kc *kafkaConf) configure(props map[string]interface{}) error {
+	if err := cast.MapToStruct(props, kc); err != nil {
+		return err
+	}
+	if err := cast.MapToStruct(props, &kc.kafkaWriterConf); err != nil {
+		return err
+	}
+	return nil
+}
