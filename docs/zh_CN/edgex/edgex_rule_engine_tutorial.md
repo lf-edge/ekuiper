@@ -38,9 +38,19 @@
 
 ![](./arch_light.png)
 
-## 迁移到 EdgeX V2
+## 迁移
 
-eKuiper v1.2.1 之后的版本将仅支持 EdgeX v2 ( Ireland 及之后的版本 )，并引入以下突破性变化。
+eKuiper v2.1.0 只会的版本包括当前版本仅支持 EdgeX v4 版本。相比之前版本，主要变化为：.
+
+1. 数据总线不再支持 Redis 。默认的数据总线改为 MQTT 。
+
+### 使用 EdgeX v3
+
+eKuiper v1.11 到 v2.0的版本将仅支持 EdgeX v3。
+
+### 使用 EdgeX V2
+
+eKuiper v1.2.1 到 v1.10 的版本仅支持 EdgeX v2，相比之前的版本，引入以下突破性变化。
 
 1. EdgeX 源不再依赖 `Core contract Service` 。用户可以从配置文件 `edgex.yaml` 中移除属性 `serviceServer` 的相关配置。
 2. [元数据中的突破性变化](./edgex_meta.md#突破性变化)。例如，元数据 `Device` 重命名为 `DeviceName` 。
@@ -78,55 +88,24 @@ d4b236a7b561   redis:6.2.4-alpine                                              "
 当 eKuiper 从 messageBus 获取数据并返回处理结果时，用户需要在创建源和接收器时分别指定连接信息。
 从 `eKuiper 1.4.0` 和 `EdgeX Jakarta` 开始，有一个新功能支持用户可以在固定位置指定连接信息，然后源和目标输出可以参考。
 
-- `redis` 消息总线： 这个功能在 EdgeX 使用 `secure` 模式时特别有用，在这种情况下，客户端凭据将在服务引导时自动注入该共享位置。
-  为了使用这个功能，用户需要对目标 `docker-compose` 文件的 `rulesengine` 服务部分做部分修改
-  将这些添加到 `environment` 部分并确保镜像是 `1.4.0` 或更高版本
-
-  ```yaml
-  environment:
-      CONNECTION__EDGEX__REDISMSGBUS__PORT: 6379
-      CONNECTION__EDGEX__REDISMSGBUS__PROTOCOL: redis
-      CONNECTION__EDGEX__REDISMSGBUS__SERVER: edgex-redis
-      CONNECTION__EDGEX__REDISMSGBUS__TYPE: redis
-      EDGEX__DEFAULT__CONNECTIONSELECTOR: edgex.redisMsgBus
-  ```
-
-- `mqtt/zeromq` 消息总线: 根据目标总线类型填写相应参数，指定必要的客户端凭证
+- `mqtt` 消息总线: 根据目标总线类型填写相应参数，指定必要的客户端凭证
   这里以 mqtt 消息总线为例，确保相应的连接信息存在于此文件 `etc/connections/connection.yaml` 中, [更多信息](../guide/sources/builtin/edgex.md#connectionselector) 请参考
 
   ```yaml
   environment:
-      CONNECTION__EDGEX__MQTTMSGBUS__PORT: 1883
+      CONNECTION__EDGEX__MQTTMSGBUS__OPTIONAL__CLIENTID: kuiper-rules-engine
+      CONNECTION__EDGEX__MQTTMSGBUS__OPTIONAL__KEEPALIVE: "500"
+      CONNECTION__EDGEX__MQTTMSGBUS__PORT: "1883"
       CONNECTION__EDGEX__MQTTMSGBUS__PROTOCOL: tcp
-      CONNECTION__EDGEX__MQTTMSGBUS__SERVER: edgex-mqtt
+      CONNECTION__EDGEX__MQTTMSGBUS__SERVER: edgex-mqtt-broker
       CONNECTION__EDGEX__MQTTMSGBUS__TYPE: mqtt
-      CONNECTION__EDGEX__MQTTMSGBUS__OPTIONAL__USERNAME: username
-      CONNECTION__EDGEX__MQTTMSGBUS__OPTIONAL__PASSWORD: password
-      EDGEX__DEFAULT__CONNECTIONSELECTOR: edgex.mqttMsgBus
   ```
 
 做完这些修改后，请参考这篇[文档](../guide/sinks/builtin/edgex.md#使用连接重用功能发布)了解如何使用连接重用功能
 
-### 使用 Redis 作为 KV 存储
-
-从 `1.4.0` 开始，eKuiper 支持 redis 来存储 KV 元数据，用户可以对目标 `docker-compose` 文件的 `rulesengine` 服务部分进行一些修改以应用此更改。
-用户可以将这些添加到 `environment` 部分并确保映像为 `1.4.0` 或更高版本
-
-  ```yaml
-  environment:
-    KUIPER__STORE__TYPE: redis
-    KUIPER__STORE__REDIS__HOST: edgex-redis
-    KUIPER__STORE__REDIS__PORT: 6379
-    KUIPER__STORE__REDIS__PASSWORD: ""
-  ```
-
-*注意*: 这个功能仅适用于 redis 工作在非安全模式时
-
 ### 原生 (native) 方式运行
 
-出于运行效率考虑，读者可能需要直接以原生方式运行 eKuiper，但是可能会发现直接使用下载的 eKuiper
-软件包启动后[无法直接使用 EdgeX](https://github.com/lf-edge/ekuiper/issues/596)，这是因为 EdgeX 缺省消息总线依赖于 `zeromq` 库，如果 eKuiper
-启动的时候在库文件寻找路径下无法找到 `zeromq` 库，它将无法启动。这导致对于不需要使用 EdgeX 的 eKuiper 用户也不得不去安装 `zeromq` 库 ，因此缺省提供的下载安装包中**<u>内置不支持
+出于运行效率考虑，读者可能需要直接以原生方式运行 eKuiper。缺省提供的下载安装包中**<u>内置不支持
 Edgex</u>** 。如果读者需要以原生方式运行 eKuiper 并且支持 `EdgeX`，可以通过命令 `make pkg_with_edgex` 自己来编译原生安装包，或者从容器中直接拷贝出安装包。
 
 ## 创建流
