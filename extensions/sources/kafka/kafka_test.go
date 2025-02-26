@@ -22,8 +22,8 @@ import (
 
 func TestKafka(t *testing.T) {
 	kfka := Kafka()
-	require.NotNil(t, kfka);
+	require.NotNil(t, kfka)
 
 	kfkaLookup := KafkaLookup()
-	require.NotNil(t, kfkaLookup);
+	require.NotNil(t, kfkaLookup)
 }
