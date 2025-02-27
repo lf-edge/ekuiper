@@ -512,7 +512,10 @@ func GetMetricsLoc() (string, error) {
 }
 
 func InitMetricsFolder() error {
-	mPath, err := GetLoc(metricsDir)
+	mPath, err := GetMetricsLoc()
+	if err != nil {
+		return err
+	}
 	if _, err = os.Stat(mPath); os.IsNotExist(err) {
 		err := os.Mkdir(mPath, 0o755)
 		if err != nil {
