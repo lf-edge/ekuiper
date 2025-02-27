@@ -167,6 +167,8 @@ func (m *kafkaSink) buildKafkaWriter() error {
 
 func (m *kafkaSink) Open(ctx api.StreamContext) error {
 	ctx.GetLogger().Debug("Opening kafka sink")
+	m.writer.RuleID = ctx.GetRuleId()
+	m.writer.OpID = ctx.GetOpId()
 	return nil
 }
 
