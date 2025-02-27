@@ -21,10 +21,12 @@ import (
 )
 
 const (
-	LblRecon = "recon"
-	LblQuery = "query"
-	LblScan  = "scan"
-	LblWait  = "wait"
+	LblRecon    = "recon"
+	LblQuery    = "query"
+	LblScan     = "scan"
+	LblWait     = "wait"
+	LblPrepare  = "prepare"
+	LblScanInto = "scanInto"
 )
 
 var (
@@ -40,7 +42,7 @@ var (
 		Subsystem: "sql_source",
 		Name:      "query_duration_microseconds",
 		Help:      "SQL Source Historgram Duration of IO",
-		Buckets:   prometheus.ExponentialBuckets(10, 2, 20), // 10us ~ 5s
+		Buckets:   prometheus.ExponentialBuckets(10, 2, 22), // 10us ~ 20s
 	}, []string{metrics.LblType, metrics.LblRuleIDType, metrics.LblOpIDType})
 )
 

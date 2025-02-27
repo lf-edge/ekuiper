@@ -94,13 +94,12 @@ func (s *sqlLookupSource) Lookup(ctx api.StreamContext, fields []string, keys []
 	for rows.Next() {
 		data := make(map[string]interface{})
 		columns := make([]interface{}, len(cols))
-		prepareValues(ctx, columns, types, cols)
-
+		prepareValues(ctx, columns, types, cols, nil)
 		err := rows.Scan(columns...)
 		if err != nil {
 			return nil, err
 		}
-		scanIntoMap(data, columns, cols)
+		scanIntoMap(data, columns, cols, nil)
 		result = append(result, api.NewDefaultSourceTupleWithTime(data, nil, rcvTime))
 	}
 	return result, nil

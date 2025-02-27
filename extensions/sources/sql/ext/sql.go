@@ -40,8 +40,10 @@ type sqlConConfig struct {
 }
 
 type sqlSourceStats struct {
-	totalScanDuration time.Duration
-	totalWaitDuration time.Duration
+	totalPrepareDuration     time.Duration
+	totalScanDuration        time.Duration
+	totalScanIntoMapDuration time.Duration
+	totalWaitDuration        time.Duration
 }
 
 type sqlsource struct {
@@ -62,6 +64,8 @@ func (m *sqlsource) updateMetrics() {
 	if m.stats != nil {
 		SqlSourceQueryDurationHist.WithLabelValues(LblScan, m.ruleID, m.opID).Observe(float64(m.stats.totalScanDuration.Microseconds()))
 		SqlSourceQueryDurationHist.WithLabelValues(LblWait, m.ruleID, m.opID).Observe(float64(m.stats.totalWaitDuration.Microseconds()))
+		SqlSourceQueryDurationHist.WithLabelValues(LblPrepare, m.ruleID, m.opID).Observe(float64(m.stats.totalPrepareDuration.Microseconds()))
+		SqlSourceQueryDurationHist.WithLabelValues(LblScanInto, m.ruleID, m.opID).Observe(float64(m.stats.totalScanIntoMapDuration.Microseconds()))
 		m.resetStats()
 	}
 }
@@ -131,7 +135,7 @@ func (m *sqlsource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple,
 				}
 				needReconnect = false
 			}
-
+			SqlSourceCounter.WithLabelValues(LblQuery, m.ruleID, m.opID).Inc()
 			rcvTime := conf.GetNow()
 			query, err := m.Query.SqlQueryStatement()
 			if err != nil {
@@ -156,23 +160,22 @@ func (m *sqlsource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple,
 				return
 			}
 			for rows.Next() {
-				prepareStart := time.Now()
 				data := make(map[string]interface{})
 				columns := make([]interface{}, len(cols))
-				prepareValues(ctx, columns, types, cols)
-
+				prepareValues(ctx, columns, types, cols, m.stats)
+				scanStart := time.Now()
 				err := rows.Scan(columns...)
 				if err != nil {
 					logger.Errorf("Run sql scan(%s) error %v", query, err)
 					errCh <- err
 					return
 				}
-				scanIntoMap(data, columns, cols)
-				m.stats.totalScanDuration += time.Since(prepareStart)
+				m.stats.totalScanDuration += time.Since(scanStart)
+				scanIntoMap(data, columns, cols, m.stats)
 				m.Query.UpdateMaxIndexValue(data)
 				waitStart := time.Now()
 				consumer <- api.NewDefaultSourceTupleWithTime(data, nil, rcvTime)
-				m.stats.totalScanDuration += time.Since(waitStart)
+				m.stats.totalWaitDuration += time.Since(waitStart)
 			}
 			rows.Close()
 			SqlSourceQueryDurationHist.WithLabelValues(LblQuery, m.ruleID, m.opID).Observe(float64(time.Since(start).Microseconds()))
