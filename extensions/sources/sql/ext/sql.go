@@ -39,11 +39,31 @@ type sqlConConfig struct {
 	displayURL string
 }
 
+type sqlSourceStats struct {
+	totalScanDuration time.Duration
+	totalWaitDuration time.Duration
+}
+
 type sqlsource struct {
 	conf  *sqlConConfig
 	Query sqlgen.SqlQueryGenerator
 	// The db connection instance
-	db *sql.DB
+	db     *sql.DB
+	stats  *sqlSourceStats
+	ruleID string
+	opID   string
+}
+
+func (m *sqlsource) resetStats() {
+	m.stats = &sqlSourceStats{}
+}
+
+func (m *sqlsource) updateMetrics() {
+	if m.stats != nil {
+		SqlSourceQueryDurationHist.WithLabelValues(LblScan, m.ruleID, m.opID).Observe(float64(m.stats.totalScanDuration.Microseconds()))
+		SqlSourceQueryDurationHist.WithLabelValues(LblWait, m.ruleID, m.opID).Observe(float64(m.stats.totalWaitDuration.Microseconds()))
+		m.resetStats()
+	}
 }
 
 func (m *sqlsource) Ping(_ string, props map[string]interface{}) error {
@@ -54,8 +74,8 @@ func (m *sqlsource) Ping(_ string, props map[string]interface{}) error {
 }
 
 func (m *sqlsource) Configure(_ string, props map[string]interface{}) error {
+	m.resetStats()
 	cfg := &sqlConConfig{}
-
 	err := cast.MapToStruct(props, cfg)
 	if err != nil {
 		return fmt.Errorf("read properties %v fail with error: %v", props, err)
@@ -93,6 +113,8 @@ func (m *sqlsource) Configure(_ string, props map[string]interface{}) error {
 }
 
 func (m *sqlsource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, errCh chan<- error) {
+	m.ruleID = ctx.GetRuleId()
+	m.opID = ctx.GetOpId()
 	logger := ctx.GetLogger()
 	t := time.NewTicker(time.Duration(m.conf.Interval) * time.Millisecond)
 	defer t.Stop()
@@ -100,7 +122,9 @@ func (m *sqlsource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple,
 	for {
 		select {
 		case <-t.C:
+			m.resetStats()
 			if needReconnect {
+				SqlSourceCounter.WithLabelValues(LblRecon, m.ruleID, m.opID).Inc()
 				reconnectSuccess := m.handleReconnect(consumer)
 				if !reconnectSuccess {
 					continue
@@ -114,6 +138,7 @@ func (m *sqlsource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple,
 				logger.Errorf("Get sql query error %v", err)
 			}
 			logger.Debugf("Query the database with %s", query)
+			start := time.Now()
 			rows, err := m.db.Query(query)
 			if err != nil {
 				consumer <- &xsql.ErrorSourceTuple{
@@ -124,7 +149,6 @@ func (m *sqlsource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple,
 			}
 
 			cols, _ := rows.Columns()
-
 			types, err := rows.ColumnTypes()
 			if err != nil {
 				logger.Errorf("query %v row ColumnTypes error %v", query, err)
@@ -132,6 +156,7 @@ func (m *sqlsource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple,
 				return
 			}
 			for rows.Next() {
+				prepareStart := time.Now()
 				data := make(map[string]interface{})
 				columns := make([]interface{}, len(cols))
 				prepareValues(ctx, columns, types, cols)
@@ -142,13 +167,16 @@ func (m *sqlsource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple,
 					errCh <- err
 					return
 				}
-
 				scanIntoMap(data, columns, cols)
+				m.stats.totalScanDuration += time.Since(prepareStart)
 				m.Query.UpdateMaxIndexValue(data)
+				waitStart := time.Now()
 				consumer <- api.NewDefaultSourceTupleWithTime(data, nil, rcvTime)
-				rcvTime = conf.GetNow()
+				m.stats.totalScanDuration += time.Since(waitStart)
 			}
 			rows.Close()
+			SqlSourceQueryDurationHist.WithLabelValues(LblQuery, m.ruleID, m.opID).Observe(float64(time.Since(start).Microseconds()))
+			m.updateMetrics()
 		case <-ctx.Done():
 			return
 		}
