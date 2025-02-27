@@ -31,7 +31,6 @@ require (
 	github.com/montanaflynn/stats v0.7.1
 	github.com/msgpack-rpc/msgpack-rpc-go v0.0.0-20131026060856-c76397e1782b
 	github.com/openziti/sdk-golang v0.23.42
-	github.com/parquet-go/parquet-go v0.21.0
 	github.com/pebbe/zmq4 v1.2.11
 	github.com/pingcap/failpoint v0.0.0-20240528011301-b51a646c7c86
 	github.com/prometheus/client_golang v1.21.0
@@ -248,7 +247,6 @@ require (
 	github.com/nxadm/tail v1.4.11 // indirect
 	github.com/oapi-codegen/runtime v1.1.1 // indirect
 	github.com/oklog/ulid v1.3.1 // indirect
-	github.com/olekukonko/tablewriter v0.0.5 // indirect
 	github.com/opentracing/opentracing-go v1.2.0 // indirect
 	github.com/openziti/channel/v3 v3.0.2 // indirect
 	github.com/openziti/edge-api v0.26.30 // indirect
@@ -273,7 +271,6 @@ require (
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/segmentio/asm v1.2.0 // indirect
-	github.com/segmentio/encoding v0.4.0 // indirect
 	github.com/segmentio/kafka-go v0.4.47 // indirect
 	github.com/shirou/gopsutil/v3 v3.24.5 // indirect
 	github.com/shoenig/go-m1cpu v0.1.6 // indirect
@@ -363,4 +360,4 @@ toolchain go1.22.8
 
 replace github.com/lf-edge/ekuiper/extensions v0.0.0-20240606005720-bdb167e36fd7 => ./extensions
 
-replace github.com/segmentio/kafka-go => github.com/yisaer/kafka-go v0.0.0-20250227022123-a81952fa3384
+replace github.com/segmentio/kafka-go => github.com/yisaer/kafka-go v0.0.0-20250227123614-f910c2704447
