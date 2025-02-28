@@ -31,6 +31,7 @@ require (
 	github.com/montanaflynn/stats v0.7.1
 	github.com/msgpack-rpc/msgpack-rpc-go v0.0.0-20131026060856-c76397e1782b
 	github.com/openziti/sdk-golang v0.23.42
+	github.com/parquet-go/parquet-go v0.25.0
 	github.com/pebbe/zmq4 v1.2.11
 	github.com/pingcap/failpoint v0.0.0-20240528011301-b51a646c7c86
 	github.com/prometheus/client_golang v1.21.0
@@ -247,6 +248,7 @@ require (
 	github.com/nxadm/tail v1.4.11 // indirect
 	github.com/oapi-codegen/runtime v1.1.1 // indirect
 	github.com/oklog/ulid v1.3.1 // indirect
+	github.com/olekukonko/tablewriter v0.0.5 // indirect
 	github.com/opentracing/opentracing-go v1.2.0 // indirect
 	github.com/openziti/channel/v3 v3.0.2 // indirect
 	github.com/openziti/edge-api v0.26.30 // indirect
