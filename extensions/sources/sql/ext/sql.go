@@ -159,10 +159,12 @@ func (m *sqlsource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple,
 				errCh <- err
 				return
 			}
+			columns := make([]interface{}, len(cols))
+			prepareValues(ctx, columns, types, cols, m.stats)
+			rowCount := 0
 			for rows.Next() {
+				rowCount++
 				data := make(map[string]interface{})
-				columns := make([]interface{}, len(cols))
-				prepareValues(ctx, columns, types, cols, m.stats)
 				scanStart := time.Now()
 				err := rows.Scan(columns...)
 				if err != nil {
@@ -178,6 +180,7 @@ func (m *sqlsource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple,
 				m.stats.totalWaitDuration += time.Since(waitStart)
 			}
 			rows.Close()
+			SqlSourceGauge.WithLabelValues(LblQuery, m.ruleID, m.opID).Set(float64(rowCount))
 			SqlSourceQueryDurationHist.WithLabelValues(LblQuery, m.ruleID, m.opID).Observe(float64(time.Since(start).Microseconds()))
 			m.updateMetrics()
 		case <-ctx.Done():

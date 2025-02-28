@@ -44,9 +44,17 @@ var (
 		Help:      "SQL Source Historgram Duration of IO",
 		Buckets:   prometheus.ExponentialBuckets(10, 2, 22), // 10us ~ 20s
 	}, []string{metrics.LblType, metrics.LblRuleIDType, metrics.LblOpIDType})
+
+	SqlSourceGauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: "kuiper",
+		Subsystem: "sql_source",
+		Name:      "gauge",
+		Help:      "counter of SQL Source IO",
+	}, []string{metrics.LblType, metrics.LblRuleIDType, metrics.LblOpIDType})
 )
 
 func init() {
 	prometheus.MustRegister(SqlSourceCounter)
 	prometheus.MustRegister(SqlSourceQueryDurationHist)
+	prometheus.MustRegister(SqlSourceGauge)
 }
