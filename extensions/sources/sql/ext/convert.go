@@ -19,11 +19,18 @@ import (
 	"database/sql/driver"
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
-func scanIntoMap(mapValue map[string]interface{}, values []interface{}, columns []string) {
+func scanIntoMap(mapValue map[string]interface{}, values []interface{}, columns []string, stats *sqlSourceStats) {
+	start := time.Now()
+	defer func() {
+		if stats != nil {
+			stats.totalScanIntoMapDuration += time.Since(start)
+		}
+	}()
 	for idx, column := range columns {
 		if reflectValue := reflect.Indirect(reflect.Indirect(reflect.ValueOf(values[idx]))); reflectValue.IsValid() {
 			mapValue[column] = reflectValue.Interface()
@@ -38,7 +45,13 @@ func scanIntoMap(mapValue map[string]interface{}, values []interface{}, columns 
 	}
 }
 
-func prepareValues(ctx api.StreamContext, values []interface{}, columnTypes []*sql.ColumnType, columns []string) {
+func prepareValues(ctx api.StreamContext, values []interface{}, columnTypes []*sql.ColumnType, columns []string, stats *sqlSourceStats) {
+	start := time.Now()
+	defer func() {
+		if stats != nil {
+			stats.totalPrepareDuration += time.Since(start)
+		}
+	}()
 	if len(columnTypes) > 0 {
 		for idx, columnType := range columnTypes {
 			nullable, ok := columnType.Nullable()
