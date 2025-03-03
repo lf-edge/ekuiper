@@ -80,10 +80,12 @@ type kafkaWriterConf struct {
 }
 
 func (m *kafkaSink) Ping(_ string, props map[string]interface{}) error {
+	m.writer = &SegmentIOWriter{}
 	return m.writer.Ping(props, m)
 }
 
 func (m *kafkaSink) Configure(props map[string]interface{}) error {
+	m.writer = &SegmentIOWriter{}
 	return m.writer.Configure(props, m)
 }
 
