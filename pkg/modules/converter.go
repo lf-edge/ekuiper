@@ -42,7 +42,7 @@ func IsFormatSupported(format string) bool {
 // ConvertWriters are sink converter to use together with batch
 var ConvertWriters = map[string]ConvertWriterProvider{}
 
-type ConvertWriterProvider func(ctx api.StreamContext, schemaId string, isColumnar bool, logicalSchema map[string]*ast.JsonStreamField, props map[string]any) (message.ConvertWriter, error)
+type ConvertWriterProvider func(ctx api.StreamContext, schemaId string, logicalSchema map[string]*ast.JsonStreamField, props map[string]any) (message.ConvertWriter, error)
 
 func RegisterWriterConverter(name string, provider ConvertWriterProvider) {
 	ConvertWriters[name] = provider
