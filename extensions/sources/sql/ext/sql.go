@@ -50,10 +50,11 @@ type sqlsource struct {
 	conf  *sqlConConfig
 	Query sqlgen.SqlQueryGenerator
 	// The db connection instance
-	db     *sql.DB
-	stats  *sqlSourceStats
-	ruleID string
-	opID   string
+	db      *sql.DB
+	stats   *sqlSourceStats
+	ruleID  string
+	opID    string
+	columns []interface{}
 }
 
 func (m *sqlsource) resetStats() {
@@ -159,21 +160,24 @@ func (m *sqlsource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple,
 				errCh <- err
 				return
 			}
-			columns := make([]interface{}, len(cols))
-			prepareValues(ctx, columns, types, cols, m.stats)
+			if len(m.columns) < 1 {
+				columns := make([]interface{}, len(cols))
+				prepareValues(ctx, columns, types, cols, m.stats)
+				m.columns = columns
+			}
 			rowCount := 0
 			for rows.Next() {
 				rowCount++
 				data := make(map[string]interface{})
 				scanStart := time.Now()
-				err := rows.Scan(columns...)
+				err := rows.Scan(m.columns...)
 				if err != nil {
 					logger.Errorf("Run sql scan(%s) error %v", query, err)
 					errCh <- err
 					return
 				}
 				m.stats.totalScanDuration += time.Since(scanStart)
-				scanIntoMap(data, columns, cols, m.stats)
+				scanIntoMap(data, m.columns, cols, m.stats)
 				m.Query.UpdateMaxIndexValue(data)
 				waitStart := time.Now()
 				consumer <- api.NewDefaultSourceTupleWithTime(data, nil, rcvTime)
