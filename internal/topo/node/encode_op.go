@@ -1,4 +1,4 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/converter"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
+	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 	"github.com/lf-edge/ekuiper/v2/pkg/message"
 )
@@ -35,8 +36,8 @@ type EncodeOp struct {
 	converter message.Converter
 }
 
-func NewEncodeOp(ctx api.StreamContext, name string, rOpt *def.RuleOption, sc *SinkConf) (*EncodeOp, error) {
-	c, err := converter.GetOrCreateConverter(ctx, sc.Format, sc.SchemaId, nil, map[string]any{"delimiter": sc.Delimiter, "hasHeader": sc.HasHeader, "fields": sc.Fields})
+func NewEncodeOp(ctx api.StreamContext, name string, rOpt *def.RuleOption, schema map[string]*ast.JsonStreamField, sc *SinkConf) (*EncodeOp, error) {
+	c, err := converter.GetOrCreateConverter(ctx, sc.Format, sc.SchemaId, schema, map[string]any{"delimiter": sc.Delimiter, "hasHeader": sc.HasHeader, "fields": sc.Fields})
 	if err != nil {
 		return nil, err
 	}

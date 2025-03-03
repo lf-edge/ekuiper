@@ -211,7 +211,7 @@ func splitSink(tp *topo.Topo, s api.Sink, sinkName string, options *def.RuleOpti
 	// Encode will convert the result to []byte
 	if _, ok := s.(api.BytesCollector); ok {
 		if !batchEnabled {
-			encodeOp, err := node.NewEncodeOp(tp.GetContext(), fmt.Sprintf("%s_%d_encode", sinkName, index), options, sc)
+			encodeOp, err := node.NewEncodeOp(tp.GetContext(), fmt.Sprintf("%s_%d_encode", sinkName, index), options, schema, sc)
 			if err != nil {
 				return nil, err
 			}
