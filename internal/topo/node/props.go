@@ -1,4 +1,4 @@
-// Copyright 2024-2025 EMQ Technologies Co., Ltd.
+// Copyright 2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -36,7 +36,6 @@ type SinkConf struct {
 	DataField        string            `json:"dataField"`
 	BatchSize        int               `json:"batchSize"`
 	LingerInterval   cast.DurationConf `json:"lingerInterval"`
-	BatchColumnar    bool              `json:"batchColumnar"`
 	Compression      string            `json:"compression"`
 	CompressionProps map[string]any    `json:"compressionProps"`
 	Encryption       string            `json:"encryption"`
