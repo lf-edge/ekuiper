@@ -20,9 +20,8 @@ import (
 	"strings"
 	"time"
 
-	kafkago "github.com/segmentio/kafka-go"
-
 	"github.com/lf-edge/ekuiper/extensions/kafka"
+	"github.com/lf-edge/ekuiper/internal/pkg/cert"
 	"github.com/lf-edge/ekuiper/metrics"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
@@ -197,16 +196,41 @@ func (kc *kafkaConf) configure(props map[string]interface{}) error {
 	return nil
 }
 
-func toCompression(c string) kafkago.Compression {
-	switch strings.ToLower(c) {
-	case "gzip":
-		return kafkago.Gzip
-	case "snappy":
-		return kafkago.Snappy
-	case "lz4":
-		return kafkago.Lz4
-	case "zstd":
-		return kafkago.Zstd
+func (m *kafkaSink) configureProps(props map[string]interface{}) error {
+	c := &sinkConf{
+		Brokers: "localhost:9092",
+		Topic:   "",
 	}
-	return 0
+	if err := cast.MapToStruct(props, c); err != nil {
+		return err
+	}
+	if len(strings.Split(c.Brokers, ",")) == 0 {
+		return fmt.Errorf("brokers can not be empty")
+	}
+	if c.Topic == "" {
+		return fmt.Errorf("topic can not be empty")
+	}
+	sc, err := kafka.GetSaslConf(props)
+	if err != nil {
+		return err
+	}
+	if err := sc.Validate(); err != nil {
+		return err
+	}
+	m.sc = sc
+	tlsConfig, err := cert.GenTLSConfig(props, "kafka-sink")
+	if err != nil {
+		return err
+	}
+	m.tlsConfig = tlsConfig
+	kc := getDefaultKafkaConf()
+	if err := kc.configure(props); err != nil {
+		return err
+	}
+	m.kc = kc
+	m.c = c
+	if err := m.setHeaders(); err != nil {
+		return fmt.Errorf("set kafka header failed, err:%v", err)
+	}
+	return nil
 }
