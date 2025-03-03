@@ -86,7 +86,7 @@ func (m *MetricsDumpManager) init(ctx context.Context) error {
 }
 
 func (m *MetricsDumpManager) gcOldMetricsJob(ctx context.Context) {
-	ticker := time.NewTicker(time.Minute)
+	ticker := time.NewTicker(15 * time.Minute)
 	defer ticker.Stop()
 	for {
 		select {
