@@ -41,6 +41,10 @@ func GenTLSConfig(props map[string]interface{}, typ string) (*tls.Config, error)
 	return tc, nil
 }
 
+func GenTlsConfigurationOptions(props map[string]interface{}) (*TlsConfigurationOptions, error) {
+	return genTlsConfigurationOptions(props)
+}
+
 func genTlsConfigurationOptions(props map[string]interface{}) (*TlsConfigurationOptions, error) {
 	opts := &TlsConfigurationOptions{}
 	if err := cast.MapToStruct(props, opts); err != nil {
