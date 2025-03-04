@@ -62,6 +62,7 @@ type MetricsDumpManager struct {
 
 func (m *MetricsDumpManager) Init(ctx context.Context) error {
 	if !conf.Config.Basic.MetricsDumpConfig.Enable {
+		conf.Log.Infof("metrics dump disabled")
 		return nil
 	}
 	return m.init(ctx)
@@ -96,6 +97,7 @@ func (m *MetricsDumpManager) init(parCtx context.Context) error {
 	m.wg.Add(2)
 	go m.gcOldMetricsJob(ctx)
 	go m.dumpMetricsJob(ctx)
+	conf.Log.Infof("metrics dump enabled, folder:%v, retension:%v", m.metricsPath, m.retainedDuration.String())
 	return nil
 }
 
@@ -103,7 +105,7 @@ func (m *MetricsDumpManager) gcOldMetricsJob(ctx context.Context) {
 	defer func() {
 		m.wg.Done()
 	}()
-	ticker := time.NewTicker(time.Hour)
+	ticker := time.NewTicker(15 * time.Minute)
 	defer ticker.Stop()
 	for {
 		select {
@@ -128,11 +130,15 @@ func (m *MetricsDumpManager) gcOldMetrics() error {
 		fileName := f.Name()
 		needGC, err := m.needGCFile(fileName, gcTime)
 		if err != nil {
+			conf.Log.Errorf("check metrics %v failed, err:%v", fileName, err)
 			continue
 		}
 		if needGC {
 			filePath := filepath.Join(m.metricsPath, fileName)
 			os.Remove(filePath)
+			conf.Log.Infof("gc metrics dump file:%v", fileName)
+		} else {
+			conf.Log.Infof("skip gc metrics dump file:%v", fileName)
 		}
 	}
 	return nil

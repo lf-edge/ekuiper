@@ -49,7 +49,7 @@ var (
 		Namespace: "kuiper",
 		Subsystem: "sql_source",
 		Name:      "gauge",
-		Help:      "counter of SQL Source IO",
+		Help:      "Gauge of SQL Source IO",
 	}, []string{metrics.LblType, metrics.LblRuleIDType, metrics.LblOpIDType})
 )
 
