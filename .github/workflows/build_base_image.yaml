@@ -33,7 +33,6 @@ jobs:
       - uses: docker/setup-qemu-action@v3
         with:
           image: tonistiigi/binfmt:qemu-v7.0.0-28
-          platforms: all
       - uses: actions/cache@v3
         with:
           path: /tmp/.docker-buildx-cache
