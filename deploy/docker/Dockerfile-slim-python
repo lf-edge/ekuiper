@@ -21,7 +21,7 @@ WORKDIR /go/kuiper
 
 RUN make build_with_edgex_and_script
 
-FROM python:3.14.0a2-slim-bookworm
+FROM python:3.12-slim-bookworm
 
 COPY --from=builder /go/kuiper/_build/kuiper-* /kuiper/
 COPY ./deploy/docker/docker-entrypoint.sh /usr/bin/docker-entrypoint.sh

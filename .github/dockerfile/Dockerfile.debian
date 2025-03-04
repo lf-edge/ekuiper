@@ -12,13 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:bullseye
+FROM debian:bookworm
 
 ARG GO_VERSION
 ARG DEBIAN_FRONTEND="noninteractive"
 
-RUN apt-get update \
-    && apt-get install -y make wget git curl procps zip libucl-dev zlib1g-dev \
+RUN apt-get update -y \
+    && apt-get install -y make cmake wget git curl procps zip libucl-dev zlib1g-dev \
     pkg-config libczmq-dev build-essential debhelper jq zip
 
 RUN case $(dpkg --print-architecture) in \
@@ -39,6 +39,6 @@ RUN if [ "$(dpkg --print-architecture)" = "amd64" ]; then \
 
 ENV PATH=$PATH:/usr/local/go/bin
 
-RUN wget --no-verbose https://github.com/upx/upx/releases/download/v3.96/upx-3.96-src.tar.xz -O - | tar -xvJC /usr/local \ 
-   && cd /usr/local/upx-3.96-src && make all \
-   && ln -s /usr/local/upx-3.96-src/src/upx.out /usr/bin/upx
+RUN wget --no-verbose https://github.com/upx/upx/releases/download/v4.2.4/upx-4.2.4-src.tar.xz -O - | tar -xvJC /usr/local \
+   && cd /usr/local/upx-4.2.4-src && make all \
+   && ln -s /usr/local/upx-4.2.4-src/src/upx.out /usr/bin/upx
