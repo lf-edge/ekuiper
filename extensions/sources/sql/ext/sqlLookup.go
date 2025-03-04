@@ -30,10 +30,11 @@ type sqlLookupConfig struct {
 }
 
 type sqlLookupSource struct {
-	url    string
-	table  string
-	db     *sql.DB
-	driver string
+	url     string
+	table   string
+	db      *sql.DB
+	driver  string
+	columns []interface{}
 }
 
 func (s *sqlLookupSource) Ping(_ string, props map[string]interface{}) error {
@@ -91,15 +92,18 @@ func (s *sqlLookupSource) Lookup(ctx api.StreamContext, fields []string, keys []
 		return nil, err
 	}
 	var result []api.SourceTuple
-	columns := make([]interface{}, len(cols))
-	prepareValues(ctx, columns, types, cols, nil)
+	if len(s.columns) < 1 {
+		columns := make([]interface{}, len(cols))
+		prepareValues(ctx, columns, types, cols, nil)
+		s.columns = columns
+	}
 	for rows.Next() {
 		data := make(map[string]interface{})
-		err := rows.Scan(columns...)
+		err := rows.Scan(s.columns...)
 		if err != nil {
 			return nil, err
 		}
-		scanIntoMap(data, columns, cols, nil)
+		scanIntoMap(data, s.columns, cols, nil)
 		result = append(result, api.NewDefaultSourceTupleWithTime(data, nil, rcvTime))
 	}
 	return result, nil
