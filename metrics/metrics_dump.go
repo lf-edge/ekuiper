@@ -23,6 +23,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -55,19 +56,33 @@ type MetricsDumpManager struct {
 	metricsPath      string
 	retainedDuration time.Duration
 	regex            *regexp.Regexp
+	cancel           context.CancelFunc
+	wg               *sync.WaitGroup
 }
 
 func (m *MetricsDumpManager) Init(ctx context.Context) error {
 	if !conf.Config.Basic.MetricsDumpConfig.Enable {
 		return nil
 	}
-	if err := conf.InitMetricsFolder(); err != nil {
-		return fmt.Errorf("init metrics folder err:%v", err)
-	}
 	return m.init(ctx)
 }
 
-func (m *MetricsDumpManager) init(ctx context.Context) error {
+func (m *MetricsDumpManager) Stop() {
+	m.cancel()
+	m.wg.Wait()
+}
+
+func (m *MetricsDumpManager) Start() error {
+	return m.init(context.Background())
+}
+
+func (m *MetricsDumpManager) init(parCtx context.Context) error {
+	if err := conf.InitMetricsFolder(); err != nil {
+		return fmt.Errorf("init metrics folder err:%v", err)
+	}
+	ctx, cancel := context.WithCancel(parCtx)
+	m.cancel = cancel
+	m.wg = &sync.WaitGroup{}
 	m.enabeld = true
 	metricsPath, err := conf.GetMetricsLoc()
 	if err != nil {
@@ -78,12 +93,16 @@ func (m *MetricsDumpManager) init(ctx context.Context) error {
 	m.writer = w
 	m.retainedDuration = conf.Config.Basic.MetricsDumpConfig.RetainedDurationD
 	m.regex = regexp.MustCompile(`^metrics\.(\d{4})(\d{2})(\d{2})-(\d{2})\.log$`)
+	m.wg.Add(2)
 	go m.gcOldMetricsJob(ctx)
 	go m.dumpMetricsJob(ctx)
 	return nil
 }
 
 func (m *MetricsDumpManager) gcOldMetricsJob(ctx context.Context) {
+	defer func() {
+		m.wg.Done()
+	}()
 	ticker := time.NewTicker(time.Hour)
 	defer ticker.Stop()
 	for {
@@ -133,6 +152,9 @@ func (m *MetricsDumpManager) needGCFile(filename string, gcTime time.Time) (bool
 }
 
 func (m *MetricsDumpManager) dumpMetricsJob(ctx context.Context) {
+	defer func() {
+		m.wg.Done()
+	}()
 	ticker := time.NewTicker(15 * time.Second)
 	defer ticker.Stop()
 	for {

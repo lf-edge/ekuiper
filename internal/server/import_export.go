@@ -507,11 +507,12 @@ func configurationStatusExport() Configuration {
 
 func configurationUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	basic := struct {
-		LogLevel   *string `json:"logLevel"`
-		Debug      *bool   `json:"debug"`
-		ConsoleLog *bool   `json:"consoleLog"`
-		FileLog    *bool   `json:"fileLog"`
-		TimeZone   *string `json:"timezone"`
+		LogLevel          *string `json:"logLevel"`
+		Debug             *bool   `json:"debug"`
+		ConsoleLog        *bool   `json:"consoleLog"`
+		FileLog           *bool   `json:"fileLog"`
+		TimeZone          *string `json:"timezone"`
+		EnableMetricsDump *bool   `json:"enableMetricsDump"`
 	}{}
 	if err := json.NewDecoder(r.Body).Decode(&basic); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
