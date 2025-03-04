@@ -30,6 +30,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/meta"
 	"github.com/lf-edge/ekuiper/internal/pkg/httpx"
 	"github.com/lf-edge/ekuiper/internal/processor"
+	"github.com/lf-edge/ekuiper/metrics"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/infra"
@@ -512,7 +513,9 @@ func configurationUpdateHandler(w http.ResponseWriter, r *http.Request) {
 		ConsoleLog        *bool   `json:"consoleLog"`
 		FileLog           *bool   `json:"fileLog"`
 		TimeZone          *string `json:"timezone"`
-		EnableMetricsDump *bool   `json:"enableMetricsDump"`
+		MetricsDumpConfig *struct {
+			Enable *bool `json:"enable"`
+		} `json:"metricsDumpConfig"`
 	}{}
 	if err := json.NewDecoder(r.Body).Decode(&basic); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -555,6 +558,20 @@ func configurationUpdateHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		conf.Config.Basic.ConsoleLog = consoleLog
 		conf.Config.Basic.FileLog = fileLog
+	}
+
+	if basic.MetricsDumpConfig != nil {
+		if basic.MetricsDumpConfig.Enable != nil {
+			if *basic.MetricsDumpConfig.Enable {
+				if err := metrics.StartMetricsManager(); err != nil {
+					w.WriteHeader(http.StatusBadRequest)
+					handleError(w, err, "", logger)
+					return
+				}
+			} else {
+				metrics.StopMetricsManager()
+			}
+		}
 	}
 
 	w.WriteHeader(http.StatusNoContent)

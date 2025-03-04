@@ -42,15 +42,24 @@ func InitMetricsDumpJob(ctx context.Context) {
 }
 
 func GetMetricsZipFile(startTime time.Time, endTime time.Time) (string, error) {
-	if !metricsManager.enabeld {
+	if !metricsManager.IsEnabled() {
 		return "", fmt.Errorf("metrics dump not enabled")
 	}
 	return metricsManager.dumpMetricsFile(startTime, endTime)
 }
 
+func StartMetricsManager() error {
+	return metricsManager.Start()
+}
+
+func StopMetricsManager() {
+	metricsManager.Stop()
+}
+
 var metricsManager = &MetricsDumpManager{}
 
 type MetricsDumpManager struct {
+	sync.Mutex
 	enabeld          bool
 	writer           *cronowriter.CronoWriter
 	metricsPath      string
@@ -58,6 +67,7 @@ type MetricsDumpManager struct {
 	regex            *regexp.Regexp
 	cancel           context.CancelFunc
 	wg               *sync.WaitGroup
+	dryRun           bool
 }
 
 func (m *MetricsDumpManager) Init(ctx context.Context) error {
@@ -68,12 +78,29 @@ func (m *MetricsDumpManager) Init(ctx context.Context) error {
 	return m.init(ctx)
 }
 
+func (m *MetricsDumpManager) IsEnabled() bool {
+	m.Lock()
+	defer m.Unlock()
+	return m.enabeld
+}
+
 func (m *MetricsDumpManager) Stop() {
+	m.Lock()
+	defer m.Unlock()
+	if !m.enabeld {
+		return
+	}
 	m.cancel()
 	m.wg.Wait()
+	m.enabeld = false
 }
 
 func (m *MetricsDumpManager) Start() error {
+	m.Lock()
+	defer m.Unlock()
+	if m.enabeld {
+		return nil
+	}
 	return m.init(context.Background())
 }
 
@@ -118,6 +145,9 @@ func (m *MetricsDumpManager) gcOldMetricsJob(ctx context.Context) {
 }
 
 func (m *MetricsDumpManager) gcOldMetrics() error {
+	if m.dryRun {
+		return nil
+	}
 	gcTime := time.Now().Add(-m.retainedDuration)
 	files, err := os.ReadDir(m.metricsPath)
 	if err != nil {
@@ -174,6 +204,9 @@ func (m *MetricsDumpManager) dumpMetricsJob(ctx context.Context) {
 }
 
 func (m *MetricsDumpManager) dumpMetrics() error {
+	if m.dryRun {
+		return nil
+	}
 	mfs, err := prometheus.DefaultGatherer.Gather()
 	if err != nil {
 		return err
