@@ -23,6 +23,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -41,20 +42,32 @@ func InitMetricsDumpJob(ctx context.Context) {
 }
 
 func GetMetricsZipFile(startTime time.Time, endTime time.Time) (string, error) {
-	if !metricsManager.enabeld {
+	if !metricsManager.IsEnabled() {
 		return "", fmt.Errorf("metrics dump not enabled")
 	}
 	return metricsManager.dumpMetricsFile(startTime, endTime)
 }
 
+func StartMetricsManager() error {
+	return metricsManager.Start()
+}
+
+func StopMetricsManager() {
+	metricsManager.Stop()
+}
+
 var metricsManager = &MetricsDumpManager{}
 
 type MetricsDumpManager struct {
+	sync.Mutex
 	enabeld          bool
 	writer           *cronowriter.CronoWriter
 	metricsPath      string
 	retainedDuration time.Duration
 	regex            *regexp.Regexp
+	cancel           context.CancelFunc
+	wg               *sync.WaitGroup
+	dryRun           bool
 }
 
 func (m *MetricsDumpManager) Init(ctx context.Context) error {
@@ -62,13 +75,42 @@ func (m *MetricsDumpManager) Init(ctx context.Context) error {
 		conf.Log.Infof("metrics dump disabled")
 		return nil
 	}
-	if err := conf.InitMetricsFolder(); err != nil {
-		return fmt.Errorf("init metrics folder err:%v", err)
-	}
 	return m.init(ctx)
 }
 
-func (m *MetricsDumpManager) init(ctx context.Context) error {
+func (m *MetricsDumpManager) IsEnabled() bool {
+	m.Lock()
+	defer m.Unlock()
+	return m.enabeld
+}
+
+func (m *MetricsDumpManager) Stop() {
+	m.Lock()
+	defer m.Unlock()
+	if !m.enabeld {
+		return
+	}
+	m.cancel()
+	m.wg.Wait()
+	m.enabeld = false
+}
+
+func (m *MetricsDumpManager) Start() error {
+	m.Lock()
+	defer m.Unlock()
+	if m.enabeld {
+		return nil
+	}
+	return m.init(context.Background())
+}
+
+func (m *MetricsDumpManager) init(parCtx context.Context) error {
+	if err := conf.InitMetricsFolder(); err != nil {
+		return fmt.Errorf("init metrics folder err:%v", err)
+	}
+	ctx, cancel := context.WithCancel(parCtx)
+	m.cancel = cancel
+	m.wg = &sync.WaitGroup{}
 	m.enabeld = true
 	metricsPath, err := conf.GetMetricsLoc()
 	if err != nil {
@@ -79,6 +121,7 @@ func (m *MetricsDumpManager) init(ctx context.Context) error {
 	m.writer = w
 	m.retainedDuration = conf.Config.Basic.MetricsDumpConfig.RetainedDurationD
 	m.regex = regexp.MustCompile(`^metrics\.(\d{4})(\d{2})(\d{2})-(\d{2})\.log$`)
+	m.wg.Add(2)
 	go m.gcOldMetricsJob(ctx)
 	go m.dumpMetricsJob(ctx)
 	conf.Log.Infof("metrics dump enabled, folder:%v, retension:%v", m.metricsPath, m.retainedDuration.String())
@@ -86,6 +129,9 @@ func (m *MetricsDumpManager) init(ctx context.Context) error {
 }
 
 func (m *MetricsDumpManager) gcOldMetricsJob(ctx context.Context) {
+	defer func() {
+		m.wg.Done()
+	}()
 	ticker := time.NewTicker(15 * time.Minute)
 	defer ticker.Stop()
 	for {
@@ -99,6 +145,9 @@ func (m *MetricsDumpManager) gcOldMetricsJob(ctx context.Context) {
 }
 
 func (m *MetricsDumpManager) gcOldMetrics() error {
+	if m.dryRun {
+		return nil
+	}
 	gcTime := time.Now().Add(-m.retainedDuration)
 	files, err := os.ReadDir(m.metricsPath)
 	if err != nil {
@@ -139,6 +188,9 @@ func (m *MetricsDumpManager) needGCFile(filename string, gcTime time.Time) (bool
 }
 
 func (m *MetricsDumpManager) dumpMetricsJob(ctx context.Context) {
+	defer func() {
+		m.wg.Done()
+	}()
 	ticker := time.NewTicker(15 * time.Second)
 	defer ticker.Stop()
 	for {
@@ -152,6 +204,9 @@ func (m *MetricsDumpManager) dumpMetricsJob(ctx context.Context) {
 }
 
 func (m *MetricsDumpManager) dumpMetrics() error {
+	if m.dryRun {
+		return nil
+	}
 	mfs, err := prometheus.DefaultGatherer.Gather()
 	if err != nil {
 		return err
