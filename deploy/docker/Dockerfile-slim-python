@@ -21,23 +21,32 @@ WORKDIR /go/kuiper
 
 RUN make build_with_edgex_and_script
 
-FROM python:3.12-slim-bookworm
+FROM python:3.12-bookworm AS python-builder
 
-COPY --from=builder /go/kuiper/_build/kuiper-* /kuiper/
-COPY ./deploy/docker/docker-entrypoint.sh /usr/bin/docker-entrypoint.sh
 COPY ./sdk/python /sdk/python
 
 ARG DEBIAN_FRONTEND="noninteractive"
 
+# Install build dependencies for pynng (including nng and mbedtls)
 RUN apt-get update \
-    && apt-get install -y wget cmake libffi-dev git\
+    && apt-get install -y --no-install-recommends \
+        wget cmake libffi-dev git \
+        build-essential gcc g++ libc-dev \
     && apt-get clean \
-    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
+    && python3 -m ensurepip --upgrade \
+    && python3 -m pip install --no-cache-dir setuptools
 
 WORKDIR /sdk/python
 RUN python3 setup.py sdist && python3 setup.py install
 
+FROM python:3.12-slim-bookworm
+
+COPY --from=builder /go/kuiper/_build/kuiper-* /kuiper/
+COPY --from=python-builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
+
 WORKDIR /kuiper
+COPY ./deploy/docker/docker-entrypoint.sh /usr/bin/docker-entrypoint.sh
 
 ENV MAINTAINER="emqx.io"
 ENV KUIPER_HOME="/kuiper"
