@@ -150,7 +150,7 @@ func (s *SqlLookupSource) Lookup(ctx api.StreamContext, fields []string, keys []
 		if err != nil {
 			return nil, err
 		}
-		scanIntoMap(data, columns, cols)
+		scanIntoMap(data, columns, cols, nil)
 		dataList = append(dataList, data)
 	}
 	return dataList, nil

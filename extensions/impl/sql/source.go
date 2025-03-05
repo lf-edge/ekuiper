@@ -29,18 +29,9 @@ import (
 	client2 "github.com/lf-edge/ekuiper/v2/extensions/impl/sql/client"
 	"github.com/lf-edge/ekuiper/v2/extensions/impl/sql/sqldatabase/sqlgen"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/util"
-	"github.com/lf-edge/ekuiper/v2/metrics"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
-)
-
-const (
-	LblSql       = "sql"
-	LblReq       = "req"
-	LblReconn    = "reconn"
-	LblException = "exception"
-	LblRecv      = "recv"
 )
 
 type SQLSourceConnector struct {
@@ -51,6 +42,15 @@ type SQLSourceConnector struct {
 	props         map[string]any
 	needReconnect bool
 	conId         string
+	columns       []interface{}
+	stats         *sqlSourceStats
+	ruleID        string
+	opID          string
+}
+
+type sqlSourceStats struct {
+	totalScanIntoMapDuration time.Duration
+	totalWaitDuration        time.Duration
 }
 
 func (s *SQLSourceConnector) Ping(ctx api.StreamContext, m map[string]any) error {
@@ -61,6 +61,18 @@ func (s *SQLSourceConnector) Ping(ctx api.StreamContext, m map[string]any) error
 	}
 	defer cli.Close(ctx)
 	return cli.Ping(ctx)
+}
+
+func (s *SQLSourceConnector) resetStats() {
+	s.stats = &sqlSourceStats{}
+}
+
+func (s *SQLSourceConnector) updateMetrics() {
+	if s.stats != nil {
+		SqlSourceQueryDurationHist.WithLabelValues(LblWait, s.ruleID, s.opID).Observe(float64(s.stats.totalWaitDuration.Microseconds()))
+		SqlSourceQueryDurationHist.WithLabelValues(LblScanInto, s.ruleID, s.opID).Observe(float64(s.stats.totalScanIntoMapDuration.Microseconds()))
+		s.resetStats()
+	}
 }
 
 type SQLConf struct {
@@ -124,6 +136,8 @@ func (s *SQLSourceConnector) Connect(ctx api.StreamContext, sc api.StatusChangeH
 	}
 	cli = conn.(*client2.SQLConnection)
 	s.conn = cli
+	s.ruleID = ctx.GetRuleId()
+	s.opID = ctx.GetOpId()
 	return err
 }
 
@@ -136,19 +150,19 @@ func (s *SQLSourceConnector) Close(ctx api.StreamContext) error {
 }
 
 func (s *SQLSourceConnector) Pull(ctx api.StreamContext, recvTime time.Time, ingest api.TupleIngest, ingestError api.ErrorIngest) {
-	metrics.IOCounter.WithLabelValues(LblSql, metrics.LblSourceIO, LblReq, ctx.GetRuleId(), ctx.GetOpId()).Inc()
+	SqlSourceCounter.WithLabelValues(LblPull, s.ruleID, s.opID).Inc()
+	s.resetStats()
 	s.queryData(ctx, recvTime, ingest, ingestError)
 }
 
 func (s *SQLSourceConnector) queryData(ctx api.StreamContext, rcvTime time.Time, ingest api.TupleIngest, ingestError api.ErrorIngest) {
 	logger := ctx.GetLogger()
 	if s.needReconnect {
-		metrics.IOCounter.WithLabelValues(LblSql, metrics.LblSourceIO, LblReconn, ctx.GetRuleId(), ctx.GetOpId()).Inc()
+		SqlSourceCounter.WithLabelValues(LblRecon, ctx.GetRuleId(), ctx.GetOpId()).Inc()
 		err := s.conn.Reconnect()
 		if err != nil {
 			logger.Errorf("reconnect db error %v", err)
 			ingestError(ctx, err)
-			metrics.IOCounter.WithLabelValues(LblSql, metrics.LblSourceIO, LblException, ctx.GetRuleId(), ctx.GetOpId()).Inc()
 			return
 		}
 	}
@@ -159,21 +173,19 @@ func (s *SQLSourceConnector) queryData(ctx api.StreamContext, rcvTime time.Time,
 	if err != nil {
 		logger.Errorf("Get sql query error %v", err)
 		ingestError(ctx, err)
-		metrics.IOCounter.WithLabelValues(LblSql, metrics.LblSourceIO, LblException, ctx.GetRuleId(), ctx.GetOpId()).Inc()
 		return
 	}
 	logger.Debugf("Query the database with %s", query)
-	start := time.Now()
+
+	queryStart := time.Now()
 	rows, err := s.conn.GetDB().Query(query)
 	failpoint.Inject("QueryErr", func() {
 		err = errors.New("QueryErr")
 	})
-	metrics.IODurationHist.WithLabelValues(LblSql, metrics.LblSourceIO, ctx.GetRuleId(), ctx.GetOpId()).Observe(float64(time.Since(start).Microseconds()))
 	if err != nil {
 		logger.Errorf("query sql error %v", err)
 		s.needReconnect = true
 		ingestError(ctx, err)
-		metrics.IOCounter.WithLabelValues(LblSql, metrics.LblSourceIO, LblException, ctx.GetRuleId(), ctx.GetOpId()).Inc()
 		return
 	} else if s.needReconnect {
 		s.needReconnect = false
@@ -186,28 +198,34 @@ func (s *SQLSourceConnector) queryData(ctx api.StreamContext, rcvTime time.Time,
 	if err != nil {
 		logger.Errorf("query %v row ColumnTypes error %v", query, err)
 		ingestError(ctx, err)
-		metrics.IOCounter.WithLabelValues(LblSql, metrics.LblSourceIO, LblException, ctx.GetRuleId(), ctx.GetOpId()).Inc()
 		return
 	}
-	for rows.Next() {
-		data := make(map[string]interface{})
+	if s.columns == nil {
 		columns := make([]interface{}, len(cols))
 		prepareValues(ctx, columns, types, cols)
-		err := rows.Scan(columns...)
+		s.columns = columns
+	}
+	rowCount := 0
+	for rows.Next() {
+		data := make(map[string]interface{})
+		err := rows.Scan(s.columns...)
 		failpoint.Inject("ScanErr", func() {
 			err = errors.New("ScanErr")
 		})
 		if err != nil {
 			logger.Errorf("Run sql scan(%s) error %v", query, err)
 			ingestError(ctx, err)
-			metrics.IOCounter.WithLabelValues(LblSql, metrics.LblSourceIO, LblException, ctx.GetRuleId(), ctx.GetOpId()).Inc()
 			return
 		}
-		scanIntoMap(data, columns, cols)
+		scanIntoMap(data, s.columns, cols, s.stats)
 		s.Query.UpdateMaxIndexValue(data)
+		watiStart := time.Now()
 		ingest(ctx, data, nil, rcvTime)
-		metrics.IOCounter.WithLabelValues(LblSql, metrics.LblSourceIO, LblRecv, ctx.GetRuleId(), ctx.GetOpId()).Inc()
+		s.stats.totalWaitDuration += time.Since(watiStart)
+		rowCount++
 	}
+	SqlSourceGauge.WithLabelValues(LblQuery, s.ruleID, s.opID).Set(float64(rowCount))
+	SqlSourceQueryDurationHist.WithLabelValues(LblQuery, s.ruleID, s.opID).Observe(float64(time.Since(queryStart).Microseconds()))
 }
 
 func (s *SQLSourceConnector) GetOffset() (interface{}, error) {
@@ -227,7 +245,13 @@ func (s *SQLSourceConnector) ResetOffset(input map[string]interface{}) error {
 	return nil
 }
 
-func scanIntoMap(mapValue map[string]interface{}, values []interface{}, columns []string) {
+func scanIntoMap(mapValue map[string]interface{}, values []interface{}, columns []string, stats *sqlSourceStats) {
+	start := time.Now()
+	defer func() {
+		if stats != nil {
+			stats.totalScanIntoMapDuration += time.Since(start)
+		}
+	}()
 	for idx, column := range columns {
 		if reflectValue := reflect.Indirect(reflect.Indirect(reflect.ValueOf(values[idx]))); reflectValue.IsValid() {
 			mapValue[column] = reflectValue.Interface()
