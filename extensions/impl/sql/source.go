@@ -151,11 +151,11 @@ func (s *SQLSourceConnector) Close(ctx api.StreamContext) error {
 
 func (s *SQLSourceConnector) Pull(ctx api.StreamContext, recvTime time.Time, ingest api.TupleIngest, ingestError api.ErrorIngest) {
 	SqlSourceCounter.WithLabelValues(LblPull, s.ruleID, s.opID).Inc()
-	s.resetStats()
 	s.queryData(ctx, recvTime, ingest, ingestError)
 }
 
 func (s *SQLSourceConnector) queryData(ctx api.StreamContext, rcvTime time.Time, ingest api.TupleIngest, ingestError api.ErrorIngest) {
+	s.resetStats()
 	logger := ctx.GetLogger()
 	if s.needReconnect {
 		SqlSourceCounter.WithLabelValues(LblRecon, ctx.GetRuleId(), ctx.GetOpId()).Inc()
