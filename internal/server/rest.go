@@ -222,6 +222,7 @@ func createRestServer(ip string, port int, needToken bool) *http.Server {
 
 	// dump metrics
 	r.HandleFunc("/metrics/dump", dumpMetricsHandler).Methods(http.MethodGet)
+	r.HandleFunc("/metrics/dump/check", dumpMetricsEnabledHandler).Methods(http.MethodGet)
 	// Register extended routes
 	for k, v := range components {
 		logger.Infof("register rest endpoint for component %s", k)
