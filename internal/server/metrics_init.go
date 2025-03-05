@@ -25,6 +25,16 @@ import (
 	"github.com/lf-edge/ekuiper/metrics"
 )
 
+func dumpMetricsEnabledHandler(w http.ResponseWriter, r *http.Request) {
+	if metrics.IsMetricsDumpEnabled() {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("enabled"))
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("disabled"))
+}
+
 func dumpMetricsHandler(w http.ResponseWriter, r *http.Request) {
 	startTime, endTime := extractStartEndTime(r)
 	zipFilePath, err := metrics.GetMetricsZipFile(startTime, endTime)

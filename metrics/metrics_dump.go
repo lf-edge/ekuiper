@@ -48,6 +48,10 @@ func GetMetricsZipFile(startTime time.Time, endTime time.Time) (string, error) {
 	return metricsManager.dumpMetricsFile(startTime, endTime)
 }
 
+func IsMetricsDumpEnabled() bool {
+	return metricsManager.IsEnabled()
+}
+
 func StartMetricsManager() error {
 	return metricsManager.Start()
 }
