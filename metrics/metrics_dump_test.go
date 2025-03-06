@@ -70,3 +70,16 @@ func TestIsFileIncludeMetricsTime(t *testing.T) {
 	a := time.Now()
 	require.True(t, isFileIncludeMetricsTime(a, a.Add(time.Minute)))
 }
+
+func TestStartStopMetricsManager(t *testing.T) {
+	conf.InitConf()
+	ctx := context.Background()
+	m := &MetricsDumpManager{
+		dryRun: true,
+	}
+	require.NoError(t, m.init(ctx))
+	m.Stop()
+	require.False(t, m.enabeld)
+	m.Start()
+	require.True(t, m.enabeld)
+}

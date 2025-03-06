@@ -30,6 +30,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/meta"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/httpx"
 	"github.com/lf-edge/ekuiper/v2/internal/processor"
+	"github.com/lf-edge/ekuiper/v2/metrics"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
@@ -513,11 +514,14 @@ func configurationStatusExport() Configuration {
 
 func configurationUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	basic := struct {
-		LogLevel   *string `json:"logLevel"`
-		Debug      *bool   `json:"debug"`
-		ConsoleLog *bool   `json:"consoleLog"`
-		FileLog    *bool   `json:"fileLog"`
-		TimeZone   *string `json:"timezone"`
+		LogLevel          *string `json:"logLevel"`
+		Debug             *bool   `json:"debug"`
+		ConsoleLog        *bool   `json:"consoleLog"`
+		FileLog           *bool   `json:"fileLog"`
+		TimeZone          *string `json:"timezone"`
+		MetricsDumpConfig *struct {
+			Enable *bool `json:"enable"`
+		} `json:"metricsDumpConfig"`
 	}{}
 	if err := json.NewDecoder(r.Body).Decode(&basic); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -560,6 +564,20 @@ func configurationUpdateHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		conf.Config.Basic.ConsoleLog = consoleLog
 		conf.Config.Basic.FileLog = fileLog
+	}
+
+	if basic.MetricsDumpConfig != nil {
+		if basic.MetricsDumpConfig.Enable != nil {
+			if *basic.MetricsDumpConfig.Enable {
+				if err := metrics.StartMetricsManager(); err != nil {
+					w.WriteHeader(http.StatusBadRequest)
+					handleError(w, err, "", logger)
+					return
+				}
+			} else {
+				metrics.StopMetricsManager()
+			}
+		}
 	}
 
 	w.WriteHeader(http.StatusNoContent)
