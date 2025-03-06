@@ -1,4 +1,4 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -113,6 +113,10 @@ func (t *TransformOp) Worker(ctx api.StreamContext, item any) []any {
 	if t.sendSingle {
 		result = make([]any, 0, len(outs))
 		for _, out := range outs {
+			if t.omitIfEmpty && (out == nil || len(out) == 0) {
+				ctx.GetLogger().Debugf("receive empty single result %v in sink, dropped", out)
+				continue
+			}
 			props, err := t.calculateProps(out)
 			if err != nil {
 				result = append(result, err)
