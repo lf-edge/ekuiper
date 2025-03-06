@@ -1,4 +1,4 @@
-// Copyright 2021-2024 EMQ Technologies Co., Ltd.
+// Copyright 2021-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -790,6 +790,37 @@ func TestEventWindow(t *testing.T) {
 				"sink_memory_0_0_exceptions_total":  int64(0),
 				"sink_memory_0_0_records_in_total":  int64(4),
 				"sink_memory_0_0_records_out_total": int64(4),
+
+				"source_demoE_0_exceptions_total":  int64(0),
+				"source_demoE_0_records_in_total":  int64(6),
+				"source_demoE_0_records_out_total": int64(6),
+
+				"op_4_window_0_exceptions_total":   int64(0),
+				"op_4_window_0_process_latency_us": int64(0),
+				"op_4_window_0_records_in_total":   int64(4),
+				"op_4_window_0_records_out_total":  int64(5),
+
+				"op_3_watermark_0_records_in_total":  int64(6),
+				"op_3_watermark_0_records_out_total": int64(4),
+			},
+		},
+		{
+			Name: `TestEventWindowRule0`,
+			Sql:  `SELECT count(*), event_time() as et FROM demoE GROUP BY HOPPINGWINDOW(ss, 2, 1) HAVING last_value(et, true) - last_agg_hit_time() > 1500`,
+			R: [][]map[string]interface{}{
+				{{
+					"count": 1,
+					"et":    int64(1541152487000),
+				}},
+				{{
+					"count": 2,
+					"et":    int64(1541152490000),
+				}},
+			},
+			M: map[string]interface{}{
+				"sink_memory_0_0_exceptions_total":  int64(0),
+				"sink_memory_0_0_records_in_total":  int64(2),
+				"sink_memory_0_0_records_out_total": int64(2),
 
 				"source_demoE_0_exceptions_total":  int64(0),
 				"source_demoE_0_records_in_total":  int64(6),
