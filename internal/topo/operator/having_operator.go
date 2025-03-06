@@ -1,4 +1,4 @@
-// Copyright 2021-2024 EMQ Technologies Co., Ltd.
+// Copyright 2021-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -57,7 +57,7 @@ func (p *HavingOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Funct
 		}
 		if len(groups) > 0 {
 			// update trigger
-			ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(fv)}
+			ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(fv, afv)}
 			for _, f := range p.StateFuncs {
 				_ = ve.Eval(f)
 			}
