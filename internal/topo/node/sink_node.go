@@ -56,6 +56,8 @@ func newSinkNode(ctx api.StreamContext, name string, rOpt def.RuleOption, eoflim
 	// Sink input channel as buffer
 	if isRetry || (sc.EnableCache && !sc.ResendAlterQueue) {
 		rOpt.BufferLength = sc.MemoryCacheThreshold
+	} else {
+		rOpt.BufferLength = sc.BufferLength
 	}
 	ctx.GetLogger().Infof("create sink node %s with isRetry %v, resendInterval %d, bufferLength %d", name, isRetry, retry, rOpt.BufferLength)
 	return &SinkNode{
