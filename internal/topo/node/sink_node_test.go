@@ -91,7 +91,8 @@ func TestNewSinkNode(t *testing.T) {
 			n := newSinkNode(ctx, "test", def.RuleOption{
 				BufferLength: 1024,
 			}, 1, &SinkConf{
-				SinkConf: *tt.sc,
+				SinkConf:     *tt.sc,
+				BufferLength: 1024,
 			}, tt.isRetry)
 			assert.Equal(t, tt.resendInterval, n.resendInterval, "resend interval")
 			assert.Equal(t, tt.bufferLength, cap(n.input))
