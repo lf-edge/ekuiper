@@ -135,9 +135,9 @@ func SinkToComp(tp *topo.Topo, sinkType string, sinkName string, props map[strin
 		var snk node.DataSinkNode
 		switch ss := s.(type) {
 		case api.BytesCollector:
-			snk, err = node.NewBytesSinkNode(tp.GetContext(), sinkName, ss, *rule.Options, streamCount, &commonConf.SinkConf, true)
+			snk, err = node.NewBytesSinkNode(tp.GetContext(), sinkName, ss, *rule.Options, streamCount, commonConf, true)
 		case api.TupleCollector:
-			snk, err = node.NewTupleSinkNode(tp.GetContext(), sinkName, ss, *rule.Options, streamCount, &commonConf.SinkConf, true)
+			snk, err = node.NewTupleSinkNode(tp.GetContext(), sinkName, ss, *rule.Options, streamCount, commonConf, true)
 		default:
 			err = fmt.Errorf("sink type %s does not implement any collector", sinkType)
 		}
