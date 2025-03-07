@@ -220,7 +220,7 @@ func dropNameConnection(ctx api.StreamContext, selId string) error {
 		return fmt.Errorf("internal connection %v can't be edit", selId)
 	}
 	if meta.GetRefCount() > 0 {
-		return fmt.Errorf("connection %s can't be dropped due to references %v", selId, meta.GetRefNames())
+		return fmt.Errorf("connection %s can't be dropped due to rule references %v", selId, meta.GetRefNames())
 	}
 	err = dropConnectionStore(meta.Typ, selId)
 	if err != nil {
