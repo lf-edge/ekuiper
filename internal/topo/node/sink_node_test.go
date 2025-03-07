@@ -90,7 +90,9 @@ func TestNewSinkNode(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			n := newSinkNode(ctx, "test", def.RuleOption{
 				BufferLength: 1024,
-			}, 1, tt.sc, tt.isRetry)
+			}, 1, &SinkConf{
+				SinkConf: *tt.sc,
+			}, tt.isRetry)
 			assert.Equal(t, tt.resendInterval, n.resendInterval, "resend interval")
 			assert.Equal(t, tt.bufferLength, cap(n.input))
 		})
@@ -102,10 +104,12 @@ func TestRetry(t *testing.T) {
 	s := &mockResendSink{failTimes: 2}
 	n, err := NewBytesSinkNode(ctx, "resendout_sink", s, def.RuleOption{
 		BufferLength: 1024,
-	}, 1, &conf.SinkConf{
-		ResendInterval:       cast.DurationConf(100 * time.Millisecond),
-		EnableCache:          true,
-		MemoryCacheThreshold: 10,
+	}, 1, &SinkConf{
+		SinkConf: conf.SinkConf{
+			ResendInterval:       cast.DurationConf(100 * time.Millisecond),
+			EnableCache:          true,
+			MemoryCacheThreshold: 10,
+		},
 	}, true)
 	assert.NoError(t, err)
 	data := &xsql.RawTuple{
@@ -132,11 +136,13 @@ func TestResendOut(t *testing.T) {
 	s := &mockResendSink{failTimes: 10}
 	n, err := NewBytesSinkNode(ctx, "resendout_sink", s, def.RuleOption{
 		BufferLength: 1024,
-	}, 1, &conf.SinkConf{
-		ResendInterval:       cast.DurationConf(100 * time.Millisecond),
-		EnableCache:          true,
-		MemoryCacheThreshold: 10,
-		ResendAlterQueue:     true,
+	}, 1, &SinkConf{
+		SinkConf: conf.SinkConf{
+			ResendInterval:       cast.DurationConf(100 * time.Millisecond),
+			EnableCache:          true,
+			MemoryCacheThreshold: 10,
+			ResendAlterQueue:     true,
+		},
 	}, true)
 	assert.NoError(t, err)
 	alertCh := make(chan any, 10)

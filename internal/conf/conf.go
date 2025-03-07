@@ -68,7 +68,6 @@ type SinkConf struct {
 	ResendPriority       int               `json:"resendPriority" yaml:"resendPriority"`
 	ResendIndicatorField string            `json:"resendIndicatorField" yaml:"resendIndicatorField"`
 	ResendDestination    string            `json:"resendDestination" yaml:"resendDestination"`
-	BufferLength         int               `json:"bufferLength" yaml:"bufferLength"`
 }
 
 // Validate the configuration and reset to the default value for invalid values.

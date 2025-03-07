@@ -21,7 +21,6 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
@@ -44,7 +43,7 @@ type SinkNode struct {
 	resendOut chan<- any
 }
 
-func newSinkNode(ctx api.StreamContext, name string, rOpt def.RuleOption, eoflimit int, sc *conf.SinkConf, isRetry bool) *SinkNode {
+func newSinkNode(ctx api.StreamContext, name string, rOpt def.RuleOption, eoflimit int, sc *SinkConf, isRetry bool) *SinkNode {
 	// set collect retry according to cache setting
 	retry := time.Duration(sc.ResendInterval)
 	if !sc.EnableCache && !isRetry {
@@ -168,7 +167,7 @@ func (s *SinkNode) ingest(ctx api.StreamContext, item any) (any, bool) {
 }
 
 // NewBytesSinkNode creates a sink node that collects data from the stream. Do some static validation
-func NewBytesSinkNode(ctx api.StreamContext, name string, sink api.BytesCollector, rOpt def.RuleOption, eoflimit int, sc *conf.SinkConf, isRetry bool) (*SinkNode, error) {
+func NewBytesSinkNode(ctx api.StreamContext, name string, sink api.BytesCollector, rOpt def.RuleOption, eoflimit int, sc *SinkConf, isRetry bool) (*SinkNode, error) {
 	ctx.GetLogger().Infof("create bytes sink node %s", name)
 	n := newSinkNode(ctx, name, rOpt, eoflimit, sc, isRetry)
 	n.sink = sink
@@ -192,7 +191,7 @@ func bytesCollect(ctx api.StreamContext, sink api.Sink, data any) (err error) {
 }
 
 // NewTupleSinkNode creates a sink node that collects data from the stream. Do some static validation
-func NewTupleSinkNode(ctx api.StreamContext, name string, sink api.TupleCollector, rOpt def.RuleOption, eoflimit int, sc *conf.SinkConf, isRetry bool) (*SinkNode, error) {
+func NewTupleSinkNode(ctx api.StreamContext, name string, sink api.TupleCollector, rOpt def.RuleOption, eoflimit int, sc *SinkConf, isRetry bool) (*SinkNode, error) {
 	ctx.GetLogger().Infof("create message sink node %s", name)
 	n := newSinkNode(ctx, name, rOpt, eoflimit, sc, isRetry)
 	n.sink = sink
