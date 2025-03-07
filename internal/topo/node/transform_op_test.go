@@ -1,4 +1,4 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -196,6 +196,18 @@ func TestTransformRun(t *testing.T) {
 
 				&xsql.Tuple{Message: map[string]any{"data": map[string]any{"a": 5, "b": 6, "sourceConf": "world"}}, Timestamp: time.UnixMilli(0), Props: map[string]string{"schema_{{.a}}": "schema_<no value>", "{{.b}}_comma": "<no value>_comma"}},
 			},
+		},
+		{
+			name: "props of single omitEmpty",
+			sc: &SinkConf{
+				Omitempty:  true,
+				Format:     "json",
+				SendSingle: true,
+			},
+			cases: []any{
+				&xsql.Tuple{Message: map[string]any{}, Timestamp: time.UnixMilli(0), Props: map[string]string{}},
+			},
+			expects: []any{},
 		},
 		{
 			name: "props of list",
