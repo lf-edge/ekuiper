@@ -28,7 +28,7 @@ type compressProps struct {
 }
 
 func NewZstdCompressor(props map[string]any) (*zstdCompressor, error) {
-	p := &compressProps{WindowSize: 32 << 10}
+	p := &compressProps{WindowSize: 8 << 20}
 	err := cast.MapToStruct(props, p)
 	if err != nil {
 		return nil, err
