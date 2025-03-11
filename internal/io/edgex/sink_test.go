@@ -233,7 +233,7 @@ func TestProduceEvents(t1 *testing.T) {
 						Id:            "22",
 						Origin:        24,
 						ValueType:     v4.ValueTypeFloat64,
-						SimpleReading: dtos.SimpleReading{Value: "5.000000e+01"},
+						SimpleReading: dtos.SimpleReading{Value: "5e+01"},
 					},
 				},
 			},
@@ -264,7 +264,7 @@ func TestProduceEvents(t1 *testing.T) {
 				Readings: []dtos.BaseReading{
 					{
 						ResourceName:  "h1",
-						SimpleReading: dtos.SimpleReading{Value: "1.000000e+02"},
+						SimpleReading: dtos.SimpleReading{Value: "1e+02"},
 						DeviceName:    "demo",
 						ProfileName:   "demoProfile",
 						ValueType:     v4.ValueTypeFloat64,
@@ -288,14 +288,14 @@ func TestProduceEvents(t1 *testing.T) {
 				Readings: []dtos.BaseReading{
 					{
 						ResourceName:  "meta",
-						SimpleReading: dtos.SimpleReading{Value: "5.000000e+01"},
+						SimpleReading: dtos.SimpleReading{Value: "5e+01"},
 						DeviceName:    "ekuiper",
 						ProfileName:   "ekuiperProfile",
 						ValueType:     v4.ValueTypeFloat64,
 					},
 					{
 						ResourceName:  "h1",
-						SimpleReading: dtos.SimpleReading{Value: "1.000000e+02"},
+						SimpleReading: dtos.SimpleReading{Value: "1e+02"},
 						DeviceName:    "ekuiper",
 						ProfileName:   "ekuiperProfile",
 						ValueType:     v4.ValueTypeFloat64,
@@ -340,7 +340,7 @@ func TestProduceEvents(t1 *testing.T) {
 					},
 					{
 						ResourceName:  "fa",
-						SimpleReading: dtos.SimpleReading{Value: "[1.100000e+00, 2.200000e+00, 3.300000e+00, 4.400000e+00]"},
+						SimpleReading: dtos.SimpleReading{Value: "[1.1e+00, 2.2e+00, 3.3e+00, 4.4e+00]"},
 						DeviceName:    "ekuiper",
 						ProfileName:   "ekuiperProfile",
 						ValueType:     v4.ValueTypeFloat64Array,
@@ -591,7 +591,7 @@ func TestReadingTypes(t *testing.T) {
 						DeviceName:    "ekuiper",
 						ProfileName:   "ekuiperProfile",
 						ValueType:     v4.ValueTypeFloat32,
-						SimpleReading: dtos.SimpleReading{Value: "1.000000e+00"},
+						SimpleReading: dtos.SimpleReading{Value: "1e+00"},
 					},
 					{
 						ResourceName:  "bin",
@@ -709,7 +709,7 @@ func TestReadingTypes(t *testing.T) {
 						DeviceName:    "ekuiper",
 						ProfileName:   "ekuiperProfile",
 						ValueType:     v4.ValueTypeFloat32Array,
-						SimpleReading: dtos.SimpleReading{Value: "[1.000000e+00]"},
+						SimpleReading: dtos.SimpleReading{Value: "[1e+00]"},
 					},
 					{
 						ResourceName:  "astring",
@@ -834,14 +834,14 @@ func TestReadingTypes(t *testing.T) {
 						DeviceName:    "ekuiper",
 						ProfileName:   "ekuiperProfile",
 						ValueType:     v4.ValueTypeFloat32,
-						SimpleReading: dtos.SimpleReading{Value: "1.000000e+00"},
+						SimpleReading: dtos.SimpleReading{Value: "1e+00"},
 					},
 					{
 						ResourceName:  "afloat64",
 						DeviceName:    "ekuiper",
 						ProfileName:   "ekuiperProfile",
 						ValueType:     v4.ValueTypeFloat64,
-						SimpleReading: dtos.SimpleReading{Value: "1.000000e+00"},
+						SimpleReading: dtos.SimpleReading{Value: "1e+00"},
 					},
 					{
 						ResourceName:  "bin",
@@ -957,14 +957,14 @@ func TestReadingTypes(t *testing.T) {
 						DeviceName:    "ekuiper",
 						ProfileName:   "ekuiperProfile",
 						ValueType:     v4.ValueTypeFloat32Array,
-						SimpleReading: dtos.SimpleReading{Value: "[1.000000e+00]"},
+						SimpleReading: dtos.SimpleReading{Value: "[1e+00]"},
 					},
 					{
 						ResourceName:  "afloat64",
 						DeviceName:    "ekuiper",
 						ProfileName:   "ekuiperProfile",
 						ValueType:     v4.ValueTypeFloat64Array,
-						SimpleReading: dtos.SimpleReading{Value: "[1.000000e+00]"},
+						SimpleReading: dtos.SimpleReading{Value: "[1e+00]"},
 					},
 					{
 						ResourceName:  "astring",
