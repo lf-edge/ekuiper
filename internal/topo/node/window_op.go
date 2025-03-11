@@ -1,4 +1,4 @@
-// Copyright 2021-2024 EMQ Technologies Co., Ltd.
+// Copyright 2021-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -571,18 +571,21 @@ func (o *WindowOperator) handleInputs(ctx api.StreamContext, inputs []*xsql.Tupl
 	left := right.Add(-length).Add(-delta)
 	log.Debugf("triggerTime: %d, length: %d, delta: %d, leftmost: %d", right.UnixMilli(), length, delta, left.UnixMilli())
 	nextleft := -1
+	// this is to avoid always scan all tuples. better for performance if a window is big.
+	allDiscarded := false
 	// Assume the inputs are sorted by timestamp
 	for i, tuple := range inputs {
 		// Other window always discard the tuples that has been triggered.
 		// So the tuple in the inputs should all bigger than the current left (in the window)
 		// For hopping and sliding window, firstly check if the beginning tuples are expired and discard them
-		if o.isOverlapWindow {
+		if o.isOverlapWindow && !allDiscarded {
 			if left.After(tuple.Timestamp) {
 				log.Debugf("tuple %x emitted at %d expired", tuple, tuple.Timestamp.UnixMilli())
 				// Expired tuple, remove it by not adding back to inputs
 				continue
 			}
 		}
+		allDiscarded = true
 		// Now all tuples are in the window. Next step is to check if the tuple is in the current window
 		// If the tuple is beyond the right boundary, then it should be in the next window
 		meet := tuple.Timestamp.Before(right) || tuple.Timestamp.Equal(right)
