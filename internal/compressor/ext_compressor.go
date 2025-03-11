@@ -1,4 +1,4 @@
-// Copyright 2023-2024 EMQ Technologies Co., Ltd.
+// Copyright 2023-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,10 +17,10 @@
 package compressor
 
 import (
-	"github.com/lf-edge/ekuiper/v2/internal/compressor/flate"
-	"github.com/lf-edge/ekuiper/v2/internal/compressor/gzip"
-	"github.com/lf-edge/ekuiper/v2/internal/compressor/zlib"
-	"github.com/lf-edge/ekuiper/v2/internal/compressor/zstd"
+	"github.com/lf-edge/ekuiper/v2/modules/compressor/flate"
+	"github.com/lf-edge/ekuiper/v2/modules/compressor/gzip"
+	"github.com/lf-edge/ekuiper/v2/modules/compressor/zlib"
+	"github.com/lf-edge/ekuiper/v2/modules/compressor/zstd"
 	"github.com/lf-edge/ekuiper/v2/pkg/message"
 )
 
