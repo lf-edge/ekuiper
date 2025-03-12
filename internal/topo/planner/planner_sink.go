@@ -80,6 +80,14 @@ func SinkToComp(tp *topo.Topo, sinkType string, sinkName string, props map[strin
 	if s == nil {
 		return nil, fmt.Errorf("sink %s is not defined", sinkType)
 	}
+	if err := s.Provision(tp.GetContext(), props); err != nil {
+		return nil, err
+	}
+	tp.GetContext().GetLogger().Infof("provision sink %s with props %+v", sinkName, props)
+	// consume common conf in sink itself, swallow and not pass it to common conf
+	if pc, ok := s.(model.PropsConsumer); ok {
+		pc.Consume(props)
+	}
 	commonConf, err := node.ParseConf(tp.GetContext().GetLogger(), props)
 	if err != nil {
 		return nil, fmt.Errorf("fail to parse sink configuration: %v", err)
@@ -90,10 +98,6 @@ func SinkToComp(tp *topo.Topo, sinkType string, sinkName string, props map[strin
 	if err != nil {
 		return nil, err
 	}
-	if err = s.Provision(tp.GetContext(), props); err != nil {
-		return nil, err
-	}
-	tp.GetContext().GetLogger().Infof("provision sink %s with props %+v", sinkName, props)
 
 	result := &SinkCompNode{
 		name:  sinkName,
