@@ -59,3 +59,8 @@ type UniqueSub interface {
 type UniqueConn interface {
 	ConnId(props map[string]any) string
 }
+
+// PropsConsumer Read in properties, swallow some and return new props
+type PropsConsumer interface {
+	Consume(props map[string]any)
+}

@@ -1,4 +1,4 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
+	"github.com/lf-edge/ekuiper/v2/pkg/model"
 )
 
 const (
@@ -132,6 +133,11 @@ func (s *SQLSinkConnector) Provision(ctx api.StreamContext, configs map[string]a
 	s.config = c
 	s.props = configs
 	return nil
+}
+
+// Consume This is run after provision. Discard common confs that will only be handled in sink itself
+func (s *SQLSinkConnector) Consume(props map[string]any) {
+	delete(props, "fields")
 }
 
 func (s *SQLSinkConnector) Connect(ctx api.StreamContext, sc api.StatusChangeHandler) error {
@@ -324,6 +330,7 @@ func GetSink() api.Sink {
 }
 
 var (
-	_ api.TupleCollector = &SQLSinkConnector{}
-	_ util.PingableConn  = &SQLSinkConnector{}
+	_ api.TupleCollector  = &SQLSinkConnector{}
+	_ util.PingableConn   = &SQLSinkConnector{}
+	_ model.PropsConsumer = &SQLSinkConnector{}
 )
