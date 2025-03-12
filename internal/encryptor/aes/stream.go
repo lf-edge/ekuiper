@@ -1,4 +1,4 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ func (a *StreamEncrypter) Encrypt(data []byte) ([]byte, error) {
 		}
 	}
 	ciphertext := make([]byte, len(data))
-	stream := cipher.NewCFBEncrypter(a.block, iv)
+	stream := cipher.NewCFBEncrypter(a.block, iv) //nolint:staticcheck
 	stream.XORKeyStream(ciphertext, data)
 	result := append(iv, ciphertext...)
 	return result, nil
@@ -88,7 +88,7 @@ func NewStreamWriter(key []byte, output io.Writer, cc *c) (*cipher.StreamWriter,
 			return nil, err
 		}
 	}
-	blockMode := cipher.NewCFBEncrypter(block, iv)
+	blockMode := cipher.NewCFBEncrypter(block, iv) //nolint:staticcheck
 	writer := &cipher.StreamWriter{S: blockMode, W: output}
 	// Only add iv when it is not constant
 	if cc.Iv == "" {
