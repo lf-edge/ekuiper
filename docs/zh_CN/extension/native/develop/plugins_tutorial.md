@@ -166,7 +166,7 @@ contract 的依赖。典型的 go.mod 如下：
 ```go
 module samplePlugin
 
-go 1.23
+go 1.24
 
 require (
 github.com/lf-edge/ekuiper/contract/v2 v2.0.0-alpha.5
@@ -178,7 +178,7 @@ github.com/lf-edge/ekuiper/contract/v2 v2.0.0-alpha.5
  ```go
 module samplePlugin
 
-go 1.23
+go 1.24
 
 require (
 github.com/lf-edge/ekuiper/contract/v2 v2.0.0
@@ -233,14 +233,14 @@ x.x.x，例如`lfedge/ekuiper:0.4.0`。)；与运行版本相比，开发版提�
       ```
 
 eKuiper 也提供了精简的 alpine 版本，但是不包含 go 环境。用户可以使用 alpine 版本的镜像来编译插件，但这就需要用户自己安装相应的依赖。用户也可以使用
-golang 镜像作为基础环境(如果您使用的是 golang 1.23 版本的镜像，并且想要编译 eKuiper 插件，您可以使用提供的 base
+golang 镜像作为基础环境(如果您使用的是 golang 1.24 版本的镜像，并且想要编译 eKuiper 插件，您可以使用提供的 base
 image (<https://github.com/lf-edge/ekuiper/pkgs/container/ekuiper%2Fbase>)作为基础环境。使用这个 base image 所编译的插件，在部署到
 alpine版本 的 eKuiper 时，不会出现`Error loading shared library libresolve.so.2`的错误)。具体步骤如下:
 
 1. 运行 golang 相应版本 docker。需要把本地插件目录和 eKuiper 源码 mount 到 docker 里的目录中，这样才能在 docker 中访问插件项目并编译。笔者的插件项目位于本地 `/var/git` 目录。下面的命令中，我们把本地的 `/var/git` 目录映射到 docker 内的 `/go/plugins` 目录中。
 
     ```shell
-    docker run --rm -it -v /var/git:/go/plugins -w /go/plugins golang:1.23.1 /bin/sh
+    docker run --rm -it -v /var/git:/go/plugins -w /go/plugins golang:1.24.1 /bin/sh
     ```
 
 2. 执行下面命令，便可以得到编译好的插件
