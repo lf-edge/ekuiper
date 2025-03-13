@@ -442,6 +442,18 @@ func splitSource(t *DataSourcePlan, ss api.SourceConnector, options *api.RuleOpt
 	return srcConnNode, ops, 0, nil
 }
 
+func checkSharedSourceOption(streams []*streamInfo, opt *api.RuleOption) error {
+	if !opt.DisableBufferFullDiscard {
+		return nil
+	}
+	for _, stream := range streams {
+		if stream.stmt.Options.SHARED {
+			return fmt.Errorf("disableBufferFullDiscard can't be enabled with shared stream %v", stream.stmt.Name)
+		}
+	}
+	return nil
+}
+
 func createLogicalPlan(stmt *ast.SelectStatement, opt *api.RuleOption, store kv.KeyValue) (lp LogicalPlan, err error) {
 	defer func() {
 		if err != nil {
@@ -463,6 +475,9 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *api.RuleOption, store kv.
 
 	streamStmts, analyticFuncs, analyticFieldFuncs, err := decorateStmt(stmt, store)
 	if err != nil {
+		return nil, err
+	}
+	if err := checkSharedSourceOption(streamStmts, opt); err != nil {
 		return nil, err
 	}
 
