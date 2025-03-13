@@ -547,7 +547,7 @@ func (t *Tuple) Pick(allWildcard bool, cols [][]string, wildcardEmitters map[str
 		if len(cols) > 0 {
 			pickedMap := make(map[string]any, len(cols))
 			for _, colTab := range cols {
-				if colTab[1] == "" || colTab[1] == string(ast.DefaultStream) || colTab[1] == t.Emitter {
+				if colTab[1] == t.Emitter || colTab[1] == "" || colTab[1] == string(ast.DefaultStream) {
 					if v, ok := t.Message.Value(colTab[0], colTab[1]); ok {
 						pickedMap[colTab[0]] = v
 					} else if sendNil {
