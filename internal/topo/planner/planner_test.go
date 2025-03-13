@@ -25,6 +25,7 @@ import (
 
 	"github.com/gdexlab/go-render/render"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/io/mqtt"
@@ -5025,4 +5026,21 @@ func TestPlanTopo(t *testing.T) {
 			assert.Equal(t, tt.topo, topo.GetTopo())
 		})
 	}
+}
+
+func TestCheckSharedSourceOption(t *testing.T) {
+	s1 := []*streamInfo{
+		{
+			stmt: &ast.StreamStmt{
+				Name: "s1",
+				Options: &ast.Options{
+					SHARED: true,
+				},
+			},
+		},
+	}
+	r1 := &api.RuleOption{
+		DisableBufferFullDiscard: true,
+	}
+	require.Error(t, checkSharedSourceOption(s1, r1))
 }
