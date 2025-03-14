@@ -45,7 +45,7 @@ require (
 	github.com/jinzhu/now v1.1.5
 	github.com/jmrobles/h2go v0.5.0
 	github.com/keepeye/logrus-filename v0.0.0-20190711075016-ce01a4391dd1
-	github.com/klauspost/compress v1.17.9
+	github.com/klauspost/compress v1.17.11
 	github.com/lf-edge/ekuiper/contract/v2 v2.0.0
 	github.com/lib/pq v1.10.9
 	github.com/mattn/go-adodb v0.0.1
@@ -63,7 +63,7 @@ require (
 	github.com/pebbe/zmq4 v1.2.11
 	github.com/pingcap/failpoint v0.0.0-20240528011301-b51a646c7c86
 	github.com/prestodb/presto-go-client v0.0.0-20240426182841-905ac40a1783
-	github.com/prometheus/client_golang v1.20.3
+	github.com/prometheus/client_golang v1.21.0
 	github.com/redis/go-redis/v9 v9.6.1
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/segmentio/kafka-go v0.4.47
@@ -95,7 +95,7 @@ require (
 	golang.org/x/text v0.22.0
 	google.golang.org/genproto/googleapis/api v0.0.0-20240823204242-4ba0660f739c
 	google.golang.org/grpc v1.66.0
-	google.golang.org/protobuf v1.34.2
+	google.golang.org/protobuf v1.36.1
 	gopkg.in/ini.v1 v1.67.0
 	gopkg.in/yaml.v3 v3.0.1
 	modernc.org/ql v1.4.7
@@ -301,7 +301,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c // indirect
 	github.com/prometheus/client_model v0.6.1
-	github.com/prometheus/common v0.59.1
+	github.com/prometheus/common v0.62.0
 	github.com/prometheus/procfs v0.15.1 // indirect
 	github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
@@ -344,7 +344,7 @@ require (
 	golang.org/x/crypto v0.35.0 // indirect
 	golang.org/x/mod v0.21.0 // indirect
 	golang.org/x/net v0.36.0 // indirect
-	golang.org/x/oauth2 v0.22.0 // indirect
+	golang.org/x/oauth2 v0.24.0 // indirect
 	golang.org/x/sync v0.11.0 // indirect
 	golang.org/x/sys v0.30.0 // indirect
 	golang.org/x/term v0.29.0 // indirect
@@ -380,8 +380,10 @@ require (
 )
 
 replace (
+	github.com/segmentio/kafka-go => github.com/yisaer/kafka-go v0.0.0-20250314054731-4abde56ff0ac
 	google.golang.org/genproto => google.golang.org/genproto v0.0.0-20240701130421-f6361c86f094
 	google.golang.org/genproto/googleapis/rpc => google.golang.org/genproto/googleapis/rpc v0.0.0-20240701130421-f6361c86f094
+
 )
 
 go 1.24.1
