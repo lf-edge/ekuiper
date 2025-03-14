@@ -1739,8 +1739,8 @@ github.com/xwb1989/sqlparser v0.0.0-20180606152119-120387863bf2 h1:zzrxE1FKn5ryB
 github.com/xwb1989/sqlparser v0.0.0-20180606152119-120387863bf2/go.mod h1:hzfGeIUDq/j97IG+FhNqkowIyEcD88LrW6fyU3K3WqY=
 github.com/yisaer/file-rotatelogs v0.0.0-20240606072000-fe792f3c4e04 h1:Ynl+fQB7r5qCcVp8YGpv6FM8lENDd+fbtgmWV6EvqV0=
 github.com/yisaer/file-rotatelogs v0.0.0-20240606072000-fe792f3c4e04/go.mod h1:sHmlLyviUxcsK1WS/LDK92OR4l5ns0wbDs3nT1YnOeE=
-github.com/yisaer/kafka-go v0.0.0-20250227123614-f910c2704447 h1:rj/dMVh1xSl3m9wx8aK8X0kl7Z/8G0VaaGa/9d6nYwE=
-github.com/yisaer/kafka-go v0.0.0-20250227123614-f910c2704447/go.mod h1:hPOwgQDYuz6bmbMssPAc+ML7feMIFwo0UF1s3ylh9y8=
+github.com/yisaer/kafka-go v0.0.0-20250314023954-78baec97a73d h1:jPqoyPCYblV/thjuhnkCIK6lasxe16vj20wDKe60gv4=
+github.com/yisaer/kafka-go v0.0.0-20250314023954-78baec97a73d/go.mod h1:hPOwgQDYuz6bmbMssPAc+ML7feMIFwo0UF1s3ylh9y8=
 github.com/youmark/pkcs8 v0.0.0-20181117223130-1be2e3e5546d/go.mod h1:rHwXgn7JulP+udvsHwJoVG1YGAP6VLg4y9I5dyZdqmA=
 github.com/yuin/goldmark v1.1.25/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.1.27/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
