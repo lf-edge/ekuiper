@@ -344,6 +344,18 @@ func CreateLogicalPlan(stmt *ast.SelectStatement, opt *def.RuleOption, store kv.
 	return createLogicalPlan(stmt, opt, store)
 }
 
+func checkSharedSourceOption(streams []*streamInfo, opt *def.RuleOption) error {
+	if !opt.DisableBufferFullDiscard {
+		return nil
+	}
+	for _, stream := range streams {
+		if stream.stmt.Options.SHARED {
+			return fmt.Errorf("disableBufferFullDiscard can't be enabled with shared stream %v", stream.stmt.Name)
+		}
+	}
+	return nil
+}
+
 func createLogicalPlan(stmt *ast.SelectStatement, opt *def.RuleOption, store kv.KeyValue) (lp LogicalPlan, err error) {
 	defer func() {
 		if err != nil {
@@ -368,6 +380,10 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *def.RuleOption, store kv.
 	if err != nil {
 		return nil, err
 	}
+	if err := checkSharedSourceOption(streamStmts, opt); err != nil {
+		return nil, err
+	}
+
 	rewriteRes := rewriteStmt(stmt, opt)
 
 	for _, sInfo := range streamStmts {

@@ -26,6 +26,7 @@ import (
 
 	"github.com/gdexlab/go-render/render"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/io/mqtt"
@@ -4608,4 +4609,21 @@ func TestTransformSourceNode(t *testing.T) {
 			assert.Equal(t, len(tc.ops), len(ops))
 		})
 	}
+}
+
+func TestCheckSharedSourceOption(t *testing.T) {
+	s1 := []*streamInfo{
+		{
+			stmt: &ast.StreamStmt{
+				Name: "s1",
+				Options: &ast.Options{
+					SHARED: true,
+				},
+			},
+		},
+	}
+	r1 := &def.RuleOption{
+		DisableBufferFullDiscard: true,
+	}
+	require.Error(t, checkSharedSourceOption(s1, r1))
 }
