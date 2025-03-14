@@ -380,6 +380,10 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *def.RuleOption, store kv.
 	if err != nil {
 		return nil, err
 	}
+	if err := checkSharedSourceOption(streamStmts, opt); err != nil {
+		return nil, err
+	}
+
 	rewriteRes := rewriteStmt(stmt, opt)
 
 	for _, sInfo := range streamStmts {
