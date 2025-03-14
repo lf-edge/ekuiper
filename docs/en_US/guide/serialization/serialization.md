@@ -88,12 +88,12 @@ To build for alpine environment, we can use the golang alpine image as the base 
 1. In your plugin project, create a Makefile and make sure the plugin can be built by `make` command. Check the [sample project](https://github.com/lf-edge/ekuiper/tree/master/internal/converter/custom/test) for reference.
 2. Check the golang version of your eKuiper. Check the `GO_VERSION` arg in
    the [docker file](https://github.com/lf-edge/ekuiper/blob/master/deploy/docker/Dockerfile) of the corresponding
-   eKuiper version. For example, if the version is `1.23.1`, use `golang:1.23.1-alpine` docker image for build.
+   eKuiper version. For example, if the version is `1.24.1`, use `golang:1.24.1-alpine` docker image for build.
 3. Switch to your project location then start the golang docker container with your project, install dependencies then execute `make`, make sure build is successful.
 
    ```shell
    cd ${yourProjectLoc}
-   docker run --rm -it -v "$PWD":/usr/src/myapp -w /usr/src/myapp golang:1.23.1-alpine sh
+   docker run --rm -it -v "$PWD":/usr/src/myapp -w /usr/src/myapp golang:1.24.1-alpine sh
    ### inside docker container
    /usr/src/myapp # apk add gcc make libc-dev
    /usr/src/myapp # make

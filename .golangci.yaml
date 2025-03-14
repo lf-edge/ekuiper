@@ -2,7 +2,7 @@ run:
   timeout: 10m
   build-tags:
     - full
-  go: '1.23'
+  go: '1.24'
 
 linters:
   disable-all: true

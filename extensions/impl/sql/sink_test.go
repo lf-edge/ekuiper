@@ -1,4 +1,4 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -330,4 +330,49 @@ func TestSQLSinkReconnect(t *testing.T) {
 		"action": "update",
 	}))
 	require.False(t, sqlSink.needReconnect)
+}
+
+func TestConsume(t *testing.T) {
+	tests := []struct {
+		name  string
+		props map[string]any
+		exp   map[string]any
+	}{
+		{
+			name: "has fields",
+			props: map[string]any{
+				"actionField": "action",
+				"keyField":    "a",
+				"fields":      []string{"a", "b"},
+				"other":       "other",
+			},
+			exp: map[string]any{
+				"actionField": "action",
+				"keyField":    "a",
+				"other":       "other",
+			},
+		},
+		{
+			name: "no fields",
+			props: map[string]any{
+				"actionField": "action",
+				"keyField":    "a",
+				"dumbfields":  []string{"a", "b"},
+				"other":       "other",
+			},
+			exp: map[string]any{
+				"actionField": "action",
+				"keyField":    "a",
+				"dumbfields":  []string{"a", "b"},
+				"other":       "other",
+			},
+		},
+	}
+	s := &SQLSinkConnector{}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			s.Consume(test.props)
+			require.Equal(t, test.exp, test.props)
+		})
+	}
 }

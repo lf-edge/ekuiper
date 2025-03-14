@@ -25,8 +25,8 @@ require (
 	github.com/dop251/goja v0.0.0-20240828124009-016eb7256539
 	github.com/eclipse/paho.golang v0.21.0
 	github.com/eclipse/paho.mqtt.golang v1.5.0
-	github.com/edgexfoundry/go-mod-core-contracts/v4 v4.0.0-dev.22
-	github.com/edgexfoundry/go-mod-messaging/v4 v4.0.0-dev.12
+	github.com/edgexfoundry/go-mod-core-contracts/v4 v4.0.1
+	github.com/edgexfoundry/go-mod-messaging/v4 v4.0.1
 	github.com/gdexlab/go-render v1.0.1
 	github.com/go-sql-driver/mysql v1.8.1
 	github.com/godror/godror v0.44.7
@@ -92,7 +92,7 @@ require (
 	go.opentelemetry.io/otel/trace v1.29.0
 	go.uber.org/automaxprocs v1.5.3
 	golang.org/x/exp v0.0.0-20240904232852-e7e105dedf7e
-	golang.org/x/text v0.21.0
+	golang.org/x/text v0.22.0
 	google.golang.org/genproto/googleapis/api v0.0.0-20240823204242-4ba0660f739c
 	google.golang.org/grpc v1.66.0
 	google.golang.org/protobuf v1.36.1
@@ -208,7 +208,7 @@ require (
 	github.com/go-openapi/validate v0.24.0 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
-	github.com/go-playground/validator/v10 v10.24.0 // indirect
+	github.com/go-playground/validator/v10 v10.25.0 // indirect
 	github.com/go-resty/resty/v2 v2.13.1 // indirect
 	github.com/go-sourcemap/sourcemap v2.1.4+incompatible // indirect
 	github.com/go-zookeeper/zk v1.0.3 // indirect
@@ -274,7 +274,7 @@ require (
 	github.com/mtibben/percent v0.2.1 // indirect
 	github.com/muhlemmer/gu v0.3.1 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
-	github.com/nats-io/nats.go v1.38.0 // indirect
+	github.com/nats-io/nats.go v1.39.1 // indirect
 	github.com/nats-io/nkeys v0.4.9 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
 	github.com/ncruces/go-strftime v0.1.9 // indirect
@@ -341,13 +341,13 @@ require (
 	go.opentelemetry.io/proto/otlp v1.3.1 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.27.0 // indirect
-	golang.org/x/crypto v0.32.0 // indirect
+	golang.org/x/crypto v0.35.0 // indirect
 	golang.org/x/mod v0.21.0 // indirect
-	golang.org/x/net v0.34.0 // indirect
+	golang.org/x/net v0.36.0 // indirect
 	golang.org/x/oauth2 v0.24.0 // indirect
-	golang.org/x/sync v0.10.0 // indirect
-	golang.org/x/sys v0.29.0 // indirect
-	golang.org/x/term v0.28.0 // indirect
+	golang.org/x/sync v0.11.0 // indirect
+	golang.org/x/sys v0.30.0 // indirect
+	golang.org/x/term v0.29.0 // indirect
 	golang.org/x/time v0.6.0 // indirect
 	golang.org/x/tools v0.24.0 // indirect
 	golang.org/x/xerrors v0.0.0-20240716161551-93cc26a95ae9 // indirect
@@ -386,4 +386,4 @@ replace (
 
 )
 
-go 1.23.4
+go 1.24.1

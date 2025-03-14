@@ -13,14 +13,14 @@
 go.mod 中的 go 语言版本和与主项目相同的依赖模块的版本一致。
 
 例如，开发对应 eKuiper v2.0.0 版本的插件时，需要先看 eKuiper 对应版本的 go.mod 文件。确保插件项目的 go 版本和 contract mod
-版本一致。例如以下的插件 go.mod 中，使用了 contract mod v2.0.0 版本，go 1.23.0 版本。
+版本一致。例如以下的插件 go.mod 中，使用了 contract mod v2.0.0 版本，go 1.24.0 版本。
 
 ```go.mod
 module mycompany.com/myplugin
 
 require github.com/lf-edge/ekuiper/contract/v2 v2.0.0
 
-go 1.23.0
+go 1.24.0
 ```
 
 ## 插件开发

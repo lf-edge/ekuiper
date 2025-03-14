@@ -1,4 +1,4 @@
-// Copyright 2023-2024 EMQ Technologies Co., Ltd.
+// Copyright 2023-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -138,7 +138,7 @@ func NewAESStreamDecrypter(key, iv []byte) (cipher.Stream, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Error creating AES cipher block: %v", err)
 	}
-	return cipher.NewCFBDecrypter(block, iv), nil
+	return cipher.NewCFBDecrypter(block, iv), nil //nolint:staticcheck
 }
 
 func decrypt(mode string, key []byte, secret []byte) ([]byte, error) {
