@@ -363,4 +363,4 @@ toolchain go1.22.8
 
 replace github.com/lf-edge/ekuiper/extensions v0.0.0-20240606005720-bdb167e36fd7 => ./extensions
 
-replace github.com/segmentio/kafka-go => github.com/yisaer/kafka-go v0.0.0-20250227123614-f910c2704447
+replace github.com/segmentio/kafka-go => github.com/yisaer/kafka-go v0.0.0-20250314054731-4abde56ff0ac
