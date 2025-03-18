@@ -199,7 +199,7 @@ func (k *KafkaSink) ping(address string) error {
 	return nil
 }
 
-func (k *KafkaSink) buildKafkaWriter() error {
+func (k *KafkaSink) buildKafkaWriter(ctx api.StreamContext) error {
 	brokers := strings.Split(k.kc.Brokers, ",")
 	w := &kafkago.Writer{
 		Addr:  kafkago.TCP(brokers...),
@@ -218,6 +218,8 @@ func (k *KafkaSink) buildKafkaWriter() error {
 			TLS:  k.tlsConfig,
 		},
 		Compression: toCompression(k.kc.Compression),
+		RuleID:      ctx.GetRuleId(),
+		OpID:        ctx.GetOpId(),
 	}
 	k.writer = w
 	return nil
@@ -230,7 +232,7 @@ func (k *KafkaSink) Close(ctx api.StreamContext) error {
 func (k *KafkaSink) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) error {
 	k.ruleID = ctx.GetRuleId()
 	k.opID = ctx.GetOpId()
-	err := k.buildKafkaWriter()
+	err := k.buildKafkaWriter(ctx)
 	if err != nil {
 		sch(api.ConnectionDisconnected, err.Error())
 	} else {
