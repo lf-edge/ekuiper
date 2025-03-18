@@ -1072,6 +1072,73 @@
           ],
           "title": "Exceptions QPS",
           "type": "timeseries"
+        },
+        {
+          "datasource": "${DS_TEST-CLUSTER}",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                }
+              },
+              "mappings": []
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 43
+          },
+          "id": 9,
+          "options": {
+            "displayLabels": [
+              "name"
+            ],
+            "legend": {
+              "displayMode": "table",
+              "placement": "right",
+              "showLegend": true,
+              "values": [
+                "value"
+              ]
+            },
+            "pieType": "donut",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            }
+          },
+          "pluginVersion": "9.5.3",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "ad687d3e-23e5-4418-bb75-0dfb04fb4721"
+              },
+              "editorMode": "builder",
+              "expr": "increase(kuiper_source_records_in_total{instance=\"$instance\", rule=\"$rule\"}[$__range])",
+              "legendFormat": "{{op}}-{{type}}",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "Records Recv in Range",
+          "type": "piechart"
         }
       ],
       "title": "Source Panel",
@@ -1853,6 +1920,7 @@
                 "mode": "palette-classic"
               },
               "custom": {
+                "axisBorderShow": false,
                 "axisCenteredZero": false,
                 "axisColorMode": "text",
                 "axisLabel": "",
@@ -1866,6 +1934,7 @@
                   "tooltip": false,
                   "viz": false
                 },
+                "insertNulls": false,
                 "lineInterpolation": "linear",
                 "lineWidth": 1,
                 "pointSize": 5,
@@ -1904,7 +1973,7 @@
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 30
+            "y": 8
           },
           "id": 51,
           "options": {
@@ -1954,6 +2023,7 @@
                 "mode": "palette-classic"
               },
               "custom": {
+                "axisBorderShow": false,
                 "axisCenteredZero": false,
                 "axisColorMode": "text",
                 "axisLabel": "",
@@ -1967,6 +2037,7 @@
                   "tooltip": false,
                   "viz": false
                 },
+                "insertNulls": false,
                 "lineInterpolation": "linear",
                 "lineWidth": 1,
                 "pointSize": 5,
@@ -2005,7 +2076,7 @@
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 30
+            "y": 8
           },
           "id": 52,
           "options": {
@@ -2032,7 +2103,7 @@
               "fullMetaSearch": false,
               "hide": false,
               "includeNullMetadata": true,
-              "legendFormat": "{{type}}",
+              "legendFormat": "{{type}}-{{op}}",
               "range": true,
               "refId": "A",
               "useBackend": false
@@ -2050,6 +2121,7 @@
                 "mode": "palette-classic"
               },
               "custom": {
+                "axisBorderShow": false,
                 "axisCenteredZero": false,
                 "axisColorMode": "text",
                 "axisLabel": "",
@@ -2063,6 +2135,7 @@
                   "tooltip": false,
                   "viz": false
                 },
+                "insertNulls": false,
                 "lineInterpolation": "linear",
                 "lineWidth": 1,
                 "pointSize": 5,
@@ -2101,7 +2174,7 @@
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 38
+            "y": 16
           },
           "id": 53,
           "options": {
@@ -2128,13 +2201,13 @@
               "fullMetaSearch": false,
               "hide": false,
               "includeNullMetadata": true,
-              "legendFormat": "{{op}}",
+              "legendFormat": "query_rows-{{op}}",
               "range": true,
               "refId": "A",
               "useBackend": false
             }
           ],
-          "title": "Rows each Query",
+          "title": "Query rows",
           "type": "timeseries"
         }
       ],
@@ -2159,6 +2232,7 @@
                 "mode": "palette-classic"
               },
               "custom": {
+                "axisBorderShow": false,
                 "axisCenteredZero": false,
                 "axisColorMode": "text",
                 "axisLabel": "",
@@ -2172,6 +2246,7 @@
                   "tooltip": false,
                   "viz": false
                 },
+                "insertNulls": false,
                 "lineInterpolation": "linear",
                 "lineWidth": 1,
                 "pointSize": 5,
@@ -2210,7 +2285,7 @@
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 31
+            "y": 7
           },
           "id": 40,
           "options": {
@@ -2248,7 +2323,10 @@
               "useBackend": false
             },
             {
-              "datasource": "${DS_TEST-CLUSTER}",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "PC96415006F908B67"
+              },
               "disableTextWrap": false,
               "editorMode": "builder",
               "expr": "histogram_quantile(0.95, sum by(le) (rate(kuiper_io_duration_hist_bucket{instance=\"$instance\", rule=\"$rule\", io=\"sink\", type=\"kafka\"}[1m])))",
@@ -2274,6 +2352,7 @@
                 "mode": "palette-classic"
               },
               "custom": {
+                "axisBorderShow": false,
                 "axisCenteredZero": false,
                 "axisColorMode": "text",
                 "axisLabel": "",
@@ -2287,6 +2366,7 @@
                   "tooltip": false,
                   "viz": false
                 },
+                "insertNulls": false,
                 "lineInterpolation": "linear",
                 "lineWidth": 1,
                 "pointSize": 5,
@@ -2325,7 +2405,7 @@
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 31
+            "y": 7
           },
           "id": 41,
           "options": {
@@ -2369,6 +2449,7 @@
                 "mode": "palette-classic"
               },
               "custom": {
+                "axisBorderShow": false,
                 "axisCenteredZero": false,
                 "axisColorMode": "text",
                 "axisLabel": "",
@@ -2382,6 +2463,7 @@
                   "tooltip": false,
                   "viz": false
                 },
+                "insertNulls": false,
                 "lineInterpolation": "linear",
                 "lineWidth": 1,
                 "pointSize": 5,
@@ -2420,7 +2502,7 @@
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 39
+            "y": 15
           },
           "id": 44,
           "options": {
@@ -2444,12 +2526,12 @@
               "datasource": "${DS_TEST-CLUSTER}",
               "disableTextWrap": false,
               "editorMode": "builder",
-              "expr": "histogram_quantile(0.95, sum by(le, type) (rate(kafka_client_writer_duration_microseconds_bucket{instance=\"$instance\", rule=\"$rule\"}[1m])))",
+              "expr": "histogram_quantile(0.95, sum by(le, type, op) (rate(kafka_client_writer_duration_microseconds_bucket{instance=\"$instance\", rule=\"$rule\"}[1m])))",
               "fullMetaSearch": false,
               "hide": false,
               "includeNullMetadata": false,
               "instant": false,
-              "legendFormat": "{{type}}",
+              "legendFormat": "{{type}}-{{op}}",
               "range": true,
               "refId": "A",
               "useBackend": false
@@ -2467,6 +2549,7 @@
                 "mode": "palette-classic"
               },
               "custom": {
+                "axisBorderShow": false,
                 "axisCenteredZero": false,
                 "axisColorMode": "text",
                 "axisLabel": "",
@@ -2480,6 +2563,7 @@
                   "tooltip": false,
                   "viz": false
                 },
+                "insertNulls": false,
                 "lineInterpolation": "linear",
                 "lineWidth": 1,
                 "pointSize": 5,
@@ -2518,7 +2602,7 @@
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 39
+            "y": 15
           },
           "id": 43,
           "options": {
@@ -2545,7 +2629,7 @@
               "fullMetaSearch": false,
               "hide": false,
               "includeNullMetadata": true,
-              "legendFormat": "{{type}}",
+              "legendFormat": "{{type}}-{{op}}",
               "range": true,
               "refId": "A",
               "useBackend": false
@@ -2563,6 +2647,7 @@
                 "mode": "palette-classic"
               },
               "custom": {
+                "axisBorderShow": false,
                 "axisCenteredZero": false,
                 "axisColorMode": "text",
                 "axisLabel": "",
@@ -2576,6 +2661,7 @@
                   "tooltip": false,
                   "viz": false
                 },
+                "insertNulls": false,
                 "lineInterpolation": "linear",
                 "lineWidth": 1,
                 "pointSize": 5,
@@ -2614,7 +2700,7 @@
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 47
+            "y": 23
           },
           "id": 45,
           "options": {
@@ -2641,13 +2727,13 @@
               "fullMetaSearch": false,
               "hide": false,
               "includeNullMetadata": true,
-              "legendFormat": "{{type}}",
+              "legendFormat": "{{type}}-{{op}}",
               "range": true,
               "refId": "A",
               "useBackend": false
             }
           ],
-          "title": "Client Operation Bytes Per Second",
+          "title": "Client Operation QPS",
           "type": "timeseries"
         },
         {
@@ -2659,6 +2745,7 @@
                 "mode": "palette-classic"
               },
               "custom": {
+                "axisBorderShow": false,
                 "axisCenteredZero": false,
                 "axisColorMode": "text",
                 "axisLabel": "",
@@ -2672,7 +2759,11 @@
                   "tooltip": false,
                   "viz": false
                 },
+                "insertNulls": false,
                 "lineInterpolation": "linear",
+                "lineStyle": {
+                  "fill": "solid"
+                },
                 "lineWidth": 1,
                 "pointSize": 5,
                 "scaleDistribution": {
@@ -2702,40 +2793,15 @@
                   }
                 ]
               },
-              "unit": "decbytes"
+              "unit": "cps"
             },
-            "overrides": [
-              {
-                "__systemRef": "hideSeriesFrom",
-                "matcher": {
-                  "id": "byNames",
-                  "options": {
-                    "mode": "exclude",
-                    "names": [
-                      "batch_bytes"
-                    ],
-                    "prefix": "All except:",
-                    "readOnly": true
-                  }
-                },
-                "properties": [
-                  {
-                    "id": "custom.hideFrom",
-                    "value": {
-                      "legend": false,
-                      "tooltip": false,
-                      "viz": true
-                    }
-                  }
-                ]
-              }
-            ]
+            "overrides": []
           },
           "gridPos": {
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 47
+            "y": 23
           },
           "id": 48,
           "options": {
@@ -2746,7 +2812,9 @@
               ],
               "displayMode": "table",
               "placement": "right",
-              "showLegend": true
+              "showLegend": true,
+              "sortBy": "Last",
+              "sortDesc": true
             },
             "tooltip": {
               "mode": "single",
@@ -2758,11 +2826,11 @@
               "datasource": "${DS_TEST-CLUSTER}",
               "disableTextWrap": false,
               "editorMode": "builder",
-              "expr": "kafka_client_writer_batch_gauge{instance=\"$instance\", rule=\"$rule\", type=\"bytes\"}",
+              "expr": "rate(kafka_client_writer_batch_range_counter{instance=\"$instance\", rule=\"$rule\", type=\"bytes\"}[1m])",
               "fullMetaSearch": false,
               "hide": false,
               "includeNullMetadata": true,
-              "legendFormat": "batch_bytes",
+              "legendFormat": "{{range}}-{{op}}",
               "range": true,
               "refId": "A",
               "useBackend": false
@@ -2780,6 +2848,7 @@
                 "mode": "palette-classic"
               },
               "custom": {
+                "axisBorderShow": false,
                 "axisCenteredZero": false,
                 "axisColorMode": "text",
                 "axisLabel": "",
@@ -2793,6 +2862,7 @@
                   "tooltip": false,
                   "viz": false
                 },
+                "insertNulls": false,
                 "lineInterpolation": "linear",
                 "lineWidth": 1,
                 "pointSize": 5,
@@ -2831,7 +2901,7 @@
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 55
+            "y": 31
           },
           "id": 49,
           "options": {
@@ -2842,7 +2912,9 @@
               ],
               "displayMode": "table",
               "placement": "right",
-              "showLegend": true
+              "showLegend": true,
+              "sortBy": "Last",
+              "sortDesc": true
             },
             "tooltip": {
               "mode": "single",
@@ -2854,18 +2926,85 @@
               "datasource": "${DS_TEST-CLUSTER}",
               "disableTextWrap": false,
               "editorMode": "builder",
-              "expr": "kafka_client_writer_batch_gauge{instance=\"$instance\", rule=\"$rule\", type=\"msg\"}",
+              "expr": "rate(kafka_client_writer_batch_range_counter{instance=\"$instance\", rule=\"$rule\", type=\"msg\"}[1m])",
               "fullMetaSearch": false,
               "hide": false,
               "includeNullMetadata": true,
-              "legendFormat": "batch_msg",
+              "legendFormat": "{{range}}-{{op}}",
               "range": true,
               "refId": "A",
               "useBackend": false
             }
           ],
-          "title": "Each Batch Count",
+          "title": "batch msg count",
           "type": "timeseries"
+        },
+        {
+          "datasource": "${DS_TEST-CLUSTER}",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                }
+              },
+              "mappings": []
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 31
+          },
+          "id": 46,
+          "options": {
+            "displayLabels": [
+              "name"
+            ],
+            "legend": {
+              "displayMode": "table",
+              "placement": "right",
+              "showLegend": true,
+              "values": [
+                "value"
+              ]
+            },
+            "pieType": "donut",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            }
+          },
+          "pluginVersion": "9.5.3",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "ad687d3e-23e5-4418-bb75-0dfb04fb4721"
+              },
+              "editorMode": "builder",
+              "expr": "increase(kuiper_kafka_sink_counter{instance=\"$instance\", rule=\"$rule\", target=\"msg\"}[$__range])",
+              "legendFormat": "{{op}}-{{type}}",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "Messages Sent in Range",
+          "type": "piechart"
         }
       ],
       "title": "Kafka sink",
