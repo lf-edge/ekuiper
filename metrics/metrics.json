@@ -1072,6 +1072,73 @@
           ],
           "title": "Exceptions QPS",
           "type": "timeseries"
+        },
+        {
+          "datasource": "${DS_TEST-CLUSTER}",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                }
+              },
+              "mappings": []
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 43
+          },
+          "id": 9,
+          "options": {
+            "displayLabels": [
+              "name"
+            ],
+            "legend": {
+              "displayMode": "table",
+              "placement": "right",
+              "showLegend": true,
+              "values": [
+                "value"
+              ]
+            },
+            "pieType": "donut",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            }
+          },
+          "pluginVersion": "9.5.3",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "ad687d3e-23e5-4418-bb75-0dfb04fb4721"
+              },
+              "editorMode": "builder",
+              "expr": "increase(kuiper_source_records_in_total{instance=\"$instance\", rule=\"$rule\"}[$__range])",
+              "legendFormat": "{{op}}-{{type}}",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "Records Recv in Range",
+          "type": "piechart"
         }
       ],
       "title": "Source Panel",
@@ -2871,6 +2938,73 @@
           ],
           "title": "batch msg count",
           "type": "timeseries"
+        },
+        {
+          "datasource": "${DS_TEST-CLUSTER}",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                }
+              },
+              "mappings": []
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 31
+          },
+          "id": 46,
+          "options": {
+            "displayLabels": [
+              "name"
+            ],
+            "legend": {
+              "displayMode": "table",
+              "placement": "right",
+              "showLegend": true,
+              "values": [
+                "value"
+              ]
+            },
+            "pieType": "donut",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            }
+          },
+          "pluginVersion": "9.5.3",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "ad687d3e-23e5-4418-bb75-0dfb04fb4721"
+              },
+              "editorMode": "builder",
+              "expr": "increase(kuiper_kafka_sink_counter{instance=\"$instance\", rule=\"$rule\", target=\"msg\"}[$__range])",
+              "legendFormat": "{{op}}-{{type}}",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "Messages Sent in Range",
+          "type": "piechart"
         }
       ],
       "title": "Kafka sink",
