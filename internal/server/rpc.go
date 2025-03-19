@@ -1,4 +1,4 @@
-// Copyright 2021-2024 EMQ Technologies Co., Ltd.
+// Copyright 2021-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -94,7 +94,9 @@ func (t *Server) CreateQuery(sql string, reply *string) error {
 	if err != nil {
 		return err
 	} else {
-		rs := rule.NewState(def.GetDefaultRule(QueryRuleId, sql))
+		rs := rule.NewState(def.GetDefaultRule(QueryRuleId, sql), func(string, bool) {
+			// do nothing
+		})
 		rs.WithTopo(tp)
 		registry.register(QueryRuleId, rs)
 		_ = rs.Start()

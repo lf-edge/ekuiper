@@ -111,7 +111,12 @@ func (rr *RuleRegistry) CreateRule(name, ruleJson string) (id string, err error)
 	}
 	ruleJson = replace.ReplaceRuleJson(ruleJson, conf.IsTesting)
 	// create state and save
-	rs := rule.NewState(r)
+	rs := rule.NewState(r, func(id string, b bool) {
+		err = rr.updateTrigger(id, b)
+		if err != nil {
+			conf.Log.Warnf("update trigger error: %v", err)
+		}
+	})
 	// Validate the topo
 	tp, err := rs.Validate()
 	if err != nil {
@@ -144,7 +149,12 @@ func (rr *RuleRegistry) CreateRule(name, ruleJson string) (id string, err error)
 // Unlike creation, 1. it suppose the rule is valid thus, it will always create the rule state in registry
 // 2. It does not handle rule saving to db.
 func (rr *RuleRegistry) RecoverRule(r *def.Rule) string {
-	rs := rule.NewState(r)
+	rs := rule.NewState(r, func(id string, b bool) {
+		err := rr.updateTrigger(id, b)
+		if err != nil {
+			conf.Log.Warnf("update trigger error: %v", err)
+		}
+	})
 	rr.register(r.Id, rs)
 	if !r.Triggered {
 		return fmt.Sprintf("Rule %s was stopped.", r.Id)
