@@ -20,6 +20,7 @@ import (
 	"io"
 	"os"
 	"path"
+	"runtime/debug"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -134,6 +135,11 @@ func (s *Topo) Cancel() error {
 			rt.Close(s.ctx, s.name, s.runId)
 		}
 	}
+	go func() {
+		time.Sleep(3 * time.Second)
+		debug.FreeOSMemory()
+		conf.Log.Infof("free os memory")
+	}()
 	return nil
 }
 
