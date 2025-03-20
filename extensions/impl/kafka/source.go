@@ -191,10 +191,13 @@ func (k *KafkaSource) Subscribe(ctx api.StreamContext, ingest api.BytesIngest, i
 		}
 		msg, err := k.reader.ReadMessage(ctx)
 		if err != nil {
+			KafkaSourceCounter.WithLabelValues(metrics.LblException, ctx.GetRuleId(), ctx.GetOpId()).Inc()
 			ingestError(ctx, err)
 			continue
 		}
-		metrics.IOCounter.WithLabelValues(LblKafka, metrics.LblSourceIO, LblMsg, ctx.GetRuleId(), ctx.GetOpId()).Inc()
+		KafkaSourceCounter.WithLabelValues(LblMsg, ctx.GetRuleId(), ctx.GetOpId()).Inc()
+		KafkaSourceCounter.WithLabelValues(LblBytes, ctx.GetRuleId(), ctx.GetOpId()).Add(float64(len(msg.Value)))
+		KafkaSourceGauge.WithLabelValues(LblOffset, ctx.GetRuleId(), ctx.GetOpId()).Set(float64(msg.Offset))
 		ingest(ctx, msg.Value, nil, timex.GetNow())
 	}
 }
