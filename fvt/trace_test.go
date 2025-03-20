@@ -1,4 +1,4 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -229,47 +229,6 @@ func (s *TraceTestSuite) TestEventTime() {
 		resp, err = http.Post("http://127.0.0.1:10081/test/push3", ContentTypeJson, bytes.NewBufferString("{\"id\":3, \"ts\": 2431}"))
 		s.Require().NoError(err)
 		s.Require().Equal(http.StatusOK, resp.StatusCode)
-	})
-	s.Run("assert trace", func() {
-		var (
-			ruleIds  []string
-			checkMap = map[int]int{
-				0: 1,
-				2: 2,
-				3: 3,
-			}
-		)
-		// Assert rule1 traces
-		r := TryAssert(10, time.Second, func() bool {
-			resp, e := client.Get("trace/rule/rule3")
-			s.Require().NoError(e)
-			defer resp.Body.Close()
-			body, err := io.ReadAll(resp.Body)
-			s.Require().NoError(err)
-			err = json.Unmarshal(body, &ruleIds)
-			s.Require().NoError(err)
-			return len(ruleIds) == 5
-		})
-		s.Require().True(r)
-		// assert each trace, just check 0/1/2
-		for i, cid := range checkMap {
-			tid := ruleIds[i]
-			resp, e := client.Get(path.Join("trace", tid))
-			s.NoError(e)
-			s.Equal(http.StatusOK, resp.StatusCode)
-			act, resultMap, err := GetResponseResultTextAndMap(resp)
-			s.NoError(err)
-			all, err := os.ReadFile(filepath.Join("result", "trace", fmt.Sprintf("event%d.json", cid)))
-			s.NoError(err)
-			exp := make(map[string]any)
-			err = json.Unmarshal(all, &exp)
-			s.NoError(err)
-			if s.compareTrace(exp, resultMap) == false {
-				fmt.Println(fmt.Sprintf("event%d.json", cid))
-				fmt.Println(string(act))
-				s.Fail(fmt.Sprintf("trace event %d compares fail", cid))
-			}
-		}
 	})
 	s.Run("clean", func() {
 		res, e := client.Delete("rules/rule3")

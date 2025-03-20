@@ -182,7 +182,7 @@ func splitSink(tp *topo.Topo, s api.Sink, sinkName string, options *def.RuleOpti
 	default:
 		sinkInfo = model.SinkInfo{}
 	}
-	batchEnabled := sc.BatchSize > 0 || sc.LingerInterval > 0
+	batchEnabled := !sinkInfo.HasBatch && (sc.BatchSize > 0 || sc.LingerInterval > 0)
 	// Batch enabled
 	if batchEnabled {
 		batchOp, err := node.NewBatchOp(fmt.Sprintf("%s_%d_batch", sinkName, index), options, sc.BatchSize, time.Duration(sc.LingerInterval))
