@@ -41,10 +41,13 @@ func init() {
 	modules.RegisterConverter(message.FormatBinary, func(_ api.StreamContext, _ string, _ map[string]*ast.JsonStreamField, props map[string]any) (message.Converter, error) {
 		return binary.GetConverter()
 	})
+	modules.RegisterConverter(message.FormatDelimited, func(_ api.StreamContext, _ string, _ map[string]*ast.JsonStreamField, props map[string]any) (message.Converter, error) {
+		return delimited.NewConverter(props)
+	})
 	modules.RegisterConverter(message.FormatUrlEncoded, func(_ api.StreamContext, _ string, _ map[string]*ast.JsonStreamField, props map[string]any) (message.Converter, error) {
 		return urlencoded.NewConverter(props)
 	})
-	modules.RegisterWriterConverter(message.FormatDelimited, func(ctx api.StreamContext, avscPath string, _ map[string]*ast.JsonStreamField, props map[string]any) (message.ConvertWriter, error) {
+	modules.RegisterWriterConverter(message.FormatDelimited, func(ctx api.StreamContext, _ string, _ map[string]*ast.JsonStreamField, props map[string]any) (message.ConvertWriter, error) {
 		return delimited.NewCsvWriter(ctx, props)
 	})
 }
