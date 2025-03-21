@@ -126,6 +126,7 @@ func LoadCfgKeyKV(key string) (map[string]interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
+	Log.Infof("load conf key:%v ", key)
 	return mmap[key], nil
 }
 
@@ -134,6 +135,7 @@ func saveCfgKeyToKV(key string, cfg map[string]interface{}) error {
 	if err != nil {
 		return err
 	}
+	Log.Infof("write conf key:%v ", key)
 	return kvStorage.Set(key, cfg)
 }
 
@@ -142,6 +144,7 @@ func delCfgKeyInStorage(key string) error {
 	if err != nil {
 		return err
 	}
+	Log.Infof("del conf key:%v ", key)
 	return kvStorage.Delete(key)
 }
 
