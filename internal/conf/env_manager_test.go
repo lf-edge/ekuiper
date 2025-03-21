@@ -26,6 +26,7 @@ func TestLoadEnv(t *testing.T) {
 	em := &EnvManager{}
 	require.NoError(t, os.Setenv("CONNECTION__MQTT__ENVDEMO__SERVER", "tcp://127.0.0.1:1883"))
 	require.NoError(t, os.Setenv("CONNECTION__MQTT__ENVDEMO__TOPIC", "mock"))
+	require.NoError(t, os.Setenv("CONNECTION__MQTT__ENVDEMO__PORT", "1883"))
 	em.Setup()
 	em.SetupConnectionProps()
 	g, err := GetCfgFromKVStorage("connections", "mqtt", "envdemo")
@@ -33,6 +34,7 @@ func TestLoadEnv(t *testing.T) {
 	require.Equal(t, map[string]interface{}{
 		"server": "tcp://127.0.0.1:1883",
 		"topic":  "mock",
+		"port":   int64(1883),
 	}, g["connections.mqtt.envdemo"])
 	require.Nil(t, em.connectionProps)
 }
