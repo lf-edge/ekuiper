@@ -55,6 +55,9 @@ func InitBumpManager() error {
 	}
 	GlobalBumpManager = b
 	GlobalBumpManager.Version, err = loadVersionFromStorage()
+	if err == nil {
+		conf.Log.Infof("start bump version: %v", GlobalBumpManager.Version)
+	}
 	return err
 }
 
@@ -110,6 +113,7 @@ func BumpToCurrentVersion(dataDir string) error {
 			GlobalBumpManager.Version = 4
 		}
 	}
+	conf.Log.Infof("success bump version: %v", currentVersion)
 	return nil
 }
 
