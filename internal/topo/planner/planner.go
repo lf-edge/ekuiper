@@ -1,4 +1,4 @@
-// Copyright 2022-2024 EMQ Technologies Co., Ltd.
+// Copyright 2022-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -77,11 +77,21 @@ func PlanSQLWithSourcesAndSinks(rule *def.Rule, mockSourcesProp map[string]map[s
 	if err != nil {
 		return nil, err
 	}
-	tp, err := createTopo(rule, lp, mockSourcesProp, streamsFromStmt)
+	tp, err := createTopo(rule, lp, mockSourcesProp, streamsFromStmt, getSinkSchema(stmt))
 	if err != nil {
 		return nil, err
 	}
 	return tp, nil
+}
+
+func getSinkSchema(stmt *ast.SelectStatement) map[string]*ast.JsonStreamField {
+	schema := make(map[string]*ast.JsonStreamField, len(stmt.Fields))
+	for _, field := range stmt.Fields {
+		if field.GetName() != "*" {
+			schema[field.GetName()] = nil
+		}
+	}
+	return schema
 }
 
 func validateStmt(stmt *ast.SelectStatement) error {
@@ -98,7 +108,7 @@ func validateStmt(stmt *ast.SelectStatement) error {
 	return vErr
 }
 
-func createTopo(rule *def.Rule, lp LogicalPlan, mockSourcesProp map[string]map[string]any, streamsFromStmt []string) (t *topo.Topo, err error) {
+func createTopo(rule *def.Rule, lp LogicalPlan, mockSourcesProp map[string]map[string]any, streamsFromStmt []string, schema map[string]*ast.JsonStreamField) (t *topo.Topo, err error) {
 	defer func() {
 		if err != nil {
 			err = errorx.NewWithCode(errorx.ExecutorError, err.Error())
@@ -118,7 +128,7 @@ func createTopo(rule *def.Rule, lp LogicalPlan, mockSourcesProp map[string]map[s
 	}
 	inputs := []node.Emitter{input}
 	// Add actions
-	err = buildActions(tp, rule, inputs, len(streamsFromStmt))
+	err = buildActions(tp, rule, inputs, len(streamsFromStmt), schema)
 	if err != nil {
 		return nil, err
 	}
@@ -189,6 +199,7 @@ func ExplainFromLogicalPlan(lp LogicalPlan, ruleID string) (string, error) {
 	return strings.Trim(res, "\n"), nil
 }
 
+// return the last schema if there are multiple sources
 func buildOps(lp LogicalPlan, tp *topo.Topo, options *def.RuleOption, sources map[string]map[string]any, streamsFromStmt []string, index int) (node.Emitter, int, error) {
 	var inputs []node.Emitter
 	newIndex := index

@@ -115,7 +115,7 @@ func worker(ctx api.StreamContext, node *defaultSinkNode, i int, wf workerFunc, 
 			}
 			var result []any
 			switch item.(type) {
-			case error, *xsql.WatermarkTuple, xsql.EOFTuple:
+			case error, *xsql.WatermarkTuple, xsql.EOFTuple, xsql.BatchEOFTuple:
 				result = []any{item}
 			default:
 				node.onProcessStart(ctx, item)

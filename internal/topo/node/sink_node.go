@@ -180,7 +180,7 @@ func (s *SinkNode) ingest(ctx api.StreamContext, item any) (any, bool) {
 			return d, false
 		}
 		return nil, true
-	case *xsql.WatermarkTuple:
+	case *xsql.WatermarkTuple, xsql.BatchEOFTuple:
 		return nil, true
 	case xsql.EOFTuple:
 		s.currentEof++
