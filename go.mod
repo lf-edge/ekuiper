@@ -32,7 +32,7 @@ require (
 	github.com/go-sql-driver/mysql v1.8.1
 	github.com/godror/godror v0.44.7
 	github.com/golang-collections/collections v0.0.0-20130729185459-604e922904d3
-	github.com/golang-jwt/jwt/v5 v5.2.1
+	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/golang/protobuf v1.5.4
 	github.com/google/uuid v1.6.0
 	github.com/googleapis/go-sql-spanner v1.7.1
