@@ -285,7 +285,7 @@ func (p *pluginInsManager) GetOrStartProcess(pluginMeta *PluginMeta, pconf *Port
 				}
 			}
 			if cmd == nil {
-				cmd = exec.Command(conf.Config.Portable.PythonBin, pluginMeta.Executable, string(jsonArg))
+				cmd = exec.Command(conf.Config.Portable.PythonBin, "-u", pluginMeta.Executable, string(jsonArg))
 			}
 			conf.Log.Infof("starting python plugin: %s", cmd)
 		default:
