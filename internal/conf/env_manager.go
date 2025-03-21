@@ -17,6 +17,7 @@ package conf
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -98,7 +99,7 @@ func (e *EnvManager) loadConnectionProps() {
 			v2 = make(map[string]interface{})
 			v1[confName] = v2
 		}
-		v2[confKey] = v
+		v2[confKey] = parseValue(v)
 	}
 }
 
@@ -111,4 +112,24 @@ func (e *EnvManager) storeConnectionProps() {
 			}
 		}
 	}
+}
+
+func parseValue(v interface{}) interface{} {
+	sd, ok := v.(string)
+	if !ok {
+		return sd
+	}
+	iv, err := strconv.ParseInt(sd, 10, 64)
+	if err == nil {
+		return iv
+	}
+	fv, err := strconv.ParseFloat(sd, 64)
+	if err == nil {
+		return fv
+	}
+	bv, err := strconv.ParseBool(sd)
+	if err == nil {
+		return bv
+	}
+	return sd
 }
