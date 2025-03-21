@@ -26,15 +26,15 @@ import (
 )
 
 func TestNewCompressOp(t *testing.T) {
-	_, err := NewCompressOp("test", &def.RuleOption{}, "non")
+	_, err := NewCompressOp("test", &def.RuleOption{}, "non", nil)
 	assert.Error(t, err)
 	assert.Equal(t, "get compressor non fail with error: unsupported compressor: non", err.Error())
-	_, err = NewCompressOp("test", &def.RuleOption{}, "gzip")
+	_, err = NewCompressOp("test", &def.RuleOption{}, "gzip", nil)
 	assert.NoError(t, err)
 }
 
 func TestCompressOp_Exec(t *testing.T) {
-	op, err := NewCompressOp("test", &def.RuleOption{BufferLength: 10, SendError: true}, "gzip")
+	op, err := NewCompressOp("test", &def.RuleOption{BufferLength: 10, SendError: true}, "gzip", nil)
 	assert.NoError(t, err)
 	op.tool = &MockCompresser{}
 	out := make(chan any, 100)

@@ -1,4 +1,4 @@
-// Copyright 2023 EMQ Technologies Co., Ltd.
+// Copyright 2023-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,10 +17,10 @@
 package compressor
 
 import (
-	"github.com/lf-edge/ekuiper/v2/internal/compressor/flate"
-	"github.com/lf-edge/ekuiper/v2/internal/compressor/gzip"
-	"github.com/lf-edge/ekuiper/v2/internal/compressor/zlib"
-	"github.com/lf-edge/ekuiper/v2/internal/compressor/zstd"
+	"github.com/lf-edge/ekuiper/v2/modules/compressor/flate"
+	"github.com/lf-edge/ekuiper/v2/modules/compressor/gzip"
+	"github.com/lf-edge/ekuiper/v2/modules/compressor/zlib"
+	"github.com/lf-edge/ekuiper/v2/modules/compressor/zstd"
 	"github.com/lf-edge/ekuiper/v2/pkg/message"
 )
 
@@ -32,17 +32,17 @@ const (
 )
 
 func init() {
-	compressors[ZLIB] = func(name string) (message.Compressor, error) {
+	compressors[ZLIB] = func(name string, _ map[string]any) (message.Compressor, error) {
 		return zlib.NewZlibCompressor()
 	}
-	compressors[GZIP] = func(name string) (message.Compressor, error) {
+	compressors[GZIP] = func(name string, _ map[string]any) (message.Compressor, error) {
 		return gzip.NewGzipCompressor()
 	}
-	compressors[FLATE] = func(name string) (message.Compressor, error) {
+	compressors[FLATE] = func(name string, _ map[string]any) (message.Compressor, error) {
 		return flate.NewFlateCompressor()
 	}
-	compressors[ZSTD] = func(name string) (message.Compressor, error) {
-		return zstd.NewZstdCompressor()
+	compressors[ZSTD] = func(name string, props map[string]any) (message.Compressor, error) {
+		return zstd.NewZstdCompressor(props)
 	}
 
 	compressWriters[GZIP] = gzip.NewWriter

@@ -19,10 +19,21 @@ import (
 	"io"
 
 	"github.com/klauspost/compress/zstd"
+
+	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
 
-func NewZstdCompressor() (*zstdCompressor, error) {
-	zstdWriter, err := zstd.NewWriter(nil, zstd.WithWindowSize(zstd.MinWindowSize))
+type compressProps struct {
+	WindowSize int `json:"windowSize"`
+}
+
+func NewZstdCompressor(props map[string]any) (*zstdCompressor, error) {
+	p := &compressProps{WindowSize: 8 << 20}
+	err := cast.MapToStruct(props, p)
+	if err != nil {
+		return nil, err
+	}
+	zstdWriter, err := zstd.NewWriter(nil, zstd.WithWindowSize(p.WindowSize))
 	if err != nil {
 		return nil, err
 	}
