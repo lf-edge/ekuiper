@@ -48,7 +48,7 @@ func NewBatchWriterOp(ctx api.StreamContext, name string, rOpt *def.RuleOption, 
 	}
 	err = c.New(nctx)
 	if err != nil {
-		return nil, fmt.Errorf("writer fail to initialize new file: %s", err)
+		return nil, fmt.Errorf("writer fail to initialize new converter: %s", err)
 	}
 	return &BatchWriterOp{
 		defaultSinkNode: newDefaultSinkNode(name, rOpt),
@@ -69,7 +69,7 @@ func (o *BatchWriterOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 			for {
 				select {
 				case <-ctx.Done():
-					ctx.GetLogger().Infof("watermark node %s is finished", o.name)
+					ctx.GetLogger().Infof("batch writer node %s is finished", o.name)
 					return nil
 				case item := <-o.input:
 					data, processed := o.ingest(ctx, item)
@@ -110,7 +110,7 @@ func (o *BatchWriterOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 						o.onProcessEnd(ctx)
 						o.lastRow = dt
 						count++
-					case xsql.Collection:
+					case api.MessageTupleList:
 						o.onProcessStart(ctx, data)
 						e := o.writer.Write(ctx, dt.ToMaps())
 						if e != nil {
