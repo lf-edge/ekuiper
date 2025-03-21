@@ -1,4 +1,4 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -290,4 +290,79 @@ func TestRestSinkRecoverErr(t *testing.T) {
 	err = s.Collect(ctx, data)
 	require.Error(t, err)
 	require.True(t, errorx.IsIOError(err))
+}
+
+func TestFormData(t *testing.T) {
+	config := map[string]any{
+		"method": "post",
+		//"url": "http://localhost/test",  //set dynamically to the test server
+		"bodyType":      "formdata",
+		"sendSingle":    true,
+		"fileFieldName": "d",
+		"formData": map[string]any{
+			"tp": "1",
+		},
+	}
+	data := []byte{0x1, 0x2, 0x3, 0x4, 0x5, 0x6}
+
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		err := r.ParseMultipartForm(10 << 20)
+		require.NoError(t, err)
+		file, _, err := r.FormFile("d") // "file" 是表单字段名
+		require.NoError(t, err)
+		defer file.Close()
+		dd, err := io.ReadAll(file)
+		require.NoError(t, err)
+		require.Equal(t, data, dd)
+		require.Equal(t, "1", r.Form.Get("tp"))
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("文件上传成功"))
+	}))
+	defer ts.Close()
+	// send request and wait result
+	s := &RestSink{}
+	config["url"] = ts.URL
+	ctx := mockContext.NewMockContext("testFormData", "op")
+	e := s.Provision(ctx, config)
+	assert.NoError(t, e)
+	e = s.Connect(ctx, func(status string, message string) {
+		// do nothing
+	})
+	assert.NoError(t, e)
+	e = s.Collect(ctx, &xsql.RawTuple{
+		Rawdata: data,
+	})
+	assert.NoError(t, e)
+	err := s.Close(ctx)
+	assert.NoError(t, err)
+}
+
+func TestFormDataErr(t *testing.T) {
+	config := map[string]any{
+		"method":        "post",
+		"url":           "http://localhost/test", // not exist
+		"bodyType":      "formdata",
+		"sendSingle":    true,
+		"fileFieldName": "d",
+		"formData": map[string]any{
+			"tp": "1",
+		},
+	}
+	data := []byte{0x1, 0x2, 0x3, 0x4, 0x5, 0x6}
+
+	// send request and wait result
+	s := &RestSink{}
+	ctx := mockContext.NewMockContext("testFormData", "op")
+	e := s.Provision(ctx, config)
+	assert.NoError(t, e)
+	e = s.Connect(ctx, func(status string, message string) {
+		// do nothing
+	})
+	assert.NoError(t, e)
+	e = s.Collect(ctx, &xsql.RawTuple{
+		Rawdata: data,
+	})
+	assert.NotNil(t, e)
+	err := s.Close(ctx)
+	assert.NoError(t, err)
 }

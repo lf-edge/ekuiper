@@ -66,14 +66,16 @@ type RefreshTokenConf struct {
 }
 
 type RawConf struct {
-	Url         string            `json:"url"`
-	Method      string            `json:"method"`
-	Body        string            `json:"body"`
-	BodyType    string            `json:"bodyType"`
-	Format      string            `json:"format"`
-	Headers     map[string]string `json:"headers"`
-	Timeout     cast.DurationConf `json:"timeout"`
-	Incremental bool              `json:"incremental"`
+	Url           string            `json:"url"`
+	Method        string            `json:"method"`
+	Body          string            `json:"body"`
+	BodyType      string            `json:"bodyType"`
+	Format        string            `json:"format"`
+	Headers       map[string]string `json:"headers"`
+	FormData      map[string]string `json:"formData"`
+	FileFieldName string            `json:"fileFieldName"`
+	Timeout       cast.DurationConf `json:"timeout"`
+	Incremental   bool              `json:"incremental"`
 
 	OAuth      map[string]map[string]interface{} `json:"oauth"`
 	SendSingle bool                              `json:"sendSingle"`
@@ -92,7 +94,7 @@ type bodyResp struct {
 	Code int `json:"code"`
 }
 
-var bodyTypeMap = map[string]string{"none": "", "text": "text/plain", "json": "application/json", "html": "text/html", "xml": "application/xml", "javascript": "application/javascript", "form": "", "binary": "application/octet-stream"}
+var bodyTypeMap = map[string]string{"none": "", "text": "text/plain", "json": "application/json", "html": "text/html", "xml": "application/xml", "javascript": "application/javascript", "form": "", "binary": "application/octet-stream", "formdata": "multipart/form-data"}
 
 // newTransport allows EdgeX Foundry, protected by OpenZiti to override and obtain a transport
 // protected by OpenZiti's zero trust connectivity. See client_edgex.go where this function is
@@ -142,13 +144,13 @@ func (cc *ClientConf) InitConf(device string, props map[string]interface{}) erro
 	if _, ok2 := bodyTypeMap[strings.ToLower(c.BodyType)]; ok2 {
 		c.BodyType = strings.ToLower(c.BodyType)
 	} else {
-		return fmt.Errorf("Not valid body type value %v.", c.BodyType)
+		return fmt.Errorf("Invalid body type value %v.", c.BodyType)
 	}
 	switch c.ResponseType {
 	case "code", "body":
 		// correct
 	default:
-		return fmt.Errorf("Not valid response type value %v.", c.ResponseType)
+		return fmt.Errorf("Invalid response type value %v.", c.ResponseType)
 	}
 	err := httpx.IsHttpUrl(c.Url)
 	if err != nil {

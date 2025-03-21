@@ -20,9 +20,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -30,12 +32,17 @@ import (
 	"github.com/pingcap/failpoint"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 var BodyTypeMap = map[string]string{"none": "", "text": "text/plain", "json": "application/json", "html": "text/html", "xml": "application/xml", "javascript": "application/javascript", "form": "application/x-www-form-urlencoded;param=value"}
 
 // Send v must be a []byte or map
 func Send(logger api.Logger, client *http.Client, bodyType string, method string, u string, headers map[string]string, v any) (*http.Response, error) {
+	return SendWithFormData(logger, client, bodyType, method, u, headers, nil, "", v)
+}
+
+func SendWithFormData(logger api.Logger, client *http.Client, bodyType string, method string, u string, headers map[string]string, formData map[string]string, formFieldName string, v any) (*http.Response, error) {
 	var req *http.Request
 	var err error
 	switch bodyType {
@@ -69,6 +76,41 @@ func Send(logger api.Logger, client *http.Client, bodyType string, method string
 		if req.Header.Get("Content-Type") == "" {
 			req.Header.Set("Content-Type", BodyTypeMap[bodyType])
 		}
+	case "formdata":
+		var requestBody bytes.Buffer
+		writer := multipart.NewWriter(&requestBody)
+		fileField, err := writer.CreateFormFile(formFieldName, strconv.FormatInt(timex.GetNowInMilli(), 10))
+		if err != nil {
+			return nil, fmt.Errorf("fail to create file field: %v", err)
+		}
+		var payload io.Reader
+		switch t := v.(type) {
+		case []byte:
+			payload = bytes.NewBuffer(t)
+		case string:
+			payload = bytes.NewBufferString(t)
+		default:
+			return nil, fmt.Errorf("http send only supports bytes but receive invalid content: %v", v)
+		}
+		_, err = io.Copy(fileField, payload)
+		if err != nil {
+			return nil, fmt.Errorf("fail to copy payload to file field: %v", err)
+		}
+		for k, v := range formData {
+			err := writer.WriteField(k, v)
+			if err != nil {
+				logger.Errorf("fail write form data field %s: %v", k, err)
+			}
+		}
+		err = writer.Close()
+		if err != nil {
+			logger.Errorf("fail to close writer: %v", err)
+		}
+		req, err = http.NewRequest(method, u, &requestBody)
+		if err != nil {
+			return nil, fmt.Errorf("fail to create request: %v", err)
+		}
+		req.Header.Set("Content-Type", writer.FormDataContentType())
 	default:
 		return nil, fmt.Errorf("unsupported body type %s", bodyType)
 	}
