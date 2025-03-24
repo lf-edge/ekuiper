@@ -541,8 +541,10 @@ func (s *State) runTopo(ctx context.Context, tp *topo.Topo, rs *def.RestartStrat
 	if err != nil { // Exit after retries
 		s.logger.Error(err)
 		s.transit(StoppedByErr, err)
-	} else {
-		s.transit(Stopped, err)
+	} else if s.lastWill != "" {
+		// Two case when err is nil; 1. Manually stop 2.EOF
+		// Only transit status when EOF. Don't do this for manual stop because the state already changed!
+		s.transit(Stopped, nil)
 	}
 }
 
