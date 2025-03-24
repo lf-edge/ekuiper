@@ -1,0 +1,4 @@
+feat(sdv): sendSingle always true when batch
+d504a4a8 feat(sdv): free os mem when rule stops
+a5bd0de3 feat(rule): allow to update rule id
+f15b8d0c chore(log): add more resend logs

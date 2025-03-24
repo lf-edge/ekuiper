@@ -201,6 +201,9 @@ func splitSink(tp *topo.Topo, s api.Sink, sinkName string, options *def.RuleOpti
 		}
 		index++
 		result = append(result, batchOp)
+		// TODO chore always set sendSingle to true for sdv branch
+		sc.SendSingle = true
+		tp.GetContext().GetLogger().Infof("sendSingle set to true when batch enabled")
 	}
 	// Transform enabled
 	// Currently, the row to map is done here and is required. TODO: eliminate map and this could become optional
