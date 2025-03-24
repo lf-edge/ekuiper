@@ -1,4 +1,4 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -97,7 +97,8 @@ type RuleGraph struct {
 type Rule struct {
 	Triggered bool                     `json:"triggered" yaml:"triggered"`
 	Id        string                   `json:"id,omitempty" yaml:"id,omitempty"`
-	Name      string                   `json:"name,omitempty" yaml:"name,omitempty"` // The display name of a rule
+	Name      string                   `json:"name,omitempty" yaml:"name,omitempty"`       // The display name of a rule
+	Version   string                   `json:"version,omitempty" yaml:"version,omitempty"` // The display name of a rule
 	Sql       string                   `json:"sql,omitempty" yaml:"sql,omitempty"`
 	Graph     *RuleGraph               `json:"graph,omitempty" yaml:"graph,omitempty"`
 	Actions   []map[string]interface{} `json:"actions,omitempty" yaml:"actions,omitempty"`

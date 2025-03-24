@@ -1,4 +1,4 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -48,6 +48,7 @@ func (s *RuleStateTestSuite) TestUpdate() {
 		ruleSql := `{
   "id": "rule1",
   "name": "keep rule",
+  "version": "123456",
   "sql": "SELECT * FROM simStream",
   "actions": [
     {
@@ -62,6 +63,15 @@ func (s *RuleStateTestSuite) TestUpdate() {
 		s.Require().NoError(err)
 		s.T().Log(GetResponseText(resp))
 		s.Require().Equal(http.StatusCreated, resp.StatusCode)
+
+		resp, err = client.Get("rules/rule1")
+		s.Require().NoError(err)
+		m, err := GetResponseResultMap(resp)
+		s.Require().NoError(err)
+		vv, ok := m["version"]
+		s.Require().True(ok)
+		version := "123456"
+		s.Require().Equal(version, vv)
 
 		ruleSql2 := `{
   "id": "rule2",
