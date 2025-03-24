@@ -1,4 +1,4 @@
-// Copyright 2022-2024 EMQ Technologies Co., Ltd.
+// Copyright 2022-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -47,6 +47,9 @@ func init() {
 	modules.RegisterConverter(message.FormatUrlEncoded, func(_ api.StreamContext, _ string, _ map[string]*ast.JsonStreamField, props map[string]any) (message.Converter, error) {
 		return urlencoded.NewConverter(props)
 	})
+	modules.RegisterWriterConverter(message.FormatDelimited, func(ctx api.StreamContext, _ string, _ map[string]*ast.JsonStreamField, props map[string]any) (message.ConvertWriter, error) {
+		return delimited.NewCsvWriter(ctx, props)
+	})
 }
 
 func GetOrCreateConverter(ctx api.StreamContext, format string, schemaId string, schema map[string]*ast.JsonStreamField, props map[string]any) (c message.Converter, err error) {
@@ -64,4 +67,15 @@ func GetOrCreateConverter(ctx api.StreamContext, format string, schemaId string,
 		return c(ctx, schemaId, schema, props)
 	}
 	return nil, fmt.Errorf("format type %s not supported", t)
+}
+
+func GetConvertWriter(ctx api.StreamContext, format string, schemaId string, schema map[string]*ast.JsonStreamField, props map[string]any) (message.ConvertWriter, error) {
+	if cw, ok := modules.ConvertWriters[format]; ok {
+		return cw(ctx, schemaId, schema, props)
+	}
+	c, err := GetOrCreateConverter(ctx, format, schemaId, schema, props)
+	if err != nil {
+		return nil, err
+	}
+	return NewStackWriter(ctx, c)
 }

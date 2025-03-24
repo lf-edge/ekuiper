@@ -1,4 +1,4 @@
-// Copyright 2022-2024 EMQ Technologies Co., Ltd.
+// Copyright 2022-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -109,7 +109,7 @@ func PlanByGraph(rule *def.Rule) (*topo.Topo, error) {
 			if _, ok := ruleGraph.Topo.Edges[nodeName]; ok {
 				return nil, fmt.Errorf("sink %s has edge", nodeName)
 			}
-			cn, err := SinkToComp(tp, gn.NodeType, nodeName, gn.Props, rule, len(sourceNames))
+			cn, err := SinkToComp(tp, gn.NodeType, nodeName, gn.Props, rule, len(sourceNames), nil)
 			if err != nil {
 				return nil, err
 			}

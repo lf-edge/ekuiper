@@ -39,6 +39,14 @@ type Converter interface {
 	Decode(ctx api.StreamContext, b []byte) (any, error)
 }
 
+// ConvertWriter encode like a writer (streaming)
+type ConvertWriter interface {
+	// New init a new container "file" in buffer
+	New(ctx api.StreamContext) error
+	Write(ctx api.StreamContext, d any) error
+	Flush(ctx api.StreamContext) ([]byte, error)
+}
+
 // PartialDecoder decodes a field partially
 type PartialDecoder interface {
 	DecodeField(ctx api.StreamContext, b []byte, f string) (any, error)

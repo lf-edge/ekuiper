@@ -1,4 +1,4 @@
-// Copyright 2022-2024 EMQ Technologies Co., Ltd.
+// Copyright 2022-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -94,6 +94,9 @@ func (c *Converter) Encode(ctx api.StreamContext, d any) (b []byte, err error) {
 				}
 				sort.Strings(keys)
 				cols = keys
+				if len(c.Cols) == 0 {
+					c.Cols = cols
+				}
 				if len(cols) > 0 && c.HasHeader {
 					hb := []byte(strings.Join(cols, c.Delimiter))
 					sb.Write(hb)

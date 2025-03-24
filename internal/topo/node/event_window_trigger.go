@@ -226,7 +226,7 @@ func (o *WindowOperator) ingest(ctx api.StreamContext, item any) (any, bool) {
 			o.Broadcast(d)
 		}
 		return nil, true
-	case xsql.EOFTuple:
+	case xsql.EOFTuple, xsql.BatchEOFTuple:
 		o.Broadcast(d)
 		return nil, true
 	}

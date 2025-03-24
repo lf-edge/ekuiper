@@ -1,4 +1,4 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -37,6 +37,15 @@ func RegisterConverter(name string, provider ConverterProvider) {
 func IsFormatSupported(format string) bool {
 	_, ok := Converters[format]
 	return ok
+}
+
+// ConvertWriters are sink converter to use together with batch
+var ConvertWriters = map[string]ConvertWriterProvider{}
+
+type ConvertWriterProvider func(ctx api.StreamContext, schemaId string, logicalSchema map[string]*ast.JsonStreamField, props map[string]any) (message.ConvertWriter, error)
+
+func RegisterWriterConverter(name string, provider ConvertWriterProvider) {
+	ConvertWriters[name] = provider
 }
 
 // Merger is used to merge multiple frames. It is currently called by rate limiter only
