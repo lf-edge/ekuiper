@@ -70,12 +70,14 @@ func GetOrCreateConverter(ctx api.StreamContext, format string, schemaId string,
 }
 
 func GetConvertWriter(ctx api.StreamContext, format string, schemaId string, schema map[string]*ast.JsonStreamField, props map[string]any) (message.ConvertWriter, error) {
-	if cw, ok := modules.ConvertWriters[format]; ok {
+	t := strings.ToLower(format)
+	if cw, ok := modules.ConvertWriters[t]; ok {
 		return cw(ctx, schemaId, schema, props)
 	}
-	c, err := GetOrCreateConverter(ctx, format, schemaId, schema, props)
+	c, err := GetOrCreateConverter(ctx, t, schemaId, schema, props)
 	if err != nil {
 		return nil, err
 	}
+	ctx.GetLogger().Infof("writer %s not found, fall back to stack writer", t)
 	return NewStackWriter(ctx, c)
 }
