@@ -1,4 +1,4 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -49,7 +49,7 @@ func TestErrors(t *testing.T) {
 	err = registry.stopAtExit("test")
 	assert.EqualError(t, err, "Rule test is not found in registry, please check if it is deleted")
 	// db problems
-	registry.register("test", rule.NewState(def.GetDefaultRule("testErrors", "select * from demo")))
+	registry.register("test", rule.NewState(def.GetDefaultRule("testErrors", "select * from demo"), func(string, bool) {}))
 	err = registry.StartRule("test")
 	assert.EqualError(t, err, "fail to get stream demo, please check if stream is created")
 }

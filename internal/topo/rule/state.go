@@ -77,8 +77,9 @@ type State struct {
 	sync.RWMutex
 	// Nearly constant, only change when update the Rule
 	// It is used to construct topo
-	Rule   *def.Rule
-	logger api.Logger
+	Rule          *def.Rule
+	logger        api.Logger
+	updateTrigger func(string, bool)
 	// concurrent running states
 	currentState RunState
 	actionQ      []ActionSignal
@@ -97,13 +98,14 @@ type State struct {
 // NewState provision a state instance only.
 // Do not plan or run as before. If the Rule is not triggered, do not plan or run.
 // When called by recover Rule, expect
-func NewState(rule *def.Rule) *State {
+func NewState(rule *def.Rule, updateTriggerFunc func(string, bool)) *State {
 	contextLogger := conf.Log.WithField("Rule", rule.Id)
 	return &State{
-		Rule:         rule,
-		actionQ:      make([]ActionSignal, 0),
-		currentState: Stopped,
-		logger:       contextLogger,
+		Rule:          rule,
+		actionQ:       make([]ActionSignal, 0),
+		currentState:  Stopped,
+		logger:        contextLogger,
+		updateTrigger: updateTriggerFunc,
 	}
 }
 
@@ -494,6 +496,7 @@ func (s *State) runTopo(ctx context.Context, tp *topo.Topo, rs *def.RestartStrat
 				} else { // exit normally
 					if errorx.IsEOF(er) {
 						s.lastWill = "done"
+						s.updateTrigger(s.Rule.Id, false)
 					}
 					tp.Cancel()
 					return nil

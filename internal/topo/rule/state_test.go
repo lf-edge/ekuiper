@@ -1,4 +1,4 @@
-// Copyright 2022-2024 EMQ Technologies Co., Ltd.
+// Copyright 2022-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ func TestAPIs(t *testing.T) {
 	defer sp.ExecStmt(`DROP STREAM demo`)
 	r := def.GetDefaultRule("testAPI", "select * from demo")
 	// Init state
-	st := NewState(r)
+	st := NewState(r, func(string, bool) {})
 	assert.Equal(t, r, st.Rule)
 	assert.NotNil(t, st.logger)
 	assert.Equal(t, Stopped, st.currentState)
@@ -177,7 +177,7 @@ func TestStateTransit(t *testing.T) {
 	}
 	for _, v := range tests {
 		t.Run(v.name, func(t *testing.T) {
-			st := NewState(v.r)
+			st := NewState(v.r, func(string, bool) {})
 			defer st.Delete()
 			st.actionQ = []ActionSignal{ActionSignalStart}
 			var wg sync.WaitGroup
@@ -222,7 +222,7 @@ func TestLongScheduleTransit(t *testing.T) {
 			End:   "2024-08-08 16:30:01",
 		},
 	}
-	st := NewState(sr)
+	st := NewState(sr, func(string, bool) {})
 	defer st.Delete()
 	// Start run, but not in schedule
 	e := st.Start()
