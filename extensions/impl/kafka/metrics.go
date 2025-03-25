@@ -39,9 +39,25 @@ var (
 		Help:      "Sink Historgram Duration of IO",
 		Buckets:   prometheus.ExponentialBuckets(10, 2, 20), // 10us ~ 5s
 	}, []string{metrics.LblType, LblTarget, metrics.LblRuleIDType, metrics.LblOpIDType})
+
+	KafkaSourceCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: "kuiper",
+		Subsystem: "kafka_source",
+		Name:      "counter",
+		Help:      "counter of Kafka Source IO",
+	}, []string{metrics.LblType, metrics.LblRuleIDType, metrics.LblOpIDType})
+
+	KafkaSourceGauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: "kuiper",
+		Subsystem: "kafka_source",
+		Name:      "gauge",
+		Help:      "Gauge of Kafka Source IO",
+	}, []string{metrics.LblType, metrics.LblRuleIDType, metrics.LblOpIDType})
 )
 
 func init() {
 	prometheus.MustRegister(KafkaSinkCounter)
 	prometheus.MustRegister(KafkaSinkCollectDurationHist)
+	prometheus.MustRegister(KafkaSourceCounter)
+	prometheus.MustRegister(KafkaSourceGauge)
 }

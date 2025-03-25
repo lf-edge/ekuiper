@@ -45,6 +45,8 @@ const (
 	LblQueueIn   = "queue-in"
 	LblIngest    = "ingest"
 	LblSend      = "send"
+	LblBytes     = "bytes"
+	LblOffset    = "offset"
 )
 
 type KafkaSink struct {
