@@ -1,4 +1,4 @@
-// Copyright 2022-2023 EMQ Technologies Co., Ltd.
+// Copyright 2022-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,14 +17,13 @@
 package server
 
 import (
-	"log"
 	"net/http"
 	_ "net/http/pprof"
-	"os"
 
 	"github.com/Rookiecom/cpuprofile"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
 
 func init() {
@@ -36,17 +35,19 @@ type pprofComp struct {
 }
 
 func (p pprofComp) serve() {
-	go func() {
-		if conf.Config.Basic.EnableResourceProfiling {
-			cpuprofile.WebProfile(":6060")
-			return
-		}
-
-		if err := http.ListenAndServe(":6060", nil); err != nil {
-			log.Fatal(err)
-		}
-		os.Exit(0)
-	}()
+	if conf.Config.Basic.Pprof {
+		go func() {
+			addr := cast.JoinHostPortInt(conf.Config.Basic.PprofIp, conf.Config.Basic.PprofPort)
+			if conf.Config.Basic.EnableResourceProfiling {
+				cpuprofile.WebProfile(addr)
+				return
+			}
+			conf.Log.Infof("Run pprof in %s", addr)
+			if err := http.ListenAndServe(addr, nil); err != nil {
+				conf.Log.Errorf("pprof start error: %s", err)
+			}
+		}()
+	}
 }
 
 func (p pprofComp) close() {
