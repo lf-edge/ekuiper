@@ -1,4 +1,4 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,9 +16,11 @@ package server
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/Rookiecom/cpuprofile"
@@ -37,9 +39,32 @@ func initRuleset() error {
 	if err != nil {
 		return err
 	}
-	signalFile := filepath.Join(loc, "initialized")
-	if _, err := os.Stat(signalFile); errors.Is(err, os.ErrNotExist) {
-		defer os.Create(signalFile)
+	initFile := filepath.Join(loc, "init.json")
+	fileInfo, err := os.Stat(initFile)
+	if err != nil {
+		conf.Log.Infof("init rules file %s does not exist", initFile)
+		return nil
+	}
+	updateTime := fileInfo.ModTime().UnixMilli()
+	lastUpdate := findInitializedTime(loc)
+	conf.Log.Infof("found init.json with update time %d and last init time %d", updateTime, lastUpdate)
+	// Only leave one initialized file each time. Due to the time shift in some system, compare time is not a good idea
+	if updateTime != lastUpdate {
+		defer func() {
+			// delete all signal files
+			ff, err := os.ReadDir(loc)
+			if err == nil {
+				prefix := "initialized"
+				for _, entry := range ff {
+					if !entry.IsDir() && strings.HasPrefix(entry.Name(), prefix) {
+						path := filepath.Join(loc, entry.Name())
+						os.Remove(path)
+					}
+				}
+			}
+			// create the unique file
+			os.Create(filepath.Join(loc, fmt.Sprintf("initialized%d", updateTime)))
+		}()
 		content, err := os.ReadFile(filepath.Join(loc, "init.json"))
 		if err != nil {
 			conf.Log.Errorf("fail to read init file: %v", err)
@@ -54,6 +79,44 @@ func initRuleset() error {
 		conf.Log.Infof("initialzie %d streams, %d tables and %d rules", counts[0], counts[1], counts[2])
 	}
 	return nil
+}
+
+// findInitializedTime finds one files starting with "initialized" and returns
+// the int64 suffix value according to the rules:
+// - No matching files: -1
+// - Matching file with no numeric suffix: 0
+// - Otherwise, the int64 suffix value
+func findInitializedTime(root string) int64 {
+	prefix := "initialized"
+	// Walk through the directory tree
+	var result int64 = -1 // Default: no files found
+	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		// Check if it's a file and starts with "initialized"
+		if !info.IsDir() && strings.HasPrefix(info.Name(), prefix) {
+			// Extract the suffix after "initialized"
+			suffix := strings.TrimPrefix(info.Name(), prefix)
+			if suffix == "" {
+				result = 0 // No suffix, return 0
+			} else {
+				// Try to parse the suffix as an int64
+				if num, err := strconv.ParseInt(suffix, 10, 64); err == nil {
+					result = num // Valid suffix, return it
+				} else {
+					result = 0 // Invalid suffix treated as no suffix
+				}
+			}
+			return filepath.SkipDir // Stop walking after first match
+		}
+		return nil
+	})
+	if err != nil {
+		conf.Log.Errorf("Error walking directory: %v\n", err)
+		return -1
+	}
+	return result
 }
 
 func resetAllRules() error {

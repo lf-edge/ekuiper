@@ -1,4 +1,4 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -613,21 +613,10 @@ func importRuleSetPartial(all processor.Ruleset) processor.Ruleset {
 	}
 
 	for k, v := range all.Rules {
-		_, err := ruleProcessor.GetRuleJson(k)
-		if err == nil {
-			// the rule already exist, update
-			err = registry.UpdateRule(k, v)
-			if err != nil {
-				ruleSetRsp.Rules[k] = err.Error()
-				continue
-			}
-		} else {
-			// not found, create
-			_, err2 := registry.CreateRule(k, v)
-			if err2 != nil {
-				ruleSetRsp.Rules[k] = err2.Error()
-				continue
-			}
+		err := registry.UpsertRule(k, v)
+		if err != nil {
+			ruleSetRsp.Rules[k] = err.Error()
+			continue
 		}
 	}
 

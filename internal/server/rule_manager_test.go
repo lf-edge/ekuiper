@@ -25,11 +25,10 @@ import (
 
 func TestErrors(t *testing.T) {
 	// update invalid rule
-	err := registry.UpdateRule("test", "selectabc")
+	err := registry.UpsertRule("test", "selectabc")
 	assert.EqualError(t, err, "Invalid rule json: Parse rule selectabc error : invalid character 's' looking for beginning of value.")
-	// update rule, no id
-	err = registry.UpdateRule("test", `{"id":"test","sql":"SELECT * FROM demo","actions":[{"log":{}}]}`)
-	assert.EqualError(t, err, "Rule test is not found in registry, please check if it is created")
+	err = registry.UpsertRule("test", `{"id":"test","sql":"SELECT * FROM demo","actions":[{"log":{}}]}`)
+	assert.EqualError(t, err, "fail to get stream demo, please check if stream is created")
 	// delete rule, no id
 	err = registry.DeleteRule("test")
 	assert.EqualError(t, err, "rule test not found")

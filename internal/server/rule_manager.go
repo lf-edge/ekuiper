@@ -72,11 +72,10 @@ func (rr *RuleRegistry) register(key string, value *rule.State) {
 	rr.internal[key] = value
 }
 
-func (rr *RuleRegistry) update(id string, ruleJson string) error {
+func (rr *RuleRegistry) upsert(id string, ruleJson string) error {
 	rr.Lock()
 	defer rr.Unlock()
-	_, err := ruleProcessor.ExecUpdate(id, ruleJson)
-	return err
+	return ruleProcessor.ExecUpsert(id, ruleJson)
 }
 
 func (rr *RuleRegistry) updateTrigger(id string, trigger bool) error {
@@ -172,18 +171,27 @@ func (rr *RuleRegistry) RecoverRule(r *def.Rule) string {
 	return fmt.Sprintf("Rule %s was started.", r.Id)
 }
 
-// UpdateRule validates the new rule, then update the db, then restart the rule
-func (rr *RuleRegistry) UpdateRule(ruleId, ruleJson string) error {
+// UpsertRule validates the new rule, then update the db, then restart the rule
+func (rr *RuleRegistry) UpsertRule(ruleId, ruleJson string) error {
 	ruleJson = replace.ReplaceRuleJson(ruleJson, conf.IsTesting)
 	// Validate the rule json
 	r, err := ruleProcessor.GetRuleByJson(ruleId, ruleJson)
 	if err != nil {
 		return fmt.Errorf("Invalid rule json: %v", err)
 	}
-
-	rs, ok := registry.load(ruleId)
-	if !ok {
-		return errorx.NewWithCode(errorx.NOT_FOUND, fmt.Sprintf("Rule %s is not found in registry, please check if it is created", ruleId))
+	// do upsert.
+	rs, isUpdate := registry.load(ruleId)
+	if !isUpdate { // if not exist, create it
+		rs = rule.NewState(r, func(id string, b bool) {
+			err = rr.updateTrigger(id, b)
+			if err != nil {
+				conf.Log.Warnf("update trigger error: %v", err)
+			}
+		})
+	} else {
+		if !ruleProcessor.CanReplace(rs.Rule.Version, r.Version) { // old version is newer
+			return fmt.Errorf("rule %s already exists with version (%s), new version (%s) is lower", ruleId, rs.Rule.Version, r.Version)
+		}
 	}
 	// Try plan with the new json. If err, revert to old rule
 	oldRule := rs.Rule
@@ -194,10 +202,20 @@ func (rr *RuleRegistry) UpdateRule(ruleId, ruleJson string) error {
 		rs.Rule = oldRule
 		return err
 	}
-	// Validate successful, save to db
-	err1 := rr.update(r.Id, ruleJson)
-	// ReRun the rule
-	rs.Stop()
+	var err1 error
+	if isUpdate {
+		// Validate successful, save to db
+		err1 = rr.upsert(r.Id, ruleJson)
+		// ReRun the rule
+		rs.Stop()
+	} else {
+		err = rr.save(r.Id, ruleJson, rs)
+		if err != nil {
+			return fmt.Errorf("store the rule error: %v", err)
+		}
+	}
+
+	rs.WithTopo(newTopo)
 	if r.Triggered {
 		rs.WithTopo(newTopo)
 		err2 := rs.Start()
