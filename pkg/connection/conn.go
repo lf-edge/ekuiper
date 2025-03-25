@@ -78,7 +78,8 @@ type Meta struct {
 	ID    string         `json:"id"`
 	Typ   string         `json:"typ"`
 	Props map[string]any `json:"props"`
-	Named bool           `json:"named"`
+	// named means connection is created manually
+	Named bool `json:"named"`
 
 	refCount atomic.Int32 `json:"-"`
 	ref      sync.Map     `json:"-"`
