@@ -59,10 +59,29 @@ func (s *RuleStateTestSuite) TestUpdate() {
     "sendError": false
   }
 }`
-		resp, err = client.CreateRule(ruleSql)
+		// test upsert
+		resp, err = client.UpdateRule("rule1", ruleSql)
 		s.Require().NoError(err)
 		s.T().Log(GetResponseText(resp))
-		s.Require().Equal(http.StatusCreated, resp.StatusCode)
+		s.Require().Equal(http.StatusOK, resp.StatusCode)
+		// test upsert with lower version
+		ruleSql = `{
+  "id": "rule1",
+  "name": "keep rule",
+  "version": "023456",
+  "sql": "SELECT * FROM simStream",
+  "actions": [
+    {
+      "nop":{}
+    }
+  ],
+  "options": {
+    "sendError": false
+  }
+}`
+		resp, err = client.UpdateRule("rule1", ruleSql)
+		s.Require().NoError(err)
+		s.Require().Equal(http.StatusBadRequest, resp.StatusCode)
 
 		resp, err = client.Get("rules/rule1")
 		s.Require().NoError(err)

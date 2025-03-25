@@ -1,4 +1,4 @@
-// Copyright 2022-2023 EMQ Technologies Co., Ltd.
+// Copyright 2022-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -114,7 +114,7 @@ func (rs *RulesetProcessor) Import(content []byte) ([]string, []int, error) {
 	for k, v := range all.Streams {
 		_, e := rs.s.ExecStreamSql(v)
 		if e != nil {
-			conf.Log.Errorf("Fail to import stream %s(%s) with error: %v", k, v, e)
+			conf.Log.Warnf("Fail to import stream %s with error: %v", k, e)
 		} else {
 			counts[0]++
 		}
@@ -123,7 +123,7 @@ func (rs *RulesetProcessor) Import(content []byte) ([]string, []int, error) {
 	for k, v := range all.Tables {
 		_, e := rs.s.ExecStreamSql(v)
 		if e != nil {
-			conf.Log.Errorf("Fail to import table %s(%s) with error: %v", k, v, e)
+			conf.Log.Warnf("Fail to import table %s with error: %v", k, e)
 		} else {
 			counts[1]++
 		}
@@ -133,7 +133,7 @@ func (rs *RulesetProcessor) Import(content []byte) ([]string, []int, error) {
 	for k, v := range all.Rules {
 		_, e := rs.r.ExecCreateWithValidation(k, v)
 		if e != nil {
-			conf.Log.Errorf("Fail to import rule %s(%s) with error: %v", k, v, e)
+			conf.Log.Warnf("Fail to import rule %s with error: %v", k, e)
 		} else {
 			rules = append(rules, k)
 			counts[2]++

@@ -1,4 +1,4 @@
-// Copyright 2021-2024 EMQ Technologies Co., Ltd.
+// Copyright 2021-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -57,11 +57,18 @@ func (p *RuleProcessor) ExecCreateWithValidation(name, ruleJson string) (*def.Ru
 		return nil, err
 	}
 
-	err = p.db.Setnx(rule.Id, ruleJson)
+	or, err := p.GetRuleById(rule.Id)
+	if err == nil {
+		if !p.CanReplace(or.Version, rule.Version) { // old rule has newer version
+			return nil, fmt.Errorf("rule %s already exists with version (%s), new version (%s) is lower", rule.Id, or.Version, rule.Version)
+		}
+	}
+
+	err = p.db.Set(rule.Id, ruleJson)
 	if err != nil {
 		return nil, err
 	} else {
-		log.Infof("Rule %s is created.", rule.Id)
+		log.Infof("Rule %s with version (%s) is created.", rule.Id, rule.Version)
 	}
 
 	return rule, nil
@@ -78,19 +85,15 @@ func (p *RuleProcessor) ExecCreate(name, ruleJson string) error {
 	return nil
 }
 
-func (p *RuleProcessor) ExecUpdate(name, ruleJson string) (*def.Rule, error) {
-	rule, err := p.GetRuleByJson(name, ruleJson)
+func (p *RuleProcessor) ExecUpsert(id, ruleJson string) error {
+	err := p.db.Set(id, ruleJson)
 	if err != nil {
-		return nil, err
-	}
-	err = p.db.Set(rule.Id, ruleJson)
-	if err != nil {
-		return nil, err
+		return err
 	} else {
-		log.Infof("Rule %s is update.", rule.Id)
+		log.Infof("Rule %s is upserted.", id)
 	}
 
-	return rule, nil
+	return nil
 }
 
 func (p *RuleProcessor) ExecReplaceRuleState(name string, triggered bool) (*def.Rule, error) {
@@ -185,6 +188,15 @@ func (p *RuleProcessor) GetRuleByJson(id, ruleJson string) (*def.Rule, error) {
 		return nil, fmt.Errorf("Rule %s has invalid options: %s.", rule.Id, err)
 	}
 	return rule, nil
+}
+
+// CanReplace compare which version is newer, return true if new version is newer
+// If both version are empty, need to replace to be backward compatible
+func (p *RuleProcessor) CanReplace(old, new string) bool {
+	if old == "" && new == "" {
+		return true
+	}
+	return new > old
 }
 
 func validateRuleID(id string) error {

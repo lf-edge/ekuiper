@@ -1,4 +1,4 @@
-// Copyright 2021-2024 EMQ Technologies Co., Ltd.
+// Copyright 2021-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -719,18 +719,12 @@ func ruleHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		_, _ = fmt.Fprintf(w, "Rule %s is dropped.", name)
 	case http.MethodPut:
-		_, err := ruleProcessor.GetRuleById(name)
-		if err != nil {
-			handleError(w, err, "Rule not found", logger)
-			return
-		}
-
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
 			handleError(w, err, "Invalid body", logger)
 			return
 		}
-		err = registry.UpdateRule(name, string(body))
+		err = registry.UpsertRule(name, string(body))
 		if err != nil {
 			handleError(w, err, "Update rule error", logger)
 			return
