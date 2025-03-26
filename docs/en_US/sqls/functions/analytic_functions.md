@@ -33,8 +33,20 @@ AnalyticFuncName(<arguments>...) OVER ([WHEN <Expression>])
 lag(expr, [offset], [default value], [ignore null])
 ```
 
-Return the former result of expression at offset, if not found, return the default value specified, if default value not
-set, return nil. If offset and default value are not specified, offset is 1 and default value is nil.
+Returns the previous result of the expression at the specified offset.
+
+**Parameters:**
+
+- `expr`: The expression to evaluate
+- `offset` (optional): Number of rows to look back (default: 1)
+- `default_value` (optional): Value returned when no row is found at offset (default: nil)
+- `ignore_null` (optional): Whether to ignore null values when looking back (default: true)
+
+**Behavior:**
+
+- If no row exists at the specified offset, returns the default value
+- If no default value is specified, returns nil
+- When neither offset nor default value are specified, uses offset=1 and default=nil
 
 Example function call to get the previous temperature value:
 

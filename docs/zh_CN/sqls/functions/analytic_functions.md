@@ -28,7 +28,20 @@ AnalyticFuncName(<arguments>...) OVER ([WHEN <Expression>])
 lag(expr, [offset], [default value], [ignore null])
 ```
 
-返回表达式前一个值在偏移 offset 处的结果，如果没有找到，则返回默认值，如果没有指定默认值则返回 nil。
+返回指定偏移量处表达式的先前结果。
+
+**参数说明:**
+
+- `expr`: 要计算的表达式
+- `offset` (可选): 偏移量，即回溯的行数 (默认: 1)
+- `default value` (可选): 当偏移量处没有值时返回的值 (默认: nil)
+- `ignore null` (可选): 回溯时是否忽略空值 (默认: true)
+
+**行为说明:**
+
+- 如果指定偏移量处没有行存在，则返回默认值
+- 如果未指定默认值，则返回 nil
+- 当偏移量和默认值都未指定时，默认使用 偏移量=1 和 默认值=nil
 
 示例1：获取之前温度值的函数
 
