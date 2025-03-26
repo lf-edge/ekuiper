@@ -268,14 +268,12 @@ plan into multiple nodes, the following benefits are primarily achieved:
 
 ### Execution Plan Splitting
 
-The physical execution plan of the Sink node can be split into:
+The physical execution plan of the Sink node can be split into a sub pipeline：
 
-Batch --> Transform --> Encode --> Compress --> Encrypt --> Cache --> Connect
+Transform --> Encode --> Compress --> Encrypt --> Cache --> Connect
 
 The rules for splitting are as follows:
 
-- **Batch**: Configured with `batchSize` and/or `lingerInterval`. This node is used to accumulate batches, sending
-  received data to subsequent nodes according to batch configuration.
 - **Transform**: Configured with `dataTemplate` or `dataField` or `fields` or other shared properties that require data
   format conversion. This node is used to implement various transformation properties.
 - **Encode**: Applicable when the Sink is of a type that sends bytecode (such as MQTT, which can send arbitrary
@@ -289,3 +287,21 @@ The rules for splitting are as follows:
   information, please refer to [Caching](#caching).
 - **Connect**: A node that is necessarily implemented for each Sink. This node is used to connect to external systems
   and send data.
+
+#### Batch Handling
+
+When user configures sink property `batchSize` and/or `lingerInterval`, the sink node will be split into another type of
+sub pipeline.
+Notice that, if the sink can or need to deal with batch by itself, for example the Kafka sink, it will use the previous
+normal sink pipeline.
+
+Batch --> Transform --> Writer --> Compress --> Encrypt --> Cache --> Connect
+
+The batch is done by two parts:
+
+- **Batch**: This node is used to calculate the trigger of batches, sending trigger signal to subsequent nodes according
+  to the batch configuration.
+- **Writer**: This node will encode the data in **streaming** way and send out the aggregated encoded data once received
+  the batch trigger signal. Similar to Encode node, this node will leverage the `format` configuration. If the format
+  like delimited already supports streaming writing, it will use the format's capability. Otherwise, it will encode each
+  data with the format and simply append the encoded bytes together.
