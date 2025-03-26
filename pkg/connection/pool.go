@@ -57,7 +57,7 @@ func init() {
 
 func InitConnectionManager4Test() error {
 	InitMockTest()
-	InitConnectionManager(nil)
+	InitConnectionManager(context.Background())
 	return nil
 }
 

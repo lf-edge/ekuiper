@@ -20,14 +20,12 @@ const (
 	LblName = "name"
 )
 
-var (
-	ConnStatusGauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: "kuiper",
-		Subsystem: "conn_status",
-		Name:      "gauge",
-		Help:      "gauge of connection status",
-	}, []string{LblName})
-)
+var ConnStatusGauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+	Namespace: "kuiper",
+	Subsystem: "conn_status",
+	Name:      "gauge",
+	Help:      "gauge of connection status",
+}, []string{LblName})
 
 func init() {
 	prometheus.MustRegister(ConnStatusGauge)
