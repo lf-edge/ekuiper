@@ -106,6 +106,7 @@ PLUGINS_IN_FULL := \
 	extensions/sinks/image \
 	extensions/sinks/sql   \
 	extensions/sinks/zmq \
+	extensions/sinks/tdengine3 \
 	extensions/sources/random \
 	extensions/sources/sql \
 	extensions/sources/video \
@@ -165,12 +166,12 @@ PLUGINS := sinks/influx \
 	sinks/kafka \
 	sinks/image \
 	sinks/sql   \
+	sinks/tdengine3 \
 	sources/random \
 	sources/zmq \
 	sources/sql \
 	sources/video \
 	sources/kafka \
-	sinks/tdengine \
 	functions/accumulateWordCount \
 	functions/countPlusOne \
 	functions/image \

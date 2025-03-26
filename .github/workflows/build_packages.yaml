@@ -193,6 +193,7 @@ jobs:
           - sinks/zmq
           - sinks/kafka
           - sinks/sql
+          - sinks/tdengine3
           - sources/random
           - sources/zmq
           - sources/sql
