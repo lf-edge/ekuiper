@@ -243,11 +243,10 @@ Sink 缓存的配置有两个层次。`etc/kuiper.yaml` 中的全局配置，定
 
 Sink 节点的物理执行计划可拆分为：
 
-Batch --> Transform --> Encode --> Compress --> Encrypt --> Cache --> Connect
+Transform --> Encode --> Compress --> Encrypt --> Cache --> Connect
 
 拆分规则如下：
 
-- Batch: 配置了 `batchSize` 和/或 `lingerInterval`。该节点用于攒批，将收到的数据按照批量配置发给后续节点。
 - Transform: 配置了 `dataTemplate` 或 `dataField` 或 `fields` 等需要对数据进行格式转换的共用属性。该节点用于实现各种转换属性。
 - Encode: Sink 为发送字节码的类型（例如 MQTT，可发送任意字节码。有自身格式的 SQL sink 则不是此种类型）且配置了 `format`
   属性。该节点将根据格式以及格式 schema 等相关配置序列化数据。
@@ -255,3 +254,26 @@ Batch --> Transform --> Encode --> Compress --> Encrypt --> Cache --> Connect
 - Encrypt: Sink 为发送字节码的类型且配置了 `encryption` 属性。该节点将根据配置的加密算法对数据进行加密。
 - Cache: 配置了 `enableCache`。该节点用于实现数据缓存重发，详细信息请参见[缓存](#缓存)。
 - Connect: 每个 Sink 必定实现的节点。该节点用于连接外部系统并发送数据。
+
+#### 批量处理
+
+当用户配置了接收器属性 `batchSize` 和/或 `lingerInterval` 时，接收器节点会被拆分为另一种子流水线。  
+**注意**：如果接收器能够自行处理批量操作（如 Kafka 接收器），则会沿用原有的标准接收器流水线。
+
+**批量处理流水线**：  
+Batch --> Transform --> Writer --> Compress --> Encrypt --> Cache --> Connect
+
+批量处理由两个核心组件实现：
+
+**Batch**
+
+- 计算批量触发条件
+- 根据批量配置向下游节点发送触发信号
+
+**Writer**
+
+- 采用**流式**方式编码数据
+- 收到批量触发信号后发送聚合的编码数据
+- 使用 `format` 配置（类似于编码节点）：
+  - 若格式支持流式写入（如分隔符格式），则直接使用该特性
+  - 否则单独编码每条记录后拼接结果（如 JSON 数组）
