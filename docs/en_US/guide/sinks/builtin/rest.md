@@ -2,21 +2,23 @@
 
 The action is used for publish output message into a RESTful API.
 
-| Property name        | Optional | Description                                                                                                                                                                                                                                                                                                                                                                 |
-|----------------------|----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| method               | true     | The HTTP method for the RESTful API. It is a case insensitive string whose value is among "get", "post", "put", "patch", "delete" and "head". The default value is "get".                                                                                                                                                                                                   |
-| url                  | false    | The RESTful API endpoint, such as `https://www.example.com/api/dummy`                                                                                                                                                                                                                                                                                                       |
-| bodyType             | true     | The type of the body. Currently, these types are supported: "none", "json", "text", "html", "xml", "javascript" and "form". For "get" and "head", no body is required so the default value is "none". For other http methods, the default value is "json" For "html", "xml" and "javascript", the dataTemplate must be carefully set up to make sure the format is correct. |
-| timeout              | true     | The timeout (milliseconds) for a HTTP request, defaults to 5000 ms                                                                                                                                                                                                                                                                                                          |
-| headers              | true     | The additional headers to be set for the HTTP request.                                                                                                                                                                                                                                                                                                                      |
-| debugResp            | true     | Control if print the response information into the console. If set it to `true`, then print response; If set to `false`, then skip print log. The default is `false`.                                                                                                                                                                                                       |
-| certificationPath    | true     | The certification path. It can be an absolute path, or a relative path. If it is an relative path, then the base path is where you excuting the `kuiperd` command. For example, if you run `bin/kuiperd` from `/var/kuiper`, then the base path is `/var/kuiper`; If you run `./kuiperd` from `/var/kuiper/bin`, then the base path is `/var/kuiper/bin`.                   |
-| privateKeyPath       | true     | The private key path. It can be either absolute path, or relative path, which is similar to use of certificationPath.                                                                                                                                                                                                                                                       |
-| rootCaPath           | true     | The location of root ca path. It can be an absolute path, or a relative path, which is similar to use of certificationPath.                                                                                                                                                                                                                                                 |
-| tlsMinVersion        | true     | Specifies the minimum version of the TLS protocol that will be negotiated with the client. Accept values are `tls1.0`, `tls1.1`, `tls1.2` and `tls1.3`. Default: `tls1.2`.                                                                                                                                                                                |
-| renegotiationSupport | true     | Determines how and when the client handles server-initiated renegotiation requests. Support `never`, `once` or `freely` options. Default: `never`.                                                                                                                                                                                                        |
-| insecureSkipVerify   | true     | Control if to skip the certification verification. If it is set to `true`, then skip certification verification; Otherwise, verify the certification. The default value is `true`.                                                                                                                                                                                          |
-| oAuth                | true     | Define the authentication flow to follow the OAuth style. Other authentication method like apikey can directly set the key to header only, not need to set this configuration. Refer to [OAuth configuration](../../sources/builtin/http_pull.md#OAuth) in httppull source for more information.                                                                            |
+| Property name        | Optional | Description                                                                                                                                                                                                                                                                                                                                                                                       |
+|----------------------|----------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| method               | true     | The HTTP method for the RESTful API. It is a case insensitive string whose value is among "get", "post", "put", "patch", "delete" and "head". The default value is "get".                                                                                                                                                                                                                         |
+| url                  | false    | The RESTful API endpoint, such as `https://www.example.com/api/dummy`                                                                                                                                                                                                                                                                                                                             |
+| bodyType             | true     | The type of the body. Currently, these types are supported: "none", "json", "text", "html", "xml", "javascript", "form", "binary" and "formdata". For "get" and "head", no body is required so the default value is "none". For other http methods, the default value is "json" For "html", "xml" and "javascript", the dataTemplate must be carefully set up to make sure the format is correct. |
+| timeout              | true     | The timeout (milliseconds) for a HTTP request, defaults to 5000 ms                                                                                                                                                                                                                                                                                                                                |
+| headers              | true     | The additional headers to be set for the HTTP request.                                                                                                                                                                                                                                                                                                                                            |
+| formdata             | true     | If bodyType is formdata, this property specifies key-value pairs for form data. The encoded body (in bytes) will be transmitted as a file. Each key-value pair represents one part of the multipart form.                                                                                                                                                                                         |
+| fileFieldName        | true     | Specifies the form field name when uploading files via multipart/form-data                                                                                                                                                                                                                                                                                                                        |
+| debugResp            | true     | Control if print the response information into the console. If set it to `true`, then print response; If set to `false`, then skip print log. The default is `false`.                                                                                                                                                                                                                             |
+| certificationPath    | true     | The certification path. It can be an absolute path, or a relative path. If it is an relative path, then the base path is where you excuting the `kuiperd` command. For example, if you run `bin/kuiperd` from `/var/kuiper`, then the base path is `/var/kuiper`; If you run `./kuiperd` from `/var/kuiper/bin`, then the base path is `/var/kuiper/bin`.                                         |
+| privateKeyPath       | true     | The private key path. It can be either absolute path, or relative path, which is similar to use of certificationPath.                                                                                                                                                                                                                                                                             |
+| rootCaPath           | true     | The location of root ca path. It can be an absolute path, or a relative path, which is similar to use of certificationPath.                                                                                                                                                                                                                                                                       |
+| tlsMinVersion        | true     | Specifies the minimum version of the TLS protocol that will be negotiated with the client. Accept values are `tls1.0`, `tls1.1`, `tls1.2` and `tls1.3`. Default: `tls1.2`.                                                                                                                                                                                                                        |
+| renegotiationSupport | true     | Determines how and when the client handles server-initiated renegotiation requests. Support `never`, `once` or `freely` options. Default: `never`.                                                                                                                                                                                                                                                |
+| insecureSkipVerify   | true     | Control if to skip the certification verification. If it is set to `true`, then skip certification verification; Otherwise, verify the certification. The default value is `true`.                                                                                                                                                                                                                |
+| oAuth                | true     | Define the authentication flow to follow the OAuth style. Other authentication method like apikey can directly set the key to header only, not need to set this configuration. Refer to [OAuth configuration](../../sources/builtin/http_pull.md#OAuth) in httppull source for more information.                                                                                                  |
 
 Other common sink properties are supported. Please refer to the [sink common properties](../overview.md#common-properties) for more information.
 
@@ -30,14 +32,14 @@ will be sent individually.
 :::
 
 ```json
-    {
-      "rest": {
-        "url": "http://127.0.0.1:59882/api/v1/device/cc622d99-f835-4e94-b5cb-b1eff8699dc4/command/51fce08a-ae19-4bce-b431-b9f363bba705",     
-        "method": "post",
-        "dataTemplate": "\"newKey\":\"{{.key}}\"",
-        "sendSingle": true
-      }
-    }
+{
+  "rest": {
+    "url": "http://127.0.0.1:59882/api/v1/device/cc622d99-f835-4e94-b5cb-b1eff8699dc4/command/51fce08a-ae19-4bce-b431-b9f363bba705",
+    "method": "post",
+    "dataTemplate": "\"newKey\":\"{{.key}}\"",
+    "sendSingle": true
+  }
+}
 ```
 
 Example to use oAuth style authentication:
@@ -131,3 +133,44 @@ Then in the action, we set the `method` and `url` to be the value of the result 
   ]
 }
 ```
+
+## File Upload
+
+To upload data as files to an HTTP server, use `bodyType=formdata` configuration.
+
+**Key Characteristics**:
+
+- Uses "multipart/form-data" content type
+- Binary results will be uploaded as form file content
+- Additional form attributes can be configured via `formData`
+
+**Best Practices**:
+
+- For high-frequency data sources, configure batching or window aggregation to avoid frequent small file uploads.
+
+**Example Configuration**:
+
+```json
+{
+  "id": "restUpload",
+  "sql": "SELECT value1, value2 FROM neuron",
+  "actions": [
+    {
+      "rest": {
+        "url": "http://yoururlhere.com",
+        "method": "post",
+        "fileFieldName": "file1",
+        "formData": {
+          "key1": "value1",
+          "key2": "value2"
+        },
+        "batchSize": 10,
+        "format": "delimited",
+        "sendSingle": true
+      }
+    }
+  ]
+}
+```
+
+In this example, the format `delimited` will encode the content into csv which containing 10 records each and upload.
