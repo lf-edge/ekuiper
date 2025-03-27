@@ -30,41 +30,47 @@
 REST 服务通常需要特定的数据格式。 这可以由公共目标属性 `dataTemplate` 强制使用。 请参考[数据模板](../data_template.md)。 以下是用于连接到 Edgex Foundry core 命令的示例配置。dataTemplate`{{.key}}` 表示将打印出键值，即 result [key]。 因此，这里的模板是在结果中仅选择字段 `key`，并将字段名称更改为 `newKey`。`sendSingle` 是另一个常见属性。 设置为 true 表示如果结果是数组，则每个元素将单独发送。
 :::
 
-    {
-        "rest": {
-            "url": "http://127.0.0.1:59882/api/v1/device/cc622d99-f835-4e94-b5cb-b1eff8699dc4/command/51fce08a-ae19-4bce-b431-b9f363bba705",
-            "method": "post",
-            "dataTemplate": "\"newKey\":\"{{.key}}\"",
-            "sendSingle": true
-        }
-    }
+```json
+{
+  "rest": {
+    "url": "http://127.0.0.1:59882/api/v1/device/cc622d99-f835-4e94-b5cb-b1eff8699dc4/command/51fce08a-ae19-4bce-b431-b9f363bba705",
+    "method": "post",
+    "dataTemplate": "\"newKey\":\"{{.key}}\"",
+    "sendSingle": true
+  }
+}
+```
 
 使用 OAuth 风格鉴权的示例:
 
+```json
+{
+  "id": "ruleFollowBack",
+  "sql": "SELECT follower FROM followStream",
+  "actions": [
     {
-        "id": "ruleFollowBack",
-        "sql": "SELECT follower FROM followStream",
-        "actions": [{
-            "rest": {
-                "url": "https://com.awebsite/follows",
-                "method": "POST",
-                "sendSingle": true,
-                "bodyType": "json",
-                "dataTemplate": "{\"data\":{\"relationships\":{\"follower\":{\"data\":{\"type\":\"users\",\"id\":\"1398589\"}},\"followed\":{\"data\":{\"type\":\"users\",\"id\":\"{{.follower}}\"}}},\"type\":\"follows\"}}",
-                "headers": {
-                    "Content-Type": "application/vnd.api+json",
-                    "Authorization": "Bearer {{.access_token}}"
-                },
-                "oAuth": {
-                    "access": {
-                        "url": "https://com.awebsite/oauth/token",
-                        "body": "{\"grant_type\": \"password\",\"username\": \"user@gmail.com\",\"password\": \"mypass\"}",
-                        "expire": "3600"
-                    }
-                }
-            }
-        }]
+      "rest": {
+        "url": "https://com.awebsite/follows",
+        "method": "POST",
+        "sendSingle": true,
+        "bodyType": "json",
+        "dataTemplate": "{\"data\":{\"relationships\":{\"follower\":{\"data\":{\"type\":\"users\",\"id\":\"1398589\"}},\"followed\":{\"data\":{\"type\":\"users\",\"id\":\"{{.follower}}\"}}},\"type\":\"follows\"}}",
+        "headers": {
+          "Content-Type": "application/vnd.api+json",
+          "Authorization": "Bearer {{.access_token}}"
+        },
+        "oAuth": {
+          "access": {
+            "url": "https://com.awebsite/oauth/token",
+            "body": "{\"grant_type\": \"password\",\"username\": \"user@gmail.com\",\"password\": \"mypass\"}",
+            "expire": "3600"
+          }
+        }
+      }
     }
+  ]
+}
+```
 
 Visualization mode
 以可视化图形交互创建 rules 的 SQL 和 Actions
@@ -74,54 +80,64 @@ Text mode
 
 创建写 taosdb rest示例：
 
+```json
+{
+  "id": "rest1",
+  "sql": "SELECT tele[0].Tag00001 AS temperature, tele[0].Tag00002 AS humidity FROM neuron",
+  "actions": [
     {
-        "id": "rest1",
-        "sql": "SELECT tele[0].Tag00001 AS temperature, tele[0].Tag00002 AS humidity FROM neuron",
-        "actions": [
-            {
-                "rest": {
-                    "bodyType": "text",
-                    "dataTemplate": "insert into mqtt.kuiper values (now, {{.temperature}}, {{.humidity}})",
-                    "debugResp": true,
-                    "headers": {"Authorization": "Basic cm9vdDp0YW9zZGF0YQ=="},
-                    "method": "POST",
-                    "sendSingle": true,
-                    "url": "http://xxx.xxx.xxx.xxx:6041/rest/sql"
-                }
-            }
-        ]
+      "rest": {
+        "bodyType": "text",
+        "dataTemplate": "insert into mqtt.kuiper values (now, {{.temperature}}, {{.humidity}})",
+        "debugResp": true,
+        "headers": {
+          "Authorization": "Basic cm9vdDp0YW9zZGF0YQ=="
+        },
+        "method": "POST",
+        "sendSingle": true,
+        "url": "http://xxx.xxx.xxx.xxx:6041/rest/sql"
+      }
     }
+  ]
+}
+```
 
 ## 设置动态输出参数
 
 很多情况下，我们需要根据结果数据，决定写入的目的地址和参数。在 REST sink 里，`method`，`url`，`bodyType` 和 `headers` 支持动态参数。动态参数可通过数据模板语法配置。接下来，让我们使用动态参数改写上例。假设我们收到了数据中包含了 http 方法和 url 后缀等元数据。我们可以通过改写 SQL 语句，在输出结果中得到这两个值。规则输出的单条数据类似：
 
-    {
-        "method":"post",
-        "url":"http://xxx.xxx.xxx.xxx:6041/rest/sql",
-        "temperature": 20,
-        "humidity": 80
-    }
+```json
+{
+  "method": "post",
+  "url": "http://xxx.xxx.xxx.xxx:6041/rest/sql",
+  "temperature": 20,
+  "humidity": 80
+}
+```
 
 在规则 action 中，可以通过数据模板语法取得结果数据作为属性变量。如下例子中，`method` 和 `url` 为动态变量。
 
+```json
+{
+  "id": "rest2",
+  "sql": "SELECT tele[0]->Tag00001 AS temperature, tele[0]->Tag00002 AS humidity, method, concat(\"http://xxx.xxx.xxx.xxx:6041/rest/sql\", urlPostfix) as url FROM neuron",
+  "actions": [
     {
-        "id": "rest2",
-        "sql": "SELECT tele[0]->Tag00001 AS temperature, tele[0]->Tag00002 AS humidity, method, concat(\"http://xxx.xxx.xxx.xxx:6041/rest/sql\", urlPostfix) as url FROM neuron",
-        "actions": [
-            {
-                "rest": {
-                    "bodyType": "text",
-                    "dataTemplate": "insert into mqtt.kuiper values (now, {{.temperature}}, {{.humidity}})",
-                    "debugResp": true,
-                    "headers": {"Authorization": "Basic cm9vdDp0YW9zZGF0YQ=="},
-                    "method": "{{.method}}",
-                    "sendSingle": true,
-                    "url": "{{.url}}"
-                }
-            }
-        ]
+      "rest": {
+        "bodyType": "text",
+        "dataTemplate": "insert into mqtt.kuiper values (now, {{.temperature}}, {{.humidity}})",
+        "debugResp": true,
+        "headers": {
+          "Authorization": "Basic cm9vdDp0YW9zZGF0YQ=="
+        },
+        "method": "{{.method}}",
+        "sendSingle": true,
+        "url": "{{.url}}"
+      }
     }
+  ]
+}
+```
 
 ## 文件上传
 
@@ -139,25 +155,27 @@ Text mode
 
 **配置示例**：
 
+```json
+{
+  "id": "restUpload",
+  "sql": "SELECT value1, value2 FROM neuron",
+  "actions": [
     {
-        "id": "restUpload",
-        "sql": "SELECT value1, value2 FROM neuron",
-        "actions": [
-            {
-                "rest": {
-                    "url": "http://yoururlhere.com",
-                    "method": "post",
-                    "fileFieldName": "file1",
-                    "formData": {
-                        "key1": "value1",
-                        "key2": "value2"
-                    },
-                    "batchSize": 10,
-                    "format": "delimited",
-                    "sendSingle": true
-                }
-            }
-        ]
+      "rest": {
+        "url": "http://yoururlhere.com",
+        "method": "post",
+        "fileFieldName": "file1",
+        "formData": {
+          "key1": "value1",
+          "key2": "value2"
+        },
+        "batchSize": 10,
+        "format": "delimited",
+        "sendSingle": true
+      }
     }
+  ]
+}
+```
 
 本示例中，每10条记录将生成一个 CSV 文件上传。
