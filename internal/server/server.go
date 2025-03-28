@@ -211,7 +211,7 @@ func StartUp(Version string) {
 		panic(err)
 	}
 	conf.SetupConnectionProps()
-	connection.InitConnectionManager()
+	connection.InitConnectionManager(serverCtx)
 	if err := connection.ReloadNamedConnection(); err != nil {
 		conf.Log.Warn(err)
 	}

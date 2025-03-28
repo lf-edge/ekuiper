@@ -57,23 +57,57 @@ func init() {
 
 func InitConnectionManager4Test() error {
 	InitMockTest()
-	InitConnectionManager()
+	InitConnectionManager(context.Background())
 	return nil
 }
 
-func InitConnectionManager() {
+func InitConnectionManager(ctx context.Context) {
 	globalConnectionManager = &Manager{
 		connectionPool: make(map[string]*Meta),
 	}
 	if conf.IsTesting {
 		return
 	}
+	go PatrolConnectionStatusJob(ctx)
 }
 
 const (
 	DefaultInitialInterval = 100 * time.Millisecond
 	DefaultMaxInterval     = 10 * time.Second
 )
+
+func PatrolConnectionStatusJob(ctx context.Context) {
+	ticker := time.NewTicker(15 * time.Second)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			patrolConnectionStatus()
+		}
+	}
+}
+
+func patrolConnectionStatus() {
+	globalConnectionManager.RLock()
+	defer globalConnectionManager.RUnlock()
+	for connName, conn := range globalConnectionManager.connectionPool {
+		// For now, we only patrol named connection
+		if !conn.Named {
+			continue
+		}
+		status, _ := conn.GetStatus()
+		switch status {
+		case api.ConnectionConnected:
+			ConnStatusGauge.WithLabelValues(connName).Set(1)
+		case api.ConnectionDisconnected:
+			ConnStatusGauge.WithLabelValues(connName).Set(-1)
+		case api.ConnectionConnecting:
+			ConnStatusGauge.WithLabelValues(connName).Set(0)
+		}
+	}
+}
 
 func NewExponentialBackOff() *backoff.ExponentialBackOff {
 	return backoff.NewExponentialBackOff(
