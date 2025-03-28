@@ -16,6 +16,7 @@ package node
 
 import (
 	"errors"
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -29,7 +30,8 @@ func TestAlignTable(t *testing.T) {
 	tests := []struct {
 		name string
 		in   []any
-		out  []any
+		out  []any // two outputs to cover random order
+		out2 []any
 	}{
 		{
 			name: "stream send",
@@ -157,6 +159,28 @@ func TestAlignTable(t *testing.T) {
 					},
 				},
 			},
+			out2: []any{
+				&xsql.WindowTuples{
+					Content: []xsql.Row{
+						&xsql.Tuple{
+							Emitter: "stream1",
+							Message: map[string]any{"id": 1, "a": 4},
+						},
+						&xsql.Tuple{
+							Emitter: "table2",
+							Message: map[string]any{"id": 1, "t2": "dd1"},
+						},
+						&xsql.Tuple{
+							Emitter: "table2",
+							Message: map[string]any{"id": 1, "t2": "dd2"},
+						},
+						&xsql.Tuple{
+							Emitter: "table1",
+							Message: map[string]any{"id": 1, "t1": "data5"},
+						},
+					},
+				},
+			},
 		},
 	}
 
@@ -181,7 +205,13 @@ func TestAlignTable(t *testing.T) {
 				rr := <-out
 				r = append(r, rr)
 			}
-			assert.Equal(t, tt.out, r)
+			if tt.out2 != nil {
+				if !reflect.DeepEqual(tt.out, r) {
+					assert.Equal(t, tt.out2, r)
+				}
+			} else {
+				assert.Equal(t, tt.out, r)
+			}
 		})
 	}
 }
