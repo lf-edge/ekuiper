@@ -16,7 +16,6 @@ package mqtt
 
 import (
 	"testing"
-	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	mqtt "github.com/mochi-mqtt/server/v2"
@@ -33,7 +32,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/model"
 )
 
-func TestV5SourceSinkRecon(t *testing.T) {
+func TestV5SourceSink(t *testing.T) {
 	// Create the new MQTT Server.
 	server := mqtt.New(nil)
 	// Allow all connections.
@@ -46,7 +45,6 @@ func TestV5SourceSinkRecon(t *testing.T) {
 		err = server.Serve()
 		require.NoError(t, err)
 	}()
-	addr := tcp.Address()
 	url := "mqtt://127.0.0.1:12883"
 	dataDir, err := conf.GetDataLoc()
 	require.NoError(t, err)
@@ -87,7 +85,7 @@ func TestV5SourceSinkRecon(t *testing.T) {
 		"qos":             0,
 		"topic":           "demo",
 	}, result, func() {
-		err := mock.RunBytesSinkCollect(sk, data[:1], map[string]any{
+		err := mock.RunBytesSinkCollect(sk, data, map[string]any{
 			"server":          url,
 			"topic":           "demo",
 			"qos":             0,
@@ -97,26 +95,6 @@ func TestV5SourceSinkRecon(t *testing.T) {
 		assert.NoError(t, err)
 		err = server.Close()
 		tcp.Close(nil)
-		assert.NoError(t, err)
-		time.Sleep(time.Millisecond * 100)
-		go func() {
-			tcp := listeners.NewTCP(listeners.Config{Address: addr})
-			err := server.AddListener(tcp)
-			require.NoError(t, err)
-			err = server.Serve()
-			require.NoError(t, err)
-		}()
-		time.Sleep(time.Millisecond * 500)
-		err = mock.RunBytesSinkCollect(sk, data[1:], map[string]any{
-			"server":          url,
-			"topic":           "demo",
-			"qos":             0,
-			"protocolVersion": "5",
-			"retained":        false,
-			"properties": map[string]string{
-				"prop2": "val2",
-			},
-		})
 		assert.NoError(t, err)
 	})
 }

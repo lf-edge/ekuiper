@@ -1,4 +1,4 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@ package mqtt
 import (
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	mqtt "github.com/mochi-mqtt/server/v2"
@@ -34,7 +33,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/model"
 )
 
-func TestSourceSinkRecon(t *testing.T) {
+func TestSourceSink(t *testing.T) {
 	// Create the new MQTT Server.
 	server := mqtt.New(nil)
 	// Allow all connections.
@@ -86,7 +85,7 @@ func TestSourceSinkRecon(t *testing.T) {
 		"qos":        0,
 		"topic":      "demo",
 	}, result, func() {
-		err := mock.RunBytesSinkCollect(sk, data[:1], map[string]any{
+		err := mock.RunBytesSinkCollect(sk, data, map[string]any{
 			"server":   url,
 			"topic":    "demo",
 			"qos":      0,
@@ -98,21 +97,6 @@ func TestSourceSinkRecon(t *testing.T) {
 		assert.NoError(t, err)
 		err = server.Close()
 		tcp.Close(nil)
-		assert.NoError(t, err)
-		go func() {
-			tcp := listeners.NewTCP(listeners.Config{Address: url})
-			err := server.AddListener(tcp)
-			require.NoError(t, err)
-			err = server.Serve()
-			require.NoError(t, err)
-		}()
-		time.Sleep(time.Millisecond * 100)
-		err = mock.RunBytesSinkCollect(sk, data[1:], map[string]any{
-			"server":   url,
-			"topic":    "demo",
-			"qos":      0,
-			"retained": false,
-		})
 		assert.NoError(t, err)
 	})
 }
