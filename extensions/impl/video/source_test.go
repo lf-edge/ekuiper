@@ -64,7 +64,6 @@ func TestProvision(t *testing.T) {
 }
 
 func TestPull(t *testing.T) {
-	t.Skipf("flaky test")
 	meta := map[string]any{
 		"url": "https://gcwbcdks.v.kcdnvip.com/gcwbcd/cdrmipanda_1/index.m3u8",
 	}
