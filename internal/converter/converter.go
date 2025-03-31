@@ -24,7 +24,6 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/converter/delimited"
 	"github.com/lf-edge/ekuiper/v2/internal/converter/json"
 	"github.com/lf-edge/ekuiper/v2/internal/converter/urlencoded"
-	"github.com/lf-edge/ekuiper/v2/internal/converter/xml"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	"github.com/lf-edge/ekuiper/v2/pkg/message"
@@ -34,9 +33,6 @@ import (
 func init() {
 	modules.RegisterConverter(message.FormatJson, func(_ api.StreamContext, _ string, schema map[string]*ast.JsonStreamField, props map[string]any) (message.Converter, error) {
 		return json.NewFastJsonConverter(schema, props), nil
-	})
-	modules.RegisterConverter(message.FormatXML, func(ctx api.StreamContext, schemaId string, logicalSchema map[string]*ast.JsonStreamField, props map[string]any) (message.Converter, error) {
-		return xml.NewXMLConverter(), nil
 	})
 	modules.RegisterConverter(message.FormatBinary, func(_ api.StreamContext, _ string, _ map[string]*ast.JsonStreamField, props map[string]any) (message.Converter, error) {
 		return binary.GetConverter()
