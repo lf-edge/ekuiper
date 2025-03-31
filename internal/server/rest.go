@@ -280,13 +280,17 @@ func upload(file *fileContent) error {
 }
 
 func getFile(file *fileContent) error {
-	filePath := filepath.Join(uploadDir, file.Name)
-	dst, err := os.Create(filePath)
+	root, err := os.OpenRoot(uploadDir)
+	if err != nil {
+		return err
+	}
+	defer root.Close()
+	dst, err := root.Create(file.Name)
 	if err != nil {
 		return err
 	}
 	defer dst.Close()
-
+	filePath := filepath.Join(uploadDir, file.Name)
 	if file.FilePath != "" {
 		err := httpx.DownloadFile(filePath, file.FilePath)
 		if err != nil {
