@@ -22,8 +22,6 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
 )
 
 func (suite *RestTestSuite) TestUploadHandler() {
