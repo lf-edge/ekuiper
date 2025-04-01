@@ -382,9 +382,15 @@ func fileUploadHandler(w http.ResponseWriter, r *http.Request) {
 
 			defer file.Close()
 
+			root, err := os.OpenRoot(uploadDir)
+			if err != nil {
+				handleError(w, err, "", logger)
+				return
+			}
+			defer root.Close()
 			// Create file
 			filePath := filepath.Join(uploadDir, handler.Filename)
-			dst, err := os.Create(filePath)
+			dst, err := root.Create(filePath)
 			defer dst.Close()
 			if err != nil {
 				handleError(w, err, "Error creating the file", logger)
