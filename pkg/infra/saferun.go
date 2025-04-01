@@ -1,4 +1,4 @@
-// Copyright 2022-2024 EMQ Technologies Co., Ltd.
+// Copyright 2022-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"runtime"
 	"runtime/debug"
+	"strings"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
@@ -66,4 +67,22 @@ func DrainError(ctx api.StreamContext, err error, errCh chan<- error) {
 	case errCh <- err:
 	default:
 	}
+}
+
+func MsgWithStack(msg string) string {
+	const depth = 32
+	var stackBuilder strings.Builder
+	pcs := make([]uintptr, depth)
+	n := runtime.Callers(2, pcs) // Skip 2 frames
+	frames := runtime.CallersFrames(pcs[:n])
+
+	for {
+		frame, more := frames.Next()
+		if !more {
+			break
+		}
+		stackBuilder.WriteString(fmt.Sprintf("%s:%d %s\n", frame.File, frame.Line, frame.Function))
+	}
+
+	return fmt.Sprintf("%s\nStack:\n%s", msg, stackBuilder.String())
 }

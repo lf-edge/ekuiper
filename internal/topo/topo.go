@@ -135,6 +135,7 @@ func (s *Topo) Cancel() error {
 			rt.Close(s.ctx, s.name, s.runId)
 		}
 	}
+	conf.Log.Info(infra.MsgWithStack("run cancel"))
 	go func() {
 		time.Sleep(3 * time.Second)
 		debug.FreeOSMemory()

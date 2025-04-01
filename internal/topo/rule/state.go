@@ -154,7 +154,7 @@ func (s *State) transit(newState RunState, err error) {
 	default:
 		// do nothing
 	}
-	s.logger.Infof("rule %s transit to state %s", s.Rule.Id, StateName[s.currentState])
+	s.logger.Info(infra.MsgWithStack(fmt.Sprintf("rule %s transit to state %s", s.Rule.Id, StateName[s.currentState])))
 }
 
 func (s *State) GetState() RunState {
