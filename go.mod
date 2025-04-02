@@ -13,7 +13,6 @@ require (
 	github.com/amsokol/ignite-go-client v0.12.2
 	github.com/apache/calcite-avatica-go/v5 v5.3.0
 	github.com/apple/foundationdb/bindings/go v0.0.0-20240904211458-9b3a2f0f068f
-	github.com/beevik/etree v1.4.1
 	github.com/benbjohnson/clock v1.3.5
 	github.com/bippio/go-impala v2.1.0+incompatible
 	github.com/btnguyen2k/gocosmos v1.1.0
@@ -65,7 +64,7 @@ require (
 	github.com/pingcap/failpoint v0.0.0-20240528011301-b51a646c7c86
 	github.com/prestodb/presto-go-client v0.0.0-20240426182841-905ac40a1783
 	github.com/prometheus/client_golang v1.21.0
-	github.com/redis/go-redis/v9 v9.6.3
+	github.com/redis/go-redis/v9 v9.6.1
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/segmentio/kafka-go v0.4.47
 	github.com/shirou/gopsutil/v3 v3.24.5
@@ -105,7 +104,11 @@ require (
 	sqlflow.org/gomaxcompute v0.0.0-20210805062559-c14ae028b44c
 )
 
-require github.com/fxamacker/cbor/v2 v2.7.0 // indirect
+require (
+	github.com/fxamacker/cbor/v2 v2.7.0 // indirect
+	github.com/json-iterator/go v1.1.12 // indirect
+	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
+)
 
 require (
 	cel.dev/expr v0.15.0 // indirect
@@ -316,7 +319,7 @@ require (
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/speps/go-hashids v2.0.0+incompatible // indirect
 	github.com/spf13/cast v1.7.0 // indirect
-	github.com/taosdata/driver-go/v3 v3.6.0 // indirect
+	github.com/taosdata/driver-go/v3 v3.6.0
 	github.com/tetratelabs/wazero v1.8.0 // indirect
 	github.com/tklauser/go-sysconf v0.3.14 // indirect
 	github.com/tklauser/numcpus v0.8.0 // indirect
