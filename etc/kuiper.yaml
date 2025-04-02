@@ -158,3 +158,6 @@ openTelemetry:
   remoteEndpoint: localhost:4318
   localTraceCapacity: 2048
   enableLocalStorage: false
+
+hack:
+  cold: false

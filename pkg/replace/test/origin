@@ -1,0 +1,54 @@
+{
+  "id": "cold",
+  "name": "冷数据周期采集",
+  "version": "1742863676",
+  "actions": [
+    {
+      "rest": {
+        "url": "https://geea-cold-data.geely.com/api/geea/offline/upload",
+        "certificationPath": "data/cert/client.pem",
+        "privateKeyPath": "data/cert/client.key",
+        "rootCaPath": "data/cert/prod_cn_chain.pem",
+        "insecureSkipVerify": true,
+        "method": "post",
+        "bodyType": "formdata",
+        "fileFieldName": "d",
+        "timeout": "60s",
+        "formData": {
+          "tp": "1",
+          "v": "{{prop \"v\"}}",
+          "cs": "{{prop \"cs\"}}",
+          "rid": "cold",
+          "sv": "{{prop \"sv\"}}",
+          "uid": "{{prop \"snowflake\"}}",
+          "nc": "{{prop \"nc\"}}",
+          "st": "{{prop \"et\"}}",
+          "et": "{{prop \"et\"}}",
+          "tt": "{{prop \"et\"}}"
+        },
+        "format": "jsonColStr",
+        "sendSingle": true,
+        "lingerInterval": "5m",
+        "compression": "zstd",
+        "compressionProps": {
+          "windowSize": 4194304
+        },
+        "encryption": "aes",
+        "encProps": {
+          "mode": "gcm",
+          "iv": "mao+aO2Bc6Du0GaE",
+          "aad": "TSPDzsM0tJvbNwxDf+x43g==",
+          "tagSize": 32
+        },
+        "resendInterval": "1m",
+        "memoryCacheThreshold": 12,
+        "bufferPageSize": 1
+      }
+    }
+  ],
+  "options": {
+    "sendNilField": true,
+    "sendError": false
+  },
+  "sql": "select event_time() from spi_1000ms_stream"
+}
