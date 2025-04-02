@@ -123,7 +123,7 @@ window_end()
 ## GET_KEYED_STATE
 
 ```text
-get_keyed_state(key, state_name)
+get_keyed_state(key, state_name, default_value)
 ```
 
 返回键在数据库中对应的值。第一个参数为 键 表达式，第二个参数为值类型，支持 bigint, float, string, boolean and datetime

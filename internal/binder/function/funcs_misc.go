@@ -639,7 +639,6 @@ func registerMiscFunc() {
 			}
 			return nil
 		},
-		check: returnNilIfHasAnyNil,
 	}
 	builtins["hex2dec"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
