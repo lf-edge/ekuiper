@@ -45,7 +45,7 @@ func buildActions(tp *topo.Topo, rule *def.Rule, inputs []node.Emitter, streamCo
 				return err
 			}
 			sinkName := fmt.Sprintf("%s_%d", name, i)
-			cn, err := SinkToComp(tp, name, sinkName, props, rule, streamCount, schema)
+			cn, err := SinkToComp(tp, name, sinkName, copyProps(props), rule, streamCount, schema)
 			if err != nil {
 				return err
 			}
@@ -53,6 +53,14 @@ func buildActions(tp *topo.Topo, rule *def.Rule, inputs []node.Emitter, streamCo
 		}
 	}
 	return nil
+}
+
+func copyProps(raw map[string]any) map[string]any {
+	newProps := make(map[string]any, len(raw))
+	for k, v := range raw {
+		newProps[k] = v
+	}
+	return newProps
 }
 
 func PlanSinkOps(tp *topo.Topo, inputs []node.Emitter, cn node.CompNode) {
