@@ -477,6 +477,8 @@ func (s *State) doStop() error {
 	return nil
 }
 
+const EOFMessage = "done"
+
 // This is called async
 func (s *State) runTopo(ctx context.Context, tp *topo.Topo, rs *def.RestartStrategy) {
 	err := infra.SafeRun(func() error {
@@ -495,7 +497,7 @@ func (s *State) runTopo(ctx context.Context, tp *topo.Topo, rs *def.RestartStrat
 					tp.Cancel()
 				} else { // exit normally
 					if errorx.IsEOF(er) {
-						s.lastWill = "done"
+						s.lastWill = EOFMessage
 						s.updateTrigger(s.Rule.Id, false)
 					}
 					tp.Cancel()
@@ -544,7 +546,7 @@ func (s *State) runTopo(ctx context.Context, tp *topo.Topo, rs *def.RestartStrat
 	if err != nil { // Exit after retries
 		s.logger.Error(err)
 		s.transit(StoppedByErr, err)
-	} else if s.lastWill != "" {
+	} else if s.lastWill == EOFMessage {
 		// Two case when err is nil; 1. Manually stop 2.EOF
 		// Only transit status when EOF. Don't do this for manual stop because the state already changed!
 		s.transit(Stopped, nil)
