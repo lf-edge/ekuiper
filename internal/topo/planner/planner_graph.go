@@ -109,7 +109,7 @@ func PlanByGraph(rule *def.Rule) (*topo.Topo, error) {
 			if _, ok := ruleGraph.Topo.Edges[nodeName]; ok {
 				return nil, fmt.Errorf("sink %s has edge", nodeName)
 			}
-			cn, err := SinkToComp(tp, gn.NodeType, nodeName, gn.Props, rule, len(sourceNames))
+			cn, err := SinkToComp(tp, gn.NodeType, nodeName, copyProps(gn.Props), rule, len(sourceNames))
 			if err != nil {
 				return nil, err
 			}
