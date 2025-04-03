@@ -283,6 +283,10 @@ func (rr *RuleRegistry) RestartRule(name string) error {
 			conf.Log.Warnf("restart rule update db status error: %s", err.Error())
 		}
 		rs.Stop()
+		rs.Rule, err = ruleProcessor.GetRuleById(name)
+		if err != nil {
+			return err
+		}
 		return rs.Start()
 	} else {
 		return errorx.NewWithCode(errorx.NOT_FOUND, fmt.Sprintf("Rule %s is not found in registry, please check if it is created", name))

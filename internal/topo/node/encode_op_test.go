@@ -1,4 +1,4 @@
-// Copyright 2021-2024 EMQ Technologies Co., Ltd.
+// Copyright 2021-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -83,7 +83,7 @@ func TestEncodeJSON(t *testing.T) {
 		},
 	}
 	ctx := mockContext.NewMockContext("test1", "encode_test")
-	op, err := NewEncodeOp(ctx, "test", &def.RuleOption{BufferLength: 10, SendError: true}, &SinkConf{Format: "json"})
+	op, err := NewEncodeOp(ctx, "test", &def.RuleOption{BufferLength: 10, SendError: true}, nil, &SinkConf{Format: "json"})
 	assert.NoError(t, err)
 	out := make(chan any, 100)
 	err = op.AddOutput(out, "test")
@@ -101,7 +101,7 @@ func TestEncodeJSON(t *testing.T) {
 
 func TestEncodeValidate(t *testing.T) {
 	ctx := mockContext.NewMockContext("test1", "encode_test")
-	_, err := NewEncodeOp(ctx, "test", &def.RuleOption{BufferLength: 10, SendError: true}, &SinkConf{Format: "cann"})
+	_, err := NewEncodeOp(ctx, "test", &def.RuleOption{BufferLength: 10, SendError: true}, nil, &SinkConf{Format: "cann"})
 	assert.Error(t, err)
 	assert.Equal(t, "format type cann not supported", err.Error())
 }
