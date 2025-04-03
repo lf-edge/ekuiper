@@ -159,6 +159,9 @@ func (k *KafkaSink) Provision(ctx api.StreamContext, configs map[string]any) err
 	if err != nil {
 		return err
 	}
+	if k.kc.BatchSize == 0 && k.kc.LingerInterval == 0 {
+		k.kc.BatchSize = 1
+	}
 	k.msgQ = make(chan *kafkago.Message, 2*k.kc.BatchSize)
 	// run batch
 	switch {
@@ -169,7 +172,6 @@ func (k *KafkaSink) Provision(ctx api.StreamContext, configs map[string]any) err
 	case k.kc.BatchSize == 0 && k.kc.LingerInterval > 0:
 		k.runWithTicker(ctx)
 	}
-
 	return nil
 }
 
