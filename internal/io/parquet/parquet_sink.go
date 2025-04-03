@@ -20,11 +20,10 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/xitongsys/parquet-go-source/local"
 	"github.com/xitongsys/parquet-go/source"
 	"github.com/xitongsys/parquet-go/writer"
-
-	"github.com/lf-edge/ekuiper/contract/v2/api"
 
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
