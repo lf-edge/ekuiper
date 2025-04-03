@@ -176,6 +176,7 @@ See the table below for a detailed explanation of each rule behavior:
 | enableRuleTracer   | bool: false          | Specify whether the rule enables rule-level data tracing                                                                                                                                                                                                                                                                                          |
 | sendNilField       | bool: false          | Specify whether to output columns with a value of nil as specified by the rules.                                                                                                                                                                                                                                                                  |
 | planOptimizeStrategy | struct | Specify whether the rule turns on the corresponding optimization |
+| disableBufferFullDiscard | bool: false | Whether to enable the behavior of discarding data when the buffer is full                                                                           |
 
 For detail about `qos` and `checkpointInterval`, please check [state and fault tolerance](./state_and_fault_tolerance.md).
 
