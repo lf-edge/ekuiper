@@ -25,12 +25,13 @@ import (
 	"github.com/pingcap/failpoint"
 )
 
-func UnzipTo(f *zip.File, fpath string) (err error) {
+func UnzipTo(f *zip.File, folder, name string) (err error) {
 	defer func() {
 		failpoint.Inject("UnzipToErr", func() {
 			err = errors.New("UnzipToErr")
 		})
 	}()
+	fpath := filepath.Join(folder, name)
 	_, err = os.Stat(fpath)
 
 	if f.FileInfo().IsDir() {
@@ -54,18 +55,20 @@ func UnzipTo(f *zip.File, fpath string) (err error) {
 		}
 	}
 
-	outFile, err := os.OpenFile(fpath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
+	root, err := os.OpenRoot(folder)
 	if err != nil {
 		return err
 	}
-
+	defer root.Close()
+	outFile, err := root.OpenFile(name, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
+	if err != nil {
+		return err
+	}
 	rc, err := f.Open()
 	if err != nil {
 		return err
 	}
-
 	_, err = io.Copy(outFile, rc)
-
 	outFile.Close()
 	rc.Close()
 	return err

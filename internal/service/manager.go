@@ -452,7 +452,7 @@ func (m *Manager) unzip(name, src string) error {
 	}
 	// unzip
 	for _, file := range r.File {
-		err := filex.UnzipTo(file, path.Join(m.etcDir, file.Name))
+		err := filex.UnzipTo(file, m.etcDir, file.Name)
 		if err != nil {
 			return err
 		}

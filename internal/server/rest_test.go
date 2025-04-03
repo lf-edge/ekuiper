@@ -66,6 +66,9 @@ func (suite *RestTestSuite) SetupTest() {
 		panic(err)
 	}
 	uploadDir = filepath.Join(dataDir, "uploads")
+	if _, err = os.Stat(uploadDir); os.IsNotExist(err) {
+		os.MkdirAll(uploadDir, 0o755)
+	}
 
 	r := mux.NewRouter()
 	r.HandleFunc("/", rootHandler).Methods(http.MethodGet, http.MethodPost)
