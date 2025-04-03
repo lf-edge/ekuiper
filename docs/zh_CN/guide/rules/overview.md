@@ -154,8 +154,9 @@ eKuiper 已经内置了丰富的 sink connector 类型，如 mqtt、rest 和 fil
 | duration           | string: ""  | 指定规则的运行持续时间，只有当指定了 cron 后才有效。duration 不应该超过两次 cron 周期之间的时间间隔，否则会引起非预期的行为。                      |
 | cronDatetimeRange  | 结构体数组       | 指定周期性规则的生效时间段。当指定了该参数后，周期性规则只有在这个参数所制定的时间范围内才生效。请查看 [周期性规则](#周期性规则) 了解详细的配置项目                  |
 | enableRuleTracer   | bool: false | 指定规则是否开启规则级别的数据追踪                                                                              |
-| planOptimizeStrategy | 结构体     | 指定规则是否打开对应优化                                                                                      |
-| sendNilField | bool: false | 指定规则是否输出值为 nil 的列 |
+| planOptimizeStrategy | 结构体     | 指定规则是否打开对应优化                                                                                   |
+| sendNilField | bool: false | 指定规则是否输出值为 nil 的列                                                                              |
+| disableBufferFullDiscard | bool: false | 是否开启禁用缓冲区满了以后丢弃数据的行为                                                                           |
 
 有关 `qos` 和 `checkpointInterval` 的详细信息，请查看[状态和容错](./state_and_fault_tolerance.md)。
 
