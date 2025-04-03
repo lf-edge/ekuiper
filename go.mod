@@ -13,7 +13,6 @@ require (
 	github.com/amsokol/ignite-go-client v0.12.2
 	github.com/apache/calcite-avatica-go/v5 v5.3.0
 	github.com/apple/foundationdb/bindings/go v0.0.0-20240904211458-9b3a2f0f068f
-	github.com/beevik/etree v1.4.1
 	github.com/benbjohnson/clock v1.3.5
 	github.com/bippio/go-impala v2.1.0+incompatible
 	github.com/btnguyen2k/gocosmos v1.1.0
@@ -82,6 +81,8 @@ require (
 	github.com/utahta/go-cronowriter v1.2.0
 	github.com/valyala/fastjson v1.6.4
 	github.com/vertica/vertica-sql-go v1.3.3
+	github.com/xitongsys/parquet-go v1.6.2
+	github.com/xitongsys/parquet-go-source v0.0.0-20241021075129-b732d2ac9c9b
 	github.com/xo/dburl v0.23.2
 	github.com/yisaer/file-rotatelogs v0.0.0-20240926070915-3a4d03835c68
 	github.com/ziutek/mymysql v1.5.4
@@ -105,7 +106,13 @@ require (
 	sqlflow.org/gomaxcompute v0.0.0-20210805062559-c14ae028b44c
 )
 
-require github.com/fxamacker/cbor/v2 v2.7.0 // indirect
+require (
+	github.com/apache/arrow/go/arrow v0.0.0-20200730104253-651201b0f516 // indirect
+	github.com/fxamacker/cbor/v2 v2.7.0 // indirect
+	github.com/golang/snappy v0.0.4 // indirect
+	github.com/json-iterator/go v1.1.12 // indirect
+	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
+)
 
 require (
 	cel.dev/expr v0.15.0 // indirect
@@ -120,9 +127,9 @@ require (
 	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/99designs/go-keychain v0.0.0-20191008050251-8e49817e8af4 // indirect
 	github.com/99designs/keyring v1.2.2 // indirect
-	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.4.0 // indirect
-	github.com/Azure/azure-sdk-for-go/sdk/internal v1.1.2 // indirect
-	github.com/Azure/azure-sdk-for-go/sdk/storage/azblob v1.0.0 // indirect
+	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.6.0 // indirect
+	github.com/Azure/azure-sdk-for-go/sdk/internal v1.3.0 // indirect
+	github.com/Azure/azure-sdk-for-go/sdk/storage/azblob v1.1.0 // indirect
 	github.com/BurntSushi/toml v1.3.2 // indirect
 	github.com/ClickHouse/ch-go v0.61.5 // indirect
 	github.com/DATA-DOG/go-sqlmock v1.4.1 // indirect
@@ -316,7 +323,7 @@ require (
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/speps/go-hashids v2.0.0+incompatible // indirect
 	github.com/spf13/cast v1.7.0 // indirect
-	github.com/taosdata/driver-go/v3 v3.6.0 // indirect
+	github.com/taosdata/driver-go/v3 v3.6.0
 	github.com/tetratelabs/wazero v1.8.0 // indirect
 	github.com/tklauser/go-sysconf v0.3.14 // indirect
 	github.com/tklauser/numcpus v0.8.0 // indirect
