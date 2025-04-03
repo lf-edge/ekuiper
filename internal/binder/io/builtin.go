@@ -24,6 +24,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/io/memory"
 	"github.com/lf-edge/ekuiper/v2/internal/io/mqtt"
 	"github.com/lf-edge/ekuiper/v2/internal/io/neuron"
+	"github.com/lf-edge/ekuiper/v2/internal/io/parquet"
 	"github.com/lf-edge/ekuiper/v2/internal/io/simulator"
 	"github.com/lf-edge/ekuiper/v2/internal/io/sink"
 	"github.com/lf-edge/ekuiper/v2/internal/io/websocket"
@@ -51,6 +52,7 @@ func init() {
 	modules.RegisterSink("neuron", neuron.GetSink)
 	modules.RegisterSink("file", file.GetSink)
 	modules.RegisterSink("websocket", func() api.Sink { return websocket.GetSink() })
+	modules.RegisterSink("parquet", parquet.GetSink)
 
 	modules.RegisterLookupSource("memory", memory.GetLookupSource)
 	modules.RegisterLookupSource("httppull", http.GetLookUpSource)
