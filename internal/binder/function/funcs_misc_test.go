@@ -510,7 +510,7 @@ func TestMiscFuncNil(t *testing.T) {
 	for name, function := range builtins {
 		switch name {
 		case "compress", "decompress", "newuuid", "tstamp", "rule_id", "rule_start", "window_start", "window_end", "event_time",
-			"json_path_query", "json_path_query_first", "coalesce", "meta", "json_path_exists", "bypass":
+			"json_path_query", "json_path_query_first", "coalesce", "meta", "json_path_exists", "bypass", "get_keyed_state":
 			continue
 		case "isnull":
 			v, b := function.exec(fctx, []interface{}{nil})
