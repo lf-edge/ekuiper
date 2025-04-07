@@ -1,4 +1,4 @@
-// Copyright 2021-2024 EMQ Technologies Co., Ltd.
+// Copyright 2021-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -109,12 +109,16 @@ func (ms *Sink) Collect(ctx api.StreamContext, item api.RawTuple) error {
 		if transformed {
 			tpc = temp
 		}
+		newProps := make(map[string]string, len(props))
 		for k, v := range props {
 			nv, ok := dp.DynamicProps(v)
 			if ok {
-				props[k] = nv
+				newProps[k] = nv
+			} else {
+				newProps[k] = v
 			}
 		}
+		props = newProps
 	}
 	traced, _, span := tracenode.TraceInput(ctx, item, fmt.Sprintf("%s_emit", ctx.GetOpId()))
 	if traced {
