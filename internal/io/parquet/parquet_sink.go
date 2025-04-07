@@ -43,9 +43,22 @@ type parquetSink struct {
 	fw source.ParquetFile
 	pw *writer.JSONWriter
 
-	currentCount int64
-	currentSize  int64
-	initFileTs   time.Time
+	currentCount     int64
+	currentSize      int64
+	initFileTs       time.Time
+	isRollingEnabled bool
+}
+
+func (p *parquetSink) checkRolling() {
+	if p.conf.RollingCount > 0 {
+		p.isRollingEnabled = true
+	}
+	if p.conf.RollingSize > 0 {
+		p.isRollingEnabled = true
+	}
+	if p.conf.RollingInterval > 0 {
+		p.isRollingEnabled = true
+	}
 }
 
 func (p *parquetSink) Provision(ctx api.StreamContext, props map[string]any) error {
@@ -60,6 +73,8 @@ func (p *parquetSink) Provision(ctx api.StreamContext, props map[string]any) err
 		return errors.New("jsonSchema cannot be empty")
 	}
 	p.conf = c
+	p.checkRolling()
+	
 	return p.initParquetWriter()
 }
 
@@ -107,8 +122,11 @@ func (p *parquetSink) finishCurrentWriter() {
 
 func (p *parquetSink) initParquetWriter() error {
 	var err error
-	filename := fmt.Sprintf("%v.%v", p.conf.Path, time.Now().Format("20060102150405"))
-	p.fw, err = local.NewLocalFileWriter(fmt.Sprintf("%v.%v", p.conf.Path, filename))
+	filename := p.conf.Path
+	if p.isRollingEnabled {
+		filename = fmt.Sprintf("%v.%v", p.conf.Path, time.Now().Format("20060102150405"))
+	}
+	p.fw, err = local.NewLocalFileWriter(filename)
 	if err != nil {
 		return fmt.Errorf("can't create file %v", err)
 	}
