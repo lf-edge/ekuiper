@@ -1,4 +1,4 @@
-// Copyright 2022-2024 EMQ Technologies Co., Ltd.
+// Copyright 2022-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -493,6 +493,9 @@ func (p *Parser) parseField() (*ast.Field, error) {
 	if field.Name == "" && field.AName == "" {
 		field.Name = DEFAULT_FIELD_NAME_PREFIX + strconv.Itoa(p.f)
 		p.f += 1
+	}
+	if isInvisible := p.parseInvisible(); isInvisible {
+		field.Invisible = true
 	}
 
 	return field, nil
@@ -1783,4 +1786,13 @@ func (p *Parser) parseWhen() (ast.Expr, error) {
 		p.unscan()
 	}
 	return nil, nil
+}
+
+func (p *Parser) parseInvisible() bool {
+	if t, _ := p.scanIgnoreWhitespace(); t == ast.INVISIBLE {
+		return true
+	} else {
+		p.unscan()
+	}
+	return false
 }

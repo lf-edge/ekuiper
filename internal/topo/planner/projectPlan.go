@@ -1,4 +1,4 @@
-// Copyright 2021-2024 EMQ Technologies Co., Ltd.
+// Copyright 2021-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -28,8 +28,6 @@ type ProjectPlan struct {
 	sendNil          bool
 	fields           ast.Fields
 	colNames         [][]string
-	aliasNames       []string
-	exprNames        []string
 	exceptNames      []string
 	wildcardEmitters map[string]bool
 	aliasFields      ast.Fields
@@ -44,7 +42,6 @@ func (p ProjectPlan) Init() *ProjectPlan {
 	for _, field := range p.fields {
 		if field.AName != "" {
 			p.aliasFields = append(p.aliasFields, field)
-			p.aliasNames = append(p.aliasNames, field.AName)
 		} else {
 			switch ft := field.Expr.(type) {
 			case *ast.Wildcard:
@@ -52,16 +49,16 @@ func (p ProjectPlan) Init() *ProjectPlan {
 				p.exceptNames = ft.Except
 				for _, replace := range ft.Replace {
 					p.aliasFields = append(p.aliasFields, replace)
-					p.aliasNames = append(p.aliasNames, replace.AName)
 				}
 			case *ast.FieldRef:
 				if ft.Name == "*" {
 					p.wildcardEmitters[string(ft.StreamName)] = true
 				} else {
-					p.colNames = append(p.colNames, []string{ft.Name, string(ft.StreamName)})
+					if !field.Invisible {
+						p.colNames = append(p.colNames, []string{ft.Name, string(ft.StreamName)})
+					}
 				}
 			default:
-				p.exprNames = append(p.exprNames, field.Name)
 				p.exprFields = append(p.exprFields, field)
 			}
 		}
