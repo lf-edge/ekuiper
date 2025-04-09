@@ -1,4 +1,4 @@
-// Copyright 2022-2024 EMQ Technologies Co., Ltd.
+// Copyright 2022-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -36,25 +36,24 @@ func parseStmt(p *ProjectOp, fields ast.Fields) {
 	for _, field := range fields {
 		if field.AName != "" {
 			p.AliasFields = append(p.AliasFields, field)
-			p.AliasNames = append(p.AliasNames, field.AName)
 		} else {
 			switch ft := field.Expr.(type) {
 			case *ast.Wildcard:
 				p.AllWildcard = true
 				p.ExceptNames = ft.Except
 				for _, replace := range ft.Replace {
-					p.AliasNames = append(p.AliasNames, replace.AName)
 					p.AliasFields = append(p.AliasFields, replace)
 				}
 			case *ast.FieldRef:
 				if ft.Name == "*" {
 					p.WildcardEmitters[string(ft.StreamName)] = true
 				} else {
-					p.ColNames = append(p.ColNames, []string{ft.Name, string(ft.StreamName)})
+					if !field.Invisible {
+						p.ColNames = append(p.ColNames, []string{ft.Name, string(ft.StreamName)})
+					}
 				}
 			default:
 				p.ExprFields = append(p.ExprFields, field)
-				p.ExprNames = append(p.ExprNames, field.Name)
 			}
 		}
 	}
@@ -673,29 +672,35 @@ func TestProjectPlan_Apply1(t *testing.T) {
 				},
 			},
 		},
+		{
+			sql: `SELECT a, a+b+c as sum invisible, b invisible FROM test`,
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"a": 1,
+					"b": 2,
+					"c": 3,
+				},
+			},
+			result: []map[string]interface{}{{
+				"a": 1,
+			}},
+		},
 	}
-
-	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 	contextLogger := conf.Log.WithField("rule", "TestProjectPlan_Apply1")
 	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
 	for i, tt := range tests {
-		stmt, err := xsql.NewParser(strings.NewReader(tt.sql)).Parse()
-		if err != nil {
-			t.Errorf("parse sql error： %s", err)
-			continue
-		}
-		pp := &ProjectOp{SendMeta: true, IsAggregate: xsql.WithAggFields(stmt)}
-		parseStmt(pp, stmt.Fields)
-		fv, afv := xsql.NewFunctionValuersForOp(nil)
-		opResult := pp.Apply(ctx, tt.data, fv, afv)
-		result, err := parseResult(opResult, pp.IsAggregate)
-		if err != nil {
-			t.Errorf("parse result error： %s", err)
-			continue
-		}
-		if !reflect.DeepEqual(tt.result, result) {
-			t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, result)
-		}
+		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+			stmt, err := xsql.NewParser(strings.NewReader(tt.sql)).Parse()
+			require.NoError(t, err)
+			pp := &ProjectOp{SendMeta: true, IsAggregate: xsql.WithAggFields(stmt)}
+			parseStmt(pp, stmt.Fields)
+			fv, afv := xsql.NewFunctionValuersForOp(nil)
+			opResult := pp.Apply(ctx, tt.data, fv, afv)
+			result, err := parseResult(opResult, pp.IsAggregate)
+			require.NoError(t, err)
+			require.Equal(t, tt.result, result)
+		})
 	}
 }
 
@@ -1561,28 +1566,35 @@ func TestProjectPlan_Funcs(t *testing.T) {
 				"d": "devicec",
 			}},
 		},
+		{
+			sql: "SELECT count(a) invisible, a FROM test",
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"a": 47.5,
+				},
+			},
+			result: []map[string]interface{}{{
+				"a": 47.5,
+			}},
+		},
 	}
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 	contextLogger := conf.Log.WithField("rule", "TestProjectPlan_Funcs")
 	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
 	for i, tt := range tests {
-		stmt, err := xsql.NewParser(strings.NewReader(tt.sql)).Parse()
-		if err != nil {
-			t.Error(err)
-		}
-		pp := &ProjectOp{SendMeta: true, IsAggregate: xsql.WithAggFields(stmt)}
-		parseStmt(pp, stmt.Fields)
-		fv, afv := xsql.NewFunctionValuersForOp(nil)
-		opResult := pp.Apply(ctx, tt.data, fv, afv)
-		result, err := parseResult(opResult, pp.IsAggregate)
-		if err != nil {
-			t.Errorf("parse result error： %s", err)
-			continue
-		}
-		if !reflect.DeepEqual(tt.result, result) {
-			t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, result)
-		}
+		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+			stmt, err := xsql.NewParser(strings.NewReader(tt.sql)).Parse()
+			require.NoError(t, err)
+			pp := &ProjectOp{SendMeta: true, IsAggregate: xsql.WithAggFields(stmt)}
+			parseStmt(pp, stmt.Fields)
+			fv, afv := xsql.NewFunctionValuersForOp(nil)
+			opResult := pp.Apply(ctx, tt.data, fv, afv)
+			result, err := parseResult(opResult, pp.IsAggregate)
+			require.NoError(t, err)
+			require.Equal(t, tt.result, result)
+		})
 	}
 }
 
@@ -2399,27 +2411,52 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 				"all": 3,
 			}},
 		},
+		// 23
+		{
+			sql: "SELECT count(* EXCEPT(a, b)) invisible, a invisible, b as d invisible, b FROM test Inner Join test1 on test.id = test1.id GROUP BY TumblingWindow(ss, 10)",
+			data: &xsql.JoinTuples{
+				Content: []*xsql.JoinTuple{
+					{
+						Tuples: []xsql.Row{
+							&xsql.Tuple{Emitter: "test", Message: xsql.Message{"id": 1, "a": "a", "b": "b"}},
+							&xsql.Tuple{Emitter: "src2", Message: xsql.Message{"id": 1, "color": "w2"}},
+						},
+					},
+					{
+						Tuples: []xsql.Row{
+							&xsql.Tuple{Emitter: "test", Message: xsql.Message{"id": 1, "a": "a", "b": "b"}},
+							&xsql.Tuple{Emitter: "src2", Message: xsql.Message{"id": 1, "color": "w2"}},
+						},
+					},
+					{
+						Tuples: []xsql.Row{
+							&xsql.Tuple{Emitter: "test", Message: xsql.Message{"id": 5, "a": "a", "b": "b"}},
+							&xsql.Tuple{Emitter: "src2", Message: xsql.Message{"id": 5, "color": "w2"}},
+						},
+					},
+				},
+			},
+
+			result: []map[string]interface{}{{
+				"b": "b",
+			}},
+		},
 	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 	contextLogger := conf.Log.WithField("rule", "TestProjectPlan_AggFuncs")
 	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
 	for i, tt := range tests {
-		stmt, err := xsql.NewParser(strings.NewReader(tt.sql)).Parse()
-		if err != nil {
-			t.Error(err)
-		}
-		pp := &ProjectOp{SendMeta: true, IsAggregate: true}
-		parseStmt(pp, stmt.Fields)
-		fv, afv := xsql.NewFunctionValuersForOp(nil)
-		opResult := pp.Apply(ctx, tt.data, fv, afv)
-		result, err := parseResult(opResult, pp.IsAggregate)
-		if err != nil {
-			t.Errorf("parse result error： %s", err)
-			continue
-		}
-		if !reflect.DeepEqual(tt.result, result) {
-			t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, result)
-		}
+		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+			stmt, err := xsql.NewParser(strings.NewReader(tt.sql)).Parse()
+			require.NoError(t, err)
+			pp := &ProjectOp{SendMeta: true, IsAggregate: true}
+			parseStmt(pp, stmt.Fields)
+			fv, afv := xsql.NewFunctionValuersForOp(nil)
+			opResult := pp.Apply(ctx, tt.data, fv, afv)
+			result, err := parseResult(opResult, pp.IsAggregate)
+			require.NoError(t, err)
+			require.Equal(t, tt.result, result)
+		})
 	}
 }
 

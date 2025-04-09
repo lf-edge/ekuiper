@@ -1,4 +1,4 @@
-// Copyright 2022-2024 EMQ Technologies Co., Ltd.
+// Copyright 2022-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -27,8 +27,6 @@ import (
 
 type ProjectOp struct {
 	ColNames         [][]string // list of [col, table]
-	AliasNames       []string   // list of alias name
-	ExprNames        []string   // list of expr name
 	ExceptNames      []string   // list of except name
 	AllWildcard      bool
 	WildcardEmitters map[string]bool
@@ -138,6 +136,9 @@ func (pp *ProjectOp) project(row xsql.RawRow, ve *xsql.ValuerEval) error {
 	// Do not set value during calculations
 
 	for _, f := range pp.ExprFields {
+		if f.Invisible {
+			continue
+		}
 		vi := ve.Eval(f.Expr)
 		if e, ok := vi.(error); ok {
 			return fmt.Errorf("expr: %s meet error, err:%v", f.Expr.String(), e)
@@ -162,7 +163,7 @@ func (pp *ProjectOp) project(row xsql.RawRow, ve *xsql.ValuerEval) error {
 			}
 			return fmt.Errorf("alias: %v expr: %v meet error, err:%v", f.AName, f.Expr.String(), e)
 		}
-		if vi != nil || pp.SendNil {
+		if !f.Invisible && (vi != nil || pp.SendNil) {
 			pp.alias = append(pp.alias, f.AName, vi)
 		}
 	}

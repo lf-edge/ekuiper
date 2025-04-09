@@ -1,4 +1,4 @@
-// Copyright 2021-2024 EMQ Technologies Co., Ltd.
+// Copyright 2021-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -540,7 +540,7 @@ func TestSingleSQL(t *testing.T) {
 	tests := []RuleTest{
 		{
 			Name: `TestAnalyzeFuncAlias1`,
-			Sql:  `SELECT lag(size,1,0) + 1 as b, lag(b,1,0),size FROM demo Group by COUNTWINDOW(5)`,
+			Sql:  `SELECT lag(size,1,0) as temp INVISIBLE, temp + 1 as b, lag(b,1,0),size FROM demo Group by COUNTWINDOW(5)`,
 			R: [][]map[string]interface{}{
 				{
 					{
