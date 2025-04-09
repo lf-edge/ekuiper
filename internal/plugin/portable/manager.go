@@ -241,13 +241,13 @@ func (m *Manager) Register(p plugin.Plugin) error {
 	}
 
 	zipPath := path.Join(m.pluginDir, name+".zip")
-	// clean up: delete zip file and unzip files in error
-	defer os.Remove(zipPath)
 	// download
-	err := httpx.DownloadFile(zipPath, uri)
+	err := httpx.DownloadZipFile(m.pluginDir, name+".zip", uri)
 	if err != nil {
 		return fmt.Errorf("fail to download file %s: %s", uri, err)
 	}
+	// clean up: delete zip file and unzip files in error
+	defer os.Remove(zipPath)
 	// unzip and copy to destination
 	err = m.install(name, zipPath, shellParas)
 	if err != nil { // Revert for any errors
@@ -343,18 +343,21 @@ func (m *Manager) install(name, src string, shellParas []string) (resultErr erro
 	}
 
 	needInstall := false
+	folder := ""
 	target := ""
 	for _, file := range r.File {
 		fileName := file.Name
 		if strings.HasPrefix(fileName, "sources/") || strings.HasPrefix(fileName, "sinks/") || strings.HasPrefix(fileName, "functions/") {
 			target = path.Join(m.pluginConfDir, fileName)
+			folder = m.pluginConfDir
 		} else {
 			target = path.Join(pluginTarget, fileName)
+			folder = pluginTarget
 			if fileName == "install.sh" {
 				needInstall = true
 			}
 		}
-		err = filex.UnzipTo(file, target)
+		err = filex.UnzipTo(file, folder, fileName)
 		if err != nil {
 			return err
 		}

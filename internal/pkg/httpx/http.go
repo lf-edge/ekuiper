@@ -197,6 +197,27 @@ func ReadFile(uri string) (io.ReadCloser, error) {
 	return src, nil
 }
 
+func DownloadZipFile(folder string, name string, uri string) (err error) {
+	src, err := ReadFile(uri)
+	if err != nil {
+		return err
+	}
+	defer src.Close()
+	root, err := os.OpenRoot(folder)
+	if err != nil {
+		return err
+	}
+	defer root.Close()
+	out, err := root.Create(name)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+	// Write the body to file
+	_, err = io.Copy(out, src)
+	return err
+}
+
 func DownloadFile(filepath string, uri string) (err error) {
 	defer func() {
 		failpoint.Inject("DownloadFileErr", func() {
