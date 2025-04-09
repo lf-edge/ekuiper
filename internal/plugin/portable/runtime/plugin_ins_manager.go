@@ -349,7 +349,7 @@ func (p *pluginInsManager) GetOrStartProcess(pluginMeta *PluginMeta, pconf *Port
 		go func(key Meta, jsonArg []byte) {
 			e := ins.sendCmd(jsonArg)
 			if e != nil {
-				ins.Status.StatusErr(err)
+				ins.Status.StatusErr(e)
 				conf.Log.Errorf("send command to %v error: %v", key, e)
 			}
 		}(m, c)
