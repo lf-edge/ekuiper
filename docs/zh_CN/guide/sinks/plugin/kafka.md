@@ -60,7 +60,7 @@ $(PLUGINS_CUSTOM):
 | topic              | 否    | kafka 主题                                                                      |
 | saslAuthType       | 否    | sasl 认证类型 , 支持none，plain，scram                                                |
 | saslUserName       | 是    | sasl 用户名                                                                      |
-| saslPassword       | 是    | sasl 密码                                                                       |
+| password           | 是    | sasl 密码                                                                       |
 | insecureSkipVerify | 是   | 是否忽略 SSL 验证                                                                   |
 | certificationPath  | 是   | Kafka 客户端 ssl 验证的 crt 文件路径                                                    |
 | privateKeyPath     | 是   | Kafka 客户端 ssl 验证的 key 文件路径                                                    |
@@ -73,7 +73,7 @@ $(PLUGINS_CUSTOM):
 | key                | 是   | Kafka 客户端向 server 发送消息所携带的 Key 信息                                             |
 | headers            | 是   | Kafka 客户端向 server 发送消息所携带的 headers 信息                                         |
 | compression        | 是   | Kafka 客户端向 server 发送消息时是否开启压缩，仅支持 `gzip`,`snappy`,`lz4`,`zstd`                |
-| batchBytes           | 是   | 设置 Kafka 客户端向 server 发送 batch 消息的最大 byte， 默认为 1048576                          |
+| batchBytes         | 是   | 设置 Kafka 客户端向 server 发送 batch 消息的最大 byte， 默认为 1048576                          |
 
 其他通用的 sink 属性也支持，请参阅[公共属性](../overview.md#公共属性)。
 
