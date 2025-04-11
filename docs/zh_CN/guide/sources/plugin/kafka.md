@@ -44,3 +44,5 @@ default:
 | privateKeyRaw      | 是    | Kafka 客户端 ssl 验证，经过 base64 编码过的的 key 原文,  如果同时定义了 `privateKeyPath` 将会先用该参数。    |
 | rootCARaw          | 是    | Kafka 客户端 ssl 验证，经过 base64 编码过的的 ca 原文,  如果同时定义了 `rootCAPath` 将会先用该参数。         |
 | maxBytes           | 是    | 单个 kafka 消息批次最大所能携带的 bytes 数，默认为 1MB                                           |
+| groupID | 是    | eKuiper 消费 kafka 消息时所使用的 group ID。 |
+| partition | 是    | eKuiper 消费 kafka 消息时所指定的 partition |
