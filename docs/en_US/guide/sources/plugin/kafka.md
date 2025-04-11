@@ -33,7 +33,6 @@ You can check the connectivity of the corresponding sink endpoint in advance thr
 | Property name      | Optional | Description                                                                                                |
 |--------------------|----------|------------------------------------------------------------------------------------------------------------|
 | brokers            | false    | The broker address list ,split with ","                                                                    |
-| topic              | false    | The topic of the Kafka                                                                                     |
 | saslAuthType       | true     | The Kafka sasl authType, support none,plain,scram, default none                                            |
 | saslUserName       | true     | The sasl user name                                                                                         |
 | password           | true     | The sasl password                                                                                          |

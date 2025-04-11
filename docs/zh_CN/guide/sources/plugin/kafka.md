@@ -33,7 +33,6 @@ default:
 | 属性名称               | 是否可选 | 说明                                                                             |
 |--------------------|------|--------------------------------------------------------------------------------|
 | brokers            | 否    | broker地址列表 ,用 "," 分割                                                           |
-| topic              | 否    | kafka 主题                                                                       |
 | saslAuthType       | 是    | sasl 认证类型 , 支持none，plain，scram, 默认为 none                                       |
 | saslUserName       | 是    | sasl 用户名                                                                       |
 | password           | 是    | sasl 密码                                                                        |
