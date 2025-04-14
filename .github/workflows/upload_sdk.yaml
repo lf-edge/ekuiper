@@ -1,0 +1,68 @@
+name: Upload sdk
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "*"
+  release:
+    types:
+      - published
+
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    if: github.repository == 'lf-edge/ekuiper'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+          architecture: 'x64'
+      - run: python3 -m pip install --user --upgrade setuptools wheel twine
+      - name: Upload test pypi
+        env:
+          TWINE_USERNAME: "__token__"
+          TWINE_PASSWORD: ${{ secrets.TEST_PYPI_API_TOKEN }}
+        working-directory: "sdk/python"
+        run: |
+          version=$(grep -E ".+version.+" setup.py | sed -r 's [ \t]*version=(.*), \1 g' | sed $'s/\'//g')
+          test_version="${version}-${GITHUB_RUN_ID}"
+          sed -i -r "s|([ \t]*version=).*|\1'$test_version',|1" setup.py
+          python3 setup.py sdist bdist_wheel
+          python3 -m twine upload --skip-existing --repository-url https://test.pypi.org/legacy/ dist/*
+          git checkout -- setup.py
+      - name: Install test pypi
+        working-directory: "sdk/python"
+        timeout-minutes: 1
+        run: |
+          version=$(grep -E ".+version.+" setup.py | sed -r 's [ \t]*version=(.*), \1 g' | sed $'s/\'//g')
+          while ! python3 -m pip install --index-url https://test.pypi.org/simple/ --no-deps ekuiper=="${version}.post${GITHUB_RUN_ID}" > /dev/null 2>&1; do
+            echo "================================================================="
+            echo "Awaiting pypi updates"
+            echo "================================================================="
+            sleep 1
+          done
+          python3 -m pip uninstall -y ekuiper
+      - name: Upload test pypi
+        if: github.event_name == 'release' && !github.event.release.prerelease
+        env:
+          TWINE_USERNAME: "__token__"
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        working-directory: "sdk/python"
+        run: |
+          sed -i -r "s|([ \t]*version=).*|\1'${GITHUB_REF#refs/tags/}',|1" setup.py
+          python3 setup.py sdist bdist_wheel
+          python3 -m twine upload --skip-existing dist/*
+      - name: Install pypi
+        if: github.event_name == 'release' && !github.event.release.prerelease
+        working-directory: "sdk/python"
+        timeout-minutes: 5
+        run: |
+          while ! python3 -m pip install --no-deps ekuiper > /dev/null 2>&1; do
+            echo "================================================================="
+            echo "Awaiting pypi updates"
+            echo "================================================================="
+            sleep 1
+          done
+          python3 -m pip uninstall -y ekuiper
