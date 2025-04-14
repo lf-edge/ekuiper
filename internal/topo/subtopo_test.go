@@ -1,4 +1,4 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -31,8 +31,9 @@ import (
 )
 
 func TestSubtopoLC(t *testing.T) {
+	ctx1 := mockContext.NewMockContext("rule1", "abc")
 	assert.Equal(t, 0, mlen(&subTopoPool))
-	subTopo, existed := GetOrCreateSubTopo("shared")
+	subTopo, existed := GetOrCreateSubTopo(ctx1, "shared")
 	assert.False(t, existed)
 	// Test creation
 	srcNode := &mockSrc{name: "shared"}
@@ -63,18 +64,17 @@ func TestSubtopoLC(t *testing.T) {
 	}
 	assert.Equal(t, ptopo, subTopo.topo)
 	// Test run
-	ctx1 := mockContext.NewMockContext("rule1", "abc")
 	subTopo.Open(ctx1, make(chan error))
 	assert.Equal(t, int32(1), subTopo.refCount.Load())
 	assert.Equal(t, 1, opNode.schemaCount)
 	// Run another
-	subTopo2, existed := GetOrCreateSubTopo("shared")
+	ctx2 := mockContext.NewMockContext("rule2", "abc")
+	subTopo2, existed := GetOrCreateSubTopo(ctx2, "shared")
 	assert.True(t, existed)
 	assert.Equal(t, subTopo, subTopo2)
 	subTopo.StoreSchema("rule2", "shared", map[string]*ast.JsonStreamField{
 		"field2": {Type: "string"},
 	}, false)
-	ctx2 := mockContext.NewMockContext("rule2", "abc")
 	subTopo2.Open(ctx2, make(chan error))
 	assert.Equal(t, int32(2), subTopo.refCount.Load())
 	assert.Equal(t, 2, opNode.schemaCount)
@@ -120,21 +120,24 @@ func TestSubtopoLC(t *testing.T) {
 
 // Test when connection fails
 func TestSubtopoRunError(t *testing.T) {
+	ctx0 := mockContext.NewMockContext("rule0", "abc")
 	assert.Equal(t, 0, mlen(&subTopoPool))
-	subTopo, existed := GetOrCreateSubTopo("shared")
+	subTopo, existed := GetOrCreateSubTopo(ctx0, "shared")
 	assert.False(t, existed)
 	srcNode := &mockSrc{name: "src1"}
 	opNode := &mockOp{name: "op1", ch: make(chan any)}
 	subTopo.AddSrc(srcNode)
 	subTopo.AddOperator([]node.Emitter{srcNode}, opNode)
 	// create another subtopo
-	subTopo2, existed := GetOrCreateSubTopo("shared")
+	ctx1 := mockContext.NewMockContext("rule1", "abc")
+	subTopo2, existed := GetOrCreateSubTopo(ctx1, "shared")
 	assert.True(t, existed)
 	assert.Equal(t, subTopo, subTopo2)
 	assert.Equal(t, 1, mlen(&subTopoPool))
-	// Test run firstly, successfully
 	assert.Equal(t, false, subTopo.opened.Load())
-	ctx1 := mockContext.NewMockContext("rule1", "abc")
+	subTopo.Open(ctx0, make(chan<- error))
+	subTopo.Close(ctx0, "rule0", 1)
+	// Test run firstly, successfully
 	subTopo.Open(ctx1, make(chan error))
 	assert.Equal(t, int32(1), subTopo.refCount.Load())
 	assert.Equal(t, true, subTopo.opened.Load())
@@ -179,7 +182,8 @@ func TestSubtopoPrint(t *testing.T) {
 			"source_shared": {"op_shared_op1"},
 		},
 	}
-	subTopo, _ := GetOrCreateSubTopo("shared")
+	ctx0 := mockContext.NewMockContext("rule0", "abc")
+	subTopo, _ := GetOrCreateSubTopo(ctx0, "shared")
 	subTopo.topo = tt
 	subTopo.tail = &mockOp{name: "op1", ch: make(chan any)}
 	ptopo := &def.PrintableTopo{
