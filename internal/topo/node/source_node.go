@@ -36,6 +36,10 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
+type FinNotifySourceNode interface {
+	SetupFinNotify(<-chan struct{})
+}
+
 // SourceNode is a node that connects to an external source
 // The SourceNode is an all-in-one source node that support connect and decode and more.
 // The SourceConnectorNode is a node that only connects to external source and does not decode.
