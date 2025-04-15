@@ -1,0 +1,5 @@
+{
+  "rules": {
+    "cold": "{\"id\":\"cold\",\"sql\":\"SELECT a FROM simup\",\"actions\":[{\"mqtt\":{\"topic\":\"sim/new2\",\"server\":\"tcp://127.0.0.1:4883\",\"sendSingle\":true}}],\"options\":{\"debug\":false,\"isEventTime\":false,\"lateTolerance\":\"1s\",\"concurrency\":1,\"bufferLength\":1024,\"sendMetaToSink\":false,\"sendNilField\":false,\"sendError\":false,\"checkpointInterval\":\"5m0s\",\"restartStrategy\":{\"delay\":\"1s\",\"multiplier\":2,\"maxDelay\":\"30s\",\"jitterFactor\":0.1}}}"
+  }
+}
