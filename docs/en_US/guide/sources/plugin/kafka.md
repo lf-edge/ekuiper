@@ -28,22 +28,21 @@ default:
 
 You can check the connectivity of the corresponding sink endpoint in advance through the API: [Connectivity Check](../../../api/restapi/connection.md#connectivity-check)
 
-### Global configurations
+### Properties
 
-User can specify the global Kafka source settings here. The configuration items specified in `default` section will be taken as default settings for the source when running this source.
-
-### brokers
-
-Kafka message source address, the address is separated by `,`.
-
-### groupID
-
-The group ID used by eKuiper when consuming kafka messages.
-
-### partition
-
-The partition specified when eKuiper consumes kafka messages
-
-### maxBytes
-
-The maximum number of bytes that a single Kafka message batch can carry, the default is 1MB
+| Property name      | Optional | Description                                                                                               |
+|--------------------|----------|-----------------------------------------------------------------------------------------------------------|
+| brokers            | false    | The broker address list ,split with ","                                                                   |
+| saslAuthType       | true     | The Kafka sasl authType, support none,plain,scram, default none                                           |
+| saslUserName       | true     | The sasl user name                                                                                        |
+| password           | true     | The sasl password                                                                                         |
+| insecureSkipVerify | true     | whether to ignore SSL verification                                                                        |
+| certificationPath  | true     | Kafka client ssl verification Cert file path                                                              |
+| privateKeyPath     | true     | Key file path for Kafka client SSL verification                                                           |
+| rootCaPath         | true     | Kafka client ssl verified CA certificate file path                                                        |
+| certficationRaw    | true     | Kafka client ssl verified Cert base64 encoded original text, use `certificationPath` first if both defined |
+| privateKeyRaw      | true     | Kafka client ssl verified Key base64 encoded original text, use `privateKeyPath` first if both defined    |
+| rootCARaw          | true     | Kafka client ssl verified CA base64 encoded original text, use `rootCaPath` first if both defined         |
+| maxBytes           | true     | The maximum number of bytes that a single Kafka message batch can carry, the default is 1MB               |
+| groupID            | true     | The group ID used by eKuiper when consuming kafka messages. |
+| partition | true     | The partition specified when eKuiper consumes kafka messages |
