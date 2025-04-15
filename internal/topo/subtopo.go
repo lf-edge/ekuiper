@@ -1,4 +1,4 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -70,12 +70,24 @@ func (s *SrcSubTopo) RemoveOutput(name string) error {
 	return s.tail.RemoveOutput(name)
 }
 
-func (s *SrcSubTopo) Open(ctx api.StreamContext, parentErrCh chan<- error) {
-	// Update the ref count
+func (s *SrcSubTopo) AddRef(ctx api.StreamContext, parentErrCh chan<- error) {
 	if _, loaded := s.refRules.LoadOrStore(ctx.GetRuleId(), parentErrCh); !loaded {
 		s.refCount.Add(1)
-		ctx.GetLogger().Infof("Sub topo %s opened by rule %s with %d ref", s.name, ctx.GetRuleId(), s.refCount.Load())
+		ctx.GetLogger().Infof("Sub topo %s created for rule %s with %d ref", s.name, ctx.GetRuleId(), s.refCount.Load())
+	} else {
+		if parentErrCh != nil {
+			s.refRules.Store(ctx.GetRuleId(), parentErrCh)
+			ctx.GetLogger().Infof("Sub topo %s for rule %s opened with %d ref", s.name, ctx.GetRuleId(), s.refCount.Load())
+		} else {
+			s.refRules.Store(ctx.GetRuleId(), nil)
+			ctx.GetLogger().Infof("Sub topo %s for rule %s reset with %d ref", s.name, ctx.GetRuleId(), s.refCount.Load())
+		}
 	}
+}
+
+func (s *SrcSubTopo) Open(ctx api.StreamContext, parentErrCh chan<- error) {
+	// Update the ref count
+	s.AddRef(ctx, parentErrCh)
 	// Attach schemas
 	for _, op := range s.ops {
 		if so, ok := op.(node.SchemaNode); ok {
@@ -177,9 +189,9 @@ func (s *SrcSubTopo) StoreSchema(ruleID, dataSource string, schema map[string]*a
 }
 
 func (s *SrcSubTopo) Close(ctx api.StreamContext, ruleId string, runId int) {
-	if _, ok := s.refRules.LoadAndDelete(ruleId); ok {
-		s.refCount.Add(-1)
-		if s.refCount.Load() == 0 {
+	if ch, ok := s.refRules.Load(ruleId); ok && ch != nil {
+		s.refRules.Delete(ruleId)
+		if s.refCount.CompareAndSwap(1, 0) {
 			if s.cancel != nil {
 				s.cancel()
 			}
@@ -187,7 +199,10 @@ func (s *SrcSubTopo) Close(ctx api.StreamContext, ruleId string, runId int) {
 				ss.Close(ctx, "$$subtopo_"+s.name, runId)
 			}
 			RemoveSubTopo(s.name)
+		} else {
+			s.refCount.Add(-1)
 		}
+		ctx.GetLogger().Infof("Sub topo %s dereference %s with %d ref", s.name, ctx.GetRuleId(), s.refCount.Load())
 		for _, op := range s.ops {
 			if so, ok := op.(node.SchemaNode); ok {
 				so.DetachSchema(ctx, ruleId)
