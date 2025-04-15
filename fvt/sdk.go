@@ -1,4 +1,4 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -51,6 +51,15 @@ func (sdk *SDK) Post(command string, body string) (resp *http.Response, err erro
 	}
 	req.Header.Set("Content-Type", ContentTypeJson)
 	return sdk.httpClient.Do(req)
+}
+
+func (sdk *SDK) Import(content string) (resp *http.Response, err error) {
+	body := map[string]string{"content": content}
+	bodyJson, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	return sdk.PostWithParam("data/import", "partial=1", string(bodyJson))
 }
 
 func (sdk *SDK) PostWithParam(command string, param string, body string) (resp *http.Response, err error) {

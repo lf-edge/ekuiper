@@ -1,4 +1,4 @@
-// Copyright 2021-2024 EMQ Technologies Co., Ltd.
+// Copyright 2021-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -244,7 +244,8 @@ func (s *Topo) prepareContext() {
 		ctx := kctx.WithValue(kctx.RuleBackground(s.name), kctx.LoggerKey, contextLogger)
 		ctx = kctx.WithValue(ctx, kctx.RuleStartKey, timex.GetNowInMilli())
 		ctx = kctx.WithValue(ctx, kctx.RuleWaitGroupKey, s.opsWg)
-		s.ctx, s.cancel = ctx.WithCancel()
+		nctx := ctx.WithRuleId(s.name)
+		s.ctx, s.cancel = nctx.WithCancel()
 	}
 }
 

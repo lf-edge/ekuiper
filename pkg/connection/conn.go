@@ -1,4 +1,4 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
@@ -110,12 +111,14 @@ func (meta *Meta) AddRef(refId string, sc api.StatusChangeHandler) {
 		sc(s, e)
 	}
 	meta.ref.Store(refId, sc)
-	meta.refCount.Add(1)
+	c := meta.refCount.Add(1)
+	conf.Log.Infof("conn %s add reference %s to %d refs", meta.ID, refId, c)
 }
 
 func (meta *Meta) DeRef(refId string) {
 	meta.ref.Delete(refId)
-	meta.refCount.Add(-1)
+	c := meta.refCount.Add(-1)
+	conf.Log.Infof("conn %s dereference %s to %d refs", meta.ID, refId, c)
 }
 
 func (meta *Meta) GetRefCount() int {

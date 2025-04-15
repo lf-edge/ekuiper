@@ -1,4 +1,4 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
+
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node"
@@ -25,7 +27,7 @@ import (
 
 var subTopoPool = sync.Map{}
 
-func GetOrCreateSubTopo(name string) (*SrcSubTopo, bool) {
+func GetOrCreateSubTopo(ctx api.StreamContext, name string) (*SrcSubTopo, bool) {
 	ac, ok := subTopoPool.LoadOrStore(name, &SrcSubTopo{
 		name: name,
 		topo: &def.PrintableTopo{
@@ -34,6 +36,10 @@ func GetOrCreateSubTopo(name string) (*SrcSubTopo, bool) {
 		},
 		schemaReg: make(map[string]schemainfo),
 	})
+	// shared connection can create without reference, so the ctx may be nil
+	if ctx != nil {
+		ac.(*SrcSubTopo).AddRef(ctx, nil)
+	}
 	return ac.(*SrcSubTopo), ok
 }
 
