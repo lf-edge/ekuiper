@@ -24,7 +24,6 @@ import (
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/lf-edge/ekuiper/v2/internal/binder/io"
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/util"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/checkpoint"
