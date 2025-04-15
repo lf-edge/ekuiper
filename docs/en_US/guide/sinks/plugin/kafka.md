@@ -60,7 +60,7 @@ Restart the eKuiper server to activate the plugin.
 | topic              | false    | The topic of the Kafka                                                                                                                                                                            |
 | saslAuthType       | false    | The Kafka sasl authType, support none,plain,scram                                                                                                                                                 |
 | saslUserName       | true     | The sasl user name                                                                                                                                                                                |
-| saslPassword       | true     | The sasl password                                                                                                                                                                                 |
+| password           | true     | The sasl password                                                                                                                                                                                 |
 | insecureSkipVerify | true     | whether to ignore SSL verification                                                                                                                                                                |
 | certificationPath  | true     | Kafka client ssl verification Cert file path                                                                                                                                                      |
 | privateKeyPath     | true     | Key file path for Kafka client SSL verification                                                                                                                                                   |
@@ -73,7 +73,7 @@ Restart the eKuiper server to activate the plugin.
 | key                | true     | Key information carried by the Kafka client in messages sent to the server                                                                                                                        |
 | headers            | true     | The header information carried by the Kafka client in the message sent to the server                                                                                                              |
 | compression        | true     | Whether to enable compression when the Kafka client sends messages to the server, only supports `gzip`, `snappy`, `lz4`, `zstd`                                                                   |
-| batchBytes           | true     | Set the maximum number of bytes for Kafka client to send batch messages to the server, default is 1048576         |
+| batchBytes         | true     | Set the maximum number of bytes for Kafka client to send batch messages to the server, default is 1048576         |
 
 You can check the connectivity of the corresponding sink endpoint in advance through the API: [Connectivity Check](../../../api/restapi/connection.md#connectivity-check)
 
