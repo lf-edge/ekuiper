@@ -58,6 +58,7 @@ type DataSourceNode interface {
 	MetricNode
 	Emitter
 	Open(ctx api.StreamContext, errCh chan<- error)
+	SetupFinNotify(<-chan struct{})
 }
 
 type DataSinkNode interface {

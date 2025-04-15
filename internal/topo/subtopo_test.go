@@ -219,6 +219,8 @@ type mockSrc struct {
 	runCount int
 }
 
+func (m *mockSrc) SetupFinNotify(<-chan struct{}) {}
+
 func (m *mockSrc) Broadcast(data interface{}) {
 	// TODO implement me
 	panic("implement me")

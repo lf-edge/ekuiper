@@ -16,12 +16,14 @@ package node
 
 import (
 	"fmt"
+	"sync/atomic"
 	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/io/memory/pubsub"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/sig"
@@ -40,9 +42,11 @@ import (
 type SourceNode struct {
 	*defaultNode
 
-	s         api.Source
-	interval  time.Duration
-	notifySub bool
+	s             api.Source
+	interval      time.Duration
+	notifySub     bool
+	finNotify     <-chan struct{}
+	recvFinNotify atomic.Bool
 }
 
 type sourceConf struct {
@@ -74,7 +78,12 @@ func NewSourceNode(ctx api.StreamContext, name string, ss api.Source, props map[
 	case api.Bounded:
 		st.SetEofIngest(m.ingestEof)
 	}
+	m.recvFinNotify.Store(false)
 	return m, nil
+}
+
+func (m *SourceNode) SetupFinNotify(finNotify <-chan struct{}) {
+	m.finNotify = finNotify
 }
 
 // Open will be invoked by topo. It starts reading data.
@@ -83,7 +92,15 @@ func (m *SourceNode) Open(ctx api.StreamContext, ctrlCh chan<- error) {
 	go m.Run(ctx, ctrlCh)
 }
 
+func (m *SourceNode) ingestFinNotify(ctx api.StreamContext) {
+	m.recvFinNotify.Store(true)
+	m.ingestEof(ctx)
+}
+
 func (m *SourceNode) ingestBytes(ctx api.StreamContext, data []byte, meta map[string]any, ts time.Time) {
+	if m.recvFinNotify.Load() {
+		return
+	}
 	ctx.GetLogger().Debugf("source connector %s receive data %+v", m.name, data)
 	m.onProcessStart(ctx, nil)
 	if meta == nil {
@@ -138,6 +155,9 @@ func (m *SourceNode) traceStart(ctx api.StreamContext, meta map[string]any, tupl
 }
 
 func (m *SourceNode) ingestAnyTuple(ctx api.StreamContext, data any, meta map[string]any, ts time.Time) {
+	if m.recvFinNotify.Load() {
+		return
+	}
 	ctx.GetLogger().Debugf("source connector %s receive data %+v", m.name, data)
 	m.onProcessStart(ctx, nil)
 	if meta == nil {
@@ -208,6 +228,9 @@ func (m *SourceNode) ingestTuple(t *xsql.Tuple, ts time.Time) {
 }
 
 func (m *SourceNode) ingestError(ctx api.StreamContext, err error) {
+	if m.recvFinNotify.Load() {
+		return
+	}
 	m.onError(ctx, err)
 }
 
@@ -289,6 +312,13 @@ func (m *SourceNode) Run(ctx api.StreamContext, ctrlCh chan<- error) {
 	})
 	if poe != nil {
 		infra.DrainError(ctx, poe, ctrlCh)
+	}
+	if m.finNotify != nil {
+		select {
+		case <-m.finNotify:
+			conf.Log.Infof("%v %v recv fin notify", ctx.GetRuleId(), ctx.GetOpId())
+			m.ingestFinNotify(ctx)
+		}
 	}
 	<-ctx.Done()
 }

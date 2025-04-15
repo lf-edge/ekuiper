@@ -60,6 +60,9 @@ type Topo struct {
 	mu          sync.Mutex
 	hasOpened   atomic.Bool
 
+	SinkFinWg    *sync.WaitGroup
+	srcFinNotify chan<- struct{}
+
 	opsWg *sync.WaitGroup
 }
 
@@ -122,6 +125,14 @@ func (s *Topo) Cancel() error {
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if s.srcFinNotify != nil {
+		conf.Log.Infof("%v topo send src finNotify", s.name)
+		close(s.srcFinNotify)
+		conf.Log.Infof("%v topo wait src finNotify response", s.name)
+		s.SinkFinWg.Wait()
+		conf.Log.Infof("%v topo finish src finNotify response", s.name)
+		s.srcFinNotify = nil
+	}
 	// completion signal
 	infra.DrainError(s.ctx, nil, s.drain)
 	if s.cancel != nil {
@@ -272,6 +283,11 @@ func (s *Topo) Open() <-chan error {
 	s.drain = make(chan error, 2)
 	log := s.ctx.GetLogger()
 	log.Info("Opening stream")
+	notifyCh := make(chan struct{})
+	if s.options.EnableWaitConsumeWhenStop {
+		s.srcFinNotify = notifyCh
+		s.SinkFinWg = &sync.WaitGroup{}
+	}
 	err := infra.SafeRun(func() error {
 		var err error
 		if s.store, err = state.CreateStore(s.name, s.options.Qos); err != nil {
@@ -283,6 +299,13 @@ func (s *Topo) Open() <-chan error {
 		topoStore := s.store
 		// open stream sink, after log sink is ready.
 		for _, snk := range s.sinks {
+			if s.SinkFinWg != nil {
+				eofsink, ok := snk.(node.EofSinkNode)
+				if ok {
+					eofsink.SetupEofWg(s.SinkFinWg)
+					s.SinkFinWg.Add(1)
+				}
+			}
 			snk.Exec(s.ctx.WithMeta(s.name, snk.GetName(), topoStore), s.drain)
 		}
 
@@ -291,6 +314,9 @@ func (s *Topo) Open() <-chan error {
 		}
 
 		for _, source := range s.sources {
+			if s.srcFinNotify != nil {
+				source.SetupFinNotify(notifyCh)
+			}
 			source.Open(s.ctx.WithMeta(s.name, source.GetName(), topoStore), s.drain)
 		}
 		// activate checkpoint

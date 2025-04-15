@@ -24,6 +24,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/lf-edge/ekuiper/v2/internal/binder/io"
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/util"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/checkpoint"
@@ -135,6 +136,12 @@ func (o *defaultNode) doBroadcast(val any) {
 	defer o.outputMu.RUnlock()
 	first := true
 	for name, out := range o.outputs {
+		fin, ok := val.(xsql.EOFTuple)
+		if ok {
+			out <- fin
+			continue
+		}
+
 		// Only copy when there are many outputs to save one copy time
 		if !first {
 			switch vt := val.(type) {

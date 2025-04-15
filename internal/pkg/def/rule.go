@@ -44,6 +44,7 @@ type RuleOption struct {
 	NotifySub                 bool                     `json:"notifySub,omitempty" yaml:"notifySub,omitempty"`
 	DisableBufferFullDiscard  bool                     `json:"disableBufferFullDiscard,omitempty" yaml:"disableBufferFullDiscard,omitempty"`
 	EnableSaveStateBeforeStop bool                     `json:"enableSaveStateBeforeStop,omitempty" yaml:"enableSaveStateBeforeStop,omitempty"`
+	EnableWaitConsumeWhenStop bool                     `json:"enableWaitConsumeWhenStop,omitempty" yaml:"enableWaitConsumeWhenStop,omitempty"`
 }
 
 type PlanOptimizeStrategy struct {
