@@ -145,12 +145,6 @@ func (o *defaultNode) doBroadcast(val any) {
 			}
 		}
 		first = false
-
-		// Fallback to set the context when sending out so that all children have the same parent ctx
-		// If has set ctx in the node impl, do not override it
-		if vt, ok := val.(xsql.HasTracerCtx); ok && vt.GetTracerCtx() == nil {
-			vt.SetTracerCtx(o.spanCtx)
-		}
 		// wait buffer consume if buffer full
 		if o.disableBufferFullDiscard {
 			select {
@@ -291,7 +285,7 @@ func (o *defaultNode) onProcessStart(ctx api.StreamContext, val any) {
 	o.statManager.ProcessTimeStart()
 	// Source just pass nil val so that no trace. The trace will start after extracting trace id
 	if val != nil {
-		traced, spanCtx, span := tracenode.TraceInput(ctx, val, o.name)
+		traced, spanCtx, span := tracenode.TraceInput(ctx.GetRuleId(), o.name, val)
 		if traced {
 			tracenode.RecordRowOrCollection(val, span)
 			o.span = span

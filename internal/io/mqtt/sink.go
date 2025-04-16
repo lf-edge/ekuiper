@@ -120,7 +120,7 @@ func (ms *Sink) Collect(ctx api.StreamContext, item api.RawTuple) error {
 		}
 		props = newProps
 	}
-	traced, _, span := tracenode.TraceInput(ctx, item, fmt.Sprintf("%s_emit", ctx.GetOpId()))
+	traced, _, span := tracenode.TraceInput(ctx.GetRuleId(), fmt.Sprintf("%s_emit", ctx.GetOpId()), item)
 	if traced {
 		defer span.End()
 		traceID := span.SpanContext().TraceID()
