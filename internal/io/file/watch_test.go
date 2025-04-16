@@ -1,4 +1,4 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -93,6 +93,9 @@ func TestWatchDir(t *testing.T) {
 		src, err := os.Open(filepath.Join(path, "test", "test.lines"))
 		require.NoError(t, err)
 		defer src.Close()
+		dest0, err := os.Create(filepath.Join(wpath, "empty"))
+		assert.NoError(t, err)
+		defer dest0.Close()
 		dest, err := os.Create(filepath.Join(wpath, "test.lines.copy"))
 		assert.NoError(t, err)
 		defer dest.Close()
