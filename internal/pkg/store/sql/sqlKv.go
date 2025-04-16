@@ -28,6 +28,11 @@ import (
 type sqlKvStore struct {
 	database Database
 	table    string
+
+	preparedGetStmt         *sql.Stmt
+	preparedSetStmt         *sql.Stmt
+	preparedDeleteQueryStmt *sql.Stmt
+	preparedDeleteStmt      *sql.Stmt
 }
 
 func createSqlKvStore(database Database, table string) (*sqlKvStore, error) {
@@ -46,7 +51,33 @@ func createSqlKvStore(database Database, table string) (*sqlKvStore, error) {
 	if err != nil {
 		return nil, err
 	}
+	if err := store.initPreparedStmt(); err != nil {
+		return nil, err
+	}
 	return store, nil
+}
+
+func (kv *sqlKvStore) initPreparedStmt() error {
+	return kv.database.Apply(func(db *sql.DB) error {
+		var err error
+		kv.preparedGetStmt, err = db.Prepare(fmt.Sprintf("SELECT val FROM '%s' WHERE key=?;", kv.table))
+		if err != nil {
+			return err
+		}
+		kv.preparedSetStmt, err = db.Prepare(fmt.Sprintf("REPLACE INTO '%s'(key,val) values(?,?);", kv.table))
+		if err != nil {
+			return err
+		}
+		kv.preparedDeleteStmt, err = db.Prepare(fmt.Sprintf("DELETE FROM '%s' WHERE key=?;", kv.table))
+		if err != nil {
+			return err
+		}
+		kv.preparedDeleteQueryStmt, err = db.Prepare(fmt.Sprintf("SELECT key FROM '%s' WHERE key=?;", kv.table))
+		if err != nil {
+			return err
+		}
+		return nil
+	})
 }
 
 func (kv *sqlKvStore) Setnx(key string, value interface{}) error {
@@ -77,13 +108,7 @@ func (kv *sqlKvStore) Set(key string, value interface{}) error {
 		return err
 	}
 	err = kv.database.Apply(func(db *sql.DB) error {
-		query := fmt.Sprintf("REPLACE INTO '%s'(key,val) values(?,?);", kv.table)
-		stmt, err := db.Prepare(query)
-		if err != nil {
-			return err
-		}
-		_, err = stmt.Exec(key, b)
-		stmt.Close()
+		_, err = kv.preparedSetStmt.Exec(key, b)
 		return err
 	})
 	return err
@@ -92,15 +117,9 @@ func (kv *sqlKvStore) Set(key string, value interface{}) error {
 func (kv *sqlKvStore) Get(key string, value interface{}) (bool, error) {
 	result := false
 	err := kv.database.Apply(func(db *sql.DB) error {
-		query := fmt.Sprintf("SELECT val FROM '%s' WHERE key=?;", kv.table)
-		stmt, err := db.Prepare(query)
-		if err != nil {
-			result = false
-			return nil
-		}
-		row := stmt.QueryRow(key)
+		row := kv.preparedGetStmt.QueryRow(key)
 		var tmp []byte
-		err = row.Scan(&tmp)
+		err := row.Scan(&tmp)
 		if err != nil {
 			result = false
 			return nil
@@ -141,7 +160,6 @@ func (kv *sqlKvStore) SetKeyedState(key string, value interface{}) error {
 			return err
 		}
 		_, err = stmt.Exec(key, value)
-		stmt.Close()
 		return err
 	})
 	return err
@@ -149,23 +167,14 @@ func (kv *sqlKvStore) SetKeyedState(key string, value interface{}) error {
 
 func (kv *sqlKvStore) Delete(key string) error {
 	return kv.database.Apply(func(db *sql.DB) error {
-		query := fmt.Sprintf("SELECT key FROM '%s' WHERE key=?;", kv.table)
-		stmt, err := db.Prepare(query)
-		if err != nil {
-			return err
-		}
-		row := stmt.QueryRow(key)
+		var err error
+		row := kv.preparedDeleteQueryStmt.QueryRow(key)
 		var tmp []byte
 		err = row.Scan(&tmp)
 		if nil != err || 0 == len(tmp) {
 			return errorx.NewWithCode(errorx.NOT_FOUND, fmt.Sprintf("%s is not found", key))
 		}
-		query = fmt.Sprintf("DELETE FROM '%s' WHERE key=?;", kv.table)
-		stmt, err = db.Prepare(query)
-		if err != nil {
-			return err
-		}
-		_, err = stmt.Exec(key)
+		_, err = kv.preparedDeleteStmt.Exec(key)
 		return err
 	})
 }
