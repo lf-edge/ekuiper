@@ -1,4 +1,4 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -100,7 +100,7 @@ func (k *KafkaSource) Provision(ctx api.StreamContext, configs map[string]any) e
 		return err
 	}
 	k.sc = kConf
-	tlsConfig, err := cert.GenTLSConfig(configs, "kafka-source")
+	tlsConfig, err := cert.GenTLSConfig(ctx, configs)
 	if err != nil {
 		conf.Log.Errorf("kafka tls conf error: %v", err)
 		return err

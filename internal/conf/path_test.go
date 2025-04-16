@@ -1,4 +1,4 @@
-// Copyright 2021-2024 EMQ Technologies Co., Ltd.
+// Copyright 2021-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,11 +15,9 @@
 package conf
 
 import (
-	"path/filepath"
 	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -99,36 +97,5 @@ func TestPathConfig(t *testing.T) {
 		d, err := absolutePath(tc.dir)
 		require.NoError(t, err)
 		require.Equal(t, tc.expect, d)
-	}
-}
-
-func TestProcessPath(t *testing.T) {
-	absPath, err := filepath.Abs("/data/uploads/test.txt")
-	require.NoError(t, err)
-	tests := []struct {
-		name     string
-		path     string
-		hasError bool
-	}{
-		{
-			name:     "absolute path",
-			path:     absPath,
-			hasError: true,
-		},
-		{
-			name:     "relative path",
-			path:     "etc/kuiper.yaml",
-			hasError: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			_, err = ProcessPath(tt.path)
-			if tt.hasError {
-				assert.NotNil(t, err)
-			} else {
-				assert.NoError(t, err)
-			}
-		})
 	}
 }

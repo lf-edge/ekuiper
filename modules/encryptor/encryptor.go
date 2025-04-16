@@ -26,6 +26,13 @@ func GetEncryptor(name string, key []byte, encryptProps map[string]any) (message
 	switch name {
 	case "aes":
 		return aes.GetEncryptor(key, encryptProps)
+	case "default":
+		d, err := GetDefaultDecryptor()
+		if err != nil {
+			return nil, err
+		} else {
+			return d.(message.Encryptor), nil
+		}
 	default:
 		return nil, fmt.Errorf("encryptor '%s' is not supported", name)
 	}
@@ -43,6 +50,8 @@ func GetDecryptor(name string, key []byte, decryptProps map[string]any) (message
 	switch name {
 	case "aes":
 		return aes.GetDecryptor(key, decryptProps)
+	case "default":
+		return GetDefaultDecryptor()
 	default:
 		return nil, fmt.Errorf("decryptor '%s' is not supported", name)
 	}

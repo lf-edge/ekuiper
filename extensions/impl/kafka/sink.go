@@ -143,7 +143,7 @@ func (k *KafkaSink) Provision(ctx api.StreamContext, configs map[string]any) err
 		return err
 	}
 	k.saslConf = sc
-	tlsConfig, err := cert.GenTLSConfig(configs, "kafka-sink")
+	tlsConfig, err := cert.GenTLSConfig(ctx, configs)
 	if err != nil {
 		return err
 	}

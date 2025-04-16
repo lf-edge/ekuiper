@@ -1,4 +1,4 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/io/mqtt/v5client"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
+	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
 
@@ -52,11 +53,12 @@ func ValidateConfig(props map[string]any) error {
 	if err != nil {
 		return err
 	}
+	ctx := mockContext.NewMockContext("1", "2")
 	switch c.PVersion {
 	case "3.1", "3.1.1", "4":
-		_, err = v4client.ValidateConfig(props)
+		_, err = v4client.ValidateConfig(ctx, props)
 	case "5":
-		_, err = v5client.ValidateConfig(props)
+		_, err = v5client.ValidateConfig(ctx, props)
 	default:
 		return fmt.Errorf("unsupported protocol version %s", c.PVersion)
 	}

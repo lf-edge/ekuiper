@@ -1,4 +1,4 @@
-// Copyright 2024-2025 EMQ Technologies Co., Ltd.
+// Copyright 2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,17 +12,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package path
+package cert
 
 import (
-	"path/filepath"
+	"crypto/tls"
+	"errors"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+
+	"github.com/lf-edge/ekuiper/v2/pkg/model"
 )
 
-func AbsPath(ctx api.StreamContext, path string) string {
-	if filepath.IsAbs(path) {
-		return path
+// read only
+var conf *model.TlsConfigurationOptions
+
+// InitConf run in server start up
+func InitConf(tc *model.TlsConfigurationOptions) {
+	conf = tc
+}
+
+func GetDefaultTlsConf(ctx api.StreamContext) (*tls.Config, error) {
+	if conf == nil {
+		return nil, errors.New("default TLS is not configured")
 	}
-	return filepath.Join(ctx.GetRootPath(), path)
+	keys, err := conf.GenKeys()
+	if err != nil {
+		return nil, err
+	}
+	return GenerateTLSForClient(ctx, conf, keys)
 }
