@@ -1,4 +1,4 @@
-// Copyright 2021-2024 EMQ Technologies Co., Ltd.
+// Copyright 2021-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -258,8 +258,13 @@ func (fs *Source) parseFile(ctx api.StreamContext, file string, ingest api.Tuple
 	info, err := f.Stat()
 	if err != nil {
 		ctx.GetLogger().Debugf("get file info for %s error: %v", file, err)
+		return
 	} else {
 		maxSize = int(info.Size())
+		if info.Size() == 0 {
+			ctx.GetLogger().Warnf("read empty file %s, ignore", file)
+			return
+		}
 	}
 	if fs.config.IgnoreStartLines > 0 || fs.config.IgnoreEndLines > 0 {
 		r = ignoreLines(ctx, r, fs.decorator, fs.config.IgnoreStartLines, fs.config.IgnoreEndLines)
