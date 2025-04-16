@@ -1,4 +1,4 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -59,9 +59,8 @@ func (f *WatchWrapper) Subscribe(ctx api.StreamContext, ingest api.TupleIngest, 
 					return
 				case event := <-watcher.Events:
 					switch {
-					// case event.Has(fsnotify.Write):
-					case event.Has(fsnotify.Create):
-						ctx.GetLogger().Debugf("file watch receive creat event")
+					case event.Has(fsnotify.Create), event.Has(fsnotify.Write):
+						ctx.GetLogger().Debugf("file watch receive %v", event)
 						f.f.parseFile(ctx, event.Name, ingest, ingestError)
 					}
 				case err = <-watcher.Errors:
