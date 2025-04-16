@@ -1,4 +1,4 @@
-// Copyright 2021-2024 EMQ Technologies Co., Ltd.
+// Copyright 2021-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -58,7 +58,7 @@ func (hps *HttpPullSource) Provision(ctx api.StreamContext, configs map[string]a
 	if hps.ClientConf == nil {
 		hps.ClientConf = &ClientConf{}
 	}
-	return hps.InitConf(pc.Path, configs)
+	return hps.InitConf(ctx, pc.Path, configs)
 }
 
 func (hps *HttpPullSource) doPull(ctx api.StreamContext) ([]map[string]any, error) {

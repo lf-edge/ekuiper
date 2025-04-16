@@ -1,4 +1,4 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -51,7 +51,7 @@ type ConnectionConfig struct {
 }
 
 func Provision(ctx api.StreamContext, props map[string]any, onConnect client.ConnectHandler, onConnectLost client.ConnectErrorHandler, _ client.ConnectHandler) (*Client, error) {
-	cc, err := ValidateConfig(props)
+	cc, err := ValidateConfig(ctx, props)
 	if err != nil {
 		return nil, err
 	}
@@ -232,7 +232,7 @@ func (c *Client) ParseMsg(ctx api.StreamContext, msg any) ([]byte, map[string]an
 	return nil, nil, nil
 }
 
-func ValidateConfig(props map[string]any) (*ConnectionConfig, error) {
+func ValidateConfig(ctx api.StreamContext, props map[string]any) (*ConnectionConfig, error) {
 	c := &ConnectionConfig{}
 	err := cast.MapToStruct(props, c)
 	if err != nil {
@@ -251,7 +251,7 @@ func ValidateConfig(props map[string]any) (*ConnectionConfig, error) {
 	if c.ClientId == "" {
 		c.ClientId = uuid.New().String()
 	}
-	tlsConfig, err := cert.GenTLSConfig(props, "mqtt")
+	tlsConfig, err := cert.GenTLSConfig(ctx, props)
 	if err != nil {
 		return nil, err
 	}

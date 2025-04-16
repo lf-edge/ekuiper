@@ -1,4 +1,4 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,11 +20,14 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
+	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
+	"github.com/lf-edge/ekuiper/v2/pkg/model"
 )
 
 func TestGenerateTLSForClient(t *testing.T) {
 	type args struct {
-		Opts TlsConfigurationOptions
+		Opts model.TlsConfigurationOptions
 	}
 	tests := []struct {
 		name    string
@@ -35,7 +38,7 @@ func TestGenerateTLSForClient(t *testing.T) {
 		{
 			name: "do not set tls",
 			args: args{
-				Opts: TlsConfigurationOptions{
+				Opts: model.TlsConfigurationOptions{
 					SkipCertVerify:       true,
 					CertFile:             "",
 					KeyFile:              "",
@@ -54,7 +57,7 @@ func TestGenerateTLSForClient(t *testing.T) {
 		{
 			name: "set tls version to TLS1.0",
 			args: args{
-				Opts: TlsConfigurationOptions{
+				Opts: model.TlsConfigurationOptions{
 					SkipCertVerify:       false,
 					CertFile:             "",
 					KeyFile:              "",
@@ -73,7 +76,7 @@ func TestGenerateTLSForClient(t *testing.T) {
 		{
 			name: "set tls version to TLS1.1",
 			args: args{
-				Opts: TlsConfigurationOptions{
+				Opts: model.TlsConfigurationOptions{
 					SkipCertVerify:       false,
 					CertFile:             "",
 					KeyFile:              "",
@@ -92,7 +95,7 @@ func TestGenerateTLSForClient(t *testing.T) {
 		{
 			name: "set tls version to TLS1.2",
 			args: args{
-				Opts: TlsConfigurationOptions{
+				Opts: model.TlsConfigurationOptions{
 					SkipCertVerify:       false,
 					CertFile:             "",
 					KeyFile:              "",
@@ -111,7 +114,7 @@ func TestGenerateTLSForClient(t *testing.T) {
 		{
 			name: "set tls version to TLS1.3",
 			args: args{
-				Opts: TlsConfigurationOptions{
+				Opts: model.TlsConfigurationOptions{
 					SkipCertVerify:       false,
 					CertFile:             "",
 					KeyFile:              "",
@@ -130,7 +133,7 @@ func TestGenerateTLSForClient(t *testing.T) {
 		{
 			name: "set unknown tls options for TLS version and negotiation",
 			args: args{
-				Opts: TlsConfigurationOptions{
+				Opts: model.TlsConfigurationOptions{
 					SkipCertVerify:       false,
 					CertFile:             "",
 					KeyFile:              "",
@@ -150,7 +153,7 @@ func TestGenerateTLSForClient(t *testing.T) {
 		{
 			name: "no cert/key",
 			args: args{
-				Opts: TlsConfigurationOptions{
+				Opts: model.TlsConfigurationOptions{
 					SkipCertVerify:       false,
 					CertFile:             "not_exist.crt",
 					KeyFile:              "not_exist.key",
@@ -165,7 +168,7 @@ func TestGenerateTLSForClient(t *testing.T) {
 		{
 			name: "no cert/key",
 			args: args{
-				Opts: TlsConfigurationOptions{
+				Opts: model.TlsConfigurationOptions{
 					SkipCertVerify:       false,
 					CertFile:             "",
 					KeyFile:              "",
@@ -180,7 +183,7 @@ func TestGenerateTLSForClient(t *testing.T) {
 		{
 			name: "skip check",
 			args: args{
-				Opts: TlsConfigurationOptions{
+				Opts: model.TlsConfigurationOptions{
 					SkipCertVerify:       true,
 					CertFile:             "",
 					KeyFile:              "",
@@ -193,9 +196,10 @@ func TestGenerateTLSForClient(t *testing.T) {
 			wantErr: true,
 		},
 	}
+	ctx := mockContext.NewMockContext("gentls", "op1")
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := GenerateTLSForClient(&tt.args.Opts)
+			got, err := GenerateTLSForClient(ctx, &tt.args.Opts, &model.TlsKeys{})
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GenerateTLSForClient() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -208,28 +212,17 @@ func TestGenerateTLSForClient(t *testing.T) {
 }
 
 func TestGenTLSConfig(t *testing.T) {
+	ctx := mockContext.NewMockContext("gentls", "op1")
 	m := map[string]interface{}{}
-	c, err := GenTLSConfig(m, "")
+	c, err := GenTLSConfig(ctx, m)
 	require.NoError(t, err)
 	require.Nil(t, c)
-
-	var opts *TlsConfigurationOptions
-	opts.TlsConfigLog("")
-	opts = &TlsConfigurationOptions{}
-	opts.TlsConfigLog("")
-	opts.SkipCertVerify = true
-	opts.TlsConfigLog("")
-	opts.SkipCertVerify = false
-	opts.CertificationRaw = "mock"
-	opts.PrivateKeyRaw = "mock"
-	opts.RootCARaw = "mock"
-	opts.TlsConfigLog("")
 }
 
 func TestGenOptions(t *testing.T) {
 	testcases := []struct {
 		m       map[string]interface{}
-		options *TlsConfigurationOptions
+		options *model.TlsConfigurationOptions
 	}{
 		{
 			m:       map[string]interface{}{},
@@ -239,13 +232,13 @@ func TestGenOptions(t *testing.T) {
 			m: map[string]interface{}{
 				"insecureSkipVerify": true,
 			},
-			options: &TlsConfigurationOptions{
+			options: &model.TlsConfigurationOptions{
 				SkipCertVerify: true,
 			},
 		},
 	}
 	for _, tc := range testcases {
-		opt, err := genTlsConfigurationOptions(tc.m)
+		opt, _, err := genTlsConfigurationOptions(tc.m)
 		require.NoError(t, err)
 		require.Equal(t, tc.options, opt)
 	}

@@ -1,4 +1,4 @@
-// Copyright 2021-2024 EMQ Technologies Co., Ltd.
+// Copyright 2021-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -170,21 +170,6 @@ func relativePath(subdir string) (dir string, err error) {
 	}
 
 	return "", fmt.Errorf("dir %s not found, please make sure it is created.", confDir)
-}
-
-func ProcessPath(p string) (string, error) {
-	abs := p
-	var err error
-	if !filepath.IsAbs(p) {
-		abs, err = GetLoc(p)
-		if err != nil {
-			return "", err
-		}
-	}
-	if _, err := os.Stat(abs); os.IsNotExist(err) {
-		return "", err
-	}
-	return abs, nil
 }
 
 func InitMetricsFolder() error {

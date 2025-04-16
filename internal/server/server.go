@@ -46,7 +46,9 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/server/bump"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/rule"
 	"github.com/lf-edge/ekuiper/v2/metrics"
+	"github.com/lf-edge/ekuiper/v2/modules/encryptor"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/cert"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 	"github.com/lf-edge/ekuiper/v2/pkg/tracer"
@@ -140,6 +142,14 @@ func StartUp(Version string) {
 	createPaths()
 	conf.SetupEnv()
 	conf.InitConf()
+	if conf.Config.Security != nil {
+		if conf.Config.Security.Encryption != nil {
+			encryptor.InitConf(conf.Config.Security.Encryption, conf.Config.AesKey)
+		}
+		if conf.Config.Security.Tls != nil {
+			cert.InitConf(conf.Config.Security.Tls)
+		}
+	}
 	// Print inited modules
 	for n := range modules.Sources {
 		conf.Log.Infof("register source %s", n)

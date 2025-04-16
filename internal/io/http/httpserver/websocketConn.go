@@ -1,4 +1,4 @@
-// Copyright 2024-2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -57,7 +57,7 @@ func (w *WebsocketConnection) Dial(ctx api.StreamContext) error {
 		w.RecvTopic = rTopic
 		w.SendTopic = sTopic
 	} else {
-		tlsConfig, err := cert.GenTLSConfig(w.props, "websocket")
+		tlsConfig, err := cert.GenTLSConfig(ctx, w.props)
 		if err != nil {
 			return err
 		}

@@ -43,6 +43,13 @@ func NewEncryptOp(name string, rOpt *def.RuleOption, encryptMethod string, encPr
 			return nil, fmt.Errorf("AES key is not defined")
 		}
 		key = conf.Config.AesKey
+	case "default":
+		if conf.Config != nil && conf.Config.Security != nil && conf.Config.Security.Encryption != nil && conf.Config.Security.Encryption.Algorithm == "aes" {
+			if conf.Config.AesKey == nil {
+				return nil, fmt.Errorf("AES key is not defined")
+			}
+			key = conf.Config.AesKey
+		}
 	}
 	dc, err := encryptor.GetEncryptor(encryptMethod, key, encProps)
 	if err != nil {

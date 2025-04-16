@@ -34,6 +34,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/schedule"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/model"
 )
 
 const (
@@ -231,8 +232,8 @@ type KuiperConf struct {
 		BackoffMaxElapsedDuration cast.DurationConf `yaml:"backoffMaxElapsedDuration"`
 	}
 	OpenTelemetry OpenTelemetry `yaml:"openTelemetry"`
-
-	AesKey []byte
+	AesKey        []byte
+	Security      *model.SecurityConf
 }
 
 type MetricsDumpConfig struct {
