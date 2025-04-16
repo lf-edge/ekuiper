@@ -1,4 +1,4 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -28,36 +28,6 @@ type GcmEncrypter struct {
 	constantNonce []byte
 	aad           []byte
 	tagSize       int
-}
-
-func (a *GcmEncrypter) Encrypt(data []byte) ([]byte, error) {
-	nonceSize := a.gcm.NonceSize()
-	if len(data) < nonceSize {
-		return nil, fmt.Errorf("cipertext too short")
-	}
-	nonce := a.constantNonce
-	if nonce == nil {
-		nonce = make([]byte, a.gcm.NonceSize())
-		if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
-			return nil, err
-		}
-	}
-	if a.aad == nil {
-		ciphertext := a.gcm.Seal(nonce, nonce, data, a.aad)
-		return ciphertext, nil
-	} else {
-		ciphertext := a.gcm.Seal(nil, nonce, data, a.aad)
-		tagSize := a.gcm.Overhead()
-		tag := ciphertext[len(ciphertext)-tagSize:]
-		ciphertext = ciphertext[:len(ciphertext)-tagSize]
-		if a.tagSize > 0 {
-			padding := a.tagSize - len(tag)
-			if padding > 0 {
-				tag = append(tag, make([]byte, padding)...)
-			}
-		}
-		return append(tag, ciphertext...), nil
-	}
 }
 
 func NewGcmEncrypter(key []byte, cc *c) (*GcmEncrypter, error) {
@@ -93,4 +63,52 @@ func NewGcmEncrypter(key []byte, cc *c) (*GcmEncrypter, error) {
 		enc.tagSize = cc.TagSize
 	}
 	return enc, nil
+}
+
+func (a *GcmEncrypter) Encrypt(data []byte) ([]byte, error) {
+	nonceSize := a.gcm.NonceSize()
+	if len(data) < nonceSize {
+		return nil, fmt.Errorf("cipertext too short")
+	}
+	nonce := a.constantNonce
+	if nonce == nil {
+		nonce = make([]byte, a.gcm.NonceSize())
+		if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
+			return nil, err
+		}
+	}
+	if a.aad == nil {
+		ciphertext := a.gcm.Seal(nonce, nonce, data, a.aad)
+		return ciphertext, nil
+	} else {
+		ciphertext := a.gcm.Seal(nil, nonce, data, a.aad)
+		tagSize := a.gcm.Overhead()
+		tag := ciphertext[len(ciphertext)-tagSize:]
+		ciphertext = ciphertext[:len(ciphertext)-tagSize]
+		if a.tagSize > 0 {
+			padding := a.tagSize - len(tag)
+			if padding > 0 {
+				tag = append(tag, make([]byte, padding)...)
+			}
+		}
+		return append(tag, ciphertext...), nil
+	}
+}
+
+func (a *GcmEncrypter) Decrypt(secret []byte) ([]byte, error) {
+	nonceSize := a.gcm.NonceSize()
+	if len(secret) < nonceSize {
+		return nil, fmt.Errorf("ciphertext too short")
+	}
+	nonce := a.constantNonce
+	if nonce == nil {
+		nonce, secret = secret[:nonceSize], secret[nonceSize:]
+	}
+	ciphertext := secret
+	if a.tagSize > 0 {
+		tag := secret[:16]
+		secret = secret[32:]
+		ciphertext = append(secret, tag...)
+	}
+	return a.gcm.Open(nil, nonce, ciphertext, a.aad)
 }

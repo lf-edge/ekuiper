@@ -1,4 +1,4 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ func TestNewEncryptOp(t *testing.T) {
 	}
 	_, err = NewEncryptOp("test", &def.RuleOption{}, "aes", nil)
 	assert.Error(t, err)
-	assert.Equal(t, errors.New("get encryptor aes fail with error: AES key is not defined"), err)
+	assert.Equal(t, errors.New("AES key is not defined"), err)
 }
 
 func TestEncryptOp_Exec(t *testing.T) {

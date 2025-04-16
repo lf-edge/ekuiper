@@ -1,4 +1,4 @@
-// Copyright 2023-2024 EMQ Technologies Co., Ltd.
+// Copyright 2023-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -25,8 +25,9 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
 	"github.com/lf-edge/ekuiper/v2/internal/compressor"
-	"github.com/lf-edge/ekuiper/v2/internal/encryptor"
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/io/file/writer"
+	"github.com/lf-edge/ekuiper/v2/modules/encryptor"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
@@ -96,7 +97,15 @@ func (m *fileSink) createFileWriter(ctx api.StreamContext, fn string, ft FileTyp
 func (m *fileSink) CreateWriter(_ api.StreamContext, currWriter io.Writer, compression string, encryption string) (io.Writer, error) {
 	var err error
 	if encryption != "" {
-		currWriter, err = encryptor.GetEncryptWriter(encryption, currWriter)
+		var key []byte
+		switch encryption {
+		case "aes":
+			if conf.Config == nil || conf.Config.AesKey == nil {
+				return nil, fmt.Errorf("AES key is not defined")
+			}
+			key = conf.Config.AesKey
+		}
+		currWriter, err = encryptor.GetEncryptWriter(encryption, currWriter, key)
 		if err != nil {
 			return nil, fmt.Errorf("fail to get encrypt writer for %s: %v", encryption, err)
 		}

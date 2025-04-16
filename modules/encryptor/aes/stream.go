@@ -46,6 +46,18 @@ func (a *StreamEncrypter) Encrypt(data []byte) ([]byte, error) {
 	return result, nil
 }
 
+func (a *StreamEncrypter) Decrypt(secret []byte) ([]byte, error) {
+	iv := a.constantIv
+	if iv == nil {
+		iv = secret[:aes.BlockSize]
+	}
+	secret = secret[aes.BlockSize:]
+	stream := cipher.NewCFBDecrypter(a.block, iv) //nolint:staticcheck
+	revert := make([]byte, len(secret))
+	stream.XORKeyStream(revert, secret)
+	return revert, nil
+}
+
 func NewStreamEncrypter(key []byte, cc *c) (*StreamEncrypter, error) {
 	block, err := aes.NewCipher(key)
 	if err != nil {
