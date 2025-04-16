@@ -1,4 +1,4 @@
-// Copyright 2022-2024 EMQ Technologies Co., Ltd.
+// Copyright 2022-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -282,10 +282,10 @@ func StartUp(Version string) {
 
 	// Stop the services
 	sigint := make(chan os.Signal, 1)
-	signal.Notify(sigint, os.Interrupt, syscall.SIGTERM)
+	signal.Notify(sigint, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGHUP, syscall.SIGABRT, syscall.SIGILL, syscall.SIGTRAP, syscall.SIGSEGV)
 	select {
-	case <-sigint:
-		conf.Log.Info("eKuiper stopped by SIGTERM")
+	case ss := <-sigint:
+		conf.Log.Infof("eKuiper stopped by %v", ss)
 	case <-stopSignal:
 		// sleep 1 sec in order to let stop request got response
 		time.Sleep(time.Second)
