@@ -25,6 +25,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/pkg/message"
+	"github.com/lf-edge/ekuiper/v2/pkg/model"
 )
 
 func TestMessage(t *testing.T) {
@@ -45,7 +46,7 @@ func TestMessage(t *testing.T) {
 	// plaintext
 	pt := "Using the Input type selection, choose the type of input – a text string or a file. In case of the text string input, enter your input into the Input text textarea1,2. Otherwise, use the \"Browse\" button to select the input file to upload. Then select the cryptographic function you want to use in the Function field. Depending on the selected function the Initialization vector (IV) field is shown or hidden. Initialization vector is always a sequence of bytes, each byte has to be represented in hexadecimal form."
 	if conf.Config == nil {
-		conf.Config = &conf.KuiperConf{}
+		conf.Config = &model.KuiperConf{}
 	}
 	conf.Config.AesKey = key
 	for _, tt := range tests {
@@ -83,7 +84,7 @@ func TestConfGCM(t *testing.T) {
 	// plaintext
 	pt := "Using the Input type selection, choose the type of input – a text string or a file. In case of the text string input, enter your input into the Input text textarea1,2. Otherwise, use the \"Browse\" button to select the input file to upload. Then select the cryptographic function you want to use in the Function field. Depending on the selected function the Initialization vector (IV) field is shown or hidden. Initialization vector is always a sequence of bytes, each byte has to be represented in hexadecimal form."
 	if conf.Config == nil {
-		conf.Config = &conf.KuiperConf{}
+		conf.Config = &model.KuiperConf{}
 	}
 	conf.Config.AesKey = key
 	enc, err := GetEncryptor(key, map[string]any{"mode": "gcm", "iv": iv, "aad": aad, "tagsize": 32})
