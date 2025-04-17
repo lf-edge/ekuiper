@@ -145,6 +145,12 @@ func (o *defaultNode) doBroadcast(val any) {
 			}
 		}
 		first = false
+
+		// Fallback to set the context when sending out so that all children have the same parent ctx
+		// If has set ctx in the node impl, do not override it
+		if vt, ok := val.(xsql.HasTracerCtx); ok && vt.GetTracerCtx() == nil {
+			vt.SetTracerCtx(o.spanCtx)
+		}
 		// wait buffer consume if buffer full
 		if o.disableBufferFullDiscard {
 			select {
