@@ -57,6 +57,9 @@ func TraceInput(ruleID, spanName string, d any, opts ...trace.SpanStartOption) (
 	if !ok {
 		return false, nil, nil
 	}
+	if input.GetTracerCtx() == nil {
+		return false, nil, nil
+	}
 	spanCtx, span := tracer.GetTracer().Start(input.GetTracerCtx(), spanName, opts...)
 	span.SetAttributes(attribute.String(RuleKey, ruleID))
 	x := topoContext.WithContext(spanCtx)
