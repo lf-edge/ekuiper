@@ -754,12 +754,13 @@ func (o *WindowOperator) handleTraceEmitTuple(ctx api.StreamContext, wt *xsql.Wi
 }
 
 func (o *WindowOperator) handleNextWindowTupleSpan(ctx api.StreamContext) {
-	traced, spanCtx, span := tracenode.StartTraceBackground(ctx, "window_op")
-	if traced {
-		o.nextSpanCtx = spanCtx
-		o.nextSpan = span
-		o.nextLink = trace.Link{
-			SpanContext: span.SpanContext(),
-		}
+	if ctx.IsTraceEnabled() {
+		return
+	}
+	spanCtx, span := tracenode.StartTraceBackground(ctx.GetRuleId(), "window_op")
+	o.nextSpanCtx = spanCtx
+	o.nextSpan = span
+	o.nextLink = trace.Link{
+		SpanContext: span.SpanContext(),
 	}
 }
