@@ -1,4 +1,4 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/model"
 )
 
 type SinkConf struct {
@@ -41,7 +42,7 @@ type SinkConf struct {
 	Encryption       string            `json:"encryption"`
 	EncProps         map[string]any    `json:"encProps"`
 	HasHeader        bool              `json:"hasHeader"`
-	conf.SinkConf
+	model.SinkConf
 }
 
 func ParseConf(logger api.Logger, props map[string]any) (*SinkConf, error) {
@@ -79,7 +80,7 @@ func ParseConf(logger api.Logger, props map[string]any) (*SinkConf, error) {
 	if sconf.LingerInterval < 0 {
 		return nil, fmt.Errorf("invalid lingerInterval %v, must be positive", sconf.LingerInterval)
 	}
-	err = sconf.SinkConf.Validate()
+	err = sconf.SinkConf.Validate(logger)
 	if err != nil {
 		return nil, fmt.Errorf("invalid cache properties: %v", err)
 	}

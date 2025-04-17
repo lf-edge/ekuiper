@@ -1,4 +1,4 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,10 +22,10 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"go.opentelemetry.io/otel/trace"
 
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node/cache"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
+	"github.com/lf-edge/ekuiper/v2/pkg/model"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
@@ -36,7 +36,7 @@ import (
 type CacheOp struct {
 	*defaultSinkNode
 	// configs
-	cacheConf *conf.SinkConf
+	cacheConf *model.SinkConf
 	// state
 	cache    *cache.SyncCache
 	currItem any
@@ -48,7 +48,7 @@ type CacheOp struct {
 	rowHandle map[any]trace.Span
 }
 
-func NewCacheOp(ctx api.StreamContext, name string, rOpt *def.RuleOption, sc *conf.SinkConf) (*CacheOp, error) {
+func NewCacheOp(ctx api.StreamContext, name string, rOpt *def.RuleOption, sc *model.SinkConf) (*CacheOp, error) {
 	// use channel buffer as memory cache
 	c, err := cache.NewSyncCache(ctx, sc)
 	if err != nil {

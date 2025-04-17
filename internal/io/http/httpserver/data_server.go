@@ -1,4 +1,4 @@
-// Copyright 2022-2024 EMQ Technologies Co., Ltd.
+// Copyright 2022-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/io/memory/pubsub"
 	topoContext "github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/model"
 )
 
 type GlobalServerManager struct {
@@ -45,7 +46,7 @@ type GlobalServerManager struct {
 
 var manager *GlobalServerManager
 
-func InitGlobalServerManager(ip string, port int, tlsConf *conf.TlsConf) {
+func InitGlobalServerManager(ip string, port int, tlsConf *model.TlsConf) {
 	r := mux.NewRouter()
 	s := &http.Server{
 		Addr: cast.JoinHostPortInt(ip, port),

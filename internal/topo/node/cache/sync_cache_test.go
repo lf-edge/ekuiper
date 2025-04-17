@@ -1,4 +1,4 @@
-// Copyright 2022-2023 EMQ Technologies Co., Ltd.
+// Copyright 2022-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/topo/state"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/model"
 )
 
 func TestPage(t *testing.T) {
@@ -123,7 +124,7 @@ func TestCache(t *testing.T) {
 	deleteCachedb()
 	contextLogger := conf.Log.WithField("rule", "TestCache")
 	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger).WithMeta("TestCache", "op1", tempStore)
-	s, err := NewSyncCache(ctx, &conf.SinkConf{
+	s, err := NewSyncCache(ctx, &model.SinkConf{
 		MaxDiskCache:     6,
 		BufferPageSize:   2,
 		EnableCache:      true,
@@ -228,7 +229,7 @@ func TestCacheCase2(t *testing.T) {
 	deleteCachedb()
 	contextLogger := conf.Log.WithField("rule", "TestCache")
 	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger).WithMeta("TestCache", "op1", tempStore)
-	s, err := NewSyncCache(ctx, &conf.SinkConf{
+	s, err := NewSyncCache(ctx, &model.SinkConf{
 		MemoryCacheThreshold: 2,
 		MaxDiskCache:         4,
 		BufferPageSize:       2,
@@ -331,7 +332,7 @@ func TestCacheInit(t *testing.T) {
 	deleteCachedb()
 	contextLogger := conf.Log.WithField("rule", "TestCache")
 	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger).WithMeta("TestCache", "op1", tempStore)
-	s, err := NewSyncCache(ctx, &conf.SinkConf{
+	s, err := NewSyncCache(ctx, &model.SinkConf{
 		MemoryCacheThreshold: 0,
 		MaxDiskCache:         4,
 		BufferPageSize:       2,
@@ -356,7 +357,7 @@ func TestCacheInit(t *testing.T) {
 	assert.Equal(t, 6, s.CacheLength, "cache length before flush")
 	s.Flush(ctx)
 	s = nil
-	s, err = NewSyncCache(ctx, &conf.SinkConf{
+	s, err = NewSyncCache(ctx, &model.SinkConf{
 		MemoryCacheThreshold: 0,
 		MaxDiskCache:         4,
 		BufferPageSize:       2,
@@ -376,7 +377,7 @@ func TestCacheInit(t *testing.T) {
 	}, r)
 	s.Flush(ctx)
 	s = nil
-	s, err = NewSyncCache(ctx, &conf.SinkConf{
+	s, err = NewSyncCache(ctx, &model.SinkConf{
 		MemoryCacheThreshold: 0,
 		MaxDiskCache:         4,
 		BufferPageSize:       2,
@@ -397,7 +398,7 @@ func TestCacheInit(t *testing.T) {
 	s.cacheConf.CleanCacheAtStop = true
 	s.Flush(ctx)
 	s = nil
-	s, err = NewSyncCache(ctx, &conf.SinkConf{
+	s, err = NewSyncCache(ctx, &model.SinkConf{
 		MemoryCacheThreshold: 0,
 		MaxDiskCache:         2,
 		BufferPageSize:       2,

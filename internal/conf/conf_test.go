@@ -1,4 +1,4 @@
-// Copyright 2023-2024 EMQ Technologies Co., Ltd.
+// Copyright 2023-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,11 +15,9 @@ package conf
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
 	"path"
-	"reflect"
 	"testing"
 	"time"
 
@@ -29,67 +27,6 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
-
-func TestSourceConfValidate(t *testing.T) {
-	tests := []struct {
-		s   *SourceConf
-		e   *SourceConf
-		err string
-	}{
-		{
-			s: &SourceConf{},
-			e: &SourceConf{
-				HttpServerIp:   "0.0.0.0",
-				HttpServerPort: 10081,
-			},
-			err: "invalidHttpServerPort:httpServerPort must between 0 and 65535",
-		}, {
-			s: &SourceConf{
-				HttpServerIp: "192.168.0.1",
-			},
-			e: &SourceConf{
-				HttpServerIp:   "192.168.0.1",
-				HttpServerPort: 10081,
-			},
-			err: "invalidHttpServerPort:httpServerPort must between 0 and 65535",
-		}, {
-			s: &SourceConf{
-				HttpServerPort: 99999,
-			},
-			e: &SourceConf{
-				HttpServerIp:   "0.0.0.0",
-				HttpServerPort: 10081,
-			},
-			err: "invalidHttpServerPort:httpServerPort must between 0 and 65535",
-		}, {
-			s: &SourceConf{
-				HttpServerPort: 9090,
-				HttpServerTls: &TlsConf{
-					Certfile: "certfile",
-					Keyfile:  "keyfile",
-				},
-			},
-			e: &SourceConf{
-				HttpServerIp:   "0.0.0.0",
-				HttpServerPort: 9090,
-				HttpServerTls: &TlsConf{
-					Certfile: "certfile",
-					Keyfile:  "keyfile",
-				},
-			},
-		},
-	}
-	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
-	for i, tt := range tests {
-		err := tt.s.Validate()
-		if err != nil && tt.err != err.Error() {
-			t.Errorf("%d: error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.err, err)
-		}
-		if !reflect.DeepEqual(tt.s, tt.e) {
-			t.Errorf("%d\n\nstmt mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.s, tt.e)
-		}
-	}
-}
 
 func TestRuleOptionValidate(t *testing.T) {
 	tests := []struct {
@@ -238,200 +175,6 @@ func TestRuleOptionValidate(t *testing.T) {
 				assert.Error(t, err)
 				assert.Equal(t, tt.err, err.Error())
 			}
-		})
-	}
-}
-
-func TestSinkConf_Validate(t *testing.T) {
-	tests := []struct {
-		name    string
-		sc      SinkConf
-		wantErr error
-	}{
-		{
-			name: "valid config",
-			sc: SinkConf{
-				MemoryCacheThreshold: 1024,
-				MaxDiskCache:         1024000,
-				BufferPageSize:       256,
-				EnableCache:          true,
-				ResendInterval:       0,
-				CleanCacheAtStop:     true,
-				ResendAlterQueue:     true,
-				ResendPriority:       0,
-			},
-			wantErr: nil,
-		},
-		{
-			name: "invalid memoryCacheThreshold",
-			sc: SinkConf{
-				MemoryCacheThreshold: -1,
-				MaxDiskCache:         1024000,
-				BufferPageSize:       256,
-				EnableCache:          true,
-				ResendInterval:       0,
-				CleanCacheAtStop:     true,
-				ResendAlterQueue:     true,
-				ResendPriority:       0,
-			},
-			wantErr: errors.Join(errors.New("memoryCacheThreshold:memoryCacheThreshold must be positive")),
-		},
-		{
-			name: "invalid maxDiskCache",
-			sc: SinkConf{
-				MemoryCacheThreshold: 1024,
-				MaxDiskCache:         -1,
-				BufferPageSize:       256,
-				EnableCache:          true,
-				ResendInterval:       0,
-				CleanCacheAtStop:     true,
-				ResendAlterQueue:     true,
-				ResendPriority:       0,
-			},
-			wantErr: errors.Join(errors.New("maxDiskCache:maxDiskCache must be positive")),
-		},
-		{
-			name: "invalid bufferPageSize",
-			sc: SinkConf{
-				MemoryCacheThreshold: 1024,
-				MaxDiskCache:         1024000,
-				BufferPageSize:       0,
-				EnableCache:          true,
-				ResendInterval:       0,
-				CleanCacheAtStop:     true,
-				ResendAlterQueue:     true,
-				ResendPriority:       0,
-			},
-			wantErr: errors.Join(errors.New("bufferPageSize:bufferPageSize must be positive")),
-		},
-		{
-			name: "invalid resendInterval",
-			sc: SinkConf{
-				MemoryCacheThreshold: 1024,
-				MaxDiskCache:         1024000,
-				BufferPageSize:       256,
-				EnableCache:          true,
-				ResendInterval:       cast.DurationConf(-time.Second),
-				CleanCacheAtStop:     true,
-				ResendAlterQueue:     true,
-				ResendPriority:       0,
-			},
-			wantErr: errors.Join(errors.New("resendInterval:resendInterval must be positive")),
-		},
-		{
-			name: "memoryCacheThresholdTooSmall",
-			sc: SinkConf{
-				MemoryCacheThreshold: 128,
-				MaxDiskCache:         1024000,
-				BufferPageSize:       256,
-				EnableCache:          true,
-				ResendInterval:       0,
-				CleanCacheAtStop:     true,
-				ResendAlterQueue:     true,
-				ResendPriority:       0,
-			},
-			wantErr: errors.Join(errors.New("memoryCacheThresholdTooSmall:memoryCacheThreshold must be greater than or equal to bufferPageSize")),
-		},
-		{
-			name: "memoryCacheThresholdNotMultiple",
-			sc: SinkConf{
-				MemoryCacheThreshold: 300,
-				MaxDiskCache:         1024000,
-				BufferPageSize:       256,
-				EnableCache:          true,
-				ResendInterval:       0,
-				CleanCacheAtStop:     true,
-				ResendAlterQueue:     true,
-				ResendPriority:       0,
-			},
-			wantErr: errors.Join(errors.New("memoryCacheThresholdNotMultiple:memoryCacheThreshold must be a multiple of bufferPageSize")),
-		},
-		{
-			name: "maxDiskCacheTooSmall",
-			sc: SinkConf{
-				MemoryCacheThreshold: 1024,
-				MaxDiskCache:         128,
-				BufferPageSize:       256,
-				EnableCache:          true,
-				ResendInterval:       0,
-				CleanCacheAtStop:     true,
-				ResendAlterQueue:     true,
-				ResendPriority:       0,
-			},
-			wantErr: errors.Join(errors.New("maxDiskCacheTooSmall:maxDiskCache must be greater than bufferPageSize")),
-		},
-		{
-			name: "maxDiskCacheNotMultiple",
-			sc: SinkConf{
-				MemoryCacheThreshold: 1024,
-				MaxDiskCache:         300,
-				BufferPageSize:       256,
-				EnableCache:          true,
-				ResendInterval:       0,
-				CleanCacheAtStop:     true,
-				ResendAlterQueue:     true,
-				ResendPriority:       0,
-			},
-			wantErr: errors.Join(errors.New("maxDiskCacheNotMultiple:maxDiskCache must be a multiple of bufferPageSize")),
-		},
-		{
-			name: "invalid resendPriority",
-			sc: SinkConf{
-				MemoryCacheThreshold: 1024,
-				MaxDiskCache:         1024000,
-				BufferPageSize:       256,
-				EnableCache:          true,
-				ResendInterval:       0,
-				CleanCacheAtStop:     true,
-				ResendAlterQueue:     true,
-				ResendPriority:       2,
-			},
-			wantErr: errors.Join(errors.New("resendPriority:resendPriority must be -1, 0 or 1")),
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := tt.sc.Validate()
-			assert.Equal(t, tt.wantErr, err)
-		})
-	}
-}
-
-func TestSyslogConf_Validate(t *testing.T) {
-	tests := []struct {
-		name    string
-		sc      *syslogConf
-		wantErr error
-	}{
-		{
-			name: "valid config",
-			sc: &syslogConf{
-				Enable:  false,
-				Network: "udp",
-				Address: "localhost:514",
-				Tag:     "kuiper",
-				Level:   "info",
-			},
-			wantErr: nil,
-		},
-		{
-			name: "empty config",
-			sc:   &syslogConf{},
-		},
-		{
-			name: "invalid level",
-			sc: &syslogConf{
-				Enable: false,
-				Level:  "warning",
-			},
-			wantErr: errors.New("invalid syslog level: warning"),
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := tt.sc.Validate()
-			assert.Equal(t, tt.wantErr, err)
 		})
 	}
 }

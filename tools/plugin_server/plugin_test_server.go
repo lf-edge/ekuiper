@@ -1,4 +1,4 @@
-// Copyright 2021-2024 EMQ Technologies Co., Ltd.
+// Copyright 2021-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/topo/state"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/model"
 )
 
 // Only support to test a single plugin Testing process.
@@ -101,7 +102,7 @@ func startPluginIns(info *portable.PluginInfo) (*runtime.PluginIns, error) {
 	}
 	conf.Log.Println("waiting handshake")
 	if conf.Config == nil {
-		conf.Config = &conf.KuiperConf{}
+		conf.Config = &model.KuiperConf{}
 	}
 	conf.Config.Portable.InitTimeout = cast.DurationConf(5 * time.Minute)
 	err = ctrlChan.Handshake()
