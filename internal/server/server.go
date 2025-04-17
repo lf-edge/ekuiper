@@ -50,6 +50,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cert"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
+	"github.com/lf-edge/ekuiper/v2/pkg/model"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 	"github.com/lf-edge/ekuiper/v2/pkg/tracer"
 )
@@ -111,7 +112,7 @@ func createPaths() {
 	}
 }
 
-func getStoreConfigByKuiperConfig(c *conf.KuiperConf) (*store.StoreConf, error) {
+func getStoreConfigByKuiperConfig(c *model.KuiperConf) (*store.StoreConf, error) {
 	dataDir, err := conf.GetDataLoc()
 	if err != nil {
 		return nil, err
@@ -142,6 +143,9 @@ func StartUp(Version string) {
 	createPaths()
 	conf.SetupEnv()
 	conf.InitConf()
+	if modules.ConfHook != nil {
+		modules.ConfHook(conf.Config)
+	}
 	if conf.Config.Security != nil {
 		if conf.Config.Security.Encryption != nil {
 			encryptor.InitConf(conf.Config.Security.Encryption, conf.Config.AesKey)
