@@ -97,15 +97,7 @@ func (m *fileSink) createFileWriter(ctx api.StreamContext, fn string, ft FileTyp
 func (m *fileSink) CreateWriter(_ api.StreamContext, currWriter io.Writer, compression string, encryption string) (io.Writer, error) {
 	var err error
 	if encryption != "" {
-		var key []byte
-		switch encryption {
-		case "aes":
-			if conf.Config == nil || conf.Config.AesKey == nil {
-				return nil, fmt.Errorf("AES key is not defined")
-			}
-			key = conf.Config.AesKey
-		}
-		currWriter, err = encryptor.GetEncryptWriter(encryption, currWriter, key)
+		currWriter, err = encryptor.GetEncryptWriter(encryption, currWriter, conf.Config)
 		if err != nil {
 			return nil, fmt.Errorf("fail to get encrypt writer for %s: %v", encryption, err)
 		}

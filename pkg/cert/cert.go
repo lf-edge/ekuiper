@@ -54,7 +54,7 @@ func genTlsConfigurationOptions(props map[string]interface{}) (*model.TlsConfigu
 	if err := cast.MapToStruct(props, opts); err != nil {
 		return nil, nil, err
 	}
-	if !opts.SkipCertVerify && (len(opts.CertFile) < 1 && len(opts.KeyFile) < 1 && len(opts.CaFile) < 1) &&
+	if opts.Tls != "default" && !opts.SkipCertVerify && (len(opts.CertFile) < 1 && len(opts.KeyFile) < 1 && len(opts.CaFile) < 1) &&
 		(len(opts.CertificationRaw) < 1 && len(opts.PrivateKeyRaw) < 1 && len(opts.RootCARaw) < 1) {
 		return nil, nil, nil
 	}
@@ -147,7 +147,7 @@ func buildCert(ctx api.StreamContext, opts *model.TlsConfigurationOptions, keys 
 				return tls.Certificate{}, err
 			}
 		}
-		decryptor, e := encryptor.GetDecryptor(opts.Decrypt.Algorithm, key, opts.Decrypt.Properties)
+		decryptor, e := encryptor.GetDecryptorWithKey(opts.Decrypt.Algorithm, key, opts.Decrypt.Properties)
 		if e != nil {
 			return tls.Certificate{}, e
 		}
