@@ -23,27 +23,27 @@ import (
 )
 
 var (
-	dec     message.Decryptor
-	err     error
-	encConf *model.EncryptionConf
-	key     []byte
-	once    sync.Once
+	ddec  message.Decryptor
+	derr  error
+	dconf *model.EncryptionConf
+	dKey  []byte
+	once  sync.Once
 )
 
 // InitConf run in server start up
 func InitConf(enc *model.EncryptionConf, k []byte) {
-	encConf = enc
-	key = k
+	dconf = enc
+	dKey = k
 }
 
 // GetDefaultDecryptor returns the singleton of the decryptor
 func GetDefaultDecryptor() (message.Decryptor, error) {
 	once.Do(func() {
-		if encConf != nil {
-			dec, err = GetDecryptor(encConf.Algorithm, key, encConf.Properties)
+		if dconf != nil {
+			ddec, derr = GetDecryptorWithKey(dconf.Algorithm, dKey, dconf.Properties)
 		} else {
-			err = errors.New("default encryption is not configured")
+			derr = errors.New("default encryption is not configured")
 		}
 	})
-	return dec, err
+	return ddec, derr
 }

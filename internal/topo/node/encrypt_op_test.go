@@ -35,7 +35,7 @@ func TestNewEncryptOp(t *testing.T) {
 	}
 	_, err = NewEncryptOp("test", &def.RuleOption{}, "aes", nil)
 	assert.Error(t, err)
-	assert.Equal(t, errors.New("AES key is not defined"), err)
+	assert.Equal(t, errors.New("get encryptor aes fail with error: AES Key is not defined"), err)
 }
 
 func TestEncryptOp_Exec(t *testing.T) {
