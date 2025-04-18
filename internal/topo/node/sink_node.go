@@ -18,10 +18,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	kctx "github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
@@ -30,6 +32,10 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/model"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
+
+type EofSinkNode interface {
+	SetupEofWg(eofwg *sync.WaitGroup)
+}
 
 // SinkNode represents a sink node that collects data from the stream
 // It typically only do connect and send. It does not do any processing.
@@ -43,6 +49,7 @@ type SinkNode struct {
 	doCollect      func(ctx api.StreamContext, sink api.Sink, data any) error
 	// channel for resend
 	resendOut chan<- any
+	eofwg     *sync.WaitGroup
 }
 
 // Caching:
@@ -68,6 +75,10 @@ func newSinkNode(ctx api.StreamContext, name string, rOpt def.RuleOption, eoflim
 		eoflimit:        eoflimit,
 		resendInterval:  retry,
 	}
+}
+
+func (s *SinkNode) SetupEofWg(eofwg *sync.WaitGroup) {
+	s.eofwg = eofwg
 }
 
 func (s *SinkNode) setKafkaSinkStatsManager(ctx api.StreamContext) {
@@ -186,6 +197,10 @@ func (s *SinkNode) ingest(ctx api.StreamContext, item any) (any, bool) {
 		s.currentEof++
 		if s.eoflimit == s.currentEof {
 			infra.DrainError(ctx, errorx.NewEOF(), s.ctrlCh)
+		}
+		if s.eofwg != nil {
+			conf.Log.Infof("%v %v eofwg done", ctx.GetRuleId(), ctx.GetOpId())
+			s.eofwg.Done()
 		}
 		return nil, true
 	}

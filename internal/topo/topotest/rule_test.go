@@ -1895,10 +1895,11 @@ func TestRuleWaitGroup(t *testing.T) {
 			},
 		},
 		Options: &def.RuleOption{
-			BufferLength:       100,
-			SendError:          true,
-			Qos:                def.AtMostOnce,
-			CheckpointInterval: cast.DurationConf(time.Second * 5),
+			BufferLength:              100,
+			SendError:                 true,
+			Qos:                       def.AtMostOnce,
+			CheckpointInterval:        cast.DurationConf(time.Second * 5),
+			EnableWaitConsumeWhenStop: true,
 		},
 	}
 	tp, err := planner.Plan(rule)
