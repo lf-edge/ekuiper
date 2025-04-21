@@ -1,4 +1,4 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@ package fvt
 
 import (
 	"archive/zip"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -81,7 +82,10 @@ func (s *ServerTestSuite) TestLC() {
 		payload, err := io.ReadAll(resp.Body)
 		s.NoError(err)
 		defer resp.Body.Close()
-		s.Require().Equal("[{\"name\":\"pysam\",\"version\":\"v1.0.0\",\"language\":\"python\",\"executable\":\"/home/runner/work/ekuiper/ekuiper/plugins/portable/pysam/pysam.py\",\"sources\":[\"pyjson\"],\"sinks\":[\"print\"],\"functions\":[\"revert\"]}]", string(payload))
+		pwd, err := os.Getwd()
+		s.Require().NoError(err)
+		exp := fmt.Sprintf("[{\"name\":\"pysam\",\"version\":\"v1.0.0\",\"language\":\"python\",\"executable\":\"%s\",\"sources\":[\"pyjson\"],\"sinks\":[\"print\"],\"functions\":[\"revert\"]}]", filepath.Join(pwd, "..", "plugins", "portable", "pysam", "pysam.py"))
+		s.Require().Equal(exp, string(payload))
 	})
 	s.Run("test rule with plugin", func() {
 		resp, err := client.CreateStream(streamSql)

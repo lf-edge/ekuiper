@@ -15,7 +15,8 @@
 package conf
 
 import (
-	"strings"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -53,12 +54,12 @@ func TestAbsolutePath(t *testing.T) {
 }
 
 func TestGetDataLoc_Funcs(t *testing.T) {
+	wd, err := os.Getwd()
+	require.NoError(t, err)
+	root := filepath.Join(wd, "..", "..")
 	d, err := GetDataLoc()
-	if err != nil {
-		t.Errorf("Errors when getting data loc: %s.", err)
-	} else if !strings.HasSuffix(d, "kuiper/data/test") {
-		t.Errorf("Unexpected data location %s", d)
-	}
+	require.NoError(t, err)
+	require.Equal(t, filepath.Join(root, "data", "test"), d)
 }
 
 func TestPathConfig(t *testing.T) {
