@@ -1,4 +1,4 @@
-// Copyright 2021-2024 EMQ Technologies Co., Ltd.
+// Copyright 2021-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -55,6 +55,10 @@ func TestManager_Install(t *testing.T) {
 	defer s.Close()
 	endpoint := s.URL
 
+	pwd, err := os.Getwd()
+	require.NoError(t, err)
+	ppath := path.Join(pwd, "..", "..", "..", "plugins", "portable", "mirror2", "mirror2")
+
 	data := []struct {
 		n   string
 		u   string
@@ -84,7 +88,7 @@ func TestManager_Install(t *testing.T) {
 		}, { // 5
 			n:   "mirror2",
 			u:   endpoint + "/portables/mirror.zip",
-			err: errors.New("fail to install plugin: plugin executable /home/runner/work/ekuiper/ekuiper/plugins/portable/mirror2/mirror2 stops with error fork/exec /home/runner/work/ekuiper/ekuiper/plugins/portable/mirror2/mirror2: permission denied"),
+			err: fmt.Errorf("fail to install plugin: plugin executable %s stops with error fork/exec %s: permission denied", ppath, ppath),
 		},
 	}
 

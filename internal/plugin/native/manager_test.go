@@ -1,4 +1,4 @@
-// Copyright 2021-2024 EMQ Technologies Co., Ltd.
+// Copyright 2021-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/binder"
 	"github.com/lf-edge/ekuiper/v2/internal/binder/function"
@@ -61,6 +62,9 @@ func TestManager_Register(t *testing.T) {
 	)
 	defer s.Close()
 	endpoint := s.URL
+	pwd, err := os.Getwd()
+	require.NoError(t, err)
+	soPath := path.Join(pwd, "..", "..", "..", "plugins", "sources", "ZipMissConf.so")
 
 	data := []struct {
 		t       plugin.PluginType
@@ -81,7 +85,7 @@ func TestManager_Register(t *testing.T) {
 			t:   plugin.SOURCE,
 			n:   "zipMissConf",
 			u:   endpoint + "/sources/zipMissConf.zip",
-			err: errors.New("fail to install plugin: invalid zip file: expectFiles: 2, got filenames:[/home/runner/work/ekuiper/ekuiper/plugins/sources/ZipMissConf.so], zipFiles: [ZipMissConf.so], yamlFileChecked:false, soFileChecked:true"),
+			err: fmt.Errorf("fail to install plugin: invalid zip file: expectFiles: 2, got filenames:[%s], zipFiles: [ZipMissConf.so], yamlFileChecked:false, soFileChecked:true", soPath),
 		},
 		{
 			t:   plugin.SINK,
