@@ -1,4 +1,4 @@
-// Copyright 2022-2024 EMQ Technologies Co., Ltd.
+// Copyright 2022-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -28,4 +28,11 @@ func NewMockContext(ruleId string, opId string) api.StreamContext {
 	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
 	tempStore, _ := state.CreateStore(ruleId, def.AtMostOnce)
 	return ctx.WithMeta(ruleId, opId, tempStore)
+}
+
+func NewMockFuncContext(ruleId string, opId string, funcId int) api.FunctionContext {
+	contextLogger := conf.Log.WithField("rule", ruleId)
+	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
+	tempStore, _ := state.CreateStore(ruleId, def.AtMostOnce)
+	return context.NewDefaultFuncContext(ctx.WithMeta(ruleId, opId, tempStore), funcId)
 }

@@ -1,4 +1,4 @@
-// Copyright 2021-2024 EMQ Technologies Co., Ltd.
+// Copyright 2021-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package io
 import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
+	"github.com/lf-edge/ekuiper/v2/extensions/functions/analytic"
 	"github.com/lf-edge/ekuiper/v2/internal/binder"
 	"github.com/lf-edge/ekuiper/v2/internal/io/file"
 	"github.com/lf-edge/ekuiper/v2/internal/io/http"
@@ -59,6 +60,11 @@ func init() {
 	modules.RegisterConnection("nng", nng.CreateConnection)
 	modules.RegisterConnection("httppush", httpserver.CreateConnection)
 	modules.RegisterConnection("websocket", httpserver.CreateWebsocketConnection)
+
+	modules.RegisterFunc("change_capture", analytic.NewChangeCaptureFunc)
+	modules.RegisterFunc("change_to", analytic.NewChangeToFunc)
+	modules.RegisterFunc("consecutive_count", analytic.NewConsecutiveCountFunc)
+	modules.RegisterFunc("consecutive_start", analytic.NewConsecutiveStartFunc)
 }
 
 type Manager struct{}

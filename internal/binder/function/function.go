@@ -1,4 +1,4 @@
-// Copyright 2022-2024 EMQ Technologies Co., Ltd.
+// Copyright 2022-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -70,15 +70,19 @@ func init() {
 //}
 
 var analyticFuncs = map[string]struct{}{
-	"lag":         {},
-	"changed_col": {},
-	"had_changed": {},
-	"latest":      {},
-	"acc_sum":     {},
-	"acc_min":     {},
-	"acc_max":     {},
-	"acc_avg":     {},
-	"acc_count":   {},
+	"lag":               {},
+	"changed_col":       {},
+	"had_changed":       {},
+	"latest":            {},
+	"acc_sum":           {},
+	"acc_min":           {},
+	"acc_max":           {},
+	"acc_avg":           {},
+	"acc_count":         {},
+	"change_to":         {},
+	"change_capture":    {},
+	"consecutive_count": {},
+	"consecutive_start": {},
 }
 
 var windowFuncs = map[string]struct{}{
