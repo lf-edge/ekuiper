@@ -942,7 +942,7 @@ func (p *Parser) parseCall(n string) (ast.Expr, error) {
 			}
 		default:
 			if valErr := validateFuncs(name, args); valErr != nil {
-				return nil, valErr
+				return nil, fmt.Errorf("validate function %s error: %v", name, valErr)
 			}
 		}
 		// Add context for some aggregate func
