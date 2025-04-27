@@ -1,4 +1,4 @@
-// Copyright 2022-2024 EMQ Technologies Co., Ltd.
+// Copyright 2022-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -73,9 +73,9 @@ func (ms *MultiSorter) Less(i, j int) bool {
 			return false
 		}
 		switch {
-		case v.simpleDataEval(vp, vq, ast.LT):
+		case v.SimpleDataEval(vp, vq, ast.LT):
 			return field.Ascending
-		case v.simpleDataEval(vq, vp, ast.LT):
+		case v.SimpleDataEval(vq, vp, ast.LT):
 			return !field.Ascending
 		}
 	}
