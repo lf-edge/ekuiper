@@ -194,20 +194,24 @@ func (s *SrcSubTopo) StoreSchema(ruleID, dataSource string, schema map[string]*a
 }
 
 func (s *SrcSubTopo) Close(ctx api.StreamContext, ruleId string, runId int) {
-	if ch, ok := s.refRules.Load(ruleId); ok && ch != nil {
-		s.refRules.Delete(ruleId)
-		if s.refCount.CompareAndSwap(1, 0) {
-			if s.cancel != nil {
-				s.cancel()
+	if ch, ok := s.refRules.Load(ruleId); ok {
+		// Only do clean up when rule is deleted instead of updated
+		if ch != nil {
+			s.refRules.Delete(ruleId)
+			if s.refCount.CompareAndSwap(1, 0) {
+				if s.cancel != nil {
+					s.cancel()
+				}
+				if ss, ok := s.source.(*SrcSubTopo); ok {
+					ss.Close(ctx, "$$subtopo_"+s.name, runId)
+				}
+				RemoveSubTopo(s.name)
+			} else {
+				s.refCount.Add(-1)
 			}
-			if ss, ok := s.source.(*SrcSubTopo); ok {
-				ss.Close(ctx, "$$subtopo_"+s.name, runId)
-			}
-			RemoveSubTopo(s.name)
-		} else {
-			s.refCount.Add(-1)
+			ctx.GetLogger().Infof("Sub topo %s dereference %s with %d ref", s.name, ctx.GetRuleId(), s.refCount.Load())
 		}
-		ctx.GetLogger().Infof("Sub topo %s dereference %s with %d ref", s.name, ctx.GetRuleId(), s.refCount.Load())
+		ctx.GetLogger().Infof("Sub topo %s update schema for rule %s change", s.name, ctx.GetRuleId())
 		for _, op := range s.ops {
 			if so, ok := op.(node.SchemaNode); ok {
 				so.DetachSchema(ctx, ruleId)
