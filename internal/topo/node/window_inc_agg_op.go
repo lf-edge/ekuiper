@@ -310,6 +310,7 @@ func (co *CountWindowIncAggOp) emit(ctx api.StreamContext, errCh chan<- error) {
 	co.CurrWindowSize = 0
 	co.CurrWindow = nil
 	co.Broadcast(results)
+	co.onSend(ctx, results)
 }
 
 type TumblingWindowIncAggOp struct {
@@ -384,6 +385,7 @@ func (to *TumblingWindowIncAggOp) exec(ctx api.StreamContext, errCh chan<- error
 			if processed {
 				continue
 			}
+			to.onProcessStart(ctx, input)
 			switch row := data.(type) {
 			case *xsql.Tuple:
 				if to.CurrWindow == nil {
@@ -393,6 +395,7 @@ func (to *TumblingWindowIncAggOp) exec(ctx api.StreamContext, errCh chan<- error
 				incAggCal(ctx, name, row, to.CurrWindow, to.aggFields)
 			}
 			to.PutState(ctx)
+			to.onProcessEnd(ctx)
 		default:
 		}
 		if to.FirstTimer != nil {
@@ -438,6 +441,7 @@ func (to *TumblingWindowIncAggOp) emit(ctx api.StreamContext, errCh chan<- error
 	results.WindowRange = xsql.NewWindowRange(to.CurrWindow.StartTime.UnixMilli(), now.UnixMilli())
 	to.CurrWindow = nil
 	to.Broadcast(results)
+	to.onSend(ctx, results)
 }
 
 type SlidingWindowIncAggOp struct {
@@ -515,6 +519,7 @@ func (so *SlidingWindowIncAggOp) exec(ctx api.StreamContext, errCh chan<- error)
 			if processed {
 				continue
 			}
+			so.onProcessStart(ctx, input)
 			switch row := data.(type) {
 			case *xsql.Tuple:
 				so.CurrWindowList = gcIncAggWindow(so.CurrWindowList, so.Length+so.Delay, now)
@@ -537,6 +542,7 @@ func (so *SlidingWindowIncAggOp) exec(ctx api.StreamContext, errCh chan<- error)
 				}
 				so.PutState(ctx)
 			}
+			so.onProcessEnd(ctx)
 		case <-so.taskCh:
 			now := timex.GetNow()
 			so.CurrWindowList = gcIncAggWindow(so.CurrWindowList, so.Length+so.Delay, now)
@@ -570,6 +576,7 @@ func (so *SlidingWindowIncAggOp) emit(ctx api.StreamContext, errCh chan<- error,
 	}
 	results.WindowRange = xsql.NewWindowRange(window.StartTime.UnixMilli(), now.UnixMilli())
 	so.Broadcast(results)
+	so.onSend(ctx, results)
 }
 
 func (so *SlidingWindowIncAggOp) isMatchCondition(ctx api.StreamContext, fv *xsql.FunctionValuer, d *xsql.Tuple) bool {
@@ -694,6 +701,7 @@ func (ho *HoppingWindowIncAggOp) exec(ctx api.StreamContext, errCh chan<- error)
 			if processed {
 				continue
 			}
+			ho.onProcessStart(ctx, input)
 			switch row := data.(type) {
 			case *xsql.Tuple:
 				ho.CurrWindowList = gcIncAggWindow(ho.CurrWindowList, ho.Length, now)
@@ -757,6 +765,7 @@ func (ho *HoppingWindowIncAggOp) emit(ctx api.StreamContext, errCh chan<- error,
 	}
 	results.WindowRange = xsql.NewWindowRange(window.StartTime.UnixMilli(), now.UnixMilli())
 	ho.Broadcast(results)
+	ho.onSend(ctx, results)
 }
 
 func (ho *HoppingWindowIncAggOp) calIncAggWindow(ctx api.StreamContext, fv *xsql.FunctionValuer, row *xsql.Tuple, now time.Time) {
