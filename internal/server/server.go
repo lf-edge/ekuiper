@@ -296,7 +296,7 @@ func StartUp(Version string) {
 
 	// Stop the services
 	sigint := make(chan os.Signal, 1)
-	signal.Notify(sigint, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGHUP, syscall.SIGABRT, syscall.SIGILL, syscall.SIGTRAP, syscall.SIGSEGV)
+	signal.Notify(sigint, os.Interrupt, syscall.SIGTERM)
 	select {
 	case ss := <-sigint:
 		conf.Log.Infof("eKuiper stopped by %v", ss)
