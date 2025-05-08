@@ -1,4 +1,4 @@
-// Copyright 2021-2024 EMQ Technologies Co., Ltd.
+// Copyright 2021-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -66,26 +66,38 @@ func (r *NanomsgReqChannel) Close() error {
 func (r *NanomsgReqChannel) SendCmd(arg []byte) error {
 	r.Lock()
 	defer r.Unlock()
-	if err := r.sock.Send(arg); err != nil {
+	for {
+		err := r.sock.Send(arg)
+		// resend if protocol state wrong, because of plugin restart or other problems
 		if err == mangos.ErrProtoState {
-			_, err = r.sock.Recv()
+			conf.Log.Debugf("send cmd protestate error %s", err.Error())
+			var prev []byte
+			prev, err = r.sock.Recv()
 			if err == nil {
+				conf.Log.Warnf("discard previous response: %s", string(prev))
+				conf.Log.Debugf("resend request: %s", string(arg))
 				err = r.sock.Send(arg)
-				if err == nil {
-					return nil
-				}
 			}
 		}
-		return fmt.Errorf("can't send message on control rep socket: %s", err.Error())
-	}
-	if msg, err := r.sock.Recv(); err != nil {
-		return fmt.Errorf("can't receive: %s", err.Error())
-	} else {
-		if string(msg) != "ok" {
-			return fmt.Errorf("receive error: %s", string(msg))
+		if err != nil {
+			return fmt.Errorf("can't send message on control rep socket: %s", err.Error())
+		}
+		result, e := r.sock.Recv()
+		if e != nil {
+			conf.Log.Errorf("can't receive: %s", e.Error())
+		} else {
+			conf.Log.Debugf("receive response: %s", string(result))
+		}
+		if len(result) > 0 && result[0] == 'h' {
+			conf.Log.Debugf("receive previous handshake response: %s", string(result))
+			continue
+		}
+		if string(result) != "ok" {
+			return fmt.Errorf("receive error: %s", string(result))
+		} else {
+			return nil
 		}
 	}
-	return nil
 }
 
 // Handshake should only be called once

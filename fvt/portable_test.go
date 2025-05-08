@@ -35,7 +35,7 @@ func TestPortableTestSuite(t *testing.T) {
 	suite.Run(t, new(PortableTestSuite))
 }
 
-func (s *ServerTestSuite) TestLC() {
+func (s *PortableTestSuite) TestLC() {
 	streamSql := `{"sql": "create stream pyjsonStream () WITH (TYPE=\"pyjson\", FORMAT=\"json\")"}`
 	ruleSql := `{
 	  "id": "rulePort1",
@@ -118,6 +118,31 @@ func (s *ServerTestSuite) TestLC() {
 		s.Equal("", metrics["source_pyjsonStream_0_last_exception"])
 	})
 	s.Run("check plugin status", func() {
+		// check the plugin status
+		resp, err := client.Get("plugins/portables/pysam/status")
+		s.Require().NoError(err)
+		s.Require().Equal(http.StatusOK, resp.StatusCode)
+		payload, err := io.ReadAll(resp.Body)
+		s.NoError(err)
+		defer resp.Body.Close()
+		s.T().Log(string(payload))
+		s.Require().True(strings.Contains(string(payload), "{\"refCount\":{\"rulePort1\":2},\"status\":\"running\",\"errMsg\":\"\""))
+	})
+	s.Run("update plugin and check status", func() {
+		// zip the plugin dir
+		pysamDir := filepath.Join(PWD, "sdk", "python", "example", "pysam")
+		pysamZipPath := "/tmp/pysam.zip"
+		err := zipDirectory(pysamDir, pysamZipPath)
+		s.Require().NoError(err)
+		defer func() {
+			os.Remove(pysamZipPath)
+		}()
+		// update the plugin
+		resp, err := client.Req("plugins/portables/pysam", http.MethodPut, `{"name":"pysam","file":"file:///tmp/pysam.zip"}`)
+		s.Require().NoError(err)
+		s.Require().Equal(http.StatusOK, resp.StatusCode)
+	})
+	s.Run("check plugin status after update", func() {
 		// check the plugin status
 		resp, err := client.Get("plugins/portables/pysam/status")
 		s.Require().NoError(err)
