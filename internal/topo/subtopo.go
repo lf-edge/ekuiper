@@ -58,8 +58,9 @@ type SrcSubTopo struct {
 	refCount atomic.Int32
 	refRules sync.Map // map[ruleId]errCh, notify the rule for errors
 	// Runtime state, affect the running loop. Update when any rule opened or all rules stopped
-	opened atomic.Bool
-	cancel context.CancelFunc
+	opened           atomic.Bool
+	cancel           context.CancelFunc
+	enableCheckpoint bool
 }
 
 func (s *SrcSubTopo) AddOutput(output chan interface{}, name string) error {
@@ -102,7 +103,11 @@ func (s *SrcSubTopo) Open(ctx api.StreamContext, parentErrCh chan<- error) {
 	if s.opened.CompareAndSwap(false, true) {
 		poe := infra.SafeRun(func() error {
 			ctx.GetLogger().Infof("Opening sub topo %s by rule %s", s.name, ctx.GetRuleId())
-			pctx, cancel, err := prepareSharedContext(ctx, s.name)
+			qos := def.AtMostOnce
+			if s.enableCheckpoint {
+				qos = def.AtLeastOnce
+			}
+			pctx, cancel, err := prepareSharedContext(ctx, s.name, qos)
 			if err != nil {
 				return err
 			}
@@ -227,9 +232,10 @@ func (s *SrcSubTopo) EnableCheckpoint(sources *[]checkpoint.StreamTask, ops *[]c
 	for _, op := range s.ops {
 		*ops = append(*ops, op)
 	}
+	s.enableCheckpoint = true
 }
 
-func prepareSharedContext(parCtx api.StreamContext, k string) (api.StreamContext, context.CancelFunc, error) {
+func prepareSharedContext(parCtx api.StreamContext, k string, qos def.Qos) (api.StreamContext, context.CancelFunc, error) {
 	contextLogger := conf.Log.WithField("subtopo", k)
 	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
 	if dParCtx, ok := parCtx.(*kctx.DefaultContext); ok {
@@ -237,13 +243,13 @@ func prepareSharedContext(parCtx api.StreamContext, k string) (api.StreamContext
 	}
 	ruleId := "$$subtopo_" + k
 	opId := "subtopo_" + k
-	store, err := state.CreateStore("subtopo_"+k, 0)
+	store, err := state.CreateStore("subtopo_"+k, qos)
 	if err != nil {
 		ctx.GetLogger().Errorf("source pool %s create store error %v", k, err)
 		return nil, nil, err
 	}
-	sctx, cancel := ctx.WithMeta(ruleId, opId, store).WithCancel()
-	return sctx, cancel, nil
+	sctx, cancel := ctx.WithCancel()
+	return sctx.WithMeta(ruleId, opId, store), cancel, nil
 }
 
 var (
