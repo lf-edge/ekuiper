@@ -1,4 +1,4 @@
-// Copyright 2021-2024 EMQ Technologies Co., Ltd.
+// Copyright 2021-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -172,6 +172,7 @@ func (i *PluginIns) Stop() error {
 	i.Status.Stop()
 	if i.process != nil {
 		err = i.process.Kill()
+		i.process = nil
 	}
 	return err
 }

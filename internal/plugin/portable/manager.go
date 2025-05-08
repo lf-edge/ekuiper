@@ -1,4 +1,4 @@
-// Copyright 2021-2024 EMQ Technologies Co., Ltd.
+// Copyright 2021-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -345,7 +345,7 @@ func (m *Manager) install(name, src string, shellParas []string) (resultErr erro
 	needInstall := false
 	target := ""
 	for _, file := range r.File {
-		fileName := file.Name
+		fileName := filepath.ToSlash(filepath.Clean(file.Name))
 		if strings.HasPrefix(fileName, "sources/") || strings.HasPrefix(fileName, "sinks/") || strings.HasPrefix(fileName, "functions/") {
 			target = path.Join(m.pluginConfDir, fileName)
 		} else {
