@@ -1,4 +1,4 @@
-// Copyright 2021-2024 EMQ Technologies Co., Ltd.
+// Copyright 2021-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -297,7 +297,7 @@ func (o *defaultSinkNode) handleEof(ctx api.StreamContext, d xsql.EOFTuple) {
 	if len(o.outputs) > 0 {
 		o.Broadcast(d)
 	} else {
-		infra.DrainError(ctx, errorx.NewEOF(), o.ctrlCh)
+		infra.DrainError(ctx, errorx.NewEOF(string(d)), o.ctrlCh)
 	}
 }
 

@@ -170,7 +170,7 @@ func (fs *Source) Connect(_ api.StreamContext, sch api.StatusChangeHandler) erro
 func (fs *Source) Pull(ctx api.StreamContext, _ time.Time, ingest api.TupleIngest, ingestError api.ErrorIngest) {
 	fs.Load(ctx, ingest, ingestError)
 	if fs.config.Interval == 0 && fs.eof != nil {
-		fs.eof(ctx)
+		fs.eof(ctx, "")
 		ctx.GetLogger().Debug("All tuples sent")
 	}
 }

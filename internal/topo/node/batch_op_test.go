@@ -1,4 +1,4 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -92,7 +92,7 @@ func TestRun(t *testing.T) {
 				}
 				mc.Add(30 * time.Millisecond)
 			}
-			op.input <- xsql.EOFTuple(0)
+			op.input <- xsql.EOFTuple("")
 			count := 0
 		loop:
 			for r := range out {
