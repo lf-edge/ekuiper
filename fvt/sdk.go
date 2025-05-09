@@ -68,6 +68,16 @@ func (sdk *SDK) PostWithParam(command string, param string, body string) (resp *
 	return http.Post(u.String(), ContentTypeJson, bytes.NewBufferString(body))
 }
 
+func (sdk *SDK) Req(command string, method string, body string) (resp *http.Response, err error) {
+	u := sdk.baseUrl.JoinPath(command)
+	req, err := http.NewRequest(method, u.String(), bytes.NewBufferString(body))
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	return sdk.httpClient.Do(req)
+}
+
 func (sdk *SDK) Delete(command string) (resp *http.Response, err error) {
 	req, err := http.NewRequest(http.MethodDelete, sdk.baseUrl.JoinPath(command).String(), nil)
 	if err != nil {
