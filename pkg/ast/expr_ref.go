@@ -57,6 +57,12 @@ type FieldRef struct {
 	// optional, set only once. For selections, empty name will be assigned a default name
 	// MUST have after binding, assign a name for 1.4
 	Name string
+	// whether the index is set. Use this to distinguish uninitialized index and zero index
+	HasIndex bool
+	// optional, set when it is a Field define in stream. If not a field, set to -1
+	SourceIndex int
+	// must have if it is from sink.
+	Index int
 	// Only for alias
 	*AliasRef
 }
@@ -96,7 +102,7 @@ func (fr *FieldRef) RefSelection(a *AliasRef) {
 // RefSources Must call after binding or will get empty
 func (fr *FieldRef) RefSources() []StreamName {
 	if fr.StreamName == AliasStream {
-		return fr.refSources
+		return fr.AliasRef.RefSources
 	} else if fr.StreamName != "" {
 		return []StreamName{fr.StreamName}
 	} else {
@@ -106,14 +112,14 @@ func (fr *FieldRef) RefSources() []StreamName {
 
 // SetRefSource Only call this for alias field ref
 func (fr *FieldRef) SetRefSource(names []StreamName) {
-	fr.refSources = names
+	fr.AliasRef.RefSources = names
 }
 
 type AliasRef struct {
 	// MUST have, It is used for evaluation
 	Expression Expr
 	// MUST have after binding, calculate once in initializer. Could be 0 when alias an Expression without col like "1+2"
-	refSources []StreamName
+	RefSources []StreamName
 	// optional, lazy set when calculating isAggregate
 	IsAggregate *bool
 }
@@ -124,9 +130,9 @@ func (a *AliasRef) String() string {
 
 // SetRefSource only used for unit test
 func (a *AliasRef) SetRefSource(names []string) {
-	a.refSources = make([]StreamName, 0)
+	a.RefSources = make([]StreamName, 0)
 	for _, name := range names {
-		a.refSources = append(a.refSources, StreamName(name))
+		a.RefSources = append(a.RefSources, StreamName(name))
 	}
 }
 
@@ -138,7 +144,7 @@ func NewAliasRef(e Expr) (*AliasRef, error) {
 		case *FieldRef:
 			switch f.StreamName {
 			case AliasStream:
-				for _, name := range f.AliasRef.refSources {
+				for _, name := range f.AliasRef.RefSources {
 					r[name] = true
 				}
 			default:
@@ -156,7 +162,7 @@ func NewAliasRef(e Expr) (*AliasRef, error) {
 	}
 	return &AliasRef{
 		Expression: e,
-		refSources: rs,
+		RefSources: rs,
 	}, nil
 }
 
