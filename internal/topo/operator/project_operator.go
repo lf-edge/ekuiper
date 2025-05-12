@@ -32,9 +32,12 @@ type ProjectOp struct {
 	WildcardEmitters map[string]bool
 	AliasFields      ast.Fields
 	ExprFields       ast.Fields
-	IsAggregate      bool // Whether the project is used in an aggregate context. This is set by planner by analyzing the SQL query
-	EnableLimit      bool
-	LimitCount       int
+	Fields           ast.Fields
+	// the length of fields exclude invisible
+	FieldLen    int
+	IsAggregate bool // Whether the project is used in an aggregate context. This is set by planner by analyzing the SQL query
+	EnableLimit bool
+	LimitCount  int
 
 	SendMeta bool
 	SendNil  bool
@@ -131,50 +134,74 @@ func (pp *ProjectOp) getRowVE(tuple xsql.Row, wr *xsql.WindowRange, fv *xsql.Fun
 }
 
 func (pp *ProjectOp) project(row xsql.RawRow, ve *xsql.ValuerEval) error {
-	// Calculate all fields then pick the needed ones
-	// To make sure all calculations are run with the same context (e.g. alias values)
-	// Do not set value during calculations
-
-	for _, f := range pp.ExprFields {
-		if f.Invisible {
-			continue
+	switch rt := row.(type) {
+	case *xsql.SliceTuple:
+		for _, f := range pp.AliasFields {
+			vi := ve.Eval(f.Expr)
+			if e, ok := vi.(error); ok {
+				return fmt.Errorf("expr: %s meet error, err:%v", f.Expr.String(), e)
+			}
+			fr := f.Expr.(*ast.FieldRef)
+			rt.SetByIndex(fr.Index, vi)
 		}
-		vi := ve.Eval(f.Expr)
-		if e, ok := vi.(error); ok {
-			return fmt.Errorf("expr: %s meet error, err:%v", f.Expr.String(), e)
-		}
-		if vi != nil {
-			switch vt := vi.(type) {
-			case function.ResultCols:
-				for k, v := range vt {
-					pp.kvs = append(pp.kvs, k, v)
+		for _, f := range pp.Fields {
+			if f.AName == "" {
+				vi := ve.Eval(f.Expr)
+				if e, ok := vi.(error); ok {
+					return fmt.Errorf("expr: %s meet error, err:%v", f.Expr.String(), e)
 				}
-			default:
-				pp.kvs = append(pp.kvs, f.Name, vi)
+				// TODO deal with other types
+				fr := f.Expr.(*ast.FieldRef)
+				rt.SetByIndex(fr.Index, vi)
 			}
 		}
-	}
-	for _, f := range pp.AliasFields {
-		vi := ve.Eval(f.Expr)
-		if e, ok := vi.(error); ok {
-			if ref, ok := f.Expr.(*ast.FieldRef); ok {
-				s := ref.AliasRef.Expression.String()
-				return fmt.Errorf("alias: %v expr: %v meet error, err:%v", f.AName, s, e)
+		rt.Compact(pp.FieldLen)
+	default:
+		// Calculate all fields then pick the needed ones
+		// To make sure all calculations are run with the same context (e.g. alias values)
+		// Do not set value during calculations
+
+		for _, f := range pp.ExprFields {
+			if f.Invisible {
+				continue
 			}
-			return fmt.Errorf("alias: %v expr: %v meet error, err:%v", f.AName, f.Expr.String(), e)
+			vi := ve.Eval(f.Expr)
+			if e, ok := vi.(error); ok {
+				return fmt.Errorf("expr: %s meet error, err:%v", f.Expr.String(), e)
+			}
+			if vi != nil {
+				switch vt := vi.(type) {
+				case function.ResultCols:
+					for k, v := range vt {
+						pp.kvs = append(pp.kvs, k, v)
+					}
+				default:
+					pp.kvs = append(pp.kvs, f.Name, vi)
+				}
+			}
 		}
-		if !f.Invisible && (vi != nil || pp.SendNil) {
-			pp.alias = append(pp.alias, f.AName, vi)
+		for _, f := range pp.AliasFields {
+			vi := ve.Eval(f.Expr)
+			if e, ok := vi.(error); ok {
+				if ref, ok := f.Expr.(*ast.FieldRef); ok {
+					s := ref.AliasRef.Expression.String()
+					return fmt.Errorf("alias: %v expr: %v meet error, err:%v", f.AName, s, e)
+				}
+				return fmt.Errorf("alias: %v expr: %v meet error, err:%v", f.AName, f.Expr.String(), e)
+			}
+			if !f.Invisible && (vi != nil || pp.SendNil) {
+				pp.alias = append(pp.alias, f.AName, vi)
+			}
 		}
+		row.Pick(pp.AllWildcard, pp.ColNames, pp.WildcardEmitters, pp.ExceptNames, pp.SendNil)
+		for i := 0; i < len(pp.kvs); i += 2 {
+			row.Set(pp.kvs[i].(string), pp.kvs[i+1])
+		}
+		pp.kvs = pp.kvs[:0]
+		for i := 0; i < len(pp.alias); i += 2 {
+			row.AppendAlias(pp.alias[i].(string), pp.alias[i+1])
+		}
+		pp.alias = pp.alias[:0]
 	}
-	row.Pick(pp.AllWildcard, pp.ColNames, pp.WildcardEmitters, pp.ExceptNames, pp.SendNil)
-	for i := 0; i < len(pp.kvs); i += 2 {
-		row.Set(pp.kvs[i].(string), pp.kvs[i+1])
-	}
-	pp.kvs = pp.kvs[:0]
-	for i := 0; i < len(pp.alias); i += 2 {
-		row.AppendAlias(pp.alias[i].(string), pp.alias[i+1])
-	}
-	pp.alias = pp.alias[:0]
 	return nil
 }

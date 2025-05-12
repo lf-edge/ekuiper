@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,7 +20,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/lf-edge/ekuiper/v2/internal/converter/merge"
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/schema"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/message"
 )
@@ -49,7 +50,8 @@ type DataSourcePlan struct {
 	metaMap     map[string]string
 	pruneFields []string
 	// inRuleTest means whether in the rule test mode
-	inRuleTest bool
+	inRuleTest    bool
+	useSliceTuple bool
 }
 
 func (p DataSourcePlan) Init() *DataSourcePlan {
@@ -66,7 +68,7 @@ func (p *DataSourcePlan) BuildSchemaInfo(ruleID string) {
 }
 
 func (p *DataSourcePlan) buildSchemaInfo(ruleID string) string {
-	r := merge.GetRuleSchema(ruleID)
+	r := schema.GetRuleSchema(ruleID)
 	if r.Wildcard != nil && r.Wildcard[string(p.name)] {
 		return " wildcard:true"
 	}
@@ -194,17 +196,6 @@ func (p *DataSourcePlan) PruneColumns(fields []ast.Expr) error {
 	if !p.allMeta {
 		p.metaMap = make(map[string]string)
 	}
-	if p.timestampField != "" {
-		if !p.isSchemaless {
-			tsf, ok := p.streamFields[p.timestampField]
-			if !ok {
-				return fmt.Errorf("timestamp field %s not found", p.timestampField)
-			}
-			p.fields[p.timestampField] = tsf
-		} else {
-			p.fields[p.timestampField] = nil
-		}
-	}
 	arrowFileds := make([]*ast.BinaryExpr, 0)
 	for _, field := range fields {
 		switch f := field.(type) {
@@ -291,6 +282,17 @@ func (p *DataSourcePlan) PruneColumns(fields []ast.Expr) error {
 			}
 		default:
 			return fmt.Errorf("unsupported field %v", field)
+		}
+	}
+	if p.timestampField != "" {
+		if !p.isSchemaless {
+			tsf, ok := p.streamFields[p.timestampField]
+			if !ok {
+				return fmt.Errorf("timestamp field %s not found", p.timestampField)
+			}
+			p.fields[p.timestampField] = tsf
+		} else {
+			p.fields[p.timestampField] = nil
 		}
 	}
 	p.getAllFields()
@@ -430,6 +432,46 @@ func (p *DataSourcePlan) getAllFields() {
 	sort.Strings(p.metaFields)
 	p.fields = nil
 	p.metaMap = nil
+	index := 0
+	if conf.IsTesting {
+		keys := make([]string, 0, len(p.streamFields))
+		for k := range p.streamFields {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+		for _, k := range keys {
+			v := p.streamFields[k]
+			if p.useSliceTuple {
+				if v != nil {
+					v.HasIndex = true
+					v.Index = 0
+				} else {
+					v = &ast.JsonStreamField{
+						Index:    index,
+						HasIndex: true,
+					}
+				}
+			}
+			p.streamFields[k] = v
+			index++
+		}
+	} else {
+		for k, v := range p.streamFields {
+			if p.useSliceTuple {
+				if v != nil {
+					v.HasIndex = true
+					v.Index = 0
+				} else {
+					v = &ast.JsonStreamField{
+						Index:    index,
+						HasIndex: true,
+					}
+				}
+			}
+			p.streamFields[k] = v
+			index++
+		}
+	}
 }
 
 func (p *DataSourcePlan) getProps() error {

@@ -26,6 +26,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
+	"github.com/lf-edge/ekuiper/v2/pkg/model"
 )
 
 func TestFastJsonConverterWithSchema(t *testing.T) {
@@ -783,4 +784,160 @@ func TestIssue3441(t *testing.T) {
 	m, err = f.Decode(ctx, []byte(data))
 	require.NoError(t, err)
 	require.Equal(t, map[string]interface{}{"id": 17952926683484.44}, m)
+}
+
+func TestSliceDecode(t *testing.T) {
+	origin := "123"
+	encode := base64.StdEncoding.EncodeToString([]byte(origin))
+	testcases := []struct {
+		name    string
+		schema  map[string]*ast.JsonStreamField
+		payload []byte
+		require model.SliceVal
+	}{
+		{
+			name:    "normal",
+			payload: []byte(`{"a":1}`),
+			schema: map[string]*ast.JsonStreamField{
+				"a": {
+					Type:     "bigint",
+					HasIndex: true,
+					Index:    0,
+				},
+			},
+			require: model.SliceVal{
+				int64(1),
+			},
+		},
+		{
+			name:    "float",
+			payload: []byte(`{"a":1}`),
+			schema: map[string]*ast.JsonStreamField{
+				"a": {
+					Type:     "float",
+					HasIndex: true,
+					Index:    0,
+				},
+			},
+			require: model.SliceVal{
+				float64(1),
+			},
+		},
+		{
+			name:    "string",
+			payload: []byte(`{"a":"a"}`),
+			schema: map[string]*ast.JsonStreamField{
+				"a": {
+					Type:     "string",
+					HasIndex: true,
+				},
+			},
+			require: model.SliceVal{
+				"a",
+			},
+		},
+		{
+			payload: []byte(fmt.Sprintf(`{"a":"%v"}`, encode)),
+			schema: map[string]*ast.JsonStreamField{
+				"a": {
+					Type:     "bytea",
+					HasIndex: true,
+				},
+			},
+			require: model.SliceVal{
+				[]byte(origin),
+			},
+		},
+		{
+			payload: []byte(`{"a":true}`),
+			schema: map[string]*ast.JsonStreamField{
+				"a": {
+					Type:     "boolean",
+					HasIndex: true,
+				},
+			},
+			require: model.SliceVal{
+				true,
+			},
+		},
+		{
+			payload: []byte(`{"a":123}`),
+			schema: map[string]*ast.JsonStreamField{
+				"a": {
+					Type:     "datetime",
+					HasIndex: true,
+				},
+			},
+			require: model.SliceVal{
+				float64(123),
+			},
+		},
+		{
+			payload: []byte(`{"a":"123"}`),
+			schema: map[string]*ast.JsonStreamField{
+				"a": {
+					Type:     "datetime",
+					HasIndex: true,
+				},
+			},
+			require: model.SliceVal{
+				"123",
+			},
+		},
+		// not supported yet
+		//{
+		//	name:    "embed",
+		//	payload: []byte(`{"a":{"b":1}}`),
+		//	schema: map[string]*ast.JsonStreamField{
+		//		"a": {
+		//			HasIndex: true,
+		//			Index:    0,
+		//		},
+		//	},
+		//	require: model.SliceVal{
+		//		map[string]any{
+		//			"b": int64(1),
+		//		},
+		//	},
+		//},
+	}
+	ctx := mockContext.NewMockContext("test", "op1")
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			f := NewFastJsonConverter(tc.schema, nil)
+			v, err := f.Decode(ctx, tc.payload)
+			require.NoError(t, err)
+			require.Equal(t, v, tc.require)
+		})
+	}
+}
+
+func TestSliceEncode(t *testing.T) {
+	schema := map[string]*ast.JsonStreamField{
+		"a": {
+			HasIndex: true,
+			Index:    1,
+		},
+		"b": {
+			HasIndex: true,
+			Index:    0,
+		},
+	}
+	ctx := mockContext.NewMockContext("test", "op1")
+	f := NewFastJsonConverter(nil, nil)
+
+	data := model.SliceVal{
+		2, 1,
+	}
+	f.ResetSchema(schema)
+	v, err := f.Encode(ctx, data)
+	require.NoError(t, err)
+	require.Equal(t, string(v), "{\"a\":1,\"b\":2}")
+	list := []model.SliceVal{
+		{4, 2},
+		{5, 6},
+	}
+	v, err = f.Encode(ctx, list)
+	require.NoError(t, err)
+	require.Equal(t, string(v), "[{\"a\":2,\"b\":4},{\"a\":6,\"b\":5}]")
 }

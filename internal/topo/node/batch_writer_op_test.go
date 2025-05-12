@@ -26,6 +26,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
+	"github.com/lf-edge/ekuiper/v2/pkg/model"
 )
 
 func TestNewErr(t *testing.T) {
@@ -65,6 +66,18 @@ func TestBatchWriterRun(t *testing.T) {
 				},
 			},
 			expect: "b\n12\n20",
+		},
+		{
+			name: "multiple slice",
+			input: []any{
+				&xsql.SliceTuple{
+					SourceContent: model.SliceVal{nil, 12},
+				},
+				&xsql.SliceTuple{
+					SourceContent: model.SliceVal{"a", 20},
+				},
+			},
+			expect: "\n,12\na,20",
 		},
 		{
 			name: "multiple batch",

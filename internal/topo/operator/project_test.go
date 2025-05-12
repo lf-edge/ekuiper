@@ -28,13 +28,46 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/model"
 )
 
+var constSourceIndex = map[string]int{
+	"a": 0, "b": 1, "c": 2, "d": 3, "e": 4,
+}
+
 func parseStmt(p *ProjectOp, fields ast.Fields) {
+	parseStmtWithSlice(p, fields, false)
+}
+
+func parseStmtWithSlice(p *ProjectOp, fields ast.Fields, hasIndex bool) {
 	p.AllWildcard = false
 	p.WildcardEmitters = make(map[string]bool)
+	index := 0
 	for _, field := range fields {
 		if field.AName != "" {
+			ast.WalkFunc(field.Expr, func(n ast.Node) bool {
+				switch nf := n.(type) {
+				case *ast.FieldRef:
+					if !field.Invisible && hasIndex {
+						nf.SourceIndex = constSourceIndex[nf.Name]
+						nf.HasIndex = hasIndex
+					}
+				}
+				return true
+			})
+			ar, _ := ast.NewAliasRef(field.Expr)
+			fr := &ast.FieldRef{
+				StreamName: ast.AliasStream,
+				Name:       field.AName,
+				AliasRef:   ar,
+			}
+			if hasIndex {
+				fr.HasIndex = true
+				fr.Index = index
+				fr.SourceIndex = -1
+			}
+			field.Expr = fr
+			index++
 			p.AliasFields = append(p.AliasFields, field)
 		} else {
 			switch ft := field.Expr.(type) {
@@ -50,6 +83,12 @@ func parseStmt(p *ProjectOp, fields ast.Fields) {
 				} else {
 					if !field.Invisible {
 						p.ColNames = append(p.ColNames, []string{ft.Name, string(ft.StreamName)})
+						if hasIndex {
+							ft.Index = index
+							ft.SourceIndex = constSourceIndex[ft.Name]
+							ft.HasIndex = hasIndex
+						}
+						index++
 					}
 				}
 			default:
@@ -57,6 +96,8 @@ func parseStmt(p *ProjectOp, fields ast.Fields) {
 			}
 		}
 	}
+	p.Fields = fields
+	p.FieldLen = len(fields)
 }
 
 func parseResult(opResult interface{}, aggregate bool) (result []map[string]interface{}, err error) {
@@ -3173,6 +3214,80 @@ func TestProjectPlan_SendNil(t *testing.T) {
 			result, err := parseResult(opResult, pp.IsAggregate)
 			require.NoError(t, err)
 			require.Equal(t, tt.result, result)
+		})
+	}
+}
+
+func TestProjectSlice(t *testing.T) {
+	tests := []struct {
+		name   string
+		sql    string
+		data   any
+		result any
+	}{
+		{
+			name: "normal",
+			sql:  `SELECT c, a FROM test`,
+			data: &xsql.SliceTuple{
+				SourceContent: model.SliceVal{"a0", "b0", "c0"},
+			},
+			result: &xsql.SliceTuple{
+				SourceContent: model.SliceVal{"c0", "a0"},
+			},
+		},
+		{
+			name: "agg",
+			sql:  `SELECT b FROM test`,
+			data: &xsql.WindowTuples{
+				Content: []xsql.Row{
+					&xsql.SliceTuple{
+						SourceContent: model.SliceVal{"a0", "b0", "c0"},
+					},
+					&xsql.SliceTuple{
+						SourceContent: model.SliceVal{"a1", "b1", "c1"},
+					},
+					&xsql.SliceTuple{
+						SourceContent: model.SliceVal{"a2", "b2", "c2"},
+					},
+				},
+			},
+			result: &xsql.WindowTuples{
+				Content: []xsql.Row{
+					&xsql.SliceTuple{
+						SourceContent: model.SliceVal{"b0"},
+					},
+					&xsql.SliceTuple{
+						SourceContent: model.SliceVal{"b1"},
+					},
+					&xsql.SliceTuple{
+						SourceContent: model.SliceVal{"b2"},
+					},
+				},
+			},
+		},
+		{
+			name: "alias",
+			sql:  `SELECT concat(a,b) as ab, c FROM test`,
+			data: &xsql.SliceTuple{
+				SourceContent: model.SliceVal{"a0", "b0", "c0"},
+			},
+			result: &xsql.SliceTuple{
+				SourceContent: model.SliceVal{"a0b0", "c0"},
+			},
+		},
+	}
+	contextLogger := conf.Log.WithField("rule", "TestProjectPlan_Apply1")
+	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			stmt, err := xsql.NewParser(strings.NewReader(tt.sql)).Parse()
+			require.NoError(t, err)
+			pp := &ProjectOp{IsAggregate: xsql.WithAggFields(stmt)}
+			parseStmtWithSlice(pp, stmt.Fields, true)
+			fv, afv := xsql.NewFunctionValuersForOp(nil)
+			opResult := pp.Apply(ctx, tt.data, fv, afv)
+			require.NoError(t, err)
+			require.Equal(t, tt.result, opResult)
 		})
 	}
 }

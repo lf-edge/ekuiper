@@ -1,4 +1,4 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -312,7 +312,7 @@ func TestRateLimitCustomMerge(t *testing.T) {
 			op.input <- &xsql.Tuple{
 				Message: map[string]any{"test": 1},
 			}
-			op.AttachSchema(ctx, "source1", map[string]*ast.JsonStreamField{}, true)
+			op.ResetSchema(ctx, map[string]*ast.JsonStreamField{})
 			for i := 0; i < tc.sendCount; i++ {
 				op.input <- &xsql.RawTuple{
 					Rawdata: []byte(fmt.Sprintf(`{"id":%d, "value":%d}`, i%2, i)),
@@ -320,7 +320,6 @@ func TestRateLimitCustomMerge(t *testing.T) {
 				mc.Add(300 * time.Millisecond)
 			}
 			cancel()
-			op.DetachSchema(ctx, "rule1")
 			// make sure op has done all sending
 			for {
 				processed := op.statManager.GetMetrics()[2]

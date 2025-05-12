@@ -1,4 +1,4 @@
-// Copyright 2022-2023 EMQ Technologies Co., Ltd.
+// Copyright 2022-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -222,6 +222,7 @@ type Call struct {
 	// In planner, all analytic functions are planned to calculate in analytic_op which produce a new field.
 	// This cachedField cached the new field name and when evaluating, just returned the field access evaluated value.
 	CachedField string
+	CacheIndex  int
 	Cached      bool
 	Partition   *PartitionExpr
 	WhenExpr    Expr

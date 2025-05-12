@@ -42,6 +42,11 @@ type Event interface {
 	IsWatermark() bool
 }
 
+type EventRow interface {
+	Row
+	Event
+}
+
 type ReadonlyRow interface {
 	HasTracerCtx
 	Valuer

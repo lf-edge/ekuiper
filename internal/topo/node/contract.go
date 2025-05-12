@@ -1,4 +1,4 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -89,8 +89,5 @@ type MergeableTopo interface {
 }
 
 type SchemaNode interface {
-	// AttachSchema attach the schema to the node. The parameters are ruleId, sourceName, schema, whether is wildcard
-	AttachSchema(api.StreamContext, string, map[string]*ast.JsonStreamField, bool)
-	// DetachSchema detach the schema from the node. The parameters are ruleId
-	DetachSchema(api.StreamContext, string)
+	ResetSchema(api.StreamContext, map[string]*ast.JsonStreamField)
 }
