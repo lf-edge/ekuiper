@@ -19,12 +19,13 @@ COPY . /go/kuiper
 
 WORKDIR /go/kuiper
 
+RUN sed -i -r "s|([ \t]*version=).*|\1'$(git describe --tags --always --match 'v[0-9]*.[0-9]*.[0-9]*' | sed 's/^v//g' | sed -E 's/^(.*)-([0-9]+)-.*$/\1a\2/')',|1" sdk/python/setup.py
+RUN cat sdk/python/setup.py
 RUN make build_with_edgex_and_script
 
 FROM python:3.12-bookworm AS python-builder
 
-COPY ./sdk/python /sdk/python
-
+COPY --from=builder /go/kuiper/sdk/python /sdk/python
 ARG DEBIAN_FRONTEND="noninteractive"
 
 # Install build dependencies for pynng (including nng and mbedtls)
@@ -38,14 +39,18 @@ RUN apt-get update \
     && python3 -m pip install --no-cache-dir setuptools
 
 WORKDIR /sdk/python
-RUN python3 setup.py sdist && python3 setup.py install
+RUN cat setup.py
+RUN python3 setup.py sdist
 
 FROM python:3.12-slim-bookworm
 
-COPY --from=builder /go/kuiper/_build/kuiper-* /kuiper/
-COPY --from=python-builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
+COPY --from=python-builder /sdk/python /sdk/python
+WORKDIR /sdk/python
+RUN pip install .
 
+COPY --from=builder /go/kuiper/_build/kuiper-* /kuiper/
 WORKDIR /kuiper
+RUN rm -rf /sdk/python
 COPY ./deploy/docker/docker-entrypoint.sh /usr/bin/docker-entrypoint.sh
 
 ENV MAINTAINER="emqx.io"

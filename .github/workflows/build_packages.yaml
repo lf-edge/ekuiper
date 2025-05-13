@@ -129,7 +129,6 @@ jobs:
         image: tonistiigi/binfmt:qemu-v9.2.2-52
         platforms: all
     - name: Build single platform image
-      if: endsWith( matrix.suffix, 'python') == false
       uses: docker/build-push-action@v6
       with:
         context: .
