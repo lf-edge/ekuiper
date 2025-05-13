@@ -71,6 +71,7 @@ func (suite *RestTestSuite) SetupTest() {
 	}
 
 	r := mux.NewRouter()
+	router = r
 	r.HandleFunc("/", rootHandler).Methods(http.MethodGet, http.MethodPost)
 	r.HandleFunc("/ping", pingHandler).Methods(http.MethodGet)
 	r.HandleFunc("/streams", streamsHandler).Methods(http.MethodGet, http.MethodPost)
@@ -110,6 +111,7 @@ func (suite *RestTestSuite) SetupTest() {
 	r.HandleFunc("/ruletest/{name}", testRuleStopHandler).Methods(http.MethodDelete)
 	// r.HandleFunc("/connection/websocket", connectionHandler).Methods(http.MethodGet, http.MethodPost, http.MethodDelete)
 	r.HandleFunc("/metadata/sinks/{name}/confKeys/{confKey}", sinkConfKeyHandler).Methods(http.MethodDelete, http.MethodPut)
+	r.HandleFunc("/batch/req", batchRequestHandler).Methods(http.MethodPost)
 	suite.r = r
 }
 
@@ -1003,4 +1005,30 @@ func (suite *RestTestSuite) TestWaitStopRule() {
 	end = time.Now()
 	require.True(suite.T(), end.Sub(now) >= 300*time.Millisecond)
 	waitAllRuleStop()
+}
+
+func (suite *RestTestSuite) TestBatchRequest() {
+	// delete create
+	req, _ := http.NewRequest(http.MethodDelete, "http://localhost:8080/streams/demobatch", bytes.NewBufferString("any"))
+	w := httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+
+	bodyJson := `[
+    {
+        "method": "POST",
+        "path": "/streams",
+        "body": "{\"sql\":\"CREATE stream demobatch() WITH (DATASOURCE=\\\"/data1\\\", TYPE=\\\"websocket\\\")\"}"
+    },
+    {
+        "method": "GET",
+        "path": "/streams/demobatch"
+    }
+]`
+
+	buf := bytes.NewBuffer([]byte(bodyJson))
+	req, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/batch/req", buf)
+	w = httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	require.Equal(suite.T(), http.StatusOK, w.Code)
+	require.Equal(suite.T(), `[{"code":201,"response":"Stream demobatch is created.","error":""},{"code":200,"response":"{\"Name\":\"demobatch\",\"StreamFields\":null,\"Options\":{\"datasource\":\"/data1\",\"type\":\"websocket\"},\"StreamType\":0,\"Statement\":null}","error":""}]`, w.Body.String())
 }
