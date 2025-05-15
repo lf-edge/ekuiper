@@ -374,28 +374,8 @@ func (to *TumblingWindowIncAggOp) exec(ctx api.StreamContext, errCh chan<- error
 		}
 	}
 	fv, _ := xsql.NewFunctionValuersForOp(ctx)
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case input := <-to.input:
-			now := timex.GetNow()
-			data, processed := to.commonIngest(ctx, input)
-			if processed {
-				continue
-			}
-			switch row := data.(type) {
-			case *xsql.Tuple:
-				if to.CurrWindow == nil {
-					to.CurrWindow = newIncAggWindow(ctx, now)
-				}
-				name := calDimension(fv, to.Dimensions, row)
-				incAggCal(ctx, name, row, to.CurrWindow, to.aggFields)
-			}
-			to.PutState(ctx)
-		default:
-		}
-		if to.FirstTimer != nil {
+	if to.FirstTimer != nil {
+		for {
 			select {
 			case <-ctx.Done():
 				return
@@ -407,20 +387,54 @@ func (to *TumblingWindowIncAggOp) exec(ctx api.StreamContext, errCh chan<- error
 				}
 				to.ticker = timex.GetTicker(to.Interval)
 				to.PutState(ctx)
-			default:
-			}
-		}
-		if to.ticker != nil {
-			select {
-			case <-ctx.Done():
-				return
-			case now := <-to.ticker.C:
-				if to.CurrWindow != nil {
-					to.emit(ctx, errCh, now)
+				goto outer
+			case input := <-to.input:
+				now := timex.GetNow()
+				data, processed := to.commonIngest(ctx, input)
+				if processed {
+					continue
+				}
+				to.onProcessStart(ctx, input)
+				switch row := data.(type) {
+				case *xsql.Tuple:
+					if to.CurrWindow == nil {
+						to.CurrWindow = newIncAggWindow(ctx, now)
+					}
+					name := calDimension(fv, to.Dimensions, row)
+					incAggCal(ctx, name, row, to.CurrWindow, to.aggFields)
 				}
 				to.PutState(ctx)
-			default:
+				to.onProcessEnd(ctx)
 			}
+		}
+	}
+outer:
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case input := <-to.input:
+			now := timex.GetNow()
+			data, processed := to.commonIngest(ctx, input)
+			if processed {
+				continue
+			}
+			to.onProcessStart(ctx, input)
+			switch row := data.(type) {
+			case *xsql.Tuple:
+				if to.CurrWindow == nil {
+					to.CurrWindow = newIncAggWindow(ctx, now)
+				}
+				name := calDimension(fv, to.Dimensions, row)
+				incAggCal(ctx, name, row, to.CurrWindow, to.aggFields)
+			}
+			to.PutState(ctx)
+			to.onProcessEnd(ctx)
+		case now := <-to.ticker.C:
+			if to.CurrWindow != nil {
+				to.emit(ctx, errCh, now)
+			}
+			to.PutState(ctx)
 		}
 	}
 }
