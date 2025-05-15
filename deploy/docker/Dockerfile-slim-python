@@ -40,13 +40,13 @@ RUN apt-get update \
 
 WORKDIR /sdk/python
 RUN cat setup.py
-RUN python3 setup.py sdist
+RUN pip wheel .
 
 FROM python:3.12-slim-bookworm
 
 COPY --from=python-builder /sdk/python /sdk/python
 WORKDIR /sdk/python
-RUN pip install .
+RUN pip install *.whl
 
 COPY --from=builder /go/kuiper/_build/kuiper-* /kuiper/
 WORKDIR /kuiper
