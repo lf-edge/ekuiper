@@ -166,10 +166,7 @@ func (s *State) GetState() RunState {
 func (s *State) GetStartTimestamp() time.Time {
 	s.RLock()
 	defer s.RUnlock()
-	if s.topology != nil {
-		return s.topology.GetStartTimeStamp()
-	}
-	return time.Time{}
+	return time.UnixMilli(s.lastStartTimestamp)
 }
 
 // GetStatusMessage return the current RunState of the Rule
