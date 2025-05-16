@@ -60,8 +60,7 @@ type Topo struct {
 	mu          sync.Mutex
 	hasOpened   atomic.Bool
 
-	opsWg          *sync.WaitGroup
-	startTimeStamp time.Time
+	opsWg *sync.WaitGroup
 }
 
 func NewWithNameAndOptions(name string, options *def.RuleOption) (*Topo, error) {
@@ -101,10 +100,6 @@ func (s *Topo) GetStreams() []string {
 
 func (s *Topo) GetContext() api.StreamContext {
 	return s.ctx
-}
-
-func (s *Topo) GetStartTimeStamp() time.Time {
-	return s.startTimeStamp
 }
 
 func (s *Topo) GetName() string {
@@ -307,7 +302,6 @@ func (s *Topo) Open() <-chan error {
 	if err != nil {
 		infra.DrainError(s.ctx, err, s.drain)
 	}
-	s.startTimeStamp = time.Now()
 	return s.drain
 }
 
