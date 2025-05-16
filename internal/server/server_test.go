@@ -26,6 +26,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/schedule"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/rule"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
 
@@ -39,8 +40,10 @@ func TestHandleScheduleRule(t *testing.T) {
 	require.NoError(t, err)
 	now = now.In(cast.GetConfiguredTimeZone())
 	testcases := []struct {
-		Options *def.RuleOption
-		action  scheduleRuleAction
+		Options   *def.RuleOption
+		startTime time.Time
+		state     rule.RunState
+		action    scheduleRuleAction
 	}{
 		{
 			Options: &def.RuleOption{
@@ -156,6 +159,13 @@ func TestHandleScheduleRule(t *testing.T) {
 			},
 			action: scheduleRuleActionDoNothing,
 		},
+		{
+			Options: &def.RuleOption{
+				Cron:     "",
+				Duration: "10s",
+			},
+			action: scheduleRuleActionDoNothing,
+		},
 	}
 	for i, tc := range testcases {
 		t.Run(strconv.Itoa(i), func(t *testing.T) {
@@ -163,7 +173,12 @@ func TestHandleScheduleRule(t *testing.T) {
 				Triggered: true,
 				Options:   tc.Options,
 			}
-			scheduleRuleSignal := handleScheduleRule(now, r)
+			rw := ruleWrapper{
+				rule:      r,
+				state:     tc.state,
+				startTime: tc.startTime,
+			}
+			scheduleRuleSignal := handleScheduleRule(now, rw)
 			require.Equal(t, tc.action, scheduleRuleSignal, fmt.Sprintf("case %v", i))
 		})
 	}
