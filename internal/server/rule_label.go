@@ -34,7 +34,12 @@ func rulesLabelsHandler(w http.ResponseWriter, r *http.Request) {
 			res = append(res, rs.Rule.Id)
 		}
 	}
-	jsonResponse(res, w, logger)
+	resp := &RulesLabelsResp{Rules: res}
+	jsonResponse(resp, w, logger)
+}
+
+type RulesLabelsResp struct {
+	Rules []string `json:"Rules"`
 }
 
 func ruleLabelsHandler(w http.ResponseWriter, r *http.Request) {
@@ -42,7 +47,7 @@ func ruleLabelsHandler(w http.ResponseWriter, r *http.Request) {
 	ruleID := vars["name"]
 	defer r.Body.Close()
 	switch r.Method {
-	case http.MethodPost:
+	case http.MethodPut:
 		labels := make(map[string]string)
 		if err := json.NewDecoder(r.Body).Decode(&labels); err != nil {
 			handleError(w, err, "decode body error", logger)
@@ -69,14 +74,14 @@ func ruleLabelsHandler(w http.ResponseWriter, r *http.Request) {
 		for k, v := range labels {
 			rs.Rule.Labels[k] = v
 		}
-		if err := registry.save(ruleID, newRuleJson, rs); err != nil {
+		if err := registry.update(ruleID, newRuleJson, rs); err != nil {
 			handleError(w, err, "", logger)
 			return
 		}
 		w.WriteHeader(http.StatusOK)
 	case http.MethodDelete:
-		keys := make([]string, 0)
-		if err := json.NewDecoder(r.Body).Decode(&keys); err != nil {
+		keysReq := &KeysRequest{}
+		if err := json.NewDecoder(r.Body).Decode(&keysReq); err != nil {
 			handleError(w, err, "decode body error", logger)
 			return
 		}
@@ -90,7 +95,7 @@ func ruleLabelsHandler(w http.ResponseWriter, r *http.Request) {
 			handleError(w, err, "Get rule error", logger)
 			return
 		}
-		newRuleJson, err := deleteRuleLabels(ruleJson, keys)
+		newRuleJson, err := deleteRuleLabels(ruleJson, keysReq.Keys)
 		if err != nil {
 			handleError(w, err, "update rule labels error", logger)
 			return
@@ -98,15 +103,19 @@ func ruleLabelsHandler(w http.ResponseWriter, r *http.Request) {
 		if rs.Rule.Labels == nil {
 			rs.Rule.Labels = make(map[string]string)
 		}
-		for _, key := range keys {
+		for _, key := range keysReq.Keys {
 			delete(rs.Rule.Labels, key)
 		}
-		if err := registry.save(ruleID, newRuleJson, rs); err != nil {
+		if err := registry.update(ruleID, newRuleJson, rs); err != nil {
 			handleError(w, err, "", logger)
 			return
 		}
 		w.WriteHeader(http.StatusOK)
 	}
+}
+
+type KeysRequest struct {
+	Keys []string `json:"keys,omitempty"`
 }
 
 func addRuleLabels(ruleJson string, labels map[string]string) (string, error) {

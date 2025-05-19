@@ -267,3 +267,67 @@ func (s *RuleStateTestSuite) TestCreateStoppedRule() {
 		s.Equal(http.StatusOK, res.StatusCode)
 	})
 }
+
+func (s *RuleStateTestSuite) TestRuleLabels() {
+	s.Run("clean up", func() {
+		client.DeleteStream("simStream1")
+		client.DeleteRule("ruleLabels")
+	})
+	s.Run("create rule and attach labels", func() {
+		conf := map[string]any{
+			"interval": "10ms",
+		}
+		resp, err := client.CreateConf("sources/simulator/confKeys/ttt", conf)
+		s.Require().NoError(err)
+		s.Require().Equal(http.StatusOK, resp.StatusCode)
+
+		streamSql := `{"sql": "create stream simStream1() WITH (TYPE=\"simulator\", FORMAT=\"json\", CONF_KEY=\"ttt\", SHARED=\"true\")"}`
+		resp, err = client.CreateStream(streamSql)
+		s.Require().NoError(err)
+		s.T().Log(GetResponseText(resp))
+		s.Require().Equal(http.StatusCreated, resp.StatusCode)
+		ruleJson := `{
+  "id": "ruleLabels",
+  "triggered": false,
+  "sql": "SELECT * FROM simStream1",
+  "actions": [
+    {
+      "nop":{}
+    }
+  ],
+  "options": {
+    "sendError": false,
+	"bufferLength": 2
+  }
+}`
+		resp, err = client.CreateRule(ruleJson)
+		s.Require().NoError(err)
+		s.T().Log(GetResponseText(resp))
+		s.Require().Equal(http.StatusCreated, resp.StatusCode)
+
+		resp, err = client.AddRuleLabels("ruleLabels", map[string]string{"k1": "v1"})
+		s.Require().NoError(err)
+		s.T().Log(GetResponseText(resp))
+		s.Require().Equal(http.StatusOK, resp.StatusCode)
+
+		lists, err := client.GetRulesByLabels(map[string]string{"k1": "v1"})
+		s.Require().NoError(err)
+		s.Require().Equal(http.StatusOK, resp.StatusCode)
+		s.Require().Equal([]string{"ruleLabels"}, lists)
+
+		resp, err = client.RemoveRuleLabels("ruleLabels", []string{"k1"})
+		s.Require().NoError(err)
+		s.T().Log(GetResponseText(resp))
+		s.Require().Equal(http.StatusOK, resp.StatusCode)
+
+		lists, err = client.GetRulesByLabels(map[string]string{"k1": "v1"})
+		s.Require().NoError(err)
+		s.Require().Equal(http.StatusOK, resp.StatusCode)
+		s.Require().Equal([]string{}, lists)
+
+	})
+	s.Run("clean up", func() {
+		client.DeleteStream("simStream1")
+		client.DeleteRule("ruleLabels")
+	})
+}

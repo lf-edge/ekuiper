@@ -76,6 +76,13 @@ func (rr *RuleRegistry) save(key string, ruleJson string, value *rule.State) err
 	return ruleProcessor.ExecCreate(key, ruleJson)
 }
 
+func (rr *RuleRegistry) update(key string, ruleJson string, value *rule.State) error {
+	rr.Lock()
+	defer rr.Unlock()
+	rr.internal[key] = value
+	return ruleProcessor.ExecUpsert(key, ruleJson)
+}
+
 // only register. It is called when recover from db
 func (rr *RuleRegistry) register(key string, value *rule.State) {
 	rr.Lock()
