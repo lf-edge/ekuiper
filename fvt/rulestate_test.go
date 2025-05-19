@@ -324,7 +324,6 @@ func (s *RuleStateTestSuite) TestRuleLabels() {
 		s.Require().NoError(err)
 		s.Require().Equal(http.StatusOK, resp.StatusCode)
 		s.Require().Equal([]string{}, lists)
-
 	})
 	s.Run("clean up", func() {
 		client.DeleteStream("simStream1")
