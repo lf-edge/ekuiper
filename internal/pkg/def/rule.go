@@ -99,10 +99,27 @@ type Rule struct {
 	Id        string                   `json:"id,omitempty" yaml:"id,omitempty"`
 	Name      string                   `json:"name,omitempty" yaml:"name,omitempty"`       // The display name of a rule
 	Version   string                   `json:"version,omitempty" yaml:"version,omitempty"` // The display name of a rule
+	Labels    map[string]string        `json:"labels,omitempty" yaml:"labels,omitempty"`
 	Sql       string                   `json:"sql,omitempty" yaml:"sql,omitempty"`
 	Graph     *RuleGraph               `json:"graph,omitempty" yaml:"graph,omitempty"`
 	Actions   []map[string]interface{} `json:"actions,omitempty" yaml:"actions,omitempty"`
 	Options   *RuleOption              `json:"options,omitempty" yaml:"options,omitempty"`
+}
+
+func (r *Rule) MatchLabels(labels map[string]string) bool {
+	if r == nil {
+		return false
+	}
+	if len(r.Labels) < 1 {
+		return false
+	}
+	for k, v := range labels {
+		rv, ok := r.Labels[k]
+		if !ok || rv != v {
+			return false
+		}
+	}
+	return true
 }
 
 func (r *Rule) IsDurationRule() bool {
