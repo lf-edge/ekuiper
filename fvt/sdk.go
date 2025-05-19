@@ -22,6 +22,8 @@ import (
 	"net/http"
 	"net/url"
 	"time"
+
+	"github.com/lf-edge/ekuiper/v2/internal/server"
 )
 
 const ContentTypeJson = "application/json"
@@ -137,6 +139,47 @@ func (sdk *SDK) GetRuleStatus(name string) (map[string]any, error) {
 		return nil, err
 	}
 	return GetResponseResultMap(resp)
+}
+
+func (sdk *SDK) AddRuleLabels(name string, labels map[string]string) (resp *http.Response, err error) {
+	v, _ := json.Marshal(labels)
+	url := sdk.baseUrl.JoinPath("rules", name, "labels").String()
+	req, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer(v))
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	return sdk.httpClient.Do(req)
+}
+
+func (sdk *SDK) RemoveRuleLabels(name string, keys []string) (resp *http.Response, err error) {
+	v, _ := json.Marshal(&server.KeysRequest{Keys: keys})
+	req, err := http.NewRequest(http.MethodDelete, sdk.baseUrl.JoinPath("rules", name, "labels").String(), bytes.NewBuffer(v))
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	return sdk.httpClient.Do(req)
+}
+
+func (sdk *SDK) GetRulesByLabels(labels map[string]string) (list []string, err error) {
+	v, _ := json.Marshal(labels)
+	req, err := http.NewRequest(http.MethodGet, sdk.baseUrl.JoinPath("rules", "labels", "match").String(), bytes.NewBuffer(v))
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	resp, err := sdk.httpClient.Do(req)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	rsp := server.RulesLabelsResp{}
+	if err := json.NewDecoder(resp.Body).Decode(&rsp); err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
+	return rsp.Rules, nil
 }
 
 func GetResponseText(resp *http.Response) (string, error) {

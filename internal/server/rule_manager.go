@@ -58,12 +58,29 @@ func (rr *RuleRegistry) load(key string) (value *rule.State, ok bool) {
 	return result, ok
 }
 
+func (rr *RuleRegistry) list() []*rule.State {
+	lists := make([]*rule.State, 0)
+	rr.RLock()
+	for _, rs := range rr.internal {
+		lists = append(lists, rs)
+	}
+	rr.RUnlock()
+	return lists
+}
+
 // register and save to db
 func (rr *RuleRegistry) save(key string, ruleJson string, value *rule.State) error {
 	rr.Lock()
 	defer rr.Unlock()
 	rr.internal[key] = value
 	return ruleProcessor.ExecCreate(key, ruleJson)
+}
+
+func (rr *RuleRegistry) update(key string, ruleJson string, value *rule.State) error {
+	rr.Lock()
+	defer rr.Unlock()
+	rr.internal[key] = value
+	return ruleProcessor.ExecUpsert(key, ruleJson)
 }
 
 // only register. It is called when recover from db
