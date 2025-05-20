@@ -1,4 +1,4 @@
-// Copyright 2021-2024 EMQ Technologies Co., Ltd.
+// Copyright 2021-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -148,24 +148,6 @@ func ReadSourceMetaDir(scanChecker InstallChecker, lookupChecker InstallChecker)
 				conf.Log.Warnf("Find source metadata file but not installed : %s", fileName)
 			}
 		}
-	}
-	return nil
-}
-
-func ReadSourceMetaData() error {
-	keys, err := conf.GetYamlConfigAllKeys("sources")
-	if err != nil {
-		return err
-	}
-	for key := range keys {
-		loadConfigOperatorForSource(key)
-	}
-	keys, err = conf.GetYamlConfigAllKeys("connections")
-	if err != nil {
-		return err
-	}
-	for key := range keys {
-		loadConfigOperatorForConnection(key)
 	}
 	return nil
 }

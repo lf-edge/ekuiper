@@ -1,4 +1,4 @@
-// Copyright 2021-2024 EMQ Technologies Co., Ltd.
+// Copyright 2021-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -165,16 +165,6 @@ func newAbout(fi *fileAbout) *about {
 	return ui
 }
 
-//	func newNode(fi *fileNode) *node {
-//		if nil == fi {
-//			return nil
-//		}
-//		ui := new(node)
-//		ui.Category = fi.Category
-//		ui.Icon = fi.Icon
-//		ui.Label = newLanguage(fi.Label)
-//		return ui
-//	}
 func newUiSink(fi *fileSink) (*uiSink, error) {
 	if nil == fi {
 		return nil, nil
@@ -189,17 +179,6 @@ func newUiSink(fi *fileSink) (*uiSink, error) {
 }
 
 var gSinkmetadata = make(map[string]*uiSink) // immutable
-
-func ReadSinkMetaData() error {
-	keys, err := conf.GetYamlConfigAllKeys("sinks")
-	if err != nil {
-		return err
-	}
-	for key := range keys {
-		loadConfigOperatorForSink(key)
-	}
-	return nil
-}
 
 func ReadSinkMetaDir(checker InstallChecker) error {
 	confDir, err := conf.GetConfLoc()

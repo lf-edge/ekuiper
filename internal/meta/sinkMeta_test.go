@@ -1,4 +1,4 @@
-// Copyright 2021-2024 EMQ Technologies Co., Ltd.
+// Copyright 2021-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/pingcap/failpoint"
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
@@ -62,15 +61,6 @@ func TestReadMetaData(t *testing.T) {
 	require.NoError(t, conf.SaveCfgKeyToKV("sources.mqtt.conf1", map[string]interface{}{"a": 1}))
 	require.NoError(t, conf.SaveCfgKeyToKV("sinks.mqtt.conf1", map[string]interface{}{"a": 1}))
 	require.NoError(t, conf.SaveCfgKeyToKV("connections.mqtt.conf1", map[string]interface{}{"a": 1}))
-	require.NoError(t, ReadSourceMetaData())
-	require.NoError(t, ReadSinkMetaData())
-
-	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/conf/storageErr", "return(true)")
-	err = ReadSourceMetaData()
-	require.Error(t, err)
-	err = ReadSinkMetaData()
-	require.Error(t, err)
-	failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/conf/storageErr")
 }
 
 func TestGetSinkMeta(t *testing.T) {

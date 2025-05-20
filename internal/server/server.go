@@ -1,4 +1,4 @@
-// Copyright 2022-2024 EMQ Technologies Co., Ltd.
+// Copyright 2022-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -38,7 +38,6 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/keyedstate"
 	meta2 "github.com/lf-edge/ekuiper/v2/internal/meta"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/async"
-	"github.com/lf-edge/ekuiper/v2/internal/pkg/sig"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store/definition"
 	"github.com/lf-edge/ekuiper/v2/internal/plugin/portable/runtime"
@@ -210,13 +209,11 @@ func StartUp(Version string) {
 	if err != nil {
 		panic(err)
 	}
-	conf.SetupConnectionProps()
+	meta.Bind()
 	connection.InitConnectionManager()
 	if err := connection.ReloadNamedConnection(); err != nil {
 		conf.Log.Warn(err)
 	}
-	meta.Bind()
-	sig.InitMQTTControl()
 	initRuleset()
 
 	registry = &RuleRegistry{internal: make(map[string]*rule.State)}
