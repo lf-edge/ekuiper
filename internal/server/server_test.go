@@ -17,6 +17,7 @@ package server
 import (
 	"context"
 	"fmt"
+	"runtime/pprof"
 	"strconv"
 	"testing"
 	"time"
@@ -205,17 +206,46 @@ func (test *testProfile) GetWindowData() cpuprofile.DataSetAggregateMap {
 	return cpuprofile.DataSetAggregateMap{}
 }
 
+func (test *testProfile) RegisterTag(tag string, ch chan *cpuprofile.DataSetAggregate) {
+	return
+}
+
 func TestStartCPUProfiling(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	ekuiperProfiler := &ekuiperProfile{}
-	if err := ekuiperProfiler.StartCPUProfiler(ctx, 1000*time.Millisecond); err != nil {
+	if err := ekuiperProfiler.StartCPUProfiler(ctx, time.Second); err != nil {
 		t.Fatal(err)
 	}
 	ekuiperProfiler.EnableWindowAggregator(5)
-	data := ekuiperProfiler.GetWindowData()
-	if data == nil {
-		t.Fatal("cpu profiling data is nil")
+	if windowData := ekuiperProfiler.GetWindowData(); windowData == nil {
+		t.Fatal("cpu profiling windowData is nil")
+	}
+	go func(ctx context.Context) {
+		defer pprof.SetGoroutineLabels(ctx)
+		ctx = pprof.WithLabels(ctx, pprof.Labels("rule", "test"))
+		pprof.SetGoroutineLabels(ctx)
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				// Simulate some work
+				for i := 0; i < 1000; i++ {
+					_ = i * i
+				}
+			}
+		}
+	}(ctx)
+	recvCh := make(chan *cpuprofile.DataSetAggregate)
+	ekuiperProfiler.RegisterTag("rule", recvCh)
+	select {
+	case recvData := <-recvCh:
+		if recvData == nil {
+			t.Fatal("cpu profiling recvData is nil")
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("timeout waiting for cpu profiling recvData")
 	}
 
 	profiler := &testProfile{}
