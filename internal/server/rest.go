@@ -153,6 +153,8 @@ func traceMiddleware(next http.Handler) http.Handler {
 	})
 }
 
+var router *mux.Router
+
 func createRestServer(ip string, port int, needToken bool) *http.Server {
 	dataDir, err := conf.GetDataLoc()
 	if err != nil {
@@ -169,6 +171,7 @@ func createRestServer(ip string, port int, needToken bool) *http.Server {
 	}
 
 	r := mux.NewRouter()
+	router = r
 	r.Use(traceMiddleware)
 	r.HandleFunc("/", rootHandler).Methods(http.MethodGet, http.MethodPost)
 	r.HandleFunc("/stop", stopHandler).Methods(http.MethodGet, http.MethodPost)
@@ -223,6 +226,7 @@ func createRestServer(ip string, port int, needToken bool) *http.Server {
 	// dump metrics
 	r.HandleFunc("/metrics/dump", dumpMetricsHandler).Methods(http.MethodGet)
 	r.HandleFunc("/metrics/dump/check", dumpMetricsEnabledHandler).Methods(http.MethodGet)
+	r.HandleFunc("/batch/req", batchRequestHandler).Methods(http.MethodPost)
 	// Register extended routes
 	for k, v := range components {
 		logger.Infof("register rest endpoint for component %s", k)
