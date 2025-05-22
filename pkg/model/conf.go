@@ -30,37 +30,37 @@ type KuiperConf struct {
 		Cold bool `yaml:"cold"`
 	}
 	Basic struct {
-		LogLevel                string            `yaml:"logLevel"`
-		Debug                   bool              `yaml:"debug"`
-		ConsoleLog              bool              `yaml:"consoleLog"`
-		FileLog                 bool              `yaml:"fileLog"`
-		LogDisableTimestamp     bool              `yaml:"logDisableTimestamp"`
-		Syslog                  *SyslogConf       `yaml:"syslog"`
-		RotateTime              int               `yaml:"rotateTime"`
-		MaxAge                  int               `yaml:"maxAge"`
-		RotateSize              int64             `yaml:"rotateSize"`
-		RotateCount             int               `yaml:"rotateCount"`
-		TimeZone                string            `yaml:"timezone"`
-		Ip                      string            `yaml:"ip"`
-		Port                    int               `yaml:"port"`
-		RestIp                  string            `yaml:"restIp"`
-		RestPort                int               `yaml:"restPort"`
-		RestTls                 *TlsConf          `yaml:"restTls"`
-		Prometheus              bool              `yaml:"prometheus"`
-		PrometheusPort          int               `yaml:"prometheusPort"`
-		Pprof                   bool              `yaml:"pprof"`
-		PprofIp                 string            `yaml:"pprofIp"`
-		PprofPort               int               `yaml:"pprofPort"`
-		PluginHosts             string            `yaml:"pluginHosts"`
-		Authentication          bool              `yaml:"authentication"`
-		IgnoreCase              bool              `yaml:"ignoreCase"`
-		SQLConf                 *SQLConf          `yaml:"sql"`
-		RulePatrolInterval      cast.DurationConf `yaml:"rulePatrolInterval"`
-		EnableOpenZiti          bool              `yaml:"enableOpenZiti"`
-		AesKey                  string            `yaml:"aesKey"`
-		GracefulShutdownTimeout cast.DurationConf `yaml:"gracefulShutdownTimeout"`
-		EnableResourceProfiling bool              `yaml:"enableResourceProfiling"`
-		MetricsDumpConfig       MetricsDumpConfig `yaml:"metricsDumpConfig"`
+		LogLevel                string                `yaml:"logLevel"`
+		Debug                   bool                  `yaml:"debug"`
+		ConsoleLog              bool                  `yaml:"consoleLog"`
+		FileLog                 bool                  `yaml:"fileLog"`
+		LogDisableTimestamp     bool                  `yaml:"logDisableTimestamp"`
+		Syslog                  *SyslogConf           `yaml:"syslog"`
+		RotateTime              int                   `yaml:"rotateTime"`
+		MaxAge                  int                   `yaml:"maxAge"`
+		RotateSize              int64                 `yaml:"rotateSize"`
+		RotateCount             int                   `yaml:"rotateCount"`
+		TimeZone                string                `yaml:"timezone"`
+		Ip                      string                `yaml:"ip"`
+		Port                    int                   `yaml:"port"`
+		RestIp                  string                `yaml:"restIp"`
+		RestPort                int                   `yaml:"restPort"`
+		RestTls                 *TlsConf              `yaml:"restTls"`
+		Prometheus              bool                  `yaml:"prometheus"`
+		PrometheusPort          int                   `yaml:"prometheusPort"`
+		Pprof                   bool                  `yaml:"pprof"`
+		PprofIp                 string                `yaml:"pprofIp"`
+		PprofPort               int                   `yaml:"pprofPort"`
+		PluginHosts             string                `yaml:"pluginHosts"`
+		Authentication          bool                  `yaml:"authentication"`
+		IgnoreCase              bool                  `yaml:"ignoreCase"`
+		SQLConf                 *SQLConf              `yaml:"sql"`
+		RulePatrolInterval      cast.DurationConf     `yaml:"rulePatrolInterval"`
+		EnableOpenZiti          bool                  `yaml:"enableOpenZiti"`
+		AesKey                  string                `yaml:"aesKey"`
+		GracefulShutdownTimeout cast.DurationConf     `yaml:"gracefulShutdownTimeout"`
+		ResourceProfileConfig   ResourceProfileConfig `yaml:"ResourceProfileConfig"`
+		MetricsDumpConfig       MetricsDumpConfig     `yaml:"metricsDumpConfig"`
 	}
 	Rule   def.RuleOption
 	Sink   *SinkConf
@@ -214,6 +214,11 @@ func (s *SyslogConf) Validate() error {
 type MetricsDumpConfig struct {
 	Enable           bool          `yaml:"enable"`
 	RetainedDuration time.Duration `yaml:"retainedDuration"`
+}
+
+type ResourceProfileConfig struct {
+	Enable   bool          `yaml:"enable"`
+	Interval time.Duration `yaml:"interval"`
 }
 
 type OpenTelemetry struct {

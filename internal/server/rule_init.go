@@ -327,10 +327,10 @@ func (e *ekuiperProfile) RegisterTag(tag string, receiveChan chan *cpuprofile.Da
 	cpuprofile.RegisterTag(tag, receiveChan)
 }
 
-func StartCPUProfiling(ctx context.Context, cpuProfile Profiler) error {
+func StartCPUProfiling(ctx context.Context, cpuProfile Profiler, interval time.Duration) error {
 	recvCh := make(chan *cpuprofile.DataSetAggregate)
 	cpuProfile.RegisterTag("rule", recvCh)
-	if err := cpuProfile.StartCPUProfiler(ctx, time.Second); err != nil {
+	if err := cpuProfile.StartCPUProfiler(ctx, interval); err != nil {
 		return err
 	}
 	go func(ctx context.Context) {

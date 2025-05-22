@@ -249,7 +249,7 @@ func TestStartCPUProfiling(t *testing.T) {
 	}
 
 	profiler := &testProfile{}
-	err := StartCPUProfiling(ctx, profiler)
+	err := StartCPUProfiling(ctx, profiler, time.Second)
 	if err != nil {
 		t.Fatal(err)
 	}

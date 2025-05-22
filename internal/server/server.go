@@ -169,8 +169,8 @@ func StartUp(Version string) {
 	}
 
 	serverCtx, serverCancel := context.WithCancel(context.Background())
-	if conf.Config.Basic.EnableResourceProfiling {
-		err := StartCPUProfiling(serverCtx, cpuProfiler)
+	if conf.Config.Basic.ResourceProfileConfig.Enable {
+		err := StartCPUProfiling(serverCtx, cpuProfiler, conf.Config.Basic.ResourceProfileConfig.Interval)
 		conf.Log.Warn(err)
 	}
 
