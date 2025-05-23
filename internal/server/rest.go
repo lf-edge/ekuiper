@@ -1023,7 +1023,7 @@ func testRuleStopHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func rulesTopCpuUsageHandler(w http.ResponseWriter, r *http.Request) {
-	if !conf.Config.Basic.EnableResourceProfiling {
+	if !conf.Config.Basic.ResourceProfileConfig.Enable {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("cpu usage not enabled"))
 		return

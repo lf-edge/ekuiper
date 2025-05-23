@@ -53,11 +53,11 @@ var (
 		Help:      "gauge of rule status",
 	}, []string{LblRuleIDType})
 
-	RuleCPUUsageGauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+	RuleCPUTimeCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: "kuiper",
 		Subsystem: "rule",
-		Name:      "cpu_ms",
-		Help:      "gauge of rule CPU usage",
+		Name:      "cpu_time_seconds_total",
+		Help:      "Total accumulated CPU time (in seconds) used by each rule",
 	}, []string{LblRuleIDType})
 )
 
@@ -65,7 +65,7 @@ func init() {
 	RegisterSyncCache()
 	prometheus.MustRegister(RuleStatusCountGauge)
 	prometheus.MustRegister(RuleStatusGauge)
-	prometheus.MustRegister(RuleCPUUsageGauge)
+	prometheus.MustRegister(RuleCPUTimeCounter)
 }
 
 func SetRuleStatusCountGauge(isRunning bool, count int) {
@@ -85,6 +85,6 @@ func RemoveRuleStatus(ruleID string) {
 	RuleStatusGauge.DeleteLabelValues(ruleID)
 }
 
-func SetRuleCPUUsageGauge(ruleID string, value int) {
-	RuleCPUUsageGauge.WithLabelValues(ruleID).Set(float64(value))
+func AddRuleCPUTime(ruleID string, seconds float64) {
+	RuleCPUTimeCounter.WithLabelValues(ruleID).Add(seconds)
 }

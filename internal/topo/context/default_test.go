@@ -273,7 +273,7 @@ func TestParseTemplate(t *testing.T) {
 
 func TestRuleBackground(t *testing.T) {
 	conf.InitConf()
-	conf.Config.Basic.EnableResourceProfiling = true
+	conf.Config.Basic.ResourceProfileConfig.Enable = true
 	c := RuleBackground("test")
 	ctx := pprof.WithLabels(context.Background(), pprof.Labels("rule", "test"))
 	assert.Equal(t, c.ctx, ctx)

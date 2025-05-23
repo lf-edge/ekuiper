@@ -306,6 +306,7 @@ type Profiler interface {
 	StartCPUProfiler(context.Context, time.Duration) error
 	EnableWindowAggregator(int)
 	GetWindowData() cpuprofile.DataSetAggregateMap
+	RegisterTag(string, chan *cpuprofile.DataSetAggregate)
 }
 
 type ekuiperProfile struct{}
@@ -322,31 +323,27 @@ func (e *ekuiperProfile) GetWindowData() cpuprofile.DataSetAggregateMap {
 	return cpuprofile.GetWindowData()
 }
 
-func StartCPUProfiling(ctx context.Context, cpuProfile Profiler) error {
-	cpuProfile.EnableWindowAggregator(30)
-	if err := cpuProfile.StartCPUProfiler(ctx, 1000*time.Millisecond); err != nil {
+func (e *ekuiperProfile) RegisterTag(tag string, receiveChan chan *cpuprofile.DataSetAggregate) {
+	cpuprofile.RegisterTag(tag, receiveChan)
+}
+
+func StartCPUProfiling(ctx context.Context, cpuProfile Profiler, interval time.Duration) error {
+	recvCh := make(chan *cpuprofile.DataSetAggregate)
+	cpuProfile.RegisterTag("rule", recvCh)
+	if err := cpuProfile.StartCPUProfiler(ctx, interval); err != nil {
 		return err
 	}
 	go func(ctx context.Context) {
-		ticker := time.NewTicker(15 * time.Second)
-		defer ticker.Stop()
 		for {
 			select {
 			case <-ctx.Done():
 				return
-			case <-ticker.C:
-				if conf.Config.Basic.Prometheus {
-					data := cpuProfile.GetWindowData()
-					if data == nil {
-						continue
-					}
-					ruleUsage, ok := data["rule"]
-					if !ok {
-						continue
-					}
-					for labelValue, t := range ruleUsage.Stats {
-						metrics.SetRuleCPUUsageGauge(labelValue, t)
-					}
+			case dataset := <-recvCh:
+				if dataset == nil {
+					return
+				}
+				for ruleID, cpuTimeMs := range dataset.Stats {
+					metrics.AddRuleCPUTime(ruleID, float64(cpuTimeMs)/1000)
 				}
 			}
 		}
