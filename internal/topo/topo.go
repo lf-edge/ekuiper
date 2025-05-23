@@ -60,7 +60,15 @@ type Topo struct {
 	mu          sync.Mutex
 	hasOpened   atomic.Bool
 
+	EofCtx *EofCtx
+
 	opsWg *sync.WaitGroup
+}
+
+type EofCtx struct {
+	eofSetup     bool
+	SinkFinWg    *sync.WaitGroup
+	srcFinNotify chan<- struct{}
 }
 
 func NewWithNameAndOptions(name string, options *def.RuleOption) (*Topo, error) {
@@ -122,6 +130,14 @@ func (s *Topo) Cancel() error {
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if s.EofCtx != nil && s.EofCtx.eofSetup {
+		conf.Log.Infof("%v topo send src finNotify", s.name)
+		close(s.EofCtx.srcFinNotify)
+		conf.Log.Infof("%v topo wait src finNotify response", s.name)
+		s.EofCtx.SinkFinWg.Wait()
+		conf.Log.Infof("%v topo finish src finNotify response", s.name)
+		s.EofCtx.eofSetup = false
+	}
 	// completion signal
 	infra.DrainError(s.ctx, nil, s.drain)
 	if s.cancel != nil {
@@ -281,6 +297,7 @@ func (s *Topo) Open() <-chan error {
 			return err
 		}
 		topoStore := s.store
+		s.setupEofCtxSrcSink()
 		// open stream sink, after log sink is ready.
 		for _, snk := range s.sinks {
 			snk.Exec(s.ctx.WithMeta(s.name, snk.GetName(), topoStore), s.drain)
@@ -289,7 +306,6 @@ func (s *Topo) Open() <-chan error {
 		for _, op := range s.ops {
 			op.Exec(s.ctx.WithMeta(s.name, op.GetName(), topoStore), s.drain)
 		}
-
 		for _, source := range s.sources {
 			source.Open(s.ctx.WithMeta(s.name, source.GetName(), topoStore), s.drain)
 		}
@@ -303,6 +319,41 @@ func (s *Topo) Open() <-chan error {
 		infra.DrainError(s.ctx, err, s.drain)
 	}
 	return s.drain
+}
+
+func (s *Topo) setupEofCtxSrcSink() {
+	notifyCh := make(chan struct{})
+	if s.options.EnableWaitConsumeWhenStop {
+		s.EofCtx = &EofCtx{
+			srcFinNotify: notifyCh,
+			SinkFinWg:    &sync.WaitGroup{},
+		}
+	}
+	invalidEofTopo := false
+	for _, snk := range s.sinks {
+		if s.EofCtx != nil {
+			eofsink, ok := snk.(node.EofSinkNode)
+			if ok {
+				eofsink.SetupEofWg(s.EofCtx.SinkFinWg)
+				s.EofCtx.SinkFinWg.Add(1)
+			} else {
+				invalidEofTopo = true
+			}
+		}
+	}
+	for _, source := range s.sources {
+		if s.EofCtx != nil {
+			eofsrc, ok := source.(node.FinNotifySourceNode)
+			if ok {
+				eofsrc.SetupFinNotify(notifyCh)
+			} else {
+				invalidEofTopo = true
+			}
+		}
+	}
+	if s.EofCtx != nil && !invalidEofTopo {
+		s.EofCtx.eofSetup = true
+	}
 }
 
 func (s *Topo) HasOpen() bool {

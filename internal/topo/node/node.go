@@ -135,6 +135,12 @@ func (o *defaultNode) doBroadcast(val any) {
 	defer o.outputMu.RUnlock()
 	first := true
 	for name, out := range o.outputs {
+		fin, ok := val.(xsql.EOFTuple)
+		if ok {
+			out <- fin
+			continue
+		}
+
 		// Only copy when there are many outputs to save one copy time
 		if !first {
 			switch vt := val.(type) {
