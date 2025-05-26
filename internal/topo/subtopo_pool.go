@@ -42,6 +42,7 @@ func GetOrCreateSubTopo(ctx api.StreamContext, name string) (*SrcSubTopo, bool) 
 				Edges:   make(map[string][]any),
 			},
 			schemaReg: make(map[string]schemainfo),
+			refRules:  make(map[string]chan<- error),
 		}
 		subTopoPool[name] = ac
 	}

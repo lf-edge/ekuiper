@@ -16,7 +16,6 @@ package topo
 
 import (
 	"fmt"
-	"sync"
 	"testing"
 	"time"
 
@@ -32,7 +31,7 @@ import (
 
 func TestSubtopoLC(t *testing.T) {
 	ctx1 := mockContext.NewMockContext("rule1", "abc")
-	assert.Equal(t, 0, mlen(&subTopoPool))
+	assert.Equal(t, 0, len(subTopoPool))
 	subTopo, existed := GetOrCreateSubTopo(ctx1, "shared")
 	assert.False(t, existed)
 	// Test creation
@@ -43,7 +42,7 @@ func TestSubtopoLC(t *testing.T) {
 	subTopo.StoreSchema("rule1", "shared", map[string]*ast.JsonStreamField{
 		"field1": {Type: "string"},
 	}, false)
-	assert.Equal(t, 1, mlen(&subTopoPool))
+	assert.Equal(t, 1, len(subTopoPool))
 	assert.Equal(t, srcNode, subTopo.GetSource())
 	assert.Equal(t, []node.OperatorNode{opNode}, subTopo.ops)
 	assert.Equal(t, opNode, subTopo.tail)
@@ -65,7 +64,7 @@ func TestSubtopoLC(t *testing.T) {
 	assert.Equal(t, ptopo, subTopo.topo)
 	// Test run
 	subTopo.Open(ctx1, make(chan error))
-	assert.Equal(t, int32(1), subTopo.refCount.Load())
+	assert.Equal(t, 1, len(subTopo.refRules))
 	assert.Equal(t, 1, opNode.schemaCount)
 	// Run another
 	ctx2 := mockContext.NewMockContext("rule2", "abc")
@@ -76,7 +75,7 @@ func TestSubtopoLC(t *testing.T) {
 		"field2": {Type: "string"},
 	}, false)
 	subTopo2.Open(ctx2, make(chan error))
-	assert.Equal(t, int32(2), subTopo.refCount.Load())
+	assert.Equal(t, 2, len(subTopo.refRules))
 	assert.Equal(t, 2, opNode.schemaCount)
 	// Metrics test
 	metrics := []any{0, 0, 0, 0, 0, 0, 0, "", 0, 0, 0, 0, 0, 0, 0, 0, "", 0}
@@ -109,11 +108,11 @@ func TestSubtopoLC(t *testing.T) {
 	assert.Equal(t, []checkpoint.NonSourceTask{opNode}, ops)
 	// Stop
 	subTopo.Close(ctx1, "rule1", 1)
-	assert.Equal(t, int32(1), subTopo.refCount.Load())
-	assert.Equal(t, 1, mlen(&subTopoPool))
+	assert.Equal(t, 1, len(subTopo.refRules))
+	assert.Equal(t, 1, len(subTopoPool))
 	subTopo2.Close(ctx2, "rule2", 2)
-	assert.Equal(t, int32(0), subTopo.refCount.Load())
-	assert.Equal(t, 0, mlen(&subTopoPool))
+	assert.Equal(t, 0, len(subTopo.refRules))
+	assert.Equal(t, 0, len(subTopoPool))
 	assert.Equal(t, 2, len(subTopo.schemaReg))
 	assert.Equal(t, 0, opNode.schemaCount)
 }
@@ -121,7 +120,7 @@ func TestSubtopoLC(t *testing.T) {
 // Test when connection fails
 func TestSubtopoRunError(t *testing.T) {
 	ctx0 := mockContext.NewMockContext("rule0", "abc")
-	assert.Equal(t, 0, mlen(&subTopoPool))
+	assert.Equal(t, 0, len(subTopoPool))
 	subTopo, existed := GetOrCreateSubTopo(ctx0, "shared")
 	assert.False(t, existed)
 	srcNode := &mockSrc{name: "src1"}
@@ -133,29 +132,29 @@ func TestSubtopoRunError(t *testing.T) {
 	subTopo2, existed := GetOrCreateSubTopo(ctx1, "shared")
 	assert.True(t, existed)
 	assert.Equal(t, subTopo, subTopo2)
-	assert.Equal(t, 1, mlen(&subTopoPool))
+	assert.Equal(t, 1, len(subTopoPool))
 	assert.Equal(t, false, subTopo.opened.Load())
 	subTopo.Open(ctx0, make(chan<- error))
 	subTopo.Close(ctx0, "rule0", 1)
 	// Test run firstly, successfully
 	subTopo.Open(ctx1, make(chan error))
-	assert.Equal(t, int32(1), subTopo.refCount.Load())
+	assert.Equal(t, 1, len(subTopo.refRules))
 	assert.Equal(t, true, subTopo.opened.Load())
 	subTopo.Close(ctx1, "rule1", 1)
-	assert.Equal(t, int32(0), subTopo.refCount.Load())
-	assert.Equal(t, 0, mlen(&subTopoPool))
+	assert.Equal(t, 0, len(subTopo.refRules))
+	assert.Equal(t, 0, len(subTopoPool))
 	time.Sleep(10 * time.Millisecond)
 	assert.Equal(t, false, subTopo.opened.Load())
 	// Test run secondly and thirdly, should fail
 	errCh1 := make(chan error, 1)
 	ctx1 = mockContext.NewMockContext("rule1", "abc")
 	subTopo.Open(ctx1, errCh1)
-	assert.Equal(t, int32(1), subTopo.refCount.Load())
+	assert.Equal(t, 1, len(subTopo.refRules))
 	errCh2 := make(chan error, 1)
 	assert.Equal(t, true, subTopo.opened.Load())
 	ctx2 := mockContext.NewMockContext("rule2", "abc")
 	subTopo.Open(ctx2, errCh2)
-	assert.Equal(t, int32(2), subTopo.refCount.Load())
+	assert.Equal(t, 2, len(subTopo.refRules))
 	select {
 	case err := <-errCh1:
 		assert.Equal(t, assert.AnError, err)
@@ -171,8 +170,8 @@ func TestSubtopoRunError(t *testing.T) {
 		assert.Fail(t, "Should receive error")
 	}
 	assert.Equal(t, false, subTopo.opened.Load())
-	assert.Equal(t, int32(0), subTopo.refCount.Load())
-	assert.Equal(t, 0, mlen(&subTopoPool))
+	assert.Equal(t, 0, len(subTopo.refRules))
+	assert.Equal(t, 0, len(subTopoPool))
 }
 
 func TestSubtopoPrint(t *testing.T) {
@@ -203,18 +202,6 @@ func TestSubtopoPrint(t *testing.T) {
 			"source_shared": {"op_shared_op1"},
 		},
 	}, ptopo)
-}
-
-func mlen(m *sync.Map) int {
-	var count int
-
-	// Iterate through the map and count elements
-	m.Range(func(key, value interface{}) bool {
-		// Increment the counter for each element
-		count++
-		return true
-	})
-	return count
 }
 
 type mockSrc struct {

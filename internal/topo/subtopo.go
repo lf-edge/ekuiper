@@ -55,8 +55,8 @@ type SrcSubTopo struct {
 
 	// runtime state
 	// Ref state, affect the pool. Update when rule created or stopped
-	refCount atomic.Int32
-	refRules sync.Map // map[ruleId]errCh, notify the rule for errors
+	sync.RWMutex
+	refRules map[string]chan<- error // map[ruleId]errCh, notify the rule for errors
 	// Runtime state, affect the running loop. Update when any rule opened or all rules stopped
 	opened           atomic.Bool
 	cancel           context.CancelFunc
@@ -72,18 +72,18 @@ func (s *SrcSubTopo) RemoveOutput(name string) error {
 }
 
 func (s *SrcSubTopo) AddRef(ctx api.StreamContext, parentErrCh chan<- error) {
-	if _, loaded := s.refRules.LoadOrStore(ctx.GetRuleId(), parentErrCh); !loaded {
-		s.refCount.Add(1)
-		ctx.GetLogger().Infof("Sub topo %s created for rule %s with %d ref", s.name, ctx.GetRuleId(), s.refCount.Load())
+	s.Lock()
+	defer s.Unlock()
+	if _, ok := s.refRules[ctx.GetRuleId()]; !ok {
+		ctx.GetLogger().Infof("Sub topo %s created for rule %s with %d ref", s.name, ctx.GetRuleId(), len(s.refRules))
 	} else {
 		if parentErrCh != nil {
-			s.refRules.Store(ctx.GetRuleId(), parentErrCh)
-			ctx.GetLogger().Infof("Sub topo %s for rule %s opened with %d ref", s.name, ctx.GetRuleId(), s.refCount.Load())
+			ctx.GetLogger().Infof("Sub topo %s for rule %s opened with %d ref", s.name, ctx.GetRuleId(), len(s.refRules))
 		} else {
-			s.refRules.Store(ctx.GetRuleId(), nil)
-			ctx.GetLogger().Infof("Sub topo %s for rule %s reset with %d ref", s.name, ctx.GetRuleId(), s.refCount.Load())
+			ctx.GetLogger().Infof("Sub topo %s for rule %s reset with %d ref", s.name, ctx.GetRuleId(), len(s.refRules))
 		}
 	}
+	s.refRules[ctx.GetRuleId()] = parentErrCh
 }
 
 func (s *SrcSubTopo) Open(ctx api.StreamContext, parentErrCh chan<- error) {
@@ -143,12 +143,13 @@ func (s *SrcSubTopo) Open(ctx api.StreamContext, parentErrCh chan<- error) {
 }
 
 func (s *SrcSubTopo) notifyError(poe error) {
+	s.RLock()
+	defer s.RUnlock()
 	// Notify error to all ref rules
-	s.refRules.Range(func(k, v interface{}) bool {
-		conf.Log.Debugf("Notify error %v to rule %s", poe, k.(string))
-		infra.DrainError(nil, poe, v.(chan<- error))
-		return true
-	})
+	for k, ch := range s.refRules {
+		conf.Log.Debugf("Notify error %v to rule %s", poe, k)
+		infra.DrainError(nil, poe, ch)
+	}
 }
 
 func (s *SrcSubTopo) GetSource() node.DataSourceNode {
@@ -194,11 +195,13 @@ func (s *SrcSubTopo) StoreSchema(ruleID, dataSource string, schema map[string]*a
 }
 
 func (s *SrcSubTopo) Close(ctx api.StreamContext, ruleId string, runId int) {
-	if ch, ok := s.refRules.Load(ruleId); ok {
+	s.Lock()
+	defer s.Unlock()
+	if ch, ok := s.refRules[ruleId]; ok {
 		// Only do clean up when rule is deleted instead of updated
 		if ch != nil {
-			s.refRules.Delete(ruleId)
-			if s.refCount.CompareAndSwap(1, 0) {
+			delete(s.refRules, ruleId)
+			if len(s.refRules) == 0 {
 				if s.cancel != nil {
 					s.cancel()
 				}
@@ -206,10 +209,8 @@ func (s *SrcSubTopo) Close(ctx api.StreamContext, ruleId string, runId int) {
 					ss.Close(ctx, "$$subtopo_"+s.name, runId)
 				}
 				RemoveSubTopo(s.name)
-			} else {
-				s.refCount.Add(-1)
 			}
-			ctx.GetLogger().Infof("Sub topo %s dereference %s with %d ref", s.name, ctx.GetRuleId(), s.refCount.Load())
+			ctx.GetLogger().Infof("Sub topo %s dereference %s with %d ref", s.name, ctx.GetRuleId(), len(s.refRules))
 		}
 		ctx.GetLogger().Infof("Sub topo %s update schema for rule %s change", s.name, ctx.GetRuleId())
 		for _, op := range s.ops {
@@ -223,7 +224,9 @@ func (s *SrcSubTopo) Close(ctx api.StreamContext, ruleId string, runId int) {
 
 // RemoveMetrics is called when the rule is deleted
 func (s *SrcSubTopo) RemoveMetrics(ruleId string) {
-	if s.refCount.Load() == 0 {
+	s.RLock()
+	defer s.RUnlock()
+	if len(s.refRules) == 0 {
 		s.source.RemoveMetrics(ruleId)
 		for _, op := range s.ops {
 			op.RemoveMetrics(ruleId)
