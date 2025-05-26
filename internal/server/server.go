@@ -38,7 +38,6 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/keyedstate"
 	meta2 "github.com/lf-edge/ekuiper/v2/internal/meta"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/async"
-	"github.com/lf-edge/ekuiper/v2/internal/pkg/sig"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store/definition"
 	"github.com/lf-edge/ekuiper/v2/internal/plugin/portable/runtime"
@@ -224,13 +223,11 @@ func StartUp(Version string) {
 	if err != nil {
 		panic(err)
 	}
-	conf.SetupConnectionProps()
+	meta.Bind()
 	connection.InitConnectionManager(serverCtx)
 	if err := connection.ReloadNamedConnection(); err != nil {
 		conf.Log.Warn(err)
 	}
-	meta.Bind()
-	sig.InitMQTTControl()
 	initRuleset()
 
 	registry = &RuleRegistry{internal: make(map[string]*rule.State)}

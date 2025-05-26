@@ -1,4 +1,4 @@
-// Copyright 2022-2024 EMQ Technologies Co., Ltd.
+// Copyright 2022-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -98,6 +98,13 @@ func loadConfigOperatorForConnection(pluginName string) {
 	if cfg, _ := conf.NewConfigOperatorFromConnectionStorage(pluginName); cfg != nil {
 		ConfigManager.lock.Lock()
 		ConfigManager.cfgOperators[yamlKey] = cfg
+		conns := cfg.CopyConfContent()
+		for id, props := range conns {
+			err := conf.WriteCfgIntoKVStorage("connections", pluginName, id, props)
+			if err != nil {
+				conf.Log.Errorf("save connection %s err:%v", yamlKey, err)
+			}
+		}
 		ConfigManager.lock.Unlock()
 	}
 }
