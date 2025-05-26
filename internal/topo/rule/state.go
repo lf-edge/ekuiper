@@ -538,15 +538,18 @@ func (s *State) runTopo(ctx context.Context, tp *topo.Topo, rs *def.RestartStrat
 		s.topoGraph = s.topology.GetTopo()
 		keys, values := s.topology.GetMetrics()
 		s.stoppedMetrics = []any{keys, values}
-		s.topology = nil
 	}
 	if err != nil { // Exit after retries
 		s.logger.Error(err)
 		s.transit(StoppedByErr, err)
+		s.topology = nil
+		s.logger.Infof("%s exit by error set tp to nil", s.Rule.Id)
 	} else if s.lastWill == EOFMessage {
 		// Two case when err is nil; 1. Manually stop 2.EOF
 		// Only transit status when EOF. Don't do this for manual stop because the state already changed!
 		s.transit(Stopped, nil)
+		s.topology = nil
+		s.logger.Infof("%s exit eof set tp to nil", s.Rule.Id)
 	}
 }
 

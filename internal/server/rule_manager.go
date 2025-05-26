@@ -187,7 +187,6 @@ func (rr *RuleRegistry) UpdateRule(ruleId, ruleJson string) error {
 	// ReRun the rule
 	rs.Stop()
 	if r.Triggered {
-		rs.WithTopo(newTopo)
 		err2 := rs.Start()
 		if err2 != nil {
 			return err2
