@@ -256,3 +256,42 @@ GET http://localhost:9081/rules/usage/cpu
 ```
 
 Get the CPU time used by all rules in the past 30 seconds, in milliseconds.
+
+
+## Add labels on rules
+
+This API is used to add labels to rules
+
+```shell
+PUT /rules/{id}/labels
+
+{
+  "key1":"value1",
+  "key2":"value2"
+}
+```
+
+## Delete labels on rules
+
+This API is used to delete labels from rules
+
+```shell
+DELETE /rules/{id}/labels
+
+{
+  "keys":["key1","key2"]
+}
+```
+
+## Query rules based on labels
+
+This API is used to query rules containing a given label and return a list of rule names that meet the conditions
+
+```shell
+GET /rules/labels/match
+
+{
+  "key1":"value1",
+  "key2":"value2"
+}
+```

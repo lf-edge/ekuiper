@@ -227,3 +227,41 @@ GET http://localhost:9081/rules/usage/cpu
 ```
 
 获取所有规则在过去 30s 内的所使用的 CPU 时间，单位为毫秒
+
+## 添加标签
+
+该 API 用于给规则添加标签
+
+```shell
+PUT /rules/{id}/labels
+
+{
+  "key1":"value1",
+  "key2":"value2"
+}
+```
+
+## 删除标签
+
+该 API 用于给规则删除标签
+
+```shell
+DELETE /rules/{id}/labels
+
+{
+  "keys":["key1","key2"]
+}
+```
+
+## 根据标签查询规则
+
+该 API 用于根据给定标签查询包含该标签的规则们，返回符合条件的规则名列表
+
+```shell
+GET /rules/labels/match
+
+{
+  "key1":"value1",
+  "key2":"value2"
+}
+```
