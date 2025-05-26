@@ -71,6 +71,9 @@ type DefaultContext struct {
 }
 
 func RuleBackground(ruleName string) *DefaultContext {
+	if conf.Config == nil {
+		return Background()
+	}
 	if !conf.Config.Basic.ResourceProfileConfig.Enable {
 		return Background()
 	}
