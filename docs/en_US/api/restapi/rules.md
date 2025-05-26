@@ -257,7 +257,6 @@ GET http://localhost:9081/rules/usage/cpu
 
 Get the CPU time used by all rules in the past 30 seconds, in milliseconds.
 
-
 ## Add labels on rules
 
 This API is used to add labels to rules
