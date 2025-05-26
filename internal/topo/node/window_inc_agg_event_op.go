@@ -90,10 +90,12 @@ func (ho *HoppingWindowIncAggEventOp) exec(ctx api.StreamContext, errCh chan<- e
 				ho.CurrWindowList = gcIncAggWindow(ho.CurrWindowList, ho.op.Length, now)
 				ho.PutState(ctx)
 			case *xsql.Tuple:
+				ho.op.onProcessStart(ctx, data)
 				now := tuple.GetTimestamp()
 				ho.triggerWindow(ctx, now)
 				ho.calIncAggWindow(ctx, fv, tuple, tuple.GetTimestamp())
 				ho.PutState(ctx)
+				ho.op.onProcessEnd(ctx)
 			}
 		}
 	}
@@ -209,13 +211,16 @@ func (so *SlidingWindowIncAggEventOp) exec(ctx api.StreamContext, errCh chan<- e
 				so.CurrWindowList = gcIncAggWindow(so.CurrWindowList, so.op.Length, now)
 				so.PutState(ctx)
 			case *xsql.Tuple:
+				so.op.onProcessStart(ctx, tuple)
 				if so.op.Delay > 0 {
 					so.appendDelayIncAggWindowInEvent(ctx, errCh, fv, tuple)
 					so.PutState(ctx)
+					so.op.onProcessEnd(ctx)
 					continue
 				}
 				so.appendIncAggWindowInEvent(ctx, errCh, fv, tuple)
 				so.PutState(ctx)
+				so.op.onProcessEnd(ctx)
 			}
 		}
 	}
@@ -377,6 +382,7 @@ func (co *CountWindowIncAggEventOp) exec(ctx api.StreamContext, errCh chan<- err
 				}
 				co.PutState(ctx)
 			case *xsql.Tuple:
+				co.op.onProcessStart(ctx, tuple)
 				now := tuple.GetTimestamp()
 				if co.CurrWindow == nil {
 					co.CurrWindow = newIncAggWindow(ctx, now)
@@ -389,6 +395,7 @@ func (co *CountWindowIncAggEventOp) exec(ctx api.StreamContext, errCh chan<- err
 					co.CurrWindow = nil
 				}
 				co.PutState(ctx)
+				co.op.onProcessEnd(ctx)
 			}
 		}
 	}
@@ -406,6 +413,7 @@ func (co *CountWindowIncAggEventOp) emitWindow(ctx api.StreamContext, errCh chan
 	}
 	results.WindowRange = xsql.NewWindowRange(window.StartTime.UnixMilli(), now.UnixMilli())
 	co.op.Broadcast(results)
+	co.op.onSend(ctx, results)
 }
 
 func (co *CountWindowIncAggEventOp) PutState(ctx api.StreamContext) {
