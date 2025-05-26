@@ -22,6 +22,8 @@ import (
 	"net/http"
 	"net/url"
 	"time"
+
+	"github.com/lf-edge/ekuiper/v2/internal/server"
 )
 
 const ContentTypeJson = "application/json"
@@ -177,6 +179,31 @@ func (sdk *SDK) CreateConf(confpath string, conf map[string]any) (resp *http.Res
 		return
 	}
 	return sdk.httpClient.Do(req)
+}
+
+func (sdk *SDK) BatchRequest(reqs []*server.EachRequest) ([]*server.EachResponse, error) {
+	b, err := json.Marshal(reqs)
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
+	req, err := http.NewRequest(http.MethodPost, sdk.baseUrl.JoinPath("/batch/req").String(), bytes.NewBuffer(b))
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
+	resp, err := sdk.httpClient.Do(req)
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
+	resps := make([]*server.EachResponse, 0)
+	err = json.NewDecoder(resp.Body).Decode(&resps)
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
+	return resps, nil
 }
 
 func TryAssert(count int, interval time.Duration, tryFunc func() bool) bool {

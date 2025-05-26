@@ -23,6 +23,7 @@ import (
 	"html/template"
 	"io"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -1050,4 +1051,40 @@ func rulesTopCpuUsageHandler(w http.ResponseWriter, r *http.Request) {
 		result[key] = value
 	}
 	jsonResponse(result, w, logger)
+}
+
+func batchRequestHandler(w http.ResponseWriter, r *http.Request) {
+	batchRequest := make([]*EachRequest, 0)
+	if err := json.NewDecoder(r.Body).Decode(&batchRequest); err != nil {
+		handleError(w, err, "", logger)
+		return
+	}
+	allResponse := make([]*EachResponse, 0)
+	for _, batchReq := range batchRequest {
+		resp := &EachResponse{}
+		rr := httptest.NewRecorder()
+		req, err := http.NewRequest(batchReq.Method, batchReq.Path, bytes.NewBuffer([]byte(batchReq.Body)))
+		if err != nil {
+			resp.Error = err.Error()
+			allResponse = append(allResponse, resp)
+			continue
+		}
+		router.ServeHTTP(rr, req)
+		resp.Code = rr.Code
+		resp.Response = rr.Body.String()
+		allResponse = append(allResponse, resp)
+	}
+	jsonResponse(allResponse, w, logger)
+}
+
+type EachRequest struct {
+	Method string `json:"method"`
+	Path   string `json:"path"`
+	Body   string `json:"body"`
+}
+
+type EachResponse struct {
+	Code     int    `json:"code"`
+	Response string `json:"response"`
+	Error    string `json:"error"`
 }
