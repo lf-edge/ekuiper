@@ -218,7 +218,6 @@ func (rr *RuleRegistry) UpsertRule(ruleId, ruleJson string) error {
 
 	rs.WithTopo(newTopo)
 	if r.Triggered {
-		rs.WithTopo(newTopo)
 		err2 := rs.Start()
 		if err2 != nil {
 			return err2
