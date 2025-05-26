@@ -163,6 +163,12 @@ func (s *State) GetState() RunState {
 	return s.currentState
 }
 
+func (s *State) GetStartTimestamp() time.Time {
+	s.RLock()
+	defer s.RUnlock()
+	return time.UnixMilli(s.lastStartTimestamp)
+}
+
 // GetStatusMessage return the current RunState of the Rule
 // No set is provided, RunState are changed according to the action (start, stop)
 func (s *State) GetStatusMessage() string {

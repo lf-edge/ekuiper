@@ -87,7 +87,7 @@ func PlanSQLWithSourcesAndSinks(rule *def.Rule, mockSourcesProp map[string]map[s
 func getSinkSchema(stmt *ast.SelectStatement) map[string]*ast.JsonStreamField {
 	schema := make(map[string]*ast.JsonStreamField, len(stmt.Fields))
 	for _, field := range stmt.Fields {
-		if field.GetName() != "*" {
+		if field.GetName() != "*" && !field.Invisible {
 			schema[field.GetName()] = nil
 		}
 	}

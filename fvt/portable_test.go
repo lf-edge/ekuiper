@@ -1,4 +1,4 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@ package fvt
 
 import (
 	"archive/zip"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -35,7 +36,7 @@ func TestPortableTestSuite(t *testing.T) {
 	suite.Run(t, new(PortableTestSuite))
 }
 
-func (s *ServerTestSuite) TestLC() {
+func (s *PortableTestSuite) TestLC() {
 	streamSql := `{"sql": "create stream pyjsonStream () WITH (TYPE=\"pyjson\", FORMAT=\"json\")"}`
 	ruleSql := `{
 	  "id": "rulePort1",
@@ -81,7 +82,10 @@ func (s *ServerTestSuite) TestLC() {
 		payload, err := io.ReadAll(resp.Body)
 		s.NoError(err)
 		defer resp.Body.Close()
-		s.Require().Equal("[{\"name\":\"pysam\",\"version\":\"v1.0.0\",\"language\":\"python\",\"executable\":\"/home/runner/work/ekuiper/ekuiper/plugins/portable/pysam/pysam.py\",\"sources\":[\"pyjson\"],\"sinks\":[\"print\"],\"functions\":[\"revert\"]}]", string(payload))
+		pwd, err := os.Getwd()
+		s.Require().NoError(err)
+		exp := fmt.Sprintf("[{\"name\":\"pysam\",\"version\":\"v1.0.0\",\"language\":\"python\",\"executable\":\"%s\",\"sources\":[\"pyjson\"],\"sinks\":[\"print\"],\"functions\":[\"revert\"]}]", filepath.Join(pwd, "..", "plugins", "portable", "pysam", "pysam.py"))
+		s.Require().Equal(exp, string(payload))
 	})
 	s.Run("test rule with plugin", func() {
 		resp, err := client.CreateStream(streamSql)
@@ -118,6 +122,31 @@ func (s *ServerTestSuite) TestLC() {
 		s.Equal("", metrics["source_pyjsonStream_0_last_exception"])
 	})
 	s.Run("check plugin status", func() {
+		// check the plugin status
+		resp, err := client.Get("plugins/portables/pysam/status")
+		s.Require().NoError(err)
+		s.Require().Equal(http.StatusOK, resp.StatusCode)
+		payload, err := io.ReadAll(resp.Body)
+		s.NoError(err)
+		defer resp.Body.Close()
+		s.T().Log(string(payload))
+		s.Require().True(strings.Contains(string(payload), "{\"refCount\":{\"rulePort1\":2},\"status\":\"running\",\"errMsg\":\"\""))
+	})
+	s.Run("update plugin and check status", func() {
+		// zip the plugin dir
+		pysamDir := filepath.Join(PWD, "sdk", "python", "example", "pysam")
+		pysamZipPath := "/tmp/pysam.zip"
+		err := zipDirectory(pysamDir, pysamZipPath)
+		s.Require().NoError(err)
+		defer func() {
+			os.Remove(pysamZipPath)
+		}()
+		// update the plugin
+		resp, err := client.Req("plugins/portables/pysam", http.MethodPut, `{"name":"pysam","file":"file:///tmp/pysam.zip"}`)
+		s.Require().NoError(err)
+		s.Require().Equal(http.StatusOK, resp.StatusCode)
+	})
+	s.Run("check plugin status after update", func() {
 		// check the plugin status
 		resp, err := client.Get("plugins/portables/pysam/status")
 		s.Require().NoError(err)
