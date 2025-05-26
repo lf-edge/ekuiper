@@ -25,26 +25,38 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node"
 )
 
-var subTopoPool = sync.Map{}
+var (
+	subTopoPool = make(map[string]*SrcSubTopo)
+	lock        sync.Mutex
+)
 
 func GetOrCreateSubTopo(ctx api.StreamContext, name string) (*SrcSubTopo, bool) {
-	ac, ok := subTopoPool.LoadOrStore(name, &SrcSubTopo{
-		name: name,
-		topo: &def.PrintableTopo{
-			Sources: make([]string, 0),
-			Edges:   make(map[string][]any),
-		},
-		schemaReg: make(map[string]schemainfo),
-	})
+	lock.Lock()
+	defer lock.Unlock()
+	ac, ok := subTopoPool[name]
+	if !ok {
+		ac = &SrcSubTopo{
+			name: name,
+			topo: &def.PrintableTopo{
+				Sources: make([]string, 0),
+				Edges:   make(map[string][]any),
+			},
+			schemaReg: make(map[string]schemainfo),
+			refRules:  make(map[string]chan<- error),
+		}
+		subTopoPool[name] = ac
+	}
 	// shared connection can create without reference, so the ctx may be nil
 	if ctx != nil {
-		ac.(*SrcSubTopo).AddRef(ctx, nil)
+		ac.AddRef(ctx, nil)
 	}
-	return ac.(*SrcSubTopo), ok
+	return ac, ok
 }
 
 func RemoveSubTopo(name string) {
-	subTopoPool.Delete(name)
+	lock.Lock()
+	defer lock.Unlock()
+	delete(subTopoPool, name)
 	conf.Log.Infof("Delete SubTopo %s", name)
 }
 
