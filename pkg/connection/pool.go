@@ -56,7 +56,7 @@ func init() {
 }
 
 func InitConnectionManager4Test() error {
-	InitMockTest()
+	conf.IsTesting = true
 	InitConnectionManager(context.Background())
 	return nil
 }
