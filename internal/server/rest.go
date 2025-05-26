@@ -1085,6 +1085,6 @@ type EachRequest struct {
 
 type EachResponse struct {
 	Code     int    `json:"code"`
-	Response string `json:"response"`
-	Error    string `json:"error"`
+	Response string `json:"response,omitempty"`
+	Error    string `json:"error,omitempty"`
 }
