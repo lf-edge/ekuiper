@@ -49,6 +49,23 @@ type RuleRegistry struct {
 
 //// registry and db level state change functions
 
+func (rr *RuleRegistry) list() []*rule.State {
+	lists := make([]*rule.State, 0)
+	rr.RLock()
+	for _, rs := range rr.internal {
+		lists = append(lists, rs)
+	}
+	rr.RUnlock()
+	return lists
+}
+
+func (rr *RuleRegistry) update(key string, ruleJson string, value *rule.State) error {
+	rr.Lock()
+	defer rr.Unlock()
+	rr.internal[key] = value
+	return ruleProcessor.ExecUpsert(key, ruleJson)
+}
+
 // load the entry of a rule by id. It is used to get the current rule state
 // or send command to a running rule
 func (rr *RuleRegistry) load(key string) (value *rule.State, ok bool) {
