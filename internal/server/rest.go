@@ -1069,6 +1069,7 @@ func batchRequestHandler(w http.ResponseWriter, r *http.Request) {
 			allResponse = append(allResponse, resp)
 			continue
 		}
+		req.Header = r.Header
 		router.ServeHTTP(rr, req)
 		resp.Code = rr.Code
 		resp.Response = rr.Body.String()
