@@ -149,7 +149,7 @@ func (rr *RuleRegistry) CreateRule(name, ruleJson string) (id string, err error)
 			}
 		}()
 	} else if tp != nil {
-		tp.Cancel()
+		_ = tp.Cancel()
 	}
 	return r.Id, nil
 }
@@ -230,7 +230,7 @@ func (rr *RuleRegistry) UpsertRule(ruleId, ruleJson string) error {
 			return err2
 		}
 	} else if newTopo != nil {
-		newTopo.Cancel()
+		_ = newTopo.Cancel()
 	}
 	return err1
 }
@@ -348,12 +348,17 @@ func (rr *RuleRegistry) GetAllRulesWithStatus() ([]map[string]any, error) {
 				trace = rs.IsTraceEnabled()
 			}
 		}
-		result[i] = map[string]interface{}{
-			"id":     id,
-			"name":   ruleName,
-			"status": str,
-			"trace":  trace,
-			"tags":   tags,
+		ver := ""
+		if ruleDef != nil {
+			ver = ruleDef.Version
+		}
+		result[i] = map[string]any{
+			"id":      id,
+			"name":    ruleName,
+			"status":  str,
+			"version": ver,
+			"trace":   trace,
+			"tags":    tags,
 		}
 	}
 	return result, nil
