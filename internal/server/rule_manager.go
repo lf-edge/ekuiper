@@ -66,6 +66,16 @@ func (rr *RuleRegistry) load(key string) (value *rule.State, ok bool) {
 	return result, ok
 }
 
+func (rr *RuleRegistry) keys() (keys []string) {
+	rr.RLock()
+	defer rr.RUnlock()
+	keys = make([]string, 0, len(rr.internal))
+	for k := range rr.internal {
+		keys = append(keys, k)
+	}
+	return
+}
+
 // register and save to db
 func (rr *RuleRegistry) save(key string, ruleJson string, value *rule.State) error {
 	rr.Lock()
@@ -213,8 +223,10 @@ func (rr *RuleRegistry) UpsertRule(ruleId, ruleJson string) error {
 	}
 	var err1 error
 	if isUpdate {
-		// Validate successful, save to db
-		err1 = rr.upsert(r.Id, ruleJson)
+		if !r.Temp {
+			// Validate successful, save to db
+			err1 = rr.upsert(r.Id, ruleJson)
+		}
 		// ReRun the rule
 		rs.Stop()
 	} else {
@@ -223,7 +235,6 @@ func (rr *RuleRegistry) UpsertRule(ruleId, ruleJson string) error {
 			return fmt.Errorf("store the rule error: %v", err)
 		}
 	}
-
 	rs.WithTopo(newTopo)
 	if r.Triggered {
 		err2 := rs.Start()
@@ -307,8 +318,10 @@ func (rr *RuleRegistry) GetAllRuleStatus() (string, error) {
 	if err != nil {
 		return "", err
 	}
+	keys := rr.keys()
+	all := mergeAndSortStrings(rules, keys)
 	m := make(map[string]ruleExceptionStatus)
-	for _, ruleID := range rules {
+	for _, ruleID := range all {
 		s, err := getRuleExceptionStatus(ruleID)
 		if err != nil {
 			return "", err
@@ -324,9 +337,10 @@ func (rr *RuleRegistry) GetAllRulesWithStatus() ([]map[string]any, error) {
 	if err != nil {
 		return nil, err
 	}
-	sort.Strings(ruleIds)
-	result := make([]map[string]interface{}, len(ruleIds))
-	for i, id := range ruleIds {
+	keys := rr.keys()
+	all := mergeAndSortStrings(ruleIds, keys)
+	result := make([]map[string]any, len(all))
+	for i, id := range all {
 		ruleName := id
 		ruleDef, _ := ruleProcessor.GetRuleById(id)
 		var tags []string
@@ -364,6 +378,30 @@ func (rr *RuleRegistry) GetAllRulesWithStatus() ([]map[string]any, error) {
 		}
 	}
 	return result, nil
+}
+
+// mergeAndSortStrings merges two string slices, removes duplicates, and sorts the result.
+func mergeAndSortStrings(slice1, slice2 []string) []string {
+	// Step 1: Merge the two slices
+	merged := make([]string, 0, len(slice1)+len(slice2)) // Pre-allocate capacity
+	merged = append(merged, slice1...)
+	merged = append(merged, slice2...)
+
+	// Step 2: Remove duplicates using a map
+	seen := make(map[string]struct{})        // Using struct{} for a memory-efficient "set"
+	unique := make([]string, 0, len(merged)) // Pre-allocate capacity based on merged length (upper bound)
+
+	for _, s := range merged {
+		if _, ok := seen[s]; !ok { // If element not seen yet
+			seen[s] = struct{}{}       // Mark as seen
+			unique = append(unique, s) // Add to unique slice
+		}
+	}
+
+	// Step 3: Sort the unique slice
+	sort.Strings(unique) // sort.Strings sorts a slice of strings in ascending order
+
+	return unique
 }
 
 func (rr *RuleRegistry) GetRuleStatus(name string) (string, error) {

@@ -566,11 +566,7 @@ func sourcesManageHandler(w http.ResponseWriter, r *http.Request, st ast.StreamT
 }
 
 func checkStreamBeforeDrop(name string) (bool, error) {
-	rules, err := ruleProcessor.GetAllRules()
-	if err != nil {
-		return false, err
-	}
-	for _, r := range rules {
+	for _, r := range registry.keys() {
 		rs, ok := registry.load(r)
 		if !ok {
 			continue
