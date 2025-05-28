@@ -1,4 +1,4 @@
-// Copyright 2023-2024 EMQ Technologies Co., Ltd.
+// Copyright 2023-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -26,67 +26,68 @@ import (
 
 func TestInitConf(t *testing.T) {
 	m := map[string]interface{}{}
+	ctx := mockContext.NewMockContext("1", "2")
 	c := &ClientConf{}
-	require.NoError(t, c.InitConf("", m))
+	require.NoError(t, c.InitConf(ctx, "", m))
 	m = map[string]interface{}{
 		"url": "",
 	}
 	c = &ClientConf{}
-	require.Error(t, c.InitConf("", m))
+	require.Error(t, c.InitConf(ctx, "", m))
 
 	m = map[string]interface{}{
 		"method": "123",
 	}
 	c = &ClientConf{}
-	require.Error(t, c.InitConf("", m))
+	require.Error(t, c.InitConf(ctx, "", m))
 
 	m = map[string]interface{}{
 		"timeout": -1,
 	}
 	c = &ClientConf{}
-	require.Error(t, c.InitConf("", m))
+	require.Error(t, c.InitConf(ctx, "", m))
 
 	m = map[string]interface{}{
 		"timeout": -1,
 	}
 	c = &ClientConf{}
-	require.Error(t, c.InitConf("", m))
+	require.Error(t, c.InitConf(ctx, "", m))
 
 	m = map[string]interface{}{
 		"responseType": "mock",
 	}
 	c = &ClientConf{}
-	require.Error(t, c.InitConf("", m))
+	require.Error(t, c.InitConf(ctx, "", m))
 
 	m = map[string]interface{}{
 		"method": "post",
 	}
 	c = &ClientConf{}
-	require.NoError(t, c.InitConf("", m))
+	require.NoError(t, c.InitConf(ctx, "", m))
 
 	m = map[string]interface{}{
 		"bodyType": "123",
 	}
 	c = &ClientConf{}
-	require.Error(t, c.InitConf("", m))
+	require.Error(t, c.InitConf(ctx, "", m))
 
 	m = map[string]interface{}{
 		"url": "scae::",
 	}
 	c = &ClientConf{}
-	require.Error(t, c.InitConf("", m))
+	require.Error(t, c.InitConf(ctx, "", m))
 
 	m = map[string]interface{}{
 		"compression": "zlib",
 	}
 	c = &ClientConf{}
-	require.NoError(t, c.InitConf("", m))
+	require.NoError(t, c.InitConf(ctx, "", m))
 
 	m = map[string]interface{}{
 		"compression": "mock",
 	}
 	c = &ClientConf{}
-	require.Error(t, c.InitConf("", m))
+	require.Error(t, c.InitConf(ctx, "", m))
 }
 
 func TestDecode(t *testing.T) {
@@ -146,7 +147,7 @@ func TestClientAuth(t *testing.T) {
 
 	c := &ClientConf{}
 	ctx := mockContext.NewMockContext("1", "2")
-	require.NoError(t, c.InitConf("", map[string]interface{}{
+	require.NoError(t, c.InitConf(ctx, "", map[string]interface{}{
 		"oauth": map[string]interface{}{
 			"access": map[string]interface{}{
 				"url":    fmt.Sprintf("%s/auth", server.URL),

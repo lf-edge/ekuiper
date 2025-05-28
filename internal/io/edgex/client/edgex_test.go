@@ -36,8 +36,8 @@ func TestEdgex_CfgValidate(t *testing.T) {
 				"port":     1883,
 				"type":     "mqtt",
 				"optional": map[string]interface{}{
-					"ClientId":  "client1",
-					"Username":  "user1",
+					"clientid":  "client1",
+					"username":  "user1",
 					"KeepAlive": 500,
 				},
 			},

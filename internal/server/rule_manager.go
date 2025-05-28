@@ -22,6 +22,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
@@ -217,7 +218,6 @@ func (rr *RuleRegistry) UpsertRule(ruleId, ruleJson string) error {
 
 	rs.WithTopo(newTopo)
 	if r.Triggered {
-		rs.WithTopo(newTopo)
 		err2 := rs.Start()
 		if err2 != nil {
 			return err2
@@ -492,8 +492,9 @@ type ruleExceptionStatus struct {
 }
 
 type ruleWrapper struct {
-	rule  *def.Rule
-	state rule.RunState
+	rule      *def.Rule
+	state     rule.RunState
+	startTime time.Time
 }
 
 func getAllRulesWithState() ([]ruleWrapper, error) {
@@ -507,7 +508,7 @@ func getAllRulesWithState() ([]ruleWrapper, error) {
 		rs, ok := registry.load(id)
 		if ok {
 			s := rs.GetState()
-			rules = append(rules, ruleWrapper{rule: rs.Rule, state: s})
+			rules = append(rules, ruleWrapper{rule: rs.Rule, state: s, startTime: rs.GetStartTimestamp()})
 		}
 	}
 	return rules, nil

@@ -1,4 +1,4 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,12 +21,12 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
+	"github.com/lf-edge/ekuiper/v2/pkg/model"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
@@ -34,14 +34,14 @@ func TestNewSinkNode(t *testing.T) {
 	ctx := mockContext.NewMockContext("testSink", "sink")
 	tests := []struct {
 		name           string
-		sc             *conf.SinkConf
+		sc             *model.SinkConf
 		isRetry        bool
 		resendInterval time.Duration
 		bufferLength   int
 	}{
 		{
 			name: "normal sink",
-			sc: &conf.SinkConf{
+			sc: &model.SinkConf{
 				ResendInterval:       0,
 				MemoryCacheThreshold: 1024,
 			},
@@ -51,7 +51,7 @@ func TestNewSinkNode(t *testing.T) {
 		},
 		{
 			name: "linear cache sink",
-			sc: &conf.SinkConf{
+			sc: &model.SinkConf{
 				ResendInterval:       cast.DurationConf(100 * time.Millisecond),
 				EnableCache:          true,
 				MemoryCacheThreshold: 10,
@@ -62,7 +62,7 @@ func TestNewSinkNode(t *testing.T) {
 		},
 		{
 			name: "retry cache normal sink",
-			sc: &conf.SinkConf{
+			sc: &model.SinkConf{
 				ResendInterval:       cast.DurationConf(100 * time.Millisecond),
 				EnableCache:          true,
 				MemoryCacheThreshold: 1024,
@@ -75,7 +75,7 @@ func TestNewSinkNode(t *testing.T) {
 		},
 		{
 			name: "retry cache resend sink",
-			sc: &conf.SinkConf{
+			sc: &model.SinkConf{
 				ResendInterval:       cast.DurationConf(100 * time.Millisecond),
 				EnableCache:          true,
 				MemoryCacheThreshold: 10,
@@ -107,7 +107,7 @@ func TestRetry(t *testing.T) {
 	n, err := NewBytesSinkNode(ctx, "resendout_sink", s, def.RuleOption{
 		BufferLength: 1024,
 	}, 1, &SinkConf{
-		SinkConf: conf.SinkConf{
+		SinkConf: model.SinkConf{
 			ResendInterval:       cast.DurationConf(100 * time.Millisecond),
 			EnableCache:          true,
 			MemoryCacheThreshold: 10,
@@ -139,7 +139,7 @@ func TestResendOut(t *testing.T) {
 	n, err := NewBytesSinkNode(ctx, "resendout_sink", s, def.RuleOption{
 		BufferLength: 1024,
 	}, 1, &SinkConf{
-		SinkConf: conf.SinkConf{
+		SinkConf: model.SinkConf{
 			ResendInterval:       cast.DurationConf(100 * time.Millisecond),
 			EnableCache:          true,
 			MemoryCacheThreshold: 10,

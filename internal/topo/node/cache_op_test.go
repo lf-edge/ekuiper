@@ -1,4 +1,4 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
+	"github.com/lf-edge/ekuiper/v2/pkg/model"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
@@ -104,7 +105,7 @@ func TestCacheRun(t *testing.T) {
 	}
 
 	ctx := mockContext.NewMockContext("testCache", "op1")
-	cacheOp, err := NewCacheOp(ctx, "test", &def.RuleOption{BufferLength: 10, SendError: true}, &conf.SinkConf{
+	cacheOp, err := NewCacheOp(ctx, "test", &def.RuleOption{BufferLength: 10, SendError: true}, &model.SinkConf{
 		MemoryCacheThreshold: 2,
 		MaxDiskCache:         4,
 		BufferPageSize:       2,
@@ -155,7 +156,7 @@ func TestRunError(t *testing.T) {
 	ctx, cancel := mockContext.NewMockContext("testError", "op1").WithCancel()
 	// Test multiple output error
 	testx.InitEnv("cacheErr")
-	op, err := NewCacheOp(ctx, "test", &def.RuleOption{BufferLength: 10, SendError: true}, &conf.SinkConf{
+	op, err := NewCacheOp(ctx, "test", &def.RuleOption{BufferLength: 10, SendError: true}, &model.SinkConf{
 		MemoryCacheThreshold: 2,
 		MaxDiskCache:         4,
 		BufferPageSize:       2,

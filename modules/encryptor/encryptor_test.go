@@ -1,4 +1,4 @@
-// Copyright 2023-2024 EMQ Technologies Co., Ltd.
+// Copyright 2023-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,17 +19,17 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/pkg/model"
 )
 
 func TestGetEncryptor(t *testing.T) {
-	conf.InitConf()
-	_, err := GetEncryptor("aes", map[string]any{"mode": "gcm"})
+	key := []byte("0123456789abcdef0123456789abcdef")
+	_, err := GetEncryptor("aes", map[string]any{"mode": "gcm"}, &model.KuiperConf{AesKey: key})
 	assert.NoError(t, err)
-	_, err = GetEncryptor("unknown", map[string]any{"mode": "gcm"})
+	_, err = GetEncryptor("unknown", map[string]any{"mode": "gcm"}, &model.KuiperConf{AesKey: key})
 	assert.Error(t, err)
-	_, err = GetEncryptor("aes", map[string]any{"mode": "cfb"})
+	_, err = GetEncryptor("aes", map[string]any{"mode": "cfb"}, &model.KuiperConf{AesKey: key})
 	assert.NoError(t, err)
-	_, err = GetEncryptor("aes", map[string]any{"mode": "abc"})
+	_, err = GetEncryptor("aes", map[string]any{"mode": "abc"}, &model.KuiperConf{AesKey: key})
 	assert.Error(t, err)
 }

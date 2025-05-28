@@ -1,4 +1,4 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,27 +18,45 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
+
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node"
 )
 
-var subTopoPool = sync.Map{}
+var (
+	subTopoPool = make(map[string]*SrcSubTopo)
+	lock        sync.Mutex
+)
 
-func GetOrCreateSubTopo(name string) (*SrcSubTopo, bool) {
-	ac, ok := subTopoPool.LoadOrStore(name, &SrcSubTopo{
-		name: name,
-		topo: &def.PrintableTopo{
-			Sources: make([]string, 0),
-			Edges:   make(map[string][]any),
-		},
-		schemaReg: make(map[string]schemainfo),
-	})
-	return ac.(*SrcSubTopo), ok
+func GetOrCreateSubTopo(ctx api.StreamContext, name string) (*SrcSubTopo, bool) {
+	lock.Lock()
+	defer lock.Unlock()
+	ac, ok := subTopoPool[name]
+	if !ok {
+		ac = &SrcSubTopo{
+			name: name,
+			topo: &def.PrintableTopo{
+				Sources: make([]string, 0),
+				Edges:   make(map[string][]any),
+			},
+			schemaReg: make(map[string]schemainfo),
+			refRules:  make(map[string]chan<- error),
+		}
+		subTopoPool[name] = ac
+	}
+	// shared connection can create without reference, so the ctx may be nil
+	if ctx != nil {
+		ac.AddRef(ctx, nil)
+	}
+	return ac, ok
 }
 
 func RemoveSubTopo(name string) {
-	subTopoPool.Delete(name)
+	lock.Lock()
+	defer lock.Unlock()
+	delete(subTopoPool, name)
 	conf.Log.Infof("Delete SubTopo %s", name)
 }
 

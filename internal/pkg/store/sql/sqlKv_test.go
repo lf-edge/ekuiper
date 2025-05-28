@@ -34,6 +34,39 @@ const (
 	STable  = "test"
 )
 
+func TestSqlGetSetDelete(t *testing.T) {
+	ks, db, abs := setupSqlKv()
+	defer cleanSqlKv(db, abs)
+	require.NoError(t, ks.Set("pk1", "pv1"))
+	var val string
+	ok, err := ks.Get("pk1", &val)
+	require.True(t, ok)
+	require.NoError(t, err)
+	require.Equal(t, "pv1", val)
+
+	require.NoError(t, ks.Set("pk1", "pv2"))
+	ok, err = ks.Get("pk1", &val)
+	require.True(t, ok)
+	require.NoError(t, err)
+	require.Equal(t, "pv2", val)
+
+	require.NoError(t, ks.Delete("pk1"))
+	ok, err = ks.Get("pk1", &val)
+	require.False(t, ok)
+	require.NoError(t, err)
+
+	require.NoError(t, ks.Set("pk2", "pv2"))
+	ok, err = ks.Get("pk2", &val)
+	require.True(t, ok)
+	require.NoError(t, err)
+	require.Equal(t, "pv2", val)
+
+	require.NoError(t, ks.Delete("pk2"))
+	ok, err = ks.Get("pk2", &val)
+	require.False(t, ok)
+	require.NoError(t, err)
+}
+
 func TestSqlKvSetnx(t *testing.T) {
 	ks, db, abs := setupSqlKv()
 	defer cleanSqlKv(db, abs)

@@ -1,4 +1,4 @@
-// Copyright 2023-2024 EMQ Technologies Co., Ltd.
+// Copyright 2023-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,110 +15,54 @@
 package cert
 
 import (
-	"bytes"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/base64"
+	"fmt"
 	"os"
 
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/contract/v2/api"
+
+	"github.com/lf-edge/ekuiper/v2/modules/encryptor"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/model"
+	"github.com/lf-edge/ekuiper/v2/pkg/path"
 )
 
-func GenTLSConfig(props map[string]interface{}, typ string) (*tls.Config, error) {
-	opts, err := genTlsConfigurationOptions(props)
+func GenTLSConfig(ctx api.StreamContext, props map[string]interface{}) (*tls.Config, error) {
+	opts, keys, err := genTlsConfigurationOptions(props)
 	if err != nil {
 		return nil, err
 	}
 	if opts == nil {
 		return nil, nil
 	}
-	opts.TlsConfigLog(typ)
-	tc, err := GenerateTLSForClient(opts)
+	if opts.Tls == "default" {
+		return GetDefaultTlsConf(ctx)
+	} else if opts.Tls != "" {
+		return nil, fmt.Errorf("unknown tls configuration type: %s", opts.Tls)
+	}
+	tc, err := GenerateTLSForClient(ctx, opts, keys)
 	if err != nil {
 		return nil, err
 	}
 	return tc, nil
 }
 
-func genTlsConfigurationOptions(props map[string]interface{}) (*TlsConfigurationOptions, error) {
-	opts := &TlsConfigurationOptions{}
+func genTlsConfigurationOptions(props map[string]interface{}) (*model.TlsConfigurationOptions, *model.TlsKeys, error) {
+	opts := &model.TlsConfigurationOptions{}
 	if err := cast.MapToStruct(props, opts); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	var err error
-	if !opts.SkipCertVerify && (len(opts.CertFile) < 1 && len(opts.KeyFile) < 1 && len(opts.CaFile) < 1) &&
+	if opts.Tls != "default" && !opts.SkipCertVerify && (len(opts.CertFile) < 1 && len(opts.KeyFile) < 1 && len(opts.CaFile) < 1) &&
 		(len(opts.CertificationRaw) < 1 && len(opts.PrivateKeyRaw) < 1 && len(opts.RootCARaw) < 1) {
-		return nil, nil
+		return nil, nil, nil
 	}
-	if len(opts.RootCARaw) > 0 {
-		opts.rawCABytes, err = base64.StdEncoding.DecodeString(opts.RootCARaw)
-		if err != nil {
-			return nil, err
-		}
-	}
-	if len(opts.CertificationRaw) > 0 {
-		opts.rawCertBytes, err = base64.StdEncoding.DecodeString(opts.CertificationRaw)
-		if err != nil {
-			return nil, err
-		}
-	}
-	if len(opts.PrivateKeyRaw) > 0 {
-		opts.rawKeyBytes, err = base64.StdEncoding.DecodeString(opts.PrivateKeyRaw)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return opts, nil
+	keys, err := opts.GenKeys()
+	return opts, keys, err
 }
 
-func (opts *TlsConfigurationOptions) TlsConfigLog(typ string) {
-	if opts == nil {
-		conf.Log.Infof("%s tls disabled", typ)
-		return
-	}
-	if opts.SkipCertVerify {
-		conf.Log.Infof("%s tls enable insecure skip verify", typ)
-		return
-	}
-	b := bytes.NewBufferString("")
-	b.WriteString(typ)
-	b.WriteString(" tls enabled")
-	if len(opts.CertFile) > 0 || len(opts.CertificationRaw) > 0 {
-		b.WriteString(", crt configured")
-	} else {
-		b.WriteString(", crt not configured")
-	}
-	if len(opts.KeyFile) > 0 || len(opts.PrivateKeyRaw) > 0 {
-		b.WriteString(", key configured")
-	} else {
-		b.WriteString(", key not configured")
-	}
-	if len(opts.CaFile) > 0 || len(opts.RootCARaw) > 0 {
-		b.WriteString(", root ca configured")
-	} else {
-		b.WriteString(", root ca not configured")
-	}
-	conf.Log.Info(b.String())
-}
-
-type TlsConfigurationOptions struct {
-	SkipCertVerify       bool   `json:"insecureSkipVerify"`
-	CertificationRaw     string `json:"certificationRaw"`
-	PrivateKeyRaw        string `json:"privateKeyRaw"`
-	RootCARaw            string `json:"rootCARaw"`
-	CertFile             string `json:"certificationPath"`
-	KeyFile              string `json:"privateKeyPath"`
-	CaFile               string `json:"rootCaPath"`
-	TLSMinVersion        string `json:"tlsMinVersion"`
-	RenegotiationSupport string `json:"renegotiationSupport"`
-
-	rawCABytes   []byte
-	rawCertBytes []byte
-	rawKeyBytes  []byte
-}
-
-func getTLSMinVersion(userInput string) uint16 {
+func getTLSMinVersion(ctx api.StreamContext, userInput string) uint16 {
 	switch userInput {
 	case "tls1.0":
 		return tls.VersionTLS10
@@ -131,12 +75,12 @@ func getTLSMinVersion(userInput string) uint16 {
 	case "":
 		return tls.VersionTLS12
 	default:
-		conf.Log.Warnf("Unrecognized or unsupported TLS version: %s, defaulting to TLS 1.2", userInput)
+		ctx.GetLogger().Warnf("Unrecognized or unsupported TLS version: %s, defaulting to TLS 1.2", userInput)
 		return tls.VersionTLS12
 	}
 }
 
-func getRenegotiationSupport(userInput string) tls.RenegotiationSupport {
+func getRenegotiationSupport(ctx api.StreamContext, userInput string) tls.RenegotiationSupport {
 	switch userInput {
 	case "never":
 		return tls.RenegotiateNever
@@ -147,72 +91,95 @@ func getRenegotiationSupport(userInput string) tls.RenegotiationSupport {
 	case "":
 		return tls.RenegotiateNever
 	default:
-		conf.Log.Warnf("Invalid renegotiation option: %s, defaulting to \"never\"", userInput)
+		ctx.GetLogger().Warnf("Invalid renegotiation option: %s, defaulting to \"never\"", userInput)
 		return tls.RenegotiateNever
 	}
 }
 
-func isCertDefined(opts *TlsConfigurationOptions) bool {
+func isCertDefined(opts *model.TlsConfigurationOptions) bool {
 	if len(opts.CertificationRaw) == 0 && len(opts.PrivateKeyRaw) == 0 && len(opts.CertFile) == 0 && len(opts.KeyFile) == 0 {
 		return false
 	}
 	return true
 }
 
-func GenerateTLSForClient(
-	Opts *TlsConfigurationOptions,
-) (*tls.Config, error) {
+func GenerateTLSForClient(ctx api.StreamContext, Opts *model.TlsConfigurationOptions, keys *model.TlsKeys) (*tls.Config, error) {
 	if Opts == nil {
 		return nil, nil
 	}
 	tlsConfig := &tls.Config{
 		InsecureSkipVerify: Opts.SkipCertVerify,
-		Renegotiation:      getRenegotiationSupport(Opts.RenegotiationSupport),
-		MinVersion:         getTLSMinVersion(Opts.TLSMinVersion),
+		Renegotiation:      getRenegotiationSupport(ctx, Opts.RenegotiationSupport),
+		MinVersion:         getTLSMinVersion(ctx, Opts.TLSMinVersion),
 	}
 	if !isCertDefined(Opts) {
 		tlsConfig.Certificates = nil
 	} else {
-		if cert, err := buildCert(Opts); err != nil {
+		if cert, err := buildCert(ctx, Opts, keys); err != nil {
 			return nil, err
 		} else {
 			tlsConfig.Certificates = []tls.Certificate{cert}
 		}
 	}
 
-	if err := buildCA(Opts, tlsConfig); err != nil {
+	if err := buildCA(ctx, Opts, tlsConfig, keys); err != nil {
 		return nil, err
 	}
 
 	return tlsConfig, nil
 }
 
-func buildCert(opts *TlsConfigurationOptions) (tls.Certificate, error) {
+func buildCert(ctx api.StreamContext, opts *model.TlsConfigurationOptions, keys *model.TlsKeys) (tls.Certificate, error) {
+	var (
+		cpb, kpb []byte
+		err      error
+	)
 	if len(opts.CertFile) > 0 || len(opts.KeyFile) > 0 {
-		return certLoader(opts.CertFile, opts.KeyFile)
-	}
-	return tls.X509KeyPair(opts.rawCertBytes, opts.rawKeyBytes)
-}
-
-func certLoader(certFilePath, keyFilePath string) (tls.Certificate, error) {
-	if cp, err := conf.ProcessPath(certFilePath); err == nil {
-		if kp, err1 := conf.ProcessPath(keyFilePath); err1 == nil {
-			if cer, err2 := tls.LoadX509KeyPair(cp, kp); err2 != nil {
-				return tls.Certificate{}, err2
-			} else {
-				return cer, nil
-			}
-		} else {
-			return tls.Certificate{}, err1
-		}
+		cpb, kpb, err = certLoader(ctx, opts.CertFile, opts.KeyFile)
 	} else {
-		return tls.Certificate{}, err
+		cpb, kpb = keys.RawCertBytes, keys.RawKeyBytes
 	}
+	if opts.Decrypt != nil {
+		var key []byte
+		if opts.Decrypt.Key != "" {
+			key, err = base64.StdEncoding.DecodeString(opts.Decrypt.Key)
+			if err != nil {
+				return tls.Certificate{}, err
+			}
+		}
+		decryptor, e := encryptor.GetDecryptorWithKey(opts.Decrypt.Algorithm, key, opts.Decrypt.Properties)
+		if e != nil {
+			return tls.Certificate{}, e
+		}
+		cpb, e = decryptor.Decrypt(cpb)
+		if err != nil {
+			return tls.Certificate{}, e
+		}
+		kpb, e = decryptor.Decrypt(kpb)
+		if e != nil {
+			return tls.Certificate{}, e
+		}
+	}
+	return tls.X509KeyPair(cpb, kpb)
 }
 
-func buildCA(opts *TlsConfigurationOptions, tlsConfig *tls.Config) error {
+func certLoader(ctx api.StreamContext, certFilePath, keyFilePath string) ([]byte, []byte, error) {
+	cp := path.AbsPath(ctx, certFilePath)
+	kp := path.AbsPath(ctx, keyFilePath)
+	cpb, err := os.ReadFile(cp)
+	if err != nil {
+		return nil, nil, err
+	}
+	kpb, err := os.ReadFile(kp)
+	if err != nil {
+		return nil, nil, err
+	}
+	return cpb, kpb, nil
+}
+
+func buildCA(ctx api.StreamContext, opts *model.TlsConfigurationOptions, tlsConfig *tls.Config, keys *model.TlsKeys) error {
 	if len(opts.CaFile) > 0 {
-		root, err := caLoader(opts.CaFile)
+		root, err := caLoader(ctx, opts.CaFile)
 		if err != nil {
 			return err
 		}
@@ -221,23 +188,20 @@ func buildCA(opts *TlsConfigurationOptions, tlsConfig *tls.Config) error {
 	}
 	if len(opts.RootCARaw) > 0 {
 		pool := x509.NewCertPool()
-		pool.AppendCertsFromPEM(opts.rawCABytes)
+		pool.AppendCertsFromPEM(keys.RawCABytes)
 		tlsConfig.RootCAs = pool
 		return nil
 	}
 	return nil
 }
 
-func caLoader(caFilePath string) (*x509.CertPool, error) {
-	if cp, err := conf.ProcessPath(caFilePath); err == nil {
-		pool := x509.NewCertPool()
-		caCrt, err1 := os.ReadFile(cp)
-		if err1 != nil {
-			return nil, err1
-		}
-		pool.AppendCertsFromPEM(caCrt)
-		return pool, err1
-	} else {
-		return nil, err
+func caLoader(ctx api.StreamContext, caFilePath string) (*x509.CertPool, error) {
+	cp := path.AbsPath(ctx, caFilePath)
+	pool := x509.NewCertPool()
+	caCrt, err1 := os.ReadFile(cp)
+	if err1 != nil {
+		return nil, err1
 	}
+	pool.AppendCertsFromPEM(caCrt)
+	return pool, err1
 }

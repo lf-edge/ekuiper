@@ -1,4 +1,4 @@
-// Copyright 2022-2024 EMQ Technologies Co., Ltd.
+// Copyright 2022-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -38,7 +38,6 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/keyedstate"
 	meta2 "github.com/lf-edge/ekuiper/v2/internal/meta"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/async"
-	"github.com/lf-edge/ekuiper/v2/internal/pkg/sig"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store/definition"
 	"github.com/lf-edge/ekuiper/v2/internal/plugin/portable/runtime"
@@ -46,8 +45,11 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/server/bump"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/rule"
 	"github.com/lf-edge/ekuiper/v2/metrics"
+	"github.com/lf-edge/ekuiper/v2/modules/encryptor"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/cert"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
+	"github.com/lf-edge/ekuiper/v2/pkg/model"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 	"github.com/lf-edge/ekuiper/v2/pkg/tracer"
 )
@@ -109,7 +111,7 @@ func createPaths() {
 	}
 }
 
-func getStoreConfigByKuiperConfig(c *conf.KuiperConf) (*store.StoreConf, error) {
+func getStoreConfigByKuiperConfig(c *model.KuiperConf) (*store.StoreConf, error) {
 	dataDir, err := conf.GetDataLoc()
 	if err != nil {
 		return nil, err
@@ -140,6 +142,17 @@ func StartUp(Version string) {
 	createPaths()
 	conf.SetupEnv()
 	conf.InitConf()
+	if modules.ConfHook != nil {
+		modules.ConfHook(conf.Config)
+	}
+	if conf.Config.Security != nil {
+		if conf.Config.Security.Encryption != nil {
+			encryptor.InitConf(conf.Config.Security.Encryption, conf.Config.AesKey)
+		}
+		if conf.Config.Security.Tls != nil {
+			cert.InitConf(conf.Config.Security.Tls)
+		}
+	}
 	// Print inited modules
 	for n := range modules.Sources {
 		conf.Log.Infof("register source %s", n)
@@ -155,8 +168,8 @@ func StartUp(Version string) {
 	}
 
 	serverCtx, serverCancel := context.WithCancel(context.Background())
-	if conf.Config.Basic.EnableResourceProfiling {
-		err := StartCPUProfiling(serverCtx, cpuProfiler)
+	if conf.Config.Basic.ResourceProfileConfig.Enable {
+		err := StartCPUProfiling(serverCtx, cpuProfiler, conf.Config.Basic.ResourceProfileConfig.Interval)
 		conf.Log.Warn(err)
 	}
 
@@ -210,13 +223,11 @@ func StartUp(Version string) {
 	if err != nil {
 		panic(err)
 	}
-	conf.SetupConnectionProps()
+	meta.Bind()
 	connection.InitConnectionManager(serverCtx)
 	if err := connection.ReloadNamedConnection(); err != nil {
 		conf.Log.Warn(err)
 	}
-	meta.Bind()
-	sig.InitMQTTControl()
 	initRuleset()
 
 	registry = &RuleRegistry{internal: make(map[string]*rule.State)}
@@ -284,8 +295,8 @@ func StartUp(Version string) {
 	sigint := make(chan os.Signal, 1)
 	signal.Notify(sigint, os.Interrupt, syscall.SIGTERM)
 	select {
-	case <-sigint:
-		conf.Log.Info("eKuiper stopped by SIGTERM")
+	case ss := <-sigint:
+		conf.Log.Infof("eKuiper stopped by %v", ss)
 	case <-stopSignal:
 		// sleep 1 sec in order to let stop request got response
 		time.Sleep(time.Second)

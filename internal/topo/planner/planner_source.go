@@ -1,4 +1,4 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -102,7 +102,7 @@ func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, option
 			subId = us.SubId(props)
 		}
 		selName := fmt.Sprintf("%s/%s", conId, subId)
-		srcSubtopo, existed := topo.GetOrCreateSubTopo(selName)
+		srcSubtopo, existed := topo.GetOrCreateSubTopo(nil, selName)
 		if !existed {
 			var scn node.DataSourceNode
 			scn, err = node.NewSourceNode(ctx, selName, ss, props, options)
@@ -110,6 +110,8 @@ func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, option
 				ctx.GetLogger().Infof("Create SubTopo %s for shared connection", selName)
 				srcSubtopo.AddSrc(scn)
 			}
+		} else {
+			ctx.GetLogger().Infof("Load SubTopo %s for shared connection", selName)
 		}
 		srcConnNode = srcSubtopo
 		if err != nil {
@@ -195,7 +197,7 @@ func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, option
 
 	if t.streamStmt.Options.SHARED && !t.inRuleTest {
 		// Create subtopo in the end to avoid errors in the middle
-		srcSubtopo, existed := topo.GetOrCreateSubTopo(string(t.name))
+		srcSubtopo, existed := topo.GetOrCreateSubTopo(ctx, string(t.name))
 		if !existed {
 			ctx.GetLogger().Infof("Create SubTopo %s", string(t.name))
 			srcSubtopo.AddSrc(srcConnNode)
@@ -204,6 +206,8 @@ func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, option
 				srcSubtopo.AddOperator(subInputs, e)
 				subInputs = []node.Emitter{e}
 			}
+		} else {
+			ctx.GetLogger().Infof("Load SubTopo %s", string(t.name))
 		}
 		srcSubtopo.StoreSchema(ruleId, string(t.name), t.streamFields, t.isWildCard)
 		return srcSubtopo, nil, len(ops), nil

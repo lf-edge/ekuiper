@@ -34,6 +34,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/schedule"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/model"
 )
 
 const (
@@ -47,205 +48,144 @@ const (
 )
 
 var (
-	Config    *KuiperConf
+	Config    *model.KuiperConf
 	IsTesting bool
 	TestId    string
 )
 
-type TlsConf struct {
-	Certfile string `yaml:"certfile"`
-	Keyfile  string `yaml:"keyfile"`
-}
-
-type SinkConf struct {
-	MemoryCacheThreshold int               `json:"memoryCacheThreshold" yaml:"memoryCacheThreshold"`
-	MaxDiskCache         int               `json:"maxDiskCache" yaml:"maxDiskCache"`
-	BufferPageSize       int               `json:"bufferPageSize" yaml:"bufferPageSize"`
-	EnableCache          bool              `json:"enableCache" yaml:"enableCache"`
-	ResendInterval       cast.DurationConf `json:"resendInterval" yaml:"resendInterval"`
-	CleanCacheAtStop     bool              `json:"cleanCacheAtStop" yaml:"cleanCacheAtStop"`
-	ResendAlterQueue     bool              `json:"resendAlterQueue" yaml:"resendAlterQueue"`
-	ResendPriority       int               `json:"resendPriority" yaml:"resendPriority"`
-	ResendIndicatorField string            `json:"resendIndicatorField" yaml:"resendIndicatorField"`
-	ResendDestination    string            `json:"resendDestination" yaml:"resendDestination"`
-}
-
-// Validate the configuration and reset to the default value for invalid values.
-func (sc *SinkConf) Validate() error {
-	var errs error
-	if sc.MemoryCacheThreshold < 0 {
-		sc.MemoryCacheThreshold = 1024
-		Log.Warnf("memoryCacheThreshold is less than 0, set to 1024")
-		errs = errors.Join(errs, errors.New("memoryCacheThreshold:memoryCacheThreshold must be positive"))
+func InitConf() {
+	cpath, err := GetConfLoc()
+	if err != nil {
+		panic(err)
 	}
-	if sc.MaxDiskCache < 0 {
-		sc.MaxDiskCache = 1024000
-		Log.Warnf("maxDiskCache is less than 0, set to 1024000")
-		errs = errors.Join(errs, errors.New("maxDiskCache:maxDiskCache must be positive"))
-	}
-	if sc.BufferPageSize <= 0 {
-		sc.BufferPageSize = 256
-		Log.Warnf("bufferPageSize is less than or equal to 0, set to 256")
-		errs = errors.Join(errs, errors.New("bufferPageSize:bufferPageSize must be positive"))
-	}
-	if sc.ResendInterval < 0 {
-		errs = errors.Join(errs, errors.New("resendInterval:resendInterval must be positive"))
+	kc := model.KuiperConf{
+		Rule: def.RuleOption{
+			LateTol:            cast.DurationConf(time.Second),
+			Concurrency:        1,
+			BufferLength:       1024,
+			CheckpointInterval: cast.DurationConf(5 * time.Minute), // 5 minutes
+			SendError:          false,
+			RestartStrategy: &def.RestartStrategy{
+				Attempts:     0,
+				Delay:        1000,
+				Multiplier:   2,
+				MaxDelay:     30000,
+				JitterFactor: 0.1,
+			},
+		},
 	}
 
-	if sc.BufferPageSize > sc.MemoryCacheThreshold {
-		sc.MemoryCacheThreshold = sc.BufferPageSize
-		Log.Warnf("memoryCacheThreshold is less than bufferPageSize, set to %d", sc.BufferPageSize)
-		errs = errors.Join(errs, errors.New("memoryCacheThresholdTooSmall:memoryCacheThreshold must be greater than or equal to bufferPageSize"))
+	err = LoadConfigFromPath(path.Join(cpath, ConfFileName), &kc)
+	if err != nil {
+		Log.Fatal(err)
+		panic(err)
 	}
-	if sc.MemoryCacheThreshold%sc.BufferPageSize != 0 {
-		sc.MemoryCacheThreshold = sc.BufferPageSize * (sc.MemoryCacheThreshold/sc.BufferPageSize + 1)
-		Log.Warnf("memoryCacheThreshold is not a multiple of bufferPageSize, set to %d", sc.MemoryCacheThreshold)
-		errs = errors.Join(errs, errors.New("memoryCacheThresholdNotMultiple:memoryCacheThreshold must be a multiple of bufferPageSize"))
+	Config = &kc
+	if 0 == len(Config.Basic.Ip) {
+		Config.Basic.Ip = "0.0.0.0"
 	}
-	if sc.BufferPageSize > sc.MaxDiskCache {
-		sc.MaxDiskCache = sc.BufferPageSize
-		Log.Warnf("maxDiskCache is less than bufferPageSize, set to %d", sc.BufferPageSize)
-		errs = errors.Join(errs, errors.New("maxDiskCacheTooSmall:maxDiskCache must be greater than bufferPageSize"))
+	if 0 == len(Config.Basic.RestIp) {
+		Config.Basic.RestIp = "0.0.0.0"
 	}
-	if sc.MaxDiskCache%sc.BufferPageSize != 0 {
-		sc.MaxDiskCache = sc.BufferPageSize * (sc.MaxDiskCache/sc.BufferPageSize + 1)
-		Log.Warnf("maxDiskCache is not a multiple of bufferPageSize, set to %d", sc.MaxDiskCache)
-		errs = errors.Join(errs, errors.New("maxDiskCacheNotMultiple:maxDiskCache must be a multiple of bufferPageSize"))
-	}
-	if sc.ResendPriority < -1 || sc.ResendPriority > 1 {
-		sc.ResendPriority = 0
-		Log.Warnf("resendPriority is not in [-1, 1], set to 0")
-		errs = errors.Join(errs, errors.New("resendPriority:resendPriority must be -1, 0 or 1"))
-	}
-	return errs
-}
 
-type SourceConf struct {
-	HttpServerIp   string   `json:"httpServerIp" yaml:"httpServerIp"`
-	HttpServerPort int      `json:"httpServerPort" yaml:"httpServerPort"`
-	HttpServerTls  *TlsConf `json:"httpServerTls" yaml:"httpServerTls"`
-}
+	if time.Duration(Config.Basic.RulePatrolInterval) < time.Second {
+		Log.Warnf("rule patrol interval %v is less than 1 second, set it to 10 seconds", Config.Basic.RulePatrolInterval)
+		Config.Basic.RulePatrolInterval = cast.DurationConf(10 * time.Second)
+	}
 
-func (sc *SourceConf) Validate() error {
-	var errs error
-	if sc.HttpServerIp == "" {
-		sc.HttpServerIp = "0.0.0.0"
+	if time.Duration(Config.Connection.BackoffMaxElapsedDuration) < 1 {
+		Config.Connection.BackoffMaxElapsedDuration = cast.DurationConf(3 * time.Minute)
 	}
-	if sc.HttpServerPort <= 0 || sc.HttpServerPort > 65535 {
-		Log.Warnf("invalid source.httpServerPort configuration %d, set to 10081", sc.HttpServerPort)
-		errs = errors.Join(errs, errors.New("invalidHttpServerPort:httpServerPort must between 0 and 65535"))
-		sc.HttpServerPort = 10081
-	}
-	return errs
-}
 
-type SQLConf struct {
-	MaxConnections int `yaml:"maxConnections"`
-}
-
-type syslogConf struct {
-	Enable  bool   `yaml:"enable"`
-	Network string `yaml:"network"`
-	Address string `yaml:"address"`
-	Tag     string `yaml:"tag"`
-	Level   string `yaml:"level"`
-}
-
-func (s *syslogConf) Validate() error {
-	if s.Network == "" {
-		s.Network = "udp"
+	if Config.Basic.LogLevel == "" {
+		Config.Basic.LogLevel = InfoLogLevel
 	}
-	if s.Level == "" {
-		s.Level = "info"
+	SetLogLevel(Config.Basic.LogLevel, Config.Basic.Debug)
+	SetLogFormat(Config.Basic.LogDisableTimestamp)
+	if err := SetConsoleAndFileLog(Config.Basic.ConsoleLog, Config.Basic.FileLog); err != nil {
+		log.Fatal(err)
 	}
-	switch s.Level {
-	case "debug", "info", "warn", "error":
-		// valid, do nothing
-	default:
-		return fmt.Errorf("invalid syslog level: %s", s.Level)
-	}
-	return nil
-}
-
-type KuiperConf struct {
-	Basic struct {
-		LogLevel                string            `yaml:"logLevel"`
-		Debug                   bool              `yaml:"debug"`
-		ConsoleLog              bool              `yaml:"consoleLog"`
-		FileLog                 bool              `yaml:"fileLog"`
-		LogDisableTimestamp     bool              `yaml:"logDisableTimestamp"`
-		Syslog                  *syslogConf       `yaml:"syslog"`
-		RotateTime              int               `yaml:"rotateTime"`
-		MaxAge                  int               `yaml:"maxAge"`
-		RotateSize              int64             `yaml:"rotateSize"`
-		RotateCount             int               `yaml:"rotateCount"`
-		TimeZone                string            `yaml:"timezone"`
-		Ip                      string            `yaml:"ip"`
-		Port                    int               `yaml:"port"`
-		RestIp                  string            `yaml:"restIp"`
-		RestPort                int               `yaml:"restPort"`
-		RestTls                 *TlsConf          `yaml:"restTls"`
-		Prometheus              bool              `yaml:"prometheus"`
-		PrometheusPort          int               `yaml:"prometheusPort"`
-		Pprof                   bool              `yaml:"pprof"`
-		PprofIp                 string            `yaml:"pprofIp"`
-		PprofPort               int               `yaml:"pprofPort"`
-		PluginHosts             string            `yaml:"pluginHosts"`
-		Authentication          bool              `yaml:"authentication"`
-		IgnoreCase              bool              `yaml:"ignoreCase"`
-		SQLConf                 *SQLConf          `yaml:"sql"`
-		RulePatrolInterval      cast.DurationConf `yaml:"rulePatrolInterval"`
-		EnableOpenZiti          bool              `yaml:"enableOpenZiti"`
-		AesKey                  string            `yaml:"aesKey"`
-		GracefulShutdownTimeout cast.DurationConf `yaml:"gracefulShutdownTimeout"`
-		EnableResourceProfiling bool              `yaml:"enableResourceProfiling"`
-		MetricsDumpConfig       MetricsDumpConfig `yaml:"metricsDumpConfig"`
-	}
-	Rule   def.RuleOption
-	Sink   *SinkConf
-	Source *SourceConf
-	Store  struct {
-		Type         string `yaml:"type"`
-		ExtStateType string `yaml:"extStateType"`
-		Redis        struct {
-			Host               string            `yaml:"host"`
-			Port               int               `yaml:"port"`
-			Password           string            `yaml:"password"`
-			Timeout            cast.DurationConf `yaml:"timeout"`
-			ConnectionSelector string            `yaml:"connectionSelector"`
+	if os.Getenv(logger.KuiperSyslogKey) == "true" || Config.Basic.Syslog != nil {
+		c := Config.Basic.Syslog
+		if c == nil {
+			c = &model.SyslogConf{
+				Enable: true,
+			}
 		}
-		Sqlite struct {
-			Name string `yaml:"name"`
-		}
-		Fdb struct {
-			Path string `yaml:"path"`
+		// Init when env is set OR enable is true
+		if c.Enable {
+			err := logger.InitSyslog(c.Network, c.Address, c.Level, c.Tag)
+			if err != nil {
+				log.Fatal(err)
+			}
 		}
 	}
-	Portable struct {
-		PythonBin   string            `yaml:"pythonBin"`
-		InitTimeout cast.DurationConf `yaml:"initTimeout"`
-		SendTimeout time.Duration     `yaml:"sendTimeout"`
-		RecvTimeout time.Duration     `yaml:"recvTimeout"`
+
+	if time.Duration(Config.Basic.GracefulShutdownTimeout) < 1 {
+		Config.Basic.GracefulShutdownTimeout = cast.DurationConf(3 * time.Second)
 	}
-	Connection struct {
-		BackoffMaxElapsedDuration cast.DurationConf `yaml:"backoffMaxElapsedDuration"`
+
+	if Config.Basic.TimeZone != "" {
+		if err := cast.SetTimeZone(Config.Basic.TimeZone); err != nil {
+			Log.Fatal(err)
+		}
+	} else {
+		if err := cast.SetTimeZone("Local"); err != nil {
+			Log.Fatal(err)
+		}
 	}
-	OpenTelemetry OpenTelemetry `yaml:"openTelemetry"`
 
-	AesKey []byte
-}
+	if Config.Basic.AesKey != "" {
+		key, err := base64.StdEncoding.DecodeString(Config.Basic.AesKey)
+		if err != nil {
+			Log.Fatal(err)
+		}
+		Config.AesKey = key
+	}
 
-type MetricsDumpConfig struct {
-	Enable           bool          `yaml:"enable"`
-	RetainedDuration time.Duration `yaml:"retainedDuration"`
-}
+	if Config.Store.ExtStateType == "" {
+		Config.Store.ExtStateType = "sqlite"
+	}
 
-type OpenTelemetry struct {
-	ServiceName           string `yaml:"serviceName"`
-	EnableRemoteCollector bool   `yaml:"enableRemoteCollector"`
-	RemoteEndpoint        string `yaml:"remoteEndpoint"`
-	LocalTraceCapacity    int    `yaml:"localTraceCapacity"`
-	EnableLocalStorage    bool   `yaml:"enableLocalStorage"`
+	if Config.Portable.PythonBin == "" {
+		Config.Portable.PythonBin = "python"
+	}
+	if Config.Portable.InitTimeout <= 0 {
+		Config.Portable.InitTimeout = 5000
+	}
+	if Config.Portable.SendTimeout <= 0 {
+		Config.Portable.SendTimeout = 5 * time.Second
+	}
+	if Config.Portable.RecvTimeout <= 0 {
+		Config.Portable.RecvTimeout = 5 * time.Second
+	}
+	if Config.Source == nil {
+		Config.Source = &model.SourceConf{}
+	}
+
+	if Config.Basic.MetricsDumpConfig.RetainedDuration < 1 {
+		Config.Basic.MetricsDumpConfig.RetainedDuration = 6 * time.Hour
+	}
+
+	_ = Config.Source.Validate(Log)
+	if Config.Sink == nil {
+		Config.Sink = &model.SinkConf{}
+	}
+	_ = Config.Sink.Validate(Log)
+
+	if Config.Basic.Syslog != nil {
+		_ = Config.Basic.Syslog.Validate()
+	}
+
+	if Config.OpenTelemetry.RemoteEndpoint == "" {
+		Config.OpenTelemetry.RemoteEndpoint = "localhost:4318"
+	}
+
+	if Config.OpenTelemetry.LocalTraceCapacity < 1 {
+		Config.OpenTelemetry.LocalTraceCapacity = 2048
+	}
+
+	_ = ValidateRuleOption(&Config.Rule)
 }
 
 func SetLogLevel(level string, debug bool) {
@@ -315,141 +255,6 @@ func SetConsoleAndFileLog(consoleLog, fileLog bool) error {
 		gcOutdatedLog(logDir, time.Hour*time.Duration(Config.Basic.MaxAge))
 	}
 	return nil
-}
-
-func InitConf() {
-	cpath, err := GetConfLoc()
-	if err != nil {
-		panic(err)
-	}
-	kc := KuiperConf{
-		Rule: def.RuleOption{
-			LateTol:            cast.DurationConf(time.Second),
-			Concurrency:        1,
-			BufferLength:       1024,
-			CheckpointInterval: cast.DurationConf(5 * time.Minute), // 5 minutes
-			SendError:          false,
-			RestartStrategy: &def.RestartStrategy{
-				Attempts:     0,
-				Delay:        1000,
-				Multiplier:   2,
-				MaxDelay:     30000,
-				JitterFactor: 0.1,
-			},
-		},
-	}
-
-	err = LoadConfigFromPath(path.Join(cpath, ConfFileName), &kc)
-	if err != nil {
-		Log.Fatal(err)
-		panic(err)
-	}
-	Config = &kc
-	if 0 == len(Config.Basic.Ip) {
-		Config.Basic.Ip = "0.0.0.0"
-	}
-	if 0 == len(Config.Basic.RestIp) {
-		Config.Basic.RestIp = "0.0.0.0"
-	}
-
-	if time.Duration(Config.Basic.RulePatrolInterval) < time.Second {
-		Log.Warnf("rule patrol interval %v is less than 1 second, set it to 10 seconds", Config.Basic.RulePatrolInterval)
-		Config.Basic.RulePatrolInterval = cast.DurationConf(10 * time.Second)
-	}
-
-	if time.Duration(Config.Connection.BackoffMaxElapsedDuration) < 1 {
-		Config.Connection.BackoffMaxElapsedDuration = cast.DurationConf(3 * time.Minute)
-	}
-
-	if Config.Basic.LogLevel == "" {
-		Config.Basic.LogLevel = InfoLogLevel
-	}
-	SetLogLevel(Config.Basic.LogLevel, Config.Basic.Debug)
-	SetLogFormat(Config.Basic.LogDisableTimestamp)
-	if err := SetConsoleAndFileLog(Config.Basic.ConsoleLog, Config.Basic.FileLog); err != nil {
-		log.Fatal(err)
-	}
-	if os.Getenv(logger.KuiperSyslogKey) == "true" || Config.Basic.Syslog != nil {
-		c := Config.Basic.Syslog
-		if c == nil {
-			c = &syslogConf{
-				Enable: true,
-			}
-		}
-		// Init when env is set OR enable is true
-		if c.Enable {
-			err := logger.InitSyslog(c.Network, c.Address, c.Level, c.Tag)
-			if err != nil {
-				log.Fatal(err)
-			}
-		}
-	}
-
-	if time.Duration(Config.Basic.GracefulShutdownTimeout) < 1 {
-		Config.Basic.GracefulShutdownTimeout = cast.DurationConf(3 * time.Second)
-	}
-
-	if Config.Basic.TimeZone != "" {
-		if err := cast.SetTimeZone(Config.Basic.TimeZone); err != nil {
-			Log.Fatal(err)
-		}
-	} else {
-		if err := cast.SetTimeZone("Local"); err != nil {
-			Log.Fatal(err)
-		}
-	}
-
-	if Config.Basic.AesKey != "" {
-		key, err := base64.StdEncoding.DecodeString(Config.Basic.AesKey)
-		if err != nil {
-			Log.Fatal(err)
-		}
-		Config.AesKey = key
-	}
-
-	if Config.Store.ExtStateType == "" {
-		Config.Store.ExtStateType = "sqlite"
-	}
-
-	if Config.Portable.PythonBin == "" {
-		Config.Portable.PythonBin = "python"
-	}
-	if Config.Portable.InitTimeout <= 0 {
-		Config.Portable.InitTimeout = 5000
-	}
-	if Config.Portable.SendTimeout <= 0 {
-		Config.Portable.SendTimeout = 5 * time.Second
-	}
-	if Config.Portable.RecvTimeout <= 0 {
-		Config.Portable.RecvTimeout = 5 * time.Second
-	}
-	if Config.Source == nil {
-		Config.Source = &SourceConf{}
-	}
-
-	if Config.Basic.MetricsDumpConfig.RetainedDuration < 1 {
-		Config.Basic.MetricsDumpConfig.RetainedDuration = 6 * time.Hour
-	}
-
-	_ = Config.Source.Validate()
-	if Config.Sink == nil {
-		Config.Sink = &SinkConf{}
-	}
-	_ = Config.Sink.Validate()
-
-	if Config.Basic.Syslog != nil {
-		_ = Config.Basic.Syslog.Validate()
-	}
-
-	if Config.OpenTelemetry.RemoteEndpoint == "" {
-		Config.OpenTelemetry.RemoteEndpoint = "localhost:4318"
-	}
-
-	if Config.OpenTelemetry.LocalTraceCapacity < 1 {
-		Config.OpenTelemetry.LocalTraceCapacity = 2048
-	}
-
-	_ = ValidateRuleOption(&Config.Rule)
 }
 
 func SetLogFormat(disableTimestamp bool) {

@@ -1,4 +1,4 @@
-// Copyright 2023-2024 EMQ Technologies Co., Ltd.
+// Copyright 2023-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -107,7 +107,7 @@ func getTransport(tlscfg *tls.Config, logger *logrus.Logger) *http.Transport {
 	}
 }
 
-func (cc *ClientConf) InitConf(device string, props map[string]interface{}) error {
+func (cc *ClientConf) InitConf(ctx api.StreamContext, device string, props map[string]interface{}) error {
 	c := &RawConf{
 		Url:          "http://localhost",
 		Method:       http.MethodGet,
@@ -189,7 +189,7 @@ func (cc *ClientConf) InitConf(device string, props map[string]interface{}) erro
 		}
 	}
 
-	tlscfg, err := cert.GenTLSConfig(props, "http")
+	tlscfg, err := cert.GenTLSConfig(ctx, props)
 	if err != nil {
 		return err
 	}

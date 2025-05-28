@@ -1,4 +1,4 @@
-// Copyright 2023-2024 EMQ Technologies Co., Ltd.
+// Copyright 2023-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/message"
 )
@@ -30,11 +29,7 @@ type c struct {
 	TagSize int    `json:"tagsize"`
 }
 
-func GetEncryptor(props map[string]any) (message.Encryptor, error) {
-	if conf.Config == nil || conf.Config.AesKey == nil {
-		return nil, fmt.Errorf("AES key is not defined")
-	}
-	key := conf.Config.AesKey
+func GetEncryptor(key []byte, props map[string]any) (message.Encryptor, error) {
 	cc := &c{Mode: "cfb"}
 	err := cast.MapToStruct(props, cc)
 	if err != nil {
@@ -50,11 +45,7 @@ func GetEncryptor(props map[string]any) (message.Encryptor, error) {
 	}
 }
 
-func GetEncryptWriter(output io.Writer, props map[string]any) (io.Writer, error) {
-	if conf.Config == nil || conf.Config.AesKey == nil {
-		return nil, fmt.Errorf("AES key is not defined")
-	}
-	key := conf.Config.AesKey
+func GetEncryptWriter(output io.Writer, key []byte, props map[string]any) (io.Writer, error) {
 	cc := &c{Mode: "cfb"}
 	err := cast.MapToStruct(props, cc)
 	if err != nil {
@@ -65,5 +56,21 @@ func GetEncryptWriter(output io.Writer, props map[string]any) (io.Writer, error)
 		return NewStreamWriter(key, output, cc)
 	default:
 		return nil, fmt.Errorf("unsupported AES writer mode: %s", cc.Mode)
+	}
+}
+
+func GetDecryptor(key []byte, props map[string]any) (message.Decryptor, error) {
+	cc := &c{Mode: "gcm"}
+	err := cast.MapToStruct(props, cc)
+	if err != nil {
+		return nil, err
+	}
+	switch cc.Mode {
+	case "cfb":
+		return NewStreamEncrypter(key, cc)
+	case "gcm":
+		return NewGcmEncrypter(key, cc)
+	default:
+		return nil, fmt.Errorf("unsupported AES encryption mode: %s", cc.Mode)
 	}
 }

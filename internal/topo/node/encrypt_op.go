@@ -1,4 +1,4 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,8 +19,9 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
-	"github.com/lf-edge/ekuiper/v2/internal/encryptor"
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
+	"github.com/lf-edge/ekuiper/v2/modules/encryptor"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 	"github.com/lf-edge/ekuiper/v2/pkg/message"
 )
@@ -35,7 +36,7 @@ type EncryptNode struct {
 }
 
 func NewEncryptOp(name string, rOpt *def.RuleOption, encryptMethod string, encProps map[string]any) (*EncryptNode, error) {
-	dc, err := encryptor.GetEncryptor(encryptMethod, encProps)
+	dc, err := encryptor.GetEncryptor(encryptMethod, encProps, conf.Config)
 	if err != nil {
 		return nil, fmt.Errorf("get encryptor %s fail with error: %v", encryptMethod, err)
 	}

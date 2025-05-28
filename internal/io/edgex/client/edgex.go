@@ -33,6 +33,10 @@ type Client struct {
 	id     string
 }
 
+var optKeys = map[string]string{
+	"clientid": "ClientId", "username": "Username", "password": "Password", "qos": "Qos", "keepalive": "KeepAlive", "retained": "Retained", "connectionpayload": "ConnectionPayload", "certfile": "CertFile", "keyfile": "KeyFile", "certpemblock": "CertPEMBlock", "keypemblock": "KeyPEMBlock", "skipcertverify": "SkipCertVerify",
+}
+
 func GetConnection(_ api.StreamContext) modules.Connection {
 	return &Client{}
 }
@@ -129,6 +133,9 @@ func (es *Client) CfgValidate(props map[string]interface{}) error {
 		case map[string]interface{}:
 			c.Optional = make(map[string]string)
 			for k, v := range ot {
+				if nk, ok := optKeys[k]; ok {
+					k = nk
+				}
 				c.Optional[k] = fmt.Sprintf("%v", v)
 			}
 		default:

@@ -1,4 +1,4 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ type ConnectionConfig struct {
 }
 
 func Provision(ctx api.StreamContext, props map[string]any, onConnect client.ConnectHandler, onConnectLost client.ConnectErrorHandler, onReconnect client.ConnectHandler) (*Client, error) {
-	c, err := ValidateConfig(props)
+	c, err := ValidateConfig(ctx, props)
 	if err != nil {
 		return nil, err
 	}
@@ -112,7 +112,7 @@ func (c *Client) Disconnect(_ api.StreamContext) {
 	c.cli.Disconnect(1)
 }
 
-func ValidateConfig(props map[string]any) (*ConnectionConfig, error) {
+func ValidateConfig(ctx api.StreamContext, props map[string]any) (*ConnectionConfig, error) {
 	c := &ConnectionConfig{PVersion: "3.1.1"}
 	err := cast.MapToStruct(props, c)
 	if err != nil {
@@ -133,7 +133,7 @@ func ValidateConfig(props map[string]any) (*ConnectionConfig, error) {
 	case "3.1.1", "4":
 		c.pversion = 4
 	}
-	tlsConfig, err := cert.GenTLSConfig(props, "mqtt")
+	tlsConfig, err := cert.GenTLSConfig(ctx, props)
 	if err != nil {
 		return nil, err
 	}

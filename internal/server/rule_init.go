@@ -26,7 +26,6 @@ import (
 	"github.com/Rookiecom/cpuprofile"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
-	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/schedule"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/rule"
 	"github.com/lf-edge/ekuiper/v2/metrics"
@@ -222,23 +221,22 @@ func handleAllRuleStatusMetrics(rs []ruleWrapper) {
 
 func handleAllScheduleRuleState(now time.Time, rs []ruleWrapper) {
 	for _, r := range rs {
-		if !r.rule.IsScheduleRule() {
-			continue
-		}
-		if err := handleScheduleRuleState(now, r.rule); err != nil {
-			conf.Log.Errorf("handle schedule rule %v state failed, err:%v", r.rule.Id, err)
+		if r.rule.IsScheduleRule() || r.rule.IsDurationRule() {
+			if err := handleScheduleRuleState(now, r); err != nil {
+				conf.Log.Errorf("handle schedule rule %v state failed, err:%v", r.rule.Id, err)
+			}
 		}
 	}
 }
 
-func handleScheduleRuleState(now time.Time, r *def.Rule) error {
-	scheduleActionSignal := handleScheduleRule(now, r)
-	conf.Log.Debugf("rule %v, sginal: %v", r.Id, scheduleActionSignal)
+func handleScheduleRuleState(now time.Time, rw ruleWrapper) error {
+	scheduleActionSignal := handleScheduleRule(now, rw)
+	conf.Log.Debugf("rule %v, sginal: %v", rw.rule.Id, scheduleActionSignal)
 	switch scheduleActionSignal {
 	case scheduleRuleActionStart:
-		return registry.scheduledStart(r.Id)
+		return registry.scheduledStart(rw.rule.Id)
 	case scheduleRuleActionStop:
-		return registry.scheduledStop(r.Id)
+		return registry.scheduledStop(rw.rule.Id)
 	default:
 		// do nothing
 	}
@@ -253,14 +251,14 @@ const (
 	scheduleRuleActionStop
 )
 
-func handleScheduleRule(now time.Time, r *def.Rule) scheduleRuleAction {
-	options := r.Options
+func handleScheduleRule(now time.Time, rw ruleWrapper) scheduleRuleAction {
+	options := rw.rule.Options
 	if options == nil {
 		return scheduleRuleActionDoNothing
 	}
 	isInRange, err := schedule.IsInScheduleRanges(now, options.CronDatetimeRange)
 	if err != nil {
-		conf.Log.Errorf("check rule %v schedule failed, err:%v", r.Id, err)
+		conf.Log.Errorf("check rule %v schedule failed, err:%v", rw.rule.Id, err)
 		return scheduleRuleActionDoNothing
 	}
 	if !isInRange {
@@ -269,33 +267,46 @@ func handleScheduleRule(now time.Time, r *def.Rule) scheduleRuleAction {
 	if options.Cron == "" && options.Duration == "" {
 		return scheduleRuleActionStart
 	}
-	isInCron, err := scheduleCronRule(now, options)
-	if err != nil {
-		conf.Log.Errorf("check rule %v schedule failed, err:%v", r.Id, err)
-		return scheduleRuleActionDoNothing
-	}
-	if isInCron {
-		return scheduleRuleActionStart
-	}
-	return scheduleRuleActionStop
+	return scheduleCronRuleAction(now, rw)
 }
 
-func scheduleCronRule(now time.Time, options *def.RuleOption) (bool, error) {
-	if len(options.Cron) > 0 && len(options.Duration) > 0 {
+func scheduleCronRuleAction(now time.Time, rw ruleWrapper) scheduleRuleAction {
+	options := rw.rule.Options
+	if options == nil {
+		return scheduleRuleActionDoNothing
+	}
+	if len(options.Duration) > 0 {
 		d, err := time.ParseDuration(options.Duration)
 		if err != nil {
-			return false, err
+			conf.Log.Errorf("check rule %v schedule failed, err:%v", rw.rule.Id, err)
+			return scheduleRuleActionDoNothing
 		}
-		isin, _, err := schedule.IsInRunningSchedule(options.Cron, now, d)
-		return isin, err
+		if len(options.Cron) > 0 {
+			isin, _, err := schedule.IsInRunningSchedule(options.Cron, now, d)
+			if err != nil {
+				conf.Log.Errorf("check rule %v schedule failed, err:%v", rw.rule.Id, err)
+				return scheduleRuleActionDoNothing
+			}
+			if isin {
+				return scheduleRuleActionStart
+			} else {
+				return scheduleRuleActionStop
+			}
+
+		} else {
+			if rw.state == rule.Running && !rw.startTime.IsZero() && now.After(rw.startTime.Add(d)) {
+				return scheduleRuleActionStop
+			}
+		}
 	}
-	return false, nil
+	return scheduleRuleActionDoNothing
 }
 
 type Profiler interface {
 	StartCPUProfiler(context.Context, time.Duration) error
 	EnableWindowAggregator(int)
 	GetWindowData() cpuprofile.DataSetAggregateMap
+	RegisterTag(string, chan *cpuprofile.DataSetAggregate)
 }
 
 type ekuiperProfile struct{}
@@ -312,31 +323,27 @@ func (e *ekuiperProfile) GetWindowData() cpuprofile.DataSetAggregateMap {
 	return cpuprofile.GetWindowData()
 }
 
-func StartCPUProfiling(ctx context.Context, cpuProfile Profiler) error {
-	cpuProfile.EnableWindowAggregator(30)
-	if err := cpuProfile.StartCPUProfiler(ctx, 1000*time.Millisecond); err != nil {
+func (e *ekuiperProfile) RegisterTag(tag string, receiveChan chan *cpuprofile.DataSetAggregate) {
+	cpuprofile.RegisterTag(tag, receiveChan)
+}
+
+func StartCPUProfiling(ctx context.Context, cpuProfile Profiler, interval time.Duration) error {
+	recvCh := make(chan *cpuprofile.DataSetAggregate)
+	cpuProfile.RegisterTag("rule", recvCh)
+	if err := cpuProfile.StartCPUProfiler(ctx, interval); err != nil {
 		return err
 	}
 	go func(ctx context.Context) {
-		ticker := time.NewTicker(15 * time.Second)
-		defer ticker.Stop()
 		for {
 			select {
 			case <-ctx.Done():
 				return
-			case <-ticker.C:
-				if conf.Config.Basic.Prometheus {
-					data := cpuProfile.GetWindowData()
-					if data == nil {
-						continue
-					}
-					ruleUsage, ok := data["rule"]
-					if !ok {
-						continue
-					}
-					for labelValue, t := range ruleUsage.Stats {
-						metrics.SetRuleCPUUsageGauge(labelValue, t)
-					}
+			case dataset := <-recvCh:
+				if dataset == nil {
+					return
+				}
+				for ruleID, cpuTimeMs := range dataset.Stats {
+					metrics.AddRuleCPUTime(ruleID, float64(cpuTimeMs)/1000)
 				}
 			}
 		}

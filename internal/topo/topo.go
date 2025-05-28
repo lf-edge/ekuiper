@@ -318,6 +318,7 @@ func (s *Topo) Open() <-chan error {
 	if err != nil {
 		infra.DrainError(s.ctx, err, s.drain)
 	}
+	s.ctx.GetLogger().Infof("Rule %s with topo %d is running", s.name, s.runId)
 	return s.drain
 }
 

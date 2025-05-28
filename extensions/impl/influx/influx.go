@@ -1,4 +1,4 @@
-// Copyright 2021-2024 EMQ Technologies Co., Ltd.
+// Copyright 2021-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -77,7 +77,7 @@ func (m *influxSink) Provision(ctx api.StreamContext, props map[string]any) erro
 	if err != nil {
 		return err
 	}
-	tlsConf, err := cert.GenTLSConfig(props, "influx-sink")
+	tlsConf, err := cert.GenTLSConfig(ctx, props)
 	if err != nil {
 		return fmt.Errorf("error configuring tls: %s", err)
 	}

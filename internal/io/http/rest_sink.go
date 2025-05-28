@@ -38,7 +38,7 @@ var bodyTypeFormat = map[string]string{
 
 func (r *RestSink) Provision(ctx api.StreamContext, configs map[string]any) error {
 	r.ClientConf = &ClientConf{}
-	err := r.InitConf("", configs)
+	err := r.InitConf(ctx, "", configs)
 	if err != nil {
 		return err
 	}

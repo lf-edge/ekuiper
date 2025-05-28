@@ -38,7 +38,7 @@ func (p pprofComp) serve() {
 	if conf.Config.Basic.Pprof {
 		go func() {
 			addr := cast.JoinHostPortInt(conf.Config.Basic.PprofIp, conf.Config.Basic.PprofPort)
-			if conf.Config.Basic.EnableResourceProfiling {
+			if conf.Config.Basic.ResourceProfileConfig.Enable {
 				cpuprofile.WebProfile(addr)
 				return
 			}

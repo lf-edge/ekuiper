@@ -71,7 +71,7 @@ type DefaultContext struct {
 }
 
 func RuleBackground(ruleName string) *DefaultContext {
-	if !conf.Config.Basic.EnableResourceProfiling {
+	if conf.Config == nil || !conf.Config.Basic.ResourceProfileConfig.Enable {
 		return Background()
 	}
 	ctx := pprof.WithLabels(context.Background(), pprof.Labels("rule", ruleName))

@@ -379,7 +379,6 @@ func fileUploadHandler(w http.ResponseWriter, r *http.Request) {
 				handleError(w, err, "Error Retrieving the File", logger)
 				return
 			}
-
 			defer file.Close()
 
 			root, err := os.OpenRoot(uploadDir)
@@ -390,7 +389,7 @@ func fileUploadHandler(w http.ResponseWriter, r *http.Request) {
 			defer root.Close()
 			// Create file
 			filePath := filepath.Join(uploadDir, handler.Filename)
-			dst, err := root.Create(filePath)
+			dst, err := root.Create(handler.Filename)
 			defer dst.Close()
 			if err != nil {
 				handleError(w, err, "Error creating the file", logger)
@@ -1024,7 +1023,7 @@ func testRuleStopHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func rulesTopCpuUsageHandler(w http.ResponseWriter, r *http.Request) {
-	if !conf.Config.Basic.EnableResourceProfiling {
+	if !conf.Config.Basic.ResourceProfileConfig.Enable {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("cpu usage not enabled"))
 		return

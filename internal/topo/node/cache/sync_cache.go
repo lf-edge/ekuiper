@@ -1,4 +1,4 @@
-// Copyright 2022-2024 EMQ Technologies Co., Ltd.
+// Copyright 2022-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,10 +22,10 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/v2/metrics"
 	"github.com/lf-edge/ekuiper/v2/pkg/kv"
+	"github.com/lf-edge/ekuiper/v2/pkg/model"
 )
 
 // SyncCache is the struct to handle cache saving and read
@@ -108,7 +108,7 @@ type SyncCache struct {
 	RuleID string
 	OpID   string
 	// cache config
-	cacheConf   *conf.SinkConf
+	cacheConf   *model.SinkConf
 	maxDiskPage int
 	// cache storage
 	writeBufferPage *page
@@ -122,7 +122,7 @@ type SyncCache struct {
 	store kv.KeyValue
 }
 
-func NewSyncCache(ctx api.StreamContext, cacheConf *conf.SinkConf) (*SyncCache, error) {
+func NewSyncCache(ctx api.StreamContext, cacheConf *model.SinkConf) (*SyncCache, error) {
 	ctx.GetLogger().Infof("create sync cache with conf %+v", cacheConf)
 	// The maximum pages in disk. This includes readBuffer, all disk page and write buffer. When flush, all save into disk
 	diskPage := cacheConf.MaxDiskCache / cacheConf.BufferPageSize

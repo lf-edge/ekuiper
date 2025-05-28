@@ -133,34 +133,31 @@ func (o *defaultNode) BroadcastCustomized(val any, broadcastFunc func(val any)) 
 func (o *defaultNode) doBroadcast(val any) {
 	o.outputMu.RLock()
 	defer o.outputMu.RUnlock()
-	first := true
+	last := len(o.outputs) - 1
+	i := 0
+	var valCopy any
 	for name, out := range o.outputs {
-		fin, ok := val.(xsql.EOFTuple)
-		if ok {
-			out <- fin
-			continue
-		}
-
-		// Only copy when there are many outputs to save one copy time
-		if !first {
+		// Only copy tuples except the last one(copy previous one may change val, so copy the last) when there are many outputs to save one copy time
+		if i != last {
 			switch vt := val.(type) {
 			case xsql.Collection:
-				val = vt.Clone()
+				valCopy = vt.Clone()
 			case xsql.Row:
-				val = vt.Clone()
+				valCopy = vt.Clone()
 			}
+		} else {
+			valCopy = val
 		}
-		first = false
-
+		i++
 		// Fallback to set the context when sending out so that all children have the same parent ctx
 		// If has set ctx in the node impl, do not override it
-		if vt, ok := val.(xsql.HasTracerCtx); ok && vt.GetTracerCtx() == nil {
+		if vt, ok := valCopy.(xsql.HasTracerCtx); ok && vt.GetTracerCtx() == nil {
 			vt.SetTracerCtx(o.spanCtx)
 		}
 		// wait buffer consume if buffer full
 		if o.disableBufferFullDiscard {
 			select {
-			case out <- val:
+			case out <- valCopy:
 				continue
 			case <-o.ctx.Done():
 				return
@@ -170,7 +167,7 @@ func (o *defaultNode) doBroadcast(val any) {
 	forlabel:
 		for {
 			select {
-			case out <- val:
+			case out <- valCopy:
 				break forlabel
 			case <-o.ctx.Done():
 				return
