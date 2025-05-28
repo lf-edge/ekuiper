@@ -64,35 +64,45 @@ func (p *RuleProcessor) ExecCreateWithValidation(name, ruleJson string) (*def.Ru
 		}
 	}
 
-	err = p.db.Set(rule.Id, ruleJson)
-	if err != nil {
-		return nil, err
-	} else {
-		log.Infof("Rule %s with version (%s) is created.", rule.Id, rule.Version)
+	if !rule.Temp {
+		err = p.db.Set(rule.Id, ruleJson)
+		if err != nil {
+			return nil, err
+		}
 	}
-
+	log.Infof("Rule %s with version (%s) is created.", rule.Id, rule.Version)
 	return rule, nil
 }
 
 func (p *RuleProcessor) ExecCreate(name, ruleJson string) error {
-	err := p.db.Setnx(name, ruleJson)
+	rule, err := p.GetRuleByJson(name, ruleJson)
 	if err != nil {
 		return err
-	} else {
-		log.Infof("Rule %s is created.", name)
 	}
-
+	if !rule.Temp {
+		err := p.db.Setnx(name, ruleJson)
+		if err != nil {
+			return err
+		}
+	}
+	log.Infof("Rule %s is created.", name)
 	return nil
 }
 
 func (p *RuleProcessor) ExecUpsert(id, ruleJson string) error {
-	err := p.db.Set(id, ruleJson)
+	rule, err := p.GetRuleByJson(id, ruleJson)
 	if err != nil {
 		return err
-	} else {
-		log.Infof("Rule %s is upserted.", id)
 	}
-
+	if !rule.Temp {
+		err = p.db.Set(id, ruleJson)
+		if err != nil {
+			return err
+		}
+	} else {
+		_ = p.db.Delete(id)
+	}
+	log.Infof("Rule %s is upserted.", id)
 	return nil
 }
 
@@ -108,12 +118,13 @@ func (p *RuleProcessor) ExecReplaceRuleState(name string, triggered bool) (*def.
 		return nil, fmt.Errorf("Marshal rule %s error : %s.", name, err)
 	}
 
-	err = p.db.Set(name, string(ruleJson))
-	if err != nil {
-		return nil, err
-	} else {
-		log.Infof("Rule %s is replaced.", name)
+	if !rule.Temp {
+		err = p.db.Set(name, string(ruleJson))
+		if err != nil {
+			return nil, err
+		}
 	}
+	log.Infof("Rule %s is replaced.", name)
 	return rule, err
 }
 

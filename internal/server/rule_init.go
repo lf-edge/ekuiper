@@ -57,12 +57,18 @@ func initRuleset() error {
 				for _, entry := range ff {
 					if !entry.IsDir() && strings.HasPrefix(entry.Name(), prefix) {
 						path := filepath.Join(loc, entry.Name())
-						os.Remove(path)
+						err = os.Remove(path)
+						if err != nil {
+							conf.Log.Warnf("remove file %s failed", path)
+						}
 					}
 				}
 			}
 			// create the unique file
-			os.Create(filepath.Join(loc, fmt.Sprintf("initialized%d", updateTime)))
+			_, err = os.Create(filepath.Join(loc, fmt.Sprintf("initialized%d", updateTime)))
+			if err != nil {
+				conf.Log.Warn("create new initialized file failed")
+			}
 		}()
 		content, err := os.ReadFile(filepath.Join(loc, "init.json"))
 		if err != nil {
@@ -119,11 +125,7 @@ func findInitializedTime(root string) int64 {
 }
 
 func resetAllRules() error {
-	rules, err := ruleProcessor.GetAllRules()
-	if err != nil {
-		return err
-	}
-	for _, name := range rules {
+	for _, name := range registry.keys() {
 		err := registry.DeleteRule(name)
 		if err != nil {
 			logger.Warnf("delete rule: %s with error %v", name, err)
@@ -356,8 +358,7 @@ func StartCPUProfiling(ctx context.Context, cpuProfile Profiler, interval time.D
 }
 
 func waitAllRuleStop() {
-	rules, _ := ruleProcessor.GetAllRules()
-	for _, r := range rules {
+	for _, r := range registry.keys() {
 		err := registry.stopAtExit(r, "")
 		if err != nil {
 			logger.Warnf("stop rule %s failed, err:%v", r, err)
