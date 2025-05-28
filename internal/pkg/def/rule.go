@@ -153,8 +153,9 @@ type RuleGraph struct {
 type Rule struct {
 	Triggered bool                     `json:"triggered" yaml:"triggered"`
 	Id        string                   `json:"id,omitempty" yaml:"id,omitempty"`
-	Name      string                   `json:"name,omitempty" yaml:"name,omitempty"`       // The display name of a rule
-	Version   string                   `json:"version,omitempty" yaml:"version,omitempty"` // The display name of a rule
+	Name      string                   `json:"name,omitempty" yaml:"name,omitempty"` // The display name of a rule
+	Version   string                   `json:"version,omitempty" yaml:"version,omitempty"`
+	Temp      bool                     `json:"temp,omitempty" yaml:"temp,omitempty"`
 	Sql       string                   `json:"sql,omitempty" yaml:"sql,omitempty"`
 	Graph     *RuleGraph               `json:"graph,omitempty" yaml:"graph,omitempty"`
 	Actions   []map[string]interface{} `json:"actions,omitempty" yaml:"actions,omitempty"`
