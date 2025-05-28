@@ -42,10 +42,9 @@ POST http://localhost:9081/batch/req
         "path": "/streams/demobatch"
     }
 ]
-```
 
-response
-```json
+Response
+
 [
     {
         "code": 201,
@@ -57,7 +56,6 @@ response
     }
 ]
 ```
-
 
 - [流](streams.md)
 - [规则](rules.md)

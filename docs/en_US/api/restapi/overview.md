@@ -44,10 +44,9 @@ POST http://localhost:9081/batch/req
         "path": "/streams/demobatch"
     }
 ]
-```
 
-response
-```json
+Response
+
 [
     {
         "code": 201,
