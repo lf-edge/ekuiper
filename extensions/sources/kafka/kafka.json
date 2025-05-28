@@ -19,53 +19,55 @@
   "libs": [
     "github.com/segmentio/kafka-go@v0.4.39"
   ],
-  "properties": [
-    {
-      "name": "brokers",
-      "default": "127.0.0.1:9092,127.0.0.2:9092",
-      "optional": false,
-      "control": "text",
-      "type": "string",
-      "hint": {
-        "en_US": "The url of the Kafka broker list",
-        "zh_CN": "Kafka brokers 的 URL 列表"
+  "properties": {
+    "default": [
+      {
+        "name": "brokers",
+        "default": "127.0.0.1:9092,127.0.0.2:9092",
+        "optional": false,
+        "control": "text",
+        "type": "string",
+        "hint": {
+          "en_US": "The url of the Kafka broker list",
+          "zh_CN": "Kafka brokers 的 URL 列表"
+        },
+        "label": {
+          "en_US": "broker list",
+          "zh_CN": "Broker URL 列表"
+        }
       },
-      "label": {
-        "en_US": "broker list",
-        "zh_CN": "Broker URL 列表"
-      }
-    },
-    {
-      "name": "groupID",
-      "default": "kuiper-source",
-      "optional": false,
-      "control": "text",
-      "type": "string",
-      "hint": {
-        "en_US": "The groupId of the Kafka consumer",
-        "zh_CN": "Kafka 消费组名"
+      {
+        "name": "groupID",
+        "default": "kuiper-source",
+        "optional": false,
+        "control": "text",
+        "type": "string",
+        "hint": {
+          "en_US": "The groupId of the Kafka consumer",
+          "zh_CN": "Kafka 消费组名"
+        },
+        "label": {
+          "en_US": "group id",
+          "zh_CN": "Kafka 消费组名"
+        }
       },
-      "label": {
-        "en_US": "group id",
-        "zh_CN": "Kafka 消费组名"
+      {
+        "name": "datasource",
+        "default": "",
+        "optional": true,
+        "control": "text",
+        "type": "string",
+        "hint": {
+          "en_US": "The topic of the Kafka consumer",
+          "zh_CN": "Kafka 消费topic"
+        },
+        "label": {
+          "en_US": "topic",
+          "zh_CN": "Kafka 消费topic"
+        }
       }
-    },
-    {
-      "name": "datasource",
-      "default": "",
-      "optional": true,
-      "control": "text",
-      "type": "string",
-      "hint": {
-        "en_US": "The topic of the Kafka consumer",
-        "zh_CN": "Kafka 消费topic"
-      },
-      "label": {
-        "en_US": "topic",
-        "zh_CN": "Kafka 消费topic"
-      }
-    }
-  ],
+    ]
+  },
   "node": {
     "category": "source",
     "icon": "iconPath",
