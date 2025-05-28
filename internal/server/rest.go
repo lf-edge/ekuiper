@@ -23,6 +23,7 @@ import (
 	"html/template"
 	"io"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -153,6 +154,8 @@ func traceMiddleware(next http.Handler) http.Handler {
 	})
 }
 
+var router *mux.Router
+
 func createRestServer(ip string, port int, needToken bool) *http.Server {
 	dataDir, err := conf.GetDataLoc()
 	if err != nil {
@@ -169,6 +172,7 @@ func createRestServer(ip string, port int, needToken bool) *http.Server {
 	}
 
 	r := mux.NewRouter()
+	router = r
 	r.Use(traceMiddleware)
 	r.HandleFunc("/", rootHandler).Methods(http.MethodGet, http.MethodPost)
 	r.HandleFunc("/stop", stopHandler).Methods(http.MethodGet, http.MethodPost)
@@ -223,6 +227,7 @@ func createRestServer(ip string, port int, needToken bool) *http.Server {
 	// dump metrics
 	r.HandleFunc("/metrics/dump", dumpMetricsHandler).Methods(http.MethodGet)
 	r.HandleFunc("/metrics/dump/check", dumpMetricsEnabledHandler).Methods(http.MethodGet)
+	r.HandleFunc("/batch/req", batchRequestHandler).Methods(http.MethodPost)
 	// Register extended routes
 	for k, v := range components {
 		logger.Infof("register rest endpoint for component %s", k)
@@ -1045,4 +1050,41 @@ func rulesTopCpuUsageHandler(w http.ResponseWriter, r *http.Request) {
 		result[key] = value
 	}
 	jsonResponse(result, w, logger)
+}
+
+func batchRequestHandler(w http.ResponseWriter, r *http.Request) {
+	batchRequest := make([]*EachRequest, 0)
+	if err := json.NewDecoder(r.Body).Decode(&batchRequest); err != nil {
+		handleError(w, err, "", logger)
+		return
+	}
+	allResponse := make([]*EachResponse, 0)
+	for _, batchReq := range batchRequest {
+		resp := &EachResponse{}
+		rr := httptest.NewRecorder()
+		req, err := http.NewRequest(batchReq.Method, batchReq.Path, bytes.NewBuffer([]byte(batchReq.Body)))
+		if err != nil {
+			resp.Error = err.Error()
+			allResponse = append(allResponse, resp)
+			continue
+		}
+		req.Header = r.Header
+		router.ServeHTTP(rr, req)
+		resp.Code = rr.Code
+		resp.Response = rr.Body.String()
+		allResponse = append(allResponse, resp)
+	}
+	jsonResponse(allResponse, w, logger)
+}
+
+type EachRequest struct {
+	Method string `json:"method"`
+	Path   string `json:"path"`
+	Body   string `json:"body"`
+}
+
+type EachResponse struct {
+	Code     int    `json:"code"`
+	Response string `json:"response,omitempty"`
+	Error    string `json:"error,omitempty"`
 }
