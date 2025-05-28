@@ -103,6 +103,24 @@ type Rule struct {
 	Graph     *RuleGraph               `json:"graph,omitempty" yaml:"graph,omitempty"`
 	Actions   []map[string]interface{} `json:"actions,omitempty" yaml:"actions,omitempty"`
 	Options   *RuleOption              `json:"options,omitempty" yaml:"options,omitempty"`
+	Tags      []string                 `json:"tags,omitempty" yaml:"tags,omitempty"`
+}
+
+func (r *Rule) IsTagsMatch(tags []string) bool {
+	if len(r.Tags) < len(tags) {
+		return false
+	}
+	mTags := make(map[string]struct{})
+	for _, tag := range r.Tags {
+		mTags[tag] = struct{}{}
+	}
+	for _, tag := range tags {
+		_, ok := mTags[tag]
+		if !ok {
+			return false
+		}
+	}
+	return true
 }
 
 func (r *Rule) IsDurationRule() bool {
