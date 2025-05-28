@@ -44,6 +44,21 @@ POST http://localhost:9081/batch/req
 ]
 ```
 
+response
+```json
+[
+    {
+        "code": 201,
+        "response": "Stream demobatch is created."
+    },
+    {
+        "code": 200,
+        "response": "{\"Name\":\"demobatch\",\"StreamFields\":null,\"Options\":{\"datasource\":\"/data1\",\"type\":\"websocket\"},\"StreamType\":0,\"Statement\":null}"
+    }
+]
+```
+
+
 - [流](streams.md)
 - [规则](rules.md)
 - [插件](plugins.md)
