@@ -66,9 +66,8 @@ type Topo struct {
 }
 
 type EofCtx struct {
-	eofSetup     bool
-	SinkFinWg    *sync.WaitGroup
 	srcFinNotify chan<- struct{}
+	srcWg        *sync.WaitGroup
 }
 
 func NewWithNameAndOptions(name string, options *def.RuleOption) (*Topo, error) {
@@ -120,6 +119,14 @@ func (s *Topo) Cancel() error {
 		return nil
 	}
 	s.hasOpened.Store(false)
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.EofCtx != nil {
+		conf.Log.Infof("%v topo send src finNotify", s.name)
+		close(s.EofCtx.srcFinNotify)
+		s.EofCtx.srcWg.Wait()
+		s.EofCtx = nil
+	}
 	if s.coordinator.IsActivated() && s.options.EnableSaveStateBeforeStop {
 		notify, err := s.coordinator.ForceSaveState()
 		if err != nil {
@@ -127,16 +134,6 @@ func (s *Topo) Cancel() error {
 			return fmt.Errorf("rule %v duplicated cancel", s.name)
 		}
 		<-notify
-	}
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if s.EofCtx != nil && s.EofCtx.eofSetup {
-		conf.Log.Infof("%v topo send src finNotify", s.name)
-		close(s.EofCtx.srcFinNotify)
-		conf.Log.Infof("%v topo wait src finNotify response", s.name)
-		s.EofCtx.SinkFinWg.Wait()
-		conf.Log.Infof("%v topo finish src finNotify response", s.name)
-		s.EofCtx.eofSetup = false
 	}
 	// completion signal
 	infra.DrainError(s.ctx, nil, s.drain)
@@ -297,7 +294,7 @@ func (s *Topo) Open() <-chan error {
 			return err
 		}
 		topoStore := s.store
-		s.setupEofCtxSrcSink()
+		s.setupEofCtxSrc()
 		// open stream sink, after log sink is ready.
 		for _, snk := range s.sinks {
 			snk.Exec(s.ctx.WithMeta(s.name, snk.GetName(), topoStore), s.drain)
@@ -322,38 +319,20 @@ func (s *Topo) Open() <-chan error {
 	return s.drain
 }
 
-func (s *Topo) setupEofCtxSrcSink() {
-	notifyCh := make(chan struct{})
-	if s.options.EnableWaitConsumeWhenStop {
-		s.EofCtx = &EofCtx{
-			srcFinNotify: notifyCh,
-			SinkFinWg:    &sync.WaitGroup{},
-		}
-	}
-	invalidEofTopo := false
-	for _, snk := range s.sinks {
-		if s.EofCtx != nil {
-			eofsink, ok := snk.(node.EofSinkNode)
-			if ok {
-				eofsink.SetupEofWg(s.EofCtx.SinkFinWg)
-				s.EofCtx.SinkFinWg.Add(1)
-			} else {
-				invalidEofTopo = true
-			}
-		}
+func (s *Topo) setupEofCtxSrc() {
+	notifyCh := make(chan struct{}, 4)
+	s.EofCtx = &EofCtx{
+		srcFinNotify: notifyCh,
+		srcWg:        &sync.WaitGroup{},
 	}
 	for _, source := range s.sources {
 		if s.EofCtx != nil {
 			eofsrc, ok := source.(node.FinNotifySourceNode)
 			if ok {
-				eofsrc.SetupFinNotify(notifyCh)
-			} else {
-				invalidEofTopo = true
+				s.EofCtx.srcWg.Add(1)
+				eofsrc.SetupFinNotify(notifyCh, s.EofCtx.srcWg)
 			}
 		}
-	}
-	if s.EofCtx != nil && !invalidEofTopo {
-		s.EofCtx.eofSetup = true
 	}
 }
 

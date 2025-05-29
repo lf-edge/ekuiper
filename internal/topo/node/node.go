@@ -137,12 +137,6 @@ func (o *defaultNode) doBroadcast(val any) {
 	i := 0
 	var valCopy any
 	for name, out := range o.outputs {
-		// send the eoftuple, shouldn't be discarded
-		fin, ok := val.(xsql.EOFTuple)
-		if ok {
-			out <- fin
-			continue
-		}
 		// Only copy tuples except the last one(copy previous one may change val, so copy the last) when there are many outputs to save one copy time
 		if i != last {
 			switch vt := val.(type) {
