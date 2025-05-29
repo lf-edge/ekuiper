@@ -120,13 +120,13 @@ func (s *Topo) Cancel() error {
 	s.hasOpened.Store(false)
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if s.EofCtx != nil {
-		conf.Log.Infof("%v topo send src finNotify", s.name)
-		close(s.EofCtx.srcFinNotify)
-		s.EofCtx = nil
-		conf.Log.Infof("%v topo finish src finNotify", s.name)
-	}
 	if s.coordinator.IsActivated() && s.options.EnableSaveStateBeforeStop {
+		if s.EofCtx != nil {
+			conf.Log.Infof("%v topo send src finNotify", s.name)
+			close(s.EofCtx.srcFinNotify)
+			s.EofCtx = nil
+			conf.Log.Infof("%v topo finish src finNotify", s.name)
+		}
 		notify, err := s.coordinator.ForceSaveState()
 		if err != nil {
 			conf.Log.Infof("rule %v duplicated cancel", s.name)
@@ -319,15 +319,17 @@ func (s *Topo) Open() <-chan error {
 }
 
 func (s *Topo) setupEofCtxSrc() {
-	notifyCh := make(chan struct{}, 4)
-	s.EofCtx = &EofCtx{
-		srcFinNotify: notifyCh,
-	}
-	for _, source := range s.sources {
-		if s.EofCtx != nil {
-			eofsrc, ok := source.(node.FinNotifySourceNode)
-			if ok {
-				eofsrc.SetupFinNotify(notifyCh)
+	if s.options.EnableSaveStateBeforeStop {
+		notifyCh := make(chan struct{}, 4)
+		s.EofCtx = &EofCtx{
+			srcFinNotify: notifyCh,
+		}
+		for _, source := range s.sources {
+			if s.EofCtx != nil {
+				eofsrc, ok := source.(node.FinNotifySourceNode)
+				if ok {
+					eofsrc.SetupFinNotify(notifyCh)
+				}
 			}
 		}
 	}
