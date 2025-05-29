@@ -60,7 +60,13 @@ type Topo struct {
 	mu          sync.Mutex
 	hasOpened   atomic.Bool
 
+	EofCtx *EofCtx
+
 	opsWg *sync.WaitGroup
+}
+
+type EofCtx struct {
+	srcFinNotify chan<- struct{}
 }
 
 func NewWithNameAndOptions(name string, options *def.RuleOption) (*Topo, error) {
@@ -113,6 +119,12 @@ func (s *Topo) Cancel() error {
 	}
 	s.hasOpened.Store(false)
 	if s.coordinator.IsActivated() && s.options.EnableSaveStateBeforeStop {
+		if s.EofCtx != nil {
+			conf.Log.Infof("%v topo send src finNotify", s.name)
+			close(s.EofCtx.srcFinNotify)
+			s.EofCtx = nil
+			conf.Log.Infof("%v topo finish src finNotify", s.name)
+		}
 		notify, err := s.coordinator.ForceSaveState()
 		if err != nil {
 			conf.Log.Infof("rule %v duplicated cancel", s.name)
@@ -281,6 +293,7 @@ func (s *Topo) Open() <-chan error {
 			return err
 		}
 		topoStore := s.store
+		s.setupEofCtxSrc()
 		// open stream sink, after log sink is ready.
 		for _, snk := range s.sinks {
 			snk.Exec(s.ctx.WithMeta(s.name, snk.GetName(), topoStore), s.drain)
@@ -289,7 +302,6 @@ func (s *Topo) Open() <-chan error {
 		for _, op := range s.ops {
 			op.Exec(s.ctx.WithMeta(s.name, op.GetName(), topoStore), s.drain)
 		}
-
 		for _, source := range s.sources {
 			source.Open(s.ctx.WithMeta(s.name, source.GetName(), topoStore), s.drain)
 		}
@@ -304,6 +316,23 @@ func (s *Topo) Open() <-chan error {
 	}
 	s.ctx.GetLogger().Infof("Rule %s with topo %d is running", s.name, s.runId)
 	return s.drain
+}
+
+func (s *Topo) setupEofCtxSrc() {
+	if s.options.EnableSaveStateBeforeStop {
+		notifyCh := make(chan struct{}, 4)
+		s.EofCtx = &EofCtx{
+			srcFinNotify: notifyCh,
+		}
+		for _, source := range s.sources {
+			if s.EofCtx != nil {
+				eofsrc, ok := source.(node.FinNotifySourceNode)
+				if ok {
+					eofsrc.SetupFinNotify(notifyCh)
+				}
+			}
+		}
+	}
 }
 
 func (s *Topo) HasOpen() bool {
