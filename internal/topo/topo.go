@@ -118,8 +118,6 @@ func (s *Topo) Cancel() error {
 		return nil
 	}
 	s.hasOpened.Store(false)
-	s.mu.Lock()
-	defer s.mu.Unlock()
 	if s.coordinator.IsActivated() && s.options.EnableSaveStateBeforeStop {
 		if s.EofCtx != nil {
 			conf.Log.Infof("%v topo send src finNotify", s.name)
@@ -134,6 +132,8 @@ func (s *Topo) Cancel() error {
 		}
 		<-notify
 	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	// completion signal
 	infra.DrainError(s.ctx, nil, s.drain)
 	if s.cancel != nil {
