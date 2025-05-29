@@ -16,7 +16,6 @@ package node
 
 import (
 	"fmt"
-	"sync"
 	"sync/atomic"
 	"time"
 
@@ -38,7 +37,7 @@ import (
 )
 
 type FinNotifySourceNode interface {
-	SetupFinNotify(<-chan struct{}, *sync.WaitGroup)
+	SetupFinNotify(<-chan struct{})
 }
 
 // SourceNode is a node that connects to an external source
@@ -51,7 +50,6 @@ type SourceNode struct {
 	interval      time.Duration
 	notifySub     bool
 	finNotify     <-chan struct{}
-	finWg         *sync.WaitGroup
 	recvFinNotify atomic.Bool
 }
 
@@ -88,9 +86,8 @@ func NewSourceNode(ctx api.StreamContext, name string, ss api.Source, props map[
 	return m, nil
 }
 
-func (m *SourceNode) SetupFinNotify(finNotify <-chan struct{}, wg *sync.WaitGroup) {
+func (m *SourceNode) SetupFinNotify(finNotify <-chan struct{}) {
 	m.finNotify = finNotify
-	m.finWg = wg
 }
 
 // Open will be invoked by topo. It starts reading data.
@@ -100,7 +97,6 @@ func (m *SourceNode) Open(ctx api.StreamContext, ctrlCh chan<- error) {
 }
 
 func (m *SourceNode) ingestFinNotify(ctx api.StreamContext) {
-	defer m.finWg.Done()
 	m.recvFinNotify.Store(true)
 }
 
