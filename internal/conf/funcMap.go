@@ -16,20 +16,10 @@ package conf
 
 import (
 	"text/template"
-
-	"github.com/lf-edge/ekuiper/v2/pkg/props"
 )
 
 var FuncMap template.FuncMap
 
 func init() {
 	FuncMap = make(template.FuncMap)
-	FuncMap["prop"] = func(k string) string {
-		v, ok := props.SC.Get(k)
-		if !ok {
-			return k
-		} else {
-			return v
-		}
-	}
 }
