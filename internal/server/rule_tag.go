@@ -155,11 +155,19 @@ func rulesTagsHandler(w http.ResponseWriter, r *http.Request) {
 		handleError(w, err, "decode body error", logger)
 		return
 	}
+	kv, err := ruleProcessor.GetAllRulesJson()
+	if err != nil {
+		handleError(w, err, "", logger)
+		return
+	}
 	res := make([]string, 0)
-	rss := registry.list()
-	for _, rs := range rss {
-		if rs.Rule.IsTagsMatch(tagsReq.Tags) {
-			res = append(res, rs.Rule.Id)
+	for ruleID, ruleJson := range kv {
+		rr, err := ruleProcessor.GetRuleByJsonValidated(ruleID, ruleJson)
+		if err != nil {
+			continue
+		}
+		if rr.IsTagsMatch(tagsReq.Tags) {
+			res = append(res, ruleID)
 		}
 	}
 	resp := &RuleTagResponse{Rules: res}
