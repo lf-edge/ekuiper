@@ -185,12 +185,12 @@ func (c *Coordinator) Activate() error {
 					if c.inForceSaveState.Load() {
 						continue
 					}
-					c.saveState(n, logger)
+					c.saveState(n, logger, false)
 				case s := <-c.signal:
 					switch s.Message {
 					case ForceSaveState:
 						c.inForceSaveState.Store(true)
-						c.saveState(time.Now(), logger)
+						c.saveState(time.Now(), logger, true)
 					case STOP:
 						logger.Debug("Stop checkpoint scheduler")
 						if c.ticker != nil {
@@ -233,7 +233,7 @@ func (c *Coordinator) Activate() error {
 	return nil
 }
 
-func (c *Coordinator) saveState(n time.Time, logger api.Logger) {
+func (c *Coordinator) saveState(n time.Time, logger api.Logger, isEof bool) {
 	// trigger checkpoint
 	// TODO pose max attempt and min pause check for consequent pendingCheckpoints
 
@@ -247,7 +247,7 @@ func (c *Coordinator) saveState(n time.Time, logger api.Logger) {
 	// Let the sources send out a barrier
 	for _, r := range c.tasksToTrigger {
 		go func(t Responder) {
-			if err := t.TriggerCheckpoint(checkpointId); err != nil {
+			if err := t.TriggerCheckpoint(checkpointId, isEof); err != nil {
 				logger.Infof("Fail to trigger checkpoint for source %s with error %v, cancel it", t.GetName(), err)
 				c.cancel(checkpointId)
 			}

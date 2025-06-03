@@ -77,6 +77,10 @@ func NewSourceNode(ctx api.StreamContext, name string, ss api.Source, props map[
 	return m, nil
 }
 
+func (m *SourceNode) NotifySourceClose(ctx api.StreamContext) {
+	m.s.Close(ctx)
+}
+
 // Open will be invoked by topo. It starts reading data.
 func (m *SourceNode) Open(ctx api.StreamContext, ctrlCh chan<- error) {
 	m.prepareExec(ctx, ctrlCh, "source")
