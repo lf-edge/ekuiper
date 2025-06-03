@@ -27,12 +27,23 @@ import (
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/props"
 )
 
 func RegisterAdditionalFuncs() {
 	conf.FuncMap = sprig.FuncMap()
 	conf.FuncMap["json"] = conf.FuncMap["toJson"]
 	conf.FuncMap["base64"] = Base64Encode
+	conf.FuncMap["prop"] = Prop
+}
+
+func Prop(k string) string {
+	v, ok := props.SC.Get(k)
+	if !ok {
+		return k
+	} else {
+		return v
+	}
 }
 
 func Base64Encode(para interface{}) (string, error) {
