@@ -181,6 +181,8 @@ func findTemplateProps(props map[string]any) []string {
 
 // Split sink node according to the sink configuration. Return the new input emitters.
 func splitSink(tp *topo.Topo, s api.Sink, sinkName string, options *def.RuleOption, sc *node.SinkConf, templates []string, schema map[string]*ast.JsonStreamField) ([]node.TopNode, error) {
+	// tailor schema, each sink may have different transform field
+	schema = washSchema(sc, schema)
 	index := 0
 	result := make([]node.TopNode, 0)
 	var sinkInfo model.SinkInfo
@@ -256,6 +258,32 @@ func splitSink(tp *topo.Topo, s api.Sink, sinkName string, options *def.RuleOpti
 		result = append(result, cacheOp)
 	}
 	return result, nil
+}
+
+func washSchema(sc *node.SinkConf, schema map[string]*ast.JsonStreamField) map[string]*ast.JsonStreamField {
+	if sc.DataField != "" || len(sc.Fields) > 0 || len(sc.ExcludeFields) > 0 {
+		washedSchema := make(map[string]*ast.JsonStreamField)
+		if len(sc.Fields) > 0 {
+			for _, field := range sc.Fields {
+				washedSchema[field] = schema[field]
+			}
+		} else if sc.DataField == "" && len(sc.ExcludeFields) > 0 {
+			excludedMap := make(map[string]struct{}, len(sc.ExcludeFields))
+			for _, field := range sc.ExcludeFields {
+				excludedMap[field] = struct{}{}
+			}
+			for k, v := range schema {
+				if _, ok := excludedMap[k]; ok {
+					continue
+				}
+				washedSchema[k] = v
+			}
+		} else { // set DataField, we don't know the final schema then
+			washedSchema = nil
+		}
+		schema = washedSchema
+	}
+	return schema
 }
 
 type SinkCompNode struct {

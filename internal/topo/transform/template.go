@@ -28,8 +28,8 @@ func GenTp(dt string) (*template.Template, error) {
 }
 
 // TransItem If you do not need to convert data to []byte, you can use this function directly. Otherwise, use TransFunc.
-func TransItem(input interface{}, dataField string, fields []string) (interface{}, bool, error) {
-	if dataField == "" && len(fields) == 0 {
+func TransItem(input interface{}, dataField string, fields []string, excludeFields []string) (any, bool, error) {
+	if dataField == "" && len(fields) == 0 && len(excludeFields) == 0 {
 		return input, false, nil
 	}
 	if _, ok := input.([]byte); ok {
@@ -70,7 +70,7 @@ func TransItem(input interface{}, dataField string, fields []string) (interface{
 		}
 		input = ma
 	}
-	m, err := selectMap(input, fields)
+	m, err := selectMap(input, fields, excludeFields)
 	if err != nil && err.Error() != "fields cannot be empty" {
 		return nil, false, fmt.Errorf("fail to decode data %v for error %v", input, err)
 	} else {
@@ -79,29 +79,48 @@ func TransItem(input interface{}, dataField string, fields []string) (interface{
 }
 
 // selectMap select fields from input map or array of map.
-func selectMap(input interface{}, fields []string) (interface{}, error) {
-	if len(fields) == 0 {
-		return input, fmt.Errorf("fields cannot be empty")
-	}
-
-	outputs := make([]map[string]interface{}, 0)
-	switch input.(type) {
-	case map[string]interface{}:
-		output := make(map[string]interface{})
-		for _, field := range fields {
-			output[field] = input.(map[string]interface{})[field]
-		}
-		return output, nil
-	case []map[string]interface{}:
-		for _, v := range input.([]map[string]interface{}) {
-			output := make(map[string]interface{})
+func selectMap(input any, fields []string, excludeFields []string) (any, error) {
+	// can only have fields or excludeFields
+	if len(fields) > 0 {
+		switch it := input.(type) {
+		case map[string]interface{}:
+			output := make(map[string]any, len(fields))
 			for _, field := range fields {
-				output[field] = v[field]
+				output[field] = it[field]
 			}
-			outputs = append(outputs, output)
+			return output, nil
+		case []map[string]any:
+			outputs := make([]map[string]any, 0, len(fields))
+			for _, v := range it {
+				output := make(map[string]any, len(fields))
+				for _, field := range fields {
+					output[field] = v[field]
+				}
+				outputs = append(outputs, output)
+			}
+			return outputs, nil
+		default:
+			return input, fmt.Errorf("unsupported type %v", input)
 		}
-		return outputs, nil
-	default:
-		return input, fmt.Errorf("unsupported type %v", input)
+	} else if len(excludeFields) > 0 {
+		switch it := input.(type) {
+		case map[string]interface{}:
+			for _, field := range excludeFields {
+				delete(it, field)
+			}
+			return it, nil
+		case []map[string]any:
+			outputs := make([]map[string]any, 0, len(fields))
+			for _, v := range it {
+				for _, field := range excludeFields {
+					delete(v, field)
+				}
+				outputs = append(outputs, v)
+			}
+			return outputs, nil
+		default:
+			return input, fmt.Errorf("unsupported type %v", input)
+		}
 	}
+	return input, nil
 }

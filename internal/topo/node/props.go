@@ -34,6 +34,7 @@ type SinkConf struct {
 	Delimiter        string            `json:"delimiter"`
 	BufferLength     int               `json:"bufferLength"`
 	Fields           []string          `json:"fields"`
+	ExcludeFields    []string          `json:"excludeFields"`
 	DataField        string            `json:"dataField"`
 	BatchSize        int               `json:"batchSize"`
 	LingerInterval   cast.DurationConf `json:"lingerInterval"`

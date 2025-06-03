@@ -19,11 +19,14 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/binder/io"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/topo"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node"
+	"github.com/lf-edge/ekuiper/v2/internal/xsql"
+	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 )
 
 func TestSinkPlan(t *testing.T) {
@@ -396,6 +399,78 @@ func TestFindTemplates(t *testing.T) {
 			r := findTemplateProps(tt.props)
 			sort.Strings(r)
 			assert.Equal(t, tt.result, r)
+		})
+	}
+}
+
+func TestSinkSchema(t *testing.T) {
+	tc := []struct {
+		name string
+		sql  string
+		sc   *node.SinkConf
+		exp  map[string]*ast.JsonStreamField
+	}{
+		{
+			name: "normal",
+			sql:  "select a, b from demo",
+			sc:   &node.SinkConf{SendSingle: true},
+			exp: map[string]*ast.JsonStreamField{
+				"a": nil,
+				"b": nil,
+			},
+		},
+		{
+			name: "fields",
+			sql:  "select a, b, c, d from demo where a=b",
+			sc: &node.SinkConf{
+				Fields: []string{"d", "b"},
+			},
+			exp: map[string]*ast.JsonStreamField{
+				"b": nil,
+				"d": nil,
+			},
+		},
+		{
+			name: "exclude fields",
+			sql:  "select a, b, c, d from demo where a=b",
+			sc: &node.SinkConf{
+				ExcludeFields: []string{"d", "b"},
+			},
+			exp: map[string]*ast.JsonStreamField{
+				"a": nil,
+				"c": nil,
+			},
+		},
+		{
+			name: "both fields & exclude fields",
+			sql:  "select a, b, c, d from demo where a=b",
+			sc: &node.SinkConf{
+				Fields:        []string{"a", "b", "c"},
+				ExcludeFields: []string{"d", "b"},
+			},
+			exp: map[string]*ast.JsonStreamField{
+				"a": nil,
+				"b": nil,
+				"c": nil,
+			},
+		},
+		{
+			name: "data field and other",
+			sql:  "select a, b, c, d from demo where a=b",
+			sc: &node.SinkConf{
+				DataField:     "a",
+				ExcludeFields: []string{"d", "b"},
+			},
+			exp: nil,
+		},
+	}
+	for _, tt := range tc {
+		t.Run(tt.name, func(t *testing.T) {
+			stmt, err := xsql.GetStatementFromSql(tt.sql)
+			require.NoError(t, err)
+			ss := getSinkSchema(stmt)
+			ss = washSchema(tt.sc, ss)
+			require.Equal(t, tt.exp, ss)
 		})
 	}
 }
