@@ -64,6 +64,9 @@ func (w *WebsocketSource) Connect(ctx api.StreamContext, sc api.StatusChangeHand
 		return err
 	}
 	conn, err := cw.Wait(ctx)
+	if err != nil {
+		return err
+	}
 	if conn == nil {
 		return fmt.Errorf("websocket endpoint not ready: %v", err)
 	}
