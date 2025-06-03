@@ -1,4 +1,4 @@
-// Copyright 2022-2024 EMQ Technologies Co., Ltd.
+// Copyright 2022-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import (
 	"crypto/sha256"
 	"crypto/sha512"
 	b64 "encoding/base64"
+	"encoding/gob"
 	"encoding/json"
 	"fmt"
 	"hash/crc32"
@@ -43,6 +44,7 @@ import (
 )
 
 func registerMiscFunc() {
+	gob.Register(&ringqueue{})
 	builtins["bypass"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
@@ -692,19 +694,19 @@ func jsonCall(ctx api.StreamContext, args []interface{}) (interface{}, error) {
 // page Rotate storage for in memory cache
 // Not thread safe!
 type ringqueue struct {
-	data []interface{}
-	h    int
-	t    int
-	l    int
-	size int
+	Data []any
+	H    int
+	T    int
+	L    int
+	Size int
 }
 
 func newRingqueue(size int) *ringqueue {
 	return &ringqueue{
-		data: make([]interface{}, size),
-		h:    0, // When deleting, head++, if tail == head, it is empty
-		t:    0, // When append, tail++, if tail== head, it is full
-		size: size,
+		Data: make([]interface{}, size),
+		H:    0, // When deleting, head++, if tail == head, it is empty
+		T:    0, // When append, tail++, if tail== head, it is full
+		Size: size,
 	}
 }
 
@@ -719,41 +721,41 @@ func (p *ringqueue) fill(item interface{}) {
 
 // append item if list is not full and return true; otherwise return false
 func (p *ringqueue) append(item interface{}) bool {
-	if p.l == p.size { // full
+	if p.L == p.Size { // full
 		return false
 	}
-	p.data[p.t] = item
-	p.t++
-	if p.t == p.size {
-		p.t = 0
+	p.Data[p.T] = item
+	p.T++
+	if p.T == p.Size {
+		p.T = 0
 	}
-	p.l++
+	p.L++
 	return true
 }
 
 // fetch get the first item in the cache and remove
 func (p *ringqueue) fetch() (interface{}, bool) {
-	if p.l == 0 {
+	if p.L == 0 {
 		return nil, false
 	}
-	result := p.data[p.h]
-	p.h++
-	if p.h == p.size {
-		p.h = 0
+	result := p.Data[p.H]
+	p.H++
+	if p.H == p.Size {
+		p.H = 0
 	}
-	p.l--
+	p.L--
 	return result, true
 }
 
 // peek get the first item in the cache but keep it
 func (p *ringqueue) peek() (interface{}, bool) {
-	if p.l == 0 {
+	if p.L == 0 {
 		return nil, false
 	}
-	result := p.data[p.h]
+	result := p.Data[p.H]
 	return result, true
 }
 
 func (p *ringqueue) isFull() bool {
-	return p.l == p.size
+	return p.L == p.Size
 }
