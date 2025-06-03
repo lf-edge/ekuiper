@@ -18,7 +18,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"strings"
 	"sync"
 
 	"github.com/gorilla/websocket"
@@ -92,9 +91,8 @@ func sendProcess(ctx api.StreamContext, topic, sourceID string, c *websocket.Con
 		case d := <-ch:
 			data := d.([]byte)
 			if err := c.WriteMessage(websocket.TextMessage, data); err != nil {
-				if websocket.IsCloseError(err) || strings.Contains(err.Error(), "close") {
-					return
-				}
+				conf.Log.Errorf("write websocket msg err:%v, topic:%v", err, topic)
+				return
 			}
 		}
 	}
@@ -114,10 +112,8 @@ func recvProcess(ctx api.StreamContext, topic string, c *websocket.Conn, cancel 
 		}
 		msgType, data, err := c.ReadMessage()
 		if err != nil {
-			if websocket.IsCloseError(err) || strings.Contains(err.Error(), "close") {
-				return
-			}
-			continue
+			conf.Log.Errorf("read websocket msg err:%v, topic:%v", err, topic)
+			return
 		}
 		switch msgType {
 		case websocket.TextMessage:
