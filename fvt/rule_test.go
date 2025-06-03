@@ -29,6 +29,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/lf-edge/ekuiper/v2/internal/io/memory/pubsub"
+	"github.com/lf-edge/ekuiper/v2/internal/server"
 )
 
 type RuleTestSuite struct {
@@ -223,4 +224,23 @@ func (s *RuleTestSuite) TestUpsert() {
 		expected := map[string]string{"sim/new1": "{\"b\":2}", "sim/new2": "{\"a\":1}", "sim/old1": "{\"a\":1}", "sim/old2": "{\"b\":2}"}
 		s.Require().Equal(expected, result)
 	})
+}
+
+func (s *RuleTestSuite) TestBatchRequest() {
+	client.DeleteStream("demobatch")
+	reqs := make([]*server.EachRequest, 0)
+	reqs = append(reqs, &server.EachRequest{
+		Method: "POST",
+		Path:   "/streams",
+		Body:   "{\"sql\":\"CREATE stream demobatch() WITH (DATASOURCE=\\\"/data1\\\", TYPE=\\\"websocket\\\")\"}",
+	})
+	reqs = append(reqs, &server.EachRequest{
+		Method: "GET",
+		Path:   "/streams/demobatch",
+	})
+	resps, err := client.BatchRequest(reqs)
+	s.Require().NoError(err)
+	s.Require().Len(resps, len(reqs))
+	s.Require().Equal(http.StatusCreated, resps[0].Code)
+	s.Require().Equal(http.StatusOK, resps[1].Code)
 }
