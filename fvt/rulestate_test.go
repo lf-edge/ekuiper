@@ -271,7 +271,7 @@ func (s *RuleStateTestSuite) TestCreateStoppedRule() {
 func (s *RuleStateTestSuite) TestRuleTags() {
 	s.Run("clean up", func() {
 		client.DeleteStream("simStream1")
-		client.DeleteRule("ruleLabels")
+		client.DeleteRule("ruleTags")
 	})
 	s.Run("create rule and attach labels", func() {
 		conf := map[string]any{
@@ -315,7 +315,7 @@ func (s *RuleStateTestSuite) TestRuleTags() {
 		s.Require().Equal(http.StatusOK, resp.StatusCode)
 		s.Require().Equal([]string{"ruleTags"}, lists)
 
-		resp, err = client.RemoveRuleTags("ruleTags", []string{"k1"})
+		resp, err = client.RemoveRuleTags("ruleTags", []string{"t1"})
 		s.Require().NoError(err)
 		s.T().Log(GetResponseText(resp))
 		s.Require().Equal(http.StatusOK, resp.StatusCode)
@@ -327,6 +327,6 @@ func (s *RuleStateTestSuite) TestRuleTags() {
 	})
 	s.Run("clean up", func() {
 		client.DeleteStream("simStream1")
-		client.DeleteRule("ruleLabels")
+		client.DeleteRule("ruleTags")
 	})
 }

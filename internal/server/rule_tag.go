@@ -36,17 +36,21 @@ func updateRuleTags(ruleJson string, tags []string, addOrRemove bool) (string, [
 	}
 	ruleTags, ok := m["tags"]
 	if !ok {
-		m["tags"] = []string{}
-		ruleTags = make([]string, 0)
+		m["tags"] = [][]interface{}{}
+		ruleTags = make([]interface{}, 0)
 	}
-	eTags, ok := ruleTags.([]string)
+	tmpTags, ok := ruleTags.([]interface{})
 	var newTags []string
 	if ok {
+		etags := make([]string, 0)
+		for _, tag := range tmpTags {
+			etags = append(etags, tag.(string))
+		}
 		if addOrRemove {
-			newTags = addNewTagsIntoExistTags(tags, eTags)
+			newTags = addNewTagsIntoExistTags(tags, etags)
 			m["tags"] = newTags
 		} else {
-			newTags = removeTagsFromExistTags(tags, eTags)
+			newTags = removeTagsFromExistTags(tags, etags)
 			m["tags"] = newTags
 		}
 	}
@@ -91,12 +95,12 @@ func ruleTagHandler(w http.ResponseWriter, r *http.Request) {
 	ruleID := vars["name"]
 	defer r.Body.Close()
 	tagsReq := &RuleTagRequest{Tags: []string{}}
+	if err := json.NewDecoder(r.Body).Decode(&tagsReq); err != nil {
+		handleError(w, err, "decode body error", logger)
+		return
+	}
 	switch r.Method {
 	case http.MethodPut:
-		if err := json.NewDecoder(r.Body).Decode(&tagsReq); err != nil {
-			handleError(w, err, "decode body error", logger)
-			return
-		}
 		ruleJson, err := ruleProcessor.GetRuleJson(ruleID)
 		if err != nil {
 			handleError(w, err, "Get rule error", logger)
