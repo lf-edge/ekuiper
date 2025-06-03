@@ -191,45 +191,29 @@ func (sdk *SDK) CreateConf(confpath string, conf map[string]any) (resp *http.Res
 	return sdk.httpClient.Do(req)
 }
 
-func (sdk *SDK) AddRuleTags(name string, tags []string) (resp *http.Response, err error) {
-	v, _ := json.Marshal(&server.RuleTagRequest{Tags: tags})
-	url := sdk.baseUrl.JoinPath("rules", name, "tags").String()
-	req, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer(v))
+func (sdk *SDK) BatchRequest(reqs []*server.EachRequest) ([]*server.EachResponse, error) {
+	b, err := json.Marshal(reqs)
 	if err != nil {
 		fmt.Println(err)
-		return
+		return nil, err
 	}
-	return sdk.httpClient.Do(req)
-}
-
-func (sdk *SDK) RemoveRuleTags(name string, keys []string) (resp *http.Response, err error) {
-	v, _ := json.Marshal(&server.RuleTagRequest{Tags: keys})
-	req, err := http.NewRequest(http.MethodDelete, sdk.baseUrl.JoinPath("rules", name, "tags").String(), bytes.NewBuffer(v))
+	req, err := http.NewRequest(http.MethodPost, sdk.baseUrl.JoinPath("/batch/req").String(), bytes.NewBuffer(b))
 	if err != nil {
 		fmt.Println(err)
-		return
-	}
-	return sdk.httpClient.Do(req)
-}
-
-func (sdk *SDK) GetRulesByTags(tags []string) (list []string, err error) {
-	v, _ := json.Marshal(&server.RuleTagRequest{Tags: tags})
-	req, err := http.NewRequest(http.MethodGet, sdk.baseUrl.JoinPath("rules", "tags", "match").String(), bytes.NewBuffer(v))
-	if err != nil {
-		fmt.Println(err)
-		return
+		return nil, err
 	}
 	resp, err := sdk.httpClient.Do(req)
 	if err != nil {
 		fmt.Println(err)
-		return
+		return nil, err
 	}
-	rsp := server.RuleTagResponse{Rules: make([]string, 0)}
-	if err := json.NewDecoder(resp.Body).Decode(&rsp); err != nil {
+	resps := make([]*server.EachResponse, 0)
+	err = json.NewDecoder(resp.Body).Decode(&resps)
+	if err != nil {
 		fmt.Println(err)
 		return nil, err
 	}
-	return rsp.Rules, nil
+	return resps, nil
 }
 
 func TryAssert(count int, interval time.Duration, tryFunc func() bool) bool {
