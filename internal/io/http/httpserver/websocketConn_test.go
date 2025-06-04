@@ -54,8 +54,8 @@ func TestWebsocketClientConn(t *testing.T) {
 	}()
 	ctx := mockContext.NewMockContext("1", "2")
 	props := map[string]any{
-		"datasource": "/ws",
-		"addr":       s.URL[len("http://"):],
+		"path": "/ws",
+		"addr": s.URL[len("http://"):],
 	}
 	conn := CreateWebsocketConnection(ctx).(*WebsocketConnection)
 	err := conn.Provision(ctx, "test", props)
