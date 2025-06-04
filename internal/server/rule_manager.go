@@ -49,16 +49,6 @@ type RuleRegistry struct {
 
 //// registry and db level state change functions
 
-func (rr *RuleRegistry) list() []*rule.State {
-	lists := make([]*rule.State, 0)
-	rr.RLock()
-	for _, rs := range rr.internal {
-		lists = append(lists, rs)
-	}
-	rr.RUnlock()
-	return lists
-}
-
 func (rr *RuleRegistry) update(key string, ruleJson string, value *rule.State) error {
 	rr.Lock()
 	defer rr.Unlock()
