@@ -152,9 +152,10 @@ func (o *BatchWriterOp) ingest(ctx api.StreamContext, item any) (any, bool) {
 			o.Broadcast(d)
 		}
 		return nil, true
-	case *xsql.WatermarkTuple, xsql.EOFTuple:
+	case *xsql.WatermarkTuple, xsql.EOFTuple, xsql.StopTuple, xsql.StopPrepareTuple:
 		o.Broadcast(d)
 		return nil, true
 	}
+	// deal with xsql.BatchEOFTuple
 	return item, false
 }

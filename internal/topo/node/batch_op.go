@@ -93,8 +93,21 @@ func (b *BatchOp) ingest(ctx api.StreamContext, item any, checkSize bool) {
 		return
 	}
 	// If receive EOF, sendBatchEnd out the result immediately. Only work with single stream
-	if _, ok := data.(xsql.EOFTuple); ok {
+	switch dt := data.(type) {
+	case xsql.EOFTuple:
 		b.sendBatchEnd(ctx)
+		b.Broadcast(data)
+		return
+	case xsql.StopTuple:
+		// Check rule id to avoid Eof form other rules for the same shared stream
+		if ctx.GetRuleId() == dt.RuleId {
+			// Inform sink that this is sig term
+			if dt.Sig == xsql.SigTerm {
+				b.Broadcast(xsql.StopPrepareTuple{})
+			}
+			ctx.GetLogger().Infof("send out batch for stopping rule")
+			b.sendBatchEnd(ctx)
+		}
 		b.Broadcast(data)
 		return
 	}

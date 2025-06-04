@@ -255,7 +255,7 @@ func (c *Coordinator) saveState(n time.Time, logger api.Logger) {
 	}
 	c.toBeClean++
 	if c.toBeClean >= c.cleanThreshold {
-		c.store.Clean()
+		_ = c.store.Clean()
 		c.toBeClean = 0
 	}
 }
@@ -268,9 +268,13 @@ func (c *Coordinator) Deactivate() error {
 	return nil
 }
 
-func (c *Coordinator) ForceSaveState() (chan any, error) {
+func (c *Coordinator) ForceSaveState(eofT any) (chan any, error) {
 	if c.inForceSaveState.Load() {
 		return nil, fmt.Errorf("duplicated force save state")
+	}
+	// Send out EoF
+	for _, r := range c.tasksToTrigger {
+		r.Broadcast(eofT)
 	}
 	c.signal <- &Signal{Message: ForceSaveState}
 	return c.forceSaveStateNotify, nil

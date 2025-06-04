@@ -45,7 +45,7 @@ func (ho *HoppingWindowIncAggEventOp) PutState(ctx api.StreamContext) {
 		window.GenerateAllFunctionState()
 		ho.CurrWindowList[index] = window
 	}
-	ctx.PutState(buildStateKey(ctx), ho.HoppingWindowIncAggEventOpState)
+	_ = ctx.PutState(buildStateKey(ctx), ho.HoppingWindowIncAggEventOpState)
 }
 
 func (ho *HoppingWindowIncAggEventOp) RestoreFromState(ctx api.StreamContext) error {
@@ -162,7 +162,7 @@ func (so *SlidingWindowIncAggEventOp) PutState(ctx api.StreamContext) {
 		window.GenerateAllFunctionState()
 		so.EmitList[index] = window
 	}
-	ctx.PutState(buildStateKey(ctx), so.SlidingWindowIncAggEventOpState)
+	_ = ctx.PutState(buildStateKey(ctx), so.SlidingWindowIncAggEventOpState)
 }
 
 func (so *SlidingWindowIncAggEventOp) RestoreFromState(ctx api.StreamContext) error {
@@ -251,7 +251,7 @@ func (so *SlidingWindowIncAggEventOp) emitList(ctx api.StreamContext, errCh chan
 	}
 }
 
-func (so *SlidingWindowIncAggEventOp) appendIncAggWindowInEvent(ctx api.StreamContext, errCh chan<- error, fv *xsql.FunctionValuer, row *xsql.Tuple) {
+func (so *SlidingWindowIncAggEventOp) appendIncAggWindowInEvent(ctx api.StreamContext, _ chan<- error, fv *xsql.FunctionValuer, row *xsql.Tuple) {
 	now := row.GetTimestamp()
 	name := calDimension(fv, so.op.Dimensions, row)
 	if so.op.isMatchCondition(ctx, fv, row) {
@@ -270,7 +270,7 @@ func (so *SlidingWindowIncAggEventOp) appendIncAggWindowInEvent(ctx api.StreamCo
 	return
 }
 
-func (so *SlidingWindowIncAggEventOp) appendDelayIncAggWindowInEvent(ctx api.StreamContext, errCh chan<- error, fv *xsql.FunctionValuer, row *xsql.Tuple) {
+func (so *SlidingWindowIncAggEventOp) appendDelayIncAggWindowInEvent(ctx api.StreamContext, _ chan<- error, fv *xsql.FunctionValuer, row *xsql.Tuple) {
 	now := row.GetTimestamp()
 	name := calDimension(fv, so.op.Dimensions, row)
 	so.CurrWindowList = append(so.CurrWindowList, newIncAggWindow(ctx, row.GetTimestamp()))
@@ -318,7 +318,7 @@ func (o *WindowIncAggOperator) ingest(ctx api.StreamContext, item any) (any, boo
 			o.Broadcast(d)
 		}
 		return nil, true
-	case xsql.EOFTuple:
+	case xsql.EOFTuple, xsql.BatchEOFTuple, xsql.StopPrepareTuple, xsql.StopTuple:
 		o.Broadcast(d)
 		return nil, true
 	}
@@ -401,7 +401,7 @@ func (co *CountWindowIncAggEventOp) exec(ctx api.StreamContext, errCh chan<- err
 	}
 }
 
-func (co *CountWindowIncAggEventOp) emitWindow(ctx api.StreamContext, errCh chan<- error, window *IncAggWindow, now time.Time) {
+func (co *CountWindowIncAggEventOp) emitWindow(ctx api.StreamContext, _ chan<- error, window *IncAggWindow, now time.Time) {
 	results := &xsql.WindowTuples{
 		Content: make([]xsql.Row, 0),
 	}
@@ -418,7 +418,7 @@ func (co *CountWindowIncAggEventOp) emitWindow(ctx api.StreamContext, errCh chan
 
 func (co *CountWindowIncAggEventOp) PutState(ctx api.StreamContext) {
 	co.CurrWindow.GenerateAllFunctionState()
-	ctx.PutState(buildStateKey(ctx), co.CountWindowIncAggEventOpState)
+	_ = ctx.PutState(buildStateKey(ctx), co.CountWindowIncAggEventOpState)
 }
 
 func (co *CountWindowIncAggEventOp) RestoreFromState(ctx api.StreamContext) error {

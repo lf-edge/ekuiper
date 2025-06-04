@@ -285,7 +285,7 @@ func (o *defaultSinkNode) commonIngest(ctx api.StreamContext, item any) (any, bo
 			o.Broadcast(d)
 		}
 		return nil, true
-	case *xsql.WatermarkTuple, xsql.EOFTuple, xsql.BatchEOFTuple:
+	case *xsql.WatermarkTuple, xsql.StopTuple, xsql.StopPrepareTuple, xsql.EOFTuple, xsql.BatchEOFTuple:
 		o.Broadcast(d)
 		return nil, true
 	}
@@ -317,7 +317,7 @@ func (o *defaultNode) onProcessStart(ctx api.StreamContext, val any) {
 }
 
 // onProcessEnd do the common works(metric, trace) after processing a message from upstream
-func (o *defaultNode) onProcessEnd(ctx api.StreamContext) {
+func (o *defaultNode) onProcessEnd(_ api.StreamContext) {
 	o.statManager.ProcessTimeEnd()
 	o.statManager.IncTotalMessagesProcessed(1)
 	if o.span != nil {
@@ -327,7 +327,7 @@ func (o *defaultNode) onProcessEnd(ctx api.StreamContext) {
 }
 
 // onSend do the common works(metric, trace) after sending a message to downstream
-func (o *defaultNode) onSend(ctx api.StreamContext, val any) {
+func (o *defaultNode) onSend(_ api.StreamContext, _ any) {
 	o.statManager.IncTotalRecordsOut()
 }
 

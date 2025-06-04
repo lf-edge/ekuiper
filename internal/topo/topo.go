@@ -36,6 +36,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node/metric"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/state"
+	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
@@ -111,18 +112,34 @@ func (s *Topo) GetName() string {
 
 // Cancel may be called multiple times so must be idempotent
 func (s *Topo) Cancel() error {
+	return s.CancelWithSig(0)
+}
+
+func (s *Topo) CancelWithSig(sig int) error {
 	if s == nil {
 		return nil
 	}
 	s.hasOpened.Store(false)
 	if s.coordinator.IsActivated() && s.options.EnableSaveStateBeforeStop {
-		notify, err := s.coordinator.ForceSaveState()
+		notify, err := s.coordinator.ForceSaveState(xsql.StopTuple{
+			RuleId: s.ctx.GetRuleId(),
+			Sig:    sig,
+		})
 		if err != nil {
-			s.ctx.GetLogger().Infof("rule %v duplicated cancel", s.name)
-			return fmt.Errorf("rule %v duplicated cancel", s.name)
+			s.ctx.GetLogger().Infof("rule %s duplicated cancel", s.name)
+			return fmt.Errorf("rule %s duplicated cancel", s.name)
 		}
-		s.ctx.GetLogger().Infof("rule %v is saving last state", s.name)
-		<-notify
+		s.ctx.GetLogger().Infof("rule %s is saving last state", s.name)
+		timeout := 3 * time.Second
+		if s.options.ForceExitTimeout > 0 {
+			timeout = time.Duration(s.options.ForceExitTimeout)
+		}
+		select {
+		case <-notify:
+			s.ctx.GetLogger().Infof("rule %s has saved last state", s.name)
+		case <-time.After(timeout):
+			s.ctx.GetLogger().Infof("rule %s save state timed out, force exit", s.name)
+		}
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()

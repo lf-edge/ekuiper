@@ -15,6 +15,7 @@
 package node
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -189,9 +190,11 @@ func (m *mockResendSink) Connect(ctx api.StreamContext, _ api.StatusChangeHandle
 
 func (m *mockResendSink) Collect(ctx api.StreamContext, item api.RawTuple) error {
 	if m.failTimes > 0 {
+		fmt.Printf("%v sent data fail: %v\n", time.Now(), item)
 		m.failTimes--
 		return errorx.NewIOErr("fake error")
 	}
+	fmt.Printf("%v sent data: %v\n", time.Now(), item)
 	m.val = item
 	return nil
 }

@@ -453,11 +453,10 @@ func (rr *RuleRegistry) stopAtExit(name string, msg string) error {
 	if !ok {
 		return errorx.NewWithCode(errorx.NOT_FOUND, fmt.Sprintf("Rule %s is not found in registry, please check if it is deleted", name))
 	} else {
-		if len(msg) > 0 {
-			rs.StopWithLastWill(msg)
-		} else {
-			rs.Stop()
+		if len(msg) == 0 {
+			msg = "canceled manually"
 		}
+		rs.StopWithLastWillAndSig(msg, xsql.SigTerm)
 		return nil
 	}
 }

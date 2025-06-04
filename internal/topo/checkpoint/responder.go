@@ -23,6 +23,7 @@ import (
 type Responder interface {
 	TriggerCheckpoint(checkpointId int64) error
 	GetName() string
+	Broadcast(sig any)
 }
 
 type ResponderExecutor struct {
@@ -41,6 +42,12 @@ func (re *ResponderExecutor) GetName() string {
 	return re.task.GetName()
 }
 
+func (re *ResponderExecutor) Broadcast(sig any) {
+	if nonSink, ok := re.task.(NonSinkTask); ok {
+		nonSink.Broadcast(sig)
+	}
+}
+
 func (re *ResponderExecutor) TriggerCheckpoint(checkpointId int64) error {
 	ctx := re.task.GetStreamContext()
 	logger := ctx.GetLogger()
@@ -56,9 +63,7 @@ func (re *ResponderExecutor) TriggerCheckpoint(checkpointId int64) error {
 		OpId:         name,
 	}
 	// broadcast barrier
-	if nonSink, ok := re.task.(NonSinkTask); ok {
-		nonSink.Broadcast(barrier)
-	}
+	re.Broadcast(barrier)
 	// Save key state to the global state
 	err := sctx.Snapshot()
 	if err != nil {
@@ -66,7 +71,7 @@ func (re *ResponderExecutor) TriggerCheckpoint(checkpointId int64) error {
 	}
 	go infra.SafeRun(func() error {
 		state := ACK
-		err := sctx.SaveState(checkpointId)
+		err = sctx.SaveState(checkpointId)
 		if err != nil {
 			logger.Infof("save checkpoint error %s", err)
 			state = DEC

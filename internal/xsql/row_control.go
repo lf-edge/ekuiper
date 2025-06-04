@@ -31,4 +31,12 @@ func (t *WatermarkTuple) IsWatermark() bool {
 type (
 	EOFTuple      int
 	BatchEOFTuple time.Time
+	// StopTuple indicates rule stop. The content is the rule id. Sends out when Qos is set and rule stops
+	StopTuple struct {
+		RuleId string
+		Sig    int
+	}
+	StopPrepareTuple struct{}
 )
+
+const SigTerm = 1

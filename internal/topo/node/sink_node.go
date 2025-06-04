@@ -15,13 +15,17 @@
 package node
 
 import (
+	"encoding/gob"
 	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	kctx "github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
@@ -39,6 +43,7 @@ type SinkNode struct {
 	sink           api.Sink
 	eoflimit       int
 	currentEof     int
+	saveCache      bool
 	resendInterval time.Duration
 	doCollect      func(ctx api.StreamContext, sink api.Sink, data any) error
 	// channel for resend
@@ -48,7 +53,7 @@ type SinkNode struct {
 // Caching:
 // 1. Set cache settings to enable diskCache
 // 2. Set resendInterval and bufferLength will use bufferLength as the memory cache
-// 3. By default, drop if it cannot sends out.
+// 3. By default, drop if it cannot send out.
 func newSinkNode(ctx api.StreamContext, name string, rOpt def.RuleOption, eoflimit int, sc *SinkConf, isRetry bool) *SinkNode {
 	// set collect retry according to cache setting
 	retry := time.Duration(sc.ResendInterval)
@@ -66,6 +71,7 @@ func newSinkNode(ctx api.StreamContext, name string, rOpt def.RuleOption, eoflim
 	return &SinkNode{
 		defaultSinkNode: newDefaultSinkNode(name, &rOpt),
 		eoflimit:        eoflimit,
+		saveCache:       rOpt.Qos > def.AtMostOnce,
 		resendInterval:  retry,
 	}
 }
@@ -89,11 +95,45 @@ func (s *SinkNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 			if err != nil {
 				infra.DrainError(ctx, err, errCh)
 			}
+			var loadedData []any
+			if s.saveCache {
+				dataLoc, _ := conf.GetDataLoc()
+				ruleDataPath := filepath.Join(dataLoc, "rule_"+ctx.GetRuleId())
+				filename := filepath.Join(ruleDataPath, fmt.Sprintf("%s.cache", ctx.GetOpId()))
+				cacheFile, err := os.Open(filename)
+				if err == nil {
+					func() {
+						defer func() {
+							cacheFile.Close()
+							os.Remove(filename)
+						}()
+						ctx.GetLogger().Infof("load sink cache from %s", filename)
+						decoder := gob.NewDecoder(cacheFile)
+						if err = decoder.Decode(&loadedData); err != nil {
+							ctx.GetLogger().Errorf("failed to decode GOB data: %v", err)
+						} else if len(loadedData) > 0 {
+							conf.Log.Infof("reading sink %s cache %d", filename, len(loadedData))
+						}
+					}()
+				}
+			}
+			var (
+				// record the current sending data. Always save it to disk when exit regardless of the ack.
+				sendingData any
+				loadedCount int
+				prepareExit bool
+			)
 			defer func() {
-				s.sink.Close(ctx)
+				_ = s.sink.Close(ctx)
 				s.Close()
 			}()
 			s.currentEof = 0
+			for _, data := range loadedData {
+				sendingData = data
+				s.handle(ctx, data)
+				// If not handle and exit, will need to save back to file
+				loadedCount++
+			}
 			for {
 				select {
 				case <-ctx.Done():
@@ -103,51 +143,57 @@ func (s *SinkNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 					if processed {
 						break
 					}
-					s.onProcessStart(ctx, data)
-					err = s.doCollect(ctx, s.sink, data)
-					if err != nil { // resend handling when enabling cache. Two cases: 1. send to alter queue with resendOUt. 2. retry (blocking) until success or unrecoverable error if resendInterval is set
-						s.onError(ctx, err)
-						if s.resendOut != nil {
-							s.BroadcastCustomized(data, func(val any) {
-								select {
-								case s.resendOut <- val:
-									// do nothing
-								case <-ctx.Done():
-									// rule stop so stop waiting
-								default:
-									s.onError(ctx, fmt.Errorf("buffer full, drop message from %s to resend sink", s.name))
+					switch data.(type) {
+					case xsql.StopPrepareTuple:
+						prepareExit = true
+						ctx.GetLogger().Infof("receive prepare tuple")
+					default:
+						sendingData = data
+						if prepareExit && s.saveCache {
+							// If it is about to exit, save cache async
+							go func() {
+								ctx.GetLogger().Infof("save cache asyncly")
+								// save data which are not sent yet
+								dataToKeep := make([]any, 0, len(loadedData)-loadedCount+len(s.input))
+								if loadedCount < len(loadedData) {
+									dataToKeep = loadedData[loadedCount:]
+									ctx.GetLogger().Infof("save %d loaded data", len(dataToKeep))
 								}
-							})
-						} else if s.resendInterval > 0 {
-							if !errorx.IsIOError(err) {
-								ctx.GetLogger().Errorf("no io error %v, drop %v", err, xsql.GetId(data))
-							} else {
-								ticker := timex.GetTicker(s.resendInterval)
-								defer ticker.Stop()
-								for err != nil && errorx.IsIOError(err) {
-									ctx.GetLogger().Infof("wait resending %v", xsql.GetId(data))
-									select {
-									case <-ctx.Done():
-										ctx.GetLogger().Infof("rule stop, exit retry for %v", xsql.GetId(data))
-										return nil
-									case <-ticker.C:
-										err = s.doCollect(ctx, s.sink, data)
-										s.statManager.SetBufferLength(int64(len(s.input)))
+								if sendingData != nil {
+									dataToKeep = append(dataToKeep, sendingData)
+									ctx.GetLogger().Info("save sending data")
+								}
+								// read all buffered content
+								ctx.GetLogger().Infof("saving buffer %d", len(s.input))
+								for len(s.input) > 0 {
+									bb := <-s.input
+									dd, processed := s.ingest(ctx, bb)
+									if processed {
+										continue
 									}
+									dataToKeep = append(dataToKeep, dd)
 								}
+								dataLoc, _ := conf.GetDataLoc()
+								ruleDataPath := filepath.Join(dataLoc, "rule_"+ctx.GetRuleId())
+								os.MkdirAll(ruleDataPath, os.ModePerm)
+								filename := filepath.Join(ruleDataPath, fmt.Sprintf("%s.cache", ctx.GetOpId()))
+								cacheFile, err := os.Create(filename)
 								if err == nil {
-									ctx.GetLogger().Infof("resend success %v", xsql.GetId(data))
-									s.onSend(ctx, data)
+									defer cacheFile.Close()
+									encoder := gob.NewEncoder(cacheFile)
+									err = encoder.Encode(dataToKeep)
+									if err != nil {
+										ctx.GetLogger().Errorf("fail to encode data to cache: %v", err)
+									} else {
+										ctx.GetLogger().Infof("save sink %s cache %d", filename, len(dataToKeep))
+									}
 								} else {
-									ctx.GetLogger().Errorf("no io error %v", err)
+									ctx.GetLogger().Errorf("fail to save sink %s cache: %v", filename, err)
 								}
-							}
+							}()
 						}
-					} else {
-						s.onSend(ctx, data)
+						s.handle(ctx, data)
 					}
-					s.onProcessEnd(ctx)
-					s.statManager.SetBufferLength(int64(len(s.input)))
 				}
 			}
 		})
@@ -155,6 +201,56 @@ func (s *SinkNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 			infra.DrainError(ctx, err, errCh)
 		}
 	}()
+}
+
+func (s *SinkNode) handle(ctx api.StreamContext, data any) any {
+	s.onProcessStart(ctx, data)
+	sendingData := data
+	err := s.doCollect(ctx, s.sink, data)
+	if err != nil { // resend handling when enabling cache. Two cases: 1. send to alter queue with resendOUt. 2. retry (blocking) until success or unrecoverable error if resendInterval is set
+		s.onError(ctx, err)
+		if s.resendOut != nil {
+			s.BroadcastCustomized(data, func(val any) {
+				select {
+				case s.resendOut <- val:
+					// do nothing
+				case <-ctx.Done():
+					// rule stop so stop waiting
+				default:
+					s.onError(ctx, fmt.Errorf("buffer full, drop message from %s to resend sink", s.name))
+				}
+			})
+		} else if s.resendInterval > 0 {
+			if !errorx.IsIOError(err) {
+				ctx.GetLogger().Errorf("no io error %v, drop %v", err, xsql.GetId(data))
+			} else {
+				ticker := timex.GetTicker(s.resendInterval)
+				defer ticker.Stop()
+				for err != nil && errorx.IsIOError(err) {
+					ctx.GetLogger().Infof("wait resending %v", xsql.GetId(data))
+					select {
+					case <-ctx.Done():
+						ctx.GetLogger().Infof("rule stop, exit retry for %v", xsql.GetId(data))
+						return sendingData
+					case <-ticker.C:
+						err = s.doCollect(ctx, s.sink, data)
+						s.statManager.SetBufferLength(int64(len(s.input)))
+					}
+				}
+				if err == nil {
+					ctx.GetLogger().Infof("resend success %v", xsql.GetId(data))
+					s.onSend(ctx, data)
+				} else {
+					ctx.GetLogger().Errorf("no io error %v", err)
+				}
+			}
+		}
+	} else {
+		s.onSend(ctx, data)
+	}
+	s.onProcessEnd(ctx)
+	s.statManager.SetBufferLength(int64(len(s.input)))
+	return nil
 }
 
 func (s *SinkNode) SetResendOutput(output chan<- any) {
@@ -180,7 +276,7 @@ func (s *SinkNode) ingest(ctx api.StreamContext, item any) (any, bool) {
 			return d, false
 		}
 		return nil, true
-	case *xsql.WatermarkTuple, xsql.BatchEOFTuple:
+	case *xsql.WatermarkTuple, xsql.BatchEOFTuple, xsql.StopTuple:
 		return nil, true
 	case xsql.EOFTuple:
 		s.currentEof++

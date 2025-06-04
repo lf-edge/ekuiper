@@ -389,7 +389,25 @@ func (s *State) triggerAction(action ActionSignal) bool {
 // Stop run stop action or add the stop action to queue
 // regSchedule: whether need to handle scheduler. If call externally, set it to true
 func (s *State) Stop() {
-	s.StopWithLastWill("canceled manually")
+	s.StopWithLastWillAndSig("canceled manually", 0)
+}
+
+func (s *State) StopWithLastWillAndSig(msg string, sig int) {
+	defer s.nextAction()
+	s.logger.Debug("stop RunState")
+	done := s.triggerAction(ActionSignalStop)
+	if done {
+		return
+	}
+	// do stop, stopping action and starting action are mutual exclusive. No concurrent problem here
+	s.logger.Infof("stopping rule %s", s.Rule.Id)
+	err := s.doStopWithSig(sig)
+	if err == nil {
+		err = errors.New(msg)
+	}
+	// currentState may be accessed concurrently
+	s.transit(Stopped, err)
+	return
 }
 
 func (s *State) ScheduleStop() {
@@ -407,24 +425,6 @@ func (s *State) ScheduleStop() {
 	} else {
 		s.transit(ScheduledStop, err)
 	}
-	return
-}
-
-func (s *State) StopWithLastWill(msg string) {
-	s.logger.Debug("stop RunState")
-	done := s.triggerAction(ActionSignalStop)
-	if done {
-		return
-	}
-	// do stop, stopping action and starting action are mutual exclusive. No concurrent problem here
-	s.logger.Infof("stopping rule %s", s.Rule.Id)
-	err := s.doStop()
-	if err == nil {
-		err = errors.New(msg)
-	}
-	// currentState may be accessed concurrently
-	s.transit(Stopped, err)
-	s.lastWill = msg
 	return
 }
 
@@ -476,6 +476,10 @@ func (s *State) doStart() error {
 }
 
 func (s *State) doStop() error {
+	return s.doStopWithSig(0)
+}
+
+func (s *State) doStopWithSig(sig int) error {
 	if s.cancelRetry != nil {
 		s.cancelRetry()
 	}
@@ -484,7 +488,7 @@ func (s *State) doStop() error {
 		s.topoGraph = s.topology.GetTopo()
 		keys, values := s.topology.GetMetrics()
 		s.stoppedMetrics = []any{keys, values}
-		s.topology.Cancel()
+		s.topology.CancelWithSig(sig)
 		s.topology.WaitClose()
 		s.topology = nil
 		return e
