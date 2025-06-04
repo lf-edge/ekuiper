@@ -61,7 +61,7 @@ func (w *WebsocketConnection) Dial(ctx api.StreamContext) error {
 		if err != nil {
 			return err
 		}
-		c := NewWebsocketClient(w.cfg.Addr, w.cfg.Datasource, tlsConfig)
+		c := NewWebsocketClient(w.cfg.Addr, w.cfg.Path, tlsConfig)
 		if err := c.Connect(); err != nil {
 			return err
 		}
@@ -72,6 +72,7 @@ func (w *WebsocketConnection) Dial(ctx api.StreamContext) error {
 }
 
 type wscConfig struct {
+	Path       string `json:"path"`
 	Datasource string `json:"datasource"`
 	Addr       string `json:"addr"`
 }

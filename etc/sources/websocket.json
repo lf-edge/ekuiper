@@ -46,21 +46,6 @@
       }
     },
     {
-      "name": "path",
-      "optional": false,
-      "control": "text",
-      "default": "",
-      "type": "string",
-      "hint": {
-        "en_US": "\nThe url for websocket to apply for a connection. If addr is defined, then eKuiper will apply for a connection to the path where addr is located. If the addr is not defined, then eKuiper will use this url as the websocket server.",
-        "zh_CN": "websocket 申请连接的 url，如果定义了 addr，那么 eKuiper 将会向 addr 所在 path 端申请连接，如果没有定义 url，那么 eKuiper 将会自身以该 url 作为 websocket server 端"
-      },
-      "label": {
-        "en_US": "websocket path",
-        "zh_CN": "websocket path"
-      }
-    },
-    {
       "name": "certificationPath",
       "default": "",
       "optional": true,
