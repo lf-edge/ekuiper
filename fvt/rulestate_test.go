@@ -267,3 +267,66 @@ func (s *RuleStateTestSuite) TestCreateStoppedRule() {
 		s.Equal(http.StatusOK, res.StatusCode)
 	})
 }
+
+func (s *RuleStateTestSuite) TestRuleTags() {
+	s.Run("clean up", func() {
+		client.DeleteStream("simStream1")
+		client.DeleteRule("ruleTags")
+	})
+	s.Run("create rule and attach labels", func() {
+		conf := map[string]any{
+			"interval": "10ms",
+		}
+		resp, err := client.CreateConf("sources/simulator/confKeys/ttt", conf)
+		s.Require().NoError(err)
+		s.Require().Equal(http.StatusOK, resp.StatusCode)
+
+		streamSql := `{"sql": "create stream simStream1() WITH (TYPE=\"simulator\", FORMAT=\"json\", CONF_KEY=\"ttt\", SHARED=\"true\")"}`
+		resp, err = client.CreateStream(streamSql)
+		s.Require().NoError(err)
+		s.T().Log(GetResponseText(resp))
+		s.Require().Equal(http.StatusCreated, resp.StatusCode)
+		ruleJson := `{
+  "id": "ruleTags",
+  "triggered": false,
+  "sql": "SELECT * FROM simStream1",
+  "actions": [
+    {
+      "nop":{}
+    }
+  ],
+  "options": {
+    "sendError": false,
+	"bufferLength": 2
+  }
+}`
+		resp, err = client.CreateRule(ruleJson)
+		s.Require().NoError(err)
+		s.T().Log(GetResponseText(resp))
+		s.Require().Equal(http.StatusCreated, resp.StatusCode)
+
+		resp, err = client.AddRuleTags("ruleTags", []string{"t1", "t2"})
+		s.Require().NoError(err)
+		s.T().Log(GetResponseText(resp))
+		s.Require().Equal(http.StatusOK, resp.StatusCode)
+
+		lists, err := client.GetRulesByTags([]string{"t1", "t2"})
+		s.Require().NoError(err)
+		s.Require().Equal(http.StatusOK, resp.StatusCode)
+		s.Require().Equal([]string{"ruleTags"}, lists)
+
+		resp, err = client.RemoveRuleTags("ruleTags", []string{"t1"})
+		s.Require().NoError(err)
+		s.T().Log(GetResponseText(resp))
+		s.Require().Equal(http.StatusOK, resp.StatusCode)
+
+		lists, err = client.GetRulesByTags([]string{"t1", "t2"})
+		s.Require().NoError(err)
+		s.Require().Equal(http.StatusOK, resp.StatusCode)
+		s.Require().Equal([]string{}, lists)
+	})
+	s.Run("clean up", func() {
+		client.DeleteStream("simStream1")
+		client.DeleteRule("ruleTags")
+	})
+}

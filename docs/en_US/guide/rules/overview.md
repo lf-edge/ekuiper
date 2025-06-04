@@ -39,6 +39,7 @@ The table below is a detailed explanation of the row component:
 | graph          | required if sql is not defined   | The json presentation of the rule's DAG(directed acyclic graph)              |
 | options        | true                             | A map of options                                                             |
 | triggerd       | true                             | Whether to start the rule after creation. Default is true.                   |
+| tags           | yes                              | string list, rule tags, used to filter rules                                 |
 
 ## Rule Logic
 

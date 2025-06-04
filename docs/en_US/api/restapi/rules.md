@@ -256,3 +256,39 @@ GET http://localhost:9081/rules/usage/cpu
 ```
 
 Get the CPU time used by all rules in the past 30 seconds, in milliseconds.
+
+## Add tags on rules
+
+This API is used to add tags to rules
+
+```shell
+PUT /rules/{id}/tags
+
+{
+  "tags": ["t1","t2"]
+}
+```
+
+## Delete tags on rules
+
+This API is used to delete tags from rules
+
+```shell
+DELETE /rules/{id}/tags
+
+{
+  "keys":["key1","key2"]
+}
+```
+
+## Query rules based on tags
+
+This API is used to query rules containing a given tags and return a list of rule names that meet the conditions
+
+```shell
+GET /rules/tags/match
+
+{
+  "keys":["key1","key2"]
+}
+```
