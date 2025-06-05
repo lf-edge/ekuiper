@@ -43,6 +43,8 @@ type KafkaSource struct {
 	sc        *kafkaSourceConf
 	saslConf  *saslConf
 	mechanism sasl.Mechanism
+	connected bool
+	sch       api.StatusChangeHandler
 }
 
 type kafkaSourceConf struct {
@@ -175,11 +177,24 @@ func (k *KafkaSource) Connect(ctx api.StreamContext, sch api.StatusChangeHandler
 	k.reader = reader
 	err := k.reader.SetOffset(kafkago.LastOffset)
 	if err != nil {
+		k.connected = false
 		sch(api.ConnectionDisconnected, err.Error())
+		return err
 	} else {
+		k.connected = true
 		sch(api.ConnectionConnected, "")
 	}
+	k.sch = sch
 	return nil
+}
+
+func (k *KafkaSource) handleConnectedSch(err error) {
+	if k.connected && err != nil {
+		k.connected = false
+		k.sch(api.ConnectionDisconnected, err.Error())
+	} else if !k.connected && err == nil {
+		k.sch(api.ConnectionConnected, "")
+	}
 }
 
 func (k *KafkaSource) Subscribe(ctx api.StreamContext, ingest api.BytesIngest, ingestError api.ErrorIngest) error {
@@ -190,6 +205,7 @@ func (k *KafkaSource) Subscribe(ctx api.StreamContext, ingest api.BytesIngest, i
 		default:
 		}
 		msg, err := k.reader.ReadMessage(ctx)
+		k.handleConnectedSch(err)
 		if err != nil {
 			KafkaSourceCounter.WithLabelValues(metrics.LblException, ctx.GetRuleId(), ctx.GetOpId()).Inc()
 			ingestError(ctx, err)

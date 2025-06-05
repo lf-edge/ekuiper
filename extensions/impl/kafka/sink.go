@@ -50,6 +50,7 @@ const (
 )
 
 type KafkaSink struct {
+	props          map[string]any
 	writer         *kafkago.Writer
 	kc             *kafkaConf
 	tlsConfig      *tls.Config
@@ -64,6 +65,8 @@ type KafkaSink struct {
 	ruleID         string
 	opID           string
 	statManager    metric.StatManager
+	connected      bool
+	sch            api.StatusChangeHandler
 }
 
 func (k *KafkaSink) setStatManager(ctx api.StreamContext) {
@@ -120,6 +123,7 @@ func (c *kafkaConf) validate() error {
 }
 
 func (k *KafkaSink) Provision(ctx api.StreamContext, configs map[string]any) error {
+	k.props = configs
 	c := getDefaultKafkaConf()
 	err := c.configure(configs)
 	failpoint.Inject("kafkaErr", func(val failpoint.Value) {
@@ -203,7 +207,7 @@ func (k *KafkaSink) ping(address string) error {
 	return nil
 }
 
-func (k *KafkaSink) buildKafkaWriter(ctx api.StreamContext) error {
+func (k *KafkaSink) buildKafkaWriter(ctx api.StreamContext) {
 	brokers := strings.Split(k.kc.Brokers, ",")
 	w := &kafkago.Writer{
 		Addr:  kafkago.TCP(brokers...),
@@ -226,7 +230,7 @@ func (k *KafkaSink) buildKafkaWriter(ctx api.StreamContext) error {
 		OpID:        ctx.GetOpId(),
 	}
 	k.writer = w
-	return nil
+	return
 }
 
 func (k *KafkaSink) Close(ctx api.StreamContext) error {
@@ -236,14 +240,18 @@ func (k *KafkaSink) Close(ctx api.StreamContext) error {
 func (k *KafkaSink) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) error {
 	k.ruleID = ctx.GetRuleId()
 	k.opID = ctx.GetOpId()
-	err := k.buildKafkaWriter(ctx)
-	if err != nil {
+	k.buildKafkaWriter(ctx)
+	if err := k.Ping(ctx, k.props); err != nil {
+		k.connected = false
 		sch(api.ConnectionDisconnected, err.Error())
+		return err
 	} else {
+		k.connected = true
 		sch(api.ConnectionConnected, "")
 	}
+	k.sch = sch
 	k.setStatManager(ctx)
-	return err
+	return nil
 }
 
 func (k *KafkaSink) runWithTickerAndBatchSize(ctx api.StreamContext) {
@@ -319,6 +327,7 @@ func (k *KafkaSink) send(ctx api.StreamContext) {
 		metrics.IODurationHist.WithLabelValues(LblKafka, metrics.LblSinkIO, k.ruleID, k.opID).Observe(float64(time.Since(start).Microseconds()))
 	}()
 	err := k.writer.WriteMessages(ctx, k.messages...)
+	k.handleConnectedSch(err)
 	k.handleErrMsgs(ctx, err, len(k.messages))
 	k.messages = make([]kafkago.Message, 0, k.kc.BatchSize/4)
 	k.currIndex = 0
@@ -448,6 +457,16 @@ func (k *KafkaSink) handleErrMsgs(ctx api.StreamContext, err error, count int) {
 		for i := 0; i < count; i++ {
 			k.statManager.IncTotalExceptions(err.Error())
 		}
+	}
+}
+
+func (k *KafkaSink) handleConnectedSch(err error) {
+	if k.connected && err != nil {
+		k.connected = false
+		k.sch(api.ConnectionDisconnected, err.Error())
+	} else if !k.connected && err == nil {
+		k.connected = true
+		k.sch(api.ConnectionConnected, "")
 	}
 }
 
