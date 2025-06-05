@@ -241,14 +241,8 @@ func (k *KafkaSink) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) 
 	k.ruleID = ctx.GetRuleId()
 	k.opID = ctx.GetOpId()
 	k.buildKafkaWriter(ctx)
-	if err := k.Ping(ctx, k.props); err != nil {
-		k.connected = false
-		sch(api.ConnectionDisconnected, err.Error())
-		return err
-	} else {
-		k.connected = true
-		sch(api.ConnectionConnected, "")
-	}
+	k.connected = true
+	sch(api.ConnectionConnected, "")
 	k.sch = sch
 	k.setStatManager(ctx)
 	return nil
