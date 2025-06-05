@@ -144,6 +144,20 @@ func (o *defaultNode) doBroadcast(val any) {
 				valCopy = vt.Clone()
 			case xsql.Row:
 				valCopy = vt.Clone()
+			case *checkpoint.BufferOrEvent:
+				vd := vt.Data
+				switch vdt := vt.Data.(type) {
+				case xsql.Collection:
+					vd = vdt.Clone()
+				case xsql.Row:
+					vd = vdt.Clone()
+				}
+				valCopy = &checkpoint.BufferOrEvent{
+					Data:    vd,
+					Channel: vt.Channel,
+				}
+			default:
+				valCopy = vt
 			}
 		} else {
 			valCopy = val
