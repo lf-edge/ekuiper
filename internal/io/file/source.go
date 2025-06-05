@@ -17,7 +17,7 @@ package file
 import (
 	"bufio"
 	"bytes"
-	"encoding/json"
+	"encoding/gob"
 	"errors"
 	"fmt"
 	"io"
@@ -424,20 +424,21 @@ type FileDirSourceRewindMeta struct {
 	LastModifyTime time.Time `json:"lastModifyTime"`
 }
 
+func init() {
+	gob.Register(time.Time{})
+	gob.Register(&FileDirSourceRewindMeta{})
+}
+
 func (fs *Source) GetOffset() (any, error) {
-	c, err := json.Marshal(fs.rewindMeta)
-	return string(c), err
+	return fs.rewindMeta, nil
 }
 
 func (fs *Source) Rewind(offset any) error {
-	c, ok := offset.(string)
+	rewindMeta, ok := offset.(*FileDirSourceRewindMeta)
 	if !ok {
 		return fmt.Errorf("fileDirSource rewind failed")
 	}
-	fs.rewindMeta = &FileDirSourceRewindMeta{}
-	if err := json.Unmarshal([]byte(c), fs.rewindMeta); err != nil {
-		return err
-	}
+	fs.rewindMeta = rewindMeta
 	return nil
 }
 
