@@ -192,7 +192,7 @@ func (c *Coordinator) Activate() error {
 						c.inForceSaveState.Store(true)
 						c.saveState(time.Now(), logger)
 					case STOP:
-						logger.Debug("Stop checkpoint scheduler")
+						logger.Infof("Stop checkpoint scheduler")
 						if c.ticker != nil {
 							c.ticker.Stop()
 						}
