@@ -43,23 +43,24 @@ import (
 var uid atomic.Uint32
 
 // Topo is the runtime DAG for a rule
-// It only run once. If the rule restarts, another topo is created.
+// It only runs once. If the rule restarts, another topo is created.
 type Topo struct {
-	streams     []string
-	sources     []node.DataSourceNode
-	sinks       []node.DataSinkNode
-	ctx         api.StreamContext
-	cancel      context.CancelFunc
-	drain       chan error
-	ops         []node.OperatorNode
-	name        string
-	runId       int
-	options     *def.RuleOption
-	store       api.Store
-	coordinator *checkpoint.Coordinator
-	topo        *def.PrintableTopo
-	mu          sync.Mutex
-	hasOpened   atomic.Bool
+	streams      []string
+	sources      []node.DataSourceNode
+	sinks        []node.DataSinkNode
+	ctx          api.StreamContext
+	cancel       context.CancelFunc
+	drain        chan error
+	ops          []node.OperatorNode
+	subSrcOpsMap map[string]struct{}
+	name         string
+	runId        int
+	options      *def.RuleOption
+	store        api.Store
+	coordinator  *checkpoint.Coordinator
+	topo         *def.PrintableTopo
+	mu           sync.Mutex
+	hasOpened    atomic.Bool
 
 	opsWg *sync.WaitGroup
 }
@@ -74,7 +75,8 @@ func NewWithNameAndOptions(name string, options *def.RuleOption) (*Topo, error) 
 			Sources: make([]string, 0),
 			Edges:   make(map[string][]interface{}),
 		},
-		opsWg: &sync.WaitGroup{},
+		opsWg:        &sync.WaitGroup{},
+		subSrcOpsMap: make(map[string]struct{}),
 	}
 	tp.prepareContext() // ensure context is set
 	return tp, nil
@@ -116,9 +118,10 @@ func (s *Topo) Cancel() error {
 	if s.coordinator.IsActivated() && s.options.EnableSaveStateBeforeStop {
 		notify, err := s.coordinator.ForceSaveState()
 		if err != nil {
-			conf.Log.Infof("rule %v duplicated cancel", s.name)
+			s.ctx.GetLogger().Infof("rule %v duplicated cancel", s.name)
 			return fmt.Errorf("rule %v duplicated cancel", s.name)
 		}
+		s.ctx.GetLogger().Infof("rule %v is saving last state", s.name)
 		<-notify
 	}
 	s.mu.Lock()
@@ -187,6 +190,7 @@ func (s *Topo) AddOperator(inputs []node.Emitter, operator node.OperatorNode) *T
 		switch rt := input.(type) {
 		case node.MergeableTopo:
 			rt.LinkTopo(s.topo, operator.GetName())
+			s.subSrcOpsMap[operator.GetName()] = struct{}{}
 		case node.TopNode:
 			s.addEdge(rt, operator, "op")
 		}
@@ -326,15 +330,22 @@ func (s *Topo) enableCheckpoint(ctx api.StreamContext) error {
 		for _, r := range s.sources {
 			switch rt := r.(type) {
 			case checkpoint.StreamTask:
-				sources = append(sources, r.(checkpoint.StreamTask))
+				sources = append(sources, rt)
 			case checkpoint.SourceSubTopoTask:
-				rt.EnableCheckpoint(&sources, &ops)
+				// do nothing for now
+				// rt.EnableCheckpoint(&sources, &ops)
 			default: // should never happen
 				ctx.GetLogger().Errorf("source %s is not a checkpoint task", r.GetName())
 			}
 		}
+		// If use shared stream sub topo, ignore subtopo for this rule's checkpoint.
+		// Send the barrier from the first op after subtopo
 		for _, r := range s.ops {
-			ops = append(ops, r)
+			if _, isSubSrc := s.subSrcOpsMap[r.GetName()]; isSubSrc {
+				sources = append(sources, r)
+			} else {
+				ops = append(ops, r)
+			}
 		}
 		var sinks []checkpoint.SinkTask
 		for _, r := range s.sinks {
