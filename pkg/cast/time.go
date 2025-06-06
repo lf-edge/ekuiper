@@ -133,7 +133,7 @@ func ParseTime(t string, f string) (_ time.Time, err error) {
 	if f, err = convertFormat(f); err != nil {
 		return time.Time{}, err
 	}
-	return time.Parse(f, t)
+	return time.ParseInLocation(f, t, GetConfiguredTimeZone())
 }
 
 func ParseTimeByFormats(t string, formats []string) (_ time.Time, err error) {

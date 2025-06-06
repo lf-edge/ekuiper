@@ -102,7 +102,7 @@ func TestParseTime(t *testing.T) {
 			time.Date(2020, time.January, 16, 2, 14, 24, 0, GetConfiguredTimeZone()),
 			"2020-01-16 02:14:24",
 			"",
-			false,
+			true,
 		},
 		{
 			time.Time{},
@@ -314,7 +314,9 @@ func TestParseTimeFormats(t *testing.T) {
 	require.Equal(t, tt, tts)
 }
 
-func TestParseTimeWithFormat(t *testing.T) {
+func TestParseTimeIssue(t *testing.T) {
+	err := SetTimeZone("UTC")
+	require.NoError(t, err)
 	target := `2025-06-04T08:54:00.7530000Z`
 	format := `YYYY-MM-ddTHH:mm:ssSSSSSSS\Z`
 	t1, err := ParseTime(target, format)
