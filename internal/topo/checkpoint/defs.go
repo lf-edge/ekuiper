@@ -26,6 +26,11 @@ type StreamTask interface {
 	SetQos(qos def.Qos)
 }
 
+type SourceTask interface {
+	NonSinkTask
+	NotifySourceClose(ctx api.StreamContext)
+}
+
 type NonSinkTask interface {
 	Broadcast(data any)
 }
@@ -73,4 +78,5 @@ type Signal struct {
 type Barrier struct {
 	CheckpointId int64
 	OpId         string
+	IsEof        bool
 }

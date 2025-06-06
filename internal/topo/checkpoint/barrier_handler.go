@@ -21,7 +21,7 @@ import (
 )
 
 type BarrierHandler interface {
-	Process(data *BufferOrEvent, ctx api.StreamContext) bool // If data is barrier return true, else return false
+	Process(data *BufferOrEvent, ctx api.StreamContext) bool // If data is barrier without eof return true, else return false
 	SetOutput(chan<- *BufferOrEvent)                         // It is using for block a channel
 }
 
@@ -44,7 +44,7 @@ func (h *BarrierTracker) Process(data *BufferOrEvent, ctx api.StreamContext) boo
 	d := data.Data
 	if b, ok := d.(*Barrier); ok {
 		h.processBarrier(b, ctx)
-		return true
+		return !b.IsEof
 	}
 	return false
 }
@@ -56,7 +56,7 @@ func (h *BarrierTracker) SetOutput(_ chan<- *BufferOrEvent) {
 func (h *BarrierTracker) processBarrier(b *Barrier, ctx api.StreamContext) {
 	logger := ctx.GetLogger()
 	if h.inputCount == 1 {
-		err := h.responder.TriggerCheckpoint(b.CheckpointId)
+		err := h.responder.TriggerCheckpoint(b.CheckpointId, b.IsEof)
 		if err != nil {
 			logger.Errorf("trigger checkpoint for %s err: %s", h.responder.GetName(), err)
 		}
@@ -65,7 +65,7 @@ func (h *BarrierTracker) processBarrier(b *Barrier, ctx api.StreamContext) {
 	if c, ok := h.pendingCheckpoints[b.CheckpointId]; ok {
 		c += 1
 		if c == h.inputCount {
-			err := h.responder.TriggerCheckpoint(b.CheckpointId)
+			err := h.responder.TriggerCheckpoint(b.CheckpointId, b.IsEof)
 			if err != nil {
 				logger.Errorf("trigger checkpoint for %s err: %s", h.responder.GetName(), err)
 				return
@@ -107,7 +107,7 @@ func (h *BarrierAligner) Process(data *BufferOrEvent, ctx api.StreamContext) boo
 	switch d := data.Data.(type) {
 	case *Barrier:
 		h.processBarrier(d, ctx)
-		return true
+		return !d.IsEof
 	default:
 		// If blocking, save to buffer
 		if h.inputCount > 1 && len(h.blockedChannels) > 0 {
@@ -126,7 +126,7 @@ func (h *BarrierAligner) processBarrier(b *Barrier, ctx api.StreamContext) {
 	if h.inputCount == 1 {
 		if b.CheckpointId > h.currentCheckpointId {
 			h.currentCheckpointId = b.CheckpointId
-			err := h.responder.TriggerCheckpoint(b.CheckpointId)
+			err := h.responder.TriggerCheckpoint(b.CheckpointId, b.IsEof)
 			if err != nil {
 				logger.Errorf("trigger checkpoint for %s err: %s", h.responder.GetName(), err)
 			}
@@ -153,7 +153,7 @@ func (h *BarrierAligner) processBarrier(b *Barrier, ctx api.StreamContext) {
 	}
 	if len(h.blockedChannels) == h.inputCount {
 		logger.Debugf("Received all barriers, triggering checkpoint %d", b.CheckpointId)
-		err := h.responder.TriggerCheckpoint(b.CheckpointId)
+		err := h.responder.TriggerCheckpoint(b.CheckpointId, b.IsEof)
 		if err != nil {
 			logger.Errorf("trigger checkpoint for %s err: %s", h.responder.GetName(), err)
 			return

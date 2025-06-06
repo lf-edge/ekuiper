@@ -21,7 +21,7 @@ import (
 )
 
 type Responder interface {
-	TriggerCheckpoint(checkpointId int64) error
+	TriggerCheckpoint(checkpointId int64, isEof bool) error
 	GetName() string
 }
 
@@ -41,7 +41,7 @@ func (re *ResponderExecutor) GetName() string {
 	return re.task.GetName()
 }
 
-func (re *ResponderExecutor) TriggerCheckpoint(checkpointId int64) error {
+func (re *ResponderExecutor) TriggerCheckpoint(checkpointId int64, isEof bool) error {
 	ctx := re.task.GetStreamContext()
 	logger := ctx.GetLogger()
 	sctx, ok := ctx.(StreamCheckpointContext)
@@ -54,6 +54,10 @@ func (re *ResponderExecutor) TriggerCheckpoint(checkpointId int64) error {
 	barrier := &Barrier{
 		CheckpointId: checkpointId,
 		OpId:         name,
+		IsEof:        isEof,
+	}
+	if st, ok := re.task.(SourceTask); ok {
+		st.NotifySourceClose(ctx)
 	}
 	// broadcast barrier
 	if nonSink, ok := re.task.(NonSinkTask); ok {
@@ -74,7 +78,7 @@ func (re *ResponderExecutor) TriggerCheckpoint(checkpointId int64) error {
 
 		signal := &Signal{
 			Message: state,
-			Barrier: Barrier{CheckpointId: checkpointId, OpId: name},
+			Barrier: Barrier{CheckpointId: checkpointId, OpId: name, IsEof: isEof},
 		}
 		re.responder <- signal
 		logger.Debugf("Complete checkpoint %d on task %s", checkpointId, name)
