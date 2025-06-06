@@ -133,14 +133,7 @@ func ParseTime(t string, f string) (_ time.Time, err error) {
 	if f, err = convertFormat(f); err != nil {
 		return time.Time{}, err
 	}
-	c := &now.Config{
-		TimeLocation: localTimeZone,
-		TimeFormats:  now.TimeFormats,
-	}
-	if f != "" {
-		c.TimeFormats = append([]string{f}, c.TimeFormats...)
-	}
-	return c.Parse(t)
+	return time.Parse(f, t)
 }
 
 func ParseTimeByFormats(t string, formats []string) (_ time.Time, err error) {
@@ -320,7 +313,7 @@ func convertFormat(f string) (string, error) {
 			}
 			b := bytes.NewBufferString(".")
 			for x := 0; x < j; x++ {
-				b.WriteString("0")
+				b.WriteString("9")
 			}
 			out += b.String()
 			i = i + j - 1

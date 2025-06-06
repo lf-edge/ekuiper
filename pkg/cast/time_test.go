@@ -313,3 +313,11 @@ func TestParseTimeFormats(t *testing.T) {
 	tt, _ := time.Parse(time.RFC3339, timeString)
 	require.Equal(t, tt, tts)
 }
+
+func TestParseTimeWithFormat(t *testing.T) {
+	target := `2025-06-04T08:54:00.7530000Z`
+	format := `YYYY-MM-ddTHH:mm:ssSSSSSSS\Z`
+	t1, err := ParseTime(target, format)
+	require.NoError(t, err)
+	require.Equal(t, "2025-06-04 08:54:00.753 +0000 UTC", t1.String())
+}
