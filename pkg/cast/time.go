@@ -17,7 +17,9 @@ package cast
 import (
 	"bytes"
 	"fmt"
+	"strings"
 	"time"
+	"unicode"
 
 	"github.com/jinzhu/now"
 )
@@ -140,7 +142,7 @@ func ParseTime(t string, f string) (_ time.Time, err error) {
 	if f != "" {
 		c.TimeFormats = append([]string{f}, c.TimeFormats...)
 	}
-	return c.Parse(t)
+	return c.Parse(padFractionalSeconds(t))
 }
 
 func ParseTimeByFormats(t string, formats []string) (_ time.Time, err error) {
@@ -378,4 +380,37 @@ func InterfaceToDuration(i interface{}) (time.Duration, error) {
 		return 0, fmt.Errorf("given arguments cannot convert to duration: %q", err)
 	}
 	return time.ParseDuration(duration)
+}
+
+func padFractionalSeconds(dateStr string) string {
+	parts := strings.Split(dateStr, ".")
+	if len(parts) != 2 {
+		return dateStr
+	}
+	integerPart := parts[0]
+	fractionAndSuffix := parts[1]
+	var fractionalDigits, suffix string
+	for i, c := range fractionAndSuffix {
+		if !unicode.IsDigit(c) {
+			fractionalDigits = fractionAndSuffix[:i]
+			suffix = fractionAndSuffix[i:]
+			break
+		}
+	}
+	if fractionalDigits == "" && suffix == "" {
+		fractionalDigits = fractionAndSuffix
+	}
+	targetLength := 3
+	if len(fractionalDigits) > 3 {
+		targetLength = 6
+	}
+	if len(fractionalDigits) > 6 {
+		targetLength = 9
+	}
+	if len(fractionalDigits) < targetLength {
+		fractionalDigits += strings.Repeat("0", targetLength-len(fractionalDigits))
+	} else if len(fractionalDigits) > targetLength {
+		fractionalDigits = fractionalDigits[:targetLength]
+	}
+	return integerPart + "." + fractionalDigits + suffix
 }
