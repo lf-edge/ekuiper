@@ -313,7 +313,7 @@ func convertFormat(f string) (string, error) {
 			}
 			b := bytes.NewBufferString(".")
 			for x := 0; x < j; x++ {
-				b.WriteString("9")
+				b.WriteString("0")
 			}
 			out += b.String()
 			i = i + j - 1
