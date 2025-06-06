@@ -16,6 +16,7 @@ package cast
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"time"
 
@@ -130,6 +131,14 @@ func TimeFromUnixMilli(t int64) time.Time {
 }
 
 func ParseTime(t string, f string) (_ time.Time, err error) {
+	if f == "" {
+		for _, defaultFormat := range now.TimeFormats {
+			if dt, err := time.Parse(defaultFormat, f); nil == err {
+				return dt.In(GetConfiguredTimeZone()), nil
+			}
+		}
+		return time.Time{}, errors.New("timestamp format should be defined")
+	}
 	if f, err = convertFormat(f); err != nil {
 		return time.Time{}, err
 	}
