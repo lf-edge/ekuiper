@@ -313,3 +313,40 @@ func TestParseTimeFormats(t *testing.T) {
 	tt, _ := time.Parse(time.RFC3339, timeString)
 	require.Equal(t, tt, tts)
 }
+
+func TestPadFractionalSeconds(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{"2025-06-04T08:54:00.7Z", "2025-06-04T08:54:00.700Z"},
+		{"2025-06-04T08:54:00.753Z", "2025-06-04T08:54:00.753Z"},
+		{"2025-06-04T08:54:00.123456789Z", "2025-06-04T08:54:00.123456789Z"},
+
+		{"2025-06-04T08:54:00.12+08:00", "2025-06-04T08:54:00.120+08:00"},
+		{"2025-06-04T08:54:00.753UTC", "2025-06-04T08:54:00.753UTC"},
+
+		{"2025-06-04T08:54:00.7", "2025-06-04T08:54:00.700"},
+		{"2025-06-04T08:54:00.123456789", "2025-06-04T08:54:00.123456789"},
+
+		{"2025-06-04T08:54:00.", "2025-06-04T08:54:00.000"},
+		{"2025-06-04T08:54:00", "2025-06-04T08:54:00"},
+	}
+
+	for _, tt := range tests {
+		got := padFractionalSeconds(tt.input)
+		if got != tt.expected {
+			t.Errorf("padFractionalSeconds(%q) = %q, want %q", tt.input, got, tt.expected)
+		}
+	}
+}
+
+func TestParseTimeIssue(t *testing.T) {
+	err := SetTimeZone("UTC")
+	require.NoError(t, err)
+	target := `2025-06-04T08:54:00.7530000Z`
+	format := `YYYY-MM-ddTHH:mm:ssSSSSSSS\Z`
+	t1, err := ParseTime(target, format)
+	require.NoError(t, err)
+	require.Equal(t, "2025-06-04 08:54:00.753 +0000 UTC", t1.String())
+}
