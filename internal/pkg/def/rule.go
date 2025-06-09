@@ -47,9 +47,14 @@ type RuleOption struct {
 }
 
 type PlanOptimizeStrategy struct {
-	EnableIncrementalWindow bool `json:"enableIncrementalWindow" yaml:"enableIncrementalWindow"`
-	EnableAliasPushdown     bool `json:"enableAliasPushdown,omitempty" yaml:"enableAliasPushdown,omitempty"`
-	DisableAliasRefCal      bool `json:"disableAliasRefCal,omitempty" yaml:"disableAliasRefCal,omitempty"`
+	WindowOption            *WindowOption `json:"windowOption,omitempty" yaml:"windowOption,omitempty"`
+	EnableIncrementalWindow bool          `json:"enableIncrementalWindow" yaml:"enableIncrementalWindow"`
+	EnableAliasPushdown     bool          `json:"enableAliasPushdown,omitempty" yaml:"enableAliasPushdown,omitempty"`
+	DisableAliasRefCal      bool          `json:"disableAliasRefCal,omitempty" yaml:"disableAliasRefCal,omitempty"`
+}
+
+type WindowOption struct {
+	EnableSendSlidingWindowTwice bool `json:"enableSendSlidingWindowTwice,omitempty" yaml:"enableSendSlidingWindowTwice,omitempty"`
 }
 
 func (p *PlanOptimizeStrategy) IsAliasRefCalEnable() bool {
@@ -57,6 +62,16 @@ func (p *PlanOptimizeStrategy) IsAliasRefCalEnable() bool {
 		return true
 	}
 	return !p.DisableAliasRefCal
+}
+
+func (p *PlanOptimizeStrategy) IsSlidingWindowSendTwiceEnable() bool {
+	if p == nil {
+		return false
+	}
+	if p.WindowOption == nil {
+		return false
+	}
+	return p.WindowOption.EnableSendSlidingWindowTwice
 }
 
 type RestartStrategy struct {
