@@ -26,9 +26,11 @@ var optRuleList = []logicalOptRule{
 func optimize(p LogicalPlan, options *def.RuleOption) (LogicalPlan, error) {
 	var err error
 	for _, rule := range optRuleList {
-		p, err = rule.optimize(p, options)
-		if err != nil {
-			return nil, err
+		if options.PlanOptimizeStrategy.IsOptimizeEnabled(rule.name()) {
+			p, err = rule.optimize(p, options)
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 	return p, err
