@@ -340,7 +340,7 @@ func TestFilterPlan_Apply(t *testing.T) {
 						Message: xsql.Message{"id1": 3, "f1": "v1"},
 					},
 				},
-				WindowRange: xsql.NewWindowRange(1541152486013, 1541152487013),
+				WindowRange: xsql.NewWindowRange(1541152486013, 1541152487013, 1541152487013),
 			},
 			result: &xsql.WindowTuples{
 				Content: []xsql.Row{
@@ -352,7 +352,7 @@ func TestFilterPlan_Apply(t *testing.T) {
 						Message: xsql.Message{"id1": 3, "f1": "v1"},
 					},
 				},
-				WindowRange: xsql.NewWindowRange(1541152486013, 1541152487013),
+				WindowRange: xsql.NewWindowRange(1541152486013, 1541152487013, 1541152487013),
 			},
 		},
 		{
@@ -395,7 +395,7 @@ func TestFilterPlan_Apply(t *testing.T) {
 						},
 					},
 				},
-				WindowRange: xsql.NewWindowRange(1541152486013, 1541152487013),
+				WindowRange: xsql.NewWindowRange(1541152486013, 1541152487013, 1541152487013),
 			},
 			result: &xsql.JoinTuples{
 				Content: []*xsql.JoinTuple{
@@ -411,7 +411,7 @@ func TestFilterPlan_Apply(t *testing.T) {
 						},
 					},
 				},
-				WindowRange: xsql.NewWindowRange(1541152486013, 1541152487013),
+				WindowRange: xsql.NewWindowRange(1541152486013, 1541152487013, 1541152487013),
 			},
 		},
 		{
@@ -436,7 +436,7 @@ func TestFilterPlan_Apply(t *testing.T) {
 						},
 					},
 				},
-				WindowRange: xsql.NewWindowRange(1541152486013, 1541152487013),
+				WindowRange: xsql.NewWindowRange(1541152486013, 1541152487013, 1541152487013),
 			},
 			result: &xsql.JoinTuples{
 				Content: []*xsql.JoinTuple{
@@ -452,7 +452,7 @@ func TestFilterPlan_Apply(t *testing.T) {
 						},
 					},
 				},
-				WindowRange: xsql.NewWindowRange(1541152486013, 1541152487013),
+				WindowRange: xsql.NewWindowRange(1541152486013, 1541152487013, 1541152487013),
 			},
 		},
 		{

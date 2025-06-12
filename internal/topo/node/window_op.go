@@ -277,7 +277,7 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 						break
 					}
 					log.Debugf("triggered by restore inputs")
-					inputs = o.scan(inputs, next, ctx, o.window.Length+o.window.Delay)
+					inputs = o.scan(inputs, next, ctx, o.window.Length+o.window.Delay, true)
 					_ = ctx.PutState(WindowInputsKey, inputs)
 					_ = ctx.PutState(TriggerTimeKey, o.triggerTime)
 				}
@@ -314,7 +314,7 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 						break
 					}
 					log.Debugf("triggered by restore inputs")
-					inputs = o.scan(inputs, next, ctx, o.window.Length+o.window.Delay)
+					inputs = o.scan(inputs, next, ctx, o.window.Length+o.window.Delay, true)
 					_ = ctx.PutState(WindowInputsKey, inputs)
 					_ = ctx.PutState(TriggerTimeKey, o.triggerTime)
 				}
@@ -328,9 +328,9 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 			o.statManager.ProcessTimeStart()
 			if o.window.enableSlidingWindowSendTwice {
 				// send the last part
-				inputs = o.scan(inputs, delayTS, ctx, o.window.Delay)
+				inputs = o.scan(inputs, delayTS, ctx, o.window.Delay, false)
 			} else {
-				inputs = o.scan(inputs, delayTS, ctx, o.window.Delay+o.window.Length)
+				inputs = o.scan(inputs, delayTS, ctx, o.window.Delay+o.window.Length, true)
 			}
 			o.statManager.ProcessTimeEnd()
 			_ = ctx.PutState(WindowInputsKey, inputs)
@@ -349,13 +349,13 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 				inputs = append(inputs, d)
 				switch o.window.Type {
 				case ast.NOT_WINDOW:
-					inputs = o.scan(inputs, d.Timestamp, ctx, o.window.Length+o.window.Delay)
+					inputs = o.scan(inputs, d.Timestamp, ctx, o.window.Length+o.window.Delay, true)
 				case ast.SLIDING_WINDOW:
 					if o.isMatchCondition(ctx, d) {
 						if o.window.Delay > 0 {
 							if o.window.enableSlidingWindowSendTwice {
 								// send the first part
-								inputs = o.scan(inputs, d.Timestamp, ctx, o.window.Length)
+								inputs = o.scan(inputs, d.Timestamp, ctx, o.window.Length, true)
 							}
 							go func(ts time.Time) {
 								after := timex.After(o.window.Delay)
@@ -367,7 +367,7 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 								}
 							}(d.Timestamp.Add(o.window.Delay))
 						} else {
-							inputs = o.scan(inputs, d.Timestamp, ctx, o.window.Length+o.window.Delay)
+							inputs = o.scan(inputs, d.Timestamp, ctx, o.window.Length+o.window.Delay, true)
 						}
 					} else {
 						// clear inputs if condition not matched
@@ -405,7 +405,7 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 							windowStart := triggerTime
 							triggerTime = timex.GetNowInMilli()
 							windowEnd := triggerTime
-							tsets.WindowRange = xsql.NewWindowRange(windowStart, windowEnd)
+							tsets.WindowRange = xsql.NewWindowRange(windowStart, windowEnd, windowEnd)
 							log.Debugf("Sent: %v", tsets)
 							o.handleTraceEmitTuple(ctx, tsets)
 							o.Broadcast(tsets)
@@ -446,7 +446,7 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 			if len(inputs) > 0 {
 				o.statManager.ProcessTimeStart()
 				log.Debugf("triggered by timeout")
-				inputs = o.scan(inputs, now, ctx, o.window.Length+o.window.Delay)
+				inputs = o.scan(inputs, now, ctx, o.window.Length+o.window.Delay, true)
 				_ = inputs
 				// expire all inputs, so that when timer scans there is no item
 				inputs = make([]*xsql.Tuple, 0)
@@ -490,7 +490,7 @@ func (o *WindowOperator) tick(ctx api.StreamContext, inputs []*xsql.Tuple, n tim
 	}
 	o.statManager.ProcessTimeStart()
 	log.Debugf("triggered by ticker at %d", n.UnixMilli())
-	inputs = o.scan(inputs, n, ctx, o.window.Length+o.window.Delay)
+	inputs = o.scan(inputs, n, ctx, o.window.Length+o.window.Delay, true)
 	o.statManager.ProcessTimeEnd()
 	_ = ctx.PutState(WindowInputsKey, inputs)
 	_ = ctx.PutState(TriggerTimeKey, o.triggerTime)
@@ -667,7 +667,7 @@ func (o *WindowOperator) gcInputs(inputs []*xsql.Tuple, triggerTime time.Time, c
 	return inputs[gcIndex+1:]
 }
 
-func (o *WindowOperator) scan(inputs []*xsql.Tuple, triggerTime time.Time, ctx api.StreamContext, length time.Duration) []*xsql.Tuple {
+func (o *WindowOperator) scan(inputs []*xsql.Tuple, triggerTime time.Time, ctx api.StreamContext, length time.Duration, isFirstPart bool) []*xsql.Tuple {
 	log := ctx.GetLogger()
 	log.Debugf("window %s triggered at %s(%d)", o.name, triggerTime, triggerTime.UnixMilli())
 	var (
@@ -697,7 +697,11 @@ func (o *WindowOperator) scan(inputs []*xsql.Tuple, triggerTime time.Time, ctx a
 	if windowStart <= 0 {
 		windowStart = windowEnd.Add(-length).UnixMilli()
 	}
-	results.WindowRange = xsql.NewWindowRange(windowStart, windowEnd.UnixMilli())
+	if isFirstPart {
+		results.WindowRange = xsql.NewWindowRange(windowStart, windowEnd.UnixMilli(), windowEnd.UnixMilli())
+	} else if o.window.enableSlidingWindowSendTwice {
+		results.WindowRange = xsql.NewWindowRange(windowStart, windowEnd.UnixMilli(), triggerTime.Add(-o.window.Delay).UnixMilli())
+	}
 	log.Debugf("window %s triggered for %d tuples", o.name, len(inputs))
 	log.Debugf("Sent: %v", results)
 	o.Broadcast(results)

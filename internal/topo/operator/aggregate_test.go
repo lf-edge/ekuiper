@@ -48,7 +48,7 @@ func TestAggregatePlan_Apply(t *testing.T) {
 						Message: xsql.Message{"id1": 3, "f1": "v1"},
 					},
 				},
-				WindowRange: xsql.NewWindowRange(1541152486013, 1541152487013),
+				WindowRange: xsql.NewWindowRange(1541152486013, 1541152487013, 1541152487013),
 			},
 			result: &xsql.GroupedTuplesSet{
 				Groups: []*xsql.GroupedTuples{
@@ -63,7 +63,7 @@ func TestAggregatePlan_Apply(t *testing.T) {
 								Message: xsql.Message{"id1": 3, "f1": "v1"},
 							},
 						},
-						WindowRange: xsql.NewWindowRange(1541152486013, 1541152487013),
+						WindowRange: xsql.NewWindowRange(1541152486013, 1541152487013, 1541152487013),
 					},
 					{
 						Content: []xsql.Row{
@@ -72,7 +72,7 @@ func TestAggregatePlan_Apply(t *testing.T) {
 								Message: xsql.Message{"id1": 2, "f1": "v2"},
 							},
 						},
-						WindowRange: xsql.NewWindowRange(1541152486013, 1541152487013),
+						WindowRange: xsql.NewWindowRange(1541152486013, 1541152487013, 1541152487013),
 					},
 				},
 			},
@@ -192,7 +192,7 @@ func TestAggregatePlan_Apply(t *testing.T) {
 						},
 					},
 				},
-				WindowRange: xsql.NewWindowRange(1541152486013, 1541152487013),
+				WindowRange: xsql.NewWindowRange(1541152486013, 1541152487013, 1541152487013),
 			},
 			result: &xsql.GroupedTuplesSet{
 				Groups: []*xsql.GroupedTuples{
@@ -205,7 +205,7 @@ func TestAggregatePlan_Apply(t *testing.T) {
 								},
 							},
 						},
-						WindowRange: xsql.NewWindowRange(1541152486013, 1541152487013),
+						WindowRange: xsql.NewWindowRange(1541152486013, 1541152487013, 1541152487013),
 					},
 					{
 						Content: []xsql.Row{
@@ -216,7 +216,7 @@ func TestAggregatePlan_Apply(t *testing.T) {
 								},
 							},
 						},
-						WindowRange: xsql.NewWindowRange(1541152486013, 1541152487013),
+						WindowRange: xsql.NewWindowRange(1541152486013, 1541152487013, 1541152487013),
 					},
 					{
 						Content: []xsql.Row{
@@ -226,7 +226,7 @@ func TestAggregatePlan_Apply(t *testing.T) {
 								},
 							},
 						},
-						WindowRange: xsql.NewWindowRange(1541152486013, 1541152487013),
+						WindowRange: xsql.NewWindowRange(1541152486013, 1541152487013, 1541152487013),
 					},
 				},
 			},

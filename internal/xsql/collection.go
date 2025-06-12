@@ -590,12 +590,13 @@ func (w WindowRangeValuer) Meta(_, _ string) (interface{}, bool) {
 }
 
 type WindowRange struct {
-	windowStart int64
-	windowEnd   int64
+	windowStart   int64
+	windowEnd     int64
+	windowTrigger int64
 }
 
-func NewWindowRange(windowStart int64, windowEnd int64) *WindowRange {
-	return &WindowRange{windowStart, windowEnd}
+func NewWindowRange(windowStart int64, windowEnd int64, windowTrigger int64) *WindowRange {
+	return &WindowRange{windowStart, windowEnd, windowTrigger}
 }
 
 func (r *WindowRange) FuncValue(key string) (interface{}, bool) {

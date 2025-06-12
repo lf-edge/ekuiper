@@ -71,7 +71,7 @@ func TestLeftJoinPlan_Apply(t *testing.T) {
 						Message: xsql.Message{"id2": 4, "f2": "w3"},
 					},
 				},
-				WindowRange: xsql.NewWindowRange(1541152486013, 1541152487013),
+				WindowRange: xsql.NewWindowRange(1541152486013, 1541152487013, 1541152487013),
 			},
 			result: &xsql.JoinTuples{
 				Content: []*xsql.JoinTuple{
@@ -93,7 +93,7 @@ func TestLeftJoinPlan_Apply(t *testing.T) {
 						},
 					},
 				},
-				WindowRange: xsql.NewWindowRange(1541152486013, 1541152487013),
+				WindowRange: xsql.NewWindowRange(1541152486013, 1541152487013, 1541152487013),
 			},
 		},
 		{ // 1
