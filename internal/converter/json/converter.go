@@ -216,7 +216,7 @@ func (f *FastJsonConverter) decodeArray(array []*fastjson.Value, field *ast.Json
 }
 
 func (f *FastJsonConverter) decodeObject(obj *fastjson.Object, schema map[string]*ast.JsonStreamField, isOuter bool) (map[string]interface{}, error) {
-	m := make(map[string]interface{})
+	m := make(map[string]interface{}, obj.Len())
 	var err error
 	obj.Visit(func(k []byte, v *fastjson.Value) {
 		key := string(k)
