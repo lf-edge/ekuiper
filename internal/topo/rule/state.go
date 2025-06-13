@@ -419,6 +419,25 @@ func (s *State) ScheduleStop() {
 	return
 }
 
+func (s *State) StopWithLastWill(msg string) {
+	defer s.nextAction()
+	s.logger.Debug("stop RunState")
+	done := s.triggerAction(ActionSignalStop)
+	if done {
+		return
+	}
+	// do stop, stopping action and starting action are mutual exclusive. No concurrent problem here
+	s.logger.Infof("stopping rule %s", s.Rule.Id)
+	err := s.doStop()
+	if err == nil {
+		err = errors.New("canceled manually")
+	}
+	// currentState may be accessed concurrently
+	s.transit(Stopped, err)
+	s.lastWill = msg
+	return
+}
+
 func (s *State) nextAction() {
 	var action ActionSignal = -1
 	s.Lock()

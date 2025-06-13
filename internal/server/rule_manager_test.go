@@ -45,7 +45,7 @@ func TestErrors(t *testing.T) {
 	assert.EqualError(t, err, "Scheduled rule test is not found in registry, please check if it is deleted")
 	err = registry.scheduledStop("test")
 	assert.EqualError(t, err, "Scheduled rule test is not found in registry, please check if it is deleted")
-	err = registry.stopAtExit("test")
+	err = registry.stopAtExit("test", "")
 	assert.EqualError(t, err, "Rule test is not found in registry, please check if it is deleted")
 	// db problems
 	registry.register("test", rule.NewState(def.GetDefaultRule("testErrors", "select * from demo"), func(string, bool) {}))
