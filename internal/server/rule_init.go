@@ -238,7 +238,7 @@ func handleScheduleRuleState(now time.Time, rw ruleWrapper) error {
 	case scheduleRuleActionStop:
 		return registry.scheduledStop(rw.rule.Id)
 	case doStop:
-		return registry.stopAtExit(rw.rule.Id)
+		return registry.stopAtExit(rw.rule.Id, "stopped by rule patrol")
 	default:
 		// do nothing
 	}
@@ -358,7 +358,7 @@ func StartCPUProfiling(ctx context.Context, cpuProfile Profiler, interval time.D
 func waitAllRuleStop() {
 	rules, _ := ruleProcessor.GetAllRules()
 	for _, r := range rules {
-		err := registry.stopAtExit(r)
+		err := registry.stopAtExit(r, "")
 		if err != nil {
 			logger.Warnf("stop rule %s failed, err:%v", r, err)
 		}
