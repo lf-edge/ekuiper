@@ -35,9 +35,9 @@ var commonCases = []any{
 	&xsql.Tuple{Emitter: "test", Message: map[string]any{"a": 3, "b": 4, "sourceConf": "hello", "data": []any{map[string]any{"a": 5, "b": 6, "sourceConf": "world"}}}, Timestamp: time.UnixMilli(0)}, // common a,b,sourceConf
 	&xsql.Tuple{Emitter: "test", Message: map[string]any{"data": map[string]any{"a": 5, "b": 6, "sourceConf": "world"}}, Timestamp: time.UnixMilli(0)},                                               // nested data
 	// &xsql.Tuple{Emitter: "test", Message: map[string]any{}},                                                     // empty tuple
-	&xsql.WindowTuples{Content: []xsql.Row{&xsql.Tuple{Emitter: "test", Message: map[string]any{"a": 1, "b": 2}, Timestamp: time.UnixMilli(0)}, &xsql.Tuple{Emitter: "test", Timestamp: time.UnixMilli(0), Message: map[string]any{"a": 3, "b": 4, "sourceConf": "hello"}}}},
-	&xsql.WindowTuples{Content: []xsql.Row{&xsql.Tuple{Emitter: "test", Timestamp: time.UnixMilli(0), Message: map[string]any{"data": map[string]any{"a": 5, "b": 6, "sourceConf": "world"}}}, &xsql.Tuple{Emitter: "test", Timestamp: time.UnixMilli(0), Message: map[string]any{"a": 3, "b": 4, "sourceConf": "hello"}}}},
-	&xsql.WindowTuples{Content: []xsql.Row{}}, // empty data should be omitted if omitempty is true
+	&xsql.WindowTuples{WindowRange: xsql.NewWindowRange(123, 456, 456), Content: []xsql.Row{&xsql.Tuple{Emitter: "test", Message: map[string]any{"a": 1, "b": 2}, Timestamp: time.UnixMilli(0)}, &xsql.Tuple{Emitter: "test", Timestamp: time.UnixMilli(0), Message: map[string]any{"a": 3, "b": 4, "sourceConf": "hello"}}}},
+	&xsql.WindowTuples{WindowRange: xsql.NewWindowRange(456, 789, 456), Content: []xsql.Row{&xsql.Tuple{Emitter: "test", Timestamp: time.UnixMilli(0), Message: map[string]any{"data": map[string]any{"a": 5, "b": 6, "sourceConf": "world"}}}, &xsql.Tuple{Emitter: "test", Timestamp: time.UnixMilli(0), Message: map[string]any{"a": 3, "b": 4, "sourceConf": "hello"}}}},
+	&xsql.WindowTuples{WindowRange: xsql.NewWindowRange(789, 1230, 789), Content: []xsql.Row{}}, // empty data should be omitted if omitempty is true
 }
 
 func TestTransformRun(t *testing.T) {
@@ -247,6 +247,24 @@ func TestTransformRun(t *testing.T) {
 
 				&xsql.RawTuple{Rawdata: []byte(`{"ab":1,"bb":2}`), Timestamp: timex.GetNow(), Props: map[string]string{"{{.a}}": "1"}},
 				&xsql.RawTuple{Rawdata: []byte(`{"ab":3,"bb":4}`), Timestamp: timex.GetNow(), Props: map[string]string{"{{.a}}": "3"}},
+			},
+		},
+		{
+			name: "props of data template with meta",
+			sc: &SinkConf{
+				Format:       "json",
+				DataTemplate: "{\"ab\":{{.a}},\"bb\":{{.b}}}",
+				SendSingle:   true,
+				SchemaId:     "{{meta \"et\"}}",
+			},
+			templates: []string{"{{meta \"et\"}}"},
+			cases:     commonCases,
+			expects: []any{
+				&xsql.RawTuple{Rawdata: []byte(`{"ab":1,"bb":2}`), Timestamp: timex.GetNow(), Props: map[string]string{"{{meta \"et\"}}": "0"}},
+				&xsql.RawTuple{Rawdata: []byte(`{"ab":3,"bb":4}`), Timestamp: timex.GetNow(), Props: map[string]string{"{{meta \"et\"}}": "0"}},
+				&xsql.RawTuple{Rawdata: []byte(`{"ab":<no value>,"bb":<no value>}`), Timestamp: timex.GetNow(), Props: map[string]string{"{{meta \"et\"}}": "0"}},
+				&xsql.RawTuple{Rawdata: []byte(`{"ab":1,"bb":2}`), Timestamp: timex.GetNow(), Props: map[string]string{"{{meta \"et\"}}": "456"}},
+				&xsql.RawTuple{Rawdata: []byte(`{"ab":3,"bb":4}`), Timestamp: timex.GetNow(), Props: map[string]string{"{{meta \"et\"}}": "456"}},
 			},
 		},
 	}

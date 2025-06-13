@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"text/template"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
@@ -37,15 +38,17 @@ import (
 // Output: MessageTuple, SinkTupleList, RawTuple
 type TransformOp struct {
 	*defaultSinkNode
-	dataField     string
-	fields        []string
-	excludeFields []string
-	sendSingle    bool
-	omitIfEmpty   bool
+	dataField       string
+	fields          []string
+	excludeFields   []string
+	sendSingle      bool
+	omitIfEmpty     bool
+	hasMetaTemplate bool
 	// If the result format is text, the dataTemplate should be used to format the data and skip the encode step. Otherwise, the text must be unmarshall back to map
 	isTextFormat bool
 	dt           *template.Template
 	templates    map[string]*template.Template
+	metaStore    map[string]any
 	isSliceMode  bool
 	// temp state
 	output bytes.Buffer
@@ -76,15 +79,35 @@ func NewTransformOp(name string, rOpt *def.RuleOption, sc *SinkConf, templates [
 		}
 		o.isSliceMode = true
 	}
+	var (
+		temp *template.Template
+		err  error
+	)
 	if sc.DataTemplate != "" {
-		temp, err := transform.GenTp(sc.DataTemplate)
+		if strings.Contains(sc.DataTemplate, "meta") {
+			if o.metaStore == nil {
+				o.metaStore = make(map[string]any, 1)
+			}
+			o.hasMetaTemplate = true
+			temp, err = transform.GenTpWithMeta(sc.DataTemplate, o.metaStore)
+		} else {
+			temp, err = transform.GenTp(sc.DataTemplate)
+		}
 		if err != nil {
 			return nil, err
 		}
 		o.dt = temp
 	}
 	for _, tstr := range templates {
-		temp, err := transform.GenTp(tstr)
+		if strings.Contains(tstr, "meta") {
+			if o.metaStore == nil {
+				o.metaStore = make(map[string]any, 1)
+			}
+			o.hasMetaTemplate = true
+			temp, err = transform.GenTpWithMeta(tstr, o.metaStore)
+		} else {
+			temp, err = transform.GenTp(tstr)
+		}
 		if err != nil {
 			return nil, err
 		}
@@ -117,6 +140,16 @@ func (t *TransformOp) Worker(ctx api.StreamContext, item any) []any {
 	if ic, ok := item.(xsql.Collection); ok && t.omitIfEmpty && ic.Len() == 0 {
 		ctx.GetLogger().Debugf("receive empty collection, dropped")
 		return nil
+	}
+	if t.hasMetaTemplate {
+		var et int64
+		if fv, ok := item.(xsql.FuncValuer); ok {
+			v, _ := fv.FuncValue("event_time")
+			if ett, exist := v.(int64); exist {
+				et = ett
+			}
+		}
+		t.metaStore["et"] = et
 	}
 	outs := itemToMap(item)
 	if t.omitIfEmpty && (item == nil || len(outs) == 0) {

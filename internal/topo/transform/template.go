@@ -27,6 +27,14 @@ func GenTp(dt string) (*template.Template, error) {
 	return template.New("sink").Funcs(conf.FuncMap).Parse(dt)
 }
 
+func GenTpWithMeta(dt string, store map[string]any) (*template.Template, error) {
+	return template.New("sink").Funcs(conf.FuncMap).Funcs(template.FuncMap{
+		"meta": func(k string) any {
+			return store[k]
+		},
+	}).Parse(dt)
+}
+
 // TransItem If you do not need to convert data to []byte, you can use this function directly. Otherwise, use TransFunc.
 func TransItem(input interface{}, dataField string, fields []string, excludeFields []string) (any, bool, error) {
 	if dataField == "" && len(fields) == 0 && len(excludeFields) == 0 {
