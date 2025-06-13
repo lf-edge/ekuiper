@@ -237,6 +237,8 @@ func handleScheduleRuleState(now time.Time, rw ruleWrapper) error {
 		return registry.scheduledStart(rw.rule.Id)
 	case scheduleRuleActionStop:
 		return registry.scheduledStop(rw.rule.Id)
+	case doStop:
+		return registry.stopAtExit(rw.rule.Id)
 	default:
 		// do nothing
 	}
@@ -249,6 +251,7 @@ const (
 	scheduleRuleActionDoNothing scheduleRuleAction = iota
 	scheduleRuleActionStart
 	scheduleRuleActionStop
+	doStop
 )
 
 func handleScheduleRule(now time.Time, rw ruleWrapper) scheduleRuleAction {
@@ -295,7 +298,7 @@ func scheduleCronRuleAction(now time.Time, rw ruleWrapper) scheduleRuleAction {
 
 		} else {
 			if rw.state == rule.Running && !rw.startTime.IsZero() && now.After(rw.startTime.Add(d)) {
-				return scheduleRuleActionStop
+				return doStop
 			}
 		}
 	}
