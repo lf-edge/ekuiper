@@ -585,16 +585,19 @@ func (o *WindowOperator) handleInputsForSlidingWindow(ctx api.StreamContext, inp
 			nextleft = i
 			continue
 		}
-		if tuple.Timestamp.Equal(windowStart) || tuple.Timestamp.After(windowStart) {
+		if tuple.Timestamp.After(windowStart) {
 			if tuple.Timestamp.Before(windowEnd) || tuple.Timestamp.Equal(windowEnd) {
 				content = append(content, tuple)
 			}
 		}
 	}
-	if nextleft < 0 {
+	if nextleft == -1 {
+		return inputs, inputs[:0], content
+	}
+	if nextleft == len(inputs)-1 {
 		return inputs[:0], inputs, content
 	}
-	return inputs[nextleft:], inputs[:nextleft], content
+	return inputs[:nextleft+1], inputs[nextleft:], content
 }
 
 func (o *WindowOperator) handleInputs(ctx api.StreamContext, inputs []*xsql.Tuple, right time.Time) ([]*xsql.Tuple, []*xsql.Tuple, []xsql.Row) {

@@ -605,7 +605,7 @@ func (r *WindowRange) FuncValue(key string) (interface{}, bool) {
 		return r.windowStart, true
 	case "window_end":
 		return r.windowEnd, true
-	case "event_time":
+	case "event_time", "window_trigger":
 		return r.windowTrigger, true
 	default:
 		return nil, false

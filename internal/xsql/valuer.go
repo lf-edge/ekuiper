@@ -29,9 +29,10 @@ import (
 var (
 	// implicitValueFuncs is a set of functions that event implicitly passes the value.
 	implicitValueFuncs = map[string]bool{
-		"window_start": true,
-		"window_end":   true,
-		"event_time":   true,
+		"window_start":   true,
+		"window_end":     true,
+		"event_time":     true,
+		"window_trigger": true,
 	}
 	// ImplicitStateFuncs is a set of functions that read/update global state implicitly.
 	ImplicitStateFuncs = map[string]bool{
