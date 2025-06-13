@@ -49,6 +49,15 @@ func TestHandleScheduleRule(t *testing.T) {
 		{
 			Options: &def.RuleOption{
 				Cron:     "",
+				Duration: "10s",
+			},
+			action:    doStop,
+			startTime: now.Add(-time.Hour),
+			state:     rule.Running,
+		},
+		{
+			Options: &def.RuleOption{
+				Cron:     "",
 				Duration: "",
 				CronDatetimeRange: []schedule.DatetimeRange{
 					{
