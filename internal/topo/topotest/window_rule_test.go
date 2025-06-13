@@ -707,18 +707,18 @@ func TestWindow(t *testing.T) {
 			BufferLength: 100,
 			SendError:    true,
 		},
-		//{
-		//	BufferLength:       100,
-		//	SendError:          true,
-		//	Qos:                def.AtLeastOnce,
-		//	CheckpointInterval: cast.DurationConf(5 * time.Second),
-		//},
-		//{
-		//	BufferLength:       100,
-		//	SendError:          true,
-		//	Qos:                def.ExactlyOnce,
-		//	CheckpointInterval: cast.DurationConf(5 * time.Second),
-		//},
+		{
+			BufferLength:       100,
+			SendError:          true,
+			Qos:                def.AtLeastOnce,
+			CheckpointInterval: cast.DurationConf(5 * time.Second),
+		},
+		{
+			BufferLength:       100,
+			SendError:          true,
+			Qos:                def.ExactlyOnce,
+			CheckpointInterval: cast.DurationConf(5 * time.Second),
+		},
 	}
 	for _, opt := range options {
 		DoRuleTest(t, tests, opt, 15)
