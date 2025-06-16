@@ -84,17 +84,20 @@ type WindowV2Exec interface {
 
 type SlidingWindowOp struct {
 	*WindowV2Operator
-	Length time.Duration
+	Length           time.Duration
+	triggerCondition ast.Expr
 }
 
 func NewSlidingWindowOp(o *WindowV2Operator) *SlidingWindowOp {
 	return &SlidingWindowOp{
 		WindowV2Operator: o,
 		Length:           o.windowConfig.Length,
+		triggerCondition: o.windowConfig.TriggerCondition,
 	}
 }
 
 func (s *SlidingWindowOp) exec(ctx api.StreamContext, errCh chan<- error) {
+	fv, _ := xsql.NewFunctionValuersForOp(ctx)
 	for {
 		select {
 		case <-ctx.Done():
@@ -108,14 +111,42 @@ func (s *SlidingWindowOp) exec(ctx api.StreamContext, errCh chan<- error) {
 			s.onProcessStart(ctx, input)
 			switch row := data.(type) {
 			case *xsql.Tuple:
-				s.scanner.gc(now)
-				s.scanner.addTuple(row)
 				windowStart := now.Add(-s.Length)
 				windowEnd := now
-				s.emitWindow(ctx, s.scanner.scanWindow(windowStart, windowEnd), windowStart, windowEnd)
+				s.scanner.gc(windowStart)
+				s.scanner.addTuple(row)
+				sendWindow := true
+				if s.triggerCondition != nil {
+					sendWindow = s.isMatchCondition(ctx, fv, row)
+				}
+				if sendWindow {
+					s.emitWindow(ctx, s.scanner.scanWindow(windowStart, windowEnd), windowStart, windowEnd)
+				}
 			}
 			s.onProcessEnd(ctx)
 		}
+	}
+}
+
+func (s *SlidingWindowOp) isMatchCondition(ctx api.StreamContext, fv *xsql.FunctionValuer, d *xsql.Tuple) bool {
+	if s.triggerCondition == nil {
+		return true
+	}
+	log := ctx.GetLogger()
+	ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(d, fv)}
+	result := ve.Eval(s.triggerCondition)
+	// not match trigger condition
+	if result == nil {
+		return false
+	}
+	switch v := result.(type) {
+	case error:
+		log.Errorf("inc sliding window trigger condition meet error: %v", v)
+		return false
+	case bool:
+		return v
+	default:
+		return false
 	}
 }
 

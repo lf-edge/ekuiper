@@ -46,6 +46,10 @@ func (p *WindowPlan) WindowType() ast.WindowType {
 	return p.wtype
 }
 
+func (p *WindowPlan) GetTriggerCondition() ast.Expr {
+	return p.triggerCondition
+}
+
 func (p *WindowPlan) BuildExplainInfo() {
 	t := p.wtype.String()
 	info := "{ length:" + strconv.Itoa(p.length) + ", "
