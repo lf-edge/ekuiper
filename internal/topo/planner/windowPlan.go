@@ -42,6 +42,10 @@ func (p WindowPlan) Init() *WindowPlan {
 	return &p
 }
 
+func (p *WindowPlan) WindowType() ast.WindowType {
+	return p.wtype
+}
+
 func (p *WindowPlan) BuildExplainInfo() {
 	t := p.wtype.String()
 	info := "{ length:" + strconv.Itoa(p.length) + ", "
