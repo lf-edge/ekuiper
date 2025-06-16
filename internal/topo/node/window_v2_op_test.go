@@ -51,6 +51,8 @@ func TestWindowV2SlidingWindow(t *testing.T) {
 	stmt, err := xsql.NewParser(strings.NewReader(sql)).Parse()
 	require.NoError(t, err)
 	p, err := planner.CreateLogicalPlan(stmt, o, kv)
+	require.NoError(t, err)
+	require.NotNil(t, p)
 	windowPlan := extractWindowPlan(p)
 	require.NotNil(t, windowPlan)
 	op, err := node.NewWindowV2Op("window", node.WindowConfig{
