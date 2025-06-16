@@ -383,21 +383,7 @@ func (s *State) triggerAction(action ActionSignal) bool {
 // Stop run stop action or add the stop action to queue
 // regSchedule: whether need to handle scheduler. If call externally, set it to true
 func (s *State) Stop() {
-	defer s.nextAction()
-	s.logger.Debug("stop RunState")
-	done := s.triggerAction(ActionSignalStop)
-	if done {
-		return
-	}
-	// do stop, stopping action and starting action are mutual exclusive. No concurrent problem here
-	s.logger.Infof("stopping rule %s", s.Rule.Id)
-	err := s.doStop()
-	if err == nil {
-		err = errors.New("canceled manually")
-	}
-	// currentState may be accessed concurrently
-	s.transit(Stopped, err)
-	return
+	s.StopWithLastWill("canceled manually")
 }
 
 func (s *State) ScheduleStop() {
@@ -430,7 +416,7 @@ func (s *State) StopWithLastWill(msg string) {
 	s.logger.Infof("stopping rule %s", s.Rule.Id)
 	err := s.doStop()
 	if err == nil {
-		err = errors.New("canceled manually")
+		err = errors.New(msg)
 	}
 	// currentState may be accessed concurrently
 	s.transit(Stopped, err)
