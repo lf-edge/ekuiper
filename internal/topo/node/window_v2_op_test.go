@@ -36,6 +36,61 @@ func init() {
 	testx.InitEnv("node_test")
 }
 
+func TestWindowV2SlidingWindowDelay(t *testing.T) {
+	conf.IsTesting = true
+	now := time.Now()
+	o := &def.RuleOption{
+		BufferLength: 10,
+	}
+	kv, err := store.GetKV("stream")
+	require.NoError(t, err)
+	require.NoError(t, prepareStream())
+	sql := "select count(*) from stream group by slidingWindow(ss,1,1) over (when a = 1)"
+	stmt, err := xsql.NewParser(strings.NewReader(sql)).Parse()
+	require.NoError(t, err)
+	p, err := planner.CreateLogicalPlan(stmt, o, kv)
+	require.NoError(t, err)
+	require.NotNil(t, p)
+	windowPlan := extractWindowPlan(p)
+	require.NotNil(t, windowPlan)
+	op, err := node.NewWindowV2Op("window", node.WindowConfig{
+		TriggerCondition: windowPlan.GetTriggerCondition(),
+		Type:             windowPlan.WindowType(),
+		Delay:            time.Second,
+		Length:           time.Second,
+		RawInterval:      1,
+		TimeUnit:         ast.SS,
+	}, o)
+	require.NoError(t, err)
+	require.NotNil(t, op)
+	input, _ := op.GetInput()
+	output := make(chan any, 10)
+	op.AddOutput(output, "output")
+	errCh := make(chan error, 10)
+	ctx, cancel := mockContext.NewMockContext("1", "2").WithCancel()
+	op.Exec(ctx, errCh)
+	waitExecute()
+	input <- &xsql.Tuple{Message: map[string]any{"a": int64(1)}, Timestamp: now}
+	input <- &xsql.Tuple{Message: map[string]any{"a": int64(2)}, Timestamp: now.Add(500 * time.Millisecond)}
+	waitExecute()
+	got := <-output
+	wt, ok := got.(*xsql.WindowTuples)
+	require.True(t, ok)
+	require.NotNil(t, wt)
+	d := wt.ToMaps()
+	require.Equal(t, []map[string]any{
+		{
+			"a": int64(1),
+		},
+		{
+			"a": int64(2),
+		},
+	}, d)
+	cancel()
+	waitExecute()
+	op.Close()
+}
+
 func TestWindowV2SlidingWindowCondition(t *testing.T) {
 	conf.IsTesting = true
 	now := time.Now()

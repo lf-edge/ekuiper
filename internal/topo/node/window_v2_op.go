@@ -24,7 +24,6 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
-	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 type WindowV2Operator struct {
@@ -108,7 +107,7 @@ func (s *SlidingWindowOp) exec(ctx api.StreamContext, errCh chan<- error) {
 			return
 		case delayTs := <-s.delayNotify:
 			windowEnd := delayTs
-			windowStart := delayTs.Add(-s.Delay)
+			windowStart := delayTs.Add(-s.Delay).Add(-s.Length)
 			s.emitWindow(ctx, s.scanner.scanWindow(windowStart, windowEnd), windowStart, windowEnd)
 		case input := <-s.input:
 			data, processed := s.commonIngest(ctx, input)
@@ -129,7 +128,7 @@ func (s *SlidingWindowOp) exec(ctx api.StreamContext, errCh chan<- error) {
 				if s.Delay > 0 {
 					sendWindow = false
 					go func(ts time.Time) {
-						after := timex.After(s.Delay)
+						after := time.After(s.Delay)
 						select {
 						case <-ctx.Done():
 							return
