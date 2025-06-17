@@ -438,12 +438,16 @@ func (rr *RuleRegistry) scheduledStop(name string) error {
 	}
 }
 
-func (rr *RuleRegistry) stopAtExit(name string) error {
+func (rr *RuleRegistry) stopAtExit(name string, msg string) error {
 	rs, ok := registry.load(name)
 	if !ok {
 		return errorx.NewWithCode(errorx.NOT_FOUND, fmt.Sprintf("Rule %s is not found in registry, please check if it is deleted", name))
 	} else {
-		rs.Stop()
+		if len(msg) > 0 {
+			rs.StopWithLastWill(msg)
+		} else {
+			rs.Stop()
+		}
 		return nil
 	}
 }
