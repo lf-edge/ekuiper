@@ -238,7 +238,7 @@ func handleScheduleRuleState(now time.Time, rw ruleWrapper) error {
 	case scheduleRuleActionStop:
 		return registry.scheduledStop(rw.rule.Id)
 	case doStop:
-		return registry.stopAtExit(rw.rule.Id, "stopped by rule patrol")
+		return registry.stopAtExit(rw.rule.Id, "duration terminated")
 	default:
 		// do nothing
 	}
