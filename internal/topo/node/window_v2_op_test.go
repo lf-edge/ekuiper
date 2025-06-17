@@ -30,7 +30,6 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
-	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 func init() {
@@ -39,8 +38,7 @@ func init() {
 
 func TestWindowV2SlidingWindowCondition(t *testing.T) {
 	conf.IsTesting = true
-	timex.Set(time.Now().UnixMilli())
-	now := timex.GetNow()
+	now := time.Now()
 	o := &def.RuleOption{
 		BufferLength: 10,
 	}
@@ -72,7 +70,7 @@ func TestWindowV2SlidingWindowCondition(t *testing.T) {
 	op.Exec(ctx, errCh)
 	waitExecute()
 	input <- &xsql.Tuple{Message: map[string]any{"a": int64(1)}, Timestamp: now}
-	input <- &xsql.Tuple{Message: map[string]any{"a": int64(2)}, Timestamp: now}
+	input <- &xsql.Tuple{Message: map[string]any{"a": int64(2)}, Timestamp: now.Add(time.Second)}
 	waitExecute()
 	got := <-output
 	wt, ok := got.(*xsql.WindowTuples)
@@ -94,8 +92,7 @@ func TestWindowV2SlidingWindowCondition(t *testing.T) {
 
 func TestWindowV2SlidingWindow(t *testing.T) {
 	conf.IsTesting = true
-	timex.Set(time.Now().UnixMilli())
-	now := timex.GetNow()
+	now := time.Now()
 	o := &def.RuleOption{
 		BufferLength: 10,
 	}

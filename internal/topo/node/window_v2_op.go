@@ -84,15 +84,19 @@ type WindowV2Exec interface {
 
 type SlidingWindowOp struct {
 	*WindowV2Operator
+	Delay            time.Duration
 	Length           time.Duration
 	triggerCondition ast.Expr
+	delayNotify      chan time.Time
 }
 
 func NewSlidingWindowOp(o *WindowV2Operator) *SlidingWindowOp {
 	return &SlidingWindowOp{
 		WindowV2Operator: o,
+		Delay:            o.windowConfig.Delay,
 		Length:           o.windowConfig.Length,
 		triggerCondition: o.windowConfig.TriggerCondition,
+		delayNotify:      make(chan time.Time, 1024),
 	}
 }
 
@@ -102,8 +106,11 @@ func (s *SlidingWindowOp) exec(ctx api.StreamContext, errCh chan<- error) {
 		select {
 		case <-ctx.Done():
 			return
+		case delayTs := <-s.delayNotify:
+			windowEnd := delayTs
+			windowStart := delayTs.Add(-s.Delay)
+			s.emitWindow(ctx, s.scanner.scanWindow(windowStart, windowEnd), windowStart, windowEnd)
 		case input := <-s.input:
-			now := timex.GetNow()
 			data, processed := s.commonIngest(ctx, input)
 			if processed {
 				continue
@@ -111,13 +118,25 @@ func (s *SlidingWindowOp) exec(ctx api.StreamContext, errCh chan<- error) {
 			s.onProcessStart(ctx, input)
 			switch row := data.(type) {
 			case *xsql.Tuple:
-				windowStart := now.Add(-s.Length)
-				windowEnd := now
+				windowEnd := row.Timestamp
+				windowStart := windowEnd.Add(-s.Length)
 				s.scanner.gc(windowStart)
 				s.scanner.addTuple(row)
 				sendWindow := true
 				if s.triggerCondition != nil {
 					sendWindow = s.isMatchCondition(ctx, fv, row)
+				}
+				if s.Delay > 0 {
+					sendWindow = false
+					go func(ts time.Time) {
+						after := timex.After(s.Delay)
+						select {
+						case <-ctx.Done():
+							return
+						case <-after:
+							s.delayNotify <- ts
+						}
+					}(windowEnd.Add(s.Delay))
 				}
 				if sendWindow {
 					s.emitWindow(ctx, s.scanner.scanWindow(windowStart, windowEnd), windowStart, windowEnd)
