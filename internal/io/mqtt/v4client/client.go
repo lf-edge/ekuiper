@@ -31,7 +31,8 @@ import (
 )
 
 type Client struct {
-	cli pahoMqtt.Client
+	cli                 pahoMqtt.Client
+	EnableClientSession bool
 }
 
 type ConnectionConfig struct {
@@ -53,6 +54,7 @@ func Provision(ctx api.StreamContext, props map[string]any, onConnect client.Con
 	opts := pahoMqtt.NewClientOptions().AddBroker(c.Server).SetProtocolVersion(c.pversion).SetAutoReconnect(true).SetMaxReconnectInterval(connection.DefaultMaxInterval).SetClientID(c.ClientId).SetTLSConfig(c.tls)
 
 	if c.EnableClientSession {
+		c.EnableClientSession = true
 		opts.SetCleanSession(false)
 	}
 
@@ -102,13 +104,16 @@ func (c *Client) Publish(_ api.StreamContext, topic string, qos byte, retained b
 }
 
 func (c *Client) Subscribe(ctx api.StreamContext, topic string, qos byte, callback client.MessageHandler) error {
-	token := c.cli.Subscribe(topic, qos, func(_ pahoMqtt.Client, message pahoMqtt.Message) {
+	token := c.cli.Subscribe("/yisa/data", 1, func(_ pahoMqtt.Client, message pahoMqtt.Message) {
 		callback(ctx, message)
 	})
 	return handleToken(token)
 }
 
 func (c *Client) Unsubscribe(_ api.StreamContext, topic string) error {
+	if c.EnableClientSession {
+		return nil
+	}
 	token := c.cli.Unsubscribe(topic)
 	return handleToken(token)
 }

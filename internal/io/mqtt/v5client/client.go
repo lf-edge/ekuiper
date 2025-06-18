@@ -38,7 +38,8 @@ type Client struct {
 	// subscription route info
 	router paho.Router
 	// record if already have subscription for a topic
-	subs map[string]struct{}
+	subs                map[string]struct{}
+	EnableClientSession bool
 }
 
 type ConnectionConfig struct {
@@ -107,6 +108,7 @@ func Provision(ctx api.StreamContext, props map[string]any, onConnect client.Con
 	if cc.Password != "" {
 		cliCfg.ConnectPassword = []byte(cc.Password)
 	}
+	cli.EnableClientSession = cc.EnableClientSession
 	cm, err := autopaho.NewConnection(ctx, cliCfg) // starts process; will reconnect until context cancelled
 	if err != nil {
 		return nil, err
@@ -186,21 +188,23 @@ func (c *Client) Publish(ctx api.StreamContext, topic string, qos byte, retained
 func (c *Client) Unsubscribe(ctx api.StreamContext, topic string) error {
 	c.Lock()
 	defer c.Unlock()
-	unsuback, err := c.cm.Unsubscribe(ctx, &paho.Unsubscribe{
-		Topics: []string{topic},
-	})
-	c.router.UnregisterHandler(topic)
 	delete(c.subs, topic)
-	// Do not exit immediately when unsub error. Just remove unsub handler
-	if err != nil {
-		if unsuback != nil {
-			if unsuback.Properties != nil {
-				return fmt.Errorf("unsuscribe to %s error: %s", topic, unsuback.Properties.ReasonString)
-			} else {
-				return fmt.Errorf("unsuscribe to %s error: %s", topic, unsuback.Reasons)
+	if !c.EnableClientSession {
+		unsuback, err := c.cm.Unsubscribe(ctx, &paho.Unsubscribe{
+			Topics: []string{topic},
+		})
+		c.router.UnregisterHandler(topic)
+		// Do not exit immediately when unsub error. Just remove unsub handler
+		if err != nil {
+			if unsuback != nil {
+				if unsuback.Properties != nil {
+					return fmt.Errorf("unsuscribe to %s error: %s", topic, unsuback.Properties.ReasonString)
+				} else {
+					return fmt.Errorf("unsuscribe to %s error: %s", topic, unsuback.Reasons)
+				}
 			}
+			return err
 		}
-		return err
 	}
 	return nil
 }
