@@ -42,12 +42,13 @@ type Client struct {
 }
 
 type ConnectionConfig struct {
-	Server    string `json:"server"`
-	ClientId  string `json:"clientid"`
-	Uname     string `json:"username"`
-	Password  string `json:"password"`
-	serverUrl *url.URL
-	tls       *tls.Config
+	Server              string `json:"server"`
+	ClientId            string `json:"clientid"`
+	Uname               string `json:"username"`
+	Password            string `json:"password"`
+	EnableClientSession bool   `json:"enableClientSession"`
+	serverUrl           *url.URL
+	tls                 *tls.Config
 }
 
 func Provision(ctx api.StreamContext, props map[string]any, onConnect client.ConnectHandler, onConnectLost client.ConnectErrorHandler, _ client.ConnectHandler) (*Client, error) {
@@ -67,7 +68,7 @@ func Provision(ctx api.StreamContext, props map[string]any, onConnect client.Con
 		ConnectRetryDelay: time.Second,
 		KeepAlive:         20, // Keepalive message should be sent every 20 seconds
 		// CleanStartOnInitialConnection defaults to false. Setting this to true will clear the session on the first connection.
-		CleanStartOnInitialConnection: true,
+		CleanStartOnInitialConnection: !cc.EnableClientSession,
 		// SessionExpiryInterval - Seconds that a session will survive after disconnection.
 		// It is important to set this because otherwise, any queued messages will be lost if the connection drops and
 		// the server will not queue messages while it is down. The specific setting will depend upon your needs

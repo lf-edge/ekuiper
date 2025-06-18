@@ -35,13 +35,14 @@ type Client struct {
 }
 
 type ConnectionConfig struct {
-	Server   string `json:"server"`
-	PVersion string `json:"protocolVersion"`
-	ClientId string `json:"clientid"`
-	Uname    string `json:"username"`
-	Password string `json:"password"`
-	pversion uint   // 3 or 4
-	tls      *tls.Config
+	Server              string `json:"server"`
+	PVersion            string `json:"protocolVersion"`
+	ClientId            string `json:"clientid"`
+	Uname               string `json:"username"`
+	Password            string `json:"password"`
+	EnableClientSession bool   `json:"enableClientSession"`
+	pversion            uint   // 3 or 4
+	tls                 *tls.Config
 }
 
 func Provision(ctx api.StreamContext, props map[string]any, onConnect client.ConnectHandler, onConnectLost client.ConnectErrorHandler, onReconnect client.ConnectHandler) (*Client, error) {
@@ -50,6 +51,10 @@ func Provision(ctx api.StreamContext, props map[string]any, onConnect client.Con
 		return nil, err
 	}
 	opts := pahoMqtt.NewClientOptions().AddBroker(c.Server).SetProtocolVersion(c.pversion).SetAutoReconnect(true).SetMaxReconnectInterval(connection.DefaultMaxInterval).SetClientID(c.ClientId).SetTLSConfig(c.tls)
+
+	if c.EnableClientSession {
+		opts.SetCleanSession(false)
+	}
 
 	if c.Uname != "" {
 		opts = opts.SetUsername(c.Uname)
