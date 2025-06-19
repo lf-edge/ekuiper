@@ -40,7 +40,11 @@ func NewWindowV2Op(name string, w WindowConfig, options *def.RuleOption) (*Windo
 	o.windowConfig = w
 	switch w.Type {
 	case ast.SLIDING_WINDOW:
-		o.wExec = NewSlidingWindowOp(o)
+		if options.IsEventTime {
+			o.wExec = NewEventSlidingWindowOp(o)
+		} else {
+			o.wExec = NewSlidingWindowOp(o)
+		}
 	default:
 		return nil, fmt.Errorf("unsupported window type:%v", w.Type.String())
 	}
@@ -65,7 +69,8 @@ func (o *WindowV2Operator) Exec(ctx api.StreamContext, errCh chan<- error) {
 	}()
 }
 
-func (o *WindowV2Operator) emitWindow(ctx api.StreamContext, tuples []*xsql.Tuple, startTime, endTime time.Time) {
+func (o *WindowV2Operator) emitWindow(ctx api.StreamContext, startTime, endTime time.Time) {
+	tuples := o.scanner.scanWindow(startTime, endTime)
 	results := &xsql.WindowTuples{
 		Content: make([]xsql.Row, 0),
 	}
@@ -108,7 +113,7 @@ func (s *SlidingWindowOp) exec(ctx api.StreamContext, errCh chan<- error) {
 		case delayTs := <-s.delayNotify:
 			windowEnd := delayTs
 			windowStart := delayTs.Add(-s.Delay).Add(-s.Length)
-			s.emitWindow(ctx, s.scanner.scanWindow(windowStart, windowEnd), windowStart, windowEnd)
+			s.emitWindow(ctx, windowStart, windowEnd)
 		case input := <-s.input:
 			data, processed := s.commonIngest(ctx, input)
 			if processed {
@@ -123,9 +128,9 @@ func (s *SlidingWindowOp) exec(ctx api.StreamContext, errCh chan<- error) {
 				s.scanner.addTuple(row)
 				sendWindow := true
 				if s.triggerCondition != nil {
-					sendWindow = s.isMatchCondition(ctx, fv, row)
+					sendWindow = isMatchCondition(ctx, s.triggerCondition, fv, row)
 				}
-				if s.Delay > 0 {
+				if s.Delay > 0 && sendWindow {
 					sendWindow = false
 					go func(ts time.Time) {
 						after := time.After(s.Delay)
@@ -138,7 +143,7 @@ func (s *SlidingWindowOp) exec(ctx api.StreamContext, errCh chan<- error) {
 					}(windowEnd.Add(s.Delay))
 				}
 				if sendWindow {
-					s.emitWindow(ctx, s.scanner.scanWindow(windowStart, windowEnd), windowStart, windowEnd)
+					s.emitWindow(ctx, windowStart, windowEnd)
 				}
 			}
 			s.onProcessEnd(ctx)
@@ -146,13 +151,13 @@ func (s *SlidingWindowOp) exec(ctx api.StreamContext, errCh chan<- error) {
 	}
 }
 
-func (s *SlidingWindowOp) isMatchCondition(ctx api.StreamContext, fv *xsql.FunctionValuer, d *xsql.Tuple) bool {
-	if s.triggerCondition == nil {
+func isMatchCondition(ctx api.StreamContext, triggerCondition ast.Expr, fv *xsql.FunctionValuer, d *xsql.Tuple) bool {
+	if triggerCondition == nil {
 		return true
 	}
 	log := ctx.GetLogger()
 	ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(d, fv)}
-	result := ve.Eval(s.triggerCondition)
+	result := ve.Eval(triggerCondition)
 	// not match trigger condition
 	if result == nil {
 		return false
