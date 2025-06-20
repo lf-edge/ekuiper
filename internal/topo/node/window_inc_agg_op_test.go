@@ -653,11 +653,17 @@ func prepareStream() error {
 					a BIGINT,
 					b BIGINT,
 				) WITH (DATASOURCE="src1");`,
+		"eventStream": `CREATE STREAM eventStream (
+					a  BIGINT,
+					b  BIGINT,
+                    ts BIGINT
+				) WITH (DATASOURCE="src1",TIMESTAMP="ts");`,
 	}
 
 	types := map[string]ast.StreamType{
 		"sharedStream": ast.TypeStream,
 		"stream":       ast.TypeStream,
+		"eventStream":  ast.TypeStream,
 	}
 	for name, sql := range streamSqls {
 		s, err := json.Marshal(&xsql.StreamInfo{
