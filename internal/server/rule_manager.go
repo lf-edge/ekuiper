@@ -327,8 +327,12 @@ func (rr *RuleRegistry) GetAllRulesWithStatus() ([]map[string]any, error) {
 	for i, id := range ruleIds {
 		ruleName := id
 		ruleDef, _ := ruleProcessor.GetRuleById(id)
-		if ruleDef != nil && ruleDef.Name != "" {
-			ruleName = ruleDef.Name
+		var tags []string
+		if ruleDef != nil {
+			if ruleDef.Name != "" {
+				ruleName = ruleDef.Name
+			}
+			tags = ruleDef.Tags
 		}
 		var str string
 		s, err := getRuleState(id)
@@ -349,6 +353,7 @@ func (rr *RuleRegistry) GetAllRulesWithStatus() ([]map[string]any, error) {
 			"name":   ruleName,
 			"status": str,
 			"trace":  trace,
+			"tags":   tags,
 		}
 	}
 	return result, nil
