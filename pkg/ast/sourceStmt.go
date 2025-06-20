@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -54,6 +54,8 @@ type JsonStreamField struct {
 	Type       string                      `json:"type"`
 	Items      *JsonStreamField            `json:"items,omitempty"`
 	Properties map[string]*JsonStreamField `json:"properties,omitempty"`
+	HasIndex   bool
+	Index      int
 
 	Selected bool
 }
@@ -352,4 +354,11 @@ func doPrintFieldTypeForJson(ft FieldType) (result string, isLiteral bool) {
 		result += `]}`
 	}
 	return result, false
+}
+
+func CheckSchemaIndex(schema map[string]*JsonStreamField) bool {
+	for _, field := range schema {
+		return field != nil && field.HasIndex
+	}
+	return false
 }

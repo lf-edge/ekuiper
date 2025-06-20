@@ -23,6 +23,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/schema"
 )
 
 var (
@@ -41,8 +42,8 @@ func GetOrCreateSubTopo(ctx api.StreamContext, name string) (*SrcSubTopo, bool) 
 				Sources: make([]string, 0),
 				Edges:   make(map[string][]any),
 			},
-			schemaReg: make(map[string]schemainfo),
-			refRules:  make(map[string]chan<- error),
+			schemaLayer: schema.GetStream(name).(*schema.SharedLayer),
+			refRules:    make(map[string]chan<- error),
 		}
 		subTopoPool[name] = ac
 	}

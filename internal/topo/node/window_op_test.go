@@ -27,28 +27,28 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 )
 
-var fivet = []*xsql.Tuple{
-	{
+var fivet = []xsql.EventRow{
+	&xsql.Tuple{
 		Message: map[string]interface{}{
 			"f1": "v1",
 		},
 	},
-	{
+	&xsql.Tuple{
 		Message: map[string]interface{}{
 			"f2": "v2",
 		},
 	},
-	{
+	&xsql.Tuple{
 		Message: map[string]interface{}{
 			"f3": "v3",
 		},
 	},
-	{
+	&xsql.Tuple{
 		Message: map[string]interface{}{
 			"f4": "v4",
 		},
 	},
-	{
+	&xsql.Tuple{
 		Message: map[string]interface{}{
 			"f5": "v5",
 		},
@@ -145,7 +145,7 @@ func TestCountWindow(t *testing.T) {
 		tuplelist     TupleList
 		expWinCount   int
 		winTupleSets  []xsql.WindowTuples
-		expRestTuples []*xsql.Tuple
+		expRestTuples []xsql.EventRow
 	}{
 		{
 			tuplelist: TupleList{
@@ -184,23 +184,23 @@ func TestCountWindow(t *testing.T) {
 					},
 				},
 			},
-			expRestTuples: []*xsql.Tuple{
-				{
+			expRestTuples: []xsql.EventRow{
+				&xsql.Tuple{
 					Message: map[string]interface{}{
 						"f2": "v2",
 					},
 				},
-				{
+				&xsql.Tuple{
 					Message: map[string]interface{}{
 						"f3": "v3",
 					},
 				},
-				{
+				&xsql.Tuple{
 					Message: map[string]interface{}{
 						"f4": "v4",
 					},
 				},
-				{
+				&xsql.Tuple{
 					Message: map[string]interface{}{
 						"f5": "v5",
 					},
@@ -235,13 +235,13 @@ func TestCountWindow(t *testing.T) {
 					},
 				},
 			},
-			expRestTuples: []*xsql.Tuple{
-				{
+			expRestTuples: []xsql.EventRow{
+				&xsql.Tuple{
 					Message: map[string]interface{}{
 						"f4": "v4",
 					},
 				},
-				{
+				&xsql.Tuple{
 					Message: map[string]interface{}{
 						"f5": "v5",
 					},
@@ -272,8 +272,8 @@ func TestCountWindow(t *testing.T) {
 				},
 			},
 
-			expRestTuples: []*xsql.Tuple{
-				{
+			expRestTuples: []xsql.EventRow{
+				&xsql.Tuple{
 					Message: map[string]interface{}{
 						"f5": "v5",
 					},
@@ -288,28 +288,28 @@ func TestCountWindow(t *testing.T) {
 			},
 			expWinCount:  0,
 			winTupleSets: nil,
-			expRestTuples: []*xsql.Tuple{
-				{
+			expRestTuples: []xsql.EventRow{
+				&xsql.Tuple{
 					Message: map[string]interface{}{
 						"f1": "v1",
 					},
 				},
-				{
+				&xsql.Tuple{
 					Message: map[string]interface{}{
 						"f2": "v2",
 					},
 				},
-				{
+				&xsql.Tuple{
 					Message: map[string]interface{}{
 						"f3": "v3",
 					},
 				},
-				{
+				&xsql.Tuple{
 					Message: map[string]interface{}{
 						"f4": "v4",
 					},
 				},
-				{
+				&xsql.Tuple{
 					Message: map[string]interface{}{
 						"f5": "v5",
 					},
@@ -356,24 +356,24 @@ func TestGCInputsForConditionNotMatch(t *testing.T) {
 		},
 		isOverlapWindow: true,
 	}
-	tuples := []*xsql.Tuple{
-		{
+	tuples := []xsql.EventRow{
+		&xsql.Tuple{
 			Timestamp: time.UnixMilli(3000),
 		},
-		{
+		&xsql.Tuple{
 			Timestamp: time.UnixMilli(4000),
 		},
-		{
+		&xsql.Tuple{
 			Timestamp: time.UnixMilli(5000),
 		},
 	}
 	o.triggerTime = time.UnixMilli(1)
 	inputs := o.gcInputs(tuples, time.UnixMilli(4500), context.Background())
-	require.Equal(t, []*xsql.Tuple{
-		{
+	require.Equal(t, []xsql.EventRow{
+		&xsql.Tuple{
 			Timestamp: time.UnixMilli(4000),
 		},
-		{
+		&xsql.Tuple{
 			Timestamp: time.UnixMilli(5000),
 		},
 	}, inputs)

@@ -485,12 +485,13 @@ func parseSource(nodeName string, gn *def.GraphNode, rule *def.Rule, tp *topo.To
 		} else {
 			// Use the plan to calculate the schema and other meta info
 			p := DataSourcePlan{
-				name:         sInfo.stmt.Name,
-				streamStmt:   sInfo.stmt,
-				streamFields: sInfo.schema.ToJsonSchema(),
-				isSchemaless: sInfo.schema == nil,
-				iet:          rule.Options.IsEventTime,
-				allMeta:      rule.Options.SendMetaToSink,
+				name:          sInfo.stmt.Name,
+				streamStmt:    sInfo.stmt,
+				streamFields:  sInfo.schema.ToJsonSchema(),
+				isSchemaless:  sInfo.schema == nil,
+				iet:           rule.Options.IsEventTime,
+				allMeta:       rule.Options.SendMetaToSink,
+				useSliceTuple: rule.Options.Experiment != nil && rule.Options.Experiment.UseSliceTuple,
 			}.Init()
 
 			if sInfo.stmt.StreamType == ast.TypeStream {
@@ -534,6 +535,7 @@ func parseSource(nodeName string, gn *def.GraphNode, rule *def.Rule, tp *topo.To
 			allMeta:         rule.Options.SendMetaToSink,
 			timestampField:  sourceOption.TIMESTAMP,
 			timestampFormat: sourceOption.TIMESTAMP_FORMAT,
+			useSliceTuple:   rule.Options.Experiment != nil && rule.Options.Experiment.UseSliceTuple,
 		}.Init()
 		srcNode, ops, _, e := transformSourceNode(tp.GetContext(), p, nil, rule.Id, rule.Options, 1)
 		if e != nil {
@@ -726,7 +728,7 @@ func parsePick(props map[string]interface{}, sourceNames []string) (*operator.Pr
 		fields:      stmt.Fields,
 		isAggregate: n.IsAgg,
 	}.Init()
-	return &operator.ProjectOp{ColNames: t.colNames, AliasFields: t.aliasFields, ExprFields: t.exprFields, ExceptNames: t.exceptNames, IsAggregate: t.isAggregate, AllWildcard: t.allWildcard, WildcardEmitters: t.wildcardEmitters, SendMeta: t.sendMeta, SendNil: t.sendNil}, nil
+	return &operator.ProjectOp{Fields: t.fields, FieldLen: len(t.fields), ColNames: t.colNames, AliasFields: t.aliasFields, ExprFields: t.exprFields, ExceptNames: t.exceptNames, IsAggregate: t.isAggregate, AllWildcard: t.allWildcard, WildcardEmitters: t.wildcardEmitters, SendMeta: t.sendMeta, SendNil: t.sendNil}, nil
 }
 
 func parseFunc(props map[string]interface{}, sourceNames []string) (*operator.FuncOp, error) {

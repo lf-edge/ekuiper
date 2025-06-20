@@ -15,6 +15,7 @@
 package planner
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
@@ -25,6 +26,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node"
 	nodeConf "github.com/lf-edge/ekuiper/v2/internal/topo/node/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/operator"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/schema"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/model"
@@ -32,6 +34,9 @@ import (
 
 func transformSourceNode(ctx api.StreamContext, t *DataSourcePlan, mockSourcesProp map[string]map[string]any, ruleId string, options *def.RuleOption, index int) (node.DataSourceNode, []node.OperatorNode, int, error) {
 	isSchemaless := t.isSchemaless
+	if t.streamFields == nil && options.Experiment != nil && options.Experiment.UseSliceTuple {
+		return nil, nil, 0, errors.New("slice tuple mode does not support wildcard/schemaless")
+	}
 	mockProps, isMock := mockSourcesProp[string(t.name)]
 	if isMock {
 		t.streamStmt.Options.TYPE = "simulator"
@@ -158,7 +163,7 @@ func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, option
 			schema = nil
 		}
 		// Create the decode node
-		decodeNode, err := node.NewDecodeOp(ctx, false, fmt.Sprintf("%d_decoder", index), string(t.streamStmt.Name), options, schema, props)
+		decodeNode, err := node.NewDecodeOp(ctx, false, fmt.Sprintf("%d_decoder", index), options, schema, props)
 		if err != nil {
 			return nil, nil, 0, err
 		}
@@ -181,7 +186,7 @@ func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, option
 			schema = nil
 		}
 		// Create the decode node
-		payloadDecodeNode, err := node.NewDecodeOp(ctx, true, fmt.Sprintf("%d_payload_decoder", index), string(t.streamStmt.Name), options, schema, props)
+		payloadDecodeNode, err := node.NewDecodeOp(ctx, true, fmt.Sprintf("%d_payload_decoder", index), options, schema, props)
 		if err != nil {
 			return nil, nil, 0, err
 		}
@@ -211,6 +216,8 @@ func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, option
 		}
 		srcSubtopo.StoreSchema(ruleId, string(t.name), t.streamFields, t.isWildCard)
 		return srcSubtopo, nil, len(ops), nil
+	} else {
+		schema.AddStaticStream(string(t.name), t.streamFields)
 	}
 	return srcConnNode, ops, 0, nil
 }

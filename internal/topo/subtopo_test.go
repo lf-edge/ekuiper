@@ -47,10 +47,6 @@ func TestSubtopoLC(t *testing.T) {
 	assert.Equal(t, []node.OperatorNode{opNode}, subTopo.ops)
 	assert.Equal(t, opNode, subTopo.tail)
 	assert.Equal(t, 1, subTopo.OpsCount())
-	assert.Equal(t, 1, len(subTopo.schemaReg))
-	assert.Equal(t, schemainfo{"shared", map[string]*ast.JsonStreamField{
-		"field1": {Type: "string"},
-	}, false}, subTopo.schemaReg["rule1"])
 	// Test linkage
 	assert.Equal(t, 1, len(srcNode.outputs))
 	var tch chan<- any = opNode.ch
@@ -113,7 +109,6 @@ func TestSubtopoLC(t *testing.T) {
 	subTopo2.Close(ctx2, "rule2", 2)
 	assert.Equal(t, 0, len(subTopo.refRules))
 	assert.Equal(t, 0, len(subTopoPool))
-	assert.Equal(t, 2, len(subTopo.schemaReg))
 	assert.Equal(t, 0, opNode.schemaCount)
 }
 
@@ -330,10 +325,6 @@ func (m *mockOp) RemoveMetrics(name string) {
 	// do nothing
 }
 
-func (m *mockOp) AttachSchema(ctx api.StreamContext, dataSource string, schema map[string]*ast.JsonStreamField, isWildcard bool) {
-	m.schemaCount++
-}
-
-func (m *mockOp) DetachSchema(ctx api.StreamContext, ruleId string) {
-	m.schemaCount--
+func (m *mockOp) ResetSchema(ctx api.StreamContext, schema map[string]*ast.JsonStreamField) {
+	m.schemaCount = len(schema)
 }

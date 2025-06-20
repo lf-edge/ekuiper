@@ -1,4 +1,4 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,12 +16,13 @@ package schema
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/lf-edge/ekuiper/v2/internal/converter/merge"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
+	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
 
 func TestMergeSchema(t *testing.T) {
@@ -181,14 +182,22 @@ func TestMergeSchema(t *testing.T) {
 			},
 		},
 	}
-	for _, tc := range testcases {
-		sLayer := NewSchemaLayer("r1", "s1", tc.originSchema, false)
-		err := sLayer.MergeSchema("r2", "s1", tc.newSchema, false)
-		if tc.err == nil {
+	ctx1 := mockContext.NewMockContext("r1", "t1")
+	ctx2 := mockContext.NewMockContext("r2", "t2")
+	for i, tc := range testcases {
+		t.Run(fmt.Sprintf("case-%d", i), func(t *testing.T) {
+			sLayer := newSharedLayer()
+			sLayer.RegSchema("r1", "s1", tc.originSchema, false)
+			sLayer.RegSchema("r2", "s1", tc.newSchema, false)
+			err := sLayer.Attach(ctx1)
 			require.NoError(t, err)
-		} else {
-			require.Equal(t, tc.err, err)
-		}
+			err = sLayer.Attach(ctx2)
+			if tc.err == nil {
+				require.NoError(t, err)
+			} else {
+				require.Equal(t, tc.err, err)
+			}
+		})
 	}
 }
 
@@ -198,26 +207,40 @@ func TestMergeWildcardSchema(t *testing.T) {
 			Type: "bigint",
 		},
 	}
-	f := NewSchemaLayer("1", "", originSchema, false)
-	require.NoError(t, f.MergeSchema("2", "", nil, true))
+	ctx1 := mockContext.NewMockContext("1", "t1")
+	ctx2 := mockContext.NewMockContext("2", "t2")
+	f := newSharedLayer()
+	f.RegSchema("1", "", originSchema, false)
+	err := f.Attach(ctx1)
+	require.NoError(t, err)
+	f.RegSchema("2", "", nil, true)
+	require.NoError(t, f.Attach(ctx2))
 	newSchema := map[string]*ast.JsonStreamField{
 		"b": {
 			Type: "bigint",
 		},
 	}
-	require.NoError(t, f.MergeSchema("3", "", newSchema, false))
+	f.RegSchema("3", "", newSchema, false)
+	ctx3 := mockContext.NewMockContext("3", "t3")
+	require.NoError(t, f.Attach(ctx3))
 	s := f.GetSchema()
 	require.Nil(t, s)
 }
 
 func TestAttachDetachSchema(t *testing.T) {
-	f := NewSchemaLayer("rule1", "demo", nil, true)
-	err := f.MergeSchema("rule2", "demo", map[string]*ast.JsonStreamField{
+	f := newSharedLayer()
+	f.RegSchema("rule1", "demo", nil, true)
+	ctx1 := mockContext.NewMockContext("rule1", "t1")
+	err := f.Attach(ctx1)
+	require.NoError(t, err)
+	f.RegSchema("rule2", "demo", map[string]*ast.JsonStreamField{
 		"a": nil,
 	}, false)
+	ctx2 := mockContext.NewMockContext("rule2", "t1")
+	err = f.Attach(ctx2)
 	require.NoError(t, err)
-	r := merge.GetRuleSchema("rule1")
-	er := merge.RuleSchemaResponse{
+	r := GetRuleSchema("rule1")
+	er := RuleSchemaResponse{
 		Schema: map[string]map[string]*ast.JsonStreamField{
 			"demo": nil,
 		},
@@ -226,12 +249,12 @@ func TestAttachDetachSchema(t *testing.T) {
 		},
 	}
 	require.Equal(t, r, er)
-	r = merge.GetRuleSchema("rule2")
+	r = GetRuleSchema("rule2")
 	require.Equal(t, r, er)
 	// detach rule
-	require.NoError(t, f.DetachSchema("rule1"))
-	r = merge.GetRuleSchema("rule2")
-	er = merge.RuleSchemaResponse{
+	require.NoError(t, f.Detach(ctx1))
+	r = GetRuleSchema("rule2")
+	er = RuleSchemaResponse{
 		Schema: map[string]map[string]*ast.JsonStreamField{
 			"demo": {
 				"a": nil,

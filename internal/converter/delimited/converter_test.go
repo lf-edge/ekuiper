@@ -1,4 +1,4 @@
-// Copyright 2022-2024 EMQ Technologies Co., Ltd.
+// Copyright 2022-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,15 +16,14 @@ package delimited
 
 import (
 	"fmt"
-	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/lf-edge/ekuiper/v2/internal/testx"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
+	"github.com/lf-edge/ekuiper/v2/pkg/model"
 )
 
 func TestEncode(t *testing.T) {
@@ -69,6 +68,28 @@ func TestEncode(t *testing.T) {
 				{
 					"id":   14,
 					"name": "test2",
+				},
+			},
+			r: []byte("12:test\n14:test2"),
+		},
+		{
+			name: "slice model",
+			m: model.SliceVal{
+				1670170500.0,
+				"test",
+			},
+			r: []byte(`1670170500:test`),
+		},
+		{
+			name: "slice list",
+			m: []model.SliceVal{
+				{
+					12,
+					"test",
+				},
+				{
+					14,
+					"test2",
 				},
 			},
 			r: []byte("12:test\n14:test2"),
@@ -136,6 +157,28 @@ func TestEncodeWithHeader(t *testing.T) {
 			},
 			r: []byte("id:name\n12:test\n1670170500:test2"),
 		},
+		{
+			name: "slice model",
+			m: model.SliceVal{
+				1670170500.0,
+				"test",
+			},
+			r: []byte(`1670170500:test`),
+		},
+		{
+			name: "slice list",
+			m: []model.SliceVal{
+				{
+					12,
+					"test",
+				},
+				{
+					14,
+					"test2",
+				},
+			},
+			r: []byte("12:test\n14:test2"),
+		},
 	}
 	ctx := mockContext.NewMockContext("test", "op1")
 	for _, tt := range tests {
@@ -166,7 +209,6 @@ func TestDecode(t *testing.T) {
 		m  map[string]interface{}
 		nm map[string]interface{}
 		r  []byte
-		e  string
 	}{
 		{
 			m: map[string]interface{}{
@@ -187,18 +229,14 @@ func TestDecode(t *testing.T) {
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 	ctx := mockContext.NewMockContext("test", "op1")
 	for i, tt := range tests {
-		a, err := c.Decode(ctx, tt.r)
-		if !reflect.DeepEqual(tt.e, testx.Errstring(err)) {
-			t.Errorf("%d.error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.e, err)
-		} else if tt.e == "" && !reflect.DeepEqual(tt.m, a) {
-			t.Errorf("%d. \n\nresult mismatch:\n\nexp=%v\n\ngot=%v\n\n", i, tt.m, a)
-		}
-		b, err := ch.Decode(ctx, tt.r)
-		if !reflect.DeepEqual(tt.e, testx.Errstring(err)) {
-			t.Errorf("%d.error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.e, err)
-		} else if tt.e == "" && !reflect.DeepEqual(tt.nm, b) {
-			t.Errorf("%d. \n\nresult mismatch:\n\nexp=%v\n\ngot=%v\n\n", i, tt.nm, b)
-		}
+		t.Run(fmt.Sprintf("test%d", i), func(t *testing.T) {
+			a, err := c.Decode(ctx, tt.r)
+			require.NoError(t, err)
+			require.Equal(t, tt.m, a)
+			b, err := ch.Decode(ctx, tt.r)
+			require.NoError(t, err)
+			require.Equal(t, tt.nm, b)
+		})
 	}
 }
 

@@ -44,6 +44,11 @@ type RuleOption struct {
 	NotifySub                 bool                     `json:"notifySub,omitempty" yaml:"notifySub,omitempty"`
 	DisableBufferFullDiscard  bool                     `json:"disableBufferFullDiscard,omitempty" yaml:"disableBufferFullDiscard,omitempty"`
 	EnableSaveStateBeforeStop bool                     `json:"enableSaveStateBeforeStop,omitempty" yaml:"enableSaveStateBeforeStop,omitempty"`
+	Experiment                *ExpOpts                 `json:"experiment,omitempty" yaml:"experiment,omitempty"`
+}
+
+type ExpOpts struct {
+	UseSliceTuple bool `json:"useSliceTuple" yaml:"useSliceTuple"`
 }
 
 type PlanOptimizeStrategy struct {
@@ -180,6 +185,7 @@ func GetDefaultRule(name, sql string) *Rule {
 				JitterFactor: 0.1,
 			},
 			PlanOptimizeStrategy: &PlanOptimizeStrategy{},
+			Experiment:           &ExpOpts{UseSliceTuple: false},
 		},
 	}
 }

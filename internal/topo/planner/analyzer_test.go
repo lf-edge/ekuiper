@@ -1,4 +1,4 @@
-// Copyright 2021-2024 EMQ Technologies Co., Ltd.
+// Copyright 2021-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -29,7 +29,6 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/testx"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
-	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 )
 
 func init() {
@@ -181,7 +180,7 @@ func TestCheckTopoSort(t *testing.T) {
 	sql := "select latest(a) as a from src1"
 	stmt, err := xsql.NewParser(strings.NewReader(sql)).Parse()
 	require.NoError(t, err)
-	_, err = createLogicalPlan(stmt, &def.RuleOption{
+	_, err = CreateLogicalPlan(stmt, &def.RuleOption{
 		IsEventTime:        false,
 		LateTol:            0,
 		Concurrency:        0,
@@ -191,10 +190,7 @@ func TestCheckTopoSort(t *testing.T) {
 		CheckpointInterval: 0,
 		SendError:          true,
 	}, store)
-	errWithCode, ok := err.(errorx.ErrorWithCode)
-	require.True(t, ok)
-	require.Equal(t, errorx.PlanError, errWithCode.Code())
-	require.Equal(t, "unknown field a", errWithCode.Error())
+	require.EqualError(t, err, "unknown field a")
 }
 
 func Test_validation(t *testing.T) {
@@ -243,7 +239,7 @@ func Test_validation(t *testing.T) {
 			t.Errorf("%d. %q: error compile sql: %s\n", i, tt.sql, err)
 			continue
 		}
-		_, err = createLogicalPlan(stmt, &def.RuleOption{
+		_, err = CreateLogicalPlan(stmt, &def.RuleOption{
 			IsEventTime:        false,
 			LateTol:            0,
 			Concurrency:        0,
@@ -299,7 +295,7 @@ func Test_validationSchemaless(t *testing.T) {
 			t.Errorf("%d. %q: error compile sql: %s\n", i, tt.sql, err)
 			continue
 		}
-		_, err = createLogicalPlan(stmt, &def.RuleOption{
+		_, err = CreateLogicalPlan(stmt, &def.RuleOption{
 			IsEventTime:        false,
 			LateTol:            0,
 			Concurrency:        0,

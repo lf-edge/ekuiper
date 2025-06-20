@@ -16,9 +16,10 @@ package operator
 
 import (
 	"fmt"
-	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
@@ -649,7 +650,7 @@ func TestStrFunc_Apply1(t *testing.T) {
 		},
 
 		{
-			sql: `SELECT split_value(a,"/",0) AS a, split_value(a,"/",3) AS b FROM test1`,
+			sql: `SELECT split_value(a,"/",0) AS aa, split_value(a,"/",3) AS b FROM test1`,
 			data: &xsql.Tuple{
 				Emitter: "test",
 				Message: xsql.Message{
@@ -657,8 +658,8 @@ func TestStrFunc_Apply1(t *testing.T) {
 				},
 			},
 			result: []map[string]interface{}{{
-				"a": "",
-				"b": "message",
+				"aa": "",
+				"b":  "message",
 			}},
 		},
 	}
@@ -667,21 +668,17 @@ func TestStrFunc_Apply1(t *testing.T) {
 	contextLogger := conf.Log.WithField("rule", "TestStrFunc_Apply1")
 	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
 	for i, tt := range tests {
-		stmt, err := xsql.NewParser(strings.NewReader(tt.sql)).Parse()
-		if err != nil || stmt == nil {
-			t.Errorf("parse sql %s error %v", tt.sql, err)
-		}
-		pp := &ProjectOp{}
-		parseStmt(pp, stmt.Fields)
-		fv, afv := xsql.NewFunctionValuersForOp(nil)
-		opResult := pp.Apply(ctx, tt.data, fv, afv)
-		result, err := parseResult(opResult, pp.IsAggregate)
-		if err != nil {
-			t.Errorf("parse result error： %s", err)
-			continue
-		}
-		if !reflect.DeepEqual(tt.result, result) {
-			t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, result)
-		}
+		t.Run(fmt.Sprintf("case-%d", i), func(t *testing.T) {
+			stmt, err := xsql.NewParser(strings.NewReader(tt.sql)).Parse()
+			require.NoError(t, err)
+			require.NotNil(t, stmt)
+			pp := &ProjectOp{}
+			parseStmt(pp, stmt.Fields)
+			fv, afv := xsql.NewFunctionValuersForOp(nil)
+			opResult := pp.Apply(ctx, tt.data, fv, afv)
+			result, err := parseResult(opResult, pp.IsAggregate)
+			require.NoError(t, err)
+			require.Equal(t, tt.result, result)
+		})
 	}
 }

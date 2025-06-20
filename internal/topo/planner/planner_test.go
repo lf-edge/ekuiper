@@ -1,4 +1,4 @@
-// Copyright 2022-2024 EMQ Technologies Co., Ltd.
+// Copyright 2022-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -1508,9 +1508,9 @@ func Test_createLogicalPlan(t *testing.T) {
 										},
 										funcs: []*ast.Call{
 											{
-												Name:        "lag",
-												FuncId:      2,
-												CachedField: "$$a_lag_2",
+												Name:   "lag",
+												FuncId: 2,
+												Cached: true, CacheIndex: -1, CachedField: "$$a_lag_2",
 												Args: []ast.Expr{&ast.FieldRef{
 													Name:       "temp",
 													StreamName: "src1",
@@ -1519,10 +1519,10 @@ func Test_createLogicalPlan(t *testing.T) {
 										},
 										fieldFuncs: []*ast.Call{
 											{
-												Name: "lag", FuncId: 0, CachedField: "$$a_lag_0", FuncType: ast.FuncTypeScalar, Args: []ast.Expr{&ast.FieldRef{Name: "name", StreamName: "src1"}},
+												Name: "lag", FuncId: 0, Cached: true, CacheIndex: -1, CachedField: "$$a_lag_0", FuncType: ast.FuncTypeScalar, Args: []ast.Expr{&ast.FieldRef{Name: "name", StreamName: "src1"}},
 											},
 											{
-												Name: "latest", FuncId: 1, CachedField: "$$a_latest_1", FuncType: ast.FuncTypeScalar, Args: []ast.Expr{&ast.Call{Name: "lag", FuncId: 0, Cached: true, CachedField: "$$a_lag_0", FuncType: ast.FuncTypeScalar, Args: []ast.Expr{&ast.FieldRef{Name: "name", StreamName: "src1"}}}},
+												Name: "latest", FuncId: 1, Cached: true, CacheIndex: -1, CachedField: "$$a_latest_1", FuncType: ast.FuncTypeScalar, Args: []ast.Expr{&ast.Call{Name: "lag", FuncId: 0, Cached: true, CacheIndex: -1, CachedField: "$$a_lag_0", FuncType: ast.FuncTypeScalar, Args: []ast.Expr{&ast.FieldRef{Name: "name", StreamName: "src1"}}}},
 											},
 										},
 									}.Init(),
@@ -1536,8 +1536,8 @@ func Test_createLogicalPlan(t *testing.T) {
 										Name:       "temp",
 										StreamName: "src1",
 									}},
-									CachedField: "$$a_lag_2",
-									Cached:      true,
+									CacheIndex: -1, CachedField: "$$a_lag_2",
+									Cached: true,
 								},
 								OP: ast.GT,
 								RHS: &ast.FieldRef{
@@ -1551,11 +1551,11 @@ func Test_createLogicalPlan(t *testing.T) {
 				fields: []ast.Field{
 					{
 						Expr: &ast.Call{
-							Name:        "latest",
-							FuncId:      1,
-							Args:        []ast.Expr{&ast.Call{Name: "lag", FuncId: 0, Cached: true, CachedField: "$$a_lag_0", FuncType: ast.FuncTypeScalar, Args: []ast.Expr{&ast.FieldRef{Name: "name", StreamName: "src1"}}}},
-							CachedField: "$$a_latest_1",
-							Cached:      true,
+							Name:       "latest",
+							FuncId:     1,
+							Args:       []ast.Expr{&ast.Call{Name: "lag", FuncId: 0, Cached: true, CacheIndex: -1, CachedField: "$$a_lag_0", FuncType: ast.FuncTypeScalar, Args: []ast.Expr{&ast.FieldRef{Name: "name", StreamName: "src1"}}}},
+							CacheIndex: -1, CachedField: "$$a_latest_1",
+							Cached: true,
 						},
 						Name: "latest",
 					}, {
@@ -1661,23 +1661,23 @@ func Test_createLogicalPlan(t *testing.T) {
 										},
 										funcs: []*ast.Call{
 											{
-												Name:        "lag",
-												FuncId:      2,
-												CachedField: "$$a_lag_2",
+												Name:   "lag",
+												FuncId: 2,
+												Cached: true, CacheIndex: -1, CachedField: "$$a_lag_2",
 												Args: []ast.Expr{&ast.FieldRef{
 													Name:       "temp",
 													StreamName: "src1",
 												}},
 											},
 											{
-												Name:        "latest",
-												FuncId:      3,
-												CachedField: "$$a_latest_3",
+												Name:   "latest",
+												FuncId: 3,
+												Cached: true, CacheIndex: -1, CachedField: "$$a_latest_3",
 												Args: []ast.Expr{&ast.Call{
-													Name:        "lag",
-													FuncId:      2,
-													CachedField: "$$a_lag_2",
-													Cached:      true,
+													Name:       "lag",
+													FuncId:     2,
+													CacheIndex: -1, CachedField: "$$a_lag_2",
+													Cached: true,
 													Args: []ast.Expr{&ast.FieldRef{
 														Name:       "temp",
 														StreamName: "src1",
@@ -1687,10 +1687,10 @@ func Test_createLogicalPlan(t *testing.T) {
 										},
 										fieldFuncs: []*ast.Call{
 											{
-												Name: "lag", FuncId: 0, CachedField: "$$a_lag_0", FuncType: ast.FuncTypeScalar, Args: []ast.Expr{&ast.FieldRef{Name: "name", StreamName: "src1"}},
+												Name: "lag", FuncId: 0, Cached: true, CacheIndex: -1, CachedField: "$$a_lag_0", FuncType: ast.FuncTypeScalar, Args: []ast.Expr{&ast.FieldRef{Name: "name", StreamName: "src1"}},
 											},
 											{
-												Name: "latest", FuncId: 1, CachedField: "$$a_latest_1", FuncType: ast.FuncTypeScalar, Args: []ast.Expr{&ast.Call{Name: "lag", FuncId: 0, Cached: true, CachedField: "$$a_lag_0", FuncType: ast.FuncTypeScalar, Args: []ast.Expr{&ast.FieldRef{Name: "name", StreamName: "src1"}}}}, Partition: &ast.PartitionExpr{Exprs: []ast.Expr{&ast.FieldRef{Name: "temp", StreamName: "src1"}}},
+												Name: "latest", FuncId: 1, Cached: true, CacheIndex: -1, CachedField: "$$a_latest_1", FuncType: ast.FuncTypeScalar, Args: []ast.Expr{&ast.Call{Name: "lag", FuncId: 0, Cached: true, CacheIndex: -1, CachedField: "$$a_lag_0", FuncType: ast.FuncTypeScalar, Args: []ast.Expr{&ast.FieldRef{Name: "name", StreamName: "src1"}}}}, Partition: &ast.PartitionExpr{Exprs: []ast.Expr{&ast.FieldRef{Name: "temp", StreamName: "src1"}}},
 											},
 										},
 									}.Init(),
@@ -1698,14 +1698,14 @@ func Test_createLogicalPlan(t *testing.T) {
 							},
 							condition: &ast.BinaryExpr{
 								LHS: &ast.Call{
-									Name:        "latest",
-									FuncId:      3,
-									CachedField: "$$a_latest_3",
-									Cached:      true,
+									Name:       "latest",
+									FuncId:     3,
+									CacheIndex: -1, CachedField: "$$a_latest_3",
+									Cached: true,
 									Args: []ast.Expr{&ast.Call{
-										Name:        "lag",
-										FuncId:      2,
-										CachedField: "$$a_lag_2",
+										Name:       "lag",
+										FuncId:     2,
+										CacheIndex: -1, CachedField: "$$a_lag_2",
 										Args: []ast.Expr{&ast.FieldRef{
 											Name:       "temp",
 											StreamName: "src1",
@@ -1725,11 +1725,11 @@ func Test_createLogicalPlan(t *testing.T) {
 				fields: []ast.Field{
 					{
 						Expr: &ast.Call{
-							Name:        "latest",
-							FuncId:      1,
-							Args:        []ast.Expr{&ast.Call{Name: "lag", FuncId: 0, Cached: true, CachedField: "$$a_lag_0", FuncType: ast.FuncTypeScalar, Args: []ast.Expr{&ast.FieldRef{Name: "name", StreamName: "src1"}}}},
-							CachedField: "$$a_latest_1",
-							Cached:      true,
+							Name:       "latest",
+							FuncId:     1,
+							Args:       []ast.Expr{&ast.Call{Name: "lag", FuncId: 0, Cached: true, CacheIndex: -1, CachedField: "$$a_lag_0", FuncType: ast.FuncTypeScalar, Args: []ast.Expr{&ast.FieldRef{Name: "name", StreamName: "src1"}}}},
+							CacheIndex: -1, CachedField: "$$a_latest_1",
+							Cached: true,
 							Partition: &ast.PartitionExpr{
 								Exprs: []ast.Expr{
 									&ast.FieldRef{Name: "temp", StreamName: "src1"},
@@ -1778,9 +1778,9 @@ func Test_createLogicalPlan(t *testing.T) {
 										},
 										funcs: []*ast.Call{
 											{
-												Name:        "lag",
-												FuncId:      3,
-												CachedField: "$$a_lag_3",
+												Name:   "lag",
+												FuncId: 3,
+												Cached: true, CacheIndex: -1, CachedField: "$$a_lag_3",
 												Args: []ast.Expr{&ast.FieldRef{
 													Name:       "temp",
 													StreamName: "src1",
@@ -1789,13 +1789,13 @@ func Test_createLogicalPlan(t *testing.T) {
 										},
 										fieldFuncs: []*ast.Call{
 											{
-												Name: "lag", FuncId: 0, CachedField: "$$a_lag_0", FuncType: ast.FuncTypeScalar, Args: []ast.Expr{&ast.FieldRef{Name: "name", StreamName: "src1"}},
+												Name: "lag", FuncId: 0, Cached: true, CacheIndex: -1, CachedField: "$$a_lag_0", FuncType: ast.FuncTypeScalar, Args: []ast.Expr{&ast.FieldRef{Name: "name", StreamName: "src1"}},
 											},
 											{
-												Name: "latest", FuncId: 1, CachedField: "$$a_latest_1", FuncType: ast.FuncTypeScalar, Args: []ast.Expr{&ast.Call{Name: "lag", FuncId: 0, Cached: true, CachedField: "$$a_lag_0", FuncType: ast.FuncTypeScalar, Args: []ast.Expr{&ast.FieldRef{Name: "name", StreamName: "src1"}}}}, Partition: &ast.PartitionExpr{Exprs: []ast.Expr{&ast.FieldRef{Name: "temp", StreamName: "src1"}}}, WhenExpr: &ast.BinaryExpr{LHS: &ast.FieldRef{Name: "temp", StreamName: "src1"}, OP: ast.GT, RHS: &ast.IntegerLiteral{Val: 12}},
+												Name: "latest", FuncId: 1, Cached: true, CacheIndex: -1, CachedField: "$$a_latest_1", FuncType: ast.FuncTypeScalar, Args: []ast.Expr{&ast.Call{Name: "lag", FuncId: 0, Cached: true, CacheIndex: -1, CachedField: "$$a_lag_0", FuncType: ast.FuncTypeScalar, Args: []ast.Expr{&ast.FieldRef{Name: "name", StreamName: "src1"}}}}, Partition: &ast.PartitionExpr{Exprs: []ast.Expr{&ast.FieldRef{Name: "temp", StreamName: "src1"}}}, WhenExpr: &ast.BinaryExpr{LHS: &ast.FieldRef{Name: "temp", StreamName: "src1"}, OP: ast.GT, RHS: &ast.IntegerLiteral{Val: 12}},
 											},
 											{
-												Name: "lag", FuncId: 2, CachedField: "$$a_lag_2", FuncType: ast.FuncTypeScalar, Args: []ast.Expr{&ast.FieldRef{Name: "id1", StreamName: "src1"}},
+												Name: "lag", FuncId: 2, Cached: true, CacheIndex: -1, CachedField: "$$a_lag_2", FuncType: ast.FuncTypeScalar, Args: []ast.Expr{&ast.FieldRef{Name: "id1", StreamName: "src1"}},
 											},
 										},
 									}.Init(),
@@ -1809,8 +1809,8 @@ func Test_createLogicalPlan(t *testing.T) {
 										Name:       "temp",
 										StreamName: "src1",
 									}},
-									CachedField: "$$a_lag_3",
-									Cached:      true,
+									CacheIndex: -1, CachedField: "$$a_lag_3",
+									Cached: true,
 								},
 								OP: ast.GT,
 								RHS: &ast.FieldRef{
@@ -1824,11 +1824,11 @@ func Test_createLogicalPlan(t *testing.T) {
 				fields: []ast.Field{
 					{
 						Expr: &ast.Call{
-							Name:        "latest",
-							FuncId:      1,
-							Args:        []ast.Expr{&ast.Call{Name: "lag", FuncId: 0, Cached: true, CachedField: "$$a_lag_0", FuncType: ast.FuncTypeScalar, Args: []ast.Expr{&ast.FieldRef{Name: "name", StreamName: "src1"}}}},
-							CachedField: "$$a_latest_1",
-							Cached:      true,
+							Name:       "latest",
+							FuncId:     1,
+							Args:       []ast.Expr{&ast.Call{Name: "lag", FuncId: 0, Cached: true, CacheIndex: -1, CachedField: "$$a_lag_0", FuncType: ast.FuncTypeScalar, Args: []ast.Expr{&ast.FieldRef{Name: "name", StreamName: "src1"}}}},
+							CacheIndex: -1, CachedField: "$$a_latest_1",
+							Cached: true,
 							Partition: &ast.PartitionExpr{
 								Exprs: []ast.Expr{
 									&ast.FieldRef{Name: "temp", StreamName: "src1"},
@@ -1847,12 +1847,12 @@ func Test_createLogicalPlan(t *testing.T) {
 								{
 									Expr: &ast.IntegerLiteral{Val: 1},
 									Result: &ast.Call{
-										Name:        "lag",
-										FuncId:      2,
-										FuncType:    ast.FuncTypeScalar,
-										Args:        []ast.Expr{&ast.FieldRef{Name: "id1", StreamName: "src1"}},
-										CachedField: "$$a_lag_2",
-										Cached:      true,
+										Name:       "lag",
+										FuncId:     2,
+										FuncType:   ast.FuncTypeScalar,
+										Args:       []ast.Expr{&ast.FieldRef{Name: "id1", StreamName: "src1"}},
+										CacheIndex: -1, CachedField: "$$a_lag_2",
+										Cached: true,
 									},
 								},
 							},
@@ -2016,7 +2016,7 @@ func Test_createLogicalPlan(t *testing.T) {
 											Name:       "id1",
 										},
 									},
-									CachedField: "$$a_lag_1",
+									Cached: true, CacheIndex: -1, CachedField: "$$a_lag_1",
 								},
 								{
 									Name:     "lag",
@@ -2028,7 +2028,7 @@ func Test_createLogicalPlan(t *testing.T) {
 											Name:       "temp",
 										},
 									},
-									CachedField: "$$a_lag_0",
+									Cached: true, CacheIndex: -1, CachedField: "$$a_lag_0",
 									WhenExpr: &ast.BinaryExpr{
 										OP: ast.GT,
 										LHS: &ast.Call{
@@ -2041,8 +2041,8 @@ func Test_createLogicalPlan(t *testing.T) {
 													Name:       "id1",
 												},
 											},
-											CachedField: "$$a_lag_1",
-											Cached:      true,
+											CacheIndex: -1, CachedField: "$$a_lag_1",
+											Cached: true,
 										},
 										RHS: &ast.IntegerLiteral{
 											Val: 1,
@@ -2071,8 +2071,8 @@ func Test_createLogicalPlan(t *testing.T) {
 													Name:       "temp",
 												},
 											},
-											CachedField: "$$a_lag_0",
-											Cached:      true,
+											CacheIndex: -1, CachedField: "$$a_lag_0",
+											Cached: true,
 											WhenExpr: &ast.BinaryExpr{
 												OP: ast.GT,
 												LHS: &ast.Call{
@@ -2085,8 +2085,8 @@ func Test_createLogicalPlan(t *testing.T) {
 															Name:       "id1",
 														},
 													},
-													CachedField: "$$a_lag_1",
-													Cached:      true,
+													CacheIndex: -1, CachedField: "$$a_lag_1",
+													Cached: true,
 												},
 												RHS: &ast.IntegerLiteral{
 													Val: 1,
@@ -2562,7 +2562,7 @@ func Test_createLogicalPlan(t *testing.T) {
 			if !assert.NoError(t, err) {
 				return
 			}
-			p, err := createLogicalPlan(stmt, &def.RuleOption{
+			p, err := CreateLogicalPlan(stmt, &def.RuleOption{
 				IsEventTime:        false,
 				LateTol:            0,
 				Concurrency:        0,
@@ -3904,7 +3904,7 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 			t.Errorf("%d. %q: error compile sql: %s\n", i, tt.sql, err)
 			continue
 		}
-		p, err := createLogicalPlan(stmt, &def.RuleOption{
+		p, err := CreateLogicalPlan(stmt, &def.RuleOption{
 			IsEventTime:        false,
 			LateTol:            0,
 			Concurrency:        0,
@@ -4492,7 +4492,7 @@ func Test_createLogicalPlan4Lookup(t *testing.T) {
 		t.Run(tt.sql, func(t *testing.T) {
 			stmt, err := xsql.NewParser(strings.NewReader(tt.sql)).Parse()
 			assert.NoError(t, err)
-			p, err := createLogicalPlan(stmt, &def.RuleOption{
+			p, err := CreateLogicalPlan(stmt, &def.RuleOption{
 				IsEventTime:        false,
 				LateTol:            0,
 				Concurrency:        0,
@@ -4538,11 +4538,11 @@ func TestTransformSourceNode(t *testing.T) {
 	props := nodeConf.GetSourceConf("mqtt", &ast.Options{TYPE: "mqtt", DATASOURCE: "topic1"})
 	srcNode, err := node.NewSourceNode(tp.GetContext(), "test", &mqtt.SourceConnector{}, props, &def.RuleOption{SendError: false})
 	assert.NoError(t, err)
-	decodeNode, err := node.NewDecodeOp(tp.GetContext(), false, "2_decoder", "test", &def.RuleOption{SendError: false}, schema, nil)
+	decodeNode, err := node.NewDecodeOp(tp.GetContext(), false, "2_decoder", &def.RuleOption{SendError: false}, schema, nil)
 	assert.NoError(t, err)
 	decomNode, err := node.NewDecompressOp("2_decompressor", &def.RuleOption{SendError: false}, "gzip")
 	assert.NoError(t, err)
-	decodeNode2, err := node.NewDecodeOp(tp.GetContext(), false, "3_decoder", "test", &def.RuleOption{SendError: false}, schema, nil)
+	decodeNode2, err := node.NewDecodeOp(tp.GetContext(), false, "3_decoder", &def.RuleOption{SendError: false}, schema, nil)
 	assert.NoError(t, err)
 	props2 := nodeConf.GetSourceConf("mqtt", &ast.Options{TYPE: "mqtt", CONF_KEY: "testCom", DATASOURCE: "topic2"})
 	srcNode2, err := node.NewSourceNode(tp.GetContext(), "test", &mqtt.SourceConnector{}, props2, &def.RuleOption{SendError: false})

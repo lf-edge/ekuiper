@@ -22,20 +22,19 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
 	"github.com/lf-edge/ekuiper/v2/internal/converter"
-	schemaLayer "github.com/lf-edge/ekuiper/v2/internal/converter/schema"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 	"github.com/lf-edge/ekuiper/v2/pkg/message"
+	"github.com/lf-edge/ekuiper/v2/pkg/model"
 )
 
 // DecodeOp manages the format decoding (employ schema) and sending frequency (for batch decode, like a json array)
 type DecodeOp struct {
 	*defaultSinkNode
 	converter message.Converter
-	sLayer    *schemaLayer.SchemaLayer
 
 	c *dconf
 	// This is for first level decode, add the payload field to schema to make sure it is decoded
@@ -58,7 +57,7 @@ type dconf struct {
 	PayloadDelimiter  string            `json:"payloadDelimiter"`
 }
 
-func NewDecodeOp(ctx api.StreamContext, forPayload bool, name, StreamName string, rOpt *def.RuleOption, schema map[string]*ast.JsonStreamField, props map[string]any) (*DecodeOp, error) {
+func NewDecodeOp(ctx api.StreamContext, forPayload bool, name string, rOpt *def.RuleOption, schema map[string]*ast.JsonStreamField, props map[string]any) (*DecodeOp, error) {
 	dc := &dconf{}
 	e := cast.MapToStruct(props, dc)
 	if e != nil {
@@ -71,6 +70,7 @@ func NewDecodeOp(ctx api.StreamContext, forPayload bool, name, StreamName string
 		additionSchema string
 		converterTool  message.Converter
 		err            error
+		cformat        string
 	)
 
 	// It is payload decoder
@@ -81,6 +81,7 @@ func NewDecodeOp(ctx api.StreamContext, forPayload bool, name, StreamName string
 			msg := fmt.Sprintf("cannot get converter from format %s, schemaId %s: %v", dc.PayloadFormat, dc.PayloadSchemaId, err)
 			return nil, errors.New(msg)
 		}
+		cformat = dc.PayloadFormat
 	} else {
 		if dc.PayloadBatchField != "" {
 			additionSchema = dc.PayloadBatchField
@@ -95,12 +96,18 @@ func NewDecodeOp(ctx api.StreamContext, forPayload bool, name, StreamName string
 			msg := fmt.Sprintf("cannot get converter from format %s, schemaId %s: %v", dc.Format, dc.SchemaId, err)
 			return nil, errors.New(msg)
 		}
+		cformat = dc.Format
+	}
+
+	if rOpt.Experiment != nil && rOpt.Experiment.UseSliceTuple {
+		if _, ok := converterTool.(message.SchemaResetAbleConverter); !ok {
+			return nil, fmt.Errorf("slice tuple mode does not support non schema converter %s", cformat)
+		}
 	}
 
 	o := &DecodeOp{
 		defaultSinkNode: newDefaultSinkNode(name, rOpt),
 		converter:       converterTool,
-		sLayer:          schemaLayer.NewSchemaLayer(ctx.GetRuleId(), StreamName, schema, schema == nil),
 		c:               dc,
 		forPayload:      forPayload,
 		additionSchema:  additionSchema,
@@ -155,12 +162,24 @@ func (o *DecodeOp) Worker(ctx api.StreamContext, item any) []any {
 				rr[i] = tuple
 			}
 			return rr
-		case []interface{}:
+		case model.SliceVal:
+			tuple := &xsql.SliceTuple{SourceContent: r, Timestamp: d.Timestamp}
+			return []any{tuple}
+		case []model.SliceVal:
 			rr := make([]any, len(r))
 			for i, v := range r {
-				if vc, ok := v.(map[string]interface{}); ok {
+				rr[i] = &xsql.SliceTuple{SourceContent: v, Timestamp: d.Timestamp}
+			}
+			return rr
+		case []any:
+			rr := make([]any, len(r))
+			for i, v := range r {
+				switch vc := v.(type) {
+				case map[string]any:
 					rr[i] = toTupleFromRawTuple(ctx, vc, d)
-				} else {
+				case model.SliceVal:
+					rr[i] = &xsql.SliceTuple{SourceContent: vc, Timestamp: d.Timestamp}
+				default:
 					rr[i] = fmt.Errorf("only map[string]any inside a list is supported but got: %v", v)
 				}
 			}
@@ -173,9 +192,9 @@ func (o *DecodeOp) Worker(ctx api.StreamContext, item any) []any {
 	}
 }
 
-func (o *DecodeOp) AttachSchema(ctx api.StreamContext, dataSource string, schema map[string]*ast.JsonStreamField, isWildcard bool) {
+func (o *DecodeOp) ResetSchema(ctx api.StreamContext, schema map[string]*ast.JsonStreamField) {
 	if fastDecoder, ok := o.converter.(message.SchemaResetAbleConverter); ok {
-		ctx.GetLogger().Infof("attach schema to shared stream")
+		ctx.GetLogger().Infof("reset schema for shared stream")
 		// append payload field to schema
 		if o.additionSchema != "" {
 			newSchema := make(map[string]*ast.JsonStreamField, len(schema)+1)
@@ -183,25 +202,9 @@ func (o *DecodeOp) AttachSchema(ctx api.StreamContext, dataSource string, schema
 				newSchema[k] = v
 			}
 			newSchema[o.additionSchema] = nil
+			schema = newSchema
 		}
-		if err := o.sLayer.MergeSchema(ctx.GetRuleId(), dataSource, schema, isWildcard); err != nil {
-			ctx.GetLogger().Warnf("merge schema to shared stream failed, err: %v", err)
-		} else {
-			ctx.GetLogger().Infof("attach schema become %d", len(o.sLayer.GetSchema()))
-			fastDecoder.ResetSchema(o.sLayer.GetSchema())
-		}
-	}
-}
-
-func (o *DecodeOp) DetachSchema(ctx api.StreamContext, ruleId string) {
-	if fastDecoder, ok := o.converter.(message.SchemaResetAbleConverter); ok {
-		ctx.GetLogger().Infof("detach schema for shared stream rule %v", ruleId)
-		if err := o.sLayer.DetachSchema(ruleId); err != nil {
-			ctx.GetLogger().Infof("detach schema for shared stream rule %v failed, err:%v", ruleId, err)
-		} else {
-			fastDecoder.ResetSchema(o.sLayer.GetSchema())
-			ctx.GetLogger().Infof("detach schema become %d", len(o.sLayer.GetSchema()))
-		}
+		fastDecoder.ResetSchema(schema)
 	}
 }
 
@@ -341,9 +344,14 @@ func (o *DecodeOp) PayloadBatchDecodeWorker(ctx api.StreamContext, item any) []a
 				ctx.GetLogger().Warnf("cannot decode payload: %v", err)
 				continue
 			}
-			delete(val.(map[string]any), o.c.PayloadField)
-			mergeTuple(ctx, r, val)
-			mergeTuple(ctx, r, result)
+			if sv, ok := result.(model.SliceVal); ok {
+				tuple := &xsql.SliceTuple{SourceContent: sv, Timestamp: d.Timestamp}
+				return []any{tuple}
+			} else {
+				delete(val.(map[string]any), o.c.PayloadField)
+				mergeTuple(ctx, r, val)
+				mergeTuple(ctx, r, result)
+			}
 		}
 		o.hint = len(r.Message)
 		return []any{r}

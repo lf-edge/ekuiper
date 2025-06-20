@@ -1,4 +1,4 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import (
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/converter"
-	schemaLayer "github.com/lf-edge/ekuiper/v2/internal/converter/schema"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
@@ -63,7 +62,6 @@ type RateLimitOp struct {
 	decoder message.PartialDecoder
 	// only when using merger
 	merger modules.Merger
-	sLayer *schemaLayer.SchemaLayer
 }
 
 func NewRateLimitOp(ctx api.StreamContext, name string, rOpt *def.RuleOption, schema map[string]*ast.JsonStreamField, props map[string]any) (*RateLimitOp, error) {
@@ -106,7 +104,6 @@ func NewRateLimitOp(ctx api.StreamContext, name string, rOpt *def.RuleOption, sc
 			return nil, fmt.Errorf("merger %s not found", c.Merger)
 		}
 		o.mergeStrategy = 2
-		o.sLayer = schemaLayer.NewSchemaLayer(ctx.GetRuleId(), name, schema, schema != nil)
 	}
 	return o, nil
 }
@@ -295,33 +292,12 @@ func (o *RateLimitOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 	}()
 }
 
-func (o *RateLimitOp) AttachSchema(ctx api.StreamContext, dataSource string, schema map[string]*ast.JsonStreamField, isWildcard bool) {
+func (o *RateLimitOp) ResetSchema(ctx api.StreamContext, schema map[string]*ast.JsonStreamField) {
 	if o.mergeStrategy != 2 {
 		return
 	}
 	if fastDecoder, ok := o.merger.(message.SchemaResetAbleConverter); ok {
-		ctx.GetLogger().Infof("attach schema to shared stream")
-		// append payload field to schema
-		if err := o.sLayer.MergeSchema(ctx.GetRuleId(), dataSource, schema, isWildcard); err != nil {
-			ctx.GetLogger().Warnf("merge schema to shared stream failed, err: %v", err)
-		} else {
-			ctx.GetLogger().Infof("attach schema become %d", len(o.sLayer.GetSchema()))
-			fastDecoder.ResetSchema(o.sLayer.GetSchema())
-		}
-	}
-}
-
-func (o *RateLimitOp) DetachSchema(ctx api.StreamContext, ruleId string) {
-	if o.mergeStrategy != 2 {
-		return
-	}
-	if fastDecoder, ok := o.merger.(message.SchemaResetAbleConverter); ok {
-		ctx.GetLogger().Infof("detach schema for shared stream rule %v", ruleId)
-		if err := o.sLayer.DetachSchema(ruleId); err != nil {
-			ctx.GetLogger().Infof("detach schema for shared stream rule %v failed, err:%v", ruleId, err)
-		} else {
-			fastDecoder.ResetSchema(o.sLayer.GetSchema())
-			ctx.GetLogger().Infof("detach schema become %d", len(o.sLayer.GetSchema()))
-		}
+		ctx.GetLogger().Infof("reset schema to shared stream")
+		fastDecoder.ResetSchema(schema)
 	}
 }

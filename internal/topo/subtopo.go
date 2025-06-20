@@ -28,16 +28,11 @@ import (
 	kctx "github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node/metric"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/schema"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/state"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 )
-
-type schemainfo struct {
-	datasource string
-	schema     map[string]*ast.JsonStreamField
-	isWildcard bool
-}
 
 // SrcSubTopo Implements node.SourceNode
 type SrcSubTopo struct {
@@ -46,13 +41,10 @@ type SrcSubTopo struct {
 	// creation state
 	source node.DataSourceNode
 	// May be empty
-	ops  []node.OperatorNode
-	tail node.Emitter
-	topo *def.PrintableTopo
-	// Save the schemainfo for each rule only to use when need to attach schema when the rule is starting.
-	// Get updated if the rule is updated. Never delete it until the subtopo is deleted.
-	schemaReg map[string]schemainfo
-
+	ops         []node.OperatorNode
+	tail        node.Emitter
+	topo        *def.PrintableTopo
+	schemaLayer *schema.SharedLayer
 	// runtime state
 	// Ref state, affect the pool. Update when rule created or stopped
 	sync.RWMutex
@@ -90,13 +82,14 @@ func (s *SrcSubTopo) Open(ctx api.StreamContext, parentErrCh chan<- error) {
 	// Update the ref count
 	s.AddRef(ctx, parentErrCh)
 	// Attach schemas
+	err := s.schemaLayer.Attach(ctx)
+	if err != nil {
+		ctx.GetLogger().Warnf("attach schema layer failed: %s", err)
+	}
 	for _, op := range s.ops {
 		if so, ok := op.(node.SchemaNode); ok {
-			si, hasSchema := s.schemaReg[ctx.GetRuleId()]
-			if hasSchema {
-				ctx.GetLogger().Infof("attach schema to op %s", op.GetName())
-				so.AttachSchema(ctx, si.datasource, si.schema, si.isWildcard)
-			}
+			ctx.GetLogger().Infof("reset schema to op %s", op.GetName())
+			so.ResetSchema(ctx, s.schemaLayer.GetSchema())
 		}
 	}
 	// If not opened yet, open it. It may be opened before, but failed to open. In this case, try to open it again.
@@ -187,11 +180,7 @@ func (s *SrcSubTopo) OpsCount() int {
 }
 
 func (s *SrcSubTopo) StoreSchema(ruleID, dataSource string, schema map[string]*ast.JsonStreamField, isWildCard bool) {
-	s.schemaReg[ruleID] = schemainfo{
-		datasource: dataSource,
-		schema:     schema,
-		isWildcard: isWildCard,
-	}
+	s.schemaLayer.RegSchema(ruleID, dataSource, schema, isWildCard)
 }
 
 func (s *SrcSubTopo) Close(ctx api.StreamContext, ruleId string, runId int) {
@@ -213,9 +202,13 @@ func (s *SrcSubTopo) Close(ctx api.StreamContext, ruleId string, runId int) {
 			ctx.GetLogger().Infof("Sub topo %s dereference %s with %d ref", s.name, ctx.GetRuleId(), len(s.refRules))
 		}
 		ctx.GetLogger().Infof("Sub topo %s update schema for rule %s change", s.name, ctx.GetRuleId())
+		err := s.schemaLayer.Detach(ctx)
+		if err != nil {
+			ctx.GetLogger().Warnf("detach schema layer failed: %s", err)
+		}
 		for _, op := range s.ops {
 			if so, ok := op.(node.SchemaNode); ok {
-				so.DetachSchema(ctx, ruleId)
+				so.ResetSchema(ctx, s.schemaLayer.GetSchema())
 			}
 		}
 	}
