@@ -16,6 +16,7 @@ package v5client
 
 import (
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"net/url"
 	"sync"
@@ -23,6 +24,8 @@ import (
 
 	"github.com/eclipse/paho.golang/autopaho"
 	"github.com/eclipse/paho.golang/paho"
+	"github.com/eclipse/paho.golang/paho/session/state"
+	storefile "github.com/eclipse/paho.golang/paho/store/file"
 	"github.com/google/uuid"
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
@@ -48,6 +51,7 @@ type ConnectionConfig struct {
 	Uname               string `json:"username"`
 	Password            string `json:"password"`
 	EnableClientSession bool   `json:"enableClientSession"`
+	ClientStatePath     string `json:"clientStatePath"`
 	serverUrl           *url.URL
 	tls                 *tls.Config
 }
@@ -102,6 +106,17 @@ func Provision(ctx api.StreamContext, props map[string]any, onConnect client.Con
 			},
 		},
 	}
+	if cc.EnableClientSession {
+		cliState, err := storefile.New(cc.ClientStatePath, fmt.Sprintf("%v_%v_cli_", ctx.GetRuleId(), ctx.GetOpId()), ".pkt")
+		if err != nil {
+			return nil, err
+		}
+		srvState, err := storefile.New(cc.ClientStatePath, fmt.Sprintf("%v_%v_srv_", ctx.GetRuleId(), ctx.GetOpId()), ".pkt")
+		if err != nil {
+			return nil, err
+		}
+		cliCfg.Session = state.New(cliState, srvState)
+	}
 	if cc.Uname != "" {
 		cliCfg.ConnectUsername = cc.Uname
 	}
@@ -127,6 +142,13 @@ func (c *Client) Connect(ctx api.StreamContext) error {
 func (c *Client) Subscribe(ctx api.StreamContext, topic string, qos byte, callback client.MessageHandler) error {
 	c.Lock()
 	defer c.Unlock()
+	// register router first
+	if _, alreadySub := c.subs[topic]; !alreadySub {
+		c.subs[topic] = struct{}{}
+		c.router.RegisterHandler(topic, func(p *paho.Publish) {
+			callback(ctx, p)
+		})
+	}
 	suback, err := c.cm.Subscribe(ctx, &paho.Subscribe{
 		Subscriptions: []paho.SubscribeOptions{
 			{Topic: topic, QoS: qos},
@@ -141,12 +163,6 @@ func (c *Client) Subscribe(ctx api.StreamContext, topic string, qos byte, callba
 			}
 		}
 		return err
-	}
-	if _, alreadySub := c.subs[topic]; !alreadySub {
-		c.subs[topic] = struct{}{}
-		c.router.RegisterHandler(topic, func(p *paho.Publish) {
-			callback(ctx, p)
-		})
 	}
 	return nil
 }
@@ -261,6 +277,9 @@ func ValidateConfig(ctx api.StreamContext, props map[string]any) (*ConnectionCon
 		return nil, err
 	}
 	c.tls = tlsConfig
+	if c.EnableClientSession && len(c.ClientStatePath) == 0 {
+		return nil, errors.New("missing client state path")
+	}
 	return c, nil
 }
 
