@@ -16,6 +16,7 @@ package v5client
 
 import (
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"net/url"
 	"sync"
@@ -23,6 +24,8 @@ import (
 
 	"github.com/eclipse/paho.golang/autopaho"
 	"github.com/eclipse/paho.golang/paho"
+	"github.com/eclipse/paho.golang/paho/session/state"
+	storefile "github.com/eclipse/paho.golang/paho/store/file"
 	"github.com/google/uuid"
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
@@ -38,16 +41,19 @@ type Client struct {
 	// subscription route info
 	router paho.Router
 	// record if already have subscription for a topic
-	subs map[string]struct{}
+	subs                map[string]struct{}
+	EnableClientSession bool
 }
 
 type ConnectionConfig struct {
-	Server    string `json:"server"`
-	ClientId  string `json:"clientid"`
-	Uname     string `json:"username"`
-	Password  string `json:"password"`
-	serverUrl *url.URL
-	tls       *tls.Config
+	Server              string `json:"server"`
+	ClientId            string `json:"clientid"`
+	Uname               string `json:"username"`
+	Password            string `json:"password"`
+	EnableClientSession bool   `json:"enableClientSession"`
+	ClientStatePath     string `json:"clientStatePath"`
+	serverUrl           *url.URL
+	tls                 *tls.Config
 }
 
 func Provision(ctx api.StreamContext, props map[string]any, onConnect client.ConnectHandler, onConnectLost client.ConnectErrorHandler, _ client.ConnectHandler) (*Client, error) {
@@ -67,7 +73,7 @@ func Provision(ctx api.StreamContext, props map[string]any, onConnect client.Con
 		ConnectRetryDelay: time.Second,
 		KeepAlive:         20, // Keepalive message should be sent every 20 seconds
 		// CleanStartOnInitialConnection defaults to false. Setting this to true will clear the session on the first connection.
-		CleanStartOnInitialConnection: true,
+		CleanStartOnInitialConnection: !cc.EnableClientSession,
 		// SessionExpiryInterval - Seconds that a session will survive after disconnection.
 		// It is important to set this because otherwise, any queued messages will be lost if the connection drops and
 		// the server will not queue messages while it is down. The specific setting will depend upon your needs
@@ -100,12 +106,24 @@ func Provision(ctx api.StreamContext, props map[string]any, onConnect client.Con
 			},
 		},
 	}
+	if cc.EnableClientSession {
+		cliState, err := storefile.New(cc.ClientStatePath, fmt.Sprintf("%v_%v_cli_", ctx.GetRuleId(), ctx.GetOpId()), ".pkt")
+		if err != nil {
+			return nil, err
+		}
+		srvState, err := storefile.New(cc.ClientStatePath, fmt.Sprintf("%v_%v_srv_", ctx.GetRuleId(), ctx.GetOpId()), ".pkt")
+		if err != nil {
+			return nil, err
+		}
+		cliCfg.Session = state.New(cliState, srvState)
+	}
 	if cc.Uname != "" {
 		cliCfg.ConnectUsername = cc.Uname
 	}
 	if cc.Password != "" {
 		cliCfg.ConnectPassword = []byte(cc.Password)
 	}
+	cli.EnableClientSession = cc.EnableClientSession
 	cm, err := autopaho.NewConnection(ctx, cliCfg) // starts process; will reconnect until context cancelled
 	if err != nil {
 		return nil, err
@@ -124,6 +142,13 @@ func (c *Client) Connect(ctx api.StreamContext) error {
 func (c *Client) Subscribe(ctx api.StreamContext, topic string, qos byte, callback client.MessageHandler) error {
 	c.Lock()
 	defer c.Unlock()
+	// register router first
+	if _, alreadySub := c.subs[topic]; !alreadySub {
+		c.subs[topic] = struct{}{}
+		c.router.RegisterHandler(topic, func(p *paho.Publish) {
+			callback(ctx, p)
+		})
+	}
 	suback, err := c.cm.Subscribe(ctx, &paho.Subscribe{
 		Subscriptions: []paho.SubscribeOptions{
 			{Topic: topic, QoS: qos},
@@ -138,12 +163,6 @@ func (c *Client) Subscribe(ctx api.StreamContext, topic string, qos byte, callba
 			}
 		}
 		return err
-	}
-	if _, alreadySub := c.subs[topic]; !alreadySub {
-		c.subs[topic] = struct{}{}
-		c.router.RegisterHandler(topic, func(p *paho.Publish) {
-			callback(ctx, p)
-		})
 	}
 	return nil
 }
@@ -185,21 +204,23 @@ func (c *Client) Publish(ctx api.StreamContext, topic string, qos byte, retained
 func (c *Client) Unsubscribe(ctx api.StreamContext, topic string) error {
 	c.Lock()
 	defer c.Unlock()
-	unsuback, err := c.cm.Unsubscribe(ctx, &paho.Unsubscribe{
-		Topics: []string{topic},
-	})
-	c.router.UnregisterHandler(topic)
 	delete(c.subs, topic)
-	// Do not exit immediately when unsub error. Just remove unsub handler
-	if err != nil {
-		if unsuback != nil {
-			if unsuback.Properties != nil {
-				return fmt.Errorf("unsuscribe to %s error: %s", topic, unsuback.Properties.ReasonString)
-			} else {
-				return fmt.Errorf("unsuscribe to %s error: %s", topic, unsuback.Reasons)
+	if !c.EnableClientSession {
+		unsuback, err := c.cm.Unsubscribe(ctx, &paho.Unsubscribe{
+			Topics: []string{topic},
+		})
+		c.router.UnregisterHandler(topic)
+		// Do not exit immediately when unsub error. Just remove unsub handler
+		if err != nil {
+			if unsuback != nil {
+				if unsuback.Properties != nil {
+					return fmt.Errorf("unsuscribe to %s error: %s", topic, unsuback.Properties.ReasonString)
+				} else {
+					return fmt.Errorf("unsuscribe to %s error: %s", topic, unsuback.Reasons)
+				}
 			}
+			return err
 		}
-		return err
 	}
 	return nil
 }
@@ -256,6 +277,9 @@ func ValidateConfig(ctx api.StreamContext, props map[string]any) (*ConnectionCon
 		return nil, err
 	}
 	c.tls = tlsConfig
+	if c.EnableClientSession && len(c.ClientStatePath) == 0 {
+		return nil, errors.New("missing client state path")
+	}
 	return c, nil
 }
 
