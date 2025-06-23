@@ -16,7 +16,6 @@ package function
 
 import (
 	"fmt"
-	"math"
 	"reflect"
 	"strconv"
 

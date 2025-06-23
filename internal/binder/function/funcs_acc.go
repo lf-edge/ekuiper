@@ -231,13 +231,13 @@ func registerGlobalAggFunc() {
 	builtins["acc_count"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			validData, partitionKey, status, err := extractAccArgs(ctx, args)
+			accCntFunc := accCountFunc{}
+			validData, partitionKey, status, err := extractAccArgs(ctx, args, accCntFunc)
 			if err != nil {
 				return err, false
 			}
-			accCntFunc := accCountFunc{}
 			if len(args) == 3 {
-				accCntFunc.accFuncExec(ctx, args[0], validData, partitionKey, status)
+				accCntFunc.accFuncExec(ctx, args[0], validData, partitionKey, status, false)
 				if status.Err != nil {
 					return status.Err, false
 				}
@@ -277,7 +277,7 @@ func handleOnCondAccFunc(ctx api.FunctionContext, args []interface{}, validData 
 	return nil
 }
 
-func extractAccArgs(ctx api.FunctionContext, args []interface{}) (validData bool, partitionKey string, status *accStatus, err error) {
+func extractAccArgs(ctx api.FunctionContext, args []interface{}, accFunc accFunc) (validData bool, partitionKey string, status *accStatus, err error) {
 	partitionKey = args[len(args)-1].(string)
 	validData = args[len(args)-2].(bool)
 	val, err := ctx.GetState(partitionKey)
@@ -289,24 +289,35 @@ func extractAccArgs(ctx api.FunctionContext, args []interface{}) (validData bool
 	}
 	status = val.(*accStatus)
 	status.Err = nil
+	if status.Value == nil {
+		accFunc.accReset(status)
+	}
 	return validData, partitionKey, status, nil
 }
 
-func accFuncWithCond(ctx api.FunctionContext, value interface{}, onBegin, onReset bool, validData bool, partitionKey string, status *accStatus,
-	accFunc accFunc) {
+// accFuncWithCond execute acc function with onBegin and onReset condition with following 4 steps:
+// 1. Check HasBegin at the beginning, if it's false, it means any result won't be calculated, thus we need to always reset the value
+// 2. Check onBegin condition to set the HasBegin
+// 3. Check HasBegin to determine whether calculate the acc function
+// 4. Check onReset to set the HasBegin
+func accFuncWithCond(ctx api.FunctionContext, value interface{}, onBegin, onReset bool, validData bool, partitionKey string, status *accStatus, accFunc accFunc) {
+	if !status.HasBegin {
+		accFunc.accReset(status)
+	}
 	if onBegin {
 		if !status.HasBegin {
 			accFunc.accReset(status)
 			status.HasBegin = true
 		}
-		accFunc.accFuncExec(ctx, value, validData, partitionKey, status)
+	}
+	if status.HasBegin {
+		accFunc.accFuncExec(ctx, value, validData, partitionKey, status, true)
 		if status.Err != nil {
 			return
 		}
 	}
 	if onReset {
 		if status.HasBegin {
-			accFunc.accReset(status)
 			status.HasBegin = false
 		}
 	}
@@ -323,13 +334,13 @@ type accStatus struct {
 }
 
 type accFunc interface {
-	accFuncExec(ctx api.FunctionContext, value interface{}, validData bool, partitionKey string, status *accStatus)
+	accFuncExec(ctx api.FunctionContext, value interface{}, validData bool, partitionKey string, status *accStatus, skipStatusSave bool)
 	accReset(status *accStatus)
 }
 
 type accCountFunc struct{}
 
-func (a accCountFunc) accFuncExec(ctx api.FunctionContext, value interface{}, validData bool, partitionKey string, status *accStatus) {
+func (a accCountFunc) accFuncExec(ctx api.FunctionContext, value interface{}, validData bool, partitionKey string, status *accStatus, skipStatusSave bool) {
 	if status.Value == nil {
 		status.Value = 0
 	}
@@ -341,8 +352,10 @@ func (a accCountFunc) accFuncExec(ctx api.FunctionContext, value interface{}, va
 		cnt++
 		status.Value = cnt
 	}
-	if err := ctx.PutState(partitionKey, status); err != nil {
-		status.Err = err
+	if !skipStatusSave {
+		if err := ctx.PutState(partitionKey, status); err != nil {
+			status.Err = err
+		}
 	}
 }
 
