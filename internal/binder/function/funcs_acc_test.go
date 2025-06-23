@@ -19,6 +19,45 @@ func TestAccumulateAggCond(t *testing.T) {
 		testargs [][]interface{}
 	}{
 		{
+			name: "acc_avg",
+			testargs: [][]interface{}{
+				{int64(1), false, false},
+				{int64(1), true, false},
+				{int64(1), false, false},
+				{int64(1), false, true},
+				{int64(1), false, false},
+			},
+			results: []interface{}{
+				float64(0), float64(1), float64(1), float64(1), float64(0),
+			},
+		},
+		{
+			name: "acc_min",
+			testargs: [][]interface{}{
+				{int64(1), false, false},
+				{int64(5), true, false},
+				{int64(4), false, false},
+				{int64(3), false, true},
+				{int64(2), false, false},
+			},
+			results: []interface{}{
+				float64(0), float64(5), float64(4), float64(3), float64(0),
+			},
+		},
+		{
+			name: "acc_sum",
+			testargs: [][]interface{}{
+				{int64(1), false, false},
+				{int64(1), true, false},
+				{int64(1), false, false},
+				{int64(1), false, true},
+				{int64(1), false, false},
+			},
+			results: []interface{}{
+				float64(0), float64(1), float64(2), float64(3), float64(0),
+			},
+		},
+		{
 			name: "acc_count",
 			testargs: [][]interface{}{
 				{1, false, false},
@@ -28,7 +67,7 @@ func TestAccumulateAggCond(t *testing.T) {
 				{1, false, false},
 			},
 			results: []interface{}{
-				0, 1, 2, 3, 0,
+				int64(0), int64(1), int64(2), int64(3), int64(0),
 			},
 		},
 	}
@@ -64,7 +103,7 @@ func TestAccumulateAgg(t *testing.T) {
 				int64(1),
 			},
 			results: []interface{}{
-				1, 2, 3, 4, 5, 6,
+				int64(1), int64(2), int64(3), int64(4), int64(5), int64(6),
 			},
 		},
 		{
@@ -72,9 +111,9 @@ func TestAccumulateAgg(t *testing.T) {
 			testargs: []interface{}{
 				"1",
 				float64(1),
-				float32(1),
-				1,
-				int32(1),
+				float64(1),
+				float64(1),
+				int64(1),
 				int64(1),
 			},
 			results: []interface{}{
@@ -91,9 +130,9 @@ func TestAccumulateAgg(t *testing.T) {
 			testargs: []interface{}{
 				"1",
 				float64(1),
-				float32(2),
-				3,
-				int32(4),
+				float64(2),
+				float64(3),
+				int64(4),
 				int64(5),
 			},
 			results: []interface{}{
@@ -110,9 +149,9 @@ func TestAccumulateAgg(t *testing.T) {
 			testargs: []interface{}{
 				"1",
 				float64(5),
-				float32(4),
-				3,
-				int32(2),
+				float64(4),
+				float64(3),
+				int64(2),
 				int64(1),
 			},
 			results: []interface{}{
@@ -129,9 +168,9 @@ func TestAccumulateAgg(t *testing.T) {
 			testargs: []interface{}{
 				"1",
 				float64(1),
-				float32(1),
-				1,
-				int32(1),
+				float64(1),
+				int64(1),
+				int64(1),
 				int64(1),
 			},
 			results: []interface{}{
@@ -167,11 +206,11 @@ func TestAccumulateAgg(t *testing.T) {
 		},
 		{
 			"acc_max",
-			0,
+			float64(0),
 		},
 		{
 			"acc_min",
-			0,
+			float64(0),
 		},
 		{
 			"acc_avg",
@@ -179,7 +218,7 @@ func TestAccumulateAgg(t *testing.T) {
 		},
 		{
 			"acc_count",
-			0,
+			int64(0),
 		},
 	}
 	for _, test := range tests2 {

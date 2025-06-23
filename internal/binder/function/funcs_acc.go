@@ -27,232 +27,16 @@ func registerGlobalAggFunc() {
 	builtins["acc_avg"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			key := args[len(args)-1].(string)
-			keyCount := fmt.Sprintf("%s_count", key)
-			keySum := fmt.Sprintf("%s_sum", key)
-			keyAvg := fmt.Sprintf("%s_avg", key)
-
-			vCount, err := ctx.GetState(keyCount)
+			status, err := handleAccFunc(ctx, args, accAvgFunc{})
 			if err != nil {
 				return err, false
 			}
-			vSum, err := ctx.GetState(keySum)
-			if err != nil {
-				return err, false
-			}
-			vAvg, err := ctx.GetState(keyAvg)
-			if err != nil {
-				return err, false
-			}
-			validData, ok := args[len(args)-2].(bool)
-			if !ok {
-				return fmt.Errorf("when arg is not a bool but got %v", args[len(args)-2]), false
-			}
-			if vSum == nil || vCount == nil || vAvg == nil {
-				vSum = float64(0)
-				vCount = float64(0)
-				vAvg = float64(0)
-			}
-			if args[0] == nil || !validData {
-				return vAvg.(float64), true
-			}
-			count := vCount.(float64)
-			sum := vSum.(float64)
-			count = count + 1
-			switch v := args[0].(type) {
-			case int:
-				sum += float64(v)
-			case int32:
-				sum += float64(v)
-			case int64:
-				sum += float64(v)
-			case float32:
-				sum += float64(v)
-			case float64:
-				sum += v
+			switch status.Value.(type) {
+			case nil:
+				return float64(0), true
 			default:
-				return fmt.Errorf("the value should be number"), false
+				return status.Value.(*accAvgStatus).avg, true
 			}
-			if err := ctx.PutState(keyCount, count); err != nil {
-				return err, false
-			}
-			if err := ctx.PutState(keySum, sum); err != nil {
-				return err, false
-			}
-			if err := ctx.PutState(keyAvg, sum/count); err != nil {
-				return err, false
-			}
-			return sum / count, true
-		},
-		val: func(ctx api.FunctionContext, args []ast.Expr) error {
-			return nil
-		},
-	}
-	builtins["acc_max"] = builtinFunc{
-		fType: ast.FuncTypeScalar,
-		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			key := args[len(args)-1].(string)
-			val, err := ctx.GetState(key)
-			if err != nil {
-				return err, false
-			}
-			validData, ok := args[len(args)-2].(bool)
-			if !ok {
-				return fmt.Errorf("when arg is not a bool but got %v", args[len(args)-2]), false
-			}
-			if val == nil {
-				if !validData {
-					return 0, true
-				}
-				val = float64(math.MinInt64)
-			}
-			m := val.(float64)
-			if !validData {
-				return m, true
-			}
-			switch v := args[0].(type) {
-			case int:
-				v1 := float64(v)
-				m = getMax(m, v1)
-			case int32:
-				v1 := float64(v)
-				m = getMax(m, v1)
-			case int64:
-				v1 := float64(v)
-				m = getMax(m, v1)
-			case float32:
-				v1 := float64(v)
-				m = getMax(m, v1)
-			case float64:
-				m = getMax(m, v)
-			default:
-				return fmt.Errorf("the value should be number"), false
-			}
-			if err := ctx.PutState(key, m); err != nil {
-				return err, false
-			}
-			return m, true
-		},
-		val: func(ctx api.FunctionContext, args []ast.Expr) error {
-			return ValidateLen(1, len(args))
-		},
-	}
-	builtins["acc_min"] = builtinFunc{
-		fType: ast.FuncTypeScalar,
-		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			key := args[len(args)-1].(string)
-			val, err := ctx.GetState(key)
-			if err != nil {
-				return err, false
-			}
-			validData, ok := args[len(args)-2].(bool)
-			if !ok {
-				return fmt.Errorf("when arg is not a bool but got %v", args[len(args)-2]), false
-			}
-			if val == nil {
-				if !validData {
-					return 0, true
-				}
-				val = float64(math.MaxInt64)
-			}
-			m := val.(float64)
-			if !validData {
-				return m, true
-			}
-			switch v := args[0].(type) {
-			case int:
-				v1 := float64(v)
-				m = getMin(m, v1)
-			case int32:
-				v1 := float64(v)
-				m = getMin(m, v1)
-			case int64:
-				v1 := float64(v)
-				m = getMin(m, v1)
-			case float32:
-				v1 := float64(v)
-				m = getMin(m, v1)
-			case float64:
-				m = getMin(m, v)
-			default:
-				return fmt.Errorf("the value should be number"), false
-			}
-			if err := ctx.PutState(key, m); err != nil {
-				return err, false
-			}
-			return m, true
-		},
-		val: func(ctx api.FunctionContext, args []ast.Expr) error {
-			return ValidateLen(1, len(args))
-		},
-	}
-	builtins["acc_sum"] = builtinFunc{
-		fType: ast.FuncTypeScalar,
-		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			key := args[len(args)-1].(string)
-			val, err := ctx.GetState(key)
-			if err != nil {
-				return err, false
-			}
-			validData, ok := args[len(args)-2].(bool)
-			if !ok {
-				return fmt.Errorf("when arg is not a bool but got %v", args[len(args)-2]), false
-			}
-			if val == nil {
-				val = float64(0)
-			}
-			accu := val.(float64)
-			if !validData {
-				return accu, true
-			}
-			switch sumValue := args[0].(type) {
-			case int:
-				accu += float64(sumValue)
-			case int32:
-				accu += float64(sumValue)
-			case int64:
-				accu += float64(sumValue)
-			case float32:
-				accu += float64(sumValue)
-			case float64:
-				accu += sumValue
-			default:
-				return fmt.Errorf("the value should be number"), false
-			}
-			if err := ctx.PutState(key, accu); err != nil {
-				return err, false
-			}
-			return accu, true
-		},
-		val: func(ctx api.FunctionContext, args []ast.Expr) error {
-			return ValidateLen(1, len(args))
-		},
-	}
-	builtins["acc_count"] = builtinFunc{
-		fType: ast.FuncTypeScalar,
-		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			accCntFunc := accCountFunc{}
-			validData, partitionKey, status, err := extractAccArgs(ctx, args, accCntFunc)
-			if err != nil {
-				return err, false
-			}
-			if len(args) == 3 {
-				accCntFunc.accFuncExec(ctx, args[0], validData, partitionKey, status, false)
-				if status.Err != nil {
-					return status.Err, false
-				}
-				return status.Value.(int), true
-			}
-			if len(args) == 5 {
-				if err := handleOnCondAccFunc(ctx, args, validData, partitionKey, status, accCntFunc); err != nil {
-					return err, false
-				}
-				if status.Err != nil {
-					return status.Err, false
-				}
-				return status.Value.(int), true
-			}
-			return fmt.Errorf("wrong args length"), false
 		},
 		val: func(ctx api.FunctionContext, args []ast.Expr) error {
 			argsLen := len(args)
@@ -262,6 +46,108 @@ func registerGlobalAggFunc() {
 			return nil
 		},
 	}
+	builtins["acc_max"] = builtinFunc{
+		fType: ast.FuncTypeScalar,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			status, err := handleAccFunc(ctx, args, accMaxFunc{})
+			if err != nil {
+				return err, false
+			}
+			switch status.Value.(type) {
+			case nil:
+				return float64(0), true
+			default:
+				return status.Value.(float64), true
+			}
+		},
+		val: func(ctx api.FunctionContext, args []ast.Expr) error {
+			argsLen := len(args)
+			if argsLen != 1 && argsLen != 3 {
+				return fmt.Errorf("Expect 1/3 arguments but found %d.", argsLen)
+			}
+			return nil
+		},
+	}
+	builtins["acc_min"] = builtinFunc{
+		fType: ast.FuncTypeScalar,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			status, err := handleAccFunc(ctx, args, accMinFunc{})
+			if err != nil {
+				return err, false
+			}
+			switch status.Value.(type) {
+			case nil:
+				return float64(0), true
+			default:
+				return status.Value.(float64), true
+			}
+		},
+		val: func(ctx api.FunctionContext, args []ast.Expr) error {
+			argsLen := len(args)
+			if argsLen != 1 && argsLen != 3 {
+				return fmt.Errorf("Expect 1/3 arguments but found %d.", argsLen)
+			}
+			return nil
+		},
+	}
+	builtins["acc_sum"] = builtinFunc{
+		fType: ast.FuncTypeScalar,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			status, err := handleAccFunc(ctx, args, accSumFunc{})
+			if err != nil {
+				return err, false
+			}
+			return status.Value.(float64), true
+		},
+		val: func(ctx api.FunctionContext, args []ast.Expr) error {
+			argsLen := len(args)
+			if argsLen != 1 && argsLen != 3 {
+				return fmt.Errorf("Expect 1/3 arguments but found %d.", argsLen)
+			}
+			return nil
+		},
+	}
+	builtins["acc_count"] = builtinFunc{
+		fType: ast.FuncTypeScalar,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			status, err := handleAccFunc(ctx, args, accCountFunc{})
+			if err != nil {
+				return err, false
+			}
+			return status.Value.(int64), true
+		},
+		val: func(ctx api.FunctionContext, args []ast.Expr) error {
+			argsLen := len(args)
+			if argsLen != 1 && argsLen != 3 {
+				return fmt.Errorf("Expect 1/3 arguments but found %d.", argsLen)
+			}
+			return nil
+		},
+	}
+}
+
+func handleAccFunc(ctx api.FunctionContext, args []interface{}, accFunc accFunc) (*accStatus, error) {
+	validData, partitionKey, status, err := extractAccArgs(ctx, args, accFunc)
+	if err != nil {
+		return nil, err
+	}
+	if len(args) == 3 {
+		accFunc.accFuncExec(ctx, args[0], validData, partitionKey, status, false)
+		if status.Err != nil {
+			return nil, status.Err
+		}
+		return status, nil
+	}
+	if len(args) == 5 {
+		if err := handleOnCondAccFunc(ctx, args, validData, partitionKey, status, accFunc); err != nil {
+			return nil, err
+		}
+		if status.Err != nil {
+			return nil, status.Err
+		}
+		return status, nil
+	}
+	return nil, fmt.Errorf("wrong args length")
 }
 
 func handleOnCondAccFunc(ctx api.FunctionContext, args []interface{}, validData bool, partitionKey string, status *accStatus, accFunc accFunc) error {
@@ -304,11 +190,8 @@ func accFuncWithCond(ctx api.FunctionContext, value interface{}, onBegin, onRese
 	if !status.HasBegin {
 		accFunc.accReset(status)
 	}
-	if onBegin {
-		if !status.HasBegin {
-			accFunc.accReset(status)
-			status.HasBegin = true
-		}
+	if onBegin && !status.HasBegin {
+		status.HasBegin = true
 	}
 	if status.HasBegin {
 		accFunc.accFuncExec(ctx, value, validData, partitionKey, status, true)
@@ -342,9 +225,9 @@ type accCountFunc struct{}
 
 func (a accCountFunc) accFuncExec(ctx api.FunctionContext, value interface{}, validData bool, partitionKey string, status *accStatus, skipStatusSave bool) {
 	if status.Value == nil {
-		status.Value = 0
+		status.Value = int64(0)
 	}
-	cnt := status.Value.(int)
+	cnt := status.Value.(int64)
 	if !validData {
 		return
 	}
@@ -360,5 +243,144 @@ func (a accCountFunc) accFuncExec(ctx api.FunctionContext, value interface{}, va
 }
 
 func (a accCountFunc) accReset(status *accStatus) {
-	status.Value = 0
+	status.Value = int64(0)
+}
+
+type accSumFunc struct{}
+
+func (a accSumFunc) accFuncExec(ctx api.FunctionContext, value interface{}, validData bool, partitionKey string, status *accStatus, skipStatusSave bool) {
+	if status.Value == nil {
+		status.Value = float64(0)
+	}
+	sum := status.Value.(float64)
+	if !validData {
+		return
+	}
+	if value != nil {
+		switch v := value.(type) {
+		case int64:
+			sum += float64(v)
+			status.Value = sum
+		case float64:
+			sum += v
+			status.Value = sum
+		default:
+			status.Err = fmt.Errorf("the value should be number")
+		}
+	}
+	if !skipStatusSave {
+		if err := ctx.PutState(partitionKey, status); err != nil {
+			status.Err = err
+		}
+	}
+}
+
+func (a accSumFunc) accReset(status *accStatus) {
+	status.Value = float64(0)
+}
+
+type accMinFunc struct{}
+
+func (a accMinFunc) accFuncExec(ctx api.FunctionContext, value interface{}, validData bool, partitionKey string, status *accStatus, skipStatusSave bool) {
+	if !validData {
+		return
+	}
+	mv := float64(math.MaxInt64)
+	sfv, ok := status.Value.(float64)
+	if ok {
+		mv = sfv
+	}
+	switch v := value.(type) {
+	case int64:
+		mv = getMin(mv, float64(v))
+		status.Value = mv
+	case float64:
+		mv = getMin(mv, v)
+		status.Value = mv
+	default:
+		status.Err = fmt.Errorf("the value should be number")
+	}
+	if !skipStatusSave {
+		if err := ctx.PutState(partitionKey, status); err != nil {
+			status.Err = err
+		}
+	}
+}
+
+func (a accMinFunc) accReset(status *accStatus) {
+	status.Value = nil
+}
+
+type accMaxFunc struct{}
+
+func (a accMaxFunc) accFuncExec(ctx api.FunctionContext, value interface{}, validData bool, partitionKey string, status *accStatus, skipStatusSave bool) {
+	if !validData {
+		return
+	}
+	mv := float64(math.MinInt64)
+	sfv, ok := status.Value.(float64)
+	if ok {
+		mv = sfv
+	}
+	switch v := value.(type) {
+	case int64:
+		mv = getMax(mv, float64(v))
+		status.Value = mv
+	case float64:
+		mv = getMax(mv, v)
+		status.Value = mv
+	default:
+		status.Err = fmt.Errorf("the value should be number")
+	}
+	if !skipStatusSave {
+		if err := ctx.PutState(partitionKey, status); err != nil {
+			status.Err = err
+		}
+	}
+}
+
+func (a accMaxFunc) accReset(status *accStatus) {
+	status.Value = nil
+}
+
+type accAvgFunc struct{}
+
+func (a accAvgFunc) accFuncExec(ctx api.FunctionContext, value interface{}, validData bool, partitionKey string, status *accStatus, skipStatusSave bool) {
+	if !validData {
+		return
+	}
+	avgStatus := &accAvgStatus{}
+	sas, ok := status.Value.(*accAvgStatus)
+	if ok {
+		avgStatus = sas
+	}
+	switch v := value.(type) {
+	case int64:
+		avgStatus.sum += float64(v)
+		avgStatus.count++
+		avgStatus.avg = avgStatus.sum / float64(avgStatus.count)
+		status.Value = avgStatus
+	case float64:
+		avgStatus.sum += v
+		avgStatus.count++
+		avgStatus.avg = avgStatus.sum / float64(avgStatus.count)
+		status.Value = avgStatus
+	default:
+		status.Err = fmt.Errorf("the value should be number")
+	}
+	if !skipStatusSave {
+		if err := ctx.PutState(partitionKey, status); err != nil {
+			status.Err = err
+		}
+	}
+}
+
+func (a accAvgFunc) accReset(status *accStatus) {
+	status.Value = nil
+}
+
+type accAvgStatus struct {
+	sum   float64
+	count int64
+	avg   float64
 }
