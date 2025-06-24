@@ -140,8 +140,14 @@ func (s *State) Validate() (*topo.Topo, error) {
 }
 
 func (s *State) transit(newState RunState, err error) {
+	chainAction := false
 	s.Lock()
-	defer s.Unlock()
+	defer func() {
+		s.Unlock()
+		if chainAction {
+			s.nextAction()
+		}
+	}()
 	s.currentState = newState
 	if err != nil {
 		s.lastWill = err.Error()
@@ -149,8 +155,10 @@ func (s *State) transit(newState RunState, err error) {
 	switch newState {
 	case Running:
 		s.lastStartTimestamp = timex.GetNowInMilli()
+		chainAction = true
 	case Stopped, StoppedByErr, ScheduledStop:
 		s.lastStopTimestamp = timex.GetNowInMilli()
+		chainAction = true
 	default:
 		// do nothing
 	}
@@ -266,7 +274,6 @@ func (s *State) GetStatusMap() map[string]any {
 // By check state, it assures only one Start function is running at any time. (thread safe)
 // regSchedule: whether need to handle scheduler. If call externally, set it to true
 func (s *State) Start() error {
-	defer s.nextAction()
 	s.logger.Debug("start RunState")
 	done := s.triggerAction(ActionSignalStart)
 	if done {
@@ -291,7 +298,6 @@ func (s *State) Start() error {
 }
 
 func (s *State) ScheduleStart() error {
-	defer s.nextAction()
 	s.logger.Debug("scheduled start RunState")
 	done := s.triggerAction(ActionSignalScheduledStart)
 	if done {
@@ -387,7 +393,6 @@ func (s *State) Stop() {
 }
 
 func (s *State) ScheduleStop() {
-	defer s.nextAction()
 	s.logger.Debug("scheduled stop RunState")
 	done := s.triggerAction(ActionSignalScheduledStop)
 	if done {
@@ -406,7 +411,6 @@ func (s *State) ScheduleStop() {
 }
 
 func (s *State) StopWithLastWill(msg string) {
-	defer s.nextAction()
 	s.logger.Debug("stop RunState")
 	done := s.triggerAction(ActionSignalStop)
 	if done {
