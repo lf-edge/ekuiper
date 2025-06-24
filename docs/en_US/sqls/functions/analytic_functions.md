@@ -396,3 +396,41 @@ acc_avg(a)
 ```
 
 The results are: 1 1.5 2
+
+### ACC function with conditions
+
+ACC function can define the starting point and reset point of cumulative calculation by accepting additional expression parameters. The specific usage is as follows
+
+```text
+acc_count(a,expr1,expr2)
+```
+
+Where expr1 represents the starting point of cumulative calculation, and expr2 represents the reset point of cumulative calculation.
+
+Example: Use acc_count to perform cumulative count with conditions
+
+```text
+acc_count(a, a > 1, a < 0)
+```
+
+The following data are obtained:
+
+```text
+a = 1
+a = 2
+a = 1
+a = 3
+a = -1
+a = 1
+```
+
+The results are as follows:
+
+```text
+0
+1
+2
+3
+4
+0
+```
