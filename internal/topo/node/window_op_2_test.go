@@ -21,7 +21,6 @@ func TestSlidingWindowSendTwice(t *testing.T) {
 	conf.IsTesting = true
 	node.EnableAlignWindow = false
 	now := time.Now()
-	timex.Set(now.UnixMilli())
 	o := &def.RuleOption{
 		BufferLength: 10,
 		PlanOptimizeStrategy: &def.PlanOptimizeStrategy{
