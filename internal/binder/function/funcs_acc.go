@@ -258,6 +258,10 @@ func (a accSumFunc) accFuncExec(ctx api.FunctionContext, value interface{}, vali
 	}
 	if value != nil {
 		switch v := value.(type) {
+		// only for unit test
+		case int:
+			sum += float64(v)
+			status.Value = sum
 		case int64:
 			sum += float64(v)
 			status.Value = sum
@@ -291,6 +295,9 @@ func (a accMinFunc) accFuncExec(ctx api.FunctionContext, value interface{}, vali
 		mv = sfv
 	}
 	switch v := value.(type) {
+	case int:
+		mv = getMin(mv, float64(v))
+		status.Value = mv
 	case int64:
 		mv = getMin(mv, float64(v))
 		status.Value = mv
@@ -323,6 +330,9 @@ func (a accMaxFunc) accFuncExec(ctx api.FunctionContext, value interface{}, vali
 		mv = sfv
 	}
 	switch v := value.(type) {
+	case int:
+		mv = getMax(mv, float64(v))
+		status.Value = mv
 	case int64:
 		mv = getMax(mv, float64(v))
 		status.Value = mv
@@ -355,6 +365,11 @@ func (a accAvgFunc) accFuncExec(ctx api.FunctionContext, value interface{}, vali
 		avgStatus = sas
 	}
 	switch v := value.(type) {
+	case int:
+		avgStatus.sum += float64(v)
+		avgStatus.count++
+		avgStatus.avg = avgStatus.sum / float64(avgStatus.count)
+		status.Value = avgStatus
 	case int64:
 		avgStatus.sum += float64(v)
 		avgStatus.count++
