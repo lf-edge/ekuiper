@@ -17,8 +17,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
-func TestSlidingWindow(t *testing.T) {
-	t.Skip("only test this locally")
+func TestSlidingWindowSendTwice(t *testing.T) {
 	conf.IsTesting = true
 	node.EnableAlignWindow = false
 	now := time.Now()
