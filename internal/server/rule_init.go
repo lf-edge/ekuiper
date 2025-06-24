@@ -297,7 +297,7 @@ func scheduleCronRuleAction(now time.Time, rw ruleWrapper) scheduleRuleAction {
 			}
 
 		} else {
-			if rw.state == rule.Running && !rw.startTime.IsZero() && now.After(rw.startTime.Add(d)) {
+			if rw.state == rule.Running && !rw.startTime.IsZero() && now.Sub(rw.startTime) >= d {
 				return doStop
 			}
 		}
