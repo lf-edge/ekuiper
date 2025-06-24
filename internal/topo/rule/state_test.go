@@ -180,6 +180,7 @@ func TestStateTransit(t *testing.T) {
 			st := NewState(v.r, func(string, bool) {})
 			defer st.Delete()
 			st.actionQ = []ActionSignal{ActionSignalStart}
+			st.nextAction()
 			var wg sync.WaitGroup
 			if v.async {
 				wg.Add(len(v.actions) - 1)
@@ -240,6 +241,7 @@ func TestLongScheduleTransit(t *testing.T) {
 	// Notice: mock the action queue. The action must be the same as the next otherwise it will loop infinitely
 	st.actionQ = append(st.actionQ, ActionSignalScheduledStart)
 	_ = st.ScheduleStart()
+	st.nextAction()
 	time.Sleep(100 * time.Millisecond)
 	assert.Equal(t, Running, st.GetState())
 	// Time move out of schedule, scheduled stop
