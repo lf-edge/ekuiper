@@ -181,7 +181,7 @@ func (s *WindowScanner) addTuple(tuple *xsql.Tuple) {
 	s.tuples = append(s.tuples, tuple)
 }
 
-// left-open, right-closed
+// scan left-open, right-closed window
 func (s *WindowScanner) scanWindow(windowStart, windowEnd time.Time) []*xsql.Tuple {
 	result := make([]*xsql.Tuple, 0)
 	for _, tuple := range s.tuples {
