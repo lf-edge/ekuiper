@@ -411,7 +411,7 @@ func (co *CountWindowIncAggEventOp) emitWindow(ctx api.StreamContext, errCh chan
 		}
 		results.Content = append(results.Content, incAggRange.LastRow)
 	}
-	results.WindowRange = xsql.NewWindowRange(window.StartTime.UnixMilli(), now.UnixMilli())
+	results.WindowRange = xsql.NewWindowRange(window.StartTime.UnixMilli(), now.UnixMilli(), now.UnixMilli())
 	co.op.Broadcast(results)
 	co.op.onSend(ctx, results)
 }

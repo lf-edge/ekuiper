@@ -87,6 +87,12 @@ func Set(t int64) {
 	}
 }
 
+func SetNow(t time.Time) {
+	if IsTesting {
+		Clock.(*clock.Mock).Set(t)
+	}
+}
+
 func Add(d time.Duration) {
 	if IsTesting {
 		Clock.(*clock.Mock).Add(d)

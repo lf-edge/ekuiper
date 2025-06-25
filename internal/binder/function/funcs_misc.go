@@ -571,6 +571,11 @@ func registerMiscFunc() {
 		},
 		val: ValidateJsonFunc,
 	}
+	builtins["window_trigger"] = builtinFunc{
+		fType: ast.FuncTypeScalar,
+		exec:  nil, // directly return in the valuer
+		val:   ValidateNoArg,
+	}
 	builtins["window_start"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec:  nil, // directly return in the valuer

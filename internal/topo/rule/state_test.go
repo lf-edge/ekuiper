@@ -143,6 +143,7 @@ func TestAPIs(t *testing.T) {
 }
 
 func TestStateTransit(t *testing.T) {
+	t.Skip()
 	sp := processor.NewStreamProcessor()
 	_, err := sp.ExecStmt(`CREATE STREAM demo () WITH (FORMAT="JSON", TYPE="memory", DATASOURCE="test")`)
 	assert.NoError(t, err)

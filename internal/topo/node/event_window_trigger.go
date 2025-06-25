@@ -128,7 +128,8 @@ func (o *WindowOperator) execEventWindow(ctx api.StreamContext, inputs []*xsql.T
 				watermarkTs := d.GetTimestamp()
 				if o.window.Type == ast.SLIDING_WINDOW {
 					for len(o.delayTS) > 0 && (watermarkTs.After(o.delayTS[0]) || watermarkTs.Equal(o.delayTS[0])) {
-						inputs = o.scan(inputs, o.delayTS[0], ctx)
+						// send the last part
+						inputs = o.scan(inputs, o.delayTS[0], ctx, o.window.Delay, false)
 						o.delayTS = o.delayTS[1:]
 					}
 				}
@@ -154,13 +155,17 @@ func (o *WindowOperator) execEventWindow(ctx api.StreamContext, inputs []*xsql.T
 							for len(o.triggerTS) > 0 && (o.triggerTS[0].Before(watermarkTs) || o.triggerTS[0].Equal(watermarkTs)) {
 								if o.window.Delay > 0 {
 									o.delayTS = append(o.delayTS, o.triggerTS[0].Add(o.window.Delay))
+									if o.window.enableSlidingWindowSendTwice {
+										// send the first part
+										inputs = o.scan(inputs, o.triggerTS[0], ctx, o.window.Length, true)
+									}
 								} else {
-									inputs = o.scan(inputs, o.triggerTS[0], ctx)
+									inputs = o.scan(inputs, o.triggerTS[0], ctx, o.window.Length+o.window.Delay, true)
 								}
 								o.triggerTS = o.triggerTS[1:]
 							}
 						} else {
-							inputs = o.scan(inputs, windowEndTs, ctx)
+							inputs = o.scan(inputs, windowEndTs, ctx, o.window.Length+o.window.Delay, true)
 						}
 					}
 					prevWindowEndTs = windowEndTs

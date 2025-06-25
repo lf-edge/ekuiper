@@ -51,6 +51,11 @@ type PlanOptimizeStrategy struct {
 	EnableAliasPushdown     bool             `json:"enableAliasPushdown,omitempty" yaml:"enableAliasPushdown,omitempty"`
 	DisableAliasRefCal      bool             `json:"disableAliasRefCal,omitempty" yaml:"disableAliasRefCal,omitempty"`
 	OptimizeControl         *OptimizeControl `json:"optimizeControl,omitempty" yaml:"optimizeControl,omitempty"`
+	WindowOption            *WindowOption    `json:"windowOption,omitempty" yaml:"windowOption,omitempty"`
+}
+
+type WindowOption struct {
+	EnableSendSlidingWindowTwice bool `json:"enableSendSlidingWindowTwice,omitempty" yaml:"enableSendSlidingWindowTwice,omitempty"`
 }
 
 func (p *PlanOptimizeStrategy) IsAliasRefCalEnable() bool {
@@ -81,6 +86,16 @@ func (oc *OptimizeControl) IsOptimizeEnabled(name string) bool {
 		}
 	}
 	return true
+}
+
+func (p *PlanOptimizeStrategy) IsSlidingWindowSendTwiceEnable() bool {
+	if p == nil {
+		return false
+	}
+	if p.WindowOption == nil {
+		return false
+	}
+	return p.WindowOption.EnableSendSlidingWindowTwice
 }
 
 type RestartStrategy struct {
