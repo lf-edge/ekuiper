@@ -77,7 +77,7 @@ func (o *WindowV2Operator) emitWindow(ctx api.StreamContext, startTime, endTime 
 	for _, tuple := range tuples {
 		results.Content = append(results.Content, tuple)
 	}
-	results.WindowRange = xsql.NewWindowRange(startTime.UnixMilli(), endTime.UnixMilli())
+	results.WindowRange = xsql.NewWindowRange(startTime.UnixMilli(), endTime.UnixMilli(), endTime.UnixMilli())
 	o.Broadcast(results)
 	o.onSend(ctx, results)
 }
