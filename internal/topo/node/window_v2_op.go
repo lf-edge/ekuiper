@@ -206,10 +206,7 @@ func (s *WindowScanner) gc(gcTime time.Time) {
 			break
 		}
 	}
-	if index == 0 {
-		return
-	}
-	if index == len(s.tuples)-1 {
+	if index == -1 {
 		s.tuples = make([]*xsql.Tuple, 0)
 		return
 	}
