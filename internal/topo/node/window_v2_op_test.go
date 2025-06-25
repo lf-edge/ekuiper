@@ -193,18 +193,3 @@ func TestWindowV2SlidingWindow(t *testing.T) {
 	waitExecute()
 	op.Close()
 }
-
-func extractWindowPlan(cur planner.LogicalPlan) *planner.WindowPlan {
-	switch plan := cur.(type) {
-	case *planner.WindowPlan:
-		return plan
-	default:
-		for _, child := range plan.Children() {
-			got := extractWindowPlan(child)
-			if got != nil {
-				return got
-			}
-		}
-	}
-	return nil
-}
