@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ func TestInvoke(t *testing.T) {
 	}
 	err = validateFuncs("sum", []ast.Expr{})
 	assert.Error(t, err)
-	assert.EqualError(t, err, "validate function sum error: Expect 1 arguments but found 0.")
+	assert.EqualError(t, err, "Expect 1 arguments but found 0.")
 	err = validateFuncs("window_start", []ast.Expr{})
 	if err != nil {
 		t.Error(err)

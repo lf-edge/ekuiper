@@ -47,7 +47,7 @@ func TestHavingPlan_Apply(t *testing.T) {
 						Message: xsql.Message{"id1": 5, "f1": "v1"},
 					},
 				},
-				WindowRange: xsql.NewWindowRange(1541152486013, 1541152487013),
+				WindowRange: xsql.NewWindowRange(1541152486013, 1541152487013, 1541152487013),
 			},
 			result: &xsql.WindowTuples{
 				Content: []xsql.Row{
@@ -62,7 +62,7 @@ func TestHavingPlan_Apply(t *testing.T) {
 						Message: xsql.Message{"id1": 5, "f1": "v1"},
 					},
 				},
-				WindowRange: xsql.NewWindowRange(1541152486013, 1541152487013),
+				WindowRange: xsql.NewWindowRange(1541152486013, 1541152487013, 1541152487013),
 			},
 		},
 		{
@@ -144,7 +144,7 @@ func TestHavingPlan_Apply(t *testing.T) {
 								Message: xsql.Message{"id1": 3, "f1": "v1"},
 							},
 						},
-						WindowRange: xsql.NewWindowRange(1541152486013, 1541152487013),
+						WindowRange: xsql.NewWindowRange(1541152486013, 1541152487013, 1541152487013),
 					},
 					{
 						Content: []xsql.Row{
@@ -153,7 +153,7 @@ func TestHavingPlan_Apply(t *testing.T) {
 								Message: xsql.Message{"id1": 2, "f1": "v2"},
 							},
 						},
-						WindowRange: xsql.NewWindowRange(1541152486055, 1541152487055),
+						WindowRange: xsql.NewWindowRange(1541152486055, 1541152487055, 1541152487013),
 					},
 				},
 			},
@@ -166,7 +166,7 @@ func TestHavingPlan_Apply(t *testing.T) {
 								Message: xsql.Message{"id1": 2, "f1": "v2"},
 							},
 						},
-						WindowRange: xsql.NewWindowRange(1541152486055, 1541152487055),
+						WindowRange: xsql.NewWindowRange(1541152486055, 1541152487055, 1541152487013),
 					},
 				},
 			},
@@ -190,7 +190,7 @@ func TestHavingPlan_Apply(t *testing.T) {
 								},
 							},
 						},
-						WindowRange: xsql.NewWindowRange(1541152486013, 1541152487013),
+						WindowRange: xsql.NewWindowRange(1541152486013, 1541152487013, 1541152487013),
 					},
 					{
 						Content: []xsql.Row{
@@ -207,7 +207,7 @@ func TestHavingPlan_Apply(t *testing.T) {
 								},
 							},
 						},
-						WindowRange: xsql.NewWindowRange(1541152486013, 1541152487013),
+						WindowRange: xsql.NewWindowRange(1541152486013, 1541152487013, 1541152487013),
 					},
 				},
 			},
@@ -228,7 +228,7 @@ func TestHavingPlan_Apply(t *testing.T) {
 								},
 							},
 						},
-						WindowRange: xsql.NewWindowRange(1541152486013, 1541152487013),
+						WindowRange: xsql.NewWindowRange(1541152486013, 1541152487013, 1541152487013),
 					},
 				},
 			},

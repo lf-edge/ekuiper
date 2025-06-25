@@ -1,4 +1,4 @@
-// Copyright 2021-2024 EMQ Technologies Co., Ltd.
+// Copyright 2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,14 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package conf
+package xsql
 
-import (
-	"text/template"
-)
+import "fmt"
 
-var FuncMap template.FuncMap
-
-func init() {
-	FuncMap = make(template.FuncMap)
+func GetId(val any) any {
+	switch vt := val.(type) {
+	case *RawTuple:
+		return fmt.Sprintf("tt %d, uid %s", vt.Timestamp.UnixMilli(), vt.Props[`{{prop "snowflake"}}`])
+	case *Tuple:
+		return vt.Timestamp.UnixMilli()
+	default:
+		return fmt.Sprintf("%T", vt)
+	}
 }

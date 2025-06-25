@@ -306,7 +306,7 @@ func (co *CountWindowIncAggOp) emit(ctx api.StreamContext, errCh chan<- error) {
 		}
 		results.Content = append(results.Content, incAggRange.LastRow)
 	}
-	results.WindowRange = xsql.NewWindowRange(co.CurrWindow.StartTime.UnixMilli(), timex.GetNow().UnixMilli())
+	results.WindowRange = xsql.NewWindowRange(co.CurrWindow.StartTime.UnixMilli(), timex.GetNow().UnixMilli(), timex.GetNow().UnixMilli())
 	co.CurrWindowSize = 0
 	co.CurrWindow = nil
 	co.Broadcast(results)
@@ -450,7 +450,7 @@ func (to *TumblingWindowIncAggOp) emit(ctx api.StreamContext, errCh chan<- error
 		}
 		results.Content = append(results.Content, incAggRange.LastRow)
 	}
-	results.WindowRange = xsql.NewWindowRange(to.CurrWindow.StartTime.UnixMilli(), now.UnixMilli())
+	results.WindowRange = xsql.NewWindowRange(to.CurrWindow.StartTime.UnixMilli(), now.UnixMilli(), now.UnixMilli())
 	to.CurrWindow = nil
 	to.Broadcast(results)
 	to.onSend(ctx, results)
@@ -586,7 +586,7 @@ func (so *SlidingWindowIncAggOp) emit(ctx api.StreamContext, errCh chan<- error,
 		}
 		results.Content = append(results.Content, incAggRange.LastRow)
 	}
-	results.WindowRange = xsql.NewWindowRange(window.StartTime.UnixMilli(), now.UnixMilli())
+	results.WindowRange = xsql.NewWindowRange(window.StartTime.UnixMilli(), now.UnixMilli(), now.UnixMilli())
 	so.Broadcast(results)
 	so.onSend(ctx, results)
 }
@@ -775,7 +775,7 @@ func (ho *HoppingWindowIncAggOp) emit(ctx api.StreamContext, errCh chan<- error,
 		}
 		results.Content = append(results.Content, incAggRange.LastRow)
 	}
-	results.WindowRange = xsql.NewWindowRange(window.StartTime.UnixMilli(), now.UnixMilli())
+	results.WindowRange = xsql.NewWindowRange(window.StartTime.UnixMilli(), now.UnixMilli(), now.UnixMilli())
 	ho.Broadcast(results)
 	ho.onSend(ctx, results)
 }

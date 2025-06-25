@@ -47,9 +47,15 @@ type RuleOption struct {
 }
 
 type PlanOptimizeStrategy struct {
-	EnableIncrementalWindow bool `json:"enableIncrementalWindow" yaml:"enableIncrementalWindow"`
-	EnableAliasPushdown     bool `json:"enableAliasPushdown,omitempty" yaml:"enableAliasPushdown,omitempty"`
-	DisableAliasRefCal      bool `json:"disableAliasRefCal,omitempty" yaml:"disableAliasRefCal,omitempty"`
+	EnableIncrementalWindow bool             `json:"enableIncrementalWindow" yaml:"enableIncrementalWindow"`
+	EnableAliasPushdown     bool             `json:"enableAliasPushdown,omitempty" yaml:"enableAliasPushdown,omitempty"`
+	DisableAliasRefCal      bool             `json:"disableAliasRefCal,omitempty" yaml:"disableAliasRefCal,omitempty"`
+	OptimizeControl         *OptimizeControl `json:"optimizeControl,omitempty" yaml:"optimizeControl,omitempty"`
+	WindowOption            *WindowOption    `json:"windowOption,omitempty" yaml:"windowOption,omitempty"`
+}
+
+type WindowOption struct {
+	EnableSendSlidingWindowTwice bool `json:"enableSendSlidingWindowTwice,omitempty" yaml:"enableSendSlidingWindowTwice,omitempty"`
 }
 
 func (p *PlanOptimizeStrategy) IsAliasRefCalEnable() bool {
@@ -57,6 +63,39 @@ func (p *PlanOptimizeStrategy) IsAliasRefCalEnable() bool {
 		return true
 	}
 	return !p.DisableAliasRefCal
+}
+
+func (p *PlanOptimizeStrategy) IsOptimizeEnabled(name string) bool {
+	if p == nil {
+		return true
+	}
+	return p.OptimizeControl.IsOptimizeEnabled(name)
+}
+
+type OptimizeControl struct {
+	DisableOptimizeRules []string `json:"disableOptimizeRules" yaml:"disableOptimizeRules"`
+}
+
+func (oc *OptimizeControl) IsOptimizeEnabled(name string) bool {
+	if oc == nil {
+		return true
+	}
+	for _, disableRules := range oc.DisableOptimizeRules {
+		if disableRules == name {
+			return false
+		}
+	}
+	return true
+}
+
+func (p *PlanOptimizeStrategy) IsSlidingWindowSendTwiceEnable() bool {
+	if p == nil {
+		return false
+	}
+	if p.WindowOption == nil {
+		return false
+	}
+	return p.WindowOption.EnableSendSlidingWindowTwice
 }
 
 type RestartStrategy struct {

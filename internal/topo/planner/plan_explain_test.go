@@ -137,11 +137,13 @@ func prepareStream() error {
 					a BIGINT,
 					b BIGINT,
 				) WITH (DATASOURCE="src1");`,
+		"memlookup": `CREATE TABLE memlookup() WITH (DATASOURCE="topicB", KEY="key" TYPE="memory", KIND="lookup")`,
 	}
 
 	types := map[string]ast.StreamType{
 		"sharedStream": ast.TypeStream,
 		"stream":       ast.TypeStream,
+		"memlookup":    ast.TypeTable,
 	}
 	for name, sql := range streamSqls {
 		s, err := json.Marshal(&xsql.StreamInfo{
@@ -239,6 +241,40 @@ func TestExplainPushAlias(t *testing.T) {
 			},
 			Qos: 0,
 		}, kv)
+		require.NoError(t, err)
+		explain, err := ExplainFromLogicalPlan(p, "")
+		require.NoError(t, err)
+		require.Equal(t, tc.explain, explain, tc.sql)
+	}
+}
+
+func TestExplainPredicatePushDown(t *testing.T) {
+	kv, err := store.GetKV("stream")
+	require.NoError(t, err)
+	require.NoError(t, prepareStream())
+	testcases := []struct {
+		sql     string
+		explain string
+	}{
+		{
+			sql: `SELECT * FROM stream LEFT JOIN memlookup ON memlookup.id = stream.device_id WHERE stream.device_id +1 =memlookup.id `,
+			explain: `{"op":"ProjectPlan_0","info":"Fields:[ * ]"}
+	{"op":"FilterPlan_1","info":"Condition:{ binaryExpr:{ binaryExpr:{ stream.device_id + 1 } = memlookup.id } }, "}
+			{"op":"LookupPlan_2","info":"Join:{ joinType:LEFT_JOIN, expr:binaryExpr:{ memlookup.id = stream.device_id } }"}
+					{"op":"DataSourcePlan_3","info":"StreamName: stream, StreamFields:[ a, b ]"}`,
+		},
+		{
+			sql: `SELECT * FROM stream LEFT JOIN memlookup ON memlookup.id = stream.device_id WHERE stream.device_id +1`,
+			explain: `{"op":"ProjectPlan_0","info":"Fields:[ * ]"}
+	{"op":"LookupPlan_1","info":"Join:{ joinType:LEFT_JOIN, expr:binaryExpr:{ memlookup.id = stream.device_id } }"}
+			{"op":"FilterPlan_2","info":"Condition:{ binaryExpr:{ stream.device_id + 1 } }, "}
+					{"op":"DataSourcePlan_3","info":"StreamName: stream, StreamFields:[ a, b ]"}`,
+		},
+	}
+	for _, tc := range testcases {
+		stmt, err := xsql.NewParser(strings.NewReader(tc.sql)).Parse()
+		require.NoError(t, err)
+		p, err := createLogicalPlan(stmt, &def.RuleOption{}, kv)
 		require.NoError(t, err)
 		explain, err := ExplainFromLogicalPlan(p, "")
 		require.NoError(t, err)

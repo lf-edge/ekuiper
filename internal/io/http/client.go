@@ -370,6 +370,7 @@ func (cc *ClientConf) parseResponse(ctx api.StreamContext, resp *http.Response, 
 			if err != nil {
 				return nil, "", fmt.Errorf("%s: decode fail for %v", BODY_ERR, err)
 			}
+			//{"code":0,"message":"success","data":null}
 			if ro.Code < 200 || ro.Code > 299 {
 				return nil, "", fmt.Errorf("%s: %d", CODE_ERR, ro.Code)
 			}

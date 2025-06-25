@@ -354,11 +354,13 @@ func (c *DefaultContext) Snapshot() error {
 }
 
 func (c *DefaultContext) SaveState(checkpointId int64) error {
-	err := c.store.SaveState(checkpointId, c.opId, c.snapshot)
-	if err != nil {
-		return err
+	if c.store != nil {
+		err := c.store.SaveState(checkpointId, c.opId, c.snapshot)
+		if err != nil {
+			return err
+		}
+		c.snapshot = nil
 	}
-	c.snapshot = nil
 	return nil
 }
 

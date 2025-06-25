@@ -57,16 +57,6 @@ func Test_parseTemplates(t *testing.T) {
 			},
 			err: "Template Invalid: template: sink:1: function \"abc\" not defined",
 		},
-		{
-			name: "prop template",
-			conf: WriteOptions{
-				Tags: map[string]string{
-					"tag1": "value1",
-					"tag2": "{{prop \"et\"}}",
-					"tag3": "100",
-				},
-			},
-		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

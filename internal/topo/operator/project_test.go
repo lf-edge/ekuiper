@@ -1623,7 +1623,7 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 								},
 							},
 						},
-						WindowRange: xsql.NewWindowRange(1541152486013, 1541152487013),
+						WindowRange: xsql.NewWindowRange(1541152486013, 1541152487013, 1541152487013),
 					},
 					{
 						Content: []xsql.Row{
@@ -1640,7 +1640,7 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 								},
 							},
 						},
-						WindowRange: xsql.NewWindowRange(1541152486013, 1541152487013),
+						WindowRange: xsql.NewWindowRange(1541152486013, 1541152487013, 1541152487013),
 					},
 				},
 			},
@@ -1841,7 +1841,7 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 						},
 					},
 				},
-				WindowRange: xsql.NewWindowRange(1541152486013, 1541152487013),
+				WindowRange: xsql.NewWindowRange(1541152486013, 1541152487013, 1541152487013),
 			},
 
 			result: []map[string]interface{}{{
@@ -1901,7 +1901,7 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 						Message: xsql.Message{"a": 123123},
 					},
 				},
-				WindowRange: xsql.NewWindowRange(1541152486013, 1541152487013),
+				WindowRange: xsql.NewWindowRange(1541152486013, 1541152487013, 1541152487013),
 			},
 			result: []map[string]interface{}{{
 				"sum":        int64(123203),
@@ -2092,7 +2092,7 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 								},
 							},
 						},
-						WindowRange: xsql.NewWindowRange(1541152486013, 1541152487013),
+						WindowRange: xsql.NewWindowRange(1541152486013, 1541152487013, 1541152487013),
 					},
 					{
 						Content: []xsql.Row{
@@ -2109,7 +2109,7 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 								},
 							},
 						},
-						WindowRange: xsql.NewWindowRange(1541152486013, 1541152487013),
+						WindowRange: xsql.NewWindowRange(1541152486013, 1541152487013, 1541152487013),
 					},
 				},
 			},
@@ -2187,7 +2187,7 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 					},
 				},
 
-				WindowRange: xsql.NewWindowRange(1541152486013, 1541152487013),
+				WindowRange: xsql.NewWindowRange(1541152486013, 1541152487013, 1541152487013),
 			},
 			result: []map[string]interface{}{{
 				"c1": map[string]interface{}{

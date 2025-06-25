@@ -237,6 +237,8 @@ func handleScheduleRuleState(now time.Time, rw ruleWrapper) error {
 		return registry.scheduledStart(rw.rule.Id)
 	case scheduleRuleActionStop:
 		return registry.scheduledStop(rw.rule.Id)
+	case doStop:
+		return registry.stopAtExit(rw.rule.Id, "duration terminated")
 	default:
 		// do nothing
 	}
@@ -249,6 +251,7 @@ const (
 	scheduleRuleActionDoNothing scheduleRuleAction = iota
 	scheduleRuleActionStart
 	scheduleRuleActionStop
+	doStop
 )
 
 func handleScheduleRule(now time.Time, rw ruleWrapper) scheduleRuleAction {
@@ -294,8 +297,8 @@ func scheduleCronRuleAction(now time.Time, rw ruleWrapper) scheduleRuleAction {
 			}
 
 		} else {
-			if rw.state == rule.Running && !rw.startTime.IsZero() && now.After(rw.startTime.Add(d)) {
-				return scheduleRuleActionStop
+			if rw.state == rule.Running && !rw.startTime.IsZero() && now.Sub(rw.startTime) >= d {
+				return doStop
 			}
 		}
 	}
@@ -355,7 +358,7 @@ func StartCPUProfiling(ctx context.Context, cpuProfile Profiler, interval time.D
 func waitAllRuleStop() {
 	rules, _ := ruleProcessor.GetAllRules()
 	for _, r := range rules {
-		err := registry.stopAtExit(r)
+		err := registry.stopAtExit(r, "")
 		if err != nil {
 			logger.Warnf("stop rule %s failed, err:%v", r, err)
 		}

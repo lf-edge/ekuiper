@@ -509,7 +509,7 @@ func TestMiscFuncNil(t *testing.T) {
 	registerMiscFunc()
 	for name, function := range builtins {
 		switch name {
-		case "compress", "decompress", "newuuid", "tstamp", "rule_id", "rule_start", "window_start", "window_end", "event_time",
+		case "compress", "decompress", "newuuid", "tstamp", "rule_id", "rule_start", "window_start", "window_end", "window_trigger", "event_time",
 			"json_path_query", "json_path_query_first", "coalesce", "meta", "json_path_exists", "bypass", "get_keyed_state":
 			continue
 		case "isnull":

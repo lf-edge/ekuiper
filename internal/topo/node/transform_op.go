@@ -36,10 +36,11 @@ import (
 // Output: MessageTuple, SinkTupleList, RawTuple
 type TransformOp struct {
 	*defaultSinkNode
-	dataField   string
-	fields      []string
-	sendSingle  bool
-	omitIfEmpty bool
+	dataField     string
+	fields        []string
+	excludeFields []string
+	sendSingle    bool
+	omitIfEmpty   bool
 	// If the result format is text, the dataTemplate should be used to format the data and skip the encode step. Otherwise, the text must be unmarshall back to map
 	isTextFormat bool
 	dt           *template.Template
@@ -51,10 +52,14 @@ type TransformOp struct {
 // NewTransformOp creates a transform node
 // sink conf should have been validated before
 func NewTransformOp(name string, rOpt *def.RuleOption, sc *SinkConf, templates []string) (*TransformOp, error) {
+	if len(sc.Fields) > 0 && len(sc.ExcludeFields) > 0 {
+		return nil, fmt.Errorf("field and excludeFields cannot both be set")
+	}
 	o := &TransformOp{
 		defaultSinkNode: newDefaultSinkNode(name, rOpt),
 		dataField:       sc.DataField,
 		fields:          sc.Fields,
+		excludeFields:   sc.ExcludeFields,
 		sendSingle:      sc.SendSingle,
 		omitIfEmpty:     sc.Omitempty,
 		isTextFormat:    xsql.IsTextFormat(sc.Format),
@@ -146,7 +151,7 @@ func (t *TransformOp) Worker(ctx api.StreamContext, item any) []any {
 }
 
 // TODO keep the tuple meta etc.
-func toSinkTuple(ctx, spanCtx api.StreamContext, bs any, props map[string]string) any {
+func toSinkTuple(_, spanCtx api.StreamContext, bs any, props map[string]string) any {
 	if bs == nil {
 		return bs
 	}
@@ -188,9 +193,9 @@ func (t *TransformOp) doTransform(d any) (any, error) {
 	}
 
 	if transformed {
-		m, selected, e = transform.TransItem(bs, t.dataField, t.fields)
+		m, selected, e = transform.TransItem(bs, t.dataField, t.fields, t.excludeFields)
 	} else {
-		m, selected, e = transform.TransItem(d, t.dataField, t.fields)
+		m, selected, e = transform.TransItem(d, t.dataField, t.fields, t.excludeFields)
 	}
 	if e != nil {
 		return nil, fmt.Errorf("fail to TransItem data %v for error %v", d, e)

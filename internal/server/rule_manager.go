@@ -149,7 +149,7 @@ func (rr *RuleRegistry) CreateRule(name, ruleJson string) (id string, err error)
 			}
 		}()
 	} else if tp != nil {
-		tp.Cancel()
+		_ = tp.Cancel()
 	}
 	return r.Id, nil
 }
@@ -230,7 +230,7 @@ func (rr *RuleRegistry) UpsertRule(ruleId, ruleJson string) error {
 			return err2
 		}
 	} else if newTopo != nil {
-		newTopo.Cancel()
+		_ = newTopo.Cancel()
 	}
 	return err1
 }
@@ -327,8 +327,12 @@ func (rr *RuleRegistry) GetAllRulesWithStatus() ([]map[string]any, error) {
 	for i, id := range ruleIds {
 		ruleName := id
 		ruleDef, _ := ruleProcessor.GetRuleById(id)
-		if ruleDef != nil && ruleDef.Name != "" {
-			ruleName = ruleDef.Name
+		var tags []string
+		if ruleDef != nil {
+			if ruleDef.Name != "" {
+				ruleName = ruleDef.Name
+			}
+			tags = ruleDef.Tags
 		}
 		var str string
 		s, err := getRuleState(id)
@@ -344,11 +348,17 @@ func (rr *RuleRegistry) GetAllRulesWithStatus() ([]map[string]any, error) {
 				trace = rs.IsTraceEnabled()
 			}
 		}
-		result[i] = map[string]interface{}{
-			"id":     id,
-			"name":   ruleName,
-			"status": str,
-			"trace":  trace,
+		ver := ""
+		if ruleDef != nil {
+			ver = ruleDef.Version
+		}
+		result[i] = map[string]any{
+			"id":      id,
+			"name":    ruleName,
+			"status":  str,
+			"version": ver,
+			"trace":   trace,
+			"tags":    tags,
 		}
 	}
 	return result, nil
@@ -438,12 +448,16 @@ func (rr *RuleRegistry) scheduledStop(name string) error {
 	}
 }
 
-func (rr *RuleRegistry) stopAtExit(name string) error {
+func (rr *RuleRegistry) stopAtExit(name string, msg string) error {
 	rs, ok := registry.load(name)
 	if !ok {
 		return errorx.NewWithCode(errorx.NOT_FOUND, fmt.Sprintf("Rule %s is not found in registry, please check if it is deleted", name))
 	} else {
-		rs.Stop()
+		if len(msg) > 0 {
+			rs.StopWithLastWill(msg)
+		} else {
+			rs.Stop()
+		}
 		return nil
 	}
 }

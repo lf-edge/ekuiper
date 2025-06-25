@@ -17,6 +17,7 @@ package planner
 import (
 	"strconv"
 
+	"github.com/lf-edge/ekuiper/v2/internal/topo/node"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 )
@@ -126,5 +127,28 @@ func (p *WindowPlan) transform(f *ast.Call) {
 			FuncId:   f.FuncId,
 			FuncType: f.FuncType,
 		})
+	}
+}
+
+func (p *WindowPlan) GenWindowConfig() *node.WindowConfig {
+	l, i, d := convertFromDuration(p.timeUnit, p.length, p.interval, p.delay)
+	var rawInterval int
+	switch p.wtype {
+	case ast.TUMBLING_WINDOW, ast.SESSION_WINDOW:
+		rawInterval = p.length
+	case ast.HOPPING_WINDOW:
+		rawInterval = p.interval
+	}
+	return &node.WindowConfig{
+		Type:             p.wtype,
+		Delay:            d,
+		Length:           l,
+		Interval:         i,
+		CountInterval:    p.interval,
+		CountLength:      p.length,
+		RawInterval:      rawInterval,
+		TimeUnit:         p.timeUnit,
+		TriggerCondition: p.triggerCondition,
+		StateFuncs:       p.stateFuncs,
 	}
 }

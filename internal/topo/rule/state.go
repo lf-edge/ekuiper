@@ -140,8 +140,14 @@ func (s *State) Validate() (*topo.Topo, error) {
 }
 
 func (s *State) transit(newState RunState, err error) {
+	chainAction := false
 	s.Lock()
-	defer s.Unlock()
+	defer func() {
+		s.Unlock()
+		if chainAction {
+			s.nextAction()
+		}
+	}()
 	s.currentState = newState
 	if err != nil {
 		s.lastWill = err.Error()
@@ -149,12 +155,14 @@ func (s *State) transit(newState RunState, err error) {
 	switch newState {
 	case Running:
 		s.lastStartTimestamp = timex.GetNowInMilli()
+		chainAction = true
 	case Stopped, StoppedByErr, ScheduledStop:
 		s.lastStopTimestamp = timex.GetNowInMilli()
+		chainAction = true
 	default:
 		// do nothing
 	}
-	s.logger.Infof("rule %s transit to state %s", s.Rule.Id, StateName[s.currentState])
+	s.logger.Info(infra.MsgWithStack(fmt.Sprintf("rule %s transit to state %s", s.Rule.Id, StateName[s.currentState])))
 }
 
 func (s *State) GetState() RunState {
@@ -266,7 +274,6 @@ func (s *State) GetStatusMap() map[string]any {
 // By check state, it assures only one Start function is running at any time. (thread safe)
 // regSchedule: whether need to handle scheduler. If call externally, set it to true
 func (s *State) Start() error {
-	defer s.nextAction()
 	s.logger.Debug("start RunState")
 	done := s.triggerAction(ActionSignalStart)
 	if done {
@@ -291,7 +298,6 @@ func (s *State) Start() error {
 }
 
 func (s *State) ScheduleStart() error {
-	defer s.nextAction()
 	s.logger.Debug("scheduled start RunState")
 	done := s.triggerAction(ActionSignalScheduledStart)
 	if done {
@@ -383,25 +389,10 @@ func (s *State) triggerAction(action ActionSignal) bool {
 // Stop run stop action or add the stop action to queue
 // regSchedule: whether need to handle scheduler. If call externally, set it to true
 func (s *State) Stop() {
-	defer s.nextAction()
-	s.logger.Debug("stop RunState")
-	done := s.triggerAction(ActionSignalStop)
-	if done {
-		return
-	}
-	// do stop, stopping action and starting action are mutual exclusive. No concurrent problem here
-	s.logger.Infof("stopping rule %s", s.Rule.Id)
-	err := s.doStop()
-	if err == nil {
-		err = errors.New("canceled manually")
-	}
-	// currentState may be accessed concurrently
-	s.transit(Stopped, err)
-	return
+	s.StopWithLastWill("canceled manually")
 }
 
 func (s *State) ScheduleStop() {
-	defer s.nextAction()
 	s.logger.Debug("scheduled stop RunState")
 	done := s.triggerAction(ActionSignalScheduledStop)
 	if done {
@@ -416,6 +407,24 @@ func (s *State) ScheduleStop() {
 	} else {
 		s.transit(ScheduledStop, err)
 	}
+	return
+}
+
+func (s *State) StopWithLastWill(msg string) {
+	s.logger.Debug("stop RunState")
+	done := s.triggerAction(ActionSignalStop)
+	if done {
+		return
+	}
+	// do stop, stopping action and starting action are mutual exclusive. No concurrent problem here
+	s.logger.Infof("stopping rule %s", s.Rule.Id)
+	err := s.doStop()
+	if err == nil {
+		err = errors.New(msg)
+	}
+	// currentState may be accessed concurrently
+	s.transit(Stopped, err)
+	s.lastWill = msg
 	return
 }
 

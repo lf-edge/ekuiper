@@ -21,25 +21,26 @@ import (
 
 func Test_SelectMap(t *testing.T) {
 	type args struct {
-		input  interface{}
-		fields []string
+		input   any
+		fields  []string
+		exclude []string
 	}
 	tests := []struct {
 		name string
 		args args
-		want interface{}
+		want any
 	}{
 		{
 			name: "test1",
 			args: args{
-				input: map[string]interface{}{
+				input: map[string]any{
 					"a": 1,
 					"b": 2,
 					"c": 3,
 				},
 				fields: []string{"a", "b"},
 			},
-			want: map[string]interface{}{
+			want: map[string]any{
 				"a": 1,
 				"b": 2,
 			},
@@ -47,7 +48,7 @@ func Test_SelectMap(t *testing.T) {
 		{
 			name: "test2",
 			args: args{
-				input: []map[string]interface{}{
+				input: []map[string]any{
 					{
 						"a": 1,
 						"b": 2,
@@ -56,7 +57,7 @@ func Test_SelectMap(t *testing.T) {
 				},
 				fields: []string{"a", "b"},
 			},
-			want: []map[string]interface{}{
+			want: []map[string]any{
 				{
 					"a": 1,
 					"b": 2,
@@ -66,7 +67,7 @@ func Test_SelectMap(t *testing.T) {
 		{
 			name: "test4",
 			args: args{
-				input: []map[string]interface{}{
+				input: []map[string]any{
 					{
 						"a": 1,
 						"b": 2,
@@ -75,7 +76,7 @@ func Test_SelectMap(t *testing.T) {
 				},
 				fields: nil,
 			},
-			want: []map[string]interface{}{
+			want: []map[string]any{
 				{
 					"a": 1,
 					"b": 2,
@@ -91,10 +92,44 @@ func Test_SelectMap(t *testing.T) {
 			},
 			want: []byte(`{"a": 1, "b": 2, "c": 3}`),
 		},
+		{
+			name: "test ex1",
+			args: args{
+				input: map[string]any{
+					"a": 1,
+					"b": 2,
+					"c": 3,
+				},
+				exclude: []string{"c"},
+			},
+			want: map[string]any{
+				"a": 1,
+				"b": 2,
+			},
+		},
+		{
+			name: "test ex2",
+			args: args{
+				input: []map[string]any{
+					{
+						"a": 1,
+						"b": 2,
+						"c": 3,
+					},
+				},
+				exclude: []string{"a"},
+			},
+			want: []map[string]any{
+				{
+					"b": 2,
+					"c": 3,
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got, _ := selectMap(tt.args.input, tt.args.fields); !reflect.DeepEqual(got, tt.want) {
+			if got, _ := selectMap(tt.args.input, tt.args.fields, tt.args.exclude); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("selectMap() = %v, want %v", got, tt.want)
 			}
 		})
@@ -103,21 +138,22 @@ func Test_SelectMap(t *testing.T) {
 
 func TestTransItem(t *testing.T) {
 	type args struct {
-		input     interface{}
+		input     any
 		dataField string
 		fields    []string
+		exclude   []string
 	}
 	tests := []struct {
 		name    string
 		args    args
-		want    interface{}
+		want    any
 		wantErr bool
 	}{
 		{
 			name: "test1",
 			args: args{
-				input: map[string]interface{}{
-					"device": map[string]interface{}{
+				input: map[string]any{
+					"device": map[string]any{
 						"device_id":          1,
 						"device_temperature": 31.2,
 						"device_humidity":    80,
@@ -127,7 +163,7 @@ func TestTransItem(t *testing.T) {
 				dataField: "device",
 				fields:    []string{"device_temperature", "device_humidity"},
 			},
-			want: map[string]interface{}{
+			want: map[string]any{
 				"device_temperature": 31.2,
 				"device_humidity":    80,
 			},
@@ -136,9 +172,9 @@ func TestTransItem(t *testing.T) {
 		{
 			name: "test2",
 			args: args{
-				input: []map[string]interface{}{
+				input: []map[string]any{
 					{
-						"device": map[string]interface{}{
+						"device": map[string]any{
 							"device_id":          1,
 							"device_temperature": 31.2,
 							"device_humidity":    80,
@@ -149,7 +185,7 @@ func TestTransItem(t *testing.T) {
 				dataField: "device",
 				fields:    []string{"device_temperature", "device_humidity"},
 			},
-			want: map[string]interface{}{
+			want: map[string]any{
 				"device_temperature": 31.2,
 				"device_humidity":    80,
 			},
@@ -158,8 +194,8 @@ func TestTransItem(t *testing.T) {
 		{
 			name: "test3",
 			args: args{
-				input: map[string]interface{}{
-					"telemetry": []map[string]interface{}{
+				input: map[string]any{
+					"telemetry": []map[string]any{
 						{
 							"temperature": 32.32,
 							"humidity":    80.8,
@@ -175,7 +211,7 @@ func TestTransItem(t *testing.T) {
 							"ts":          1388082440,
 						},
 					},
-					"device": map[string]interface{}{
+					"device": map[string]any{
 						"device_id":          1,
 						"device_temperature": 31.2,
 						"device_humidity":    80,
@@ -184,7 +220,7 @@ func TestTransItem(t *testing.T) {
 				dataField: "telemetry",
 				fields:    []string{"temperature", "humidity"},
 			},
-			want: []map[string]interface{}{
+			want: []map[string]any{
 				{
 					"temperature": 32.32,
 					"humidity":    80.8,
@@ -199,9 +235,9 @@ func TestTransItem(t *testing.T) {
 		{
 			name: "test4",
 			args: args{
-				input: []interface{}{
-					map[string]interface{}{
-						"telemetry": []map[string]interface{}{
+				input: []any{
+					map[string]any{
+						"telemetry": []map[string]any{
 							{
 								"temperature": 32.32,
 								"humidity":    80.8,
@@ -218,7 +254,7 @@ func TestTransItem(t *testing.T) {
 				dataField: "telemetry",
 				fields:    []string{"temperature", "humidity"},
 			},
-			want: []map[string]interface{}{
+			want: []map[string]any{
 				{
 					"temperature": 32.32,
 					"humidity":    80.8,
@@ -233,8 +269,8 @@ func TestTransItem(t *testing.T) {
 		{
 			name: "test5",
 			args: args{
-				input: []interface{}{
-					map[string]interface{}{
+				input: []any{
+					map[string]any{
 						"telemetry": []any{
 							"abc", "Def",
 						},
@@ -245,10 +281,51 @@ func TestTransItem(t *testing.T) {
 			},
 			wantErr: true,
 		},
+		{
+			name: "test ex 1",
+			args: args{
+				input: map[string]any{
+					"device": map[string]any{
+						"device_id":          1,
+						"device_temperature": 31.2,
+						"device_humidity":    80,
+					},
+					"ts": 1625040000,
+				},
+				dataField: "device",
+				exclude:   []string{"device_temperature"},
+			},
+			want: map[string]any{
+				"device_id":       1,
+				"device_humidity": 80,
+			},
+			wantErr: false,
+		},
+		{
+			name: "test ex2",
+			args: args{
+				input: []map[string]any{
+					{
+						"device": map[string]any{
+							"device_id":          1,
+							"device_temperature": 31.2,
+							"device_humidity":    80,
+						},
+						"ts": 1625040000,
+					},
+				},
+				dataField: "device",
+				exclude:   []string{"device_id", "device_humidity"},
+			},
+			want: map[string]any{
+				"device_temperature": 31.2,
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, _, err := TransItem(tt.args.input, tt.args.dataField, tt.args.fields)
+			got, _, err := TransItem(tt.args.input, tt.args.dataField, tt.args.fields, tt.args.exclude)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("TransItem() error = %v, wantErr %v", err, tt.wantErr)
 				return

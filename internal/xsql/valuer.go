@@ -1,4 +1,4 @@
-// Copyright 2022-2024 EMQ Technologies Co., Ltd.
+// Copyright 2022-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -29,9 +29,10 @@ import (
 var (
 	// implicitValueFuncs is a set of functions that event implicitly passes the value.
 	implicitValueFuncs = map[string]bool{
-		"window_start": true,
-		"window_end":   true,
-		"event_time":   true,
+		"window_start":   true,
+		"window_end":     true,
+		"event_time":     true,
+		"window_trigger": true,
 	}
 	// ImplicitStateFuncs is a set of functions that read/update global state implicitly.
 	ImplicitStateFuncs = map[string]bool{
@@ -550,17 +551,17 @@ func (v *ValuerEval) evalBinaryExpr(expr *ast.BinaryExpr) interface{} {
 		if !ok {
 			return fmt.Errorf("between operator expects two arguments, but found %v", rhs)
 		}
-		andLeft := v.simpleDataEval(lhs, arr[0], ast.GTE)
+		andLeft := v.SimpleDataEval(lhs, arr[0], ast.GTE)
 		switch andLeft.(type) {
 		case error:
 			return fmt.Errorf("between operator cannot compare %[1]T(%[1]v) and %[2]T(%[2]v)", lhs, arr[0])
 		}
-		andRight := v.simpleDataEval(lhs, arr[1], ast.LTE)
+		andRight := v.SimpleDataEval(lhs, arr[1], ast.LTE)
 		switch andRight.(type) {
 		case error:
 			return fmt.Errorf("between operator cannot compare %[1]T(%[1]v) and %[2]T(%[2]v)", lhs, arr[1])
 		}
-		r := v.simpleDataEval(andLeft, andRight, ast.AND)
+		r := v.SimpleDataEval(andLeft, andRight, ast.AND)
 		br, ok := r.(bool)
 		if expr.OP == ast.NOTBETWEEN && ok {
 			return !br
@@ -583,7 +584,7 @@ func (v *ValuerEval) evalBinaryExpr(expr *ast.BinaryExpr) interface{} {
 		}
 		return result
 	default:
-		return v.simpleDataEval(lhs, rhs, expr.OP)
+		return v.SimpleDataEval(lhs, rhs, expr.OP)
 	}
 }
 
@@ -592,7 +593,7 @@ func (v *ValuerEval) evalCase(expr *ast.CaseExpr) interface{} {
 		ev := v.Eval(expr.Value)
 		for _, w := range expr.WhenClauses {
 			wv := v.Eval(w.Expr)
-			switch r := v.simpleDataEval(ev, wv, ast.EQ).(type) {
+			switch r := v.SimpleDataEval(ev, wv, ast.EQ).(type) {
 			case error:
 				return fmt.Errorf("evaluate case expression error: %s", r)
 			case bool:
@@ -668,7 +669,7 @@ func (v *ValuerEval) evalSetsExpr(lhs interface{}, op ast.Token, rhsSet interfac
 		}
 		rhsSetVals := reflect.ValueOf(rhsSet)
 		for i := 0; i < rhsSetVals.Len(); i++ {
-			switch r := v.simpleDataEval(lhs, rhsSetVals.Index(i).Interface(), ast.EQ).(type) {
+			switch r := v.SimpleDataEval(lhs, rhsSetVals.Index(i).Interface(), ast.EQ).(type) {
 			case error:
 				return fmt.Errorf("evaluate in expression error: %s", r)
 			case bool:
@@ -758,8 +759,8 @@ func (v *ValuerEval) subset(result interface{}, expr ast.Expr) interface{} {
 	}
 }
 
-// lhs and rhs are non-nil
-func (v *ValuerEval) simpleDataEval(lhs, rhs interface{}, op ast.Token) any {
+// SimpleDataEval lhs and rhs are non-nil
+func (v *ValuerEval) SimpleDataEval(lhs, rhs any, op ast.Token) any {
 	if lhs == nil || rhs == nil {
 		// for relationship, return false
 		switch op {
