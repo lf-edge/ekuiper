@@ -65,6 +65,7 @@ func (s *SchemaLayer) storeSchema() {
 func (s *SchemaLayer) MergeSchema(ruleID, dataSource string, newSchema map[string]*ast.JsonStreamField, isWildcard bool) error {
 	s.Lock()
 	defer s.Unlock()
+	delete(s.wildcardMap, ruleID)
 	_, ok := s.schemaMap[ruleID]
 	if ok {
 		return nil
