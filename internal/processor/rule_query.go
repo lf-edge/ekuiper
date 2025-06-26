@@ -25,7 +25,7 @@ import (
 )
 
 func (p *RuleProcessor) ExecQuery(ruleid, sql string) (*topo.Topo, error) {
-	if tp, err := planner.PlanSQLWithSourcesAndSinks(def.GetDefaultRule(ruleid, sql), nil); err != nil {
+	if tp, _, err := planner.PlanSQLWithSourcesAndSinks(def.GetDefaultRule(ruleid, sql), nil); err != nil {
 		return nil, err
 	} else {
 		go func() {

@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,24 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package planner
+package model
 
-import "github.com/lf-edge/ekuiper/v2/internal/pkg/def"
-
-var optRuleList = []logicalOptRule{
-	&columnPruner{},
-	&predicatePushDown{},
-	//&pushProjectionPlan{},
-	&pushAliasDecode{},
+type IndexValuer interface {
+	ValueByIndex(index int, sourceIndex int) (any, bool)
+	SetByIndex(index int, value any)
+	SetTempByIndex(index int, value any)
+	TempByIndex(index int) any
 }
 
-func optimize(p LogicalPlan, options *def.RuleOption) (LogicalPlan, error) {
-	var err error
-	for _, rule := range optRuleList {
-		p, err = rule.optimize(p, options)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return p, err
-}
+// SliceVal this is the content type for slice tuple
+type SliceVal []any

@@ -1,4 +1,4 @@
-// Copyright 2022-2024 EMQ Technologies Co., Ltd.
+// Copyright 2022-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -26,12 +26,14 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
+	"github.com/lf-edge/ekuiper/v2/pkg/model"
 )
 
 type FastJsonConverter struct {
 	sync.RWMutex
 	schema map[string]*ast.JsonStreamField
 	FastJsonConverterConf
+	isSlice bool
 }
 
 type FastJsonConverterConf struct {
@@ -43,6 +45,7 @@ func NewFastJsonConverter(schema map[string]*ast.JsonStreamField, props map[stri
 	f := &FastJsonConverter{
 		schema: schema,
 	}
+	f.isSlice = ast.CheckSchemaIndex(schema)
 	f.setupProps(props)
 	return f
 }
@@ -58,9 +61,31 @@ func (f *FastJsonConverter) ResetSchema(schema map[string]*ast.JsonStreamField) 
 	f.Lock()
 	defer f.Unlock()
 	f.schema = schema
+	f.isSlice = ast.CheckSchemaIndex(schema)
 }
 
 func (f *FastJsonConverter) Encode(ctx api.StreamContext, d any) (b []byte, err error) {
+	switch dt := d.(type) {
+	case model.SliceVal:
+		mm := make(map[string]any, len(f.schema))
+		for k, v := range f.schema {
+			if v.HasIndex {
+				mm[k] = dt[v.Index]
+			}
+		}
+		return json.Marshal(mm)
+	case []model.SliceVal:
+		ms := make([]map[string]any, len(dt))
+		for i, dtt := range dt {
+			ms[i] = make(map[string]any, len(f.schema))
+			for k, v := range f.schema {
+				if v.HasIndex {
+					ms[i][k] = dtt[v.Index]
+				}
+			}
+		}
+		return json.Marshal(ms)
+	}
 	return json.Marshal(d)
 }
 
@@ -103,11 +128,14 @@ func (f *FastJsonConverter) DecodeField(_ api.StreamContext, b []byte, field str
 	return nil, nil
 }
 
-func (f *FastJsonConverter) decodeWithSchema(b []byte, schema map[string]*ast.JsonStreamField) (interface{}, error) {
+func (f *FastJsonConverter) decodeWithSchema(b []byte, schema map[string]*ast.JsonStreamField) (any, error) {
 	var p fastjson.Parser
 	v, err := p.ParseBytes(b)
 	if err != nil {
 		return nil, err
+	}
+	if f.isSlice {
+		return f.decodeToSlice(v, schema)
 	}
 	switch v.Type() {
 	case fastjson.TypeArray:
@@ -399,7 +427,7 @@ func (f *FastJsonConverter) checkSchema(key, typ string, schema map[string]*ast.
 }
 
 func (f *FastJsonConverter) extractNumberValue(name string, v *fastjson.Value, field *ast.JsonStreamField) (interface{}, error) {
-	if field == nil {
+	if field == nil || field.Type == "" {
 		return f.extractNumber(v)
 	}
 	switch {
@@ -489,6 +517,84 @@ func (f *FastJsonConverter) extractNumber(v *fastjson.Value) (any, error) {
 		return nil, err
 	}
 	return f64, nil
+}
+
+func (f *FastJsonConverter) decodeToSlice(v *fastjson.Value, schema map[string]*ast.JsonStreamField) (any, error) {
+	switch v.Type() {
+	case fastjson.TypeObject:
+		obj, err := v.Object()
+		if err != nil {
+			return nil, err
+		}
+		m, err := f.decodeObject2Slice(obj, schema, true)
+		if err != nil {
+			return nil, err
+		}
+		return m, nil
+	}
+	return nil, fmt.Errorf("do not support array yet in slice mode")
+}
+
+func (f *FastJsonConverter) decodeObject2Slice(obj *fastjson.Object, schema map[string]*ast.JsonStreamField, isOuter bool) (model.SliceVal, error) {
+	result := make(model.SliceVal, len(schema))
+	var err error
+	obj.Visit(func(k []byte, v *fastjson.Value) {
+		key := string(k)
+		field, ok := schema[key]
+		if !ok {
+			return
+		}
+		switch v.Type() {
+		case fastjson.TypeNull:
+			result[field.Index] = nil
+		case fastjson.TypeString:
+			if schema != nil {
+				field, ok = schema[key]
+				if !ok {
+					return
+				}
+			}
+			v, err2 := f.extractStringValue(key, v, field)
+			if err2 != nil {
+				err = err2
+				return
+			}
+			result[field.Index] = v
+		case fastjson.TypeNumber:
+			if schema != nil {
+				field, ok = schema[key]
+				if !ok {
+					return
+				}
+			}
+			v, err2 := f.extractNumberValue(key, v, field)
+			if err2 != nil {
+				err = err2
+				return
+			}
+			result[field.Index] = v
+		case fastjson.TypeTrue, fastjson.TypeFalse:
+			if schema != nil {
+				field, ok = schema[key]
+				if !ok {
+					return
+				}
+			}
+			v, err2 := f.extractBooleanFromValue(key, v, field)
+			if err2 != nil {
+				err = err2
+				return
+			}
+			result[field.Index] = v
+		default:
+			err = fmt.Errorf("unsupported schema type %v in slice mode", v.Type())
+			return
+		}
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
 }
 
 func getBooleanFromValue(value *fastjson.Value) (interface{}, error) {

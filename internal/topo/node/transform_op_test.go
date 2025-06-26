@@ -21,10 +21,12 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
+	"github.com/lf-edge/ekuiper/v2/pkg/model"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
@@ -260,6 +262,66 @@ func TestTransformRun(t *testing.T) {
 			errCh := make(chan error)
 			op.Exec(ctx, errCh)
 
+			for i, c := range tt.cases {
+				op.input <- c
+				if i < len(tt.expects) {
+					r := <-out
+					assert.Equal(t, tt.expects[i], r, "case %d", i)
+				}
+			}
+		})
+	}
+}
+
+func TestValidateTrans(t *testing.T) {
+	_, err := NewTransformOp("op1", &def.RuleOption{BufferLength: 10, SendError: true, Experiment: &def.ExpOpts{UseSliceTuple: true}}, &SinkConf{Fields: []string{"a"}}, nil)
+	require.EqualError(t, err, "slice tuple mode do not support sink fields yet")
+	_, err = NewTransformOp("op1", &def.RuleOption{BufferLength: 10, SendError: true, Experiment: &def.ExpOpts{UseSliceTuple: true}}, &SinkConf{DataField: "data"}, nil)
+	require.EqualError(t, err, "slice tuple mode do not support sink dataField yet")
+}
+
+var commonSliceCases = []any{
+	&xsql.SliceTuple{SourceContent: model.SliceVal{1, 2}, Timestamp: time.UnixMilli(0)},
+	&xsql.WindowTuples{Content: []xsql.Row{&xsql.SliceTuple{SourceContent: model.SliceVal{1, 2, nil}, Timestamp: time.UnixMilli(0)}, &xsql.SliceTuple{SourceContent: model.SliceVal{3, 4, "hello"}}}},
+	&xsql.WindowTuples{Content: []xsql.Row{}}, // empty data should be omitted if omitempty is true
+}
+
+func TestTransformSlice(t *testing.T) {
+	timex.Set(0)
+	testcases := []struct {
+		name      string
+		sc        *SinkConf
+		templates []string
+		cases     []any
+		expects   []any
+	}{
+		{
+			name: "data template with text format single",
+			sc: &SinkConf{
+				Omitempty:    true,
+				Format:       "custom",
+				DataTemplate: "{\"ab\":{{prop \"et\"}}}",
+				SendSingle:   false,
+			},
+			cases: commonSliceCases,
+			expects: []any{
+				&xsql.SliceTuple{SourceContent: model.SliceVal{1, 2}, Timestamp: time.UnixMilli(0)},
+				[]*xsql.SliceTuple{{SourceContent: model.SliceVal{1, 2, nil}, Timestamp: time.UnixMilli(0)}, {SourceContent: model.SliceVal{3, 4, "hello"}}},
+				[]*xsql.SliceTuple{},
+			},
+		},
+	}
+	for _, tt := range testcases {
+		t.Run(tt.name, func(t *testing.T) {
+			timex.Set(0)
+			op, err := NewTransformOp("test", &def.RuleOption{BufferLength: 10, SendError: true, Experiment: &def.ExpOpts{UseSliceTuple: true}}, tt.sc, tt.templates)
+			assert.NoError(t, err)
+			out := make(chan any, 100)
+			err = op.AddOutput(out, "test")
+			assert.NoError(t, err)
+			ctx := mockContext.NewMockContext("test1", "transform_test")
+			errCh := make(chan error)
+			op.Exec(ctx, errCh)
 			for i, c := range tt.cases {
 				op.input <- c
 				if i < len(tt.expects) {
