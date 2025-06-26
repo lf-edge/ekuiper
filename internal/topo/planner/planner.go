@@ -20,6 +20,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
+
 	"github.com/lf-edge/ekuiper/v2/internal/binder/function"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
@@ -27,6 +29,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/topo"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/operator"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/schema"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
@@ -35,14 +38,15 @@ import (
 
 func Plan(rule *def.Rule) (*topo.Topo, error) {
 	if rule.Sql != "" {
-		return PlanSQLWithSourcesAndSinks(rule, nil)
+		tp, _, err := PlanSQLWithSourcesAndSinks(rule, nil)
+		return tp, err
 	} else {
 		return PlanByGraph(rule)
 	}
 }
 
 // PlanSQLWithSourcesAndSinks For test only
-func PlanSQLWithSourcesAndSinks(rule *def.Rule, mockSourcesProp map[string]map[string]any) (*topo.Topo, error) {
+func PlanSQLWithSourcesAndSinks(rule *def.Rule, mockSourcesProp map[string]map[string]any) (*topo.Topo, *ast.SelectStatement, error) {
 	sql := rule.Sql
 	if rule.Actions == nil {
 		rule.Actions = []map[string]any{
@@ -54,44 +58,156 @@ func PlanSQLWithSourcesAndSinks(rule *def.Rule, mockSourcesProp map[string]map[s
 	conf.Log.Infof("Init rule with options %+v", rule.Options)
 	stmt, err := xsql.GetStatementFromSql(sql)
 	if err != nil {
-		return nil, err
+		return nil, stmt, err
 	}
 	// validation
 	streamsFromStmt := xsql.GetStreams(stmt)
 	// validate stmt
 	if err := validateStmt(stmt); err != nil {
-		return nil, err
+		return nil, stmt, err
 	}
 	//if len(sources) > 0 && len(sources) != len(streamsFromStmt) {
 	//	return nil, fmt.Errorf("Invalid parameter sources or streams, the length cannot match the statement, expect %d sources.", len(streamsFromStmt))
 	//}
 	if rule.Options.SendMetaToSink && (len(streamsFromStmt) > 1 || stmt.Dimensions != nil) {
-		return nil, fmt.Errorf("Invalid option sendMetaToSink, it can not be applied to window")
+		return nil, stmt, fmt.Errorf("Invalid option sendMetaToSink, it can not be applied to window")
 	}
 	store, err := store2.GetKV("stream")
 	if err != nil {
-		return nil, err
+		return nil, stmt, err
 	}
 	// Create the logical plan and optimize. Logical plans are a linked list
-	lp, err := createLogicalPlan(stmt, rule.Options, store)
+	lp, af, aff, err := createLogicalPlanFull(stmt, rule.Options, store)
 	if err != nil {
-		return nil, err
+		return nil, stmt, err
 	}
 	tp, err := createTopo(rule, lp, mockSourcesProp, streamsFromStmt, getSinkSchema(stmt))
 	if err != nil {
-		return nil, err
+		return nil, stmt, err
 	}
-	return tp, nil
+	if rule.Options.Experiment != nil && rule.Options.Experiment.UseSliceTuple {
+		updateFieldIndex(tp.GetContext(), stmt, af, aff)
+	}
+	return tp, stmt, nil
+}
+
+func updateFieldIndex(ctx api.StreamContext, stmt *ast.SelectStatement, af []*ast.Call, aff []*ast.Call) {
+	var (
+		fieldExprs      []ast.Node
+		invisibleFields []*ast.FieldRef
+		aliasIndex      = make(map[string]int)
+	)
+	count := 0
+	for _, f := range stmt.Fields {
+		ast.WalkFunc(f.Expr, func(n ast.Node) bool {
+			switch nf := n.(type) {
+			case *ast.FieldRef:
+				if nf.IsColumn() {
+					sc := schema.GetStreamSchemaIndex(string(nf.StreamName))
+					if sc != nil {
+						if si, ok := sc[nf.Name]; ok {
+							nf.SourceIndex = si
+							ctx.GetLogger().Debugf("update field source index %s to %d", nf.Name, nf.SourceIndex)
+						}
+					} else {
+						panic("field not found in schema index")
+					}
+				} else {
+					nf.SourceIndex = -1
+					if aindex, ok := aliasIndex[nf.Name]; ok && nf.IsAlias() {
+						nf.Index = aindex
+					} else {
+						fieldExprs = append(fieldExprs, nf.Expression)
+					}
+				}
+				if f.Invisible {
+					invisibleFields = append(invisibleFields, nf)
+				} else {
+					nf.Index = count
+					if nf.IsAlias() {
+						aliasIndex[nf.Name] = nf.Index
+					}
+					ctx.GetLogger().Debugf("update field sink index %s to %d", nf.Name, nf.Index)
+					count++
+				}
+			}
+			return true
+		})
+	}
+	for _, nf := range invisibleFields {
+		nf.Index = count
+		if nf.IsAlias() {
+			aliasIndex[nf.Name] = nf.Index
+		}
+		ctx.GetLogger().Infof("update invisibe field sink index %s to %d", nf.Name, nf.Index)
+		count++
+	}
+	index := len(stmt.Fields)
+	for _, fieldExpr := range fieldExprs {
+		index = doUpdateIndex(ctx, fieldExpr, index, aliasIndex)
+	}
+	// Add sink index for other non-select fields
+	index = doUpdateIndex(ctx, stmt, index, aliasIndex)
+	ctx.GetLogger().Infof("assign %d field index", index)
+	// Set temp index for analytic funcs
+	index = 0
+	for i := range aff {
+		aff[i].CacheIndex = index
+		index++
+	}
+	for i := range af {
+		af[i].CacheIndex = index
+		index++
+	}
+	ctx.GetLogger().Infof("assign %d temp index", index)
+}
+
+func doUpdateIndex(ctx api.StreamContext, root ast.Node, index int, aliasIndex map[string]int) int {
+	ast.WalkFunc(root, func(n ast.Node) bool {
+		switch nf := n.(type) {
+		case *ast.FieldRef:
+			nf.HasIndex = true
+			if nf.IsColumn() {
+				sc := schema.GetStreamSchemaIndex(string(nf.StreamName))
+				if sc != nil {
+					if si, ok := sc[nf.Name]; ok {
+						nf.SourceIndex = si
+						ctx.GetLogger().Debugf("update field source index %s to %d", nf.Name, nf.SourceIndex)
+					}
+				} else {
+					panic("field not found in schema index")
+				}
+			} else if nf.IsAlias() {
+				ai, ok := aliasIndex[nf.Name]
+				if !ok {
+					panic(fmt.Sprintf("alias %s not found in schema index", nf.Name))
+				}
+				nf.SourceIndex = -1
+				nf.Index = ai
+			} else {
+				nf.SourceIndex = -1
+				if nf.Index < 0 {
+					nf.Index = index
+					index++
+					ctx.GetLogger().Debugf("update field sink index %s to %d", nf.Name, nf.Index)
+				}
+			}
+		}
+		return true
+	})
+	return index
 }
 
 func getSinkSchema(stmt *ast.SelectStatement) map[string]*ast.JsonStreamField {
-	schema := make(map[string]*ast.JsonStreamField, len(stmt.Fields))
+	s := make(map[string]*ast.JsonStreamField, len(stmt.Fields))
+	i := 0
 	for _, field := range stmt.Fields {
 		if field.GetName() != "*" && !field.Invisible {
-			schema[field.GetName()] = nil
+			s[field.GetName()] = &ast.JsonStreamField{Index: i, HasIndex: true}
+			i++
 		}
 	}
-	return schema
+	return s
 }
 
 func validateStmt(stmt *ast.SelectStatement) error {
@@ -155,7 +271,7 @@ func GetExplainInfoFromLogicalPlan(rule *def.Rule) (string, error) {
 		return "", err
 	}
 	// Create logical plan and optimize. Logical plans are a linked list
-	lp, err := createLogicalPlan(stmt, rule.Options, store)
+	lp, err := CreateLogicalPlan(stmt, rule.Options, store)
 	if err != nil {
 		return "", err
 	}
@@ -325,7 +441,7 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *def.RuleOption, sources ma
 	case *OrderPlan:
 		op = Transform(&operator.OrderOp{SortFields: t.SortFields}, fmt.Sprintf("%d_order", newIndex), options)
 	case *ProjectPlan:
-		op = Transform(&operator.ProjectOp{ColNames: t.colNames, AliasFields: t.aliasFields, ExprFields: t.exprFields, ExceptNames: t.exceptNames, IsAggregate: t.isAggregate, AllWildcard: t.allWildcard, WildcardEmitters: t.wildcardEmitters, SendMeta: t.sendMeta, SendNil: t.sendNil, LimitCount: t.limitCount, EnableLimit: t.enableLimit}, fmt.Sprintf("%d_project", newIndex), options)
+		op = Transform(&operator.ProjectOp{Fields: t.fields, FieldLen: t.fieldLen, ColNames: t.colNames, AliasFields: t.aliasFields, ExprFields: t.exprFields, ExceptNames: t.exceptNames, IsAggregate: t.isAggregate, AllWildcard: t.allWildcard, WildcardEmitters: t.wildcardEmitters, SendMeta: t.sendMeta, SendNil: t.sendNil, LimitCount: t.limitCount, EnableLimit: t.enableLimit}, fmt.Sprintf("%d_project", newIndex), options)
 	case *ProjectSetPlan:
 		op = Transform(&operator.ProjectSetOperator{SrfMapping: t.SrfMapping, LimitCount: t.limitCount, EnableLimit: t.enableLimit}, fmt.Sprintf("%d_projectset", newIndex), options)
 	case *WindowFuncPlan:
@@ -359,8 +475,9 @@ func convertFromDuration(timeUnit ast.Token, length, interval int, delay int64) 
 	return time.Duration(length) * unit, time.Duration(interval) * unit, time.Duration(delay) * unit
 }
 
-func CreateLogicalPlan(stmt *ast.SelectStatement, opt *def.RuleOption, store kv.KeyValue) (lp LogicalPlan, err error) {
-	return createLogicalPlan(stmt, opt, store)
+func CreateLogicalPlan(stmt *ast.SelectStatement, opt *def.RuleOption, store kv.KeyValue) (LogicalPlan, error) {
+	lp, _, _, err := createLogicalPlanFull(stmt, opt, store)
+	return lp, err
 }
 
 func checkSharedSourceOption(streams []*streamInfo, opt *def.RuleOption) error {
@@ -375,12 +492,7 @@ func checkSharedSourceOption(streams []*streamInfo, opt *def.RuleOption) error {
 	return nil
 }
 
-func createLogicalPlan(stmt *ast.SelectStatement, opt *def.RuleOption, store kv.KeyValue) (lp LogicalPlan, err error) {
-	defer func() {
-		if err != nil {
-			err = errorx.NewWithCode(errorx.PlanError, err.Error())
-		}
-	}()
+func createLogicalPlanFull(stmt *ast.SelectStatement, opt *def.RuleOption, store kv.KeyValue) (LogicalPlan, []*ast.Call, []*ast.Call, error) {
 	dimensions := stmt.Dimensions
 	var (
 		p        LogicalPlan
@@ -397,22 +509,24 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *def.RuleOption, store kv.
 
 	streamStmts, analyticFuncs, analyticFieldFuncs, err := decorateStmt(stmt, store, opt)
 	if err != nil {
-		return nil, err
+		return nil, nil, nil, err
 	}
 	if err := checkSharedSourceOption(streamStmts, opt); err != nil {
-		return nil, err
+		return nil, nil, nil, err
 	}
 
 	rewriteRes := rewriteStmt(stmt, opt)
 
 	for _, sInfo := range streamStmts {
 		if sInfo.stmt.StreamType == ast.TypeTable && sInfo.stmt.Options.KIND == ast.StreamKindLookup {
+			if opt.Experiment != nil && opt.Experiment.UseSliceTuple {
+				return nil, nil, nil, fmt.Errorf("slice tuple mode do not support table yet %s", sInfo.stmt.Name)
+			}
 			if lookupTableChildren == nil {
 				lookupTableChildren = make(map[string]*ast.Options)
 			}
 			lookupTableChildren[string(sInfo.stmt.Name)] = sInfo.stmt.Options
 		} else {
-
 			p = DataSourcePlan{
 				name:            sInfo.stmt.Name,
 				streamStmt:      sInfo.stmt,
@@ -421,6 +535,7 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *def.RuleOption, store kv.
 				iet:             opt.IsEventTime,
 				allMeta:         opt.SendMetaToSink,
 				colAliasMapping: rewriteRes.dsColAliasMapping[sInfo.stmt.Name],
+				useSliceTuple:   opt.Experiment != nil && opt.Experiment.UseSliceTuple,
 			}.Init()
 			if sInfo.stmt.StreamType == ast.TypeStream {
 				children = append(children, p)
@@ -445,6 +560,9 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *def.RuleOption, store kv.
 	}
 	hasWindow := dimensions != nil && dimensions.GetWindow() != nil
 	if opt.IsEventTime {
+		if opt.Experiment != nil && opt.Experiment.UseSliceTuple {
+			return nil, nil, nil, errors.New("slice tuple mode do not support event time yet")
+		}
 		p = WatermarkPlan{
 			SendWatermark: hasWindow,
 			Emitters:      streamEmitters,
@@ -461,10 +579,13 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *def.RuleOption, store kv.
 		children = []LogicalPlan{p}
 	}
 	if dimensions != nil {
+		//if opt.Experiment != nil && opt.Experiment.UseSliceTuple {
+		//	return nil, nil, nil, errors.New("slice tuple mode do not support dimensions or window yet")
+		//}
 		w = dimensions.GetWindow()
 		if w != nil {
 			if len(children) == 0 {
-				return nil, errors.New("cannot run window for TABLE sources")
+				return nil, nil, nil, errors.New("cannot run window for TABLE sources")
 			}
 			if len(rewriteRes.incAggFields) > 0 {
 				incWp := IncWindowPlan{
@@ -524,8 +645,11 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *def.RuleOption, store kv.
 		}
 	}
 	if stmt.Joins != nil {
+		if opt.Experiment != nil && opt.Experiment.UseSliceTuple {
+			return nil, nil, nil, errors.New("slice tuple mode do not support join yet")
+		}
 		if len(lookupTableChildren) == 0 && len(scanTableChildren) == 0 && w == nil {
-			return nil, errors.New("a time window or count window is required to join multiple streams")
+			return nil, nil, nil, errors.New("a time window or count window is required to join multiple streams")
 		}
 		if len(lookupTableChildren) > 0 {
 			var joins []ast.Join
@@ -536,7 +660,7 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *def.RuleOption, store kv.
 						options:  streamOpt,
 					}
 					if !lookupPlan.validateAndExtractCondition() {
-						return nil, fmt.Errorf("join condition %s is invalid, at least one equi-join predicate is required", join.Expr)
+						return nil, nil, nil, fmt.Errorf("join condition %s is invalid, at least one equi-join predicate is required", join.Expr)
 					}
 					p = lookupPlan.Init()
 					p.SetChildren(children)
@@ -547,7 +671,7 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *def.RuleOption, store kv.
 				}
 			}
 			if len(lookupTableChildren) > 0 {
-				return nil, fmt.Errorf("cannot find lookup table %v in any join", lookupTableChildren)
+				return nil, nil, nil, fmt.Errorf("cannot find lookup table %v in any join", lookupTableChildren)
 			}
 			stmt.Joins = joins
 		}
@@ -587,6 +711,9 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *def.RuleOption, store kv.
 		}
 	}
 	if stmt.Having != nil {
+		if opt.Experiment != nil && opt.Experiment.UseSliceTuple {
+			return nil, nil, nil, errors.New("slice tuple mode do not support having yet")
+		}
 		p = HavingPlan{
 			condition: stmt.Having,
 			IsIncAgg:  len(rewriteRes.incAggFields) > 0,
@@ -604,6 +731,9 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *def.RuleOption, store kv.
 		}
 	}
 	if stmt.SortFields != nil {
+		if opt.Experiment != nil && opt.Experiment.UseSliceTuple {
+			return nil, nil, nil, errors.New("slice tuple mode do not support sort yet")
+		}
 		p = OrderPlan{
 			SortFields: stmt.SortFields,
 		}.Init()
@@ -614,6 +744,7 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *def.RuleOption, store kv.
 	if stmt.Fields != nil {
 		// extract dedup trigger op
 		fields := make([]ast.Field, 0, len(stmt.Fields))
+		fieldLen := 0
 		for _, field := range stmt.Fields {
 			if field.Expr != nil {
 				var (
@@ -652,6 +783,9 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *def.RuleOption, store kv.
 				}
 			}
 			fields = append(fields, field)
+			if opt.Experiment != nil && opt.Experiment.UseSliceTuple && !field.Invisible {
+				fieldLen++
+			}
 		}
 		enableLimit := false
 		limitCount := 0
@@ -661,6 +795,7 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *def.RuleOption, store kv.
 		}
 		p = ProjectPlan{
 			fields:      fields,
+			fieldLen:    fieldLen,
 			isAggregate: xsql.WithAggFields(stmt) && len(rewriteRes.incAggFields) < 1,
 			sendMeta:    opt.SendMetaToSink,
 			sendNil:     opt.SendNil,
@@ -672,6 +807,9 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *def.RuleOption, store kv.
 	}
 
 	if len(srfMapping) > 0 {
+		if opt.Experiment != nil && opt.Experiment.UseSliceTuple {
+			return nil, nil, nil, errors.New("slice tuple mode do not support project set yet")
+		}
 		enableLimit := false
 		limitCount := 0
 		if stmt.Limit != nil {
@@ -686,7 +824,8 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *def.RuleOption, store kv.
 		p.SetChildren(children)
 	}
 
-	return optimize(p, opt)
+	lp, err := optimize(p, opt)
+	return lp, analyticFuncs, analyticFieldFuncs, err
 }
 
 // extractSRFMapping extracts the set-returning-function in the field

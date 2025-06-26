@@ -1,3 +1,17 @@
+// Copyright 2025 EMQ Technologies Co., Ltd.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package planner
 
 import (
@@ -6,7 +20,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/lf-edge/ekuiper/v2/internal/converter/merge"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/schema"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 )
 
@@ -891,12 +905,12 @@ func TestOrderPlanExplainInfo(t *testing.T) {
 }
 
 func TestSchemaInfo(t *testing.T) {
-	merge.AddRuleSchema("r1", "d1", nil, true)
+	schema.AddRuleSchema("r1", "d1", nil, true)
 	p := DataSourcePlan{
 		name: "d1",
 	}.Init()
 	require.Equal(t, " wildcard:true", p.buildSchemaInfo("r1"))
-	merge.AddRuleSchema("r1", "d1", map[string]*ast.JsonStreamField{
+	schema.AddRuleSchema("r1", "d1", map[string]*ast.JsonStreamField{
 		"a": {},
 	}, false)
 	require.Equal(t, " ConverterSchema:[a]", p.buildSchemaInfo("r1"))

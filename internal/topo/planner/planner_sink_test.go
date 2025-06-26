@@ -415,8 +415,14 @@ func TestSinkSchema(t *testing.T) {
 			sql:  "select a, b from demo",
 			sc:   &node.SinkConf{SendSingle: true},
 			exp: map[string]*ast.JsonStreamField{
-				"a": nil,
-				"b": nil,
+				"a": {
+					HasIndex: true,
+					Index:    0,
+				},
+				"b": {
+					HasIndex: true,
+					Index:    1,
+				},
 			},
 		},
 		{
@@ -426,8 +432,14 @@ func TestSinkSchema(t *testing.T) {
 				Fields: []string{"d", "b"},
 			},
 			exp: map[string]*ast.JsonStreamField{
-				"b": nil,
-				"d": nil,
+				"b": {
+					HasIndex: true,
+					Index:    1,
+				},
+				"d": {
+					HasIndex: true,
+					Index:    3,
+				},
 			},
 		},
 		{
@@ -437,8 +449,14 @@ func TestSinkSchema(t *testing.T) {
 				ExcludeFields: []string{"d", "b"},
 			},
 			exp: map[string]*ast.JsonStreamField{
-				"a": nil,
-				"c": nil,
+				"a": {
+					HasIndex: true,
+					Index:    0,
+				},
+				"c": {
+					HasIndex: true,
+					Index:    2,
+				},
 			},
 		},
 		{
@@ -449,9 +467,18 @@ func TestSinkSchema(t *testing.T) {
 				ExcludeFields: []string{"d", "b"},
 			},
 			exp: map[string]*ast.JsonStreamField{
-				"a": nil,
-				"b": nil,
-				"c": nil,
+				"a": {
+					HasIndex: true,
+					Index:    0,
+				},
+				"b": {
+					HasIndex: true,
+					Index:    1,
+				},
+				"c": {
+					HasIndex: true,
+					Index:    2,
+				},
 			},
 		},
 		{

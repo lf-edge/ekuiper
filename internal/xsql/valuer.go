@@ -24,6 +24,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/binder/function"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/model"
 )
 
 var (
@@ -166,6 +167,44 @@ func (a multiValuer) Call(name string, funcId int, args []interface{}) (interfac
 	return nil, false
 }
 
+func (a multiValuer) ValueByIndex(index int, sourceIndex int) (any, bool) {
+	for _, valuer := range a {
+		if iv, ok := valuer.(model.IndexValuer); ok {
+			return iv.ValueByIndex(index, sourceIndex)
+		}
+	}
+	return nil, false
+}
+
+func (a multiValuer) SetByIndex(index int, value any) {
+	for _, valuer := range a {
+		if iv, ok := valuer.(model.IndexValuer); ok {
+			iv.SetByIndex(index, value)
+			return
+		}
+	}
+	panic("implement me")
+}
+
+func (a multiValuer) TempByIndex(index int) any {
+	for _, valuer := range a {
+		if iv, ok := valuer.(model.IndexValuer); ok {
+			return iv.TempByIndex(index)
+		}
+	}
+	return nil
+}
+
+func (a multiValuer) SetTempByIndex(index int, value any) {
+	for _, valuer := range a {
+		if iv, ok := valuer.(model.IndexValuer); ok {
+			iv.SetTempByIndex(index, value)
+			return
+		}
+	}
+	panic("implement me")
+}
+
 type multiAggregateValuer struct {
 	data AggregateData
 	multiValuer
@@ -251,47 +290,56 @@ func (v *ValuerEval) Eval(expr ast.Expr) interface{} {
 	if expr == nil {
 		return nil
 	}
-	switch expr := expr.(type) {
+	switch et := expr.(type) {
 	case *ast.BinaryExpr:
-		return v.evalBinaryExpr(expr)
+		return v.evalBinaryExpr(et)
 	case *ast.IntegerLiteral:
-		return expr.Val
+		return et.Val
 	case *ast.NumberLiteral:
-		return expr.Val
+		return et.Val
 	case *ast.ParenExpr:
-		return v.Eval(expr.Expr)
+		return v.Eval(et.Expr)
 	case *ast.StringLiteral:
-		return expr.Val
+		return et.Val
 	case *ast.BooleanLiteral:
-		return expr.Val
+		return et.Val
 	case *ast.ColonExpr:
-		s, e := v.Eval(expr.Start), v.Eval(expr.End)
+		s, e := v.Eval(et.Start), v.Eval(et.End)
 		si, err := cast.ToInt(s, cast.CONVERT_SAMEKIND)
 		if err != nil {
-			return fmt.Errorf("colon start %v is not int: %v", expr.Start, err)
+			return fmt.Errorf("colon start %v is not int: %v", et.Start, err)
 		}
 		ei, err := cast.ToInt(e, cast.CONVERT_SAMEKIND)
 		if err != nil {
-			return fmt.Errorf("colon end %v is not int: %v", expr.End, err)
+			return fmt.Errorf("colon end %v is not int: %v", et.End, err)
 		}
 		return &BracketEvalResult{Start: si, End: ei}
 	case *ast.IndexExpr:
-		i := v.Eval(expr.Index)
+		i := v.Eval(et.Index)
 		ii, err := cast.ToInt(i, cast.CONVERT_SAMEKIND)
 		if err != nil {
-			return fmt.Errorf("index %v is not int: %v", expr.Index, err)
+			return fmt.Errorf("index %v is not int: %v", et.Index, err)
 		}
 		return &BracketEvalResult{Start: ii, End: ii}
 	case *ast.Call:
 		// The analytic functions are calculated prior to all ops, so just get the cached field value
-		if expr.Cached && expr.CachedField != "" {
-			val, _ := v.Valuer.Value(expr.CachedField, "")
+		if et.Cached && et.CachedField != "" {
+			var val any
+			if et.CacheIndex >= 0 {
+				if iv, ok := v.Valuer.(model.IndexValuer); ok {
+					val = iv.TempByIndex(et.CacheIndex)
+				} else {
+					return fmt.Errorf("cannot calculate cacheIndex for %s", et.CachedField)
+				}
+			} else {
+				val, _ = v.Valuer.Value(et.CachedField, "")
+			}
 			// nil is also cached
 			return val
 		}
-		if _, ok := implicitValueFuncs[expr.Name]; ok {
+		if _, ok := implicitValueFuncs[et.Name]; ok {
 			if vv, ok := v.Valuer.(FuncValuer); ok {
-				val, ok := vv.FuncValue(expr.Name)
+				val, ok := vv.FuncValue(et.Name)
 				if ok {
 					return val
 				}
@@ -300,37 +348,37 @@ func (v *ValuerEval) Eval(expr ast.Expr) interface{} {
 			if valuer, ok := v.Valuer.(CallValuer); ok {
 				var (
 					args []interface{}
-					ft   = expr.FuncType
+					ft   = et.FuncType
 				)
-				if _, ok := ImplicitStateFuncs[expr.Name]; ok {
+				if _, ok := ImplicitStateFuncs[et.Name]; ok {
 					args = make([]interface{}, 1)
 					// This is the implicit arg set by the filter planner
 					// If set, it will only return the value, no updating the value
-					if expr.Cached {
+					if et.Cached {
 						args[0] = false
 					} else {
 						args[0] = true
 					}
-					if expr.Name == "last_hit_time" || expr.Name == "last_agg_hit_time" {
+					if et.Name == "last_hit_time" || et.Name == "last_agg_hit_time" {
 						if vv, ok := v.Valuer.(FuncValuer); ok {
 							val, ok := vv.FuncValue("event_time")
 							if ok {
 								args = append(args, val)
 							} else {
-								return fmt.Errorf("call %s error: %v", expr.Name, val)
+								return fmt.Errorf("call %s error: %v", et.Name, val)
 							}
 						} else {
-							return fmt.Errorf("call %s error: %v", expr.Name, "cannot get current time")
+							return fmt.Errorf("call %s error: %v", et.Name, "cannot get current time")
 						}
 					}
-					val, _ := valuer.Call(expr.Name, expr.FuncId, args)
+					val, _ := valuer.Call(et.Name, et.FuncId, args)
 					return val
 				}
-				if len(expr.Args) > 0 {
+				if len(et.Args) > 0 {
 					switch ft {
 					case ast.FuncTypeAgg:
-						args = make([]interface{}, len(expr.Args))
-						for i, arg := range expr.Args {
+						args = make([]interface{}, len(et.Args))
+						for i, arg := range et.Args {
 							if aggreValuer, ok := valuer.(AggregateCallValuer); ok {
 								args[i] = aggreValuer.GetAllTuples().AggregateEval(arg, aggreValuer.GetSingleCallValuer())
 							} else {
@@ -341,8 +389,8 @@ func (v *ValuerEval) Eval(expr ast.Expr) interface{} {
 							}
 						}
 					case ast.FuncTypeScalar, ast.FuncTypeSrf:
-						args = make([]interface{}, len(expr.Args))
-						for i, arg := range expr.Args {
+						args = make([]interface{}, len(et.Args))
+						for i, arg := range et.Args {
 							args[i] = v.Eval(arg)
 							if _, ok := args[i].(error); ok {
 								return args[i]
@@ -350,7 +398,7 @@ func (v *ValuerEval) Eval(expr ast.Expr) interface{} {
 						}
 					case ast.FuncTypeCols:
 						var keys []string
-						for _, arg := range expr.Args { // In the parser, the col func arguments must be ColField
+						for _, arg := range et.Args { // In the parser, the col func arguments must be ColField
 							cf, ok := arg.(*ast.ColFuncField)
 							if !ok {
 								// won't happen
@@ -381,11 +429,11 @@ func (v *ValuerEval) Eval(expr ast.Expr) interface{} {
 						return fmt.Errorf("unknown function type")
 					}
 				}
-				if function.IsAnalyticFunc(expr.Name) {
+				if function.IsAnalyticFunc(et.Name) {
 					// this data should be recorded or not ? default answer is yes
-					if expr.WhenExpr != nil {
+					if et.WhenExpr != nil {
 						validData := true
-						temp := v.Eval(expr.WhenExpr)
+						temp := v.Eval(et.WhenExpr)
 						whenExprVal, ok := temp.(bool)
 						if ok {
 							validData = whenExprVal
@@ -397,9 +445,9 @@ func (v *ValuerEval) Eval(expr ast.Expr) interface{} {
 					}
 
 					// analytic func must put the partition key into the args
-					if expr.Partition != nil && len(expr.Partition.Exprs) > 0 {
+					if et.Partition != nil && len(et.Partition.Exprs) > 0 {
 						pk := ""
-						for _, pe := range expr.Partition.Exprs {
+						for _, pe := range et.Partition.Exprs {
 							temp := v.Eval(pe)
 							if _, ok := temp.(error); ok {
 								return temp
@@ -411,30 +459,42 @@ func (v *ValuerEval) Eval(expr ast.Expr) interface{} {
 						args = append(args, "self")
 					}
 				}
-				val, _ := valuer.Call(expr.Name, expr.FuncId, args)
+				val, _ := valuer.Call(et.Name, et.FuncId, args)
 				return val
 			}
 		}
 		return nil
 	case *ast.FieldRef:
+		if et.HasIndex {
+			if indexValuer, ok := v.Valuer.(model.IndexValuer); ok {
+				val, ok := indexValuer.ValueByIndex(et.Index, et.SourceIndex)
+				if !ok {
+					r := v.Eval(et.Expression)
+					indexValuer.SetByIndex(et.Index, r)
+					val = r
+				}
+				return val
+			}
+		}
+
 		var t, n string
-		if expr.IsAlias() {
+		if et.IsAlias() {
 			if valuer, ok := v.Valuer.(AliasValuer); ok {
-				val, ok := valuer.AliasValue(expr.Name)
+				val, ok := valuer.AliasValue(et.Name)
 				if ok {
 					return val
 				} else {
-					r := v.Eval(expr.Expression)
+					r := v.Eval(et.Expression)
 					// TODO possible performance elevation to eliminate this cal
-					valuer.AppendAlias(expr.Name, r)
+					valuer.AppendAlias(et.Name, r)
 					return r
 				}
 			}
-		} else if expr.StreamName == ast.DefaultStream {
-			n = expr.Name
+		} else if et.StreamName == ast.DefaultStream {
+			n = et.Name
 		} else {
-			t = string(expr.StreamName)
-			n = expr.Name
+			t = string(et.StreamName)
+			n = et.Name
 		}
 		if n != "" {
 			val, ok := v.Valuer.Value(n, t)
@@ -444,16 +504,16 @@ func (v *ValuerEval) Eval(expr ast.Expr) interface{} {
 		}
 		return nil
 	case *ast.MetaRef:
-		if expr.StreamName == "" || expr.StreamName == ast.DefaultStream {
-			val, _ := v.Valuer.Meta(expr.Name, "")
+		if et.StreamName == "" || et.StreamName == ast.DefaultStream {
+			val, _ := v.Valuer.Meta(et.Name, "")
 			return val
 		} else {
 			// The field specified with stream source
-			val, _ := v.Valuer.Meta(expr.Name, string(expr.StreamName))
+			val, _ := v.Valuer.Meta(et.Name, string(et.StreamName))
 			return val
 		}
 	case *ast.JsonFieldRef:
-		val, ok := v.Valuer.Value(expr.Name, "")
+		val, ok := v.Valuer.Value(et.Name, "")
 		if ok {
 			return val
 		} else {
@@ -467,11 +527,11 @@ func (v *ValuerEval) Eval(expr ast.Expr) interface{} {
 		}
 		val := make(map[string]interface{})
 		for k, v := range al {
-			if !contains(expr.Except, k) {
+			if !contains(et.Except, k) {
 				val[k] = v
 			}
 		}
-		for _, field := range expr.Replace {
+		for _, field := range et.Replace {
 			vi := v.Eval(field.Expr)
 			if e, ok := vi.(error); ok {
 				return e
@@ -480,28 +540,28 @@ func (v *ValuerEval) Eval(expr ast.Expr) interface{} {
 		}
 		return val
 	case *ast.CaseExpr:
-		return v.evalCase(expr)
+		return v.evalCase(et)
 	case *ast.ValueSetExpr:
-		return v.evalValueSet(expr)
+		return v.evalValueSet(et)
 	case *ast.BetweenExpr:
-		lower := v.Eval(expr.Lower)
-		higher := v.Eval(expr.Higher)
+		lower := v.Eval(et.Lower)
+		higher := v.Eval(et.Higher)
 		if lower == nil || higher == nil {
 			return nil
 		}
 		return []interface{}{
-			v.Eval(expr.Lower), v.Eval(expr.Higher),
+			v.Eval(et.Lower), v.Eval(et.Higher),
 		}
 	case *ast.LikePattern:
-		if expr.Pattern != nil {
-			return expr.Pattern
+		if et.Pattern != nil {
+			return et.Pattern
 		}
-		v := v.Eval(expr.Expr)
+		v := v.Eval(et.Expr)
 		str, ok := v.(string)
 		if !ok {
 			return fmt.Errorf("invalid LIKE pattern, must be a string but got %v", v)
 		}
-		re, err := expr.Compile(str)
+		re, err := et.Compile(str)
 		if err != nil {
 			return err
 		}

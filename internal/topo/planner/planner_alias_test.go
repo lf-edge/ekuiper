@@ -1,4 +1,4 @@
-// Copyright 2023 EMQ Technologies Co., Ltd.
+// Copyright 2023-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -244,7 +244,7 @@ func TestPlannerAlias(t *testing.T) {
 			t.Errorf("%d. %q: error compile sql: %s\n", i, tt.sql, err)
 			continue
 		}
-		p, _ := createLogicalPlan(stmt, &def.RuleOption{
+		p, _ := CreateLogicalPlan(stmt, &def.RuleOption{
 			IsEventTime:          false,
 			LateTol:              0,
 			Concurrency:          0,

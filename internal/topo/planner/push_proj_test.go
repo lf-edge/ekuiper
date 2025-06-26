@@ -25,6 +25,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 )
 
+// TODO slice mode remove project optimization by default, need to revert it later
 func TestPushProjection(t *testing.T) {
 	kv, err := store.GetKV("stream")
 	require.NoError(t, err)
@@ -32,7 +33,7 @@ func TestPushProjection(t *testing.T) {
 	sql := `select a as c from sharedStream group by countwindow(2)`
 	stmt, err := xsql.NewParser(strings.NewReader(sql)).Parse()
 	require.NoError(t, err)
-	p, err := createLogicalPlan(stmt, &def.RuleOption{
+	p, err := CreateLogicalPlan(stmt, &def.RuleOption{
 		Qos: 0,
 	}, kv)
 	require.NoError(t, err)
@@ -40,8 +41,7 @@ func TestPushProjection(t *testing.T) {
 	require.NoError(t, err)
 	expect := `{"op":"ProjectPlan_0","info":"Fields:[ $$alias.c,aliasRef:sharedStream.a ]"}
 	{"op":"WindowPlan_1","info":"{ length:2, windowType:COUNT_WINDOW, limit: 0 }"}
-			{"op":"ProjectPlan_2","info":"Fields:[ sharedStream.a ]"}
-					{"op":"DataSourcePlan_3","info":"StreamName: sharedStream, StreamFields:[ a ]"}`
+			{"op":"DataSourcePlan_2","info":"StreamName: sharedStream, StreamFields:[ a ]"}`
 	require.Equal(t, strings.TrimPrefix(expect, "\n"), explain)
 }
 
@@ -52,7 +52,7 @@ func TestPushProjectionDisable(t *testing.T) {
 	sql := `select a as c from sharedStream group by countwindow(2)`
 	stmt, err := xsql.NewParser(strings.NewReader(sql)).Parse()
 	require.NoError(t, err)
-	p, err := createLogicalPlan(stmt, &def.RuleOption{
+	p, err := CreateLogicalPlan(stmt, &def.RuleOption{
 		Qos: 0,
 		PlanOptimizeStrategy: &def.PlanOptimizeStrategy{
 			OptimizeControl: &def.OptimizeControl{

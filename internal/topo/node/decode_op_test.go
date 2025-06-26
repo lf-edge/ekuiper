@@ -1,4 +1,4 @@
-// Copyright 2021-2024 EMQ Technologies Co., Ltd.
+// Copyright 2021-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@ package node
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -28,6 +27,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
+	"github.com/lf-edge/ekuiper/v2/pkg/model"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
@@ -42,7 +42,7 @@ func TestJSON(t *testing.T) {
 	ctx := mockContext.NewMockContext("test", "Test")
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			op, err := NewDecodeOp(ctx, false, "test", "streamName", &def.RuleOption{BufferLength: 10, SendError: true, Concurrency: tt.concurrency}, nil, map[string]any{
+			op, err := NewDecodeOp(ctx, false, "test", &def.RuleOption{BufferLength: 10, SendError: true, Concurrency: tt.concurrency}, nil, map[string]any{
 				"sendInterval": "10ms",
 			})
 			assert.NoError(t, err)
@@ -96,7 +96,7 @@ func TestJSON(t *testing.T) {
 // This is useful when a node is much slower
 func BenchmarkThrougput(b *testing.B) {
 	ctx := mockContext.NewMockContext("test1", "decode_test")
-	op, err := NewDecodeOp(ctx, false, "test", "streamName", &def.RuleOption{BufferLength: 10, SendError: true, Concurrency: 10, Debug: true}, nil, nil)
+	op, err := NewDecodeOp(ctx, false, "test", &def.RuleOption{BufferLength: 10, SendError: true, Concurrency: 10, Debug: true}, nil, nil)
 	assert.NoError(b, err)
 	out := make(chan any, 100)
 	err = op.AddOutput(out, "test")
@@ -120,11 +120,17 @@ func TestJSONWithSchema(t *testing.T) {
 		schema      map[string]*ast.JsonStreamField
 	}{
 		{"single", 1, map[string]*ast.JsonStreamField{
+			"a": {
+				Type: "bigint",
+			},
 			"b": {
 				Type: "float",
 			},
 		}},
 		{"multi", 10, map[string]*ast.JsonStreamField{
+			"a": {
+				Type: "bigint",
+			},
 			"b": {
 				Type: "float",
 			},
@@ -133,11 +139,12 @@ func TestJSONWithSchema(t *testing.T) {
 	ctx := mockContext.NewMockContext("test1", "decode_test")
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			op, err := NewDecodeOp(ctx, false, "test", "streamName", &def.RuleOption{BufferLength: 10, SendError: true, Concurrency: tt.concurrency}, map[string]*ast.JsonStreamField{
+			originSchema := map[string]*ast.JsonStreamField{
 				"a": {
 					Type: "bigint",
 				},
-			}, map[string]any{
+			}
+			op, err := NewDecodeOp(ctx, false, "test", &def.RuleOption{BufferLength: 10, SendError: true, Concurrency: tt.concurrency}, originSchema, map[string]any{
 				"payloadField": "sourceConf", "payloadFormat": "json",
 			})
 			// payload field will add to schema automatically
@@ -174,7 +181,7 @@ func TestJSONWithSchema(t *testing.T) {
 			}
 
 			nctx := mockContext.NewMockContext("test2", "decode_test")
-			op.AttachSchema(nctx, "streamName", tt.schema, false)
+			op.ResetSchema(nctx, tt.schema)
 			cases = []any{
 				&xsql.RawTuple{Emitter: "test", Rawdata: []byte("{\"a\":1,\"b\":2}"), Timestamp: time.UnixMilli(111), Metadata: map[string]any{"topic": "demo", "qos": 1}},
 				&xsql.RawTuple{Emitter: "test", Rawdata: []byte("[{\"a\":1,\"b\":2},{\"a\":3,\"b\":4,\"sourceConf\":\"hello\"}]"), Timestamp: time.UnixMilli(111), Metadata: map[string]any{"topic": "demo", "qos": 1}},
@@ -200,7 +207,12 @@ func TestJSONWithSchema(t *testing.T) {
 				}
 			}
 
-			op.DetachSchema(ctx, ctx.GetRuleId())
+			lastSchema := map[string]*ast.JsonStreamField{
+				"b": {
+					Type: "float",
+				},
+			}
+			op.ResetSchema(ctx, lastSchema)
 			cases = []any{
 				&xsql.RawTuple{Emitter: "test", Rawdata: []byte("{\"a\":1,\"b\":2}"), Timestamp: time.UnixMilli(111), Metadata: map[string]any{"topic": "demo", "qos": 1}},
 				&xsql.RawTuple{Emitter: "test", Rawdata: []byte("[{\"a\":1,\"b\":2},{\"a\":3,\"b\":4,\"sourceConf\":\"hello\"}]"), Timestamp: time.UnixMilli(111), Metadata: map[string]any{"topic": "demo", "qos": 1}},
@@ -209,7 +221,7 @@ func TestJSONWithSchema(t *testing.T) {
 				{&xsql.Tuple{Emitter: "test", Message: map[string]interface{}{"b": 2.0}, Timestamp: time.UnixMilli(111), Metadata: map[string]any{"topic": "demo", "qos": 1}}},
 				{
 					&xsql.Tuple{Emitter: "test", Message: map[string]interface{}{"b": 2.0}, Timestamp: time.UnixMilli(111), Metadata: map[string]any{"topic": "demo", "qos": 1}},
-					&xsql.Tuple{Emitter: "test", Message: map[string]interface{}{"b": 4.0}, Timestamp: time.UnixMilli(111), Metadata: map[string]any{"topic": "demo", "qos": 1}},
+					&xsql.Tuple{Emitter: "test", Message: map[string]interface{}{"b": 4.0, "sourceConf": "hello"}, Timestamp: time.UnixMilli(111), Metadata: map[string]any{"topic": "demo", "qos": 1}},
 				},
 			}
 			for i, c := range cases {
@@ -228,25 +240,76 @@ func TestJSONWithSchema(t *testing.T) {
 	}
 }
 
+func TestSlice(t *testing.T) {
+	tests := []struct {
+		name   string
+		schema map[string]*ast.JsonStreamField
+		input  *xsql.RawTuple
+		exp    any
+	}{
+		{
+			name: "single",
+			schema: map[string]*ast.JsonStreamField{
+				"a": {
+					Type:     "bigint",
+					HasIndex: true,
+				},
+				"b": {
+					Type:     "float",
+					HasIndex: true,
+					Index:    1,
+				},
+			},
+			input: &xsql.RawTuple{Emitter: "test", Rawdata: []byte("{\"a\":1,\"b\":2}"), Timestamp: time.UnixMilli(111)},
+			exp:   &xsql.SliceTuple{SourceContent: model.SliceVal{int64(1), float64(2), nil}, Timestamp: time.UnixMilli(111)},
+		},
+	}
+	ctx := mockContext.NewMockContext("test1", "decode_test")
+	op, err := NewDecodeOp(ctx, false, "test", &def.RuleOption{BufferLength: 10, SendError: true, Experiment: &def.ExpOpts{UseSliceTuple: true}}, map[string]*ast.JsonStreamField{"a": {HasIndex: true}}, map[string]any{
+		"payloadField": "sourceConf", "payloadFormat": "json",
+	})
+	// payload field will add to schema automatically
+	assert.NoError(t, err)
+	out := make(chan any, 100)
+	err = op.AddOutput(out, "test")
+	assert.NoError(t, err)
+	errCh := make(chan error)
+	op.Exec(ctx, errCh)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			op.ResetSchema(ctx, tt.schema)
+			op.input <- tt.input
+			r := <-out
+			require.Equal(t, tt.exp, r)
+		})
+	}
+}
+
 func TestValidate(t *testing.T) {
 	ctx := mockContext.NewMockContext("test1", "decode_test")
-	_, err := NewDecodeOp(ctx, false, "test", "streamName", &def.RuleOption{BufferLength: 10, SendError: true}, nil, map[string]any{
+	_, err := NewDecodeOp(ctx, false, "test", &def.RuleOption{BufferLength: 10, SendError: true}, nil, map[string]any{
 		"format": "cann",
 	})
 	assert.Error(t, err)
 	assert.Equal(t, "cannot get converter from format cann, schemaId : format type cann not supported", err.Error())
-	_, err = NewDecodeOp(ctx, false, "test", "streamName", &def.RuleOption{BufferLength: 10, SendError: true}, nil, map[string]any{"sendInterval": "none"})
+	_, err = NewDecodeOp(ctx, false, "test", &def.RuleOption{BufferLength: 10, SendError: true}, nil, map[string]any{"sendInterval": "none"})
 	assert.Error(t, err)
 	assert.EqualError(t, err, "1 error(s) decoding:\n\n* error decoding 'sendInterval': time: invalid duration \"none\"")
-	do, err := NewDecodeOp(ctx, false, "test", "streamName", &def.RuleOption{BufferLength: 10, SendError: true}, nil, map[string]any{"sendInterval": "12s"})
+	do, err := NewDecodeOp(ctx, false, "test", &def.RuleOption{BufferLength: 10, SendError: true}, nil, map[string]any{"sendInterval": "12s"})
 	assert.NoError(t, err)
 	assert.Equal(t, 12*time.Second, time.Duration(do.c.SendInterval))
-	_, err = NewDecodeOp(ctx, true, "test", "streamName", &def.RuleOption{BufferLength: 10, SendError: true}, nil, map[string]any{"payloadField": "abc"})
+	_, err = NewDecodeOp(ctx, true, "test", &def.RuleOption{BufferLength: 10, SendError: true}, nil, map[string]any{"payloadField": "abc"})
 	assert.Error(t, err)
 	assert.EqualError(t, err, "payloadFormat is missing")
-	_, err = NewDecodeOp(ctx, true, "test", "streamName", &def.RuleOption{BufferLength: 10, SendError: true}, nil, map[string]any{"payloadField": "abc", "payloadFormat": "test"})
+	_, err = NewDecodeOp(ctx, true, "test", &def.RuleOption{BufferLength: 10, SendError: true}, nil, map[string]any{"payloadField": "abc", "payloadFormat": "test"})
 	assert.Error(t, err)
 	assert.EqualError(t, err, "cannot get converter from format test, schemaId : format type test not supported")
+
+	_, err = NewDecodeOp(ctx, false, "test", &def.RuleOption{BufferLength: 10, SendError: true, Experiment: &def.ExpOpts{UseSliceTuple: true}}, nil, map[string]any{
+		"format": "delimited",
+	})
+	assert.Error(t, err)
+	assert.Equal(t, "slice tuple mode does not support non schema converter delimited", err.Error())
 }
 
 func TestPayloadDecodeWithSchema(t *testing.T) {
@@ -352,7 +415,7 @@ func TestPayloadDecodeWithSchema(t *testing.T) {
 		},
 	}
 	ctx, cancel := mockContext.NewMockContext("test1", "decode_test").WithCancel()
-	op, err := NewDecodeOp(ctx, true, "test", "streamName", &def.RuleOption{BufferLength: 10, SendError: true, Concurrency: 10}, map[string]*ast.JsonStreamField{}, map[string]any{
+	op, err := NewDecodeOp(ctx, true, "test", &def.RuleOption{BufferLength: 10, SendError: true, Concurrency: 10}, map[string]*ast.JsonStreamField{}, map[string]any{
 		"payloadField": "payload", "payloadFormat": "json",
 	})
 
@@ -362,13 +425,10 @@ func TestPayloadDecodeWithSchema(t *testing.T) {
 	assert.NoError(t, err)
 	errCh := make(chan error)
 	op.Exec(ctx, errCh)
-	for i, tt := range tests {
+	for _, tt := range tests {
 		// Simulate adding another rule to change the schema
 		sctx := mockContext.NewMockContext("schema_test", "tt")
-		if i > 0 {
-			op.DetachSchema(sctx, fmt.Sprintf("stream%d", i))
-		}
-		op.AttachSchema(sctx, fmt.Sprintf("stream%d", i), tt.schema, false)
+		op.ResetSchema(sctx, tt.schema)
 		t.Run(tt.name, func(t *testing.T) {
 			op.input <- tt.input
 			for _, exp := range tt.result {
@@ -535,7 +595,7 @@ func TestPayloadBatchDecodeWithSchema(t *testing.T) {
 		},
 	}
 	ctx := mockContext.NewMockContext("test1", "decode_test")
-	op, err := NewDecodeOp(ctx, true, "test", "streamName", &def.RuleOption{BufferLength: 10, SendError: true, Concurrency: 10}, map[string]*ast.JsonStreamField{}, map[string]any{
+	op, err := NewDecodeOp(ctx, true, "test", &def.RuleOption{BufferLength: 10, SendError: true, Concurrency: 10}, map[string]*ast.JsonStreamField{}, map[string]any{
 		"payloadField": "payload", "payloadFormat": "json", "payloadBatchField": "frames",
 	})
 
@@ -545,12 +605,9 @@ func TestPayloadBatchDecodeWithSchema(t *testing.T) {
 	assert.NoError(t, err)
 	errCh := make(chan error)
 	op.Exec(ctx, errCh)
-	for i, tt := range tests {
+	for _, tt := range tests {
 		sctx := mockContext.NewMockContext("schema_batch_test", "tt")
-		if i > 0 {
-			op.DetachSchema(sctx, fmt.Sprintf("stream%d", i))
-		}
-		op.AttachSchema(sctx, fmt.Sprintf("stream%d", i), tt.schema, false)
+		op.ResetSchema(sctx, tt.schema)
 		t.Run(tt.name, func(t *testing.T) {
 			op.input <- tt.input
 			for _, exp := range tt.result {

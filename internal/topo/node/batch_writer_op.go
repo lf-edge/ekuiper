@@ -101,6 +101,15 @@ func (o *BatchWriterOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 							count = 0
 							o.lastRow = nil
 						}
+					case *xsql.SliceTuple:
+						o.onProcessStart(ctx, data)
+						e := o.writer.Write(ctx, dt.SourceContent)
+						if e != nil {
+							o.onError(ctx, e)
+						}
+						o.onProcessEnd(ctx)
+						o.lastRow = dt
+						count++
 					case xsql.Row:
 						o.onProcessStart(ctx, data)
 						e := o.writer.Write(ctx, dt.ToMap())

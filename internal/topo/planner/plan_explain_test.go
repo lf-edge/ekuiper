@@ -1,4 +1,4 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -110,7 +110,7 @@ func TestExplainPlan(t *testing.T) {
 		}
 		stmt, err := xsql.NewParser(strings.NewReader(tc.sql)).Parse()
 		require.NoError(t, err)
-		p, err := createLogicalPlan(stmt, &def.RuleOption{
+		p, err := CreateLogicalPlan(stmt, &def.RuleOption{
 			PlanOptimizeStrategy: &def.PlanOptimizeStrategy{
 				EnableIncrementalWindow: true,
 			},
@@ -235,7 +235,7 @@ func TestExplainPushAlias(t *testing.T) {
 	for _, tc := range testcases {
 		stmt, err := xsql.NewParser(strings.NewReader(tc.sql)).Parse()
 		require.NoError(t, err)
-		p, err := createLogicalPlan(stmt, &def.RuleOption{
+		p, err := CreateLogicalPlan(stmt, &def.RuleOption{
 			PlanOptimizeStrategy: &def.PlanOptimizeStrategy{
 				EnableAliasPushdown: true,
 			},
@@ -274,7 +274,7 @@ func TestExplainPredicatePushDown(t *testing.T) {
 	for _, tc := range testcases {
 		stmt, err := xsql.NewParser(strings.NewReader(tc.sql)).Parse()
 		require.NoError(t, err)
-		p, err := createLogicalPlan(stmt, &def.RuleOption{}, kv)
+		p, err := CreateLogicalPlan(stmt, &def.RuleOption{}, kv)
 		require.NoError(t, err)
 		explain, err := ExplainFromLogicalPlan(p, "")
 		require.NoError(t, err)
