@@ -30,6 +30,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
+	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 func init() {
@@ -73,6 +74,7 @@ func TestWindowV2SlidingWindowDelay(t *testing.T) {
 	input <- &xsql.Tuple{Message: map[string]any{"a": int64(1)}, Timestamp: now}
 	input <- &xsql.Tuple{Message: map[string]any{"a": int64(2)}, Timestamp: now.Add(500 * time.Millisecond)}
 	waitExecute()
+	timex.Add(2 * time.Second)
 	got := <-output
 	wt, ok := got.(*xsql.WindowTuples)
 	require.True(t, ok)

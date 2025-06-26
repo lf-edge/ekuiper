@@ -55,7 +55,18 @@ type PlanOptimizeStrategy struct {
 }
 
 type WindowOption struct {
-	EnableSendSlidingWindowTwice bool `json:"enableSendSlidingWindowTwice,omitempty" yaml:"enableSendSlidingWindowTwice,omitempty"`
+	EnableSendSlidingWindowTwice bool   `json:"enableSendSlidingWindowTwice,omitempty" yaml:"enableSendSlidingWindowTwice,omitempty"`
+	WindowVersion                string `json:"windowVersion,omitempty" yaml:"windowVersion,omitempty"`
+}
+
+func (p *PlanOptimizeStrategy) GetWindowVersion() string {
+	if p == nil {
+		return ""
+	}
+	if p.WindowOption == nil {
+		return ""
+	}
+	return p.WindowOption.WindowVersion
 }
 
 func (p *PlanOptimizeStrategy) IsAliasRefCalEnable() bool {

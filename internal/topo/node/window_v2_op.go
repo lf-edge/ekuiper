@@ -24,6 +24,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
+	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 type WindowV2Operator struct {
@@ -90,6 +91,7 @@ type SlidingWindowOp struct {
 	*WindowV2Operator
 	Delay            time.Duration
 	Length           time.Duration
+	stateFuncs       []*ast.Call
 	triggerCondition ast.Expr
 	delayNotify      chan time.Time
 }
@@ -99,6 +101,7 @@ func NewSlidingWindowOp(o *WindowV2Operator) *SlidingWindowOp {
 		WindowV2Operator: o,
 		Delay:            o.windowConfig.Delay,
 		Length:           o.windowConfig.Length,
+		stateFuncs:       o.windowConfig.StateFuncs,
 		triggerCondition: o.windowConfig.TriggerCondition,
 		delayNotify:      make(chan time.Time, 1024),
 	}
@@ -128,12 +131,12 @@ func (s *SlidingWindowOp) exec(ctx api.StreamContext, errCh chan<- error) {
 				s.scanner.addTuple(row)
 				sendWindow := true
 				if s.triggerCondition != nil {
-					sendWindow = isMatchCondition(ctx, s.triggerCondition, fv, row)
+					sendWindow = isMatchCondition(ctx, s.triggerCondition, fv, row, s.stateFuncs)
 				}
 				if s.Delay > 0 && sendWindow {
 					sendWindow = false
 					go func(ts time.Time) {
-						after := time.After(s.Delay)
+						after := timex.After(s.Delay)
 						select {
 						case <-ctx.Done():
 							return
@@ -151,7 +154,7 @@ func (s *SlidingWindowOp) exec(ctx api.StreamContext, errCh chan<- error) {
 	}
 }
 
-func isMatchCondition(ctx api.StreamContext, triggerCondition ast.Expr, fv *xsql.FunctionValuer, d *xsql.Tuple) bool {
+func isMatchCondition(ctx api.StreamContext, triggerCondition ast.Expr, fv *xsql.FunctionValuer, d *xsql.Tuple, stateFuncs []*ast.Call) bool {
 	if triggerCondition == nil {
 		return true
 	}
@@ -167,6 +170,11 @@ func isMatchCondition(ctx api.StreamContext, triggerCondition ast.Expr, fv *xsql
 		log.Errorf("inc sliding window trigger condition meet error: %v", v)
 		return false
 	case bool:
+		if v && len(stateFuncs) > 0 {
+			for _, f := range stateFuncs {
+				_ = ve.Eval(f)
+			}
+		}
 		return v
 	default:
 		return false

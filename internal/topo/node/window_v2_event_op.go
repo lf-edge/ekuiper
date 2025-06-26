@@ -27,6 +27,7 @@ type EventSlidingWindowOp struct {
 	*WindowV2Operator
 	Delay            time.Duration
 	Length           time.Duration
+	stateFuncs       []*ast.Call
 	triggerCondition ast.Expr
 	delayTS          []time.Time
 }
@@ -36,6 +37,7 @@ func NewEventSlidingWindowOp(o *WindowV2Operator) *EventSlidingWindowOp {
 		WindowV2Operator: o,
 		Delay:            o.windowConfig.Delay,
 		Length:           o.windowConfig.Length,
+		stateFuncs:       o.windowConfig.StateFuncs,
 		triggerCondition: o.windowConfig.TriggerCondition,
 		delayTS:          make([]time.Time, 0),
 	}
@@ -77,7 +79,7 @@ func (s *EventSlidingWindowOp) exec(ctx api.StreamContext, errCh chan<- error) {
 				s.scanner.addTuple(tuple)
 				sendWindow := true
 				if s.triggerCondition != nil {
-					sendWindow = isMatchCondition(ctx, s.triggerCondition, fv, tuple)
+					sendWindow = isMatchCondition(ctx, s.triggerCondition, fv, tuple, s.stateFuncs)
 				}
 				if s.Delay > 0 && sendWindow {
 					s.delayTS = append(s.delayTS, tuple.Timestamp.Add(s.Delay))
