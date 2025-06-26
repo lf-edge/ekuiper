@@ -78,7 +78,7 @@ func create(def *RunDef) (*topo.Topo, error) {
 	}
 	trialRule := genTrialRule(def, sinkProps)
 	// Add trial run prefix for rule id to avoid duplicate rule id with real rules in runtime or other trial rule
-	tp, err := planner.PlanSQLWithSourcesAndSinks(trialRule, def.Mock)
+	tp, _, err := planner.PlanSQLWithSourcesAndSinks(trialRule, def.Mock)
 	if err != nil {
 		return nil, fmt.Errorf("fail to run rule %s: %s", def.Id, err)
 	}

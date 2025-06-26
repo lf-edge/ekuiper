@@ -399,14 +399,14 @@ func TestPlanTopo(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tp, err := PlanSQLWithSourcesAndSinks(def.GetDefaultRule(tt.name, tt.sql), nil)
+			tp, _, err := PlanSQLWithSourcesAndSinks(def.GetDefaultRule(tt.name, tt.sql), nil)
 			assert.NoError(t, err)
 			assert.Equal(t, tt.topo, tp.GetTopo())
 		})
 	}
 	r := def.GetDefaultRule("incplan", "select count(*) from src1 group by countwindow(2) filter (where a > 1)")
 	r.Options.PlanOptimizeStrategy.EnableIncrementalWindow = true
-	_, err = PlanSQLWithSourcesAndSinks(r, nil)
+	_, _, err = PlanSQLWithSourcesAndSinks(r, nil)
 	assert.NoError(t, err)
 }
 
@@ -427,10 +427,10 @@ func TestSourceErr(t *testing.T) {
 		err = kv.Set(name, string(s))
 		assert.NoError(t, err)
 	}
-	_, err = PlanSQLWithSourcesAndSinks(def.GetDefaultRule("srcErr1", "select * from srcErr1"), nil)
+	_, _, err = PlanSQLWithSourcesAndSinks(def.GetDefaultRule("srcErr1", "select * from srcErr1"), nil)
 	assert.NoError(t, err)
 	require.NoError(t, conf.WriteCfgIntoKVStorage("sources", "mqtt", "srcTest1", map[string]interface{}{"server": "tcp://127.0.0.1:1883"}))
-	_, err = PlanSQLWithSourcesAndSinks(def.GetDefaultRule("srcErr1", "select * from srcErr1"), nil)
+	_, _, err = PlanSQLWithSourcesAndSinks(def.GetDefaultRule("srcErr1", "select * from srcErr1"), nil)
 	assert.NoError(t, err)
 }
 
@@ -527,7 +527,7 @@ func TestPlanError(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := PlanSQLWithSourcesAndSinks(def.GetDefaultRule(tt.name, tt.sql), nil)
+			_, _, err := PlanSQLWithSourcesAndSinks(def.GetDefaultRule(tt.name, tt.sql), nil)
 			assert.Error(t, err)
 			assert.EqualError(t, err, tt.e)
 		})

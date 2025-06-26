@@ -20,10 +20,13 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
+	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
+	"github.com/lf-edge/ekuiper/v2/pkg/model"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
@@ -96,6 +99,45 @@ func TestEncodeJSON(t *testing.T) {
 			op.input <- tt.in
 			r := <-out
 			assert.Equal(t, tt.out, r)
+		})
+	}
+}
+
+func TestEncodeSlice2JSON(t *testing.T) {
+	tests := []struct {
+		name string
+		in   any
+		out  string
+	}{
+		{
+			name: "normal",
+			in:   &xsql.SliceTuple{SourceContent: model.SliceVal{"joe", 20}},
+			out:  `{"age":20,"name":"joe"}`,
+		},
+		{
+			name: "list",
+			in:   []*xsql.SliceTuple{{SourceContent: model.SliceVal{"joe", 20}}, {SourceContent: model.SliceVal{"john", 40}}},
+			out:  "[{\"age\":20,\"name\":\"joe\"},{\"age\":40,\"name\":\"john\"}]",
+		},
+	}
+	ctx := mockContext.NewMockContext("test1", "encode_test")
+	op, err := NewEncodeOp(ctx, "test", &def.RuleOption{BufferLength: 10, SendError: true}, map[string]*ast.JsonStreamField{
+		"age":  {HasIndex: true, Index: 1},
+		"name": {HasIndex: true, Index: 0},
+	}, &SinkConf{Format: "json"})
+	assert.NoError(t, err)
+	out := make(chan any, 100)
+	err = op.AddOutput(out, "test")
+	assert.NoError(t, err)
+	errCh := make(chan error)
+	op.Exec(ctx, errCh)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			op.input <- tt.in
+			r := <-out
+			rt, ok := r.(*xsql.RawTuple)
+			require.True(t, ok)
+			assert.Equal(t, tt.out, string(rt.Rawdata))
 		})
 	}
 }

@@ -54,7 +54,7 @@ func NewEventTimeTrigger(window *WindowConfig) (*EventTimeTrigger, error) {
 }
 
 // If the window end cannot be determined yet, return max int64 so that it can be recalculated for the next watermark
-func (w *EventTimeTrigger) getNextWindow(inputs []*xsql.Tuple, current time.Time, watermark time.Time) time.Time {
+func (w *EventTimeTrigger) getNextWindow(inputs []xsql.EventRow, current time.Time, watermark time.Time) time.Time {
 	switch w.window.Type {
 	case ast.TUMBLING_WINDOW, ast.HOPPING_WINDOW:
 		if !current.IsZero() {
@@ -74,21 +74,21 @@ func (w *EventTimeTrigger) getNextWindow(inputs []*xsql.Tuple, current time.Time
 	}
 }
 
-func (w *EventTimeTrigger) getNextSessionWindow(inputs []*xsql.Tuple, now time.Time) (time.Time, bool) {
+func (w *EventTimeTrigger) getNextSessionWindow(inputs []xsql.EventRow, now time.Time) (time.Time, bool) {
 	if len(inputs) > 0 {
 		timeout, duration := w.window.Interval, w.window.Length
-		et := inputs[0].Timestamp
+		et := inputs[0].GetTimestamp()
 		tick := getAlignedWindowEndTime(et, w.window.RawInterval, w.window.TimeUnit)
 		p := time.Time{}
 		ticked := false
 		for _, tuple := range inputs {
 			r := timex.Maxtime
 			if !p.IsZero() {
-				if tuple.Timestamp.Sub(p) > timeout {
+				if tuple.GetTimestamp().Sub(p) > timeout {
 					r = p.Add(timeout)
 				}
 			}
-			if tuple.Timestamp.After(tick) {
+			if tuple.GetTimestamp().After(tick) {
 				if tick.Add(-duration).After(et) && tick.Before(r) {
 					r = tick
 					ticked = true
@@ -98,7 +98,7 @@ func (w *EventTimeTrigger) getNextSessionWindow(inputs []*xsql.Tuple, now time.T
 			if r.Before(timex.Maxtime) {
 				return r, ticked
 			}
-			p = tuple.Timestamp
+			p = tuple.GetTimestamp()
 		}
 		if !p.IsZero() {
 			if now.Sub(p) > timeout {
@@ -109,7 +109,7 @@ func (w *EventTimeTrigger) getNextSessionWindow(inputs []*xsql.Tuple, now time.T
 	return timex.Maxtime, false
 }
 
-func (o *WindowOperator) execEventWindow(ctx api.StreamContext, inputs []*xsql.Tuple, _ chan<- error) {
+func (o *WindowOperator) execEventWindow(ctx api.StreamContext, inputs []xsql.EventRow, _ chan<- error) {
 	log := ctx.GetLogger()
 	nextWindowEndTs := timex.Maxtime
 	prevWindowEndTs := time.Time{}
@@ -148,7 +148,7 @@ func (o *WindowOperator) execEventWindow(ctx api.StreamContext, inputs []*xsql.T
 					log.Debugf("Current input count %d", len(inputs))
 					// scan all events and find out the event in the current window
 					if o.window.Type == ast.SESSION_WINDOW && !lastTicked {
-						o.triggerTime = inputs[0].Timestamp
+						o.triggerTime = inputs[0].GetTimestamp()
 					}
 					if !windowEndTs.IsZero() {
 						if o.window.Type == ast.SLIDING_WINDOW {
@@ -179,17 +179,16 @@ func (o *WindowOperator) execEventWindow(ctx api.StreamContext, inputs []*xsql.T
 				}
 				nextWindowEndTs = windowEndTs
 				log.Debugf("next window end %d", nextWindowEndTs.UnixMilli())
-			case *xsql.Tuple:
+			case xsql.EventRow:
 				o.onProcessStart(ctx, d)
 				o.handleTraceIngestTuple(ctx, d)
 				ctx.GetLogger().Debug("Tuple", d.GetTimestamp())
-				log.Debugf("event window receive tuple %s", d.Message)
 				// first tuple, set the window start time, which will set to triggerTime
 				if o.triggerTime.IsZero() {
-					o.triggerTime = d.Timestamp
+					o.triggerTime = d.GetTimestamp()
 				}
 				if o.window.Type == ast.SLIDING_WINDOW && o.isMatchCondition(ctx, d) {
-					o.triggerTS = append(o.triggerTS, d.Timestamp)
+					o.triggerTS = append(o.triggerTS, d.GetTimestamp())
 				}
 				inputs = append(inputs, d)
 				o.span = nil
@@ -209,11 +208,11 @@ func (o *WindowOperator) execEventWindow(ctx api.StreamContext, inputs []*xsql.T
 	}
 }
 
-func getEarliestEventTs(inputs []*xsql.Tuple, startTs time.Time, endTs time.Time) time.Time {
+func getEarliestEventTs(inputs []xsql.EventRow, startTs time.Time, endTs time.Time) time.Time {
 	minTs := timex.Maxtime
 	for _, t := range inputs {
-		if t.Timestamp.After(startTs) && (t.Timestamp.Before(endTs) || t.Timestamp.Equal(endTs)) && t.Timestamp.Before(minTs) {
-			minTs = t.Timestamp
+		if t.GetTimestamp().After(startTs) && (t.GetTimestamp().Before(endTs) || t.GetTimestamp().Equal(endTs)) && t.GetTimestamp().Before(minTs) {
+			minTs = t.GetTimestamp()
 		}
 	}
 	return minTs

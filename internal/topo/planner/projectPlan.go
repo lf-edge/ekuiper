@@ -27,6 +27,7 @@ type ProjectPlan struct {
 	sendMeta         bool
 	sendNil          bool
 	fields           ast.Fields
+	fieldLen         int
 	colNames         [][]string
 	exceptNames      []string
 	wildcardEmitters map[string]bool

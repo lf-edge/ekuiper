@@ -25,6 +25,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 	"github.com/lf-edge/ekuiper/v2/pkg/message"
+	"github.com/lf-edge/ekuiper/v2/pkg/model"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
@@ -68,6 +69,30 @@ func (o *EncodeOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 
 func (o *EncodeOp) Worker(ctx api.StreamContext, item any) []any {
 	switch d := item.(type) {
+	case *xsql.SliceTuple:
+		raw, err := o.converter.Encode(ctx, d.SourceContent)
+		if err != nil {
+			return []any{err}
+		} else {
+			r := &xsql.RawTuple{Rawdata: raw, Timestamp: timex.GetNow(), Ctx: ctx, Props: d.Props}
+			return []any{r}
+		}
+	case []*xsql.SliceTuple:
+		rows := make([]model.SliceVal, len(d))
+		var props map[string]string
+		for i := range rows {
+			rows[i] = d[i].SourceContent
+			if d[i].Props != nil && props == nil {
+				props = d[i].Props
+			}
+		}
+		raw, err := o.converter.Encode(ctx, rows)
+		if err != nil {
+			return []any{err}
+		} else {
+			r := &xsql.RawTuple{Rawdata: raw, Timestamp: timex.GetNow(), Ctx: ctx, Props: props}
+			return []any{r}
+		}
 	case api.RawTuple:
 		return []any{d}
 	case api.MessageTuple:

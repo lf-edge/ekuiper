@@ -17,6 +17,7 @@ package node
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"text/template"
 
@@ -45,6 +46,7 @@ type TransformOp struct {
 	isTextFormat bool
 	dt           *template.Template
 	templates    map[string]*template.Template
+	isSliceMode  bool
 	// temp state
 	output bytes.Buffer
 }
@@ -64,6 +66,15 @@ func NewTransformOp(name string, rOpt *def.RuleOption, sc *SinkConf, templates [
 		omitIfEmpty:     sc.Omitempty,
 		isTextFormat:    xsql.IsTextFormat(sc.Format),
 		templates:       map[string]*template.Template{},
+	}
+	if rOpt.Experiment != nil && rOpt.Experiment.UseSliceTuple {
+		if len(o.fields) > 0 {
+			return nil, errors.New("slice tuple mode do not support sink fields yet")
+		}
+		if len(o.dataField) > 0 {
+			return nil, errors.New("slice tuple mode do not support sink dataField yet")
+		}
+		o.isSliceMode = true
 	}
 	if sc.DataTemplate != "" {
 		temp, err := transform.GenTp(sc.DataTemplate)
@@ -100,6 +111,9 @@ func (t *TransformOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 
 // Worker do not need to process error and control messages
 func (t *TransformOp) Worker(ctx api.StreamContext, item any) []any {
+	if t.isSliceMode {
+		return t.transformSlice(ctx, item)
+	}
 	if ic, ok := item.(xsql.Collection); ok && t.omitIfEmpty && ic.Len() == 0 {
 		ctx.GetLogger().Debugf("receive empty collection, dropped")
 		return nil
@@ -145,6 +159,37 @@ func (t *TransformOp) Worker(ctx api.StreamContext, item any) []any {
 			} else {
 				result = append(result, toSinkTuple(ctx, spanCtx, bs, props))
 			}
+		}
+	}
+	return result
+}
+
+func (t *TransformOp) transformSlice(ctx api.StreamContext, item any) []any {
+	var result []any
+	props, err := t.calculateProps(item)
+	if err != nil {
+		result = []any{err}
+		return result
+	}
+	switch dt := item.(type) {
+	case *xsql.SliceTuple:
+		dt.Props = props
+		result = []any{dt}
+	case xsql.Collection:
+		pack := make([]*xsql.SliceTuple, 0, dt.Len())
+		err = dt.Range(func(i int, r xsql.ReadonlyRow) (bool, error) {
+			if rs, ok := r.(*xsql.SliceTuple); ok {
+				rs.Props = props
+				pack = append(pack, rs)
+			} else {
+				ctx.GetLogger().Warnf("receive non slice tuple, dropped")
+			}
+			return true, nil
+		})
+		if err != nil {
+			result = []any{err}
+		} else {
+			result = []any{pack}
 		}
 	}
 	return result

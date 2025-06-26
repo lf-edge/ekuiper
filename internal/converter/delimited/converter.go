@@ -27,6 +27,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	"github.com/lf-edge/ekuiper/v2/pkg/message"
+	"github.com/lf-edge/ekuiper/v2/pkg/model"
 )
 
 type Converter struct {
@@ -55,6 +56,42 @@ func (c *Converter) Encode(ctx api.StreamContext, d any) (b []byte, err error) {
 		}
 	}()
 	switch m := d.(type) {
+	case model.SliceVal:
+		sb := &bytes.Buffer{}
+		if len(c.Cols) > 0 && c.HasHeader {
+			hb := []byte(strings.Join(c.Cols, c.Delimiter))
+			sb.WriteString(c.Delimiter)
+			_ = binary.Write(sb, binary.BigEndian, uint32(len(hb)))
+			sb.Write(hb)
+		}
+		for i, v := range m {
+			if i > 0 {
+				sb.WriteString(c.Delimiter)
+			}
+			p, _ := cast.ToString(v, cast.CONVERT_ALL)
+			sb.WriteString(p)
+		}
+		return sb.Bytes(), nil
+	case []model.SliceVal:
+		sb := &bytes.Buffer{}
+		if len(c.Cols) > 0 && c.HasHeader {
+			hb := []byte(strings.Join(c.Cols, c.Delimiter))
+			sb.Write(hb)
+			sb.WriteString("\n")
+		}
+		for i, mm := range m {
+			if i > 0 {
+				sb.WriteString("\n")
+			}
+			for j, v := range mm {
+				if j > 0 {
+					sb.WriteString(c.Delimiter)
+				}
+				p, _ := cast.ToString(v, cast.CONVERT_ALL)
+				sb.WriteString(p)
+			}
+		}
+		return sb.Bytes(), nil
 	case map[string]any:
 		sb := &bytes.Buffer{}
 		if len(c.Cols) == 0 {
