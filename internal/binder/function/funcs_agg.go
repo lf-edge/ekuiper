@@ -16,6 +16,7 @@ package function
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/montanaflynn/stats"
@@ -25,6 +26,23 @@ import (
 )
 
 func registerAggFunc() {
+	builtins["median"] = builtinFunc{
+		fType: ast.FuncTypeAgg,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			arg0 := args[0].([]interface{})
+			float64List := make([]float64, 0, len(arg0))
+			for _, arg := range arg0 {
+				f64, err := cast.ToFloat64(arg, cast.CONVERT_ALL)
+				if err != nil {
+					return err, false
+				}
+				float64List = append(float64List, f64)
+			}
+			return median(float64List), true
+		},
+		val:   ValidateOneNumberArg,
+		check: returnNilIfHasAnyNil,
+	}
 	builtins["avg"] = builtinFunc{
 		fType: ast.FuncTypeAgg,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
@@ -378,4 +396,16 @@ func registerAggFunc() {
 		},
 		check: returnNilIfHasAnyNil,
 	}
+}
+
+func median(data []float64) float64 {
+	sort.Float64s(data)
+	n := len(data)
+	if n == 0 {
+		return 0
+	}
+	if n%2 == 1 {
+		return data[n/2]
+	}
+	return (data[n/2-1] + data[n/2]) / 2
 }

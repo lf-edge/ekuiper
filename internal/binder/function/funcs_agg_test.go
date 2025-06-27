@@ -16,6 +16,7 @@ package function
 
 import (
 	"fmt"
+	"math"
 	"reflect"
 	"testing"
 
@@ -666,4 +667,70 @@ func TestLastValueValidation(t *testing.T) {
 			t.Errorf("%d result mismatch,\ngot:\t%v \nwant:\t%v", i, err, tt.err)
 		}
 	}
+}
+
+func TestMedian(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    []float64
+		expected float64
+	}{
+		{
+			name:     "odd number of elements",
+			input:    []float64{1, 3, 2},
+			expected: 2,
+		},
+		{
+			name:     "even number of elements",
+			input:    []float64{1, 3, 2, 4},
+			expected: 2.5,
+		},
+		{
+			name:     "single element",
+			input:    []float64{5},
+			expected: 5,
+		},
+		{
+			name:     "empty slice",
+			input:    []float64{},
+			expected: 0,
+		},
+		{
+			name:     "negative numbers",
+			input:    []float64{-1, -2, -3},
+			expected: -2,
+		},
+		{
+			name:     "mixed positive and negative",
+			input:    []float64{-1, 2, -3, 4},
+			expected: 0.5,
+		},
+		{
+			name:     "duplicate values",
+			input:    []float64{1, 1, 1, 1, 2, 2},
+			expected: 1,
+		},
+		{
+			name:     "floating point numbers",
+			input:    []float64{1.5, 2.5, 3.5},
+			expected: 2.5,
+		},
+		{
+			name:     "large numbers",
+			input:    []float64{1e10, 2e10, 3e10},
+			expected: 2e10,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := median(tt.input)
+			require.True(t, floatEquals(result, tt.expected))
+		})
+	}
+}
+
+func floatEquals(a, b float64) bool {
+	const epsilon = 1e-9
+	return math.Abs(a-b) < epsilon
 }
