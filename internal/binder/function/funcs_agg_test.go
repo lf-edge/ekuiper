@@ -748,6 +748,10 @@ func TestMedianFunc(t *testing.T) {
 		expect interface{}
 	}{
 		{
+			args:   []interface{}{},
+			expect: int64(0),
+		},
+		{
 			args: []interface{}{
 				int64(5), int64(1), int64(2), int64(3), int64(4),
 			},

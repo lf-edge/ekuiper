@@ -40,7 +40,7 @@ func registerAggFunc() {
 					return err, false
 				}
 				return median(f64s), true
-			case int64:
+			case int64, int:
 				i64s, err := cast.ToInt64Slice(arg0, cast.CONVERT_SAMEKIND)
 				if err != nil {
 					return err, false
