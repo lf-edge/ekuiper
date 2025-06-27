@@ -30,15 +30,25 @@ func registerAggFunc() {
 		fType: ast.FuncTypeAgg,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			arg0 := args[0].([]interface{})
-			float64List := make([]float64, 0, len(arg0))
-			for _, arg := range arg0 {
-				f64, err := cast.ToFloat64(arg, cast.CONVERT_ALL)
+			if len(arg0) < 1 {
+				return int64(0), true
+			}
+			switch arg0[0].(type) {
+			case float64:
+				f64s, err := cast.ToFloat64Slice(arg0, cast.CONVERT_SAMEKIND, cast.IGNORE_NIL)
 				if err != nil {
 					return err, false
 				}
-				float64List = append(float64List, f64)
+				return median(f64s), true
+			case int64:
+				i64s, err := cast.ToInt64Slice(arg0, cast.CONVERT_SAMEKIND)
+				if err != nil {
+					return err, false
+				}
+				return median(i64s), true
+			default:
+				return fmt.Errorf("%v should be number", arg0[0]), false
 			}
-			return median(float64List), true
 		},
 		val:   ValidateOneNumberArg,
 		check: returnNilIfHasAnyNil,
@@ -398,14 +408,21 @@ func registerAggFunc() {
 	}
 }
 
-func median(data []float64) float64 {
-	sort.Float64s(data)
-	n := len(data)
+type Number interface {
+	int64 | float64
+}
+
+func median[T Number](nums []T) interface{} {
+	sort.Slice(nums, func(i, j int) bool {
+		return nums[i] < nums[j]
+	})
+	n := len(nums)
 	if n == 0 {
 		return 0
 	}
 	if n%2 == 1 {
-		return data[n/2]
+		return nums[n/2]
+	} else {
+		return float64((nums[n/2-1])+(nums[n/2])) / 2
 	}
-	return (data[n/2-1] + data[n/2]) / 2
 }

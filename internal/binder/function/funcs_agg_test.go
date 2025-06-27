@@ -16,7 +16,6 @@ package function
 
 import (
 	"fmt"
-	"math"
 	"reflect"
 	"testing"
 
@@ -672,65 +671,98 @@ func TestLastValueValidation(t *testing.T) {
 func TestMedian(t *testing.T) {
 	tests := []struct {
 		name     string
-		input    []float64
-		expected float64
+		input    interface{}
+		expected interface{}
 	}{
 		{
-			name:     "odd number of elements",
-			input:    []float64{1, 3, 2},
-			expected: 2,
+			name:     "single int64 element",
+			input:    []int64{5},
+			expected: int64(5),
 		},
 		{
-			name:     "even number of elements",
-			input:    []float64{1, 3, 2, 4},
-			expected: 2.5,
+			name:     "odd length int64 slice",
+			input:    []int64{1, 3, 5, 7, 9},
+			expected: int64(5),
 		},
 		{
-			name:     "single element",
-			input:    []float64{5},
-			expected: 5,
+			name:     "even length int64 slice",
+			input:    []int64{1, 3, 5, 7, 9, 11},
+			expected: float64(6),
 		},
 		{
-			name:     "empty slice",
+			name:     "unsorted int64 slice",
+			input:    []int64{9, 1, 5, 3, 7},
+			expected: int64(5),
+		},
+		{
+			name:     "empty float64 slice",
 			input:    []float64{},
 			expected: 0,
 		},
 		{
-			name:     "negative numbers",
-			input:    []float64{-1, -2, -3},
-			expected: -2,
+			name:     "single float64 element",
+			input:    []float64{5.5},
+			expected: 5.5,
 		},
 		{
-			name:     "mixed positive and negative",
-			input:    []float64{-1, 2, -3, 4},
-			expected: 0.5,
+			name:     "odd length float64 slice",
+			input:    []float64{1.1, 3.3, 5.5, 7.7, 9.9},
+			expected: 5.5,
 		},
 		{
-			name:     "duplicate values",
-			input:    []float64{1, 1, 1, 1, 2, 2},
-			expected: 1,
+			name:     "even length float64 slice",
+			input:    []float64{1.1, 3.3, 5.5, 7.7, 9.9, 11.1},
+			expected: 6.6,
 		},
 		{
-			name:     "floating point numbers",
-			input:    []float64{1.5, 2.5, 3.5},
-			expected: 2.5,
-		},
-		{
-			name:     "large numbers",
-			input:    []float64{1e10, 2e10, 3e10},
-			expected: 2e10,
+			name:     "unsorted float64 slice",
+			input:    []float64{9.9, 1.1, 5.5, 3.3, 7.7},
+			expected: 5.5,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := median(tt.input)
-			require.True(t, floatEquals(result, tt.expected))
+			var result interface{}
+			switch v := tt.input.(type) {
+			case []int64:
+				result = median(v)
+			case []float64:
+				result = median(v)
+			default:
+				t.Fatalf("unsupported input type: %T", v)
+			}
+			require.Equal(t, tt.expected, result)
 		})
 	}
 }
 
-func floatEquals(a, b float64) bool {
-	const epsilon = 1e-9
-	return math.Abs(a-b) < epsilon
+func TestMedianFunc(t *testing.T) {
+	fm, ok := builtins["median"]
+	require.True(t, ok)
+	contextLogger := conf.Log.WithField("rule", "testExec")
+	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+	tempStore, _ := state.CreateStore("mockRule0", def.AtMostOnce)
+	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
+	tests := []struct {
+		args   []interface{}
+		expect interface{}
+	}{
+		{
+			args: []interface{}{
+				int64(5), int64(1), int64(2), int64(3), int64(4),
+			},
+			expect: int64(3),
+		},
+		{
+			args: []interface{}{
+				float64(5), float64(1), float64(2), float64(3), float64(4),
+			},
+			expect: float64(3),
+		},
+	}
+	for _, tt := range tests {
+		got, ok := fm.exec(fctx, []interface{}{tt.args})
+		require.True(t, ok)
+		require.Equal(t, tt.expect, got)
+	}
 }
