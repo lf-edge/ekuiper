@@ -15,6 +15,7 @@
 package topotest
 
 import (
+	"strings"
 	"testing"
 	"time"
 
@@ -722,6 +723,22 @@ func TestWindow(t *testing.T) {
 	}
 	for _, opt := range options {
 		DoRuleTest(t, tests, opt, 15)
+	}
+
+	v2Opt := &def.RuleOption{
+		BufferLength: 100,
+		SendError:    true,
+		PlanOptimizeStrategy: &def.PlanOptimizeStrategy{
+			WindowOption: &def.WindowOption{
+				WindowVersion: "v2",
+			},
+		},
+	}
+	for _, tt := range tests {
+		if strings.Contains(strings.ToLower(tt.Sql), "slidingwindow") {
+			tts := []RuleTest{tt}
+			DoRuleTest(t, tts, v2Opt, 15)
+		}
 	}
 }
 

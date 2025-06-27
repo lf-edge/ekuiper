@@ -283,7 +283,7 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *def.RuleOption, sources ma
 			rawInterval = t.interval
 		}
 		t.ExtractStateFunc()
-		op, err = node.NewWindowOp(fmt.Sprintf("%d_window", newIndex), node.WindowConfig{
+		wc := node.WindowConfig{
 			Type:             t.wtype,
 			Delay:            d,
 			Length:           l,
@@ -294,9 +294,17 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *def.RuleOption, sources ma
 			TimeUnit:         t.timeUnit,
 			TriggerCondition: t.triggerCondition,
 			StateFuncs:       t.stateFuncs,
-		}, options)
-		if err != nil {
-			return nil, 0, err
+		}
+		if options.PlanOptimizeStrategy.GetWindowVersion() == "v2" {
+			op, err = node.NewWindowV2Op(fmt.Sprintf("%d_window", newIndex), wc, options)
+			if err != nil {
+				return nil, 0, err
+			}
+		} else {
+			op, err = node.NewWindowOp(fmt.Sprintf("%d_window", newIndex), wc, options)
+			if err != nil {
+				return nil, 0, err
+			}
 		}
 	case *DedupTriggerPlan:
 		op = node.NewDedupTriggerNode(fmt.Sprintf("%d_dedup_trigger", newIndex), options, t.aliasName, t.startField.Name, t.endField.Name, t.nowField.Name, t.expire)
