@@ -16,6 +16,7 @@ package function
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/montanaflynn/stats"
@@ -25,6 +26,33 @@ import (
 )
 
 func registerAggFunc() {
+	builtins["median"] = builtinFunc{
+		fType: ast.FuncTypeAgg,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			arg0 := args[0].([]interface{})
+			if len(arg0) < 1 {
+				return int64(0), true
+			}
+			switch arg0[0].(type) {
+			case float64:
+				f64s, err := cast.ToFloat64Slice(arg0, cast.CONVERT_SAMEKIND, cast.IGNORE_NIL)
+				if err != nil {
+					return err, false
+				}
+				return median(f64s), true
+			case int64, int:
+				i64s, err := cast.ToInt64Slice(arg0, cast.CONVERT_SAMEKIND)
+				if err != nil {
+					return err, false
+				}
+				return median(i64s), true
+			default:
+				return fmt.Errorf("%v should be number", arg0[0]), false
+			}
+		},
+		val:   ValidateOneNumberArg,
+		check: returnNilIfHasAnyNil,
+	}
 	builtins["avg"] = builtinFunc{
 		fType: ast.FuncTypeAgg,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
@@ -377,5 +405,24 @@ func registerAggFunc() {
 			return nil
 		},
 		check: returnNilIfHasAnyNil,
+	}
+}
+
+type Number interface {
+	int64 | float64
+}
+
+func median[T Number](nums []T) interface{} {
+	sort.Slice(nums, func(i, j int) bool {
+		return nums[i] < nums[j]
+	})
+	n := len(nums)
+	if n == 0 {
+		return 0
+	}
+	if n%2 == 1 {
+		return nums[n/2]
+	} else {
+		return float64((nums[n/2-1])+(nums[n/2])) / 2
 	}
 }

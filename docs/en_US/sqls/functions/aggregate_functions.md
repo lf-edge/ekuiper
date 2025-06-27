@@ -177,6 +177,14 @@ Examples:
      SELECT deduplicate(a, false)->a as r1 FROM demo GROUP BY SlidingWindow(hh, 1)
      ```
 
+## MEDIAN
+
+```text
+median(col)
+```
+
+Returns the median value of expression in the group.
+
 ## STDDEV
 
 ```text

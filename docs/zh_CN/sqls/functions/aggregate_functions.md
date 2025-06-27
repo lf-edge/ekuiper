@@ -148,6 +148,14 @@ deduplicate(col, false)
      SELECT deduplicate(a, false)->a as r1 FROM demo GROUP BY SlidingWindow(hh, 1)
      ```
 
+## MEDIAN
+
+```text
+median(col)
+```
+
+返回组中所有值的中位数。
+
 ## STDDEV
 
 ```text

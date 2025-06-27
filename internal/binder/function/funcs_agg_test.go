@@ -667,3 +667,106 @@ func TestLastValueValidation(t *testing.T) {
 		}
 	}
 }
+
+func TestMedian(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    interface{}
+		expected interface{}
+	}{
+		{
+			name:     "single int64 element",
+			input:    []int64{5},
+			expected: int64(5),
+		},
+		{
+			name:     "odd length int64 slice",
+			input:    []int64{1, 3, 5, 7, 9},
+			expected: int64(5),
+		},
+		{
+			name:     "even length int64 slice",
+			input:    []int64{1, 3, 5, 7, 9, 11},
+			expected: float64(6),
+		},
+		{
+			name:     "unsorted int64 slice",
+			input:    []int64{9, 1, 5, 3, 7},
+			expected: int64(5),
+		},
+		{
+			name:     "empty float64 slice",
+			input:    []float64{},
+			expected: 0,
+		},
+		{
+			name:     "single float64 element",
+			input:    []float64{5.5},
+			expected: 5.5,
+		},
+		{
+			name:     "odd length float64 slice",
+			input:    []float64{1.1, 3.3, 5.5, 7.7, 9.9},
+			expected: 5.5,
+		},
+		{
+			name:     "even length float64 slice",
+			input:    []float64{1.1, 3.3, 5.5, 7.7, 9.9, 11.1},
+			expected: 6.6,
+		},
+		{
+			name:     "unsorted float64 slice",
+			input:    []float64{9.9, 1.1, 5.5, 3.3, 7.7},
+			expected: 5.5,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var result interface{}
+			switch v := tt.input.(type) {
+			case []int64:
+				result = median(v)
+			case []float64:
+				result = median(v)
+			default:
+				t.Fatalf("unsupported input type: %T", v)
+			}
+			require.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestMedianFunc(t *testing.T) {
+	fm, ok := builtins["median"]
+	require.True(t, ok)
+	contextLogger := conf.Log.WithField("rule", "testExec")
+	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+	tempStore, _ := state.CreateStore("mockRule0", def.AtMostOnce)
+	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
+	tests := []struct {
+		args   []interface{}
+		expect interface{}
+	}{
+		{
+			args:   []interface{}{},
+			expect: int64(0),
+		},
+		{
+			args: []interface{}{
+				int64(5), int64(1), int64(2), int64(3), int64(4),
+			},
+			expect: int64(3),
+		},
+		{
+			args: []interface{}{
+				float64(5), float64(1), float64(2), float64(3), float64(4),
+			},
+			expect: float64(3),
+		},
+	}
+	for _, tt := range tests {
+		got, ok := fm.exec(fctx, []interface{}{tt.args})
+		require.True(t, ok)
+		require.Equal(t, tt.expect, got)
+	}
+}
