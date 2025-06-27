@@ -320,31 +320,31 @@ func TestAccAggSQL(t *testing.T) {
 			R: [][]map[string]interface{}{
 				{
 					{
-						"acc_count": 1,
+						"acc_count": int64(1),
 						"color":     "red",
 					},
 				},
 				{
 					{
-						"acc_count": 1,
+						"acc_count": int64(1),
 						"color":     "blue",
 					},
 				},
 				{
 					{
-						"acc_count": 1,
+						"acc_count": int64(1),
 						"color":     "blue",
 					},
 				},
 				{
 					{
-						"acc_count": 1,
+						"acc_count": int64(1),
 						"color":     "yellow",
 					},
 				},
 				{
 					{
-						"acc_count": 2,
+						"acc_count": int64(2),
 						"color":     "red",
 					},
 				},
