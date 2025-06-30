@@ -194,6 +194,7 @@ func createRestServer(ip string, port int, needToken bool) *http.Server {
 	r.HandleFunc("/rules/{name}/stop", stopRuleHandler).Methods(http.MethodPost)
 	r.HandleFunc("/rules/{name}/restart", restartRuleHandler).Methods(http.MethodPost)
 	r.HandleFunc("/rules/{name}/topo", getTopoRuleHandler).Methods(http.MethodGet)
+	r.HandleFunc("/rules/{id}/schema", ruleSchemaHandler).Methods(http.MethodGet)
 	r.HandleFunc("/rules/{name}/trace/start", enableRuleTraceHandler).Methods(http.MethodPost)
 	r.HandleFunc("/rules/{name}/trace/stop", disableRuleTraceHandler).Methods(http.MethodPost)
 	r.HandleFunc("/rules/usage/cpu", rulesTopCpuUsageHandler).Methods(http.MethodGet)
@@ -894,6 +895,18 @@ func getTopoRuleHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set(ContentType, ContentTypeJSON)
 	w.Write([]byte(content))
+}
+
+func ruleSchemaHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	vars := mux.Vars(r)
+	name := vars["id"]
+	schema, err := registry.GetRuleSinkSchema(name)
+	if err != nil {
+		handleError(w, err, "get rule schema error", logger)
+		return
+	}
+	jsonResponse(schema, w, logger)
 }
 
 // validate a rule

@@ -31,6 +31,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/topo/rule"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/metrics"
+	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 	"github.com/lf-edge/ekuiper/v2/pkg/replace"
@@ -394,6 +395,17 @@ func (rr *RuleRegistry) GetRuleTopo(name string) (string, error) {
 		}
 	} else {
 		return "", errorx.NewWithCode(errorx.NOT_FOUND, fmt.Sprintf("Rule %s is not found", name))
+	}
+}
+
+func (rr *RuleRegistry) GetRuleSinkSchema(name string) (map[string]*ast.JsonStreamField, error) {
+	if rs, ok := registry.load(name); ok {
+		if !rs.HasTopo() {
+			return nil, errorx.New(fmt.Sprintf("Fail to get rule %s's topo, make sure the rule has been started before", name))
+		}
+		return rs.GetSchema(), nil
+	} else {
+		return nil, errorx.NewWithCode(errorx.NOT_FOUND, fmt.Sprintf("Rule %s is not found", name))
 	}
 }
 

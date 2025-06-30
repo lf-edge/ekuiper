@@ -428,3 +428,37 @@ func (s *RuleTestSuite) TestStreamSliceSchemaWithSharedSource() {
 	s.Require().NoError(err)
 	s.Require().Equal(expected1, schema)
 }
+
+func (s *RuleTestSuite) TestRuleSchema() {
+	streamName := "test_stream_schema_rule"
+	ruleName := "test_rule_schema_rule"
+	defer client.DeleteStream(streamName)
+	defer client.DeleteRule(ruleName)
+	streamSql := fmt.Sprintf(`{"sql": "create stream %s(id bigint, name string, age string) WITH (TYPE=\"mqtt\",DATASOURCE=\"mock\")"}`, streamName)
+	resp, err := client.CreateStream(streamSql)
+	s.Require().NoError(err)
+	s.Require().Equal(http.StatusCreated, resp.StatusCode)
+	ruleSql := fmt.Sprintf(`{
+		"id": "%s",
+		"sql": "SELECT id, name FROM %s",
+		"actions": [
+			{
+				"log":{}
+			}
+		]
+	}`, ruleName, streamName)
+	resp, err = client.CreateRule(ruleSql)
+	s.Require().NoError(err)
+	s.Require().Equal(http.StatusCreated, resp.StatusCode)
+
+	// wait until rule starts to run
+	time.Sleep(100 * time.Millisecond)
+
+	schema, err := client.GetRuleSchema(ruleName)
+	s.Require().NoError(err)
+	expected := map[string]any{
+		"id":   map[string]any{"hasIndex": true, "index": float64(0)},
+		"name": map[string]any{"hasIndex": true, "index": float64(1)},
+	}
+	s.Require().Equal(expected, schema)
+}
