@@ -873,6 +873,7 @@ var WindowFuncs = map[string]struct{}{
 	"sessionwindow":  {},
 	"slidingwindow":  {},
 	"countwindow":    {},
+	"statewindow":    {},
 	"dedup_trigger":  {},
 }
 
@@ -1045,6 +1046,11 @@ loop:
 
 func validateWindows(fname string, args []ast.Expr) (ast.WindowType, error) {
 	switch fname {
+	case "statewindow":
+		if len(args) != 2 {
+			return ast.STATE_WINDOW, fmt.Errorf("The arguments for %s should be %d.\n", fname, 2)
+		}
+		return ast.STATE_WINDOW, nil
 	case "tumblingwindow":
 		if err := validateWindow(fname, 2, args); err != nil {
 			return ast.TUMBLING_WINDOW, err
@@ -1112,6 +1118,11 @@ func validateWindow(funcName string, expectLen int, args []ast.Expr) error {
 
 func (p *Parser) ConvertToWindows(wtype ast.WindowType, args []ast.Expr) (*ast.Window, error) {
 	win := &ast.Window{WindowType: wtype}
+	if wtype == ast.STATE_WINDOW {
+		win.BeginCondition = args[0]
+		win.EmitCondition = args[1]
+		return win, nil
+	}
 	if wtype == ast.COUNT_WINDOW {
 		win.Length = &ast.IntegerLiteral{Val: args[0].(*ast.IntegerLiteral).Val}
 		if len(args) == 2 {

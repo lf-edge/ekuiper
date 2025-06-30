@@ -409,6 +409,8 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *def.RuleOption, sources ma
 			RawInterval:      rawInterval,
 			TimeUnit:         t.timeUnit,
 			TriggerCondition: t.triggerCondition,
+			BeginCondition:   t.beginCondition,
+			EmitCondition:    t.emitCondition,
 			StateFuncs:       t.stateFuncs,
 		}
 		if options.PlanOptimizeStrategy.GetWindowVersion() == "v2" {
@@ -614,10 +616,14 @@ func createLogicalPlanFull(stmt *ast.SelectStatement, opt *def.RuleOption, store
 				p = incWp
 			} else {
 				wp := WindowPlan{
-					wtype:       w.WindowType,
-					length:      int(w.Length.Val),
-					isEventTime: opt.IsEventTime,
+					wtype:          w.WindowType,
+					isEventTime:    opt.IsEventTime,
+					beginCondition: w.BeginCondition,
+					emitCondition:  w.EmitCondition,
 				}.Init()
+				if w.Length != nil {
+					wp.length = int(w.Length.Val)
+				}
 				if w.Delay != nil {
 					wp.delay = w.Delay.Val
 				}

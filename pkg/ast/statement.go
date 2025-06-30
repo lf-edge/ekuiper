@@ -189,6 +189,7 @@ const (
 	SLIDING_WINDOW
 	SESSION_WINDOW
 	COUNT_WINDOW
+	STATE_WINDOW
 )
 
 func (w WindowType) String() string {
@@ -211,6 +212,8 @@ func (w WindowType) String() string {
 
 type Window struct {
 	TriggerCondition Expr
+	BeginCondition   Expr
+	EmitCondition    Expr
 	WindowType       WindowType
 	Delay            *IntegerLiteral
 	Length           *IntegerLiteral
