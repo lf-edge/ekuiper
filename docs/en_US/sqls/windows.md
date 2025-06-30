@@ -81,7 +81,7 @@ SELECT * from demo group by statewindow(a > 1, a > 5)
 ```
 
 The conditional state window is initially in the untriggered state, at which point all data entering the window will be directly discarded. When the data entering the window meets the start window trigger condition, it changes from the untriggered state to the triggered state, at which point all data entering the window will be stored.
-When the conditional loading window is in the triggered state, when the data entering the window meets the send window trigger condition, it changes from the triggered state to the untriggered state, and all data previously stored in the window will be sent as a window.
+When the conditional state window is in the triggered state, when the data entering the window meets the send window trigger condition, it changes from the triggered state to the untriggered state, and all data previously stored in the window will be sent as a window.
 
 ## Count window
 
