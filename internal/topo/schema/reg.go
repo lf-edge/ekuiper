@@ -112,6 +112,16 @@ func GetStream(name string) SchemaContainer {
 	return stream
 }
 
+func GetStreamSchema(name string) (map[string]*ast.JsonStreamField, error) {
+	GlobalSchemaStore.RLock()
+	defer GlobalSchemaStore.RUnlock()
+	c, ok := GlobalSchemaStore.streamMap[name]
+	if !ok {
+		return nil, nil
+	}
+	return c.GetSchema(), nil
+}
+
 func GetStreamSchemaIndex(streamName string) map[string]int {
 	GlobalSchemaStore.RLock()
 	defer GlobalSchemaStore.RUnlock()

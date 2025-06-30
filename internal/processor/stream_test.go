@@ -22,7 +22,6 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/gdexlab/go-render/render"
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
@@ -310,17 +309,20 @@ func TestInferredStream(t *testing.T) {
 	schema.InitRegistry()
 
 	tests := []struct {
+		n   string
 		s   string
 		r   map[string]*ast.JsonStreamField
 		err string
 	}{
 		{
+			n: "s1",
 			s: `CREATE STREAM demo0 (USERID bigint, NAME string) WITH (FORMAT="JSON", DATASOURCE="demo", SHARED="TRUE")`,
 			r: map[string]*ast.JsonStreamField{
 				"USERID": {Type: "bigint"},
 				"NAME":   {Type: "string"},
 			},
 		}, {
+			n: "s2",
 			s: `CREATE STREAM demo1 (USERID bigint, NAME string) WITH (FORMAT="protobuf", DATASOURCE="demo", SCHEMAID="test2.Book")`,
 			r: map[string]*ast.JsonStreamField{
 				"name":   {Type: "string"},
@@ -333,19 +335,13 @@ func TestInferredStream(t *testing.T) {
 	p.db.Clean()
 	defer p.db.Clean()
 	for i, tt := range tests {
-		_, err := p.ExecStmt(tt.s)
-		if err != nil {
-			t.Errorf("%d. ExecStmt(%q) error: %v", i, tt.s, err)
-			continue
-		}
-		sf, err := p.GetInferredJsonSchema("demo"+strconv.Itoa(i), ast.TypeStream)
-		if err != nil {
-			t.Errorf("GetInferredJsonSchema fails: %s", err)
-			continue
-		}
-		if !reflect.DeepEqual(sf, tt.r) {
-			t.Errorf("GetInferredJsonSchema mismatch:\nexp=%v\ngot=%v", render.AsCode(tt.r), render.AsCode(sf))
-		}
+		t.Run(tt.n, func(t *testing.T) {
+			_, err := p.ExecStmt(tt.s)
+			require.NoError(t, err)
+			sf, err := p.GetInferredJsonSchema("demo"+strconv.Itoa(i), ast.TypeStream)
+			require.NoError(t, err)
+			require.Equal(t, tt.r, sf)
+		})
 	}
 }
 
