@@ -226,6 +226,38 @@ func (s *RuleTestSuite) TestUpsert() {
 	})
 }
 
+func (s *RuleTestSuite) TestStreamSchema() {
+	streamName := "test_stream_schema"
+	ruleName := "test_rule_schema"
+	defer client.DeleteStream(streamName)
+	defer client.DeleteRule(ruleName)
+	streamSql := fmt.Sprintf(`{"sql": "create stream %s(id bigint, name string, age string) WITH (TYPE=\"mqtt\",DATASOURCE=\"mock\")"}`, streamName)
+	resp, err := client.CreateStream(streamSql)
+	s.Require().NoError(err)
+	s.Require().Equal(http.StatusCreated, resp.StatusCode)
+	ruleSql := fmt.Sprintf(`{
+		"id": "%s",
+		"sql": "SELECT id, name FROM %s",
+		"actions": [
+			{
+				"log":{}
+			}
+		]
+	}`, ruleName, streamName)
+	resp, err = client.CreateRule(ruleSql)
+	s.Require().NoError(err)
+	s.Require().Equal(http.StatusCreated, resp.StatusCode)
+
+	schema, err := client.GetStreamSchema(streamName)
+	s.Require().NoError(err)
+	expected := map[string]any{
+		"age":  map[string]any{"type": "string", "index": float64(0)},
+		"id":   map[string]any{"type": "bigint", "index": float64(0)},
+		"name": map[string]any{"type": "string", "index": float64(0)},
+	}
+	s.Require().Equal(expected, schema)
+}
+
 func (s *RuleTestSuite) TestBatchRequest() {
 	client.DeleteStream("demobatch")
 	reqs := make([]*server.EachRequest, 0)
@@ -243,4 +275,156 @@ func (s *RuleTestSuite) TestBatchRequest() {
 	s.Require().Len(resps, len(reqs))
 	s.Require().Equal(http.StatusCreated, resps[0].Code)
 	s.Require().Equal(http.StatusOK, resps[1].Code)
+}
+
+func (s *RuleTestSuite) TestStreamSchemaWithSharedSource() {
+	streamName := "test_stream_schema_shared"
+	rule1 := "rule1"
+	rule2 := "rule2"
+	defer client.DeleteStream(streamName)
+	defer client.DeleteRule(rule1)
+	defer client.DeleteRule(rule2)
+	streamSql := fmt.Sprintf(`{"sql": "create stream %s() WITH (TYPE=\"mqtt\", DATASOURCE=\"test\", SHARED=\"true\")"}`, streamName)
+	resp, err := client.CreateStream(streamSql)
+	s.Require().NoError(err)
+	s.Require().Equal(http.StatusCreated, resp.StatusCode)
+
+	ruleSql1 := fmt.Sprintf(`{
+		"id": "%s",
+		"sql": "SELECT id, name FROM %s",
+		"actions": [
+			{
+				"log":{}
+			}
+		]
+	}`, rule1, streamName)
+	resp, err = client.CreateRule(ruleSql1)
+	s.Require().NoError(err)
+	s.Require().Equal(http.StatusCreated, resp.StatusCode)
+
+	// wait until rule starts to run
+	time.Sleep(100 * time.Millisecond)
+
+	schema, err := client.GetStreamSchema(streamName)
+	s.Require().NoError(err)
+	expected1 := map[string]any{
+		"id":   nil,
+		"name": nil,
+	}
+	s.Require().Equal(expected1, schema)
+
+	ruleSql2 := fmt.Sprintf(`{
+		"id": "%s",
+		"sql": "SELECT id, age FROM %s",
+		"actions": [
+			{
+				"log":{}
+			}
+		]
+	}`, rule2, streamName)
+	resp, err = client.CreateRule(ruleSql2)
+	s.Require().NoError(err)
+	s.Require().Equal(http.StatusCreated, resp.StatusCode)
+
+	time.Sleep(100 * time.Millisecond)
+
+	schema, err = client.GetStreamSchema(streamName)
+	s.Require().NoError(err)
+	expected2 := map[string]any{
+		"id":   nil,
+		"name": nil,
+		"age":  nil,
+	}
+	s.Require().Equal(expected2, schema)
+
+	resp, err = client.DeleteRule(rule2)
+	s.Require().NoError(err)
+	s.Require().Equal(http.StatusOK, resp.StatusCode)
+
+	time.Sleep(100 * time.Millisecond)
+
+	schema, err = client.GetStreamSchema(streamName)
+	s.Require().NoError(err)
+	s.Require().Equal(expected1, schema)
+}
+
+func (s *RuleTestSuite) TestStreamSliceSchemaWithSharedSource() {
+	streamName := "test_stream_schema_shared"
+	rule1 := "rule1"
+	rule2 := "rule2"
+	defer client.DeleteStream(streamName)
+	defer client.DeleteRule(rule1)
+	defer client.DeleteRule(rule2)
+	streamSql := fmt.Sprintf(`{"sql": "create stream %s() WITH (TYPE=\"mqtt\", DATASOURCE=\"test\", SHARED=\"true\")"}`, streamName)
+	resp, err := client.CreateStream(streamSql)
+	s.Require().NoError(err)
+	s.Require().Equal(http.StatusCreated, resp.StatusCode)
+
+	ruleSql1 := fmt.Sprintf(`{
+		"id": "%s",
+		"sql": "SELECT id, name FROM %s",
+		"actions": [
+			{
+				"log":{}
+			}
+		],
+		"options": {
+			"experiment": {
+			  "useSliceTuple": true
+			}
+	  	}
+	}`, rule1, streamName)
+	resp, err = client.CreateRule(ruleSql1)
+	s.Require().NoError(err)
+	s.Require().Equal(http.StatusCreated, resp.StatusCode)
+
+	// wait until rule starts to run
+	time.Sleep(100 * time.Millisecond)
+
+	schema, err := client.GetStreamSchema(streamName)
+	s.Require().NoError(err)
+	expected1 := map[string]any{
+		"id":   map[string]any{"hasIndex": true, "index": float64(0)},
+		"name": map[string]any{"hasIndex": true, "index": float64(1)},
+	}
+	s.Require().Equal(expected1, schema)
+
+	ruleSql2 := fmt.Sprintf(`{
+		"id": "%s",
+		"sql": "SELECT id, age FROM %s",
+		"actions": [
+			{
+				"log":{}
+			}
+		],
+		"options": {
+			"experiment": {
+			  "useSliceTuple": true
+			}
+	  	}
+	}`, rule2, streamName)
+	resp, err = client.CreateRule(ruleSql2)
+	s.Require().NoError(err)
+	s.Require().Equal(http.StatusCreated, resp.StatusCode)
+
+	time.Sleep(100 * time.Millisecond)
+
+	schema, err = client.GetStreamSchema(streamName)
+	s.Require().NoError(err)
+	expected2 := map[string]any{
+		"id":   map[string]any{"hasIndex": true, "index": float64(0)},
+		"name": map[string]any{"hasIndex": true, "index": float64(1)},
+		"age":  map[string]any{"hasIndex": true, "index": float64(2)},
+	}
+	s.Require().Equal(expected2, schema)
+
+	resp, err = client.DeleteRule(rule2)
+	s.Require().NoError(err)
+	s.Require().Equal(http.StatusOK, resp.StatusCode)
+
+	time.Sleep(100 * time.Millisecond)
+
+	schema, err = client.GetStreamSchema(streamName)
+	s.Require().NoError(err)
+	s.Require().Equal(expected1, schema)
 }
