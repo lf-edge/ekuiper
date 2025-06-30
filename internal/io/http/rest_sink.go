@@ -127,6 +127,11 @@ func (r *RestSink) Collect(ctx api.StreamContext, item api.RawTuple) error {
 	failpoint.Inject("recoverAbleErr", func() {
 		err = errors.New("connection reset by peer")
 	})
+	defer func() {
+		if resp != nil && resp.Body != nil {
+			resp.Body.Close()
+		}
+	}()
 	if err != nil {
 		originErr := err
 		recoverAble := errorx.IsRecoverAbleError(originErr)
