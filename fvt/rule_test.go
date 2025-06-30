@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"sort"
 	"sync"
 	"testing"
 	"time"
@@ -433,7 +434,7 @@ func (s *RuleTestSuite) TestStreamSliceSchemaWithSharedSource() {
 		"id":   map[string]any{"hasIndex": true, "index": float64(0)},
 		"name": map[string]any{"hasIndex": true, "index": float64(1)},
 	}
-	s.Require().Equal(expected1, schema)
+	s.assertSchemaEquality(expected1, schema)
 
 	ruleSql2 := fmt.Sprintf(`{
 		"id": "%s",
@@ -462,7 +463,7 @@ func (s *RuleTestSuite) TestStreamSliceSchemaWithSharedSource() {
 		"name": map[string]any{"hasIndex": true, "index": float64(1)},
 		"age":  map[string]any{"hasIndex": true, "index": float64(2)},
 	}
-	s.Require().Equal(expected2, schema)
+	s.assertSchemaEquality(expected2, schema)
 
 	resp, err = client.DeleteRule(rule2)
 	s.Require().NoError(err)
@@ -472,5 +473,97 @@ func (s *RuleTestSuite) TestStreamSliceSchemaWithSharedSource() {
 
 	schema, err = client.GetStreamSchema(streamName)
 	s.Require().NoError(err)
-	s.Require().Equal(expected1, schema)
+	s.assertSchemaEquality(expected1, schema)
+}
+
+func (s *RuleTestSuite) TestRuleSchema() {
+	streamName := "test_stream_schema_rule"
+	ruleName := "test_rule_schema_rule"
+	defer client.DeleteStream(streamName)
+	defer client.DeleteRule(ruleName)
+	streamSql := fmt.Sprintf(`{"sql": "create stream %s(id bigint, name string, age string) WITH (TYPE=\"mqtt\",DATASOURCE=\"mock\")"}`, streamName)
+	resp, err := client.CreateStream(streamSql)
+	s.Require().NoError(err)
+	s.Require().Equal(http.StatusCreated, resp.StatusCode)
+	ruleSql := fmt.Sprintf(`{
+		"id": "%s",
+		"sql": "SELECT id, name FROM %s",
+		"actions": [
+			{
+				"log":{}
+			}
+		]
+	}`, ruleName, streamName)
+	resp, err = client.CreateRule(ruleSql)
+	s.Require().NoError(err)
+	s.Require().Equal(http.StatusCreated, resp.StatusCode)
+
+	// wait until rule starts to run
+	time.Sleep(100 * time.Millisecond)
+
+	schema, err := client.GetRuleSchema(ruleName)
+	s.Require().NoError(err)
+	expected := map[string]any{
+		"id":   map[string]any{"hasIndex": true, "index": float64(0)},
+		"name": map[string]any{"hasIndex": true, "index": float64(1)},
+	}
+	s.assertSchemaEquality(expected, schema)
+}
+
+// A helper struct to hold the nested schema values for sorting and comparison.
+type SchemaValue struct {
+	HasIndex bool
+	Index    float64
+}
+
+// assertSchemaEquality compares two schemas for equality, ignoring key-to-index mapping order.
+func (s *RuleTestSuite) assertSchemaEquality(expected, actual map[string]any) {
+	// 1. Check if the number of keys is the same.
+	s.Equal(len(expected), len(actual), "Schema lengths should be equal")
+
+	// 2. Validate that the sets of keys are the same.
+	expectedKeys := make([]string, 0, len(expected))
+	for k := range expected {
+		expectedKeys = append(expectedKeys, k)
+	}
+	actualKeys := make([]string, 0, len(actual))
+	for k := range actual {
+		actualKeys = append(actualKeys, k)
+	}
+	sort.Strings(expectedKeys)
+	sort.Strings(actualKeys)
+	s.Equal(expectedKeys, actualKeys, "The set of schema keys should be identical")
+
+	// 3. Extract and collect all nested SchemaValue structs from both maps.
+	expectedValues := make([]SchemaValue, 0, len(expected))
+	actualValues := make([]SchemaValue, 0, len(actual))
+
+	for _, v := range expected {
+		nestedMap, ok := v.(map[string]any)
+		s.True(ok, "Expected value is not a map[string]any")
+		expectedValues = append(expectedValues, SchemaValue{
+			HasIndex: nestedMap["hasIndex"].(bool),
+			Index:    nestedMap["index"].(float64),
+		})
+	}
+
+	for _, v := range actual {
+		nestedMap, ok := v.(map[string]any)
+		s.True(ok, "Actual value is not a map[string]any")
+		actualValues = append(actualValues, SchemaValue{
+			HasIndex: nestedMap["hasIndex"].(bool),
+			Index:    nestedMap["index"].(float64),
+		})
+	}
+
+	// 4. Sort the slices of SchemaValue structs to create a canonical representation.
+	sort.Slice(expectedValues, func(i, j int) bool {
+		return expectedValues[i].Index < expectedValues[j].Index
+	})
+	sort.Slice(actualValues, func(i, j int) bool {
+		return actualValues[i].Index < actualValues[j].Index
+	})
+
+	// 5. Compare the sorted slices to ensure the nested values are identical.
+	s.Equal(expectedValues, actualValues, "The set of nested schema values should be identical")
 }
