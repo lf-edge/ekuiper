@@ -83,6 +83,7 @@ func doPull(ctx api.StreamContext, c *ClientConf, lastMD5 string) ([]map[string]
 	if err != nil {
 		return nil, "", err
 	}
+	defer resp.Body.Close()
 	results, newMD5, err := c.parseResponse(ctx, resp, lastMD5, true, false)
 	if err != nil {
 		return nil, "", err
