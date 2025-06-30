@@ -27,9 +27,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
-var (
-	InfTime = time.Now().Add(9999 * time.Hour)
-)
+var InfTime = time.Date(292277026596, time.December, 31, 23, 59, 59, 999999999, time.UTC)
 
 type WindowV2Operator struct {
 	*defaultSinkNode
