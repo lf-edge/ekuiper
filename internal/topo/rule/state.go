@@ -35,6 +35,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/topo"
 	kctx "github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/planner"
+	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
@@ -177,6 +178,15 @@ func (s *State) GetStartTimestamp() time.Time {
 	s.RLock()
 	defer s.RUnlock()
 	return time.UnixMilli(s.lastStartTimestamp)
+}
+
+func (s *State) GetSchema() map[string]*ast.JsonStreamField {
+	s.RLock()
+	defer s.RUnlock()
+	if s.topology != nil {
+		return s.topology.GetSinkSchema()
+	}
+	return nil
 }
 
 // GetStatusMessage return the current RunState of the Rule
