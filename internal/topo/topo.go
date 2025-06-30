@@ -36,6 +36,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node/metric"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/state"
+	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
@@ -61,6 +62,7 @@ type Topo struct {
 	topo         *def.PrintableTopo
 	mu           sync.Mutex
 	hasOpened    atomic.Bool
+	sinkSchema   map[string]*ast.JsonStreamField
 
 	opsWg *sync.WaitGroup
 }
@@ -99,6 +101,14 @@ func (s *Topo) GetStreams() []string {
 		return nil
 	}
 	return s.streams
+}
+
+func (s *Topo) SetSinkSchema(sinkSchema map[string]*ast.JsonStreamField) {
+	s.sinkSchema = sinkSchema
+}
+
+func (s *Topo) GetSinkSchema() map[string]*ast.JsonStreamField {
+	return s.sinkSchema
 }
 
 func (s *Topo) GetContext() api.StreamContext {

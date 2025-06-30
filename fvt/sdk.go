@@ -111,6 +111,15 @@ func (sdk *SDK) GetStreamSchema(name string) (map[string]any, error) {
 	return GetResponseResultMap(resp)
 }
 
+func (sdk *SDK) GetRuleSchema(name string) (map[string]any, error) {
+	resp, err := http.Get(sdk.baseUrl.JoinPath("rules", name, "schema").String())
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
+	return GetResponseResultMap(resp)
+}
+
 func (sdk *SDK) CreateRule(ruleJson string) (resp *http.Response, err error) {
 	return http.Post(sdk.baseUrl.JoinPath("rules").String(), ContentTypeJson, bytes.NewBufferString(ruleJson))
 }
