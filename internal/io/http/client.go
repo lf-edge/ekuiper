@@ -224,6 +224,7 @@ func (cc *ClientConf) auth(ctx api.StreamContext) error {
 	if err != nil {
 		return err
 	}
+	defer resp.Body.Close()
 	tokens, _, err := cc.parseResponse(ctx, resp, "", true, true)
 	if err != nil {
 		return err
@@ -271,11 +272,11 @@ func (cc *ClientConf) refresh(ctx api.StreamContext) error {
 				return fmt.Errorf("fail to parse the header for refresh token request %s: %v", k, err)
 			}
 		}
-
 		resp, err := httpx.Send(conf.Log, cc.client, "json", http.MethodPost, cc.refreshConf.Url, headers, cc.refreshConf.Body)
 		if err != nil {
 			return fmt.Errorf("fail to get refresh token: %v", err)
 		}
+		defer resp.Body.Close()
 		nt, _, err := cc.parseResponse(ctx, resp, "", true, true)
 		if err != nil {
 			return fmt.Errorf("Cannot parse refresh token response to json: %v", err)
@@ -326,11 +327,6 @@ func (cc *ClientConf) parseResponse(ctx api.StreamContext, resp *http.Response, 
 	if err != nil {
 		return nil, "", fmt.Errorf("%s: %v", BODY_ERR, err)
 	}
-
-	defer func() {
-		resp.Body.Close()
-	}()
-
 	newMD5 := ""
 	if returnBody && cc.config.Incremental {
 		newMD5 = getMD5Hash(c)

@@ -15,6 +15,7 @@
 package errorx
 
 import (
+	"io"
 	"net/url"
 	"strings"
 )
@@ -51,7 +52,7 @@ func IsRecoverAbleError(err error) bool {
 	}
 	if urlErr, ok := err.(*url.Error); ok {
 		// consider timeout and temporary error as recoverable
-		if urlErr.Timeout() || urlErr.Temporary() {
+		if urlErr.Timeout() || urlErr.Temporary() || urlErr.Err == io.EOF {
 			return true
 		}
 	}
