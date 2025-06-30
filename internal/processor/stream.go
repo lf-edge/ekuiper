@@ -475,6 +475,7 @@ func (p *StreamProcessor) GetInferredSchema(name string, st ast.StreamType) (r a
 }
 
 // GetInferredJsonSchema return schema in json schema type
+// TODO merge external schema and inferred dynamic schema
 func (p *StreamProcessor) GetInferredJsonSchema(name string, st ast.StreamType) (r map[string]*ast.JsonStreamField, err error) {
 	defer func() {
 		if err != nil {
@@ -503,7 +504,11 @@ func (p *StreamProcessor) GetInferredJsonSchema(name string, st ast.StreamType) 
 			return nil, err
 		}
 	}
-	return sfs.ToJsonSchema(), nil
+	result := sfs.ToJsonSchema()
+	if len(result) > 0 {
+		return result, nil
+	}
+	return streamSchema.GetStreamSchema(name)
 }
 
 func (p *StreamProcessor) execExplain(stmt ast.NameNode, st ast.StreamType) (string, error) {
