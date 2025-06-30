@@ -72,6 +72,17 @@ A session window begins when the first event occurs. If another event occurs wit
 
 If events keep occurring within the specified timeout, the session window will keep extending until maximum duration is reached. The maximum duration checking intervals are set to be the same size as the specified max duration. For example, if the max duration is 10, then the checks on if the window exceed maximum duration will happen at t = 0, 10, 20, 30, etc.
 
+## Conditional state window
+
+The conditional state window does not focus on time, but only on the impact of each piece of data on the window state. It has two main parameters, the start window trigger condition and the send window trigger condition.
+
+```sql
+SELECT * from demo group by statewindow(a > 1, a > 5)
+```
+
+The conditional state window is initially in the untriggered state, at which point all data entering the window will be directly discarded. When the data entering the window meets the start window trigger condition, it changes from the untriggered state to the triggered state, at which point all data entering the window will be stored.
+When the conditional loading window is in the triggered state, when the data entering the window meets the send window trigger condition, it changes from the triggered state to the untriggered state, and all data previously stored in the window will be sent as a window.
+
 ## Count window
 
 Please notice that the count window does not concern time, it only concern about events count.
