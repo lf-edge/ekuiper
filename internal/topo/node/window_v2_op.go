@@ -98,6 +98,7 @@ type StateWindowOp struct {
 	BeginCondition ast.Expr
 	EmitCondition  ast.Expr
 	onBegin        bool
+	stateFuncs     []*ast.Call
 }
 
 func NewStateWindowOp(o *WindowV2Operator) *StateWindowOp {
@@ -105,6 +106,7 @@ func NewStateWindowOp(o *WindowV2Operator) *StateWindowOp {
 		WindowV2Operator: o,
 		BeginCondition:   o.windowConfig.BeginCondition,
 		EmitCondition:    o.windowConfig.EmitCondition,
+		stateFuncs:       o.windowConfig.StateFuncs,
 	}
 }
 
@@ -125,14 +127,14 @@ func (s *StateWindowOp) exec(ctx api.StreamContext, errCh chan<- error) {
 				var canBegin bool
 				var canEmit bool
 				if !s.onBegin {
-					canBegin = isMatchCondition(ctx, s.BeginCondition, fv, row)
+					canBegin = isMatchCondition(ctx, s.BeginCondition, fv, row, s.stateFuncs)
 					if canBegin {
 						s.onBegin = true
 					}
 				}
 				if s.onBegin {
 					s.scanner.addTuple(row)
-					canEmit = isMatchCondition(ctx, s.EmitCondition, fv, row)
+					canEmit = isMatchCondition(ctx, s.EmitCondition, fv, row, s.stateFuncs)
 				}
 				if s.onBegin && canEmit {
 					s.emitWindow(ctx, time.Time{}, InfTime)
