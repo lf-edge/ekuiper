@@ -846,7 +846,7 @@ func TestLagExec(t *testing.T) {
 				true,
 				"self",
 			},
-			result: nil,
+			result: "default",
 		},
 		{ // 2
 			args: []interface{}{
