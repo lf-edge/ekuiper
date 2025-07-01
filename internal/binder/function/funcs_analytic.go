@@ -126,8 +126,8 @@ func registerAnalyticFunc() {
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			l := len(args) - 2
-			if l != 1 && l != 2 && l != 3 && l != 4 {
-				return fmt.Errorf("expect one two or three args but got %d", l), false
+			if l < 1 || l > 4 {
+				return fmt.Errorf("expect from 1 to 4 args but got %d", l), false
 			}
 			key := args[len(args)-1].(string)
 			v, err := ctx.GetState(key)
@@ -138,34 +138,29 @@ func registerAnalyticFunc() {
 			if !ok {
 				return fmt.Errorf("when arg is not a bool but got %v", args[len(args)-2]), false
 			}
+			size := 1
+			if l >= 2 {
+				size, err = cast.ToInt(args[1], cast.STRICT)
+				if err != nil {
+					return fmt.Errorf("error converting second arg %v to int: %v", args[1], err), false
+				}
+			}
+			var dftVal interface{} = nil
+			if l >= 3 {
+				dftVal = args[2]
+			}
 			ignoreNull := false
-			if l == 4 {
+			if l >= 4 {
 				ignoreNull, ok = args[3].(bool)
 				if !ok {
 					return fmt.Errorf("The fourth arg is not a bool but got %v", args[0]), false
 				}
 			}
-			paraLen := len(args) - 2
 			var rq *ringqueue = nil
 			var rtnVal interface{} = nil
-
 			// first time call, need create state for lag
 			if v == nil {
-				size := 0
-				var dftVal interface{} = nil
-				if paraLen == 3 {
-					dftVal = args[2]
-				}
-				if paraLen == 1 {
-					size = 1
-				} else {
-					size, err = cast.ToInt(args[1], cast.STRICT)
-					if err != nil {
-						return fmt.Errorf("error converting second arg %v to int: %v", args[1], err), false
-					}
-				}
 				rq = newRingqueue(size)
-
 				rq.fill(dftVal)
 				err := ctx.PutState(key, rq)
 				if err != nil {
