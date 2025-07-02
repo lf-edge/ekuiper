@@ -27,6 +27,8 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
+var InfTime = time.Unix(1<<63-62135596801, 999999999)
+
 type WindowV2Operator struct {
 	*defaultSinkNode
 	windowConfig WindowConfig
@@ -46,6 +48,8 @@ func NewWindowV2Op(name string, w WindowConfig, options *def.RuleOption) (*Windo
 		} else {
 			o.wExec = NewSlidingWindowOp(o)
 		}
+	case ast.STATE_WINDOW:
+		o.wExec = NewStateWindowOp(o)
 	default:
 		return nil, fmt.Errorf("unsupported window type:%v", w.Type.String())
 	}
@@ -85,6 +89,63 @@ func (o *WindowV2Operator) emitWindow(ctx api.StreamContext, startTime, endTime 
 
 type WindowV2Exec interface {
 	exec(ctx api.StreamContext, errCh chan<- error)
+}
+
+type StateWindowOp struct {
+	*WindowV2Operator
+	BeginCondition ast.Expr
+	EmitCondition  ast.Expr
+	onBegin        bool
+	stateFuncs     []*ast.Call
+}
+
+func NewStateWindowOp(o *WindowV2Operator) *StateWindowOp {
+	return &StateWindowOp{
+		WindowV2Operator: o,
+		BeginCondition:   o.windowConfig.BeginCondition,
+		EmitCondition:    o.windowConfig.EmitCondition,
+		stateFuncs:       o.windowConfig.StateFuncs,
+	}
+}
+
+func (s *StateWindowOp) exec(ctx api.StreamContext, errCh chan<- error) {
+	fv, _ := xsql.NewFunctionValuersForOp(ctx)
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case input := <-s.input:
+			data, processed := s.commonIngest(ctx, input)
+			if processed {
+				continue
+			}
+			s.onProcessStart(ctx, input)
+			switch row := data.(type) {
+			case *xsql.Tuple:
+				var canBegin bool
+				var canEmit bool
+				if !s.onBegin {
+					canBegin = isMatchCondition(ctx, s.BeginCondition, fv, row, s.stateFuncs)
+					if canBegin {
+						s.onBegin = true
+					}
+				}
+				if s.onBegin {
+					s.scanner.addTuple(row)
+					canEmit = isMatchCondition(ctx, s.EmitCondition, fv, row, s.stateFuncs)
+				}
+				if s.onBegin && canEmit {
+					s.emitWindow(ctx, time.Time{}, InfTime)
+					s.scanner.gc(InfTime)
+					s.onBegin = false
+				}
+				if canBegin && !s.onBegin {
+					s.onBegin = true
+				}
+			}
+			s.onProcessEnd(ctx)
+		}
+	}
 }
 
 type SlidingWindowOp struct {
@@ -154,13 +215,13 @@ func (s *SlidingWindowOp) exec(ctx api.StreamContext, errCh chan<- error) {
 	}
 }
 
-func isMatchCondition(ctx api.StreamContext, triggerCondition ast.Expr, fv *xsql.FunctionValuer, d *xsql.Tuple, stateFuncs []*ast.Call) bool {
-	if triggerCondition == nil {
+func isMatchCondition(ctx api.StreamContext, condition ast.Expr, fv *xsql.FunctionValuer, d *xsql.Tuple, stateFuncs []*ast.Call) bool {
+	if condition == nil {
 		return true
 	}
 	log := ctx.GetLogger()
 	ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(d, fv)}
-	result := ve.Eval(triggerCondition)
+	result := ve.Eval(condition)
 	// not match trigger condition
 	if result == nil {
 		return false
