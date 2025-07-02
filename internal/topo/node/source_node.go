@@ -1,4 +1,4 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -211,9 +211,9 @@ func (m *SourceNode) ingestError(ctx api.StreamContext, err error) {
 	m.onError(ctx, err)
 }
 
-func (m *SourceNode) ingestEof(ctx api.StreamContext) {
-	ctx.GetLogger().Infof("send out EOF")
-	m.Broadcast(xsql.EOFTuple(0))
+func (m *SourceNode) ingestEof(ctx api.StreamContext, msg string) {
+	ctx.GetLogger().Infof("send out EOF %s", msg)
+	m.Broadcast(xsql.EOFTuple(msg))
 }
 
 // GetSource only used for test

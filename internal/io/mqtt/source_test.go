@@ -1,4 +1,4 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -119,8 +119,8 @@ func TestEoF(t *testing.T) {
 	// Create a channel to receive the result
 	resultCh := make(chan any, 10)
 	// Set eof
-	r.SetEofIngest(func(ctx api.StreamContext) {
-		resultCh <- xsql.EOFTuple(0)
+	r.SetEofIngest(func(ctx api.StreamContext, msg string) {
+		resultCh <- xsql.EOFTuple(msg)
 	})
 	err = r.Subscribe(ctx, func(ctx api.StreamContext, payload []byte, meta map[string]any, ts time.Time) {
 		resultCh <- payload

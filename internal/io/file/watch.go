@@ -71,7 +71,7 @@ func (f *WatchWrapper) Subscribe(ctx api.StreamContext, ingest api.TupleIngest, 
 	} else {
 		ctx.GetLogger().Infof("file watch exit")
 		if f.f != nil && f.f.eof != nil {
-			f.f.eof(ctx)
+			f.f.eof(ctx, "")
 		}
 	}
 	return nil

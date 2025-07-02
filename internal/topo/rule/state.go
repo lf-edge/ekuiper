@@ -527,6 +527,10 @@ func (s *State) runTopo(ctx context.Context, tp *topo.Topo, rs *def.RestartStrat
 				} else { // exit normally
 					if errorx.IsEOF(er) {
 						s.lastWill = EOFMessage
+						msg := er.Error()
+						if len(msg) > 0 {
+							s.lastWill = fmt.Sprintf("%s: %s", s.lastWill, msg)
+						}
 						s.updateTrigger(s.Rule.Id, false)
 					}
 					tp.Cancel()
@@ -576,7 +580,7 @@ func (s *State) runTopo(ctx context.Context, tp *topo.Topo, rs *def.RestartStrat
 		s.transit(StoppedByErr, err)
 		s.topology = nil
 		s.logger.Infof("%s exit by error set tp to nil", s.Rule.Id)
-	} else if s.lastWill == EOFMessage {
+	} else if strings.HasPrefix(s.lastWill, EOFMessage) {
 		// Two case when err is nil; 1. Manually stop 2.EOF
 		// Only transit status when EOF. Don't do this for manual stop because the state already changed!
 		s.transit(Stopped, nil)

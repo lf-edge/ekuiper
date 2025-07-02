@@ -1,4 +1,4 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -115,7 +115,7 @@ func (ms *SourceConnector) onMessage(ctx api.StreamContext, msg any, ingest api.
 	rcvTime := timex.GetNow()
 	payload, meta, props := ms.cli.ParseMsg(ctx, msg)
 	if ms.eof != nil && ms.eofPayload != nil && bytes.Equal(ms.eofPayload, payload) {
-		ms.eof(ctx)
+		ms.eof(ctx, "")
 		return
 	}
 	// extract trace id

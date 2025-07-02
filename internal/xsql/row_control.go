@@ -1,4 +1,4 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ func (t *WatermarkTuple) IsWatermark() bool {
 }
 
 type (
-	EOFTuple      int
+	EOFTuple      string
 	BatchEOFTuple time.Time
 	// StopTuple indicates rule stop. The content is the rule id. Sends out when Qos is set and rule stops
 	StopTuple struct {

@@ -1,4 +1,4 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -324,7 +324,7 @@ func TestIgnoreLines(t *testing.T) {
 		model.NewDefaultRawTuple([]byte("{\"id\": 3,\"name\": \"John Smith\"}"), meta, mc.Now()),
 	}
 	r := GetSource()
-	r.(api.Bounded).SetEofIngest(func(ctx api.StreamContext) {
+	r.(api.Bounded).SetEofIngest(func(ctx api.StreamContext, _ string) {
 		fmt.Printf("eof")
 	})
 	moved, err := os.MkdirTemp(path, "test")
