@@ -36,7 +36,8 @@ import (
 
 // SrcSubTopo Implements node.SourceNode
 type SrcSubTopo struct {
-	name string
+	name        string
+	isSliceMode bool
 
 	// creation state
 	source node.DataSourceNode
@@ -53,6 +54,11 @@ type SrcSubTopo struct {
 	opened           atomic.Bool
 	cancel           context.CancelFunc
 	enableCheckpoint bool
+}
+
+// IsSliceMode this is a constant set when creating new subtopo
+func (s *SrcSubTopo) IsSliceMode() bool {
+	return s.isSliceMode
 }
 
 func (s *SrcSubTopo) AddOutput(output chan interface{}, name string) error {

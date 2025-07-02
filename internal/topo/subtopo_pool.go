@@ -31,7 +31,7 @@ var (
 	lock        sync.Mutex
 )
 
-func GetOrCreateSubTopo(ctx api.StreamContext, name string) (*SrcSubTopo, bool) {
+func GetOrCreateSubTopo(ctx api.StreamContext, name string, isSliceMode bool) (*SrcSubTopo, bool) {
 	lock.Lock()
 	defer lock.Unlock()
 	ac, ok := subTopoPool[name]
@@ -44,6 +44,7 @@ func GetOrCreateSubTopo(ctx api.StreamContext, name string) (*SrcSubTopo, bool) 
 			},
 			schemaLayer: schema.GetStream(name).(*schema.SharedLayer),
 			refRules:    make(map[string]chan<- error),
+			isSliceMode: isSliceMode,
 		}
 		subTopoPool[name] = ac
 	}
