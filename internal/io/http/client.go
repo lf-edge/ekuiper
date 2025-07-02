@@ -102,9 +102,9 @@ var bodyTypeMap = map[string]string{"none": "", "text": "text/plain", "json": "a
 var newTransport = getTransport
 
 func getTransport(tlscfg *tls.Config, logger *logrus.Logger) *http.Transport {
-	return &http.Transport{
-		TLSClientConfig: tlscfg,
-	}
+	tr := http.DefaultTransport.(*http.Transport).Clone()
+	tr.TLSClientConfig = tlscfg
+	return tr
 }
 
 func (cc *ClientConf) InitConf(ctx api.StreamContext, device string, props map[string]interface{}) error {
