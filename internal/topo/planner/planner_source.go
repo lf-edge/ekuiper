@@ -108,7 +108,7 @@ func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, option
 			subId = us.SubId(props)
 		}
 		selName := fmt.Sprintf("%s/%s", conId, subId)
-		srcSubtopo, existed := topo.GetOrCreateSubTopo(nil, selName)
+		srcSubtopo, existed := topo.GetOrCreateSubTopo(nil, selName, false)
 		if !existed {
 			var scn node.DataSourceNode
 			scn, err = node.NewSourceNode(ctx, selName, ss, props, options)
@@ -202,8 +202,9 @@ func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, option
 	}
 
 	if t.streamStmt.Options.SHARED && !t.inRuleTest {
+		isSliceRule := options.Experiment != nil && options.Experiment.UseSliceTuple
 		// Create subtopo in the end to avoid errors in the middle
-		srcSubtopo, existed := topo.GetOrCreateSubTopo(ctx, string(t.name))
+		srcSubtopo, existed := topo.GetOrCreateSubTopo(ctx, string(t.name), isSliceRule)
 		if !existed {
 			ctx.GetLogger().Infof("Create SubTopo %s", string(t.name))
 			srcSubtopo.AddSrc(srcConnNode)
@@ -213,6 +214,9 @@ func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, option
 				subInputs = []node.Emitter{e}
 			}
 		} else {
+			if isSliceRule != srcSubtopo.IsSliceMode() {
+				return nil, nil, 0, fmt.Errorf("rules refer to shared stream must be the same mode, stream slice mode: %v but rule slice mode: %v", srcSubtopo.IsSliceMode(), isSliceRule)
+			}
 			ctx.GetLogger().Infof("Load SubTopo %s", string(t.name))
 		}
 		srcSubtopo.StoreSchema(ruleId, string(t.name), t.streamFields, t.isWildCard)
