@@ -21,6 +21,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
@@ -150,8 +151,11 @@ func (s *SinkNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 					default:
 						sendingData = data
 						if prepareExit && s.saveCache {
+							var wg sync.WaitGroup
+							wg.Add(1)
 							// If it is about to exit, save cache async
 							go func() {
+								defer wg.Done()
 								ctx.GetLogger().Infof("save cache asyncly")
 								// save data which are not sent yet
 								dataToKeep := make([]any, 0, len(loadedData)-loadedCount+len(s.input))
@@ -191,8 +195,11 @@ func (s *SinkNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 									ctx.GetLogger().Errorf("fail to save sink %s cache: %v", filename, err)
 								}
 							}()
+							s.handle(ctx, data)
+							wg.Wait()
+						} else {
+							s.handle(ctx, data)
 						}
-						s.handle(ctx, data)
 					}
 				}
 			}
