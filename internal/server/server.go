@@ -233,6 +233,22 @@ func StartUp(Version string) {
 	registry = &RuleRegistry{internal: make(map[string]*rule.State)}
 	// Start lookup tables
 	streamProcessor.RecoverLookupTable()
+	// Clean memory rule
+	if rules, err := ruleProcessor.GetAllRules(); err != nil {
+		logger.Infof("Clean memory rules error: %s", err)
+	} else {
+		logger.Info("Cleaning memory rules")
+		for _, name := range rules {
+			rule, err := ruleProcessor.GetRuleById(name)
+			if err != nil {
+				logger.Error(err)
+				continue
+			}
+			if rule.IsMemRule() {
+				ruleProcessor.ExecDrop(name)
+			}
+		}
+	}
 	// Start rules
 	if rules, err := ruleProcessor.GetAllRules(); err != nil {
 		logger.Infof("Start rules error: %s", err)
