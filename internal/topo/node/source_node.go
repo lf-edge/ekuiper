@@ -258,7 +258,7 @@ func (m *SourceNode) Run(ctx api.StreamContext, ctrlCh chan<- error) {
 	defer func() {
 		m.s.Close(ctx)
 		m.Close()
-		if m.notifySub {
+		if m.notifySub && sig.Ctrl != nil {
 			sig.Ctrl.Rem(m.name)
 		}
 	}()
@@ -282,7 +282,7 @@ func (m *SourceNode) Run(ctx api.StreamContext, ctrlCh chan<- error) {
 		if err != nil {
 			return err
 		}
-		if m.notifySub {
+		if m.notifySub && sig.Ctrl != nil {
 			sig.Ctrl.Add(m.name)
 		}
 		return nil
