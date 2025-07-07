@@ -1,29 +1,36 @@
 package api
 
+import "context"
+
 type Tuple struct {
+	ctx          context.Context
 	StreamName   string
 	Columns      *Message
 	AffiliateRow *Message
 	Meta         map[string]string
 }
 
-func (t *Tuple) ValueByKey(s string) (*Datum, bool) {
-	v, ok := t.Columns.ValueByKey(s)
-	if ok {
-		return v, true
-	}
-	v, ok = t.AffiliateRow.ValueByKey(s)
-	if ok {
-		return v, true
-	}
-	return nil, false
+func (t *Tuple) AppendAffiliateRow(key string, d *Datum) {
+	t.AffiliateRow.Append(key, d)
 }
 
-func (t *Tuple) ValueByColumnIndex(i int) (*Datum, bool) {
+func (t *Tuple) ValueByKey(s string) (*Datum, int, int, bool) {
+	v, columnIndex, ok := t.Columns.ValueByKey(s)
+	if ok {
+		return v, columnIndex, -1, true
+	}
+	v, affiliateRowIndex, ok := t.AffiliateRow.ValueByKey(s)
+	if ok {
+		return v, -1, affiliateRowIndex, true
+	}
+	return nil, -1, -1, false
+}
+
+func (t *Tuple) ValueByColumnIndex(i int) (*Datum, string, bool) {
 	return t.Columns.ValueByIndex(i)
 }
 
-func (t *Tuple) ValueByAffiliateRowIndex(i int) (*Datum, bool) {
+func (t *Tuple) ValueByAffiliateRowIndex(i int) (*Datum, string, bool) {
 	return t.AffiliateRow.ValueByIndex(i)
 }
 
@@ -47,29 +54,34 @@ func FromMapToTuple(m map[string]interface{}) (*Tuple, error) {
 }
 
 type Message struct {
-	ColumnNames []string
-	Values      []*Datum
+	Keys   []string
+	Values []*Datum
 }
 
-func (t *Message) ValueByKey(s string) (*Datum, bool) {
-	for index, name := range t.ColumnNames {
+func (t *Message) Append(k string, v *Datum) {
+	t.Keys = append(t.Keys, k)
+	t.Values = append(t.Values, v)
+}
+
+func (t *Message) ValueByKey(s string) (*Datum, int, bool) {
+	for index, name := range t.Keys {
 		if name == s {
-			return t.Values[index], true
+			return t.Values[index], index, true
 		}
 	}
-	return nil, false
+	return nil, 0, false
 }
 
-func (t *Message) ValueByIndex(i int) (*Datum, bool) {
+func (t *Message) ValueByIndex(i int) (*Datum, string, bool) {
 	if i >= 0 && i < len(t.Values) {
-		return t.Values[i], true
+		return t.Values[i], t.Keys[i], true
 	}
-	return nil, false
+	return nil, "", false
 }
 
 func (t *Message) ToMap() map[string]interface{} {
 	result := make(map[string]interface{})
-	for i, col := range t.ColumnNames {
+	for i, col := range t.Keys {
 		if i < len(t.Values) {
 			result[col] = datumToInterface(t.Values[i])
 		}
@@ -88,5 +100,5 @@ func MapToMessage(m map[string]interface{}) (*Message, error) {
 		}
 		values = append(values, v)
 	}
-	return &Message{ColumnNames: columnNames, Values: values}, nil
+	return &Message{Keys: columnNames, Values: values}, nil
 }

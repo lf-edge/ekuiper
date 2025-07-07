@@ -9,14 +9,50 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 )
 
-type Valuer interface {
-	ValueByKey(string) (*api.Datum, bool)
-	ValueByColumnIndex(int) (*api.Datum, bool)
-	ValueByAffiliateRowIndex(int) (*api.Datum, bool)
+type ValuerEval struct {
+	Tuple *api.Tuple
 }
 
-type ValuerEval struct {
-	values []Valuer
+func (v *ValuerEval) EvalFieldRef(ctx context.Context, f *ast.FieldRef) (*api.Datum, error) {
+	if f.AliasRef != nil {
+		var d *api.Datum
+		var ok bool
+		var err error
+		d, _, ok = v.Tuple.AffiliateRow.ValueByKey(f.Name)
+		if !ok {
+			d, err = v.Eval(ctx, f.AliasRef.Expression)
+			if err != nil {
+				return nil, err
+			}
+			v.Tuple.AffiliateRow.Append(f.Name, d)
+		}
+		return d, nil
+	}
+	if f.SourceIndex != -1 {
+		d, key, ok := v.Tuple.ValueByColumnIndex(f.Index)
+		if !ok {
+			return nil, fmt.Errorf("invalid field ref index")
+		}
+		if f.Name == key {
+			return d, nil
+		}
+	}
+	if f.Index != -1 {
+		d, key, ok := v.Tuple.ValueByAffiliateRowIndex(f.Index)
+		if !ok {
+			return nil, fmt.Errorf("invalid field ref index")
+		}
+		if f.Name == key {
+			return d, nil
+		}
+	}
+	d, columnIndex, affIndex, ok := v.Tuple.ValueByKey(f.Name)
+	if !ok {
+		return nil, fmt.Errorf("invalid field ref name")
+	}
+	f.SourceIndex = columnIndex
+	f.Index = affIndex
+	return d, nil
 }
 
 func (v *ValuerEval) Eval(ctx context.Context, expr ast.Expr) (*api.Datum, error) {
@@ -29,13 +65,7 @@ func (v *ValuerEval) Eval(ctx context.Context, expr ast.Expr) (*api.Datum, error
 	case *ast.NumberLiteral:
 		return api.NewF64Datum(et.Val), nil
 	case *ast.FieldRef:
-		for _, vr := range v.values {
-			d, ok := vr.ValueByKey(et.Name)
-			if ok {
-				return d, nil
-			}
-		}
-		return nil, fmt.Errorf("field not found: %s", et.Name)
+		return v.EvalFieldRef(ctx, et)
 	case *ast.Call:
 		datumArgs := make([]*api.Datum, 0)
 		for _, arg := range et.Args {
@@ -48,4 +78,9 @@ func (v *ValuerEval) Eval(ctx context.Context, expr ast.Expr) (*api.Datum, error
 		return function.CallFunction(ctx, et.Name, datumArgs)
 	}
 	return nil, nil
+}
+
+type TupleValuer struct {
+	tuple      *api.Tuple
+	cacheIndex map[string]int64
 }
