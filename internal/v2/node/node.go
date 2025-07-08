@@ -27,25 +27,44 @@ func NewTopo() *Topo {
 	return t
 }
 
-func CreateTopo(ctx context.Context, lp planner.PhysicalPlan) (*Topo, error) {
-	t := NewTopo()
-	t.buildNodes(ctx, lp, "topo", t.recvCh)
-	return t, nil
-}
-
 func (t *Topo) Start(ctx context.Context) error {
-	t.controlCh <- &NodeMessage{StartRuleSignal: true}
+	t.controlCh <- NewSignalMsg(StartRuleSignal)
 	select {
 	case <-ctx.Done():
 		return nil
 	case msg := <-t.recvCh:
-		if msg.StartRuleSignal {
+		if msg.IsSameControlSignal(StartRuleSignal) {
 			fmt.Println("received start rule signal")
 			return nil
 		} else {
 			return fmt.Errorf("invalid start rule signal")
 		}
 	}
+}
+
+func (t *Topo) Stop(ctx context.Context) error {
+	t.controlCh <- NewSignalMsg(StopRuleSignal)
+	select {
+	case <-ctx.Done():
+		return nil
+	case msg := <-t.recvCh:
+		if msg.IsSameControlSignal(StopRuleSignal) {
+			fmt.Println("received stop rule signal")
+			return nil
+		} else {
+			return fmt.Errorf("invalid start rule signal")
+		}
+	}
+}
+
+func (t *Topo) QuickStop() {
+
+}
+
+func CreateTopo(ctx context.Context, lp planner.PhysicalPlan) (*Topo, error) {
+	t := NewTopo()
+	t.buildNodes(ctx, lp, "topo", t.recvCh)
+	return t, nil
 }
 
 func (t *Topo) buildNodes(ctx context.Context, lp planner.PhysicalPlan, parentKey string, parentCh chan *NodeMessage) error {
@@ -56,13 +75,11 @@ func (t *Topo) buildNodes(ctx context.Context, lp planner.PhysicalPlan, parentKe
 		op.AddOutput(parentKey, parentCh)
 		t.operators[lp.GetIndex()] = op
 		node = op
-		op.run(ctx)
 	case *planner.PhysicalProject:
 		op := NewProjectNode(p)
 		op.AddOutput(parentKey, parentCh)
 		t.operators[lp.GetIndex()] = op
 		node = op
-		op.run(ctx)
 	case *planner.PhysicalStake:
 		op := NewStakeNode(p)
 		op.AddOutput(parentKey, parentCh)
@@ -74,10 +91,10 @@ func (t *Topo) buildNodes(ctx context.Context, lp planner.PhysicalPlan, parentKe
 		} else if p.IsEnd {
 			op.IsEnd = true
 		}
-		op.run(t.ctx)
 	}
 	for _, child := range lp.GetChildren() {
 		t.buildNodes(ctx, child, node.GetName(), node.GetInput())
 	}
+	node.Run(t.ctx)
 	return nil
 }
