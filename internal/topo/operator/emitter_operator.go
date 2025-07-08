@@ -37,6 +37,8 @@ func (p *EmitterOp) Apply(ctx api.StreamContext, data any, _ *xsql.FunctionValue
 	case *xsql.Tuple:
 		input.Emitter = p.Emitter
 		return input
+	case nil:
+		return nil
 	default:
 		return fmt.Errorf("run emitter op error: invalid input %[1]T(%[1]v)", input)
 	}
