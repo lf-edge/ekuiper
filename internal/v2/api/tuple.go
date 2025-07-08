@@ -10,6 +10,21 @@ type Tuple struct {
 	Meta         map[string]string
 }
 
+func NewTuple(streamName string, data map[string]any) (*Tuple, error) {
+	column, err := MapToMessage(data)
+	if err != nil {
+		return nil, err
+	}
+	t := &Tuple{
+		ctx:          context.Background(),
+		StreamName:   streamName,
+		Columns:      column,
+		Meta:         make(map[string]string),
+		AffiliateRow: NewMessage(),
+	}
+	return t, nil
+}
+
 func (t *Tuple) AppendAffiliateRow(key string, d *Datum) {
 	t.AffiliateRow.Append(key, d)
 }
@@ -56,6 +71,13 @@ func FromMapToTuple(m map[string]interface{}) (*Tuple, error) {
 type Message struct {
 	Keys   []string
 	Values []*Datum
+}
+
+func NewMessage() *Message {
+	return &Message{
+		Keys:   make([]string, 0),
+		Values: make([]*Datum, 0),
+	}
 }
 
 func (t *Message) Append(k string, v *Datum) {

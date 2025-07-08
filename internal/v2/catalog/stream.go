@@ -8,6 +8,7 @@ const (
 )
 
 type Stream struct {
+	StreamName string
 	StreamType StreamType
 	MqttStream *MqttStream
 }
