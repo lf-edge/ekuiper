@@ -107,6 +107,9 @@ func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, option
 			subId = us.SubId(props)
 		}
 		selName := fmt.Sprintf("%s/%s", conId, subId)
+		if !t.streamStmt.Options.SHARED {
+			selName = fmt.Sprintf("%s%s", selName, ctx.GetRuleId())
+		}
 		srcSubtopo, existed := topo.GetOrCreateSubTopo(nil, selName)
 		if !existed {
 			var scn node.DataSourceNode
