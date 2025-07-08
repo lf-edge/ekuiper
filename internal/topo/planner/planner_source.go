@@ -94,8 +94,9 @@ func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, option
 	}
 
 	var ops []node.OperatorNode
-	// If having unique connection id AND unique sub id for each connection, need to share the sub node
-	if conId == "" {
+	// If having unique connection id AND unique sub id for each connection, need to share the sub node; Case 1 is neuron; Case 2 is edgeX
+	needShareCon := hasConId || (hasSubId && conId != "")
+	if !needShareCon {
 		srcConnNode, err = node.NewSourceNode(ctx, string(t.name), ss, props, options)
 		if err != nil {
 			return nil, nil, 0, err

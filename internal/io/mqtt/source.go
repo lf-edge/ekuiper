@@ -143,6 +143,19 @@ func GetSource() api.Source {
 	return &SourceConnector{}
 }
 
+// SubId the mqtt connection can only sub to a topic once
+func (ms *SourceConnector) SubId(props map[string]any) string {
+	tpc, ok := props["datasource"]
+	if !ok {
+		return ""
+	}
+	topic, ok := tpc.(string)
+	if !ok {
+		return ""
+	}
+	return topic
+}
+
 var (
 	_ api.BytesSource   = &SourceConnector{}
 	_ api.Bounded       = &SourceConnector{}
