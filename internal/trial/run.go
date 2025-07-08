@@ -51,6 +51,7 @@ func genTrialRule(rd *RunDef, sinkProps map[string]interface{}) *def.Rule {
 			"websocket": sinkProps,
 		},
 	}
+	rt.Options.DisableBufferFullDiscard = true
 	// Let trial rule always send out error to show
 	rt.Options.SendError = true
 	return rt
