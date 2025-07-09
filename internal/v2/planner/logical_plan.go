@@ -93,6 +93,17 @@ func NewDataSinkPlan(index int, SinkType string, SinkProps map[string]interface{
 	return sink
 }
 
+type WindowPlan struct {
+	*BaseLogicalPlan
+	Count int
+}
+
+func NewWindowPlan(index int, count int) *WindowPlan {
+	w := &WindowPlan{BaseLogicalPlan: NewBaseLogicalPlan(index, "Window")}
+	w.Count = count
+	return w
+}
+
 func ExplainLogicalPlan(lp LogicalPlan) string {
 	buf := bytes.NewBufferString("")
 	explainLogicalPlan(lp, 0, buf)

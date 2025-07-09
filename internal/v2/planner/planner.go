@@ -36,6 +36,10 @@ func (b *LogicalPlanBuilder) CreateLogicalPlan(ctx context.Context, stmt *ast.Se
 	if err != nil {
 		return nil, err
 	}
+	children, err = b.extractWindow(ctx, stmt, children)
+	if err != nil {
+		return nil, err
+	}
 	children, err = b.extractProjectPlan(ctx, stmt, children)
 	if err != nil {
 		return nil, err
@@ -45,6 +49,17 @@ func (b *LogicalPlanBuilder) CreateLogicalPlan(ctx context.Context, stmt *ast.Se
 		return nil, err
 	}
 	return b.finish(children), nil
+}
+
+func (b *LogicalPlanBuilder) extractWindow(ctx context.Context, stmt *ast.SelectStatement, children []LogicalPlan) ([]LogicalPlan, error) {
+	w := stmt.Dimensions.GetWindow()
+	if w == nil {
+		return children, nil
+	}
+	wp := NewWindowPlan(b.planIndex, int(w.Length.Val))
+	wp.SetChildren(children)
+	b.planIndex++
+	return []LogicalPlan{wp}, nil
 }
 
 func (b *LogicalPlanBuilder) extractDatasource(ctx context.Context, stmt *ast.SelectStatement, c *catalog.Catalog) ([]LogicalPlan, error) {
@@ -126,6 +141,11 @@ func (pb *PhysicalPlanBuilder) buildPhysicalPlan(ctx context.Context, plan Logic
 		pb.planIndex++
 		headPlan = ps
 		tailPlan = ps
+	case *WindowPlan:
+		pw := NewPhysicalCountWindow(p, pb.planIndex)
+		pb.planIndex++
+		headPlan = pw
+		tailPlan = pw
 	case *ProjectPlan:
 		pp := NewPhysicalProject(p, pb.planIndex)
 		pb.planIndex++

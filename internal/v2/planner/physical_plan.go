@@ -106,6 +106,18 @@ func NewPhysicalStakeEnd(root *LogicalPlanEnd, index int) *PhysicalStake {
 	}
 }
 
+type PhysicalCountWindow struct {
+	Count int
+	*BasePhysicalPlan
+}
+
+func NewPhysicalCountWindow(w *WindowPlan, index int) *PhysicalCountWindow {
+	return &PhysicalCountWindow{
+		Count:            w.Count,
+		BasePhysicalPlan: NewBasePhysicalPlan(index, "CountWindow"),
+	}
+}
+
 func ExplainPhysicalPlan(lp PhysicalPlan) string {
 	buf := bytes.NewBufferString("")
 	explainPhysicalPlan(lp, 0, buf)

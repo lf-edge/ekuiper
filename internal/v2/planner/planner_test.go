@@ -20,7 +20,7 @@ func TestParser(t *testing.T) {
 
 func TestLogicalPlan(t *testing.T) {
 	ctx := context.Background()
-	stmt, err := xsql.NewParser(strings.NewReader("select a, *, count(*) from demo")).Parse()
+	stmt, err := xsql.NewParser(strings.NewReader("select a  from demo group by countwindow(5)")).Parse()
 	require.NoError(t, err)
 	require.NotNil(t, stmt)
 	lpbuilder := &LogicalPlanBuilder{}
@@ -32,7 +32,6 @@ func TestLogicalPlan(t *testing.T) {
 	pp, err := ppbuilder.BuildPhysicalPlan(ctx, lp)
 	require.NoError(t, err)
 	require.NotNil(t, pp)
-	fmt.Println()
 	fmt.Println(ExplainPhysicalPlan(pp))
 }
 
@@ -43,6 +42,7 @@ func prepareCatalog() *catalog.Catalog {
 }
 func prepareAction() []map[string]interface{} {
 	actions := make([]map[string]interface{}, 0)
+	actions = append(actions, map[string]interface{}{"log": map[string]any{}})
 	actions = append(actions, map[string]interface{}{"log": map[string]any{}})
 	return actions
 }
