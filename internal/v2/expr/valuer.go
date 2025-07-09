@@ -2,7 +2,6 @@ package expr
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/lf-edge/ekuiper/v2/internal/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/v2/function"
@@ -13,42 +12,46 @@ type ValuerEval struct {
 	Tuple *api.Tuple
 }
 
+func NewValuerEval(tuple *api.Tuple) *ValuerEval {
+	return &ValuerEval{Tuple: tuple}
+}
+
 func (v *ValuerEval) EvalFieldRef(ctx context.Context, f *ast.FieldRef) (*api.Datum, error) {
 	if f.AliasRef != nil {
 		var d *api.Datum
 		var ok bool
 		var err error
-		d, _, ok = v.Tuple.AffiliateRow.ValueByKey(f.Name)
+		d, _, ok = v.Tuple.AffiliateRow.ValueByKey("", f.Name)
 		if !ok {
 			d, err = v.Eval(ctx, f.AliasRef.Expression)
 			if err != nil {
 				return nil, err
 			}
-			v.Tuple.AffiliateRow.Append(f.Name, d)
+			v.Tuple.AffiliateRow.Append("", f.Name, d)
 		}
 		return d, nil
 	}
 	if f.SourceIndex != -1 {
-		d, key, ok := v.Tuple.ValueByColumnIndex(f.Index)
+		d, streamName, key, ok := v.Tuple.ValueByColumnIndex(f.Index)
 		if !ok {
-			return nil, fmt.Errorf("invalid field ref index")
+			return nil, nil
 		}
-		if f.Name == key {
+		if f.Name == key && string(f.StreamName) == streamName {
 			return d, nil
 		}
 	}
 	if f.Index != -1 {
-		d, key, ok := v.Tuple.ValueByAffiliateRowIndex(f.Index)
+		d, streamName, key, ok := v.Tuple.ValueByAffiliateRowIndex(f.Index)
 		if !ok {
-			return nil, fmt.Errorf("invalid field ref index")
+			return nil, nil
 		}
-		if f.Name == key {
+		if f.Name == key && string(f.StreamName) == streamName {
 			return d, nil
 		}
 	}
-	d, columnIndex, affIndex, ok := v.Tuple.ValueByKey(f.Name)
+	d, columnIndex, affIndex, ok := v.Tuple.ValueByKey(string(f.StreamName), f.Name)
 	if !ok {
-		return nil, fmt.Errorf("invalid field ref name")
+		return nil, nil
 	}
 	f.SourceIndex = columnIndex
 	f.Index = affIndex

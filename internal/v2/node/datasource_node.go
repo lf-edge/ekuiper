@@ -46,7 +46,7 @@ func (sn *SourceNode) Run(ctx context.Context) {
 				sn.BroadCast(msg)
 			case <-ticker.C:
 				msg := &NodeMessage{Tuples: make([]*api.Tuple, 0)}
-				t, err := api.NewTuple(sn.Stream.StreamName, map[string]any{"key": "value"})
+				t, err := api.NewTupleFromData(sn.Stream.StreamName, map[string]any{"key": "value"})
 				if err != nil {
 					msg.Err = err
 				} else {
@@ -68,7 +68,7 @@ func (sn *SourceNode) whenUnstarted(ctx context.Context) {
 			if processed {
 				if send {
 					sn.BroadCast(msg)
-					if msg.StartRuleSignal && !sn.Started {
+					if msg.IsSameControlSignal(StartRuleSignal) && !sn.Started {
 						sn.Started = true
 						break
 					}

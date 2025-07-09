@@ -2,10 +2,7 @@ package node
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-
-	"github.com/lf-edge/ekuiper/v2/internal/v2/api"
 )
 
 type NodeOperator interface {
@@ -55,8 +52,11 @@ func (b *BaseNode) GetInput() chan *NodeMessage {
 }
 
 func (b *BaseNode) HandleNodeMsg(msg *NodeMessage) (processed bool, send bool) {
-	if msg.StartRuleSignal {
-		return true, b.HandleStartSignal()
+	if msg.Control != nil {
+		switch msg.Control.ControlSignal {
+		case StartRuleSignal:
+			return true, b.HandleStartSignal()
+		}
 	}
 	return false, false
 }

@@ -61,29 +61,26 @@ func (t *Topo) QuickStop() {
 
 }
 
-func CreateTopo(ctx context.Context, lp planner.PhysicalPlan) (*Topo, error) {
+func CreateTopo(ctx context.Context, physicalPlanEnd planner.PhysicalPlan) (*Topo, error) {
 	t := NewTopo()
-	t.buildNodes(ctx, lp, "topo", t.recvCh)
+	t.buildNodes(ctx, physicalPlanEnd, "topo", t.recvCh)
 	return t, nil
 }
 
-func (t *Topo) buildNodes(ctx context.Context, lp planner.PhysicalPlan, parentKey string, parentCh chan *NodeMessage) error {
+func (t *Topo) buildNodes(ctx context.Context, lp planner.PhysicalPlan, outputKey string, outputChannel chan *NodeMessage) error {
+	if _, ok := t.operators[lp.GetIndex()]; ok {
+		return nil
+	}
 	var node NodeOperator
 	switch p := lp.(type) {
 	case *planner.PhysicalDataSource:
 		op := NewSourceNode(p)
-		op.AddOutput(parentKey, parentCh)
-		t.operators[lp.GetIndex()] = op
 		node = op
 	case *planner.PhysicalProject:
 		op := NewProjectNode(p)
-		op.AddOutput(parentKey, parentCh)
-		t.operators[lp.GetIndex()] = op
 		node = op
 	case *planner.PhysicalStake:
 		op := NewStakeNode(p)
-		op.AddOutput(parentKey, parentCh)
-		t.operators[lp.GetIndex()] = op
 		node = op
 		if p.IsRoot {
 			op.IsRoot = true
@@ -92,6 +89,8 @@ func (t *Topo) buildNodes(ctx context.Context, lp planner.PhysicalPlan, parentKe
 			op.IsEnd = true
 		}
 	}
+	node.AddOutput(outputKey, outputChannel)
+	t.operators[lp.GetIndex()] = node
 	for _, child := range lp.GetChildren() {
 		t.buildNodes(ctx, child, node.GetName(), node.GetInput())
 	}

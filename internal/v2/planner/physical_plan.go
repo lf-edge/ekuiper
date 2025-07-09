@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/lf-edge/ekuiper/v2/internal/v2/catalog"
+	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 )
 
 type PhysicalPlan interface {
@@ -59,11 +60,13 @@ func NewPhysicalDataSource(ds *DataSourcePlan, index int) *PhysicalDataSource {
 }
 
 type PhysicalProject struct {
+	Fields ast.Fields
 	*BasePhysicalPlan
 }
 
 func NewPhysicalProject(proj *ProjectPlan, index int) *PhysicalProject {
 	return &PhysicalProject{
+		Fields:           proj.Fields,
 		BasePhysicalPlan: NewBasePhysicalPlan(index, "Project"),
 	}
 }

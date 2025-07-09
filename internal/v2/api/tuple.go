@@ -3,21 +3,19 @@ package api
 import "context"
 
 type Tuple struct {
-	ctx          context.Context
-	StreamName   string
+	Ctx          context.Context
 	Columns      *Message
 	AffiliateRow *Message
 	Meta         map[string]string
 }
 
-func NewTuple(streamName string, data map[string]any) (*Tuple, error) {
-	column, err := MapToMessage(data)
+func NewTupleFromData(stream string, data map[string]any) (*Tuple, error) {
+	column, err := MapToMessage(stream, data)
 	if err != nil {
 		return nil, err
 	}
 	t := &Tuple{
-		ctx:          context.Background(),
-		StreamName:   streamName,
+		Ctx:          context.Background(),
 		Columns:      column,
 		Meta:         make(map[string]string),
 		AffiliateRow: NewMessage(),
@@ -25,27 +23,37 @@ func NewTuple(streamName string, data map[string]any) (*Tuple, error) {
 	return t, nil
 }
 
-func (t *Tuple) AppendAffiliateRow(key string, d *Datum) {
-	t.AffiliateRow.Append(key, d)
+func NewTupleFromCtx(ctx context.Context, meta map[string]string) *Tuple {
+	t := &Tuple{
+		Ctx:          ctx,
+		Columns:      NewMessage(),
+		Meta:         meta,
+		AffiliateRow: NewMessage(),
+	}
+	return t
 }
 
-func (t *Tuple) ValueByKey(s string) (*Datum, int, int, bool) {
-	v, columnIndex, ok := t.Columns.ValueByKey(s)
+func (t *Tuple) AppendAffiliateRow(key string, d *Datum) {
+	t.AffiliateRow.Append("", key, d)
+}
+
+func (t *Tuple) ValueByKey(stream, s string) (*Datum, int, int, bool) {
+	v, columnIndex, ok := t.Columns.ValueByKey(stream, s)
 	if ok {
 		return v, columnIndex, -1, true
 	}
-	v, affiliateRowIndex, ok := t.AffiliateRow.ValueByKey(s)
+	v, affiliateRowIndex, ok := t.AffiliateRow.ValueByKey(stream, s)
 	if ok {
 		return v, -1, affiliateRowIndex, true
 	}
 	return nil, -1, -1, false
 }
 
-func (t *Tuple) ValueByColumnIndex(i int) (*Datum, string, bool) {
+func (t *Tuple) ValueByColumnIndex(i int) (*Datum, string, string, bool) {
 	return t.Columns.ValueByIndex(i)
 }
 
-func (t *Tuple) ValueByAffiliateRowIndex(i int) (*Datum, string, bool) {
+func (t *Tuple) ValueByAffiliateRowIndex(i int) (*Datum, string, string, bool) {
 	return t.AffiliateRow.ValueByIndex(i)
 }
 
@@ -60,8 +68,8 @@ func (t *Tuple) ToMap() map[string]interface{} {
 	return result
 }
 
-func FromMapToTuple(m map[string]interface{}) (*Tuple, error) {
-	cm, err := MapToMessage(m)
+func FromMapToTuple(streamName string, m map[string]interface{}) (*Tuple, error) {
+	cm, err := MapToMessage(streamName, m)
 	if err != nil {
 		return nil, err
 	}
@@ -69,36 +77,46 @@ func FromMapToTuple(m map[string]interface{}) (*Tuple, error) {
 }
 
 type Message struct {
-	Keys   []string
-	Values []*Datum
+	Streams map[int]string
+	Keys    []string
+	Values  []*Datum
 }
 
 func NewMessage() *Message {
 	return &Message{
-		Keys:   make([]string, 0),
-		Values: make([]*Datum, 0),
+		Streams: make(map[int]string),
+		Keys:    make([]string, 0),
+		Values:  make([]*Datum, 0),
 	}
 }
 
-func (t *Message) Append(k string, v *Datum) {
+func (t *Message) Append(stream, k string, v *Datum) {
 	t.Keys = append(t.Keys, k)
 	t.Values = append(t.Values, v)
+	if stream != "" {
+		t.Streams[len(t.Keys)-1] = stream
+	}
 }
 
-func (t *Message) ValueByKey(s string) (*Datum, int, bool) {
+func (t *Message) ValueByKey(stream, key string) (*Datum, int, bool) {
 	for index, name := range t.Keys {
-		if name == s {
-			return t.Values[index], index, true
+		if name == key {
+			if stream == "" {
+				return t.Values[index], index, true
+			}
+			if stream == t.Streams[index] {
+				return t.Values[index], index, true
+			}
 		}
 	}
 	return nil, 0, false
 }
 
-func (t *Message) ValueByIndex(i int) (*Datum, string, bool) {
+func (t *Message) ValueByIndex(i int) (*Datum, string, string, bool) {
 	if i >= 0 && i < len(t.Values) {
-		return t.Values[i], t.Keys[i], true
+		return t.Values[i], t.Streams[i], t.Keys[i], true
 	}
-	return nil, "", false
+	return nil, "", "", false
 }
 
 func (t *Message) ToMap() map[string]interface{} {
@@ -111,7 +129,7 @@ func (t *Message) ToMap() map[string]interface{} {
 	return result
 }
 
-func MapToMessage(m map[string]interface{}) (*Message, error) {
+func MapToMessage(streamName string, m map[string]interface{}) (*Message, error) {
 	columnNames := make([]string, 0, len(m))
 	values := make([]*Datum, 0, len(m))
 	for col, val := range m {
@@ -122,5 +140,9 @@ func MapToMessage(m map[string]interface{}) (*Message, error) {
 		}
 		values = append(values, v)
 	}
-	return &Message{Keys: columnNames, Values: values}, nil
+	msg := &Message{Keys: columnNames, Values: values, Streams: make(map[int]string, len(m))}
+	for index := 0; index < len(m); index++ {
+		msg.Streams[index] = streamName
+	}
+	return msg, nil
 }

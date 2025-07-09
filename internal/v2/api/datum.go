@@ -73,6 +73,8 @@ func NewDurDatum(v time.Duration) *Datum {
 func interfaceToDatum(val interface{}) (*Datum, error) {
 	var err error
 	switch v := val.(type) {
+	case nil:
+		return nil, nil
 	case int64:
 		return &Datum{Kind: I64Val, I64Val: v}, nil
 	case float64:
@@ -109,6 +111,9 @@ func interfaceToDatum(val interface{}) (*Datum, error) {
 }
 
 func datumToInterface(d *Datum) interface{} {
+	if d == nil {
+		return nil
+	}
 	switch d.Kind {
 	case UnknownVal:
 		return nil

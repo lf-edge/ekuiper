@@ -47,11 +47,3 @@ func NewSignalMsg(signal ControlSignal) *NodeMessage {
 		},
 	}
 }
-
-func NewStopRuleMsg() *NodeMessage {
-	return &NodeMessage{
-		Control: &NodeControlMessage{
-			ControlSignal: StopRuleSignal,
-		},
-	}
-}
