@@ -52,12 +52,22 @@ func Attach(name string) (api.Source, error) {
 	return nil, fmt.Errorf("lookup table %s is not found", name)
 }
 
+func IsExist(name string) bool {
+	lock.Lock()
+	defer lock.Unlock()
+	_, ok := instances[name]
+	return ok
+}
+
 // Detach called by lookup nodes when it is closed
 func Detach(name string) error {
 	lock.Lock()
 	defer lock.Unlock()
 	if i, ok := instances[name]; ok {
 		atomic.AddInt32(&i.count, -1)
+		if i.count < 1 {
+			return dropInstance(name)
+		}
 		return nil
 	}
 	return fmt.Errorf("lookup table %s is not found", name)
@@ -99,6 +109,10 @@ func CreateInstance(name string, sourceType string, options *ast.Options) error 
 func DropInstance(name string) error {
 	lock.Lock()
 	defer lock.Unlock()
+	return dropInstance(name)
+}
+
+func dropInstance(name string) error {
 	if i, ok := instances[name]; ok {
 		if atomic.LoadInt32(&i.count) > 0 {
 			return fmt.Errorf("lookup table %s is still in use, stop all using rules before dropping it", name)

@@ -18,6 +18,8 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 )
 
@@ -98,4 +100,23 @@ func TestTable(t *testing.T) {
 		t.Errorf("expect 2 instances, but got %d", len(instances))
 		return
 	}
+}
+
+func TestDetachDrop(t *testing.T) {
+	name := "test4"
+	err := CreateInstance(name, "memory", &ast.Options{
+		DATASOURCE: "test",
+		TYPE:       "memory",
+		KIND:       "lookup",
+		KEY:        "id",
+	})
+	require.NoError(t, err)
+	_, err = Attach(name)
+	require.NoError(t, err)
+	_, err = Attach(name)
+	require.NoError(t, err)
+	require.NoError(t, Detach(name))
+	require.True(t, IsExist(name))
+	require.NoError(t, Detach(name))
+	require.False(t, IsExist(name))
 }
