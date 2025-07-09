@@ -2,6 +2,7 @@ package function
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/lf-edge/ekuiper/v2/internal/v2/api"
@@ -77,6 +78,30 @@ func registerFunc() {
 					return nil, err
 				}
 				return api.NewDurDatum(d1 + d2), nil
+			},
+		},
+	}
+	builtinFuncs["to_json"] = builtinFunc{
+		calRetType: func(ctx context.Context, args []*api.Datum) (api.DatumType, error) {
+			return api.StringVal, nil
+		},
+		exec: map[api.DatumType]funcExe{
+			api.StringVal: func(ctx context.Context, args []*api.Datum) (*api.Datum, error) {
+				d := args[0]
+				switch d.Kind {
+				case api.MapVal, api.SliceVal:
+					v := d.ToInterface()
+					if v == nil {
+						return nil, nil
+					}
+					sv, err := json.Marshal(v)
+					if err != nil {
+						return nil, err
+					}
+					return api.NewStringDatum(string(sv)), nil
+				default:
+					return nil, fmt.Errorf("unsupported type: %v", args[0].Kind)
+				}
 			},
 		},
 	}

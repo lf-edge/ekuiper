@@ -31,22 +31,23 @@ func (v *ValuerEval) EvalFieldRef(ctx context.Context, f *ast.FieldRef) (*api.Da
 		}
 		return d, nil
 	}
-	if f.SourceIndex != -1 {
-		d, streamName, key, ok := v.Tuple.ValueByColumnIndex(f.Index)
-		if !ok {
-			return nil, nil
-		}
-		if f.Name == key && string(f.StreamName) == streamName {
-			return d, nil
-		}
-	}
-	if f.Index != -1 {
-		d, streamName, key, ok := v.Tuple.ValueByAffiliateRowIndex(f.Index)
-		if !ok {
-			return nil, nil
-		}
-		if f.Name == key && string(f.StreamName) == streamName {
-			return d, nil
+	if f.HasIndex {
+		if f.SourceIndex != -1 {
+			d, streamName, key, ok := v.Tuple.ValueByColumnIndex(f.SourceIndex)
+			if !ok {
+				return nil, nil
+			}
+			if f.Name == key && string(f.StreamName) == streamName {
+				return d, nil
+			}
+		} else if f.Index != -1 {
+			d, streamName, key, ok := v.Tuple.ValueByAffiliateRowIndex(f.Index)
+			if !ok {
+				return nil, nil
+			}
+			if f.Name == key && string(f.StreamName) == streamName {
+				return d, nil
+			}
 		}
 	}
 	d, columnIndex, affIndex, ok := v.Tuple.ValueByKey(string(f.StreamName), f.Name)
@@ -55,6 +56,7 @@ func (v *ValuerEval) EvalFieldRef(ctx context.Context, f *ast.FieldRef) (*api.Da
 	}
 	f.SourceIndex = columnIndex
 	f.Index = affIndex
+	f.HasIndex = true
 	return d, nil
 }
 
@@ -69,6 +71,8 @@ func (v *ValuerEval) Eval(ctx context.Context, expr ast.Expr) (*api.Datum, error
 		return api.NewF64Datum(et.Val), nil
 	case *ast.FieldRef:
 		return v.EvalFieldRef(ctx, et)
+	case *ast.Wildcard:
+		return v.Tuple.Columns.ToDatum(), nil
 	case *ast.Call:
 		datumArgs := make([]*api.Datum, 0)
 		for _, arg := range et.Args {

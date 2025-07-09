@@ -66,6 +66,10 @@ func NewF64Datum(v float64) *Datum {
 	return &Datum{Kind: F64Val, F64Val: v}
 }
 
+func NewStringDatum(v string) *Datum {
+	return &Datum{Kind: StringVal, StrVal: v}
+}
+
 func NewDurDatum(v time.Duration) *Datum {
 	return &Datum{Kind: DurationVal, DurationVal: v}
 }
@@ -107,6 +111,40 @@ func interfaceToDatum(val interface{}) (*Datum, error) {
 		return &Datum{Kind: MapVal, MapVal: m}, nil
 	default:
 		return nil, fmt.Errorf("unknown type")
+	}
+}
+
+func (d *Datum) ToInterface() interface{} {
+	if d == nil {
+		return nil
+	}
+	switch d.Kind {
+	case UnknownVal:
+		return nil
+	case I64Val:
+		return d.I64Val
+	case F64Val:
+		return d.F64Val
+	case BoolVal:
+		return d.BoolVal
+	case StringVal:
+		return d.StrVal
+	case SliceVal:
+		slice := make([]interface{}, len(d.SliceVal))
+		for i, item := range d.SliceVal {
+			slice[i] = datumToInterface(item)
+		}
+		return slice
+	case MapVal:
+		m := make(map[string]interface{})
+		for k, v := range d.MapVal {
+			m[k] = datumToInterface(v)
+		}
+		return m
+	case DurationVal:
+		return d.DurationVal.String()
+	default:
+		return nil
 	}
 }
 

@@ -20,11 +20,11 @@ func TestParser(t *testing.T) {
 
 func TestLogicalPlan(t *testing.T) {
 	ctx := context.Background()
-	stmt, err := xsql.NewParser(strings.NewReader("select a,c from demo")).Parse()
+	stmt, err := xsql.NewParser(strings.NewReader("select a, *, count(*) from demo")).Parse()
 	require.NoError(t, err)
 	require.NotNil(t, stmt)
 	lpbuilder := &LogicalPlanBuilder{}
-	lp, err := lpbuilder.CreateLogicalPlan(ctx, stmt, prepareCatalog())
+	lp, err := lpbuilder.CreateLogicalPlan(ctx, stmt, prepareCatalog(), prepareAction())
 	require.NoError(t, err)
 	require.NotNil(t, lp)
 	fmt.Println(ExplainLogicalPlan(lp))
@@ -40,4 +40,9 @@ func prepareCatalog() *catalog.Catalog {
 	c := catalog.NewCatalog()
 	c.AddStream("demo", &catalog.Stream{StreamName: "demo"})
 	return c
+}
+func prepareAction() []map[string]interface{} {
+	actions := make([]map[string]interface{}, 0)
+	actions = append(actions, map[string]interface{}{"log": map[string]any{}})
+	return actions
 }

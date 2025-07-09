@@ -96,6 +96,11 @@ func (f *Field) IsColumn() bool {
 	return false
 }
 
+func (f *Field) IsWildcard() bool {
+	_, ok := f.Expr.(*Wildcard)
+	return ok
+}
+
 type Sources []Source
 
 func (s Sources) node() {}

@@ -37,6 +37,10 @@ func (t *Tuple) AppendAffiliateRow(key string, d *Datum) {
 	t.AffiliateRow.Append("", key, d)
 }
 
+func (t *Tuple) AppendColumn(stream, key string, d *Datum) {
+	t.Columns.Append(stream, key, d)
+}
+
 func (t *Tuple) ValueByKey(stream, s string) (*Datum, int, int, bool) {
 	v, columnIndex, ok := t.Columns.ValueByKey(stream, s)
 	if ok {
@@ -127,6 +131,20 @@ func (t *Message) ToMap() map[string]interface{} {
 		}
 	}
 	return result
+}
+
+func (t *Message) ToDatum() *Datum {
+	if t == nil || len(t.Keys) == 0 {
+		return nil
+	}
+	d := &Datum{
+		Kind:   MapVal,
+		MapVal: make(map[string]*Datum),
+	}
+	for index, key := range t.Keys {
+		d.MapVal[key] = t.Values[index]
+	}
+	return d
 }
 
 func MapToMessage(streamName string, m map[string]interface{}) (*Message, error) {

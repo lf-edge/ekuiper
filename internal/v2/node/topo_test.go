@@ -17,11 +17,11 @@ func TestTopo(t *testing.T) {
 	ctx := context.Background()
 	actions := make([]map[string]interface{}, 0)
 	actions = append(actions, map[string]interface{}{"log": map[string]any{}})
-	stmt, err := xsql.NewParser(strings.NewReader("select a from demo")).Parse()
+	stmt, err := xsql.NewParser(strings.NewReader("select * from demo")).Parse()
 	require.NoError(t, err)
 	require.NotNil(t, stmt)
 	lpbuilder := &planner.LogicalPlanBuilder{}
-	lp, err := lpbuilder.CreateLogicalPlan(ctx, stmt, prepareCatalog(), actions)
+	lp, err := lpbuilder.CreateLogicalPlan(ctx, stmt, prepareCatalog(), prepareAction())
 	require.NoError(t, err)
 	require.NotNil(t, lp)
 	ppbuilder := &planner.PhysicalPlanBuilder{}
@@ -41,4 +41,10 @@ func prepareCatalog() *catalog.Catalog {
 	c := catalog.NewCatalog()
 	c.AddStream("demo", &catalog.Stream{StreamName: "demo"})
 	return c
+}
+
+func prepareAction() []map[string]interface{} {
+	actions := make([]map[string]interface{}, 0)
+	actions = append(actions, map[string]interface{}{"log": map[string]any{}})
+	return actions
 }

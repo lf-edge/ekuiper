@@ -54,16 +54,33 @@ func (pn *ProjectNode) evalTuple(ctx context.Context, tuple *api.Tuple) (*api.Tu
 	newTuple := api.NewTupleFromCtx(tuple.Ctx, tuple.Meta)
 	valuer := expr.NewValuerEval(tuple)
 	for _, field := range pn.Fields {
-		filedName := field.Name
-		if field.AName != "" {
-			filedName = field.AName
+		if field.IsWildcard() {
+			pn.evalWildcard(ctx, field.Expr.(*ast.Wildcard), tuple, newTuple)
+			continue
 		}
-		v, err := valuer.Eval(ctx, field.Expr)
-		if err != nil {
+		if err := pn.evalField(ctx, valuer, field, tuple, newTuple); err != nil {
 			return nil, err
 		}
-		tuple.AppendAffiliateRow(filedName, v)
-		newTuple.AppendAffiliateRow(filedName, v)
 	}
 	return newTuple, nil
+}
+
+func (pn *ProjectNode) evalField(ctx context.Context, valuer *expr.ValuerEval, field ast.Field, tuple *api.Tuple, newTuple *api.Tuple) error {
+	filedName := field.Name
+	if field.AName != "" {
+		filedName = field.AName
+	}
+	v, err := valuer.Eval(ctx, field.Expr)
+	if err != nil {
+		return err
+	}
+	tuple.AppendAffiliateRow(filedName, v)
+	newTuple.AppendAffiliateRow(filedName, v)
+	return nil
+}
+
+func (pn *ProjectNode) evalWildcard(ctx context.Context, _ *ast.Wildcard, tuple *api.Tuple, newTuple *api.Tuple) {
+	for index, k := range tuple.Columns.Keys {
+		newTuple.AppendColumn(tuple.Columns.Streams[index], k, tuple.Columns.Values[index])
+	}
 }
