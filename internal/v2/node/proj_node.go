@@ -29,8 +29,8 @@ func (pn *ProjectNode) Run(ctx context.Context) {
 			case <-ctx.Done():
 				return
 			case msg := <-pn.Input:
-				processd, send := pn.HandleNodeMsg(msg)
-				if processd {
+				processed, send := pn.HandleNodeMsg(ctx, msg)
+				if processed {
 					if send {
 						pn.BroadCast(msg)
 					}
@@ -62,6 +62,7 @@ func (pn *ProjectNode) evalTuple(ctx context.Context, tuple *api.Tuple) (*api.Tu
 		if err != nil {
 			return nil, err
 		}
+		tuple.AppendAffiliateRow(filedName, v)
 		newTuple.AppendAffiliateRow(filedName, v)
 	}
 	return newTuple, nil

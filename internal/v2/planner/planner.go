@@ -28,7 +28,7 @@ func (b *LogicalPlanBuilder) finish(children []LogicalPlan) LogicalPlan {
 	return b.end
 }
 
-func (b *LogicalPlanBuilder) CreateLogicalPlan(ctx context.Context, stmt *ast.SelectStatement, c *catalog.Catalog) (LogicalPlan, error) {
+func (b *LogicalPlanBuilder) CreateLogicalPlan(ctx context.Context, stmt *ast.SelectStatement, c *catalog.Catalog, actions []map[string]interface{}) (LogicalPlan, error) {
 	b.init()
 	var err error
 	var children []LogicalPlan
@@ -37,6 +37,10 @@ func (b *LogicalPlanBuilder) CreateLogicalPlan(ctx context.Context, stmt *ast.Se
 		return nil, err
 	}
 	children, err = b.extractProjectPlan(ctx, stmt, children)
+	if err != nil {
+		return nil, err
+	}
+	children, err = b.extractActions(ctx, actions, children)
 	if err != nil {
 		return nil, err
 	}
@@ -65,6 +69,23 @@ func (b *LogicalPlanBuilder) extractProjectPlan(ctx context.Context, stmt *ast.S
 	proj.SetChildren(children)
 	b.planIndex++
 	return []LogicalPlan{proj}, nil
+}
+
+func (b *LogicalPlanBuilder) extractActions(ctx context.Context, actions []map[string]interface{}, children []LogicalPlan) ([]LogicalPlan, error) {
+	sinkPlans := make([]LogicalPlan, 0)
+	for _, action := range actions {
+		for k, v := range action {
+			props, ok := v.(map[string]interface{})
+			if !ok {
+				return nil, fmt.Errorf("action %s not have props", k)
+			}
+			sink := NewDataSinkPlan(b.planIndex, k, props)
+			sink.SetChildren(children)
+			b.planIndex++
+			sinkPlans = append(sinkPlans, sink)
+		}
+	}
+	return sinkPlans, nil
 }
 
 type PhysicalPlanBuilder struct {
@@ -100,6 +121,11 @@ func (pb *PhysicalPlanBuilder) buildPhysicalPlan(ctx context.Context, plan Logic
 		pb.planIndex++
 		headPlan = pd
 		tailPlan = pd
+	case *DataSinkPlan:
+		ps := NewPhysicalDataSink(p, pb.planIndex)
+		pb.planIndex++
+		headPlan = ps
+		tailPlan = ps
 	case *ProjectPlan:
 		pp := NewPhysicalProject(p, pb.planIndex)
 		pb.planIndex++

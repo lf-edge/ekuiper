@@ -28,13 +28,14 @@ func NewTopo() *Topo {
 }
 
 func (t *Topo) Start(ctx context.Context) error {
+	fmt.Println("topo send start signal")
 	t.controlCh <- NewSignalMsg(StartRuleSignal)
 	select {
 	case <-ctx.Done():
 		return nil
 	case msg := <-t.recvCh:
-		if msg.IsSameControlSignal(StartRuleSignal) {
-			fmt.Println("received start rule signal")
+		if msg.IsControlSignal(StartRuleSignal) {
+			fmt.Println("topo recv start signal")
 			return nil
 		} else {
 			return fmt.Errorf("invalid start rule signal")
@@ -43,16 +44,17 @@ func (t *Topo) Start(ctx context.Context) error {
 }
 
 func (t *Topo) Stop(ctx context.Context) error {
+	fmt.Println("topo send start signal")
 	t.controlCh <- NewSignalMsg(StopRuleSignal)
-	select {
-	case <-ctx.Done():
-		return nil
-	case msg := <-t.recvCh:
-		if msg.IsSameControlSignal(StopRuleSignal) {
-			fmt.Println("received stop rule signal")
+	for {
+		select {
+		case <-ctx.Done():
 			return nil
-		} else {
-			return fmt.Errorf("invalid start rule signal")
+		case msg := <-t.recvCh:
+			if msg.IsControlSignal(StopRuleSignal) {
+				fmt.Println("topo recv stop signal")
+				return nil
+			}
 		}
 	}
 }
@@ -76,6 +78,9 @@ func (t *Topo) buildNodes(ctx context.Context, lp planner.PhysicalPlan, outputKe
 	case *planner.PhysicalDataSource:
 		op := NewSourceNode(p)
 		node = op
+	case *planner.PhysicalDataSink:
+		op := NewSinkNode(p)
+		node = op
 	case *planner.PhysicalProject:
 		op := NewProjectNode(p)
 		node = op
@@ -91,9 +96,10 @@ func (t *Topo) buildNodes(ctx context.Context, lp planner.PhysicalPlan, outputKe
 	}
 	node.AddOutput(outputKey, outputChannel)
 	t.operators[lp.GetIndex()] = node
+	node.Run(t.ctx)
+	fmt.Println(fmt.Sprintf("node %v running", node.GetName()))
 	for _, child := range lp.GetChildren() {
 		t.buildNodes(ctx, child, node.GetName(), node.GetInput())
 	}
-	node.Run(t.ctx)
 	return nil
 }

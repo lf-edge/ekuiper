@@ -13,7 +13,7 @@ type NodeMessage struct {
 	Err     error
 }
 
-func (nm *NodeMessage) IsSameControlSignal(c ControlSignal) bool {
+func (nm *NodeMessage) IsControlSignal(c ControlSignal) bool {
 	if nm.Control == nil {
 		return false
 	}

@@ -24,8 +24,8 @@ func (sn *StakeNode) Run(ctx context.Context) {
 			case <-ctx.Done():
 				return
 			case msg := <-sn.Input:
-				processd, send := sn.HandleNodeMsg(msg)
-				if processd {
+				processed, send := sn.HandleNodeMsg(ctx, msg)
+				if processed {
 					if send {
 						sn.BroadCast(msg)
 					}

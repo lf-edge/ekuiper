@@ -36,10 +36,11 @@ func (sn *SourceNode) Run(ctx context.Context) {
 			case <-ctx.Done():
 				return
 			case msg := <-sn.Input:
-				processd, send := sn.HandleNodeMsg(msg)
-				if processd {
+				processed, send := sn.HandleNodeMsg(ctx, msg)
+				if processed {
 					if send {
 						sn.BroadCast(msg)
+						sn.handleControlSignal(ctx, msg)
 					}
 					continue
 				}
@@ -64,21 +65,32 @@ func (sn *SourceNode) whenUnstarted(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case msg := <-sn.Input:
-			processed, send := sn.HandleNodeMsg(msg)
+			processed, send := sn.HandleNodeMsg(ctx, msg)
 			if processed {
 				if send {
 					sn.BroadCast(msg)
-					if msg.IsSameControlSignal(StartRuleSignal) && !sn.Started {
-						sn.Started = true
-						break
-					}
+					sn.handleControlSignal(ctx, msg)
+				}
+				if sn.Started {
+					return
 				}
 				continue
 			}
 			sn.BroadCast(msg)
 		}
-		if sn.Started {
-			return
-		}
 	}
+}
+
+func (sn *SourceNode) handleControlSignal(ctx context.Context, msg *NodeMessage) {
+	switch msg.Control.ControlSignal {
+	case StartRuleSignal:
+		if !sn.Started {
+			sn.Started = true
+		}
+	case StopRuleSignal:
+		sn.Close(ctx)
+	}
+}
+
+func (sn *SourceNode) Close(ctx context.Context) {
 }

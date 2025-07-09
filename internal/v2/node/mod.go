@@ -16,6 +16,7 @@ type NodeOperator interface {
 
 type NodeStatus struct {
 	RecvStartSignalCount int
+	RecvStopSignalCount  int
 }
 
 type BaseNode struct {
@@ -51,23 +52,39 @@ func (b *BaseNode) GetInput() chan *NodeMessage {
 	return b.Input
 }
 
-func (b *BaseNode) HandleNodeMsg(msg *NodeMessage) (processed bool, send bool) {
+func (b *BaseNode) HandleNodeMsg(ctx context.Context, msg *NodeMessage) (processed bool, send bool) {
 	if msg.Control != nil {
 		switch msg.Control.ControlSignal {
 		case StartRuleSignal:
 			return true, b.HandleStartSignal()
+		case StopRuleSignal:
+			return true, b.HandleStopSignal(ctx)
 		}
 	}
 	return false, false
 }
 
 func (b *BaseNode) Close(ctx context.Context) {
+	fmt.Println(fmt.Sprintf("%v_%v recv and send stop signal", b.Name, b.Index))
 	return
 }
 
 func (b *BaseNode) HandleStartSignal() bool {
 	b.Status.RecvStartSignalCount++
-	return b.Status.RecvStartSignalCount >= b.CountOfChannelSendToMe
+	send := b.Status.RecvStartSignalCount >= b.CountOfChannelSendToMe
+	if send {
+		fmt.Println(fmt.Sprintf("%v_%v recv and send start signal", b.Name, b.Index))
+	}
+	return send
+}
+
+func (b *BaseNode) HandleStopSignal(ctx context.Context) bool {
+	b.Status.RecvStopSignalCount++
+	send := b.Status.RecvStopSignalCount >= b.CountOfChannelSendToMe
+	if send {
+		b.Close(ctx)
+	}
+	return send
 }
 
 func (b *BaseNode) BroadCast(msg *NodeMessage) {

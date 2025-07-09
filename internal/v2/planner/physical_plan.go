@@ -59,6 +59,21 @@ func NewPhysicalDataSource(ds *DataSourcePlan, index int) *PhysicalDataSource {
 	return pd
 }
 
+type PhysicalDataSink struct {
+	SinkType  string
+	SinkProps map[string]interface{}
+	*BasePhysicalPlan
+}
+
+func NewPhysicalDataSink(ds *DataSinkPlan, index int) *PhysicalDataSink {
+	pd := &PhysicalDataSink{
+		SinkType:         ds.SinkType,
+		SinkProps:        make(map[string]interface{}),
+		BasePhysicalPlan: NewBasePhysicalPlan(index, "DataSink"),
+	}
+	return pd
+}
+
 type PhysicalProject struct {
 	Fields ast.Fields
 	*BasePhysicalPlan

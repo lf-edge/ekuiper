@@ -15,11 +15,13 @@ import (
 
 func TestTopo(t *testing.T) {
 	ctx := context.Background()
+	actions := make([]map[string]interface{}, 0)
+	actions = append(actions, map[string]interface{}{"log": map[string]any{}})
 	stmt, err := xsql.NewParser(strings.NewReader("select a from demo")).Parse()
 	require.NoError(t, err)
 	require.NotNil(t, stmt)
 	lpbuilder := &planner.LogicalPlanBuilder{}
-	lp, err := lpbuilder.CreateLogicalPlan(ctx, stmt, prepareCatalog())
+	lp, err := lpbuilder.CreateLogicalPlan(ctx, stmt, prepareCatalog(), actions)
 	require.NoError(t, err)
 	require.NotNil(t, lp)
 	ppbuilder := &planner.PhysicalPlanBuilder{}
@@ -30,7 +32,9 @@ func TestTopo(t *testing.T) {
 	require.NoError(t, err)
 	err = topo.Start(ctx)
 	require.NoError(t, err)
-	time.Sleep(30 * time.Second)
+	time.Sleep(5 * time.Second)
+	err = topo.Stop(ctx)
+	require.NoError(t, err)
 }
 
 func prepareCatalog() *catalog.Catalog {

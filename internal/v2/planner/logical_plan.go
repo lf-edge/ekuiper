@@ -80,6 +80,19 @@ func NewProjectPlan(index int, fields ast.Fields) *ProjectPlan {
 	return &ProjectPlan{Fields: fields, BaseLogicalPlan: NewBaseLogicalPlan(index, "Project")}
 }
 
+type DataSinkPlan struct {
+	SinkType  string
+	SinkProps map[string]interface{}
+	*BaseLogicalPlan
+}
+
+func NewDataSinkPlan(index int, SinkType string, SinkProps map[string]interface{}) *DataSinkPlan {
+	sink := &DataSinkPlan{BaseLogicalPlan: NewBaseLogicalPlan(index, "DataSink")}
+	sink.SinkType = SinkType
+	sink.SinkProps = SinkProps
+	return sink
+}
+
 func ExplainLogicalPlan(lp LogicalPlan) string {
 	buf := bytes.NewBufferString("")
 	explainLogicalPlan(lp, 0, buf)
