@@ -102,7 +102,7 @@ func TestTable(t *testing.T) {
 	}
 }
 
-func TestDetachDrop(t *testing.T) {
+func TestAttachDetach(t *testing.T) {
 	name := "test4"
 	err := CreateInstance(name, "memory", &ast.Options{
 		DATASOURCE: "test",
@@ -116,7 +116,7 @@ func TestDetachDrop(t *testing.T) {
 	_, err = Attach(name)
 	require.NoError(t, err)
 	require.NoError(t, Detach(name))
-	require.True(t, IsExist(name))
+	require.True(t, IsEnable(name))
 	require.NoError(t, Detach(name))
-	require.False(t, IsExist(name))
+	require.False(t, IsEnable(name))
 }
