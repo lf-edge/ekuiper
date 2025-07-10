@@ -54,6 +54,7 @@ var (
 type Manager struct {
 	pluginDir     string
 	pluginConfDir string
+	pluginDataDir string
 	reg           *registry // can be replaced with kv
 	// the access to plugin install script db
 	plgInstallDb kv.KeyValue
@@ -71,6 +72,10 @@ func InitManager() (*Manager, error) {
 	if err != nil {
 		return nil, fmt.Errorf("cannot find data folder: %s", err)
 	}
+	dataDir, err := conf.GetDataLoc()
+	if err != nil {
+		return nil, fmt.Errorf("cannot find data folder: %s", err)
+	}
 	reg := &registry{
 		RWMutex:   sync.RWMutex{},
 		plugins:   make(map[string]*PluginInfo),
@@ -83,6 +88,7 @@ func InitManager() (*Manager, error) {
 	m := &Manager{
 		pluginDir:     pluginDir,
 		pluginConfDir: etcDir,
+		pluginDataDir: dataDir,
 		reg:           reg,
 	}
 	err = m.syncRegistry()
@@ -180,9 +186,15 @@ func (m *Manager) doRegister(name string, pi *PluginInfo, isInit bool) error {
 			if err := meta.ReadSourceMetaFile(path.Join(m.pluginConfDir, plugin.PluginTypes[plugin.SOURCE], s+`.json`), true, false); nil != err {
 				conf.Log.Errorf("read source json file:%v", err)
 			}
+			if err := meta.ReadSourceMetaFile(path.Join(m.pluginDataDir, plugin.PluginTypes[plugin.SOURCE], s+`.json`), true, false); nil != err {
+				conf.Log.Errorf("read source json file:%v", err)
+			}
 		}
 		for _, s := range pi.Sinks {
 			if err := meta.ReadSinkMetaFile(path.Join(m.pluginConfDir, plugin.PluginTypes[plugin.SINK], s+`.json`), true); nil != err {
+				conf.Log.Errorf("read sink json file:%v", err)
+			}
+			if err := meta.ReadSinkMetaFile(path.Join(m.pluginDataDir, plugin.PluginTypes[plugin.SINK], s+`.json`), true); nil != err {
 				conf.Log.Errorf("read sink json file:%v", err)
 			}
 		}
@@ -348,8 +360,8 @@ func (m *Manager) install(name, src string, shellParas []string) (resultErr erro
 	for _, file := range r.File {
 		fileName := filepath.ToSlash(filepath.Clean(file.Name))
 		if strings.HasPrefix(fileName, "sources/") || strings.HasPrefix(fileName, "sinks/") || strings.HasPrefix(fileName, "functions/") {
-			target = path.Join(m.pluginConfDir, fileName)
-			folder = m.pluginConfDir
+			target = path.Join(m.pluginDataDir, fileName)
+			folder = m.pluginDataDir
 		} else {
 			target = path.Join(pluginTarget, fileName)
 			folder = pluginTarget
@@ -436,6 +448,10 @@ func (m *Manager) Delete(name string) error {
 		os.Remove(p)
 		p = path.Join(m.pluginConfDir, plugin.PluginTypes[plugin.SOURCE], s+".json")
 		os.Remove(p)
+		p = path.Join(m.pluginDataDir, plugin.PluginTypes[plugin.SOURCE], s+".yaml")
+		os.Remove(p)
+		p = path.Join(m.pluginDataDir, plugin.PluginTypes[plugin.SOURCE], s+".json")
+		os.Remove(p)
 		meta.UninstallSource(s)
 	}
 	for _, s := range pinfo.Sinks {
@@ -443,10 +459,16 @@ func (m *Manager) Delete(name string) error {
 		os.Remove(p)
 		p = path.Join(m.pluginConfDir, plugin.PluginTypes[plugin.SINK], s+".json")
 		os.Remove(p)
+		p = path.Join(m.pluginDataDir, plugin.PluginTypes[plugin.SINK], s+".yaml")
+		os.Remove(p)
+		p = path.Join(m.pluginDataDir, plugin.PluginTypes[plugin.SINK], s+".json")
+		os.Remove(p)
 		meta.UninstallSink(s)
 	}
 	for _, s := range pinfo.Functions {
 		p := path.Join(m.pluginConfDir, plugin.PluginTypes[plugin.FUNCTION], s+".json")
+		os.Remove(p)
+		p = path.Join(m.pluginDataDir, plugin.PluginTypes[plugin.FUNCTION], s+".json")
 		os.Remove(p)
 	}
 	_ = os.RemoveAll(path.Join(m.pluginDir, name))
