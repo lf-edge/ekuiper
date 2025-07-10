@@ -240,7 +240,7 @@ alpine版本 的 eKuiper 时，不会出现`Error loading shared library libreso
 1. 运行 golang 相应版本 docker。需要把本地插件目录和 eKuiper 源码 mount 到 docker 里的目录中，这样才能在 docker 中访问插件项目并编译。笔者的插件项目位于本地 `/var/git` 目录。下面的命令中，我们把本地的 `/var/git` 目录映射到 docker 内的 `/go/plugins` 目录中。
 
     ```shell
-    docker run --rm -it -v /var/git:/go/plugins -w /go/plugins golang:1.24.1 /bin/sh
+    docker run --rm -it -v /var/git:/go/plugins -w /go/plugins golang:1.24.5 /bin/sh
     ```
 
 2. 执行下面命令，便可以得到编译好的插件

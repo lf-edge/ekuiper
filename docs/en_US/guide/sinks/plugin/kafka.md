@@ -27,7 +27,7 @@ Dockerfile like this：
 
 ```dockerfile
 ## plase check go version that kuiper used
-ARG GO_VERSION=1.24.1
+ARG GO_VERSION=1.24.5
 FROM ghcr.io/lf-edge/ekuiper/base:$GO_VERSION-debian AS builder
 WORKDIR /workspace
 ADD . /workspace/

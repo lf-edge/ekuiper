@@ -258,7 +258,7 @@ environment:
 Assuming that your plugin project is located in the local directory `/var/git`, you can map this directory to the `/go/plugins` directory within Docker using the following command:
 
     ```shell
-    docker run --rm -it -v /var/git:/go/plugins -w /go/plugins golang:1.24.1 /bin/sh
+    docker run --rm -it -v /var/git:/go/plugins -w /go/plugins golang:1.24.5 /bin/sh
     ```
 
 2. To obtain the compiled plugin, execute the following command:
