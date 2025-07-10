@@ -252,7 +252,7 @@ func TestAttachDetachSchema(t *testing.T) {
 	r = GetRuleSchema("rule2")
 	require.Equal(t, r, er)
 	// detach rule
-	require.NoError(t, f.Detach(ctx1))
+	require.NoError(t, f.Detach(ctx1, true))
 	r = GetRuleSchema("rule2")
 	er = RuleSchemaResponse{
 		Schema: map[string]map[string]*ast.JsonStreamField{

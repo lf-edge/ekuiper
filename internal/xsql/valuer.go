@@ -468,7 +468,7 @@ func (v *ValuerEval) Eval(expr ast.Expr) interface{} {
 		if et.HasIndex {
 			if indexValuer, ok := v.Valuer.(model.IndexValuer); ok {
 				val, ok := indexValuer.ValueByIndex(et.Index, et.SourceIndex)
-				if !ok {
+				if !ok && et.IsAlias() {
 					r := v.Eval(et.Expression)
 					indexValuer.SetByIndex(et.Index, r)
 					val = r
