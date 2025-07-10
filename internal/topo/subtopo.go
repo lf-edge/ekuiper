@@ -187,8 +187,9 @@ func (s *SrcSubTopo) Close(ctx api.StreamContext, ruleId string, runId int) {
 	s.Lock()
 	defer s.Unlock()
 	if ch, ok := s.refRules[ruleId]; ok {
+		isStopped := ch != nil
 		// Only do clean up when rule is deleted instead of updated
-		if ch != nil {
+		if isStopped {
 			delete(s.refRules, ruleId)
 			if len(s.refRules) == 0 {
 				if s.cancel != nil {
@@ -202,13 +203,15 @@ func (s *SrcSubTopo) Close(ctx api.StreamContext, ruleId string, runId int) {
 			ctx.GetLogger().Infof("Sub topo %s dereference %s with %d ref", s.name, ctx.GetRuleId(), len(s.refRules))
 		}
 		ctx.GetLogger().Infof("Sub topo %s update schema for rule %s change", s.name, ctx.GetRuleId())
-		err := s.schemaLayer.Detach(ctx)
+		err := s.schemaLayer.Detach(ctx, isStopped)
 		if err != nil {
 			ctx.GetLogger().Warnf("detach schema layer failed: %s", err)
 		}
-		for _, op := range s.ops {
-			if so, ok := op.(node.SchemaNode); ok {
-				so.ResetSchema(ctx, s.schemaLayer.GetSchema())
+		if isStopped {
+			for _, op := range s.ops {
+				if so, ok := op.(node.SchemaNode); ok {
+					so.ResetSchema(ctx, s.schemaLayer.GetSchema())
+				}
 			}
 		}
 	}
