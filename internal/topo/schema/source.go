@@ -110,7 +110,7 @@ func (s *SharedLayer) Attach(ctx api.StreamContext) error {
 	return nil
 }
 
-func (s *SharedLayer) Detach(ctx api.StreamContext) error {
+func (s *SharedLayer) Detach(ctx api.StreamContext, isClose bool) error {
 	var err error
 	s.Lock()
 	defer s.Unlock()
@@ -118,18 +118,20 @@ func (s *SharedLayer) Detach(ctx api.StreamContext) error {
 	_, ok := s.reg[ruleID]
 	if ok {
 		RemoveRuleSchema(ruleID)
-		delete(s.streamMap, ruleID)
-		delete(s.wildcardMap, ruleID)
-		delete(s.reg, ruleID)
-		newSchema := make(map[string]*ast.JsonStreamField)
-		for _, si := range s.reg {
-			newSchema, err = s.merge(newSchema, si.schema)
-			if err != nil {
-				return err
+		if isClose {
+			delete(s.streamMap, ruleID)
+			delete(s.wildcardMap, ruleID)
+			delete(s.reg, ruleID)
+			newSchema := make(map[string]*ast.JsonStreamField)
+			for _, si := range s.reg {
+				newSchema, err = s.merge(newSchema, si.schema)
+				if err != nil {
+					return err
+				}
 			}
+			s.schema = newSchema
+			s.updateReg()
 		}
-		s.schema = newSchema
-		s.updateReg()
 	}
 	return nil
 }
