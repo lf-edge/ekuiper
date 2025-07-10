@@ -3275,6 +3275,16 @@ func TestProjectSlice(t *testing.T) {
 				SourceContent: model.SliceVal{"a0b0", "c0"},
 			},
 		},
+		{
+			name: "during update",
+			sql:  `SELECT d, a FROM test`,
+			data: &xsql.SliceTuple{
+				SourceContent: model.SliceVal{"a0", "b0", "c0"},
+			},
+			result: &xsql.SliceTuple{
+				SourceContent: model.SliceVal{nil, "a0"},
+			},
+		},
 	}
 	contextLogger := conf.Log.WithField("rule", "TestProjectPlan_Apply1")
 	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
