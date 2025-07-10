@@ -87,12 +87,12 @@ eKuiper 计算过程中使用的是基于 Map 的数据结构，因此 source/si
 1. 在你的插件项目中，创建一个 Makefile，并确保该插件能被 `make` 命令构建。请查看[示例项目](https://github.com/lf-edge/ekuiper/tree/master/internal/converter/custom/test)以获得参考。
 2. 检查你的 eKuiper 的版本所使用的 golang 版本。检查相应 eKuiper
    版本的 [docker 文件](https://github.com/lf-edge/ekuiper/blob/master/deploy/docker/Dockerfile)中的 `GO_VERSION`
-   参数。如果版本是 `1.24.1`，则使用 `golang:1.24.1-alpine` docker 镜像进行构建。
+   参数。如果版本是 `1.24.5`，则使用 `golang:1.24.5-alpine` docker 镜像进行构建。
 3. 切换到你的项目位置，然后在你的项目位置启动 golang docker 容器，安装依赖项，然后执行 `make`，确保构建成功。
 
    ```shell
    cd ${yourProjectLoc}
-   docker run --rm -it -v "$PWD":/usr/src/myapp -w /usr/src/myapp golang:1.24.1-alpine sh
+   docker run --rm -it -v "$PWD":/usr/src/myapp -w /usr/src/myapp golang:1.24.5-alpine sh
    ### inside docker container
    /usr/src/myapp # apk add gcc make libc-dev
    /usr/src/myapp # make
