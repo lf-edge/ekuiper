@@ -84,7 +84,7 @@ func InitManager() (*Manager, error) {
 	if err != nil {
 		return nil, fmt.Errorf("cannot find plugins folder: %s", err)
 	}
-	etcDir, err := conf.GetConfLoc()
+	dataDir, err := conf.GetDataLoc()
 	if err != nil {
 		return nil, fmt.Errorf("cannot find data folder: %s", err)
 	}
@@ -100,7 +100,7 @@ func InitManager() (*Manager, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error when opening nativePluginStatus: %v", err)
 	}
-	registry := &Manager{symbols: make(map[string]string), funcSymbolsDb: func_db, plgInstallDb: plg_db, plgStatusDb: plg_status_db, pluginDir: pluginDir, pluginConfDir: etcDir, runtime: make(map[string]*plugin.Plugin)}
+	registry := &Manager{symbols: make(map[string]string), funcSymbolsDb: func_db, plgInstallDb: plg_db, plgStatusDb: plg_status_db, pluginDir: pluginDir, pluginConfDir: dataDir, runtime: make(map[string]*plugin.Plugin)}
 	manager = registry
 
 	plugins := make([]map[string]string, 3)

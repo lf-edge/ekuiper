@@ -67,7 +67,7 @@ func InitManager() (*Manager, error) {
 	if err != nil {
 		return nil, fmt.Errorf("cannot find plugins folder: %s", err)
 	}
-	etcDir, err := conf.GetConfLoc()
+	dataDir, err := conf.GetDataLoc()
 	if err != nil {
 		return nil, fmt.Errorf("cannot find data folder: %s", err)
 	}
@@ -82,7 +82,7 @@ func InitManager() (*Manager, error) {
 	pluginDir = filepath.Join(pluginDir, "portable")
 	m := &Manager{
 		pluginDir:     pluginDir,
-		pluginConfDir: etcDir,
+		pluginConfDir: dataDir,
 		reg:           reg,
 	}
 	err = m.syncRegistry()

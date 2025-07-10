@@ -111,6 +111,14 @@ func BumpToCurrentVersion(dataDir string) error {
 				return err
 			}
 			GlobalBumpManager.Version = 4
+		case 4:
+			if err := bumpTo5(); err != nil {
+				return err
+			}
+			if err := storeGlobalVersion(5); err != nil {
+				return err
+			}
+			GlobalBumpManager.Version = 5
 		}
 	}
 	conf.Log.Infof("success bump version: %v", currentVersion)
