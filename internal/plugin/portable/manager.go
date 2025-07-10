@@ -360,18 +360,28 @@ func (m *Manager) install(name, src string, shellParas []string) (resultErr erro
 	for _, file := range r.File {
 		fileName := filepath.ToSlash(filepath.Clean(file.Name))
 		if strings.HasPrefix(fileName, "sources/") || strings.HasPrefix(fileName, "sinks/") || strings.HasPrefix(fileName, "functions/") {
+			target = path.Join(m.pluginConfDir, fileName)
+			folder = m.pluginConfDir
+			err = filex.UnzipTo(file, folder, fileName)
+			if err != nil {
+				return err
+			}
 			target = path.Join(m.pluginDataDir, fileName)
 			folder = m.pluginDataDir
+			err = filex.UnzipTo(file, folder, fileName)
+			if err != nil {
+				return err
+			}
 		} else {
 			target = path.Join(pluginTarget, fileName)
 			folder = pluginTarget
 			if fileName == "install.sh" {
 				needInstall = true
 			}
-		}
-		err = filex.UnzipTo(file, folder, fileName)
-		if err != nil {
-			return err
+			err = filex.UnzipTo(file, folder, fileName)
+			if err != nil {
+				return err
+			}
 		}
 		if !file.FileInfo().IsDir() {
 			installedMap[fileName] = target
