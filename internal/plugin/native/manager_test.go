@@ -85,7 +85,7 @@ func TestManager_Register(t *testing.T) {
 			t:   plugin.SOURCE,
 			n:   "zipMissConf",
 			u:   endpoint + "/sources/zipMissConf.zip",
-			err: fmt.Errorf("fail to install plugin: invalid zip file: expectFiles: 2, got filenames:[%s], zipFiles: [ZipMissConf.so], yamlFileChecked:false, soFileChecked:true", soPath),
+			err: fmt.Errorf("fail to install plugin: invalid zip file: expectFiles: 3, got filenames:[%s], zipFiles: [ZipMissConf.so], yamlFileChecked:false, soFileChecked:true", soPath),
 		},
 		{
 			t:   plugin.SINK,

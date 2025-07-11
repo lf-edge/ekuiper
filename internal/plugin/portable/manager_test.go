@@ -104,7 +104,7 @@ func TestManager_Install(t *testing.T) {
 		if err != nil {
 			require.Equal(t, tt.err, err)
 		} else {
-			err := checkFileForMirror(m.pluginDir, m.pluginConfDir, true)
+			err := checkFileForMirror(m.pluginDir, m.pluginDataDir, true)
 			require.NoError(t, err)
 		}
 	}
@@ -132,7 +132,7 @@ func TestManager_Read(t *testing.T) {
 func TestDelete(t *testing.T) {
 	err := manager.Delete("mirror2")
 	require.EqualError(t, err, "portable plugin mirror2 is not found")
-	err = checkFileForMirror(manager.pluginDir, manager.pluginConfDir, false)
+	err = checkFileForMirror(manager.pluginDir, manager.pluginDataDir, false)
 	if err != nil {
 		t.Errorf("error : %s\n\n", err)
 	}
