@@ -448,7 +448,7 @@ func (rr *Manager) Delete(t plugin2.PluginType, name string, stop bool) error {
 			if err != nil {
 				results = append(results, err.Error())
 			}
-		} else {
+		} else if !os.IsNotExist(err) {
 			results = append(results, fmt.Sprintf("can't find %s", p))
 		}
 	}
@@ -548,8 +548,15 @@ func (rr *Manager) install(t plugin2.PluginType, name, src string, shellParas []
 				if err != nil {
 					return version, err
 				}
+				yamlDataPath := path.Join(rr.pluginDataDir, plugin2.PluginTypes[t], yamlFile)
+				err = filex.UnzipTo(file, filepath.Join(rr.pluginDataDir, plugin2.PluginTypes[t]), yamlFile)
+				if err != nil {
+					return version, err
+				}
 				revokeFiles = append(revokeFiles, yamlPath)
 				filenames = append(filenames, yamlPath)
+				revokeFiles = append(revokeFiles, yamlDataPath)
+				filenames = append(filenames, yamlDataPath)
 			} else {
 				filenames = append(filenames, yamlPath)
 				conf.Log.Infof("skip install %s due to already exists", yamlPath)
@@ -558,6 +565,12 @@ func (rr *Manager) install(t plugin2.PluginType, name, src string, shellParas []
 		case fileName == name+".json":
 			jsonPath := path.Join(rr.pluginConfDir, plugin2.PluginTypes[t], fileName)
 			if err := filex.UnzipTo(file, filepath.Join(rr.pluginConfDir, plugin2.PluginTypes[t]), fileName); nil != err {
+				conf.Log.Errorf("Failed to decompress the metadata %s file", fileName)
+			} else {
+				revokeFiles = append(revokeFiles, jsonPath)
+			}
+			jsonPath = path.Join(rr.pluginDataDir, plugin2.PluginTypes[t], fileName)
+			if err := filex.UnzipTo(file, filepath.Join(rr.pluginDataDir, plugin2.PluginTypes[t]), fileName); nil != err {
 				conf.Log.Errorf("Failed to decompress the metadata %s file", fileName)
 			} else {
 				revokeFiles = append(revokeFiles, jsonPath)
@@ -576,6 +589,12 @@ func (rr *Manager) install(t plugin2.PluginType, name, src string, shellParas []
 			folder := path.Join(rr.pluginConfDir, plugin2.PluginTypes[t])
 			fname := strings.Replace(fileName, "etc", name, 1)
 
+			err = filex.UnzipTo(file, folder, fname)
+			if err != nil {
+				return version, err
+			}
+			folder = path.Join(rr.pluginDataDir, plugin2.PluginTypes[t])
+			fname = strings.Replace(fileName, "etc", name, 1)
 			err = filex.UnzipTo(file, folder, fname)
 			if err != nil {
 				return version, err
