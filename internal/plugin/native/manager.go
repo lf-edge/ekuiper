@@ -70,6 +70,7 @@ type Manager struct {
 	// dirs
 	pluginDir     string
 	pluginConfDir string
+	pluginDataDir string
 	// the access to func symbols db
 	funcSymbolsDb kv.KeyValue
 	// the access to plugin install script db
@@ -88,6 +89,10 @@ func InitManager() (*Manager, error) {
 	if err != nil {
 		return nil, fmt.Errorf("cannot find data folder: %s", err)
 	}
+	dataDir, err := conf.GetDataLoc()
+	if err != nil {
+		return nil, fmt.Errorf("cannot find data folder: %s", err)
+	}
 	func_db, err := store.GetKV("pluginFuncs")
 	if err != nil {
 		return nil, fmt.Errorf("error when opening funcSymbolsdb: %v", err)
@@ -100,7 +105,7 @@ func InitManager() (*Manager, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error when opening nativePluginStatus: %v", err)
 	}
-	registry := &Manager{symbols: make(map[string]string), funcSymbolsDb: func_db, plgInstallDb: plg_db, plgStatusDb: plg_status_db, pluginDir: pluginDir, pluginConfDir: etcDir, runtime: make(map[string]*plugin.Plugin)}
+	registry := &Manager{symbols: make(map[string]string), funcSymbolsDb: func_db, plgInstallDb: plg_db, plgStatusDb: plg_status_db, pluginDir: pluginDir, pluginConfDir: etcDir, pluginDataDir: dataDir, runtime: make(map[string]*plugin.Plugin)}
 	manager = registry
 
 	plugins := make([]map[string]string, 3)
@@ -318,8 +323,11 @@ func (rr *Manager) Register(t plugin2.PluginType, j plugin2.Plugin) error {
 
 	switch t {
 	case plugin2.SINK:
-		if err := meta.ReadSinkMetaFile(path.Join(rr.pluginConfDir, plugin2.PluginTypes[t], name+`.json`), true); nil != err {
+		if err := meta.ReadSinkMetaFile(path.Join(rr.pluginDataDir, plugin2.PluginTypes[t], name+`.json`), true); nil != err {
 			conf.Log.Errorf("readSinkFile:%v", err)
+			if err := meta.ReadSinkMetaFile(path.Join(rr.pluginConfDir, plugin2.PluginTypes[t], name+`.json`), true); nil != err {
+				conf.Log.Errorf("readSinkFile:%v", err)
+			}
 		}
 	case plugin2.SOURCE:
 		isScan := true
@@ -332,8 +340,11 @@ func (rr *Manager) Register(t plugin2.PluginType, j plugin2.Plugin) error {
 		if err != nil {
 			isLookup = false
 		}
-		if err := meta.ReadSourceMetaFile(path.Join(rr.pluginConfDir, plugin2.PluginTypes[t], name+`.json`), isScan, isLookup); nil != err {
+		if err := meta.ReadSourceMetaFile(path.Join(rr.pluginDataDir, plugin2.PluginTypes[t], name+`.json`), isScan, isLookup); nil != err {
 			conf.Log.Errorf("readSourceFile:%v", err)
+			if err := meta.ReadSourceMetaFile(path.Join(rr.pluginConfDir, plugin2.PluginTypes[t], name+`.json`), isScan, isLookup); nil != err {
+				conf.Log.Errorf("readSourceFile:%v", err)
+			}
 		}
 	}
 	return nil
@@ -383,11 +394,22 @@ func (rr *Manager) Delete(t plugin2.PluginType, name string, stop bool) error {
 			paths = append(paths, etcPath)
 		}
 	}
+	// Find etc folder
+	dataPath := path.Join(rr.pluginConfDir, plugin2.PluginTypes[t], name)
+	if fi, err := os.Stat(etcPath); err == nil {
+		if fi.Mode().IsDir() {
+			paths = append(paths, dataPath)
+		}
+	}
 	switch t {
 	case plugin2.SOURCE:
 		yamlPaths := path.Join(rr.pluginConfDir, plugin2.PluginTypes[plugin2.SOURCE], name+".yaml")
 		_ = os.Remove(yamlPaths)
 		srcJsonPath := path.Join(rr.pluginConfDir, plugin2.PluginTypes[plugin2.SOURCE], name+".json")
+		_ = os.Remove(srcJsonPath)
+		yamlPaths = path.Join(rr.pluginDataDir, plugin2.PluginTypes[plugin2.SOURCE], name+".yaml")
+		_ = os.Remove(yamlPaths)
+		srcJsonPath = path.Join(rr.pluginDataDir, plugin2.PluginTypes[plugin2.SOURCE], name+".json")
 		_ = os.Remove(srcJsonPath)
 		meta.UninstallSource(name)
 	case plugin2.SINK:
@@ -395,9 +417,15 @@ func (rr *Manager) Delete(t plugin2.PluginType, name string, stop bool) error {
 		_ = os.Remove(yamlPaths)
 		sinkJsonPaths := path.Join(rr.pluginConfDir, plugin2.PluginTypes[plugin2.SINK], name+".json")
 		_ = os.Remove(sinkJsonPaths)
+		yamlPaths = path.Join(rr.pluginDataDir, plugin2.PluginTypes[plugin2.SINK], name+".yaml")
+		_ = os.Remove(yamlPaths)
+		sinkJsonPaths = path.Join(rr.pluginDataDir, plugin2.PluginTypes[plugin2.SINK], name+".json")
+		_ = os.Remove(sinkJsonPaths)
 		meta.UninstallSink(name)
 	case plugin2.FUNCTION:
 		funcJsonPath := path.Join(rr.pluginConfDir, plugin2.PluginTypes[plugin2.FUNCTION], name+".json")
+		_ = os.Remove(funcJsonPath)
+		funcJsonPath = path.Join(rr.pluginDataDir, plugin2.PluginTypes[plugin2.FUNCTION], name+".json")
 		_ = os.Remove(funcJsonPath)
 		old := make([]string, 0)
 		if ok, err := rr.funcSymbolsDb.Get(name, &old); err != nil {
@@ -420,7 +448,7 @@ func (rr *Manager) Delete(t plugin2.PluginType, name string, stop bool) error {
 			if err != nil {
 				results = append(results, err.Error())
 			}
-		} else {
+		} else if !os.IsNotExist(err) {
 			results = append(results, fmt.Sprintf("can't find %s", p))
 		}
 	}
@@ -494,7 +522,7 @@ func (rr *Manager) install(t plugin2.PluginType, name, src string, shellParas []
 	if t == plugin2.SOURCE {
 		yamlFile = name + ".yaml"
 		yamlPath = path.Join(rr.pluginConfDir, plugin2.PluginTypes[t], yamlFile)
-		expFiles = 2
+		expFiles = 3
 	}
 	var revokeFiles []string
 	defer func() {
@@ -520,8 +548,15 @@ func (rr *Manager) install(t plugin2.PluginType, name, src string, shellParas []
 				if err != nil {
 					return version, err
 				}
+				yamlDataPath := path.Join(rr.pluginDataDir, plugin2.PluginTypes[t], yamlFile)
+				err = filex.UnzipTo(file, filepath.Join(rr.pluginDataDir, plugin2.PluginTypes[t]), yamlFile)
+				if err != nil {
+					return version, err
+				}
 				revokeFiles = append(revokeFiles, yamlPath)
 				filenames = append(filenames, yamlPath)
+				revokeFiles = append(revokeFiles, yamlDataPath)
+				filenames = append(filenames, yamlDataPath)
 			} else {
 				filenames = append(filenames, yamlPath)
 				conf.Log.Infof("skip install %s due to already exists", yamlPath)
@@ -530,6 +565,12 @@ func (rr *Manager) install(t plugin2.PluginType, name, src string, shellParas []
 		case fileName == name+".json":
 			jsonPath := path.Join(rr.pluginConfDir, plugin2.PluginTypes[t], fileName)
 			if err := filex.UnzipTo(file, filepath.Join(rr.pluginConfDir, plugin2.PluginTypes[t]), fileName); nil != err {
+				conf.Log.Errorf("Failed to decompress the metadata %s file", fileName)
+			} else {
+				revokeFiles = append(revokeFiles, jsonPath)
+			}
+			jsonPath = path.Join(rr.pluginDataDir, plugin2.PluginTypes[t], fileName)
+			if err := filex.UnzipTo(file, filepath.Join(rr.pluginDataDir, plugin2.PluginTypes[t]), fileName); nil != err {
 				conf.Log.Errorf("Failed to decompress the metadata %s file", fileName)
 			} else {
 				revokeFiles = append(revokeFiles, jsonPath)
@@ -548,6 +589,12 @@ func (rr *Manager) install(t plugin2.PluginType, name, src string, shellParas []
 			folder := path.Join(rr.pluginConfDir, plugin2.PluginTypes[t])
 			fname := strings.Replace(fileName, "etc", name, 1)
 
+			err = filex.UnzipTo(file, folder, fname)
+			if err != nil {
+				return version, err
+			}
+			folder = path.Join(rr.pluginDataDir, plugin2.PluginTypes[t])
+			fname = strings.Replace(fileName, "etc", name, 1)
 			err = filex.UnzipTo(file, folder, fname)
 			if err != nil {
 				return version, err
