@@ -208,21 +208,18 @@ func TestPlanTopo(t *testing.T) {
 			name: "testSharedConnSplit",
 			sql:  `SELECT * FROM src3`,
 			topo: &def.PrintableTopo{
-				Sources: []string{"source_mqtt.localConnection/topic1testSharedConnSplit"},
+				Sources: []string{"source_src3"},
 				Edges: map[string][]any{
-					"source_mqtt.localConnection/topic1testSharedConnSplit": {
-						"op_2_emitter",
+					"source_src3": {
+						"op_2_ratelimit",
 					},
-					"op_2_emitter": {
-						"op_3_ratelimit",
+					"op_2_ratelimit": {
+						"op_3_payload_decoder",
 					},
-					"op_3_ratelimit": {
-						"op_4_payload_decoder",
+					"op_3_payload_decoder": {
+						"op_4_project",
 					},
-					"op_4_payload_decoder": {
-						"op_5_project",
-					},
-					"op_5_project": {
+					"op_4_project": {
 						"op_logToMemory_0_0_transform",
 					},
 					"op_logToMemory_0_0_transform": {
@@ -238,21 +235,18 @@ func TestPlanTopo(t *testing.T) {
 			name: "testSharedNodeWithSharedConnSplit",
 			sql:  `SELECT * FROM src4`,
 			topo: &def.PrintableTopo{
-				Sources: []string{"source_mqtt.localConnection/topic1"},
+				Sources: []string{"source_src4"},
 				Edges: map[string][]any{
-					"source_mqtt.localConnection/topic1": {
-						"op_src4_2_emitter",
+					"source_src4": {
+						"op_src4_2_ratelimit",
 					},
-					"op_src4_2_emitter": {
-						"op_src4_3_ratelimit",
+					"op_src4_2_ratelimit": {
+						"op_src4_3_decoder",
 					},
-					"op_src4_3_ratelimit": {
-						"op_src4_4_decoder",
+					"op_src4_3_decoder": {
+						"op_4_project",
 					},
-					"op_src4_4_decoder": {
-						"op_5_project",
-					},
-					"op_5_project": {
+					"op_4_project": {
 						"op_logToMemory_0_0_transform",
 					},
 					"op_logToMemory_0_0_transform": {
@@ -343,21 +337,18 @@ func TestPlanTopo(t *testing.T) {
 			name: "testmqttmerger",
 			sql:  `SELECT * FROM src5`,
 			topo: &def.PrintableTopo{
-				Sources: []string{"source_mqtt.localConnection/topic1testmqttmerger"},
+				Sources: []string{"source_src3"},
 				Edges: map[string][]any{
-					"source_mqtt.localConnection/topic1testmqttmerger": {
-						"op_2_emitter",
+					"source_src3": {
+						"op_2_ratelimit",
 					},
-					"op_2_emitter": {
-						"op_3_ratelimit",
+					"op_2_ratelimit": {
+						"op_3_payload_decoder",
 					},
-					"op_3_ratelimit": {
-						"op_4_payload_decoder",
+					"op_3_payload_decoder": {
+						"op_4_project",
 					},
-					"op_4_payload_decoder": {
-						"op_5_project",
-					},
-					"op_5_project": {
+					"op_4_project": {
 						"op_logToMemory_0_0_transform",
 					},
 					"op_logToMemory_0_0_transform": {
@@ -373,9 +364,9 @@ func TestPlanTopo(t *testing.T) {
 			name: "testNngConnSplit",
 			sql:  `SELECT * FROM neuron1`,
 			topo: &def.PrintableTopo{
-				Sources: []string{"source_nng:pairtcp://127.0.0.1:7777/singletontestNngConnSplit"},
+				Sources: []string{"source_nng:pairtcp://127.0.0.1:7777/singleton"},
 				Edges: map[string][]any{
-					"source_nng:pairtcp://127.0.0.1:7777/singletontestNngConnSplit": {
+					"source_nng:pairtcp://127.0.0.1:7777/singleton": {
 						"op_2_emitter",
 					},
 					"op_2_emitter": {
