@@ -522,7 +522,7 @@ func (rr *Manager) install(t plugin2.PluginType, name, src string, shellParas []
 	if t == plugin2.SOURCE {
 		yamlFile = name + ".yaml"
 		yamlPath = path.Join(rr.pluginConfDir, plugin2.PluginTypes[t], yamlFile)
-		expFiles = 2
+		expFiles = 3
 	}
 	var revokeFiles []string
 	defer func() {
