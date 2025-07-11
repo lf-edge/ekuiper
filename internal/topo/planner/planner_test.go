@@ -4626,4 +4626,8 @@ func TestCheckSharedSourceOption(t *testing.T) {
 		DisableBufferFullDiscard: true,
 	}
 	require.Error(t, checkSharedSourceOption(s1, r1))
+	r1 = &def.RuleOption{
+		Qos: 1,
+	}
+	require.Error(t, checkSharedSourceOption(s1, r1))
 }
