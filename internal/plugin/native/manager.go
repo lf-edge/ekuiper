@@ -323,11 +323,11 @@ func (rr *Manager) Register(t plugin2.PluginType, j plugin2.Plugin) error {
 
 	switch t {
 	case plugin2.SINK:
-		if err := meta.ReadSinkMetaFile(path.Join(rr.pluginConfDir, plugin2.PluginTypes[t], name+`.json`), true); nil != err {
-			conf.Log.Errorf("readSinkFile:%v", err)
-		}
 		if err := meta.ReadSinkMetaFile(path.Join(rr.pluginDataDir, plugin2.PluginTypes[t], name+`.json`), true); nil != err {
 			conf.Log.Errorf("readSinkFile:%v", err)
+			if err := meta.ReadSinkMetaFile(path.Join(rr.pluginConfDir, plugin2.PluginTypes[t], name+`.json`), true); nil != err {
+				conf.Log.Errorf("readSinkFile:%v", err)
+			}
 		}
 	case plugin2.SOURCE:
 		isScan := true
@@ -340,11 +340,11 @@ func (rr *Manager) Register(t plugin2.PluginType, j plugin2.Plugin) error {
 		if err != nil {
 			isLookup = false
 		}
-		if err := meta.ReadSourceMetaFile(path.Join(rr.pluginConfDir, plugin2.PluginTypes[t], name+`.json`), isScan, isLookup); nil != err {
-			conf.Log.Errorf("readSourceFile:%v", err)
-		}
 		if err := meta.ReadSourceMetaFile(path.Join(rr.pluginDataDir, plugin2.PluginTypes[t], name+`.json`), isScan, isLookup); nil != err {
 			conf.Log.Errorf("readSourceFile:%v", err)
+			if err := meta.ReadSourceMetaFile(path.Join(rr.pluginConfDir, plugin2.PluginTypes[t], name+`.json`), isScan, isLookup); nil != err {
+				conf.Log.Errorf("readSourceFile:%v", err)
+			}
 		}
 	}
 	return nil

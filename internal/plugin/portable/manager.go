@@ -183,19 +183,19 @@ func (m *Manager) doRegister(name string, pi *PluginInfo, isInit bool) error {
 
 	if !isInit {
 		for _, s := range pi.Sources {
-			if err := meta.ReadSourceMetaFile(path.Join(m.pluginConfDir, plugin.PluginTypes[plugin.SOURCE], s+`.json`), true, false); nil != err {
-				conf.Log.Errorf("read source json file:%v", err)
-			}
 			if err := meta.ReadSourceMetaFile(path.Join(m.pluginDataDir, plugin.PluginTypes[plugin.SOURCE], s+`.json`), true, false); nil != err {
 				conf.Log.Errorf("read source json file:%v", err)
+				if err := meta.ReadSourceMetaFile(path.Join(m.pluginConfDir, plugin.PluginTypes[plugin.SOURCE], s+`.json`), true, false); nil != err {
+					conf.Log.Errorf("read source json file:%v", err)
+				}
 			}
 		}
 		for _, s := range pi.Sinks {
-			if err := meta.ReadSinkMetaFile(path.Join(m.pluginConfDir, plugin.PluginTypes[plugin.SINK], s+`.json`), true); nil != err {
-				conf.Log.Errorf("read sink json file:%v", err)
-			}
 			if err := meta.ReadSinkMetaFile(path.Join(m.pluginDataDir, plugin.PluginTypes[plugin.SINK], s+`.json`), true); nil != err {
 				conf.Log.Errorf("read sink json file:%v", err)
+				if err := meta.ReadSinkMetaFile(path.Join(m.pluginConfDir, plugin.PluginTypes[plugin.SINK], s+`.json`), true); nil != err {
+					conf.Log.Errorf("read sink json file:%v", err)
+				}
 			}
 		}
 	}
