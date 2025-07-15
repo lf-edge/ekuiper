@@ -79,7 +79,7 @@ func (es *Client) Ping(_ api.StreamContext) error {
 func (es *Client) DetachSub(ctx api.StreamContext, props map[string]any) {
 	topic, ok := props["topic"]
 	ctx.GetLogger().Infof("detach edgex sub %v", topic)
-	if ok {
+	if ok && es.client != nil {
 		err := es.client.Unsubscribe(topic.(string))
 		if err != nil {
 			ctx.GetLogger().Error(err)
