@@ -282,8 +282,9 @@ func TestValidateTrans(t *testing.T) {
 
 var commonSliceCases = []any{
 	&xsql.SliceTuple{SourceContent: model.SliceVal{1, 2}, Timestamp: time.UnixMilli(0)},
-	&xsql.WindowTuples{Content: []xsql.Row{&xsql.SliceTuple{SourceContent: model.SliceVal{1, 2, nil}, Timestamp: time.UnixMilli(0)}, &xsql.SliceTuple{SourceContent: model.SliceVal{3, 4, "hello"}}}},
+	&xsql.SliceTuple{SourceContent: make(model.SliceVal, 2), Timestamp: time.UnixMilli(0)},
 	&xsql.WindowTuples{Content: []xsql.Row{}}, // empty data should be omitted if omitempty is true
+	&xsql.WindowTuples{Content: []xsql.Row{&xsql.SliceTuple{SourceContent: model.SliceVal{1, 2, nil}, Timestamp: time.UnixMilli(0)}, &xsql.SliceTuple{SourceContent: model.SliceVal{3, 4, "hello"}}}},
 }
 
 func TestTransformSlice(t *testing.T) {
@@ -306,8 +307,25 @@ func TestTransformSlice(t *testing.T) {
 			cases: commonSliceCases,
 			expects: []any{
 				&xsql.SliceTuple{SourceContent: model.SliceVal{1, 2}, Timestamp: time.UnixMilli(0)},
-				[]*xsql.SliceTuple{{SourceContent: model.SliceVal{1, 2, nil}, Timestamp: time.UnixMilli(0)}, {SourceContent: model.SliceVal{3, 4, "hello"}}},
+				&xsql.SliceTuple{SourceContent: model.SliceVal{nil, nil}, Timestamp: time.UnixMilli(0)},
 				[]*xsql.SliceTuple{},
+				[]*xsql.SliceTuple{{SourceContent: model.SliceVal{1, 2, nil}, Timestamp: time.UnixMilli(0)}, {SourceContent: model.SliceVal{3, 4, "hello"}}},
+			},
+		},
+		{
+			name: "data template with text format single",
+			sc: &SinkConf{
+				Omitempty:    true,
+				Format:       "custom",
+				DataTemplate: "{\"ab\":\"et\"}",
+				SendSingle:   false,
+			},
+			cases: commonSliceCases,
+			expects: []any{
+				&xsql.SliceTuple{SourceContent: model.SliceVal{1, 2}, Timestamp: time.UnixMilli(0)},
+				nil,
+				nil,
+				[]*xsql.SliceTuple{{SourceContent: model.SliceVal{1, 2, nil}, Timestamp: time.UnixMilli(0)}, {SourceContent: model.SliceVal{3, 4, "hello"}}},
 			},
 		},
 	}
@@ -324,7 +342,7 @@ func TestTransformSlice(t *testing.T) {
 			op.Exec(ctx, errCh)
 			for i, c := range tt.cases {
 				op.input <- c
-				if i < len(tt.expects) {
+				if tt.expects[i] != nil {
 					r := <-out
 					assert.Equal(t, tt.expects[i], r, "case %d", i)
 				}
