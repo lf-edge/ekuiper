@@ -69,7 +69,7 @@ func (f *FastJsonConverter) Encode(ctx api.StreamContext, d any) (b []byte, err 
 	case model.SliceVal:
 		mm := make(map[string]any, len(f.schema))
 		for k, v := range f.schema {
-			if v.HasIndex {
+			if v.HasIndex && dt[v.Index] != nil {
 				mm[k] = dt[v.Index]
 			}
 		}

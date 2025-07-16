@@ -46,6 +46,10 @@ type ProjectOp struct {
 	alias []interface{}
 }
 
+type TypedNil struct{}
+
+var TNil = (*TypedNil)(nil)
+
 // Apply
 //
 //	input: *xsql.Tuple| xsql.Collection
@@ -141,6 +145,11 @@ func (pp *ProjectOp) project(row xsql.RawRow, ve *xsql.ValuerEval) error {
 			if e, ok := vi.(error); ok {
 				return fmt.Errorf("expr: %s meet error, err:%v", f.Expr.String(), e)
 			}
+			if pp.SendNil && vi == nil {
+				// set it to a typed nil to distinguish from nil
+				// so that the encoder can treat it differently from nil
+				vi = TNil
+			}
 			fr := f.Expr.(*ast.FieldRef)
 			rt.SetByIndex(fr.Index, vi)
 		}
@@ -151,6 +160,11 @@ func (pp *ProjectOp) project(row xsql.RawRow, ve *xsql.ValuerEval) error {
 					return fmt.Errorf("expr: %s meet error, err:%v", f.Expr.String(), e)
 				}
 				// TODO deal with other types
+				if pp.SendNil && vi == nil {
+					// set it to a typed nil to distinguish from nil
+					// so that the encoder can treat it differently from nil
+					vi = TNil
+				}
 				fr := f.Expr.(*ast.FieldRef)
 				rt.SetByIndex(fr.Index, vi)
 			}
