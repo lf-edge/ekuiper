@@ -23,3 +23,12 @@ type IndexValuer interface {
 
 // SliceVal this is the content type for slice tuple
 type SliceVal []any
+
+func (s SliceVal) IsEmpty() bool {
+	for _, v := range s {
+		if v != nil {
+			return false
+		}
+	}
+	return true
+}
