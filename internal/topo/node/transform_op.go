@@ -112,6 +112,20 @@ func (t *TransformOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 // Worker do not need to process error and control messages
 func (t *TransformOp) Worker(ctx api.StreamContext, item any) []any {
 	if t.isSliceMode {
+		if t.omitIfEmpty {
+			switch dt := item.(type) {
+			case *xsql.SliceTuple:
+				if dt.SourceContent.IsEmpty() {
+					ctx.GetLogger().Debugf("receive empty result %v in sink, dropped", dt)
+					return nil
+				}
+			case xsql.Collection:
+				if dt.Len() == 0 {
+					ctx.GetLogger().Debugf("receive empty result %v in sink, dropped", dt)
+					return nil
+				}
+			}
+		}
 		return t.transformSlice(ctx, item)
 	}
 	if ic, ok := item.(xsql.Collection); ok && t.omitIfEmpty && ic.Len() == 0 {
