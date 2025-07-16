@@ -88,7 +88,7 @@ func ToString(input interface{}, sn Strictness) (string, error) {
 				return strconv.FormatUint(uint64(s), 10), nil
 			case uint8:
 				return strconv.FormatUint(uint64(s), 10), nil
-			case nil:
+			case nil, *TypedNil:
 				return "", nil
 			case fmt.Stringer:
 				return s.String(), nil
