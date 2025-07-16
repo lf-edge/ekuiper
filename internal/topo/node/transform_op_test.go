@@ -299,7 +299,7 @@ func TestTransformSlice(t *testing.T) {
 		{
 			name: "data template with text format single",
 			sc: &SinkConf{
-				Omitempty:    true,
+				Omitempty:    false,
 				Format:       "custom",
 				DataTemplate: "{\"ab\":\"et\"}",
 				SendSingle:   false,

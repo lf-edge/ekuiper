@@ -3291,3 +3291,60 @@ func TestProjectSlice(t *testing.T) {
 		})
 	}
 }
+
+func TestSliceNilField(t *testing.T) {
+	tests := []struct {
+		name    string
+		sql     string
+		sendNil bool
+		data    any
+		result  any
+	}{
+		{
+			name: "normal default",
+			sql:  `SELECT c, t as a FROM test`,
+			data: &xsql.SliceTuple{
+				SourceContent: model.SliceVal{nil, "b0", "c0"},
+			},
+			result: &xsql.SliceTuple{
+				SourceContent: model.SliceVal{"c0", nil},
+			},
+		},
+		{
+			name:    "normal sendNil",
+			sql:     `SELECT c, a FROM test`,
+			sendNil: true,
+			data: &xsql.SliceTuple{
+				SourceContent: model.SliceVal{"a0", "b0", nil},
+			},
+			result: &xsql.SliceTuple{
+				SourceContent: model.SliceVal{cast.TNil, "a0"},
+			},
+		},
+		{
+			name:    "alias sendNil",
+			sql:     `SELECT c as ct, a FROM test`,
+			sendNil: true,
+			data: &xsql.SliceTuple{
+				SourceContent: model.SliceVal{"a0", "b0", nil},
+			},
+			result: &xsql.SliceTuple{
+				SourceContent: model.SliceVal{cast.TNil, "a0"},
+			},
+		},
+	}
+	contextLogger := conf.Log.WithField("rule", "TestProjectPlan_Apply1")
+	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			stmt, err := xsql.NewParser(strings.NewReader(tt.sql)).Parse()
+			require.NoError(t, err)
+			pp := &ProjectOp{IsAggregate: xsql.WithAggFields(stmt), SendNil: tt.sendNil}
+			parseStmtWithSlice(pp, stmt.Fields, true)
+			fv, afv := xsql.NewFunctionValuersForOp(nil)
+			opResult := pp.Apply(ctx, tt.data, fv, afv)
+			require.NoError(t, err)
+			require.Equal(t, tt.result, opResult)
+		})
+	}
+}

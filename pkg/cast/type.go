@@ -71,3 +71,7 @@ func ConvertDuration(s any) (time.Duration, error) {
 	}
 	return 0, fmt.Errorf("unsupported type:%t", s)
 }
+
+type TypedNil struct{}
+
+var TNil = (*TypedNil)(nil)
