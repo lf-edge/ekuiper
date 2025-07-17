@@ -132,6 +132,9 @@ func getStoreConfigByKuiperConfig(c *model.KuiperConf) (*store.StoreConf, error)
 		FdbConfig: definition.FdbConfig{
 			Path: c.Store.Fdb.Path,
 		},
+		PebbleConfig: definition.PebbleConfig{
+			Path: c.Store.Pebble.Path,
+		},
 	}
 	return sc, nil
 }
