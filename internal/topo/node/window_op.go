@@ -88,6 +88,7 @@ const (
 func init() {
 	gob.Register([]xsql.EventRow{})
 	gob.Register([]map[string]interface{}{})
+	gob.Register(map[string]time.Time{})
 }
 
 func NewWindowOp(name string, w WindowConfig, options *def.RuleOption) (*WindowOperator, error) {
