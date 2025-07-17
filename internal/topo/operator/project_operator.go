@@ -22,6 +22,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/binder/function"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
+	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/message"
 )
 
@@ -45,10 +46,6 @@ type ProjectOp struct {
 	kvs   []interface{}
 	alias []interface{}
 }
-
-type TypedNil struct{}
-
-var TNil = (*TypedNil)(nil)
 
 // Apply
 //
@@ -148,7 +145,7 @@ func (pp *ProjectOp) project(row xsql.RawRow, ve *xsql.ValuerEval) error {
 			if pp.SendNil && vi == nil {
 				// set it to a typed nil to distinguish from nil
 				// so that the encoder can treat it differently from nil
-				vi = TNil
+				vi = cast.TNil
 			}
 			fr := f.Expr.(*ast.FieldRef)
 			rt.SetByIndex(fr.Index, vi)
@@ -163,7 +160,7 @@ func (pp *ProjectOp) project(row xsql.RawRow, ve *xsql.ValuerEval) error {
 				if pp.SendNil && vi == nil {
 					// set it to a typed nil to distinguish from nil
 					// so that the encoder can treat it differently from nil
-					vi = TNil
+					vi = cast.TNil
 				}
 				fr := f.Expr.(*ast.FieldRef)
 				rt.SetByIndex(fr.Index, vi)
