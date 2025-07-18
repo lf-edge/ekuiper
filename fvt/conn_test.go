@@ -94,7 +94,7 @@ func (s *ConnectionTestSuite) TestConnStatus() {
 			metrics, e := client.GetRuleStatus("ruleTTT1")
 			s.Require().NoError(e)
 			fmt.Println(metrics)
-			return metrics["source_tttStream_0_connection_status"] == -1.0
+			return metrics["source_conn1/ttt_0_connection_status"] == -1.0
 		})
 		s.Require().True(r)
 	})
@@ -121,7 +121,7 @@ func (s *ConnectionTestSuite) TestConnStatus() {
 			metrics, e := client.GetRuleStatus("ruleTTT1")
 			s.Require().NoError(e)
 			fmt.Println(metrics)
-			return metrics["source_tttStream_0_connection_status"] == 1.0
+			return metrics["source_conn1/ttt_0_connection_status"] == 1.0
 		})
 		s.Require().True(r)
 		// Assert connection status
@@ -157,7 +157,7 @@ func (s *ConnectionTestSuite) TestConnStatus() {
 			metrics, e := client.GetRuleStatus("ruleTTT2")
 			s.Require().NoError(e)
 			fmt.Println(metrics)
-			return metrics["source_tttStream_0_connection_status"] == 1.0
+			return metrics["source_conn1/ttt_0_connection_status"] == 1.0
 		})
 		s.Require().True(r)
 	})
@@ -170,7 +170,7 @@ func (s *ConnectionTestSuite) TestConnStatus() {
 			metrics, e := client.GetRuleStatus("ruleTTT1")
 			s.Require().NoError(e)
 			fmt.Println(metrics)
-			return metrics["source_tttStream_0_connection_status"] == 0.0
+			return metrics["source_conn1/ttt_0_connection_status"] == 0.0
 		})
 		s.Require().True(r)
 		// Assert rule1 metrics
@@ -178,7 +178,7 @@ func (s *ConnectionTestSuite) TestConnStatus() {
 			metrics, e := client.GetRuleStatus("ruleTTT2")
 			s.Require().NoError(e)
 			fmt.Println(metrics)
-			return metrics["source_tttStream_0_connection_status"] == 0.0
+			return metrics["source_conn1/ttt_0_connection_status"] == 0.0
 		})
 		s.Require().True(r)
 		// Assert connection status
@@ -211,7 +211,7 @@ func (s *ConnectionTestSuite) TestConnStatus() {
 			metrics, e := client.GetRuleStatus("ruleTTT2")
 			s.Require().NoError(e)
 			fmt.Println(metrics)
-			return metrics["source_tttStream_0_connection_status"] == 1.0
+			return metrics["source_conn1/ttt_0_connection_status"] == 1.0
 		})
 		s.Require().True(r)
 		// Assert connection status
@@ -229,7 +229,7 @@ func (s *ConnectionTestSuite) TestConnStatus() {
 			metrics, e := client.GetRuleStatus("ruleTTT1")
 			s.Require().NoError(e)
 			fmt.Println(metrics)
-			return metrics["source_tttStream_0_connection_status"] == 1.0
+			return metrics["source_conn1/ttt_0_connection_status"] == 1.0
 		})
 		s.Require().True(r)
 	})
