@@ -188,7 +188,7 @@ func (es *Source) Subscribe(ctx api.StreamContext, ingest api.TupleIngest, inges
 					// meta["created"] = eve.Created
 					// meta["modified"] = eve.Modified
 					meta["origin"] = eve.Origin
-					meta["tags"] = eve.Tags
+					meta["tags"] = map[string]any(eve.Tags)
 					meta["correlationid"] = env.CorrelationID
 
 					ingest(ctx, result, meta, rcvTime)
