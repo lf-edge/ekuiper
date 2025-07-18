@@ -208,9 +208,9 @@ func TestPlanTopo(t *testing.T) {
 			name: "testSharedConnSplit",
 			sql:  `SELECT * FROM src3`,
 			topo: &def.PrintableTopo{
-				Sources: []string{"source_mqtt.localConnection/topic1testSharedConnSplit"},
+				Sources: []string{"source_mqtt.localConnection/topic1"},
 				Edges: map[string][]any{
-					"source_mqtt.localConnection/topic1testSharedConnSplit": {
+					"source_mqtt.localConnection/topic1": {
 						"op_2_emitter",
 					},
 					"op_2_emitter": {
@@ -340,12 +340,12 @@ func TestPlanTopo(t *testing.T) {
 			},
 		},
 		{
-			name: "testmqttmerger",
+			name: "test mqtt merger",
 			sql:  `SELECT * FROM src5`,
 			topo: &def.PrintableTopo{
-				Sources: []string{"source_mqtt.localConnection/topic1testmqttmerger"},
+				Sources: []string{"source_mqtt.localConnection/topic1"},
 				Edges: map[string][]any{
-					"source_mqtt.localConnection/topic1testmqttmerger": {
+					"source_mqtt.localConnection/topic1": {
 						"op_2_emitter",
 					},
 					"op_2_emitter": {
@@ -373,9 +373,9 @@ func TestPlanTopo(t *testing.T) {
 			name: "testNngConnSplit",
 			sql:  `SELECT * FROM neuron1`,
 			topo: &def.PrintableTopo{
-				Sources: []string{"source_nng:pairtcp://127.0.0.1:7777/singletontestNngConnSplit"},
+				Sources: []string{"source_nng:pairtcp://127.0.0.1:7777/singleton"},
 				Edges: map[string][]any{
-					"source_nng:pairtcp://127.0.0.1:7777/singletontestNngConnSplit": {
+					"source_nng:pairtcp://127.0.0.1:7777/singleton": {
 						"op_2_emitter",
 					},
 					"op_2_emitter": {
