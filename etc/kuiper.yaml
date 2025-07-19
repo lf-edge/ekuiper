@@ -130,8 +130,8 @@ source:
 
 store:
   #Type of store that will be used for keeping state of the application
-  type: pebble
-  extStateType: pebble
+  type: sqlite
+  extStateType: sqlite
   redis:
     host: localhost
     port: 6379
@@ -142,8 +142,7 @@ store:
     #Sqlite file name, if left empty name of db will be sqliteKV.db
     name:
   pebble:
-    path: /ekuiper/data/pebble
-    name: ""
+    name: "pebble"
 
 # The settings for portable plugin
 portable:

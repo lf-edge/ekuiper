@@ -9,6 +9,7 @@ import (
 	"strconv"
 
 	"github.com/cockroachdb/pebble"
+
 	kvEncoding "github.com/lf-edge/ekuiper/v2/internal/pkg/store/encoding"
 	"github.com/lf-edge/ekuiper/v2/pkg/kv"
 )

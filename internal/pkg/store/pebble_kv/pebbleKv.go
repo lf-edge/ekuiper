@@ -6,10 +6,10 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/cockroachdb/pebble"
+
 	kvEncoding "github.com/lf-edge/ekuiper/v2/internal/pkg/store/encoding"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
-
-	"github.com/cockroachdb/pebble"
 	"github.com/lf-edge/ekuiper/v2/pkg/kv"
 )
 

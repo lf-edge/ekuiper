@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/cockroachdb/pebble"
+
 	"github.com/lf-edge/ekuiper/v2/internal/conf/logger"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store/definition"
 )
