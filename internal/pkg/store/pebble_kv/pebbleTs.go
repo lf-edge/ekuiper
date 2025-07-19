@@ -49,7 +49,6 @@ func (t *pebbleTsStore) Set(key int64, value interface{}) (bool, error) {
 
 		return db.Set(t.key(key), b, pebble.Sync)
 	})
-
 	if err != nil {
 		return false, err
 	}
