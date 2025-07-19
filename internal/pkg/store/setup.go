@@ -27,6 +27,7 @@ type StoreConf struct {
 	RedisConfig  definition.RedisConfig
 	SqliteConfig definition.SqliteConfig
 	FdbConfig    definition.FdbConfig
+	PebbleConfig definition.PebbleConfig
 }
 
 func SetupDefault(dataDir string) error {
@@ -51,6 +52,7 @@ func SetupWithConfig(sc *StoreConf) error {
 		Redis:        sc.RedisConfig,
 		Sqlite:       sc.SqliteConfig,
 		Fdb:          sc.FdbConfig,
+		Pebble:       sc.PebbleConfig,
 	}
 	return Setup(c)
 }
