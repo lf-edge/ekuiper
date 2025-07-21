@@ -1024,7 +1024,7 @@ func TestSliceWrite(t *testing.T) {
 					int64(34555), "test", nil,
 				},
 			},
-			result: `[{"email":"aaa@ee.com","id":1233,"name":"test"},{"email":null,"id":34555,"name":"test"}]`,
+			result: `[{"email":"aaa@ee.com","id":1233,"name":"test"},{"id":34555,"name":"test"}]`,
 		},
 	}
 	ctx := mockContext.NewMockContext("test", "op1")

@@ -108,7 +108,7 @@ func (f *FastJsonConverter) Encode(ctx api.StreamContext, d any) (b []byte, err 
 		for i, dtt := range dt {
 			ms[i] = make(map[string]any, len(f.schema))
 			for k, v := range f.schema {
-				if v.HasIndex {
+				if v.HasIndex && dtt[v.Index] != nil {
 					ms[i][k] = dtt[v.Index]
 				}
 			}
