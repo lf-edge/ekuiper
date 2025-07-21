@@ -718,9 +718,6 @@ func createLogicalPlanFull(stmt *ast.SelectStatement, opt *def.RuleOption, store
 		}
 	}
 	if stmt.Having != nil {
-		if opt.Experiment != nil && opt.Experiment.UseSliceTuple {
-			return nil, nil, nil, errors.New("slice tuple mode do not support having yet")
-		}
 		p = HavingPlan{
 			condition: stmt.Having,
 			IsIncAgg:  len(rewriteRes.incAggFields) > 0,

@@ -39,7 +39,7 @@ type WindowV2Operator struct {
 func NewWindowV2Op(name string, w WindowConfig, options *def.RuleOption) (*WindowV2Operator, error) {
 	o := new(WindowV2Operator)
 	o.defaultSinkNode = newDefaultSinkNode(name, options)
-	o.scanner = &WindowScanner{tuples: make([]*xsql.Tuple, 0)}
+	o.scanner = &WindowScanner{tuples: make([]xsql.EventRow, 0)}
 	o.windowConfig = w
 	switch w.Type {
 	case ast.SLIDING_WINDOW:
@@ -108,7 +108,7 @@ func NewStateWindowOp(o *WindowV2Operator) *StateWindowOp {
 	}
 }
 
-func (s *StateWindowOp) exec(ctx api.StreamContext, errCh chan<- error) {
+func (s *StateWindowOp) exec(ctx api.StreamContext, _ chan<- error) {
 	fv, _ := xsql.NewFunctionValuersForOp(ctx)
 	for {
 		select {
@@ -121,7 +121,7 @@ func (s *StateWindowOp) exec(ctx api.StreamContext, errCh chan<- error) {
 			}
 			s.onProcessStart(ctx, input)
 			switch row := data.(type) {
-			case *xsql.Tuple:
+			case xsql.EventRow:
 				if !s.onBegin {
 					canBegin := isMatchCondition(ctx, s.BeginCondition, fv, row, s.stateFuncs)
 					if canBegin {
@@ -163,7 +163,7 @@ func NewSlidingWindowOp(o *WindowV2Operator) *SlidingWindowOp {
 	}
 }
 
-func (s *SlidingWindowOp) exec(ctx api.StreamContext, errCh chan<- error) {
+func (s *SlidingWindowOp) exec(ctx api.StreamContext, _ chan<- error) {
 	fv, _ := xsql.NewFunctionValuersForOp(ctx)
 	for {
 		select {
@@ -180,8 +180,8 @@ func (s *SlidingWindowOp) exec(ctx api.StreamContext, errCh chan<- error) {
 			}
 			s.onProcessStart(ctx, input)
 			switch row := data.(type) {
-			case *xsql.Tuple:
-				windowEnd := row.Timestamp
+			case xsql.EventRow:
+				windowEnd := row.GetTimestamp()
 				windowStart := windowEnd.Add(-s.Length)
 				s.scanner.gc(windowStart)
 				s.scanner.addTuple(row)
@@ -210,7 +210,7 @@ func (s *SlidingWindowOp) exec(ctx api.StreamContext, errCh chan<- error) {
 	}
 }
 
-func isMatchCondition(ctx api.StreamContext, condition ast.Expr, fv *xsql.FunctionValuer, d *xsql.Tuple, stateFuncs []*ast.Call) bool {
+func isMatchCondition(ctx api.StreamContext, condition ast.Expr, fv *xsql.FunctionValuer, d xsql.EventRow, stateFuncs []*ast.Call) bool {
 	if condition == nil {
 		return true
 	}
@@ -238,20 +238,20 @@ func isMatchCondition(ctx api.StreamContext, condition ast.Expr, fv *xsql.Functi
 }
 
 type WindowScanner struct {
-	tuples []*xsql.Tuple
+	tuples []xsql.EventRow
 }
 
-func (s *WindowScanner) addTuple(tuple *xsql.Tuple) {
+func (s *WindowScanner) addTuple(tuple xsql.EventRow) {
 	s.tuples = append(s.tuples, tuple)
 }
 
 // scan left-open, right-closed window
-func (s *WindowScanner) scanWindow(windowStart, windowEnd time.Time) []*xsql.Tuple {
-	result := make([]*xsql.Tuple, 0)
+func (s *WindowScanner) scanWindow(windowStart, windowEnd time.Time) []xsql.EventRow {
+	result := make([]xsql.EventRow, 0)
 	for _, tuple := range s.tuples {
-		if tuple.Timestamp.After(windowStart) && (tuple.Timestamp.Before(windowEnd) || tuple.Timestamp.Equal(windowEnd)) {
+		if tuple.GetTimestamp().After(windowStart) && (tuple.GetTimestamp().Before(windowEnd) || tuple.GetTimestamp().Equal(windowEnd)) {
 			result = append(result, tuple)
-		} else if tuple.Timestamp.After(windowEnd) {
+		} else if tuple.GetTimestamp().After(windowEnd) {
 			break
 		}
 	}
@@ -265,13 +265,13 @@ func (s *WindowScanner) gc(gcTime time.Time) {
 	}
 	index := -1
 	for i, tuple := range s.tuples {
-		if tuple.Timestamp.After(gcTime) {
+		if tuple.GetTimestamp().After(gcTime) {
 			index = i
 			break
 		}
 	}
 	if index == -1 {
-		s.tuples = make([]*xsql.Tuple, 0)
+		s.tuples = make([]xsql.EventRow, 0)
 		return
 	}
 	s.tuples = s.tuples[index:]
