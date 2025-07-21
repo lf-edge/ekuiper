@@ -84,6 +84,8 @@ func Walk(v Visitor, node Node) {
 		Walk(v, n.Interval)
 		Walk(v, n.Filter)
 		Walk(v, n.TriggerCondition)
+		Walk(v, n.BeginCondition)
+		Walk(v, n.EmitCondition)
 
 	case SortFields:
 		for _, sf := range n {
