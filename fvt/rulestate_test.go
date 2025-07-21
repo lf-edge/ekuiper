@@ -324,6 +324,16 @@ func (s *RuleStateTestSuite) TestRuleTags() {
 		s.Require().NoError(err)
 		s.Require().Equal(http.StatusOK, resp.StatusCode)
 		s.Require().Equal([]string{}, lists)
+
+		resp, err = client.ResetRuleTags("ruleTags", []string{"t1", "t2"})
+		s.Require().NoError(err)
+		s.T().Log(GetResponseText(resp))
+		s.Require().Equal(http.StatusOK, resp.StatusCode)
+
+		lists, err = client.GetRulesByTags([]string{"t1", "t2"})
+		s.Require().NoError(err)
+		s.Require().Equal(http.StatusOK, resp.StatusCode)
+		s.Require().Equal([]string{"ruleTags"}, lists)
 	})
 	s.Run("clean up", func() {
 		client.DeleteStream("simStream1")

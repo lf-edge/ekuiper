@@ -234,10 +234,21 @@ func (sdk *SDK) BatchRequest(reqs []*server.EachRequest) ([]*server.EachResponse
 	return resps, nil
 }
 
-func (sdk *SDK) AddRuleTags(name string, tags []string) (resp *http.Response, err error) {
+func (sdk *SDK) ResetRuleTags(name string, tags []string) (resp *http.Response, err error) {
 	v, _ := json.Marshal(&server.RuleTagRequest{Tags: tags})
 	url := sdk.baseUrl.JoinPath("rules", name, "tags").String()
 	req, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer(v))
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	return sdk.httpClient.Do(req)
+}
+
+func (sdk *SDK) AddRuleTags(name string, tags []string) (resp *http.Response, err error) {
+	v, _ := json.Marshal(&server.RuleTagRequest{Tags: tags})
+	url := sdk.baseUrl.JoinPath("rules", name, "tags").String()
+	req, err := http.NewRequest(http.MethodPatch, url, bytes.NewBuffer(v))
 	if err != nil {
 		fmt.Println(err)
 		return
