@@ -185,8 +185,18 @@ func ReadSinkMetaDir(checker InstallChecker) error {
 	if nil != err {
 		return err
 	}
+	dataDir, err := conf.GetDataLoc()
+	if err != nil {
+		return err
+	}
+	if err := readSinkMetaDir(confDir, checker); err != nil {
+		return err
+	}
+	return readSinkMetaDir(dataDir, checker)
+}
 
-	dir := path.Join(confDir, "sinks")
+func readSinkMetaDir(folder string, checker InstallChecker) error {
+	dir := path.Join(folder, "sinks")
 	files, err := os.ReadDir(dir)
 	if nil != err {
 		return err
@@ -227,10 +237,11 @@ func ReadSinkMetaFile(filePath string, installed bool) error {
 	} else {
 		metadata.About.Installed = installed
 	}
-	gSinkmetadata[finame], err = newUiSink(metadata)
-	if nil != err {
+	uisink, err := newUiSink(metadata)
+	if err != nil {
 		return err
 	}
+	gSinkmetadata[finame] = uisink
 	loadConfigOperatorForSink(strings.TrimSuffix(finame, `.json`))
 	return nil
 }
