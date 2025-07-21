@@ -122,25 +122,20 @@ func (s *StateWindowOp) exec(ctx api.StreamContext, errCh chan<- error) {
 			s.onProcessStart(ctx, input)
 			switch row := data.(type) {
 			case *xsql.Tuple:
-				var canBegin bool
-				var canEmit bool
 				if !s.onBegin {
-					canBegin = isMatchCondition(ctx, s.BeginCondition, fv, row, s.stateFuncs)
+					canBegin := isMatchCondition(ctx, s.BeginCondition, fv, row, s.stateFuncs)
 					if canBegin {
 						s.onBegin = true
+						s.scanner.addTuple(row)
 					}
-				}
-				if s.onBegin {
+				} else {
 					s.scanner.addTuple(row)
-					canEmit = isMatchCondition(ctx, s.EmitCondition, fv, row, s.stateFuncs)
-				}
-				if s.onBegin && canEmit {
-					s.emitWindow(ctx, time.Time{}, InfTime)
-					s.scanner.gc(InfTime)
-					s.onBegin = false
-				}
-				if canBegin && !s.onBegin {
-					s.onBegin = true
+					canEmit := isMatchCondition(ctx, s.EmitCondition, fv, row, s.stateFuncs)
+					if canEmit {
+						s.emitWindow(ctx, time.Time{}, InfTime)
+						s.scanner.gc(InfTime)
+						s.onBegin = false
+					}
 				}
 			}
 			s.onProcessEnd(ctx)
