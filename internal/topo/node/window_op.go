@@ -90,7 +90,19 @@ func init() {
 	gob.Register([]map[string]interface{}{})
 }
 
+func validateWindowConfig(w WindowConfig) error {
+	switch w.Type {
+	case ast.STATE_WINDOW:
+		return fmt.Errorf("v1 window op didn't support state window, use v2 window")
+	default:
+		return nil
+	}
+}
+
 func NewWindowOp(name string, w WindowConfig, options *def.RuleOption) (*WindowOperator, error) {
+	if err := validateWindowConfig(w); err != nil {
+		return nil, err
+	}
 	o := new(WindowOperator)
 
 	o.defaultSinkNode = newDefaultSinkNode(name, options)
