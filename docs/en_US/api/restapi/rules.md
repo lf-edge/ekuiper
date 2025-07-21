@@ -257,12 +257,24 @@ GET http://localhost:9081/rules/usage/cpu
 
 Get the CPU time used by all rules in the past 30 seconds, in milliseconds.
 
+## Reset Tags
+
+This API is used to reset tags to rules
+
+```shell
+PUT /rules/{id}/tags
+
+{
+  "tags": ["t1","t2"]
+}
+```
+
 ## Add tags on rules
 
 This API is used to add tags to rules
 
 ```shell
-PUT /rules/{id}/tags
+PATCH /rules/{id}/tags
 
 {
   "tags": ["t1","t2"]
