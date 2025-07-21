@@ -228,12 +228,24 @@ GET http://localhost:9081/rules/usage/cpu
 
 获取所有规则在过去 30s 内的所使用的 CPU 时间，单位为毫秒
 
+## 重置标签
+
+该 API 用于给规则重置标签
+
+```shell
+PUT /rules/{id}/tags
+
+{
+  "tags": ["t1","t2"]
+}
+```
+
 ## 添加标签
 
 该 API 用于给规则添加标签
 
 ```shell
-PUT /rules/{id}/tags
+PATCH /rules/{id}/tags
 
 {
   "tags": ["t1","t2"]
