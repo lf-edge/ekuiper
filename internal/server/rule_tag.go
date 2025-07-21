@@ -29,6 +29,19 @@ type RuleTagResponse struct {
 	Rules []string `json:"rules,omitempty"`
 }
 
+func resetRuleTags(ruleJson string, newTags []string) (string, error) {
+	m := make(map[string]any)
+	if err := json.Unmarshal([]byte(ruleJson), &m); err != nil {
+		return "", err
+	}
+	m["tags"] = newTags
+	v, err := json.Marshal(m)
+	if err != nil {
+		return "", err
+	}
+	return string(v), nil
+}
+
 func updateRuleTags(ruleJson string, tags []string, addOrRemove bool) (string, []string, error) {
 	m := make(map[string]any)
 	if err := json.Unmarshal([]byte(ruleJson), &m); err != nil {
@@ -101,6 +114,31 @@ func ruleTagHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	switch r.Method {
 	case http.MethodPut:
+		ruleJson, err := ruleProcessor.GetRuleJson(ruleID)
+		if err != nil {
+			handleError(w, err, "Get rule error", logger)
+			return
+		}
+		rs, ok := registry.load(ruleID)
+		if !ok || rs == nil {
+			handleError(w, err, "Get rule error", logger)
+			return
+		}
+		newRuleJson, err := resetRuleTags(ruleJson, tagsReq.Tags)
+		if err != nil {
+			handleError(w, err, "update rule labels error", logger)
+			return
+		}
+		if rs.Rule.Tags == nil {
+			rs.Rule.Tags = make([]string, 0)
+		}
+		rs.Rule.Tags = tagsReq.Tags
+		if err := registry.update(ruleID, newRuleJson, rs); err != nil {
+			handleError(w, err, "", logger)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+	case http.MethodPatch:
 		ruleJson, err := ruleProcessor.GetRuleJson(ruleID)
 		if err != nil {
 			handleError(w, err, "Get rule error", logger)
