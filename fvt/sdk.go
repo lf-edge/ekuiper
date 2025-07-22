@@ -110,6 +110,10 @@ func (sdk *SDK) RestartRule(ruleId string) (resp *http.Response, err error) {
 	return http.Post(sdk.baseUrl.JoinPath("rules", ruleId, "restart").String(), ContentTypeJson, nil)
 }
 
+func (sdk *SDK) StartRule(ruleId string) (resp *http.Response, err error) {
+	return http.Post(sdk.baseUrl.JoinPath("rules", ruleId, "start").String(), ContentTypeJson, nil)
+}
+
 func (sdk *SDK) StopRule(ruleId string) (resp *http.Response, err error) {
 	return http.Post(sdk.baseUrl.JoinPath("rules", ruleId, "stop").String(), ContentTypeJson, nil)
 }
