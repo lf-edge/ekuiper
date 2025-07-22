@@ -228,6 +228,38 @@ func (s *RuleStateTestSuite) TestCreateStoppedRule() {
 		s.Require().NoError(err)
 		s.T().Log(GetResponseText(resp))
 		s.Require().Equal(http.StatusCreated, resp.StatusCode)
+		// upsert stopped rule
+		ruleSql3 := `{
+  "triggered": false,
+  "id": "rule3",
+  "name": "to update rule",
+  "sql": "SELECT * FROM simStream",
+  "actions": [
+    {
+      "nop":{}
+    }
+  ],
+  "options": {
+    "sendError": false,
+	"bufferLength": 2
+  }
+}`
+		resp, err = client.UpdateRule("rule3", ruleSql3)
+		s.Require().NoError(err)
+		s.T().Log(GetResponseText(resp))
+		s.Require().Equal(http.StatusOK, resp.StatusCode)
+
+		metrics, err := client.GetRuleStatus("rule3")
+		s.Require().NoError(err)
+		s.Equal("stopped", metrics["status"])
+		s.T().Log(metrics)
+
+		resp, err = client.StartRule("rule3")
+		time.Sleep(50 * time.Millisecond)
+		metrics, err = client.GetRuleStatus("rule3")
+		s.Require().NoError(err)
+		s.Equal("running", metrics["status"])
+		s.T().Log(metrics)
 	})
 	s.Run("check no buffer is not full exp", func() {
 		// Get metrics
@@ -252,9 +284,19 @@ func (s *RuleStateTestSuite) TestCreateStoppedRule() {
 		sinkOut2, ok := metrics["source_simStream_0_records_in_total"]
 		s.True(ok)
 		s.Require().True(sinkOut2.(float64)-sinkOut1.(float64) > 0)
+		// Get rule3 metrics
+		metrics, err = client.GetRuleStatus("rule3")
+		sinkOut, ok := metrics["sink_nop_0_0_records_out_total"]
+		s.True(ok)
+		s.Require().True(sinkOut.(float64) > 0)
+		s.Require().NoError(err)
 	})
 	s.Run("clean up", func() {
-		res, e := client.Delete("rules/rule2")
+		res, e := client.Delete("rules/rule3")
+		s.NoError(e)
+		s.Equal(http.StatusOK, res.StatusCode)
+
+		res, e = client.Delete("rules/rule2")
 		s.NoError(e)
 		s.Equal(http.StatusOK, res.StatusCode)
 
