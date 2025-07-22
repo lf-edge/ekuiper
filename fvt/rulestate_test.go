@@ -254,7 +254,10 @@ func (s *RuleStateTestSuite) TestCreateStoppedRule() {
 		s.Equal("stopped", metrics["status"])
 		s.T().Log(metrics)
 
-		_, err = client.StartRule("rule3")
+		resp, err = client.StartRule("rule3")
+		s.Require().NoError(err)
+		s.Require().Equal(http.StatusOK, resp.StatusCode)
+
 		time.Sleep(50 * time.Millisecond)
 		metrics, err = client.GetRuleStatus("rule3")
 		s.Require().NoError(err)
