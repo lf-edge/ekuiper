@@ -308,23 +308,33 @@ func StartUp(Version string) {
 
 	ctx, cancel := context.WithTimeout(context.TODO(), time.Duration(conf.Config.Basic.GracefulShutdownTimeout))
 	defer cancel()
-	wg := sync.WaitGroup{}
-	// wait all service stop
-	wg.Add(2)
+	waitRuleStopCh := make(chan any, 0)
 	go func() {
-		conf.Log.Info("start to stop all rules")
-		waitAllRuleStop()
-		wg.Done()
+		wg := sync.WaitGroup{}
+		// wait all service stop
+		wg.Add(2)
+		go func() {
+			conf.Log.Info("start to stop all rules")
+			waitAllRuleStop()
+			wg.Done()
+			conf.Log.Info("stop all rules success")
+		}()
+		go func() {
+			conf.Log.Info("start to stop rest server")
+			if err = srvRest.Shutdown(ctx); err != nil {
+				logger.Errorf("rest server shutdown error: %v", err)
+			}
+			logger.Info("rest server successfully shutdown.")
+			wg.Done()
+		}()
+		wg.Wait()
+		close(waitRuleStopCh)
 	}()
-	go func() {
-		conf.Log.Info("start to stop rest server")
-		if err = srvRest.Shutdown(ctx); err != nil {
-			logger.Errorf("rest server shutdown error: %v", err)
-		}
-		logger.Info("rest server successfully shutdown.")
-		wg.Done()
-	}()
-	wg.Wait()
+	select {
+	case <-waitRuleStopCh:
+	case <-ctx.Done():
+		conf.Log.Info("wait rule graceful stop timeout")
+	}
 	// kill all plugin process
 	runtime.GetPluginInsManager().KillAll()
 
