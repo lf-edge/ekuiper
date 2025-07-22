@@ -65,7 +65,7 @@ basic:
   enableOpenZiti: false
   # AES Key, base64 encoded
   aesKey: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3
-  gracefulShutdownTimeout: 3s
+  gracefulShutdownTimeout: 10s
   connection:
     backoffMaxElapsedDuration: 3m
   # If it is enabled, the cpu time of the rule will be recorded.
