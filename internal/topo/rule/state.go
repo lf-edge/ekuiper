@@ -111,7 +111,9 @@ func NewState(rule *def.Rule, updateTriggerFunc func(string, bool)) *State {
 
 func (s *State) WithTopo(topo *topo.Topo) *State {
 	s.topology = topo
-	s.topoGraph = s.topology.GetTopo()
+	if topo != nil {
+		s.topoGraph = s.topology.GetTopo()
+	}
 	return s
 }
 
