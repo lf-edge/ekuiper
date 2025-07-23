@@ -88,4 +88,4 @@ type BytesIngest func(ctx StreamContext, payload []byte, meta map[string]any, ts
 // TupleIngest reads in a structural data or its list.
 // It supports map and []map for now
 type TupleIngest func(ctx StreamContext, data any, meta map[string]any, ts time.Time)
-type EOFIngest func(ctx StreamContext)
+type EOFIngest func(ctx StreamContext, msg string)
