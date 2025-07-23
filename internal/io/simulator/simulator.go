@@ -1,4 +1,4 @@
-// Copyright 2024-2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2025 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -63,7 +63,7 @@ func (s *SimulatorSource) Pull(ctx api.StreamContext, trigger time.Time, ingest 
 			s.index = 0
 		} else {
 			if s.eof != nil {
-				s.eof(ctx)
+				s.eof(ctx, "")
 			}
 			return
 		}
