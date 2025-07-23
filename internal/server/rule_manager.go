@@ -155,7 +155,7 @@ func (rr *RuleRegistry) CreateRule(name, ruleJson string) (id string, err error)
 }
 
 // RecoverRule loads in imported rule.
-// Unlike creation, 1. it suppose the rule is valid thus, it will always create the rule state in registry
+// Unlike creation, 1. it supposes the rule is valid thus, it will always create the rule state in registry
 // 2. It does not handle rule saving to db.
 func (rr *RuleRegistry) RecoverRule(r *def.Rule) string {
 	rs := rule.NewState(r, func(id string, b bool) {
@@ -231,6 +231,7 @@ func (rr *RuleRegistry) UpsertRule(ruleId, ruleJson string) error {
 		}
 	} else if newTopo != nil {
 		_ = newTopo.Cancel()
+		rs.WithTopo(nil)
 	}
 	return err1
 }
