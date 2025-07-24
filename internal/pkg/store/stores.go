@@ -21,6 +21,7 @@ import (
 	"sync"
 
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store/definition"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/store/pebble_kv"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store/sql"
 	"github.com/lf-edge/ekuiper/v2/pkg/kv"
 )
@@ -30,6 +31,7 @@ type StoreCreator func(conf definition.Config, name string) (definition.StoreBui
 var (
 	storeBuilders = map[string]StoreCreator{
 		"sqlite": sql.BuildStores,
+		"pebble": pebble_kv.BuildStores,
 	}
 	globalStores   *stores = nil
 	cacheStores    *stores = nil
