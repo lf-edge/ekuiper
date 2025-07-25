@@ -42,7 +42,7 @@ func rewriteStmt(stmt *ast.SelectStatement, opt *def.RuleOption) rewriteResult {
 
 // extract agg function from filter condition and rewrite with bypass fields
 func rewriteAggFunctionInWhere(stmt *ast.SelectStatement, opt *def.RuleOption) []*ast.Field {
-	if !opt.PlanOptimizeStrategy.AllowAggFuncInWhere {
+	if !opt.PlanOptimizeStrategy.IsAllowAggFuncInWhere() {
 		return nil
 	}
 	aggFuncsFieldInWhere := make([]*ast.Field, 0)
