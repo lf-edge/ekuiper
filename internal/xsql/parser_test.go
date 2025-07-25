@@ -1817,11 +1817,12 @@ func TestParser_ParseStatement(t *testing.T) {
 			err:  "Not allowed to call aggregate functions in GROUP BY clause: binaryExpr:{ Call:{ name:sum, args:[$$default.data] } > 10 }.",
 		},
 
-		{
-			s:    `SELECT temp AS t, name FROM topic/sensor1 WHERE count(name) = 3`,
-			stmt: nil,
-			err:  "Not allowed to call aggregate functions in WHERE clause: binaryExpr:{ Call:{ name:count, args:[$$default.name] } = 3 }.",
-		},
+		// let decorateStmt check aggfunc in where condition
+		//{
+		//	s:    `SELECT temp AS t, name FROM topic/sensor1 WHERE count(name) = 3`,
+		//	stmt: nil,
+		//	err:  "Not allowed to call aggregate functions in WHERE clause: binaryExpr:{ Call:{ name:count, args:[$$default.name] } = 3 }.",
+		//},
 
 		{
 			s: `SELECT s1.temp AS t, name FROM topic/sensor1 AS s1 WHERE t = "dname" GROUP BY s1.temp`,
@@ -4205,10 +4206,10 @@ func TestParser_ParseJoins(t *testing.T) {
 				Joins: []ast.Join{
 					{
 						Name: "topic1", Alias: "", JoinType: ast.LEFT_JOIN, Expr: &ast.BinaryExpr{
-							LHS: &ast.FieldRef{Name: "f", StreamName: ast.DefaultStream},
-							OP:  ast.EQ,
-							RHS: &ast.FieldRef{Name: "k", StreamName: ast.DefaultStream},
-						},
+						LHS: &ast.FieldRef{Name: "f", StreamName: ast.DefaultStream},
+						OP:  ast.EQ,
+						RHS: &ast.FieldRef{Name: "k", StreamName: ast.DefaultStream},
+					},
 					},
 				},
 			},
@@ -4228,10 +4229,10 @@ func TestParser_ParseJoins(t *testing.T) {
 				Joins: []ast.Join{
 					{
 						Name: "topic1", Alias: "t2", JoinType: ast.INNER_JOIN, Expr: &ast.BinaryExpr{
-							LHS: &ast.FieldRef{Name: "f", StreamName: ast.DefaultStream},
-							OP:  ast.EQ,
-							RHS: &ast.FieldRef{Name: "k", StreamName: ast.DefaultStream},
-						},
+						LHS: &ast.FieldRef{Name: "f", StreamName: ast.DefaultStream},
+						OP:  ast.EQ,
+						RHS: &ast.FieldRef{Name: "k", StreamName: ast.DefaultStream},
+					},
 					},
 				},
 			},
@@ -4251,10 +4252,10 @@ func TestParser_ParseJoins(t *testing.T) {
 				Joins: []ast.Join{
 					{
 						Name: "topic1/sensor2", Alias: "t2", JoinType: ast.LEFT_JOIN, Expr: &ast.BinaryExpr{
-							LHS: &ast.FieldRef{Name: "f", StreamName: ast.DefaultStream},
-							OP:  ast.EQ,
-							RHS: &ast.FieldRef{Name: "k", StreamName: ast.DefaultStream},
-						},
+						LHS: &ast.FieldRef{Name: "f", StreamName: ast.DefaultStream},
+						OP:  ast.EQ,
+						RHS: &ast.FieldRef{Name: "k", StreamName: ast.DefaultStream},
+					},
 					},
 				},
 			},
@@ -4274,10 +4275,10 @@ func TestParser_ParseJoins(t *testing.T) {
 				Joins: []ast.Join{
 					{
 						Name: "topic1/sensor2", Alias: "t2", JoinType: ast.LEFT_JOIN, Expr: &ast.BinaryExpr{
-							LHS: &ast.FieldRef{Name: "f", StreamName: ast.DefaultStream},
-							OP:  ast.EQ,
-							RHS: &ast.FieldRef{Name: "k", StreamName: ast.DefaultStream},
-						},
+						LHS: &ast.FieldRef{Name: "f", StreamName: ast.DefaultStream},
+						OP:  ast.EQ,
+						RHS: &ast.FieldRef{Name: "k", StreamName: ast.DefaultStream},
+					},
 					},
 				},
 			},
@@ -4297,10 +4298,10 @@ func TestParser_ParseJoins(t *testing.T) {
 				Joins: []ast.Join{
 					{
 						Name: "topic1/sensor2", Alias: "t2", JoinType: ast.LEFT_JOIN, Expr: &ast.BinaryExpr{
-							LHS: &ast.FieldRef{StreamName: ast.StreamName("t1"), Name: "f"},
-							OP:  ast.EQ,
-							RHS: &ast.FieldRef{StreamName: ast.StreamName("t2"), Name: "k"},
-						},
+						LHS: &ast.FieldRef{StreamName: ast.StreamName("t1"), Name: "f"},
+						OP:  ast.EQ,
+						RHS: &ast.FieldRef{StreamName: ast.StreamName("t2"), Name: "k"},
+					},
 					},
 				},
 			},
@@ -4320,10 +4321,10 @@ func TestParser_ParseJoins(t *testing.T) {
 				Joins: []ast.Join{
 					{
 						Name: "topic1/sensor2", Alias: "t2", JoinType: ast.RIGHT_JOIN, Expr: &ast.BinaryExpr{
-							LHS: &ast.FieldRef{StreamName: ast.StreamName("t1"), Name: "f"},
-							OP:  ast.EQ,
-							RHS: &ast.FieldRef{StreamName: ast.StreamName("t2"), Name: "k"},
-						},
+						LHS: &ast.FieldRef{StreamName: ast.StreamName("t1"), Name: "f"},
+						OP:  ast.EQ,
+						RHS: &ast.FieldRef{StreamName: ast.StreamName("t2"), Name: "k"},
+					},
 					},
 				},
 			},
@@ -4343,10 +4344,10 @@ func TestParser_ParseJoins(t *testing.T) {
 				Joins: []ast.Join{
 					{
 						Name: "topic1/sensor2", Alias: "t2", JoinType: ast.FULL_JOIN, Expr: &ast.BinaryExpr{
-							LHS: &ast.FieldRef{StreamName: ast.StreamName("t1"), Name: "f"},
-							OP:  ast.EQ,
-							RHS: &ast.FieldRef{StreamName: ast.StreamName("t2"), Name: "k"},
-						},
+						LHS: &ast.FieldRef{StreamName: ast.StreamName("t1"), Name: "f"},
+						OP:  ast.EQ,
+						RHS: &ast.FieldRef{StreamName: ast.StreamName("t2"), Name: "k"},
+					},
 					},
 				},
 			},
@@ -4396,10 +4397,10 @@ func TestParser_ParseJoins(t *testing.T) {
 				Joins: []ast.Join{
 					{
 						Name: "demo2", Alias: "", JoinType: ast.LEFT_JOIN, Expr: &ast.BinaryExpr{
-							LHS: &ast.FieldRef{StreamName: ast.StreamName("demo"), Name: "f1"},
-							OP:  ast.EQ,
-							RHS: &ast.FieldRef{StreamName: ast.StreamName("demo2"), Name: "f2"},
-						},
+						LHS: &ast.FieldRef{StreamName: ast.StreamName("demo"), Name: "f1"},
+						OP:  ast.EQ,
+						RHS: &ast.FieldRef{StreamName: ast.StreamName("demo2"), Name: "f2"},
+					},
 					},
 				},
 			},
