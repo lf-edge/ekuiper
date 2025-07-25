@@ -25,7 +25,6 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/schema"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	"github.com/lf-edge/ekuiper/v2/pkg/validate"
@@ -59,14 +58,14 @@ func schemasHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	switch r.Method {
 	case http.MethodGet:
-		l, err := schema.GetAllForType(def.SchemaType(st))
+		l, err := schema.GetAllForType(st)
 		if err != nil {
 			handleError(w, err, "", logger)
 			return
 		}
 		jsonResponse(l, w, logger)
 	case http.MethodPost:
-		sch := &schema.Info{Type: def.SchemaType(st)}
+		sch := &schema.Info{Type: st}
 		err := json.NewDecoder(r.Body).Decode(sch)
 		if err != nil {
 			handleError(w, err, "Invalid body: Error decoding schema json", logger)
@@ -98,7 +97,7 @@ func schemaHandler(w http.ResponseWriter, r *http.Request) {
 	name := vars["name"]
 	switch r.Method {
 	case http.MethodGet:
-		j, err := schema.GetSchema(def.SchemaType(st), name)
+		j, err := schema.GetSchema(st, name)
 		if err != nil {
 			handleError(w, err, "", logger)
 			return
@@ -108,12 +107,12 @@ func schemaHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		jsonResponse(j, w, logger)
 	case http.MethodDelete:
-		err := schema.DeleteSchema(def.SchemaType(st), name)
+		err := schema.DeleteSchema(st, name)
 		if err != nil {
 			handleError(w, err, fmt.Sprintf("delete %s schema %s error", st, name), logger)
 			return
 		}
-		sch := &schema.Info{Type: def.SchemaType(st), Name: name}
+		sch := &schema.Info{Type: st, Name: name}
 		tmpl := template.Must(template.New("response").Parse("{{.Type}} schema {{.Name}} is deleted"))
 		err = tmpl.Execute(w, sch)
 		if err != nil {
@@ -122,13 +121,13 @@ func schemaHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		w.WriteHeader(http.StatusOK)
 	case http.MethodPut:
-		sch := &schema.Info{Type: def.SchemaType(st), Name: name}
+		sch := &schema.Info{Type: st, Name: name}
 		err := json.NewDecoder(r.Body).Decode(sch)
 		if err != nil {
 			handleError(w, err, "Invalid body: Error decoding schema json", logger)
 			return
 		}
-		if sch.Type != def.SchemaType(st) || sch.Name != name {
+		if sch.Type != st || sch.Name != name {
 			handleError(w, nil, "Invalid body: Type or name does not match", logger)
 			return
 		}

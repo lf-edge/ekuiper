@@ -15,24 +15,13 @@
 package schema
 
 import (
-	"fmt"
-	"strings"
-
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
+	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
 
-type inferer func(schemaFileName string, SchemaMessageName string) (ast.StreamFields, error)
-
-// init once and read only
-var inferes = map[string]inferer{}
-
 func InferFromSchemaFile(schemaType string, schemaId string) (ast.StreamFields, error) {
-	if c, ok := inferes[schemaType]; ok {
-		r := strings.Split(schemaId, ".")
-		if len(r) != 2 {
-			return nil, fmt.Errorf("invalid schemaId: %s", schemaId)
-		}
+	if c, ok := modules.SchemaTypeDefs[schemaType]; ok {
 		// mock result for testing
 		if conf.IsTesting {
 			return ast.StreamFields{
@@ -50,7 +39,7 @@ func InferFromSchemaFile(schemaType string, schemaId string) (ast.StreamFields, 
 				},
 			}, nil
 		}
-		return c(r[0], r[1])
+		return c.Infer(conf.Log, schemaId)
 	} else {
 		return nil, nil
 	}
