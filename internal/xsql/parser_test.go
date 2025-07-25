@@ -4228,11 +4228,12 @@ func TestParser_ParseJoins(t *testing.T) {
 				Sources: []ast.Source{&ast.Table{Name: "topic/sensor1", Alias: "t1"}},
 				Joins: []ast.Join{
 					{
-						Name: "topic1", Alias: "t2", JoinType: ast.INNER_JOIN, Expr: &ast.BinaryExpr{
-						LHS: &ast.FieldRef{Name: "f", StreamName: ast.DefaultStream},
-						OP:  ast.EQ,
-						RHS: &ast.FieldRef{Name: "k", StreamName: ast.DefaultStream},
-					},
+						Name: "topic1", Alias: "t2", JoinType: ast.INNER_JOIN,
+						Expr: &ast.BinaryExpr{
+							LHS: &ast.FieldRef{Name: "f", StreamName: ast.DefaultStream},
+							OP:  ast.EQ,
+							RHS: &ast.FieldRef{Name: "k", StreamName: ast.DefaultStream},
+						},
 					},
 				},
 			},
