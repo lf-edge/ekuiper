@@ -1,31 +1,16 @@
-// Copyright 2022-2023 EMQ Technologies Co., Ltd.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
-//go:build schema || !core
-
 package schema
 
 import (
 	"os"
 	"path/filepath"
-	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
+	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
 
 func TestInferProtobuf(t *testing.T) {
@@ -54,13 +39,15 @@ func TestInferProtobuf(t *testing.T) {
 			t.Fatal(err)
 		}
 	}()
+	pt := &PbType{}
+	modules.RegisterSchemaType(modules.PROTOBUF, pt)
 	err = InitRegistry()
 	if err != nil {
 		t.Errorf("InitRegistry error: %v", err)
 		return
 	}
 	// Test infer
-	result, err := InferProtobuf("test1", "Person")
+	result, err := pt.Infer(nil, "test1.Person")
 	if err != nil {
 		t.Errorf("InferProtobuf error: %v", err)
 		return
@@ -76,9 +63,7 @@ func TestInferProtobuf(t *testing.T) {
 			}},
 		}},
 	}
-	if !reflect.DeepEqual(result, expected) {
-		t.Errorf("InferProtobuf result is not expected, got %v, expected %v", result, expected)
-	}
+	require.Equal(t, expected, result)
 }
 
 func TestInferProtobufWithEmbedType(t *testing.T) {
@@ -107,13 +92,15 @@ func TestInferProtobufWithEmbedType(t *testing.T) {
 			t.Fatal(err)
 		}
 	}()
+	pt := &PbType{}
+	modules.RegisterSchemaType(modules.PROTOBUF, pt)
 	err = InitRegistry()
 	if err != nil {
 		t.Errorf("InitRegistry error: %v", err)
 		return
 	}
 	// Test infer
-	result, err := InferProtobuf("test3", "DrivingData")
+	result, err := pt.Infer(nil, "test3.DrivingData")
 	if err != nil {
 		t.Errorf("InferProtobuf error: %v", err)
 		return

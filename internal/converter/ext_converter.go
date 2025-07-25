@@ -22,7 +22,6 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
 	"github.com/lf-edge/ekuiper/v2/internal/converter/protobuf"
-	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/schema"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/message"
@@ -40,7 +39,7 @@ func init() {
 				schemaName = r[1]
 			}
 		}
-		ffs, err := schema.GetSchemaFile(def.PROTOBUF, schemaFile)
+		ffs, err := schema.GetSchemaFile(modules.PROTOBUF, schemaFile)
 		if err != nil {
 			return nil, err
 		}
