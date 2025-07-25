@@ -504,6 +504,6 @@ func TestValidateStmt(t *testing.T) {
 	sql := "select a from src1 group by b"
 	stmt, err := xsql.NewParser(strings.NewReader(sql)).Parse()
 	require.NoError(t, err)
-	err = validate(stmt)
+	err = validate(stmt, &def.RuleOption{})
 	require.Error(t, err)
 }
