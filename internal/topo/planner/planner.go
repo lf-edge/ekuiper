@@ -432,6 +432,8 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *def.RuleOption, sources ma
 		op, err = node.NewJoinAlignNode(fmt.Sprintf("%d_join_aligner", newIndex), t.Emitters, t.Sizes, options)
 	case *JoinPlan:
 		op = Transform(&operator.JoinOp{Joins: t.joins, From: t.from}, fmt.Sprintf("%d_join", newIndex), options)
+	case *AggFuncPlan:
+		op = Transform(&operator.AggFuncOp{AggFields: t.aggFields}, fmt.Sprintf("%d_agg_func", newIndex), options)
 	case *FilterPlan:
 		t.ExtractStateFunc()
 		op = Transform(&operator.FilterOp{Condition: t.condition, StateFuncs: t.stateFuncs}, fmt.Sprintf("%d_filter", newIndex), options)
@@ -699,6 +701,13 @@ func createLogicalPlanFull(stmt *ast.SelectStatement, opt *def.RuleOption, store
 			children = []LogicalPlan{p}
 		}
 	}
+	if len(rewriteRes.aggFuncsFieldInWhere) > 0 {
+		p = AggFuncPlan{
+			aggFields: rewriteRes.aggFuncsFieldInWhere,
+		}.Init()
+		p.SetChildren(children)
+		children = []LogicalPlan{p}
+	}
 	if stmt.Condition != nil {
 		p = FilterPlan{
 			condition: stmt.Condition,
@@ -888,23 +897,6 @@ func extractWindowFuncFields(stmt *ast.SelectStatement) []*ast.Field {
 		return true
 	})
 	return windowFuncFields
-}
-
-type rewriteResult struct {
-	windowFuncFields  []*ast.Field
-	incAggFields      []*ast.Field
-	dsColAliasMapping map[ast.StreamName]map[string]string
-}
-
-// rewrite stmt will do following things:
-// 1. extract and rewrite the window function
-// 2. extract and rewrite the aggregation function
-func rewriteStmt(stmt *ast.SelectStatement, opt *def.RuleOption) rewriteResult {
-	result := rewriteResult{}
-	result.windowFuncFields = extractWindowFuncFields(stmt)
-	result.incAggFields = rewriteIfIncAggStmt(stmt, opt)
-	result.dsColAliasMapping = rewriteIfPushdownAlias(stmt, opt)
-	return result
 }
 
 func rewriteIfIncAggStmt(stmt *ast.SelectStatement, opt *def.RuleOption) []*ast.Field {

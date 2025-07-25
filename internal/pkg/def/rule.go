@@ -58,11 +58,19 @@ type PlanOptimizeStrategy struct {
 	DisableAliasRefCal      bool             `json:"disableAliasRefCal,omitempty" yaml:"disableAliasRefCal,omitempty"`
 	OptimizeControl         *OptimizeControl `json:"optimizeControl,omitempty" yaml:"optimizeControl,omitempty"`
 	WindowOption            *WindowOption    `json:"windowOption,omitempty" yaml:"windowOption,omitempty"`
+	AllowAggFuncInWhere     bool             `json:"allowAggFuncInWhere,omitempty" yaml:"allowAggFuncInWhere,omitempty"`
 }
 
 type WindowOption struct {
 	EnableSendSlidingWindowTwice bool   `json:"enableSendSlidingWindowTwice,omitempty" yaml:"enableSendSlidingWindowTwice,omitempty"`
 	WindowVersion                string `json:"windowVersion,omitempty" yaml:"windowVersion,omitempty"`
+}
+
+func (p *PlanOptimizeStrategy) IsAllowAggFuncInWhere() bool {
+	if p == nil {
+		return false
+	}
+	return p.AllowAggFuncInWhere
 }
 
 func (p *PlanOptimizeStrategy) GetWindowVersion() string {

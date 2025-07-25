@@ -167,7 +167,7 @@ func decorateStmt(s *ast.SelectStatement, store kv.KeyValue, opt *def.RuleOption
 	if walkErr != nil {
 		return nil, nil, nil, walkErr
 	}
-	walkErr = validate(s)
+	walkErr = validate(s, opt)
 	// Collect all analytic function calls so that we can let them run firstly
 	ast.WalkFunc(s, func(n ast.Node) bool {
 		switch f := n.(type) {
@@ -390,8 +390,12 @@ type validateOptStmt interface {
 	validate(statement *ast.SelectStatement) error
 }
 
-func validate(stmt *ast.SelectStatement) error {
+func validate(stmt *ast.SelectStatement, opt *def.RuleOption) error {
 	for _, checker := range stmtCheckers {
+		aggCheck, ok := checker.(*aggFuncChecker)
+		if ok {
+			aggCheck.allowAggFuncInWhereCondition = opt.PlanOptimizeStrategy.IsAllowAggFuncInWhere()
+		}
 		if err := checker.validate(stmt); err != nil {
 			return err
 		}
@@ -404,11 +408,13 @@ var stmtCheckers = []validateOptStmt{
 	&groupChecker{},
 }
 
-type aggFuncChecker struct{}
+type aggFuncChecker struct {
+	allowAggFuncInWhereCondition bool
+}
 
 func (c *aggFuncChecker) validate(s *ast.SelectStatement) (err error) {
 	isAggStmt := false
-	if xsql.IsAggregate(s.Condition) {
+	if !c.allowAggFuncInWhereCondition && xsql.IsAggregate(s.Condition) {
 		return fmt.Errorf("Not allowed to call aggregate functions in WHERE clause: %s.", s.Condition)
 	}
 	if !allAggregate(s.Having) {
