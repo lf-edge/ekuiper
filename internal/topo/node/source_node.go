@@ -102,7 +102,6 @@ func (m *SourceNode) traceStart(ctx api.StreamContext, meta map[string]any, tupl
 		return
 	}
 	var (
-		traced   bool
 		traceCtx api.StreamContext
 		span     trace.Span
 	)
@@ -121,20 +120,19 @@ func (m *SourceNode) traceStart(ctx api.StreamContext, meta map[string]any, tupl
 	}
 	// If read from parent trace
 	if tid, ok := meta["traceId"]; ok {
-		traced, traceCtx, span = tracenode.StartTraceByID(ctx, tid.(string), opts...)
+		traceCtx, span = tracenode.StartTraceByParentID(tid.(string), ctx.GetRuleId(), ctx.GetOpId(), opts...)
 	} else {
 		strategy := tracenode.ExtractStrategy(ctx)
 		if strategy != topoContext.AlwaysTraceStrategy {
 			return
 		}
-		traced, traceCtx, span = tracenode.StartTraceBackground(ctx, ctx.GetOpId(), opts...)
+		traceCtx, span = tracenode.StartTraceBackground(ctx.GetRuleId(), ctx.GetOpId(), opts...)
 		meta["traceId"] = span.SpanContext().TraceID()
 	}
-	if traced {
-		tracenode.RecordRowOrCollection(tuple, span)
-		m.span = span
-		m.spanCtx = traceCtx
-	}
+	tuple.SetTracerCtx(traceCtx)
+	tracenode.RecordRowOrCollection(tuple, span)
+	m.span = span
+	m.spanCtx = traceCtx
 }
 
 func (m *SourceNode) ingestAnyTuple(ctx api.StreamContext, data any, meta map[string]any, ts time.Time) {
@@ -197,7 +195,7 @@ func (m *SourceNode) ingestMap(t map[string]any, meta map[string]any, ts time.Ti
 func (m *SourceNode) ingestTuple(t *xsql.Tuple, ts time.Time) {
 	tuple := &xsql.Tuple{Emitter: m.name, Message: t.Message, Timestamp: ts, Metadata: t.Metadata, Ctx: t.Ctx}
 	// If receiving tuple, its source is still in the system. So continue tracing
-	traced, spanCtx, span := tracenode.TraceInput(m.ctx, tuple, m.name)
+	traced, spanCtx, span := tracenode.TraceInput(m.ctx.GetRuleId(), m.ctx.GetOpId(), tuple)
 	if traced {
 		tracenode.RecordRowOrCollection(tuple, span)
 		m.span = span
