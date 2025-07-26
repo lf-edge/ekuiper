@@ -26,3 +26,13 @@ func TestIsScheduleRule(t *testing.T) {
 	r.Options.Duration = "2s"
 	require.True(t, r.IsScheduleRule())
 }
+
+func TestIsMemRule(t *testing.T) {
+	r := GetDefaultRule("1", "2")
+	r.Tags = []string{memRuleTag}
+	require.True(t, r.IsMemRule())
+	r.Tags = []string{memRuleTag, "2"}
+	require.True(t, r.IsMemRule())
+	r.Tags = []string{"2"}
+	require.False(t, r.IsMemRule())
+}

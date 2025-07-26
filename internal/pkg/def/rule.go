@@ -162,6 +162,14 @@ type Rule struct {
 	Tags      []string                 `json:"tags,omitempty" yaml:"tags,omitempty"`
 }
 
+const (
+	memRuleTag = "memRule"
+)
+
+func (r *Rule) IsMemRule() bool {
+	return r.IsTagsMatch([]string{memRuleTag})
+}
+
 func (r *Rule) IsTagsMatch(tags []string) bool {
 	if len(r.Tags) < len(tags) {
 		return false
