@@ -45,6 +45,10 @@ func rewriteAggFunctionInWhere(stmt *ast.SelectStatement, opt *def.RuleOption) [
 	if !opt.PlanOptimizeStrategy.IsAllowAggFuncInWhere() {
 		return nil
 	}
+	return RewriteAggFunctionInWhere(stmt)
+}
+
+func RewriteAggFunctionInWhere(stmt *ast.SelectStatement) []*ast.Field {
 	aggFuncsFieldInWhere := make([]*ast.Field, 0)
 	var index int
 	ast.WalkFunc(stmt.Condition, func(node ast.Node) bool {
