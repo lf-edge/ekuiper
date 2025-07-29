@@ -40,7 +40,20 @@ POST http://localhost:9081/schemas/protobuf
 
 1. name：模式的唯一名称。
 2. 模式的内容，可选用 file 或 content 参数来指定。模式创建后，模式内容将写入 `data/schemas/$shcema_type/$schema_name` 文件中。
-   - file：模式文件的 URL。URL 支持 http 和 https 以及 file 模式。当使用 file 模式时，该文件必须在 eKuiper 服务器所在的机器上。它必须是模式类型对应的格式。例如 protobuf 模式的文件扩展名应为 .proto。
+   - file：模式文件的 URL。URL 支持 http 和 https 以及 file 模式。当使用 file 模式时，该文件必须在 eKuiper
+     服务器所在的机器上。引用的文件可以是单个模式文件，也可以是 ZIP 压缩文件。
+      - 单个模式文件: 文件扩展名必须与相应的模式类型匹配。例如：Protobuf 模式文件必须是 .proto 扩展名。
+      - ZIP 压缩文件: ZIP 文件根目录中必须包含一个主模式文件。可选地，ZIP 文件中还可以包含一个与模式名称相同（不带扩展名）的文件夹，用于存放支持文件。ZIP
+        归档中的任何其他文件或文件夹都将被忽略。例如：对于名为 test 的模式，test.zip 文件应具有以下结构：
+
+       ```text
+         test.zip/
+         ├── test.proto  (主文件)
+         └── test/          (可选文件夹，包含支持文件)
+           ├── helper.proto
+           └── config.json
+       ```
+
    - content：模式文件的内容。
 3. soFile：静态插件 so。插件创建请看[自定义格式](../../guide/serialization/serialization.md#格式扩展)。
 

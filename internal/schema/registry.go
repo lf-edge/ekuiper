@@ -15,14 +15,19 @@
 package schema
 
 import (
+	"archive/zip"
 	"context"
 	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 
+	"github.com/google/uuid"
+
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/filex"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/httpx"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
@@ -110,33 +115,86 @@ func Register(info *Info) error {
 }
 
 func CreateOrUpdateSchema(info *Info) error {
+	if strings.Contains(info.Type, "/") || strings.Contains(info.Type, "\\") || strings.Contains(info.Type, "..") {
+		return fmt.Errorf("schema type %s is invalid", info.Type)
+	}
+	if strings.Contains(info.Name, "/") || strings.Contains(info.Name, "\\") || strings.Contains(info.Name, "..") {
+		return fmt.Errorf("schema name %s is invalid", info.Name)
+	}
 	if _, ok := registry.schemas[info.Type]; !ok {
 		return fmt.Errorf("schema type %s not found", info.Type)
 	}
 	dataDir, _ := conf.GetDataLoc()
 	etcDir := filepath.Join(dataDir, "schemas", info.Type)
+	// make sure info.Type does not escape from root
 	if err := os.MkdirAll(etcDir, os.ModePerm); err != nil {
-		return err
+		conf.Log.Warnf("failed to create directory %s: %v", info.Type, err)
 	}
 	ffs := &modules.Files{}
+	// If file path is a .zip, it must have the name.type file and a folder of the same name to hold the supporting files. Other files will all be ignored.
+	// Otherwise, save the file in the upper folder
 	if info.Content != "" || info.FilePath != "" {
-		schemaFile := filepath.Join(etcDir, info.Name+schemaExt[info.Type])
-		if _, err := os.Stat(schemaFile); os.IsNotExist(err) {
-			file, err := os.Create(schemaFile)
+		supportingDir := filepath.Join(etcDir, info.Name)
+		err := os.RemoveAll(filepath.Join(etcDir, info.Name))
+		if err != nil {
+			conf.Log.Errorf("cannot delete schema supporting files %s: %s", supportingDir, err)
+		}
+
+		schemaFileName := info.Name + schemaExt[info.Type]
+		schemaFile := filepath.Join(etcDir, schemaFileName)
+		if filepath.Ext(info.FilePath) == ".zip" {
+			conf.Log.Infof("unzipping schema file %s", info.FilePath)
+			tmpFile := filepath.Join(etcDir, uuid.New().String()+".zip")
+			err := httpx.DownloadFile(tmpFile, info.FilePath)
 			if err != nil {
 				return err
 			}
-			defer file.Close()
-		}
-		if info.Content != "" {
-			err := os.WriteFile(schemaFile, cast.StringToBytes(info.Content), 0o666)
+			defer os.Remove(tmpFile)
+			reader, err := zip.OpenReader(tmpFile)
 			if err != nil {
 				return err
+			}
+			defer reader.Close()
+			found := false
+			for _, file := range reader.File {
+				fileName := file.Name
+				// Check if it's the exact file we want
+				if fileName == schemaFileName {
+					err = filex.UnzipTo(file, etcDir, schemaFileName)
+					found = true
+				} else if fileName == info.Name && file.FileInfo().IsDir() {
+					err = filex.UnzipTo(file, etcDir, info.Name)
+				} else if strings.HasPrefix(fileName, info.Name+"/") {
+					err = filex.UnzipTo(file, etcDir, fileName)
+				} else {
+					// Skip files that don't match our criteria
+					continue
+				}
+				if err != nil {
+					return err
+				}
+			}
+			if !found {
+				return fmt.Errorf("schema file %s not found inside the zip", schemaFileName)
 			}
 		} else {
-			err := httpx.DownloadFile(schemaFile, info.FilePath)
-			if err != nil {
-				return err
+			if _, err := os.Stat(schemaFile); os.IsNotExist(err) {
+				file, err := os.Create(schemaFile)
+				if err != nil {
+					return err
+				}
+				defer file.Close()
+			}
+			if info.Content != "" {
+				err := os.WriteFile(schemaFile, cast.StringToBytes(info.Content), 0o666)
+				if err != nil {
+					return err
+				}
+			} else {
+				err := httpx.DownloadFile(schemaFile, info.FilePath)
+				if err != nil {
+					return err
+				}
 			}
 		}
 		ffs.SchemaFile = schemaFile
@@ -204,10 +262,18 @@ func DeleteSchema(schemaType string, name string) error {
 		return fmt.Errorf("schema %s.%s not found", schemaType, name)
 	}
 	schemaFile := registry.schemas[schemaType][name]
+	// If the schema is a folder, delete the folder otherwise delete the single file
 	if schemaFile.SchemaFile != "" {
 		err := os.Remove(schemaFile.SchemaFile)
 		if err != nil {
 			conf.Log.Errorf("cannot delete schema file %s: %s", schemaFile.SchemaFile, err)
+		}
+		supportingDir := filepath.Join(filepath.Dir(schemaFile.SchemaFile), name)
+		if ff, _ := os.Stat(supportingDir); ff != nil && ff.IsDir() {
+			err = os.RemoveAll(supportingDir)
+			if err != nil {
+				conf.Log.Errorf("cannot delete schema supporting files %s: %s", supportingDir, err)
+			}
 		}
 	}
 	if schemaFile.SoFile != "" {
