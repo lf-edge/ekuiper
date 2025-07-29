@@ -66,13 +66,6 @@ type WindowOption struct {
 	WindowVersion                string `json:"windowVersion,omitempty" yaml:"windowVersion,omitempty"`
 }
 
-func (p *PlanOptimizeStrategy) IsAllowAggFuncInWhere() bool {
-	if p == nil {
-		return false
-	}
-	return p.AllowAggFuncInWhere
-}
-
 func (p *PlanOptimizeStrategy) GetWindowVersion() string {
 	if p == nil {
 		return ""

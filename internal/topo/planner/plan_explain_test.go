@@ -304,9 +304,6 @@ func TestExplainAggInWhere(t *testing.T) {
 		stmt, err := xsql.NewParser(strings.NewReader(tc.sql)).Parse()
 		require.NoError(t, err)
 		p, err := CreateLogicalPlan(stmt, &def.RuleOption{
-			PlanOptimizeStrategy: &def.PlanOptimizeStrategy{
-				AllowAggFuncInWhere: true,
-			},
 			Qos: 0,
 		}, kv)
 		require.NoError(t, err)
