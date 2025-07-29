@@ -410,6 +410,8 @@ type aggFuncChecker struct {
 
 func (c *aggFuncChecker) validate(s *ast.SelectStatement) (err error) {
 	isAggStmt := false
+	// lazy set isAgg flag
+	xsql.IsAggregate(s.Condition)
 	if !allAggregate(s.Having) {
 		return fmt.Errorf("Not allowed to call non-aggregate functions in HAVING clause: %s.", s.Having)
 	}
