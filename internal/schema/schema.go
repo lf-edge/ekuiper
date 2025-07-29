@@ -18,15 +18,15 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
+	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
 
 type Info struct {
-	Type     def.SchemaType `json:"type" yaml:"type"`
-	Name     string         `json:"name" yaml:"name"`
-	Content  string         `json:"content,omitempty" yaml:"content,omitempty"`
-	FilePath string         `json:"file,omitempty" yaml:"filePath,omitempty"`
-	SoPath   string         `json:"soFile,omitempty" yaml:"soPath,omitempty"`
+	Type     string `json:"type" yaml:"type"`
+	Name     string `json:"name" yaml:"name"`
+	Content  string `json:"content,omitempty" yaml:"content,omitempty"`
+	FilePath string `json:"file,omitempty" yaml:"filePath,omitempty"`
+	SoPath   string `json:"soFile,omitempty" yaml:"soPath,omitempty"`
 }
 
 func (i *Info) InstallScript() string {
@@ -45,11 +45,11 @@ func (i *Info) Validate() error {
 		return fmt.Errorf("cannot specify both content and file")
 	}
 	switch i.Type {
-	case def.PROTOBUF:
+	case modules.PROTOBUF:
 		if i.Content == "" && i.FilePath == "" {
 			return fmt.Errorf("must specify content or file")
 		}
-	case def.CUSTOM:
+	case modules.CUSTOM:
 		if i.SoPath == "" {
 			return fmt.Errorf("soFile is required")
 		}
@@ -59,6 +59,6 @@ func (i *Info) Validate() error {
 	return nil
 }
 
-var schemaExt = map[def.SchemaType]string{
-	def.PROTOBUF: ".proto",
+var schemaExt = map[string]string{
+	modules.PROTOBUF: ".proto",
 }

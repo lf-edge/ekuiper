@@ -1,55 +1,70 @@
-// Copyright 2022-2024 EMQ Technologies Co., Ltd.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 //go:build schema || !core
 
 package schema
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
 
 	dpb "github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"github.com/jhump/protoreflect/desc"            //nolint:staticcheck
 	"github.com/jhump/protoreflect/desc/protoparse" //nolint:staticcheck
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 
-	kconf "github.com/lf-edge/ekuiper/v2/internal/conf"
-	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
-	"github.com/lf-edge/ekuiper/v2/pkg/message"
+	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
 
 var protoParser *protoparse.Parser
 
 func init() {
-	inferes[message.FormatProtobuf] = InferProtobuf
-	etcDir, _ := kconf.GetLoc("etc/schemas/protobuf/")
-	dataDir, _ := kconf.GetLoc("data/schemas/protobuf/")
+	etcDir, _ := conf.GetLoc("etc/schemas/protobuf/")
+	dataDir, _ := conf.GetLoc("data/schemas/protobuf/")
 	protoParser = &protoparse.Parser{ImportPaths: []string{etcDir, dataDir}}
 }
 
-// InferProtobuf infers the schema from a protobuf file dynamically in case the schema file changed
-func InferProtobuf(schemaFile string, messageName string) (ast.StreamFields, error) {
-	ffs, err := GetSchemaFile(def.PROTOBUF, schemaFile)
+type PbType struct{}
+
+func (p *PbType) Scan(logger api.Logger, schemaDir string) (map[string]*modules.Files, error) {
+	var newSchemas map[string]*modules.Files
+	files, err := os.ReadDir(schemaDir)
 	if err != nil {
-		return nil, err
-	}
-	if fds, err := protoParser.ParseFiles(ffs.SchemaFile); err != nil {
-		return nil, fmt.Errorf("parse schema file %s failed: %s", ffs.SchemaFile, err)
+		return nil, fmt.Errorf("cannot read schema directory: %s", err)
 	} else {
-		messageDescriptor := fds[0].FindMessage(messageName)
+		newSchemas = make(map[string]*modules.Files, len(files))
+		for _, file := range files {
+			fileName := filepath.Base(file.Name())
+			ext := filepath.Ext(fileName)
+			schemaId := strings.TrimSuffix(fileName, filepath.Ext(fileName))
+			ffs, ok := newSchemas[schemaId]
+			if !ok {
+				ffs = &modules.Files{}
+				newSchemas[schemaId] = ffs
+			}
+			switch ext {
+			case ".so":
+				ffs.SoFile = filepath.Join(schemaDir, file.Name())
+			case ".proto":
+				ffs.SchemaFile = filepath.Join(schemaDir, file.Name())
+			default:
+				continue
+			}
+			logger.Infof("schema file %s/%s loaded", schemaDir, schemaId)
+		}
+	}
+	return newSchemas, nil
+}
+
+func (p *PbType) Infer(_ api.Logger, filePath string, messageId string) (ast.StreamFields, error) {
+	if fds, err := protoParser.ParseFiles(filePath); err != nil {
+		return nil, fmt.Errorf("parse schema file %s failed: %s", filePath, err)
+	} else {
+		messageDescriptor := fds[0].FindMessage(messageId)
 		if messageDescriptor == nil {
-			return nil, fmt.Errorf("message type %s not found in schema file %s", messageName, schemaFile)
+			return nil, fmt.Errorf("message type %s not found in schema file %s", messageId, filePath)
 		}
 		return convertMessage(messageDescriptor)
 	}
@@ -131,3 +146,5 @@ func convertFieldType(tt dpb.FieldDescriptorProto_Type, f *desc.FieldDescriptor)
 	}
 	return ft, nil
 }
+
+var _ modules.SchemaTypeDef = &PbType{}
