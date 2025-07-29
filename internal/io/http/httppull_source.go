@@ -44,7 +44,9 @@ func (hps *HttpPullSource) Rewind(offset any) error {
 }
 
 func (hps *HttpPullSource) ResetOffset(input map[string]any) error {
-	//TODO implement me
+	for k, v := range input {
+		hps.psc.Parameters[k] = v
+	}
 	return nil
 }
 
