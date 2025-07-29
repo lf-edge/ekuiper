@@ -24,6 +24,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/testx"
+	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
 
 func init() {
@@ -56,6 +57,8 @@ func TestProtoRegistry(t *testing.T) {
 			t.Fatal(err)
 		}
 	}()
+	pt := &PbType{}
+	modules.RegisterSchemaType(modules.PROTOBUF, pt)
 	err = InitRegistry()
 	if err != nil {
 		t.Errorf("InitRegistry error: %v", err)
@@ -202,6 +205,7 @@ func TestCustomRegistry(t *testing.T) {
 			t.Fatal(err)
 		}
 	}()
+	modules.RegisterSchemaType(modules.CUSTOM, &CustomType{})
 	err = InitRegistry()
 	if err != nil {
 		t.Errorf("InitRegistry error: %v", err)

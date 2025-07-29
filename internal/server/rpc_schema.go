@@ -20,14 +20,13 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/model"
 	"github.com/lf-edge/ekuiper/v2/internal/schema"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
 
 func (t *Server) CreateSchema(arg *model.RPCTypedArgDesc, reply *string) error {
-	sd := &schema.Info{Type: def.SchemaType(arg.Type)}
+	sd := &schema.Info{Type: arg.Type}
 	if arg.Json != "" {
 		if err := json.Unmarshal(cast.StringToBytes(arg.Json), sd); err != nil {
 			return fmt.Errorf("Parse service %s error : %s.", arg.Json, err)
@@ -49,7 +48,7 @@ func (t *Server) CreateSchema(arg *model.RPCTypedArgDesc, reply *string) error {
 }
 
 func (t *Server) DescSchema(arg *model.RPCTypedArgDesc, reply *string) error {
-	j, err := schema.GetSchema(def.SchemaType(arg.Type), arg.Name)
+	j, err := schema.GetSchema(arg.Type, arg.Name)
 	if err != nil {
 		return fmt.Errorf("Desc schema error : %s.", err)
 	} else if j == nil {
@@ -65,7 +64,7 @@ func (t *Server) DescSchema(arg *model.RPCTypedArgDesc, reply *string) error {
 }
 
 func (t *Server) DropSchema(arg *model.RPCTypedArgDesc, reply *string) error {
-	err := schema.DeleteSchema(def.SchemaType(arg.Type), arg.Name)
+	err := schema.DeleteSchema(arg.Type, arg.Name)
 	if err != nil {
 		return fmt.Errorf("Drop schema error : %s.", err)
 	}
@@ -74,7 +73,7 @@ func (t *Server) DropSchema(arg *model.RPCTypedArgDesc, reply *string) error {
 }
 
 func (t *Server) ShowSchemas(schemaType string, reply *string) error {
-	l, err := schema.GetAllForType(def.SchemaType(schemaType))
+	l, err := schema.GetAllForType(schemaType)
 	if err != nil {
 		return fmt.Errorf("Show schemas error: %s.", err)
 	}

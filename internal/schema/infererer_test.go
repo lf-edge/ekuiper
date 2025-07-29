@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,16 +12,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package def
+package schema
 
-type SchemaType string
+import (
+	"testing"
 
-const (
-	PROTOBUF SchemaType = "protobuf"
-	CUSTOM   SchemaType = "custom"
+	"github.com/stretchr/testify/assert"
 )
 
-var SchemaTypes = []SchemaType{
-	PROTOBUF,
-	CUSTOM,
+func TestInferFromSchemaFileError(t *testing.T) {
+	tests := []struct {
+		name       string
+		schemaType string
+		schemaId   string
+		err        error
+	}{
+		{
+			name:       "test weak schema type",
+			schemaType: "can",
+			schemaId:   "aa",
+			err:        nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := InferFromSchemaFile(tt.schemaType, tt.schemaId)
+			assert.Equal(t, tt.err, err)
+		})
+	}
 }
