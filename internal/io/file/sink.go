@@ -226,12 +226,10 @@ func (m *fileSink) roll(ctx api.StreamContext, k string, v *fileWriter) error {
 	err := v.Close(ctx)
 	if err != nil {
 		return err
-	} else {
-		if m.rollHook != nil {
-			err = m.rollHook.RollDone(ctx, v.File.Name())
-			if err != nil {
-				return err
-			}
+	}
+	if m.rollHook != nil {
+		if rollErr := m.rollHook.RollDone(ctx, v.File.Name()); rollErr != nil {
+			ctx.GetLogger().Errorf("%v roll done file:%v failed, err:%v", ctx.GetRuleId(), v.File.Name(), rollErr)
 		}
 	}
 	delete(m.fws, k)
