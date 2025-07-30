@@ -15,12 +15,16 @@
 package schema
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/testx"
@@ -34,36 +38,23 @@ func init() {
 func TestProtoRegistry(t *testing.T) {
 	// Move test schema file to etc dir
 	etcDir, err := conf.GetDataLoc()
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 	etcDir = filepath.Join(etcDir, "schemas", "protobuf")
 	err = os.MkdirAll(etcDir, os.ModePerm)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 	// Copy init.proto
 	bytesRead, err := os.ReadFile("test/init.proto")
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 	err = os.WriteFile(filepath.Join(etcDir, "init.proto"), bytesRead, 0o755)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 	defer func() {
 		err = os.RemoveAll(etcDir)
-		if err != nil {
-			t.Fatal(err)
-		}
+		require.NoError(t, err)
 	}()
 	pt := &PbType{}
 	modules.RegisterSchemaType(modules.PROTOBUF, pt)
 	err = InitRegistry()
-	if err != nil {
-		t.Errorf("InitRegistry error: %v", err)
-		return
-	}
+	require.NoError(t, err)
 	s := httptest.NewServer(
 		http.FileServer(http.Dir("test")),
 	)
@@ -73,25 +64,58 @@ func TestProtoRegistry(t *testing.T) {
 	schema1 := &Info{
 		Name:     "test1",
 		Type:     "protobuf",
-		FilePath: endpoint + "/test1.proto",
+		FilePath: endpoint + "/test1.zip",
 	}
 	err = Register(schema1)
+	require.NoError(t, err)
+	// Get 1
+	expectedSchema := &Info{
+		Type:     "protobuf",
+		Name:     "test1",
+		Content:  "syntax = \"proto2\";message Person {required string name = 1;optional int32 id = 2;optional string email = 3;}message ListOfDoubles {repeated double doubles = 1;}",
+		FilePath: filepath.Join(etcDir, "test1.proto"),
+	}
+	gottenSchema, err := GetSchema("protobuf", "test1")
+	assert.Equal(t, expectedSchema, gottenSchema)
+	expectedFiles := []string{
+		"init.proto", "test1.proto", "test1",
+	}
+	checkFile(etcDir, expectedFiles, t)
+	// Update 1 by file
+	schema1 = &Info{
+		Name:     "test1",
+		Type:     "protobuf",
+		FilePath: endpoint + "/test1.proto",
+	}
+	err = CreateOrUpdateSchema(schema1)
 	if err != nil {
-		t.Errorf("Register schema1 error: %v", err)
+		t.Errorf("Update schema1 error: %v", err)
 		return
 	}
 	// Get 1
-	expectedSchema := &Info{
+	expectedSchema = &Info{
 		Type:     "protobuf",
 		Name:     "test1",
 		Content:  "syntax = \"proto2\";message Person {required string name = 1;optional int32 id = 2;optional string email = 3;repeated ListOfDoubles code = 4;}message ListOfDoubles {repeated double doubles = 1;}",
 		FilePath: filepath.Join(etcDir, "test1.proto"),
 	}
-	gottenSchema, err := GetSchema("protobuf", "test1")
+	gottenSchema, err = GetSchema("protobuf", "test1")
 	if !reflect.DeepEqual(gottenSchema, expectedSchema) {
 		t.Errorf("Get test1 unmatch: Expect\n%v\nbut got\n%v", *expectedSchema, *gottenSchema)
 		return
 	}
+	expectedFiles = []string{
+		"init.proto", "test1.proto",
+	}
+	checkFile(etcDir, expectedFiles, t)
+	// Create 1 with invalid zip (no named file)
+	schema1 = &Info{
+		Name:     "test",
+		Type:     "protobuf",
+		FilePath: endpoint + "/test1.zip",
+	}
+	err = Register(schema1)
+	assert.EqualError(t, err, "schema file test.proto not found inside the zip")
 	// Create 2 by content
 	schema2 := &Info{
 		Name:    "test2",
@@ -124,16 +148,13 @@ func TestProtoRegistry(t *testing.T) {
 		t.Errorf("Expect\n%v\nbut got\n%v", expectedSchemas, regSchemas)
 		return
 	}
-	expectedFiles := []string{
+	expectedFiles = []string{
 		"init.proto", "test1.proto", "test2.proto", "test2.so",
 	}
 	checkFile(etcDir, expectedFiles, t)
 	// Delete 2
 	err = DeleteSchema("protobuf", "test2")
-	if err != nil {
-		t.Errorf("Delete Schema2 error: %v", err)
-		return
-	}
+	require.NoError(t, err)
 	// Update 1 by content
 	updatedSchema1 := &Info{
 		Name:    "test1",
@@ -141,38 +162,47 @@ func TestProtoRegistry(t *testing.T) {
 		Content: "message Person{required string name = 1;required int32 id = 2;optional string email = 3;}",
 	}
 	err = CreateOrUpdateSchema(updatedSchema1)
-	if err != nil {
-		t.Errorf("Update Schema1 error: %v", err)
-		return
-	}
+	require.NoError(t, err)
 	// List & check file
 	regSchemas, err = GetAllForType("protobuf")
 	expectedSchemas = []string{
 		"init", "test1",
 	}
-	if !reflect.DeepEqual(len(regSchemas), len(expectedSchemas)) {
-		t.Errorf("Expect\n%v\nbut got\n%v", expectedSchemas, regSchemas)
-		return
-	}
+	assert.Equal(t, len(regSchemas), len(expectedSchemas))
 	expectedFiles = []string{
 		"init.proto", "test1.proto",
 	}
 	checkFile(etcDir, expectedFiles, t)
+	// Update schema
+	schema1 = &Info{
+		Name:     "test1",
+		Type:     "protobuf",
+		FilePath: endpoint + "/test1.zip",
+	}
+	err = CreateOrUpdateSchema(schema1)
+	require.NoError(t, err)
+	// Get 1
+	expectedSchema = &Info{
+		Type:     "protobuf",
+		Name:     "test1",
+		Content:  "syntax = \"proto2\";message Person {required string name = 1;optional int32 id = 2;optional string email = 3;}message ListOfDoubles {repeated double doubles = 1;}",
+		FilePath: filepath.Join(etcDir, "test1.proto"),
+	}
+	gottenSchema, err = GetSchema("protobuf", "test1")
+	assert.Equal(t, expectedSchema, gottenSchema)
+	expectedFiles = []string{
+		"init.proto", "test1.proto", "test1",
+	}
+	checkFile(etcDir, expectedFiles, t)
 	// Delete 1
 	err = DeleteSchema("protobuf", "test1")
-	if err != nil {
-		t.Errorf("Delete Schema1 error: %v", err)
-		return
-	}
+	require.NoError(t, err)
 	// List & check file
 	regSchemas, err = GetAllForType("protobuf")
 	expectedSchemas = []string{
 		"init",
 	}
-	if !reflect.DeepEqual(regSchemas, expectedSchemas) {
-		t.Errorf("Expect\n%v\nbut got\n%v", expectedSchemas, regSchemas)
-		return
-	}
+	assert.Equal(t, regSchemas, expectedSchemas)
 	expectedFiles = []string{
 		"init.proto",
 	}
@@ -289,6 +319,7 @@ func checkFile(etcDir string, schemas []string, t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(files) != len(schemas) {
+		fmt.Printf("files: %v\nschemas: %v\n", files, schemas)
 		t.Errorf("Expect %d files but got %d", len(schemas), len(files))
 		return
 	}
@@ -305,5 +336,39 @@ func checkFile(etcDir string, schemas []string, t *testing.T) {
 			t.Errorf("Expect %s but got %s", schemas, fileName)
 			return
 		}
+	}
+}
+
+func TestInvalidInfo(t *testing.T) {
+	tests := []struct {
+		info *Info
+		err  string
+	}{
+		{
+			info: &Info{
+				Name: "../test1",
+				Type: "custom",
+			},
+			err: "schema name ../test1 is invalid",
+		},
+		{
+			info: &Info{
+				Name: "test1",
+				Type: "custom/../../test",
+			},
+			err: "schema type custom/../../test is invalid",
+		},
+		{
+			info: &Info{
+				Name: "test1",
+				Type: "invalid",
+			},
+			err: "schema type invalid not found",
+		},
+	}
+	InitRegistry()
+	for _, tt := range tests {
+		err := CreateOrUpdateSchema(tt.info)
+		assert.EqualError(t, err, tt.err)
 	}
 }
