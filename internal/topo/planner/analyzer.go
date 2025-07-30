@@ -404,9 +404,7 @@ var stmtCheckers = []validateOptStmt{
 	&groupChecker{},
 }
 
-type aggFuncChecker struct {
-	allowAggFuncInWhereCondition bool
-}
+type aggFuncChecker struct{}
 
 func (c *aggFuncChecker) validate(s *ast.SelectStatement) (err error) {
 	isAggStmt := false

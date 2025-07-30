@@ -58,7 +58,6 @@ type PlanOptimizeStrategy struct {
 	DisableAliasRefCal      bool             `json:"disableAliasRefCal,omitempty" yaml:"disableAliasRefCal,omitempty"`
 	OptimizeControl         *OptimizeControl `json:"optimizeControl,omitempty" yaml:"optimizeControl,omitempty"`
 	WindowOption            *WindowOption    `json:"windowOption,omitempty" yaml:"windowOption,omitempty"`
-	AllowAggFuncInWhere     bool             `json:"allowAggFuncInWhere,omitempty" yaml:"allowAggFuncInWhere,omitempty"`
 }
 
 type WindowOption struct {
