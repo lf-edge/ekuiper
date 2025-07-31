@@ -58,7 +58,7 @@ func RewriteAggFunctionInWhere(stmt *ast.SelectStatement) []*ast.Field {
 					Args:     aggFunc.Args,
 					FuncId:   aggFunc.FuncId,
 				}
-				name := fmt.Sprintf("agg_ref_%v", index)
+				name := fmt.Sprintf("$$agg_ref_%v", index)
 				newField := &ast.Field{
 					Name: name,
 					Expr: newAggFunc,
