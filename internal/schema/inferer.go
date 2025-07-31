@@ -54,7 +54,7 @@ func InferFromSchemaFile(schemaType string, schemaId string) (ast.StreamFields, 
 		if err != nil {
 			return nil, err
 		}
-		return c.Infer(conf.Log, ffs.SchemaFile, messageId)
+		return c.Def.Infer(conf.Log, ffs.SchemaFile, messageId)
 	} else {
 		return nil, nil
 	}

@@ -24,6 +24,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/converter/delimited"
 	"github.com/lf-edge/ekuiper/v2/internal/converter/json"
 	"github.com/lf-edge/ekuiper/v2/internal/converter/urlencoded"
+	"github.com/lf-edge/ekuiper/v2/internal/schema"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	"github.com/lf-edge/ekuiper/v2/pkg/message"
@@ -48,7 +49,7 @@ func init() {
 	})
 }
 
-func GetOrCreateConverter(ctx api.StreamContext, format string, schemaId string, schema map[string]*ast.JsonStreamField, props map[string]any) (c message.Converter, err error) {
+func GetOrCreateConverter(ctx api.StreamContext, format string, schemaId string, schemaFields map[string]*ast.JsonStreamField, props map[string]any) (c message.Converter, err error) {
 	defer func() {
 		if err != nil {
 			err = errorx.NewWithCode(errorx.CovnerterErr, err.Error())
@@ -59,8 +60,25 @@ func GetOrCreateConverter(ctx api.StreamContext, format string, schemaId string,
 	if t == "" {
 		t = message.FormatJson
 	}
-	if c, ok := modules.Converters[t]; ok {
-		return c(ctx, schemaId, schema, props)
+	if cp, ok := modules.Converters[t]; ok {
+		schemaType, hasSchema := modules.ConverterSchemas[t]
+		if hasSchema {
+			schemaFileId := ""
+			if schemaId != "" {
+				r := strings.Split(schemaId, ".")
+				schemaFileId = r[0]
+				if len(r) >= 2 {
+					props["$$messageName"] = r[1]
+				}
+			}
+			ffs, err := schema.GetSchemaFile(schemaType, schemaFileId)
+			if err != nil {
+				return nil, err
+			}
+			return cp(ctx, ffs.SchemaFile, schemaFields, props)
+		} else {
+			return cp(ctx, schemaId, schemaFields, props)
+		}
 	}
 	return nil, fmt.Errorf("format type %s not supported", t)
 }

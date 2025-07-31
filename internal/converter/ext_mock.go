@@ -22,6 +22,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
+	"github.com/lf-edge/ekuiper/v2/internal/schema"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/message"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
@@ -32,6 +33,8 @@ func init() {
 	modules.RegisterConverter("mock", func(_ api.StreamContext, _ string, _ map[string]*ast.JsonStreamField, props map[string]any) (message.Converter, error) {
 		return &MockConverter{}, nil
 	})
+	modules.RegisterSchemaType(modules.CUSTOM, &schema.CustomType{}, ".so")
+	modules.RegisterConverterSchemas("mock", "protobuf")
 }
 
 // MockConverter mocks a slow converter for benchmark test

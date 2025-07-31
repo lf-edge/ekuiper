@@ -65,3 +65,9 @@ var Mergers = map[string]MergerProvider{}
 func RegisterMerger(name string, provider MergerProvider) {
 	Mergers[name] = provider
 }
+
+var ConverterSchemas = map[string]string{}
+
+func RegisterConverterSchemas(name string, schemaType string) {
+	ConverterSchemas[name] = schemaType
+}

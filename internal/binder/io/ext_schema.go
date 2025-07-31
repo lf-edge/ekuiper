@@ -8,6 +8,6 @@ import (
 )
 
 func init() {
-	modules.RegisterSchemaType(modules.PROTOBUF, &schema.PbType{})
-	modules.RegisterSchemaType(modules.CUSTOM, &schema.CustomType{})
+	modules.RegisterSchemaType(modules.PROTOBUF, &schema.PbType{}, ".proto")
+	modules.RegisterSchemaType(modules.CUSTOM, &schema.CustomType{}, ".so")
 }

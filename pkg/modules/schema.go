@@ -11,11 +11,16 @@ type SchemaTypeDef interface {
 	Infer(logger api.Logger, filePath string, messageId string) (ast.StreamFields, error)
 }
 
-// SchemaTypeDefs is the registry of all schema type.
-var SchemaTypeDefs = map[string]SchemaTypeDef{}
+type SchemaTypeInfo struct {
+	Def SchemaTypeDef
+	Ext string
+}
 
-func RegisterSchemaType(name string, t SchemaTypeDef) {
-	SchemaTypeDefs[name] = t
+// SchemaTypeDefs is the registry of all schema type.
+var SchemaTypeDefs = map[string]SchemaTypeInfo{}
+
+func RegisterSchemaType(name string, t SchemaTypeDef, ext string) {
+	SchemaTypeDefs[name] = SchemaTypeInfo{t, ext}
 }
 
 const (
