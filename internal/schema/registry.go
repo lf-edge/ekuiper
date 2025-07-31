@@ -70,9 +70,9 @@ func InitRegistry() error {
 	if err != nil {
 		return fmt.Errorf("cannot open schemaStatus db: %s", err)
 	}
-	for schemaType, def := range modules.SchemaTypeDefs {
+	for schemaType, st := range modules.SchemaTypeDefs {
 		schemaDir := filepath.Join(dataDir, "schemas", schemaType)
-		newSchemas, err := def.Scan(conf.Log, schemaDir)
+		newSchemas, err := st.Def.Scan(conf.Log, schemaDir)
 		if err != nil {
 			conf.Log.Warnf("cannot read schema directory: %s", err)
 			newSchemas = make(map[string]*modules.Files)
@@ -121,7 +121,8 @@ func CreateOrUpdateSchema(info *Info) error {
 	if strings.Contains(info.Name, "/") || strings.Contains(info.Name, "\\") || strings.Contains(info.Name, "..") {
 		return fmt.Errorf("schema name %s is invalid", info.Name)
 	}
-	if _, ok := registry.schemas[info.Type]; !ok {
+	st, ok := modules.SchemaTypeDefs[info.Type]
+	if !ok {
 		return fmt.Errorf("schema type %s not found", info.Type)
 	}
 	dataDir, _ := conf.GetDataLoc()
@@ -140,7 +141,7 @@ func CreateOrUpdateSchema(info *Info) error {
 			conf.Log.Errorf("cannot delete schema supporting files %s: %s", supportingDir, err)
 		}
 
-		schemaFileName := info.Name + schemaExt[info.Type]
+		schemaFileName := info.Name + st.Ext
 		schemaFile := filepath.Join(etcDir, schemaFileName)
 		if filepath.Ext(info.FilePath) == ".zip" {
 			conf.Log.Infof("unzipping schema file %s", info.FilePath)
