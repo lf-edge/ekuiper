@@ -30,14 +30,14 @@ type HttpPullSource struct {
 }
 
 func (hps *HttpPullSource) GetOffset() (any, error) {
-	return hps.psc.Parameters, nil
+	return hps.psc.States, nil
 }
 
 func (hps *HttpPullSource) Rewind(offset any) error {
 	m, ok := offset.(map[string]interface{})
 	if ok {
 		for k, v := range m {
-			hps.psc.Parameters[k] = v
+			hps.psc.States[k] = v
 		}
 	}
 	return nil
@@ -45,7 +45,7 @@ func (hps *HttpPullSource) Rewind(offset any) error {
 
 func (hps *HttpPullSource) ResetOffset(input map[string]any) error {
 	for k, v := range input {
-		hps.psc.Parameters[k] = v
+		hps.psc.States[k] = v
 	}
 	return nil
 }
@@ -69,12 +69,12 @@ func (hps *HttpPullSource) Connect(ctx api.StreamContext, sch api.StatusChangeHa
 }
 
 type pullSourceConfig struct {
-	Path       string         `json:"datasource"`
-	Parameters map[string]any `json:"parameters"`
+	Path   string         `json:"datasource"`
+	States map[string]any `json:"states"`
 }
 
 func (hps *HttpPullSource) Provision(ctx api.StreamContext, configs map[string]any) error {
-	pc := &pullSourceConfig{Parameters: map[string]any{}}
+	pc := &pullSourceConfig{States: map[string]any{}}
 	if err := cast.MapToStruct(configs, pc); err != nil {
 		return err
 	}
@@ -104,8 +104,8 @@ func (hps *HttpPullSource) doPullInternal(ctx api.StreamContext, c *ClientConf, 
 		return nil, "", err
 	}
 	newUrl := c.config.Url
-	if len(hps.psc.Parameters) > 0 {
-		newUrl, err = ctx.ParseTemplate(c.config.Url, hps.psc.Parameters)
+	if len(hps.psc.States) > 0 {
+		newUrl, err = ctx.ParseTemplate(c.config.Url, hps.psc.States)
 		if err != nil {
 			return nil, "", err
 		}
@@ -119,16 +119,16 @@ func (hps *HttpPullSource) doPullInternal(ctx api.StreamContext, c *ClientConf, 
 	if err != nil {
 		return nil, "", err
 	}
-	hps.updateParameter(results)
+	hps.updateState(results)
 	return results, newMD5, nil
 }
 
-func (hps *HttpPullSource) updateParameter(results []map[string]interface{}) {
+func (hps *HttpPullSource) updateState(results []map[string]interface{}) {
 	for _, r := range results {
 		for k, v := range r {
-			_, ok := hps.psc.Parameters[k]
+			_, ok := hps.psc.States[k]
 			if ok {
-				hps.psc.Parameters[k] = v
+				hps.psc.States[k] = v
 			}
 		}
 	}

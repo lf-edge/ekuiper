@@ -123,7 +123,7 @@ func TestHttpPullStateSource(t *testing.T) {
 		"url":        server.URL,
 		"datasource": "/param?a={{.a}}",
 		"method":     "get",
-		"parameters": map[string]interface{}{"a": 1},
+		"states":     map[string]interface{}{"a": 1},
 	}))
 	require.NoError(t, source.Connect(ctx, func(status string, message string) {
 		// do nothing

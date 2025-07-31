@@ -38,6 +38,8 @@ default:
   headers:
     Accept: application/json
   # 如何检查响应状态，支持通过状态码或 body
+  states:
+ #   state_key: state_value  
   responseType: code
   # 获取 token
 #  oAuth:
@@ -82,6 +84,7 @@ application_conf: #Conf_key
 - `body`：请求的正文，例如 `{"data": "data", "method": 1}`
 - `bodyType`：正文类型，可选值 none、text、json、html、xml、javascript、format.
 - `headers`：需要与 HTTP 请求一起发送的 HTTP 请求标头。
+- `states`: httppull 的参数状态，可以通过渲染的方式更新 url。
 - `responseType`：定义如何解析 HTTP 响应。目前支持两种方式：
   - `code`：通过 HTTP 响应码判断响应状态。
   - `body`：通过 HTTP 响应正文判断响应状态。要求响应正文为 JSON 格式且其中包含 code 字段。
@@ -129,6 +132,12 @@ OAuth 2.0 是一个授权协议，让 API 客户端有限度地访问网络服�
 #### 增量数据处理
 
 `incremental`：如设置为 `true`，则将与上次的结果进行比较；如果两次请求的响应相同，则将跳过发送结果。
+
+#### 状态更新
+
+状态更新是指在运行时会动态更新的状态，在创建 http_pull 时可以指定初始状态。状态目前可以渲染在 HTTP 请求的 URL 中，其语法基于[数据模板](../../sinks/data_template.md)格式的动态属性。
+
+并且状态可以根据 http_pull 的结果进行更新。当开启了 QOS 为 1 后，状态将会被定期落盘，并在下一次启动后加载。
 
 #### 动态属性
 
