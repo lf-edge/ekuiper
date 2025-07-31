@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"testing"
 	"time"
 
@@ -90,6 +91,14 @@ func handleRefresh(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(resp)
 }
 
+func handleParam(w http.ResponseWriter, r *http.Request) {
+	v, _ := strconv.ParseInt(r.URL.Query().Get("a"), 10, 64)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	v = v + 1
+	json.NewEncoder(w).Encode(map[string]interface{}{"a": v})
+}
+
 func createServer() *httptest.Server {
 	router := http.NewServeMux()
 	router.HandleFunc("/get", handleGet)
@@ -98,8 +107,46 @@ func createServer() *httptest.Server {
 	router.HandleFunc("/codeErr", handleCodeErr)
 	router.HandleFunc("/auth", handleAuth)
 	router.HandleFunc("/refresh", handleRefresh)
+	router.HandleFunc("/param", handleParam)
 	server := httptest.NewServer(router)
 	return server
+}
+
+func TestHttpPullStateSource(t *testing.T) {
+	server := createServer()
+	defer func() {
+		server.Close()
+	}()
+	ctx := mockContext.NewMockContext("1", "2")
+	source := &HttpPullSource{}
+	require.NoError(t, source.Provision(ctx, map[string]any{
+		"url":        server.URL,
+		"datasource": "/param?a={{.a}}",
+		"method":     "get",
+		"parameters": map[string]interface{}{"a": 1},
+	}))
+	require.NoError(t, source.Connect(ctx, func(status string, message string) {
+		// do nothing
+	}))
+	dataCh := make(chan any, 1)
+	source.Pull(ctx, time.Now(), func(ctx api.StreamContext, data any, meta map[string]any, ts time.Time) {
+		dataCh <- data
+	}, func(ctx api.StreamContext, err error) {})
+	require.Equal(t, []map[string]interface{}{
+		{
+			"a": float64(2),
+		},
+	}, <-dataCh)
+	source.Pull(ctx, time.Now(), func(ctx api.StreamContext, data any, meta map[string]any, ts time.Time) {
+		dataCh <- data
+	}, func(ctx api.StreamContext, err error) {})
+	require.Equal(t, []map[string]interface{}{
+		{
+			"a": float64(3),
+		},
+	}, <-dataCh)
+	source.Close(ctx)
+	close(dataCh)
 }
 
 func TestHttpPullSource(t *testing.T) {

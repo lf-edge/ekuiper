@@ -105,7 +105,7 @@ func (hps *HttpPullSource) doPullInternal(ctx api.StreamContext, c *ClientConf, 
 	}
 	newUrl := c.config.Url
 	if len(hps.psc.Parameters) > 0 {
-		newUrl, err = ctx.ParseTemplate(c.config.Url, hps.psc)
+		newUrl, err = ctx.ParseTemplate(c.config.Url, hps.psc.Parameters)
 		if err != nil {
 			return nil, "", err
 		}
