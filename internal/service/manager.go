@@ -452,7 +452,17 @@ func (m *Manager) unzip(name, src string) error {
 	}
 	// unzip
 	for _, file := range r.File {
-		err := filex.UnzipTo(file, m.etcDir, file.Name)
+		// Prevent Zip Slip: ensure the extraction path is within m.etcDir
+		destPath := filepath.Join(m.etcDir, file.Name)
+		cleanDestPath := filepath.Clean(destPath)
+		etcDirAbs, err := filepath.Abs(m.etcDir)
+		if err != nil {
+			return fmt.Errorf("failed to get absolute path of etcDir: %v", err)
+		}
+		if !strings.HasPrefix(cleanDestPath, etcDirAbs+string(os.PathSeparator)) && cleanDestPath != etcDirAbs {
+			return fmt.Errorf("illegal file path in zip: %s", file.Name)
+		}
+		err = filex.UnzipTo(file, m.etcDir, file.Name)
 		if err != nil {
 			return err
 		}

@@ -32,6 +32,21 @@ func UnzipTo(f *zip.File, folder, name string) (err error) {
 		})
 	}()
 	fpath := filepath.Join(folder, name)
+	absFolder, err := filepath.Abs(folder)
+	if err != nil {
+		return err
+	}
+	absFpath, err := filepath.Abs(fpath)
+	if err != nil {
+		return err
+	}
+	rel, err := filepath.Rel(absFolder, absFpath)
+	if err != nil {
+		return err
+	}
+	if strings.HasPrefix(rel, ".."+string(os.PathSeparator)) || rel == ".." {
+		return errors.New("zip slip: illegal file path detected: " + name)
+	}
 	_, err = os.Stat(fpath)
 
 	if f.FileInfo().IsDir() {
