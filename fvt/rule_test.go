@@ -40,6 +40,52 @@ func TestRuleSuite(t *testing.T) {
 	suite.Run(t, new(RuleTestSuite))
 }
 
+func (s *RuleTestSuite) TestRuleAggInWhere() {
+	topic := "test2"
+	subCh := pubsub.CreateSub(topic, nil, topic, 1024)
+	defer pubsub.CloseSourceConsumerChannel(topic, topic)
+	data := []map[string]any{
+		{
+			"a": float64(1),
+		},
+		{
+			"a": float64(2),
+		},
+	}
+	conf := map[string]any{
+		"data":     data,
+		"interval": "1ms",
+		"loop":     false,
+	}
+	resp, err := client.CreateConf("sources/simulator/confKeys/sim5", conf)
+	s.Require().NoError(err)
+	s.Require().Equal(http.StatusOK, resp.StatusCode)
+	streamSql := `{"sql": "create stream sim5() WITH (TYPE=\"simulator\", CONF_KEY=\"sim5\")"}`
+	resp, err = client.CreateStream(streamSql)
+	s.Require().NoError(err)
+	s.T().Log(GetResponseText(resp))
+	s.Require().Equal(http.StatusCreated, resp.StatusCode)
+	ruleSql := `{
+    "id": "ruleSim5",
+    "sql": "SELECT * FROM sim5 where a > avg(a) group by countwindow(2)",
+    "actions": [
+        {
+            "memory": {
+                "topic": "test2"
+            }
+        }
+    ],
+    "options": {
+        
+    }
+}`
+	resp, err = client.CreateRule(ruleSql)
+	s.Require().NoError(err)
+	s.T().Log(GetResponseText(resp))
+	s.Require().Equal(http.StatusCreated, resp.StatusCode)
+	s.assertRecvMemTuple(subCh, []map[string]any{{"a": float64(2)}})
+}
+
 func (s *RuleTestSuite) TestRuleDisableBufferFullDiscard() {
 	topic := "test1"
 	subCh := pubsub.CreateSub(topic, nil, topic, 1024)

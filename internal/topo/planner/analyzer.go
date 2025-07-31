@@ -408,9 +408,8 @@ type aggFuncChecker struct{}
 
 func (c *aggFuncChecker) validate(s *ast.SelectStatement) (err error) {
 	isAggStmt := false
-	if xsql.IsAggregate(s.Condition) {
-		return fmt.Errorf("Not allowed to call aggregate functions in WHERE clause: %s.", s.Condition)
-	}
+	// lazy set isAgg flag
+	xsql.IsAggregate(s.Condition)
 	if !allAggregate(s.Having) {
 		return fmt.Errorf("Not allowed to call non-aggregate functions in HAVING clause: %s.", s.Having)
 	}
@@ -597,7 +596,8 @@ func (s *streamFieldMap) ref(k ast.StreamName, v *ast.AliasRef) error {
 			return fmt.Errorf("duplicate alias ")
 		}
 		s.content[k] = v
-	} else { // the key must exist after the schema travers, do validation
+	} else {
+		// the key must exist after the schema travers, do validation
 		if k == ast.DefaultStream { // In schema mode, default stream won't be a key
 			l := len(s.content)
 			if l == 0 {

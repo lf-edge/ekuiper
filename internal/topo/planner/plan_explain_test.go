@@ -281,3 +281,34 @@ func TestExplainPredicatePushDown(t *testing.T) {
 		require.Equal(t, tc.explain, explain, tc.sql)
 	}
 }
+
+func TestExplainAggInWhere(t *testing.T) {
+	kv, err := store.GetKV("stream")
+	require.NoError(t, err)
+	require.NoError(t, prepareStream())
+
+	testcases := []struct {
+		sql     string
+		explain string
+	}{
+		{
+			sql: `select * from stream where a > avg(a) group by countwindow(2)`,
+			explain: `{"op":"ProjectPlan_0","info":"Fields:[ * ]"}
+	{"op":"FilterPlan_1","info":"Condition:{ binaryExpr:{ stream.a > Call:{ name:bypass, args:[$$default.$$agg_ref_0] } } }, "}
+			{"op":"AggFunc_2","info":"aggFuncs:[$$agg_ref_0:Call:{ name:avg, args:[stream.a] }]"}
+					{"op":"WindowPlan_3","info":"{ length:2, windowType:COUNT_WINDOW, limit: 0 }"}
+							{"op":"DataSourcePlan_4","info":"StreamName: stream, StreamFields:[ a, b ]"}`,
+		},
+	}
+	for _, tc := range testcases {
+		stmt, err := xsql.NewParser(strings.NewReader(tc.sql)).Parse()
+		require.NoError(t, err)
+		p, err := CreateLogicalPlan(stmt, &def.RuleOption{
+			Qos: 0,
+		}, kv)
+		require.NoError(t, err)
+		explain, err := ExplainFromLogicalPlan(p, "")
+		require.NoError(t, err)
+		require.Equal(t, tc.explain, explain, tc.sql)
+	}
+}
