@@ -52,7 +52,7 @@ func TestProtoRegistry(t *testing.T) {
 		require.NoError(t, err)
 	}()
 	pt := &PbType{}
-	modules.RegisterSchemaType(modules.PROTOBUF, pt)
+	modules.RegisterSchemaType(modules.PROTOBUF, pt, ".proto")
 	err = InitRegistry()
 	require.NoError(t, err)
 	s := httptest.NewServer(
@@ -235,7 +235,7 @@ func TestCustomRegistry(t *testing.T) {
 			t.Fatal(err)
 		}
 	}()
-	modules.RegisterSchemaType(modules.CUSTOM, &CustomType{})
+	modules.RegisterSchemaType(modules.CUSTOM, &CustomType{}, ".so")
 	err = InitRegistry()
 	if err != nil {
 		t.Errorf("InitRegistry error: %v", err)

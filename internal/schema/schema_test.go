@@ -17,25 +17,33 @@ package schema
 import (
 	"errors"
 	"fmt"
-	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
 
 func TestSchemaInfo(t *testing.T) {
+	modules.RegisterSchemaType(modules.PROTOBUF, &PbType{}, ".proto")
+	modules.RegisterSchemaType(modules.CUSTOM, &CustomType{}, ".so")
 	tests := []struct {
-		i   *Info
-		err error
+		i    *Info
+		name string
+		err  error
 	}{
 		{
+			name: "invalid type",
 			i: &Info{
 				Type:    "static",
 				Name:    "aa",
 				Content: "bb",
 				SoPath:  "dd",
 			},
-			err: errors.New("unsupported type: static"),
+			err: errors.New("unsupported schema type static"),
 		},
 		{
+			name: "invalid content",
 			i: &Info{
 				Type:     "static",
 				Name:     "aa",
@@ -46,6 +54,7 @@ func TestSchemaInfo(t *testing.T) {
 			err: errors.New("cannot specify both content and file"),
 		},
 		{
+			name: "missing name",
 			i: &Info{
 				Type:     "protobuf",
 				FilePath: "cc",
@@ -54,6 +63,7 @@ func TestSchemaInfo(t *testing.T) {
 			err: errors.New("name is required"),
 		},
 		{
+			name: "missing content",
 			i: &Info{
 				Type:   "protobuf",
 				Name:   "aa",
@@ -62,6 +72,7 @@ func TestSchemaInfo(t *testing.T) {
 			err: errors.New("must specify content or file"),
 		},
 		{
+			name: "valid",
 			i: &Info{
 				Type:    "protobuf",
 				Name:    "aa",
@@ -71,6 +82,7 @@ func TestSchemaInfo(t *testing.T) {
 			err: nil,
 		},
 		{
+			name: "valid2",
 			i: &Info{
 				Type:    "protobuf",
 				Name:    "aa",
@@ -79,6 +91,7 @@ func TestSchemaInfo(t *testing.T) {
 			err: nil,
 		},
 		{
+			name: "valid custom",
 			i: &Info{
 				Type:   "custom",
 				Name:   "aa",
@@ -87,6 +100,7 @@ func TestSchemaInfo(t *testing.T) {
 			err: nil,
 		},
 		{
+			name: "missing so",
 			i: &Info{
 				Type:    "custom",
 				Name:    "aa",
@@ -96,10 +110,14 @@ func TestSchemaInfo(t *testing.T) {
 		},
 	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
-	for i, tt := range tests {
-		err := tt.i.Validate()
-		if !reflect.DeepEqual(err, tt.err) {
-			t.Errorf("%d failed,\n expect: %v, \nbut got: %v", i, tt.err, err)
-		}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.i.Validate()
+			if tt.err != nil {
+				assert.EqualError(t, err, tt.err.Error())
+			} else {
+				assert.NoError(t, err)
+			}
+		})
 	}
 }

@@ -44,6 +44,9 @@ func (i *Info) Validate() error {
 	if i.Content != "" && i.FilePath != "" {
 		return fmt.Errorf("cannot specify both content and file")
 	}
+	if _, ok := modules.SchemaTypeDefs[i.Type]; !ok {
+		return fmt.Errorf("unsupported schema type %s", i.Type)
+	}
 	switch i.Type {
 	case modules.PROTOBUF:
 		if i.Content == "" && i.FilePath == "" {
@@ -53,12 +56,6 @@ func (i *Info) Validate() error {
 		if i.SoPath == "" {
 			return fmt.Errorf("soFile is required")
 		}
-	default:
-		return fmt.Errorf("unsupported type: %s", i.Type)
 	}
 	return nil
-}
-
-var schemaExt = map[string]string{
-	modules.PROTOBUF: ".proto",
 }

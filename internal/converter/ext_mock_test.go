@@ -20,8 +20,12 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
+	"github.com/lf-edge/ekuiper/v2/internal/schema"
+	"github.com/lf-edge/ekuiper/v2/internal/testx"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
+	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
 
 func TestEncodeWithMockConverter(t *testing.T) {
@@ -47,4 +51,14 @@ func TestDecodeWithMockConverter(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, 23.4, decodedData.(map[string]interface{})["temperature"])
 	assert.Equal(t, 76, decodedData.(map[string]interface{})["humidity"])
+}
+
+func TestGetConverter(t *testing.T) {
+	testx.InitEnv("mockconv")
+	modules.RegisterSchemaType(modules.PROTOBUF, &schema.PbType{}, ".proto")
+	err := schema.InitRegistry()
+	require.NoError(t, err)
+	ctx := mockContext.NewMockContext("test", "op1")
+	_, err = GetOrCreateConverter(ctx, "mock", "a.b", nil, map[string]any{})
+	require.EqualError(t, err, "schema type protobuf, file a not found")
 }
