@@ -118,7 +118,7 @@ func TestHttpPullStateRewind(t *testing.T) {
 	source := &HttpPullSource{}
 	require.NoError(t, source.Provision(ctx, map[string]any{
 		"url":        "123",
-		"datasource": "/param?a={{.a}}",
+		"datasource": "/dd",
 		"method":     "get",
 		"states":     map[string]interface{}{"a": 1},
 	}))
