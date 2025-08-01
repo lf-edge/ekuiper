@@ -32,3 +32,11 @@ func (s SliceVal) IsEmpty() bool {
 	}
 	return true
 }
+
+func (s SliceVal) SetByIndex(index int, val any) bool {
+	if index < 0 || index >= len(s) {
+		return false
+	}
+	s[index] = val
+	return true
+}
