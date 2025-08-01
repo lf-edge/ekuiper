@@ -941,3 +941,105 @@ func TestSliceEncode(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, string(v), "[{\"a\":2,\"b\":4},{\"a\":6,\"b\":5}]")
 }
+
+func TestWrite(t *testing.T) {
+	ruleSchema := map[string]*ast.JsonStreamField{
+		"id":    nil,
+		"name":  nil,
+		"email": nil,
+	}
+	tests := []struct {
+		name   string
+		data   []map[string]any
+		result string
+	}{
+		{
+			name: "normal",
+			data: []map[string]any{
+				{
+					"id":    int64(1233),
+					"name":  "test",
+					"email": "aaa@ee.com",
+				},
+				{
+					"id":    int64(34555),
+					"name":  "test",
+					"email": nil,
+				},
+			},
+			result: `[{"email":"aaa@ee.com","id":1233,"name":"test"},{"email":null,"id":34555,"name":"test"}]`,
+		},
+		{
+			name: "normal2",
+			data: []map[string]any{
+				{
+					"id":    int64(1233),
+					"name":  "test",
+					"email": "aaa@ee.com",
+				},
+				{
+					"id":    int64(34555),
+					"name":  "test",
+					"email": nil,
+				},
+			},
+			result: `[{"email":"aaa@ee.com","id":1233,"name":"test"},{"email":null,"id":34555,"name":"test"}]`,
+		},
+	}
+	ctx := mockContext.NewMockContext("test", "op1")
+	w := NewFastJsonConverter(ruleSchema, map[string]any{})
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := w.New(ctx)
+			require.NoError(t, err)
+			for _, v := range tt.data {
+				err = w.Write(ctx, v)
+				require.NoError(t, err)
+			}
+			r, e := w.Flush(ctx)
+			require.NoError(t, e)
+			require.Equal(t, tt.result, string(r))
+		})
+	}
+}
+
+func TestSliceWrite(t *testing.T) {
+	ruleSchema := map[string]*ast.JsonStreamField{
+		"id":    {HasIndex: true, Index: 0},
+		"name":  {HasIndex: true, Index: 1},
+		"email": {HasIndex: true, Index: 2},
+	}
+	tests := []struct {
+		name   string
+		data   []model.SliceVal
+		result string
+	}{
+		{
+			name: "normal",
+			data: []model.SliceVal{
+				{
+					int64(1233), "test", "aaa@ee.com",
+				},
+				{
+					int64(34555), "test", nil,
+				},
+			},
+			result: `[{"email":"aaa@ee.com","id":1233,"name":"test"},{"id":34555,"name":"test"}]`,
+		},
+	}
+	ctx := mockContext.NewMockContext("test", "op1")
+	w := NewFastJsonConverter(ruleSchema, map[string]any{})
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := w.New(ctx)
+			require.NoError(t, err)
+			for _, v := range tt.data {
+				err = w.Write(ctx, v)
+				require.NoError(t, err)
+			}
+			r, e := w.Flush(ctx)
+			require.NoError(t, e)
+			require.Equal(t, tt.result, string(r))
+		})
+	}
+}
