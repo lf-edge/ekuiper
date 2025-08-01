@@ -48,9 +48,16 @@ func NewDedupTriggerNode(name string, options *def.RuleOption, aliasName string,
 	if aliasName != "" {
 		aname = aliasName
 	}
+	const maxBufferLength = 1024
+	bufferLength := options.BufferLength
+	if bufferLength < 1 {
+		bufferLength = 1
+	} else if bufferLength > maxBufferLength {
+		bufferLength = maxBufferLength
+	}
 	return &DedupTriggerNode{
 		defaultSinkNode: &defaultSinkNode{
-			input: make(chan interface{}, options.BufferLength),
+			input: make(chan interface{}, bufferLength),
 			defaultNode: &defaultNode{
 				outputs:   make(map[string]chan any),
 				name:      name,
