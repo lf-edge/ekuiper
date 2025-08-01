@@ -38,6 +38,8 @@ default:
   headers:
     Accept: application/json
   # how to check the response status, by status code or by body
+  states:
+  #   state_key: state_value  
   responseType: code
   #  # Get token
 #  oAuth:
@@ -82,6 +84,7 @@ Use can specify the global HTTP pull settings here. The configuration items spec
 - `body`: The body of request, such as `'{"data": "data", "method": 1}'`
 - `bodyType`: Body type, it could be none|text|json|html|xml|javascript|format.
 - `headers`: The HTTP request headers that you want to send along with the HTTP request.
+- `states`: The status of httppull, can update the url by rendering.
 - `responseType`: Define how to parse the HTTP response. There are two types defined:
   - `code`: To check the response status from the HTTP status code.
   - `body`: To check the response status from the response body. The body must be "application/json" content type and contains a "code" field.
@@ -130,6 +133,12 @@ The following configurations are designed under the assumption that the authenti
 #### Incremental Data Processing
 
 `incremental`: If it's set to `true`, then will compare with the last result; If the responses of two requests are the same, then will skip sending out the result.
+
+#### State Update
+
+State updates are dynamically updated at runtime. When creating the http_pull source, you can specify the initial state. The state can currently be rendered in the HTTP request URL.  The format for these properties is based on the [data template](../../sinks/data_template.md) syntax.
+
+State can also be updated based on the results of the http_pull result. When QOS is set to 1, the state will be periodically flushed to disk and loaded after the next boot.
 
 #### Dynamic Properties
 

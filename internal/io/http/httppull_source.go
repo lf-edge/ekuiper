@@ -26,6 +26,28 @@ import (
 type HttpPullSource struct {
 	*ClientConf
 	lastMD5 string
+	psc     *pullSourceConfig
+}
+
+func (hps *HttpPullSource) GetOffset() (any, error) {
+	return hps.psc.States, nil
+}
+
+func (hps *HttpPullSource) Rewind(offset any) error {
+	m, ok := offset.(map[string]interface{})
+	if ok {
+		for k, v := range m {
+			hps.psc.States[k] = v
+		}
+	}
+	return nil
+}
+
+func (hps *HttpPullSource) ResetOffset(input map[string]any) error {
+	for k, v := range input {
+		hps.psc.States[k] = v
+	}
+	return nil
 }
 
 func (hps *HttpPullSource) Pull(ctx api.StreamContext, trigger time.Time, ingest api.TupleIngest, ingestError api.ErrorIngest) {
@@ -47,22 +69,24 @@ func (hps *HttpPullSource) Connect(ctx api.StreamContext, sch api.StatusChangeHa
 }
 
 type pullSourceConfig struct {
-	Path string `json:"datasource"`
+	Path   string         `json:"datasource"`
+	States map[string]any `json:"states"`
 }
 
 func (hps *HttpPullSource) Provision(ctx api.StreamContext, configs map[string]any) error {
-	pc := &pullSourceConfig{}
+	pc := &pullSourceConfig{States: map[string]any{}}
 	if err := cast.MapToStruct(configs, pc); err != nil {
 		return err
 	}
 	if hps.ClientConf == nil {
 		hps.ClientConf = &ClientConf{}
 	}
+	hps.psc = pc
 	return hps.InitConf(ctx, pc.Path, configs)
 }
 
 func (hps *HttpPullSource) doPull(ctx api.StreamContext) ([]map[string]any, error) {
-	result, latestMD5, err := doPull(ctx, hps.ClientConf, hps.lastMD5)
+	result, latestMD5, err := hps.doPullInternal(ctx, hps.ClientConf, hps.lastMD5)
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +94,7 @@ func (hps *HttpPullSource) doPull(ctx api.StreamContext) ([]map[string]any, erro
 	return result, nil
 }
 
-func doPull(ctx api.StreamContext, c *ClientConf, lastMD5 string) ([]map[string]any, string, error) {
+func (hps *HttpPullSource) doPullInternal(ctx api.StreamContext, c *ClientConf, lastMD5 string) ([]map[string]any, string, error) {
 	headers, err := c.parseHeaders(ctx, c.tokens)
 	if err != nil {
 		return nil, "", err
@@ -79,7 +103,14 @@ func doPull(ctx api.StreamContext, c *ClientConf, lastMD5 string) ([]map[string]
 	if err != nil {
 		return nil, "", err
 	}
-	resp, err := httpx.Send(ctx.GetLogger(), c.client, c.config.BodyType, c.config.Method, c.config.Url, headers, []byte(newBody))
+	newUrl := c.config.Url
+	if len(hps.psc.States) > 0 {
+		newUrl, err = ctx.ParseTemplate(c.config.Url, hps.psc.States)
+		if err != nil {
+			return nil, "", err
+		}
+	}
+	resp, err := httpx.Send(ctx.GetLogger(), c.client, c.config.BodyType, c.config.Method, newUrl, headers, []byte(newBody))
 	if err != nil {
 		return nil, "", err
 	}
@@ -88,7 +119,19 @@ func doPull(ctx api.StreamContext, c *ClientConf, lastMD5 string) ([]map[string]
 	if err != nil {
 		return nil, "", err
 	}
+	hps.updateState(results)
 	return results, newMD5, nil
+}
+
+func (hps *HttpPullSource) updateState(results []map[string]interface{}) {
+	for _, r := range results {
+		for k, v := range r {
+			_, ok := hps.psc.States[k]
+			if ok {
+				hps.psc.States[k] = v
+			}
+		}
+	}
 }
 
 func GetSource() api.Source {
