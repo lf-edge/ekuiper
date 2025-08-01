@@ -15,6 +15,7 @@
 package json
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -26,6 +27,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
+	"github.com/lf-edge/ekuiper/v2/pkg/message"
 	"github.com/lf-edge/ekuiper/v2/pkg/model"
 )
 
@@ -34,6 +36,33 @@ type FastJsonConverter struct {
 	schema map[string]*ast.JsonStreamField
 	FastJsonConverterConf
 	isSlice bool
+	buffer  bytes.Buffer
+	isNew   bool
+}
+
+func (f *FastJsonConverter) New(_ api.StreamContext) error {
+	f.buffer.Reset()
+	f.buffer.WriteString("[")
+	f.isNew = true
+	return nil
+}
+
+func (f *FastJsonConverter) Write(ctx api.StreamContext, d any) error {
+	if !f.isNew {
+		f.buffer.WriteString(",")
+	}
+	b, err := f.Encode(ctx, d)
+	if err != nil {
+		return err
+	}
+	f.buffer.Write(b)
+	f.isNew = false
+	return nil
+}
+
+func (f *FastJsonConverter) Flush(_ api.StreamContext) ([]byte, error) {
+	f.buffer.WriteString("]")
+	return f.buffer.Bytes(), nil
 }
 
 type FastJsonConverterConf struct {
@@ -635,3 +664,5 @@ func getType(t *ast.JsonStreamField) string {
 func isFloat64(v string) bool {
 	return strings.Contains(v, ".")
 }
+
+var _ message.ConvertWriter = &FastJsonConverter{}
