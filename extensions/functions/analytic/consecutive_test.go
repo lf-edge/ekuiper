@@ -231,6 +231,15 @@ func TestConsecutiveStart_Exec(t *testing.T) {
 			wantResult: true,
 		},
 		{
+			name:       "condition true again, valid data false",
+			condition:  true,
+			value:      "start6",
+			validData:  false,
+			key:        "test1",
+			wantValue:  nil,
+			wantResult: true,
+		},
+		{
 			name:       "condition false, valid data true",
 			condition:  false,
 			value:      "start5",

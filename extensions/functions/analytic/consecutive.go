@@ -125,10 +125,12 @@ func (c *consecutiveStart) Exec(ctx api.FunctionContext, args []any) (any, bool)
 	if condition != lc {
 		if condition {
 			lv = args[1]
-			err = ctx.PutState(c.key, lv)
-			if err != nil {
-				return fmt.Errorf("consecutive_start func save state failed: %s", err), false
-			}
+		} else {
+			lv = nil
+		}
+		err = ctx.PutState(c.key, lv)
+		if err != nil {
+			return fmt.Errorf("consecutive_start func save state failed: %s", err), false
 		}
 		err = ctx.PutState(c.ckey, condition)
 		if err != nil {
