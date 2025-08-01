@@ -112,6 +112,23 @@ func createServer() *httptest.Server {
 	return server
 }
 
+func TestHttpPullStateRewind(t *testing.T) {
+	ctx := mockContext.NewMockContext("1", "2")
+	require.NotNil(t, GetSource())
+	source := &HttpPullSource{}
+	require.NoError(t, source.Provision(ctx, map[string]any{
+		"url":        "123",
+		"datasource": "/param?a={{.a}}",
+		"method":     "get",
+		"states":     map[string]interface{}{"a": 1},
+	}))
+	v, err := source.GetOffset()
+	require.NoError(t, err)
+	require.NotNil(t, v)
+	require.NoError(t, source.Rewind(map[string]any{"a": 1}))
+	require.NoError(t, source.ResetOffset(map[string]any{"a": 1}))
+}
+
 func TestHttpPullStateSource(t *testing.T) {
 	server := createServer()
 	defer func() {
