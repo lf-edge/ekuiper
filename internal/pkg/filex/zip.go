@@ -21,6 +21,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/pingcap/failpoint"
 )
@@ -32,6 +33,19 @@ func UnzipTo(f *zip.File, folder, name string) (err error) {
 		})
 	}()
 	fpath := filepath.Join(folder, name)
+	// Prevent Zip Slip: ensure fpath is within folder
+	absFolder, err := filepath.Abs(folder)
+	if err != nil {
+		return fmt.Errorf("failed to get absolute path of destination folder: %w", err)
+	}
+	absFpath, err := filepath.Abs(fpath)
+	if err != nil {
+		return fmt.Errorf("failed to get absolute path of file: %w", err)
+	}
+	// Ensure absFpath starts with absFolder + separator
+	if absFpath != absFolder && !strings.HasPrefix(absFpath, absFolder+string(os.PathSeparator)) {
+		return fmt.Errorf("illegal file path in zip: %s", name)
+	}
 	_, err = os.Stat(fpath)
 
 	if f.FileInfo().IsDir() {
