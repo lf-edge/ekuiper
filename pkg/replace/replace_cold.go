@@ -51,6 +51,7 @@ func ReplaceCold(rule map[string]any) (string, bool) {
 							newAction["server"] = "tcp://127.0.0.1:1883"
 							newAction["topic"] = "network_bridge/post"
 							newAction["protocolVersion"] = "5"
+							newAction["qos"] = 1
 							newAction["properties"] = formdata
 							newAction["format"] = actionPropsMap["format"]
 							newAction["sendSingle"] = actionPropsMap["sendSingle"]
