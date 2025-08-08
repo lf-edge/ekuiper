@@ -74,6 +74,36 @@ GET http://localhost:9081/rules/{id}
 }
 ```
 
+### 中文技术文档翻译（符合API文档规范）
+
+---
+
+## 获取规则输出模式
+
+本接口用于获取指定规则生成的输出模式。该模式描述了规则通过SELECT语句生成的字段及其属性（如`hasIndex`和`index`）。
+
+```shell
+GET http://localhost:9081/rules/{id}
+```
+
+**路径参数**  
+`id` : 规则唯一标识符
+
+**示例响应**：
+
+```json
+{
+  "id": {
+    "hasIndex": true,
+    "index": 0
+  },
+  "name": {
+    "hasIndex": true,
+    "index": 1
+  }
+}
+```
+
 ## 更新规则
 
 该 API 接受 JSON 内容并更新规则。
