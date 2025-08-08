@@ -74,6 +74,32 @@ Response Sample:
 }
 ```
 
+## get schema of a rule
+
+This API allows you to retrieve the output schema of a specific rule. The schema describes the fields and their
+properties (like hasIndex and index) that are produced by the rule's SELECT statement.
+
+```shell
+GET http://localhost:9081/rules/{id}
+```
+
+Path parameter `id` is the id of the rule.
+
+Example response when using slice mode:
+
+```json
+{
+  "id": {
+    "hasIndex": true,
+    "index": 0
+  },
+  "name": {
+    "hasIndex": true,
+    "index": 1
+  }
+}
+```
+
 ## update a rule
 
 The API accepts a JSON content and update a rule.
