@@ -86,7 +86,7 @@ Response Sample:
 }
 ```
 
-## Get stream schema
+## get stream schema
 
 The API is used to get the stream schema. The schema is inferred from the physical and logical schema definitions.
 
@@ -126,6 +126,9 @@ The format is like Json schema:
     }
 }
 ```
+
+For a shared stream, the schema adjusts dynamically during runtime according to the active processing rules. To reduce
+computational overhead, the system maintains only the minimal schema needed to support those rules.
 
 ## update a stream
 
