@@ -16,7 +16,6 @@ package runtime
 
 import (
 	context2 "context"
-	"encoding/json"
 	"fmt"
 
 	"go.nanomsg.org/mangos/v3"
@@ -90,16 +89,17 @@ func (s *sinkRuntime) run() {
 		if err != nil {
 			s.ctx.GetLogger().Errorf("collect error: %s", err.Error())
 		}
-		r := &ackResponse{}
-		if err != nil {
-			r.Error = err.Error()
-		}
-		data, _ := json.Marshal(r)
-		if err := s.ackCh.Send(data); err != nil {
-			s.ctx.GetLogger().Errorf("ack error: %s", err.Error())
-			_ = s.stop()
-			return
-		}
+		// temporary remove golang plugin sink ack
+		//r := &ackResponse{}
+		//if err != nil {
+		//	r.Error = err.Error()
+		//}
+		//data, _ := json.Marshal(r)
+		//if err := s.ackCh.Send(data); err != nil {
+		//	s.ctx.GetLogger().Errorf("ack error: %s", err.Error())
+		//	_ = s.stop()
+		//	return
+		//}
 	}
 }
 
