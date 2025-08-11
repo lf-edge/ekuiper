@@ -261,13 +261,11 @@ func TestSlice(t *testing.T) {
 				},
 			},
 			input: &xsql.RawTuple{Emitter: "test", Rawdata: []byte("{\"a\":1,\"b\":2}"), Timestamp: time.UnixMilli(111)},
-			exp:   &xsql.SliceTuple{SourceContent: model.SliceVal{int64(1), float64(2), nil}, Timestamp: time.UnixMilli(111)},
+			exp:   &xsql.SliceTuple{SourceContent: model.SliceVal{int64(1), float64(2)}, Timestamp: time.UnixMilli(111)},
 		},
 	}
 	ctx := mockContext.NewMockContext("test1", "decode_test")
-	op, err := NewDecodeOp(ctx, false, "test", &def.RuleOption{BufferLength: 10, SendError: true, Experiment: &def.ExpOpts{UseSliceTuple: true}}, map[string]*ast.JsonStreamField{"a": {HasIndex: true}}, map[string]any{
-		"payloadField": "sourceConf", "payloadFormat": "json",
-	})
+	op, err := NewDecodeOp(ctx, false, "test", &def.RuleOption{BufferLength: 10, SendError: true, Experiment: &def.ExpOpts{UseSliceTuple: true}}, map[string]*ast.JsonStreamField{"a": {HasIndex: true}}, map[string]any{})
 	// payload field will add to schema automatically
 	assert.NoError(t, err)
 	out := make(chan any, 100)
