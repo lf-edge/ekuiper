@@ -72,11 +72,13 @@ func TestToJsonFields(t *testing.T) {
 		{
 			input: StreamFields{
 				{Name: "STREET_NAME", FieldType: &BasicType{Type: STRINGS}},
+				{Name: "Any_Val"},
 			},
 			output: map[string]*JsonStreamField{
 				"STREET_NAME": {
 					Type: "string",
 				},
+				"Any_Val": {},
 			},
 		}, {
 			input: []StreamField{
