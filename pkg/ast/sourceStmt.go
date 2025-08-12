@@ -129,8 +129,8 @@ func convertFieldType(sf FieldType) *JsonStreamField {
 			Type:       "struct",
 			Properties: convertSchema(t.StreamFields),
 		}
-	default: // should never happen
-		return nil
+	default:
+		return &JsonStreamField{}
 	}
 }
 
