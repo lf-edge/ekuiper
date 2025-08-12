@@ -240,6 +240,7 @@ func GetSchema(schemaType string, name string) (*Info, error) {
 	}
 }
 
+// GetSchemaFile return main schema file if schema id is defined; otherwise return the original schema id (possibly the file path)
 func GetSchemaFile(schemaType string, name string) (*modules.Files, error) {
 	registry.RLock()
 	defer registry.RUnlock()
@@ -247,7 +248,8 @@ func GetSchemaFile(schemaType string, name string) (*modules.Files, error) {
 		return nil, fmt.Errorf("schema type %s not found in registry", schemaType)
 	}
 	if _, ok := registry.schemas[schemaType][name]; !ok {
-		return nil, fmt.Errorf("schema type %s, file %s not found", schemaType, name)
+		// If schema id is not defined, just return as is
+		return &modules.Files{SchemaFile: name}, nil
 	}
 	schemaFile := registry.schemas[schemaType][name]
 	return schemaFile, nil
