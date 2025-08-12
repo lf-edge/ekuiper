@@ -61,4 +61,6 @@ func TestGetConverter(t *testing.T) {
 	ctx := mockContext.NewMockContext("test", "op1")
 	_, err = GetOrCreateConverter(ctx, "mock", "a.b", nil, map[string]any{})
 	require.EqualError(t, err, "schema type protobuf, file a not found")
+	_, err = GetOrCreateConverter(ctx, "mock", "a.b.c.d", nil, map[string]any{})
+	require.EqualError(t, err, "schema type protobuf, file a not found")
 }

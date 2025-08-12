@@ -65,9 +65,9 @@ func GetOrCreateConverter(ctx api.StreamContext, format string, schemaId string,
 		if hasSchema {
 			schemaFileId := ""
 			if schemaId != "" {
-				r := strings.Split(schemaId, ".")
+				r := strings.SplitN(schemaId, ".", 2)
 				schemaFileId = r[0]
-				if len(r) >= 2 {
+				if len(r) == 2 {
 					props["$$messageName"] = r[1]
 				}
 			}
