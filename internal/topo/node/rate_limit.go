@@ -94,15 +94,11 @@ func NewRateLimitOp(ctx api.StreamContext, name string, rOpt *def.RuleOption, sc
 		}
 		o.mergeStrategy = 1
 	} else if c.Merger != "" {
-		if mp, ok := modules.Mergers[c.Merger]; ok {
-			cm, err := mp(ctx, c.PayloadSchemaId, schema)
-			if err != nil {
-				return nil, fmt.Errorf("fail to initiate merge %s: %v", c.Merger, err)
-			}
-			o.merger = cm
-		} else {
-			return nil, fmt.Errorf("merger %s not found", c.Merger)
+		cm, err := converter.GetMerger(ctx, c.Merger, c.PayloadSchemaId, schema)
+		if err != nil {
+			return nil, fmt.Errorf("fail to initiate merge %s: %v", c.Merger, err)
 		}
+		o.merger = cm
 		o.mergeStrategy = 2
 	}
 	return o, nil

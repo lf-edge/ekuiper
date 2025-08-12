@@ -60,7 +60,7 @@ func TestGetConverter(t *testing.T) {
 	require.NoError(t, err)
 	ctx := mockContext.NewMockContext("test", "op1")
 	_, err = GetOrCreateConverter(ctx, "mock", "a.b", nil, map[string]any{})
-	require.NoError(t, err)
+	require.EqualError(t, err, "schema type protobuf id a not found in registry")
 	_, err = GetOrCreateConverter(ctx, "mock", "a.b.c.d", nil, map[string]any{})
-	require.NoError(t, err)
+	require.EqualError(t, err, "schema type protobuf id a not found in registry")
 }

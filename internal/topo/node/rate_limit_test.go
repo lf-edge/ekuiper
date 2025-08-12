@@ -26,6 +26,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
+	"github.com/lf-edge/ekuiper/v2/internal/schema"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/topotest/mockclock"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
@@ -54,7 +55,7 @@ func TestNewRateLimit(t *testing.T) {
 	assert.EqualError(t, err, "format delimited does not support partial decode")
 	_, err = NewRateLimitOp(ctx, "test", &def.RuleOption{BufferLength: 10, SendError: true}, nil, map[string]any{"interval": "1s", "merger": "none", "format": "delimited"})
 	assert.Error(t, err)
-	assert.EqualError(t, err, "merger none not found")
+	assert.EqualError(t, err, "fail to initiate merge none: merger none not found")
 	modules.RegisterMerger("none", func(ctx api.StreamContext, schemaId string, logicalSchema map[string]*ast.JsonStreamField) (modules.Merger, error) {
 		return nil, errors.New("mock error")
 	})
@@ -237,6 +238,7 @@ func TestRateLimitMerge(t *testing.T) {
 }
 
 func TestRateLimitCustomMerge(t *testing.T) {
+	schema.InitRegistry()
 	testcases := []struct {
 		name        string
 		sendCount   int
@@ -291,6 +293,7 @@ func TestRateLimitCustomMerge(t *testing.T) {
 	modules.RegisterMerger("mock", func(ctx api.StreamContext, schemaId string, logicalSchema map[string]*ast.JsonStreamField) (modules.Merger, error) {
 		return &message.MockMerger{}, nil
 	})
+	delete(modules.ConverterSchemas, "mock")
 	mc := mockclock.GetMockClock()
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {

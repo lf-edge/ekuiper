@@ -61,37 +61,62 @@ func GetOrCreateConverter(ctx api.StreamContext, format string, schemaId string,
 		t = message.FormatJson
 	}
 	if cp, ok := modules.Converters[t]; ok {
-		schemaType, hasSchema := modules.ConverterSchemas[t]
-		if hasSchema {
-			schemaFileId := ""
-			if schemaId != "" {
-				r := strings.SplitN(schemaId, ".", 2)
-				schemaFileId = r[0]
-				if len(r) == 2 {
-					props["$$messageName"] = r[1]
-				}
-			}
-			ffs, err := schema.GetSchemaFile(schemaType, schemaFileId)
-			if err != nil {
-				return nil, err
-			}
-			return cp(ctx, ffs.SchemaFile, schemaFields, props)
-		} else {
-			return cp(ctx, schemaId, schemaFields, props)
+		schemaPath, err := transSchemaId(t, schemaId, props)
+		if err != nil {
+			return nil, err
 		}
+		return cp(ctx, schemaPath, schemaFields, props)
 	}
 	return nil, fmt.Errorf("format type %s not supported", t)
 }
 
 func GetConvertWriter(ctx api.StreamContext, format string, schemaId string, schema map[string]*ast.JsonStreamField, props map[string]any) (message.ConvertWriter, error) {
 	t := strings.ToLower(format)
-	if cw, ok := modules.ConvertWriters[t]; ok {
-		return cw(ctx, schemaId, schema, props)
+	schemaPath, err := transSchemaId(t, schemaId, map[string]any{})
+	if err != nil {
+		return nil, err
 	}
-	c, err := GetOrCreateConverter(ctx, t, schemaId, schema, props)
+	if cw, ok := modules.ConvertWriters[t]; ok {
+		return cw(ctx, schemaPath, schema, props)
+	}
+	c, err := GetOrCreateConverter(ctx, t, schemaPath, schema, props)
 	if err != nil {
 		return nil, err
 	}
 	ctx.GetLogger().Infof("writer %s not found, fall back to stack writer", t)
 	return NewStackWriter(ctx, c)
+}
+
+func GetMerger(ctx api.StreamContext, format string, schemaId string, schemaFields map[string]*ast.JsonStreamField) (modules.Merger, error) {
+	t := strings.ToLower(format)
+	if mp, ok := modules.Mergers[t]; ok {
+		schemaPath, err := transSchemaId(t, schemaId, map[string]any{})
+		if err != nil {
+			return nil, err
+		}
+		return mp(ctx, schemaPath, schemaFields)
+	} else {
+		return nil, fmt.Errorf("merger %s not found", t)
+	}
+}
+
+func transSchemaId(t, schemaId string, props map[string]any) (string, error) {
+	schemaType, requireSchema := modules.ConverterSchemas[t]
+	if requireSchema {
+		schemaFileId := ""
+		if schemaId != "" {
+			r := strings.SplitN(schemaId, ".", 2)
+			schemaFileId = r[0]
+			if len(r) == 2 {
+				props["$$messageName"] = r[1]
+			}
+		}
+		ffs, err := schema.GetSchemaFile(schemaType, schemaFileId)
+		if err != nil {
+			return "", err
+		}
+		return ffs.SchemaFile, nil
+	} else { // If not require schema, just return the schemaId. And the register function need to deal with it by itself. Only the specific implementation defines the schemaId format.
+		return schemaId, nil
+	}
 }
