@@ -248,8 +248,7 @@ func GetSchemaFile(schemaType string, name string) (*modules.Files, error) {
 		return nil, fmt.Errorf("schema type %s not found in registry", schemaType)
 	}
 	if _, ok := registry.schemas[schemaType][name]; !ok {
-		// If schema id is not defined, just return as is
-		return &modules.Files{SchemaFile: name}, nil
+		return nil, fmt.Errorf("schema type %s id %s not found in registry", schemaType, name)
 	}
 	schemaFile := registry.schemas[schemaType][name]
 	return schemaFile, nil

@@ -29,6 +29,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/meta"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
+	"github.com/lf-edge/ekuiper/v2/internal/schema"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/message"
@@ -42,12 +43,15 @@ func TestPlanTopo(t *testing.T) {
 		t.Error(err)
 		return
 	}
+	schema.InitRegistry()
 	modules.RegisterConverter("mockp", func(ctx api.StreamContext, _ string, _ map[string]*ast.JsonStreamField, _ map[string]any) (message.Converter, error) {
 		return &message.MockPartialConverter{}, nil
 	})
 	modules.RegisterMerger("mock", func(ctx api.StreamContext, schemaId string, logicalSchema map[string]*ast.JsonStreamField) (modules.Merger, error) {
 		return &message.MockMerger{}, nil
 	})
+	delete(modules.ConverterSchemas, "mock")
+	delete(modules.ConverterSchemas, "mockp")
 	streamSqls := map[string]string{
 		"src1":     `CREATE STREAM src1 () WITH (DATASOURCE="src1", FORMAT="json", TYPE="mqtt");`,
 		"src2":     `CREATE STREAM src2 () WITH (DATASOURCE="src1", FORMAT="json", TYPE="mqtt", SHARED="true");`,
