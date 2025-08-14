@@ -2,6 +2,7 @@ package node
 
 import (
 	"context"
+	"sync"
 
 	"github.com/lf-edge/ekuiper/v2/internal/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/v2/expr"
@@ -10,7 +11,8 @@ import (
 )
 
 type ProjectNode struct {
-	Fields ast.Fields
+	Fields  ast.Fields
+	handler *OrderNodeMessageHandler
 	*BaseNode
 }
 
@@ -23,12 +25,19 @@ func NewProjectNode(pp *planner.PhysicalProject) *ProjectNode {
 }
 
 func (pn *ProjectNode) Run(ctx context.Context) {
+	pn.handler = NewOrderNodeMessageHandler(ctx, 2, pn.handleNodeMessage)
+	wg := sync.WaitGroup{}
 	go func() {
 		for {
 			select {
 			case <-ctx.Done():
+				pn.handler.QuickClose()
 				return
 			case msg := <-pn.Input:
+				if msg.IsControlSignal(StopRuleSignal) {
+					pn.handler.GraceClose()
+					wg.Wait()
+				}
 				processed, send := pn.HandleNodeMsg(ctx, msg)
 				if processed {
 					if send {
@@ -36,18 +45,37 @@ func (pn *ProjectNode) Run(ctx context.Context) {
 					}
 					continue
 				}
-				for index, tuple := range msg.Tuples {
-					nt, err := pn.evalTuple(ctx, tuple)
-					if err != nil {
-						msg.Err = err
-						break
-					}
-					msg.Tuples[index] = nt
+				pn.handler.In <- msg
+			}
+		}
+	}()
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case msg, ok := <-pn.handler.Out:
+				if !ok {
+					return
 				}
 				pn.BroadCast(msg)
 			}
 		}
 	}()
+}
+
+func (pn *ProjectNode) handleNodeMessage(ctx context.Context, data *NodeMessage) *NodeMessage {
+	for index, tuple := range data.Tuples {
+		nt, err := pn.evalTuple(ctx, tuple)
+		if err != nil {
+			data.Err = err
+			break
+		}
+		data.Tuples[index] = nt
+	}
+	return data
 }
 
 func (pn *ProjectNode) evalTuple(ctx context.Context, tuple *api.Tuple) (*api.Tuple, error) {
