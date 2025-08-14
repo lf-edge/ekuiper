@@ -31,20 +31,8 @@ func (pn *ProjectNode) Run(ctx context.Context) {
 		for {
 			select {
 			case <-ctx.Done():
-				pn.handler.QuickClose()
 				return
 			case msg := <-pn.Input:
-				if msg.IsControlSignal(StopRuleSignal) {
-					pn.handler.GraceClose()
-					wg.Wait()
-				}
-				processed, send := pn.HandleNodeMsg(ctx, msg)
-				if processed {
-					if send {
-						pn.BroadCast(msg)
-					}
-					continue
-				}
 				pn.handler.In <- msg
 			}
 		}
@@ -56,9 +44,10 @@ func (pn *ProjectNode) Run(ctx context.Context) {
 			select {
 			case <-ctx.Done():
 				return
-			case msg, ok := <-pn.handler.Out:
-				if !ok {
-					return
+			case msg := <-pn.handler.Out:
+				processed, send := pn.HandleNodeMsg(ctx, msg)
+				if processed && !send {
+					continue
 				}
 				pn.BroadCast(msg)
 			}

@@ -44,7 +44,4 @@ func TestOrderNodeMessageHandler(t *testing.T) {
 			fmt.Println(fmt.Sprintf("assert %v msg success", i))
 		}
 	}
-	fmt.Println("assert close start")
-	handler.GraceClose()
-	fmt.Println("assert close finish")
 }
