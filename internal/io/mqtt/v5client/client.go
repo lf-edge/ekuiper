@@ -91,7 +91,7 @@ func Provision(ctx api.StreamContext, props map[string]any, onConnect client.Con
 			ClientID: cc.ClientId,
 			OnPublishReceived: []func(paho.PublishReceived) (bool, error){
 				func(pr paho.PublishReceived) (bool, error) {
-					ctx.GetLogger().Debugf("received message on topic %s; body: %s (retain: %t)", pr.Packet.Topic, pr.Packet.Payload, pr.Packet.Retain)
+					//ctx.GetLogger().Debugf("received message on topic %s; body: %s (retain: %t)", pr.Packet.Topic, pr.Packet.Payload, pr.Packet.Retain)
 					r.Route(pr.Packet.Packet())
 					return true, nil
 				},

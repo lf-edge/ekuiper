@@ -141,7 +141,7 @@ func (o *BatchWriterOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 }
 
 func (o *BatchWriterOp) ingest(ctx api.StreamContext, item any) (any, bool) {
-	ctx.GetLogger().Debugf("receive %v", item)
+	//ctx.GetLogger().Debugf("receive %v", item)
 	item, processed := o.preprocess(ctx, item)
 	if processed {
 		return item, processed

@@ -98,7 +98,7 @@ func (s *CacheOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 					// Otherwise, send out the new data. If blocked, make it currItem
 					if s.hasCache { // already have cache, add current data to cache and send out the cache
 						err := s.cache.AddCache(ctx, data)
-						ctx.GetLogger().Debugf("add data %v to cache", data)
+						//ctx.GetLogger().Debugf("add data %v to cache", data)
 						if err != nil {
 							s.onError(ctx, err)
 							break
@@ -163,7 +163,7 @@ func (s *CacheOp) doBroadcast(val interface{}) {
 	}
 	select {
 	case out <- val:
-		s.ctx.GetLogger().Debugf("send out data %v", val)
+		//s.ctx.GetLogger().Debugf("send out data %v", val)
 		// send through. The sink must retry until successful
 		if span, ok := s.rowHandle[s.currItem]; ok {
 			span.End()

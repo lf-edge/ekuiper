@@ -84,7 +84,7 @@ func (m *SourceNode) Open(ctx api.StreamContext, ctrlCh chan<- error) {
 }
 
 func (m *SourceNode) ingestBytes(ctx api.StreamContext, data []byte, meta map[string]any, ts time.Time) {
-	ctx.GetLogger().Debugf("source connector %s receive data %+v", m.name, data)
+	//ctx.GetLogger().Debugf("source connector %s receive data %+v", m.name, data)
 	m.onProcessStart(ctx, nil)
 	if meta == nil {
 		meta = make(map[string]any)
@@ -138,7 +138,7 @@ func (m *SourceNode) traceStart(ctx api.StreamContext, meta map[string]any, tupl
 }
 
 func (m *SourceNode) ingestAnyTuple(ctx api.StreamContext, data any, meta map[string]any, ts time.Time) {
-	ctx.GetLogger().Debugf("source connector %s receive data %+v", m.name, data)
+	//ctx.GetLogger().Debugf("source connector %s receive data %+v", m.name, data)
 	m.onProcessStart(ctx, nil)
 	if meta == nil {
 		meta = make(map[string]any)
