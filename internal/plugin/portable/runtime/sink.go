@@ -111,7 +111,7 @@ func (ps *PortableSink) Connect(ctx api.StreamContext, _ api.StatusChangeHandler
 }
 
 func (ps *PortableSink) Collect(ctx api.StreamContext, item api.RawTuple) error {
-	//ctx.GetLogger().Debugf("Receive %+v", item)
+	// ctx.GetLogger().Debugf("Receive %+v", item)
 	e := ps.dataCh.Send(item.Raw())
 	if e != nil {
 		return errorx.NewIOErr(e.Error())

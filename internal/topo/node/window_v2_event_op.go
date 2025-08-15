@@ -95,7 +95,7 @@ func (s *EventSlidingWindowOp) exec(ctx api.StreamContext, errCh chan<- error) {
 }
 
 func (o *WindowV2Operator) ingest(ctx api.StreamContext, item any) (any, bool) {
-	//ctx.GetLogger().Debugf("receive %v", item)
+	// ctx.GetLogger().Debugf("receive %v", item)
 	item, processed := o.preprocess(ctx, item)
 	if processed {
 		return item, processed

@@ -169,7 +169,7 @@ func (s *SinkNode) connectionStatusChange(status string, message string) {
 }
 
 func (s *SinkNode) ingest(ctx api.StreamContext, item any) (any, bool) {
-	//ctx.GetLogger().Debugf("%s_%d receive %v", ctx.GetOpId(), ctx.GetInstanceId(), item)
+	// ctx.GetLogger().Debugf("%s_%d receive %v", ctx.GetOpId(), ctx.GetInstanceId(), item)
 	item, processed := s.preprocess(ctx, item)
 	if processed {
 		return item, processed
@@ -189,7 +189,7 @@ func (s *SinkNode) ingest(ctx api.StreamContext, item any) (any, bool) {
 		}
 		return nil, true
 	}
-	//ctx.GetLogger().Debugf("%s_%d receive data %v", ctx.GetOpId(), ctx.GetInstanceId(), item)
+	// ctx.GetLogger().Debugf("%s_%d receive data %v", ctx.GetOpId(), ctx.GetInstanceId(), item)
 	return item, false
 }
 
@@ -203,7 +203,7 @@ func NewBytesSinkNode(ctx api.StreamContext, name string, sink api.BytesCollecto
 }
 
 func bytesCollect(ctx api.StreamContext, sink api.Sink, data any) (err error) {
-	//ctx.GetLogger().Debugf("Sink node %s receive data %s", ctx.GetOpId(), data)
+	// ctx.GetLogger().Debugf("Sink node %s receive data %s", ctx.GetOpId(), data)
 	switch d := data.(type) {
 	case api.RawTuple:
 		err = sink.(api.BytesCollector).Collect(ctx, d)

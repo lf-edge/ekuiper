@@ -182,7 +182,7 @@ func (o *WindowOperator) execEventWindow(ctx api.StreamContext, inputs []xsql.Ev
 			case xsql.EventRow:
 				o.onProcessStart(ctx, d)
 				o.handleTraceIngestTuple(ctx, d)
-				//ctx.GetLogger().Debug("Tuple", d.GetTimestamp())
+				// ctx.GetLogger().Debug("Tuple", d.GetTimestamp())
 				// first tuple, set the window start time, which will set to triggerTime
 				if o.triggerTime.IsZero() {
 					o.triggerTime = d.GetTimestamp()
@@ -219,7 +219,7 @@ func getEarliestEventTs(inputs []xsql.EventRow, startTs time.Time, endTs time.Ti
 }
 
 func (o *WindowOperator) ingest(ctx api.StreamContext, item any) (any, bool) {
-	//ctx.GetLogger().Debugf("receive %v", item)
+	// ctx.GetLogger().Debugf("receive %v", item)
 	item, processed := o.preprocess(ctx, item)
 	if processed {
 		return item, processed
