@@ -26,7 +26,7 @@ var notAuth = []string{"/", "/ping"}
 
 var AuditRestLog = func(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		conf.Log.Infoln("visit %v %v", r.Method, r.URL)
+		conf.Log.Infof("visit %v %v", r.Method, r.URL)
 		next.ServeHTTP(w, r)
 	})
 }
