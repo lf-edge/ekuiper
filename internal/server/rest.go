@@ -240,6 +240,9 @@ func createRestServer(ip string, port int, needToken bool) *http.Server {
 	if needToken {
 		r.Use(middleware.Auth)
 	}
+	if conf.Config.Basic.EnableRestAuditLog {
+		r.Use(middleware.AuditRestLog)
+	}
 
 	server := &http.Server{
 		Addr: cast.JoinHostPortInt(ip, port),

@@ -18,10 +18,18 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/jwt"
 )
 
 var notAuth = []string{"/", "/ping"}
+
+var AuditRestLog = func(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		conf.Log.Infoln("visit %v %v", r.Method, r.URL)
+		next.ServeHTTP(w, r)
+	})
+}
 
 var Auth = func(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
