@@ -61,6 +61,7 @@ type KuiperConf struct {
 		GracefulShutdownTimeout cast.DurationConf     `yaml:"gracefulShutdownTimeout"`
 		ResourceProfileConfig   ResourceProfileConfig `yaml:"ResourceProfileConfig"`
 		MetricsDumpConfig       MetricsDumpConfig     `yaml:"metricsDumpConfig"`
+		EnableRestAuditLog      bool                  `yaml:"enableRestAuditLog"`
 	}
 	Rule   def.RuleOption
 	Sink   *SinkConf
