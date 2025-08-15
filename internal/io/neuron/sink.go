@@ -99,7 +99,7 @@ func (s *sink) Connect(ctx api.StreamContext, sc api.StatusChangeHandler) error 
 }
 
 func (s *sink) Collect(ctx api.StreamContext, data api.MessageTuple) error {
-	//ctx.GetLogger().Debugf("receive %+v", data)
+	// ctx.GetLogger().Debugf("receive %+v", data)
 	if s.c.Raw {
 		m := data.ToMap()
 		r, err := json.Marshal(m)

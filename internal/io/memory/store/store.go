@@ -56,7 +56,7 @@ func runTable(topic string, topicRegex *regexp.Regexp, t *Table) {
 				// should never happen
 				conf.Log.Errorf("add wrong data %v for table %s", v, topic)
 			}
-			//conf.Log.Debugf("receive data %v for %s", v, topic)
+			// conf.Log.Debugf("receive data %v for %s", v, topic)
 		case <-ctx.Done():
 			return
 		}
