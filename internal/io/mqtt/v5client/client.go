@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"strings"
 	"sync"
 	"time"
 
@@ -140,20 +141,25 @@ func (c *Client) Connect(ctx api.StreamContext) error {
 }
 
 func (c *Client) Subscribe(ctx api.StreamContext, topic string, qos byte, callback client.MessageHandler) error {
+	topics := strings.Split(topic, ",")
 	c.Lock()
 	defer c.Unlock()
-	// register router first
-	if _, alreadySub := c.subs[topic]; !alreadySub {
-		c.subs[topic] = struct{}{}
-		c.router.RegisterHandler(topic, func(p *paho.Publish) {
-			callback(ctx, p)
-		})
+	s := &paho.Subscribe{
+		Subscriptions: []paho.SubscribeOptions{},
 	}
-	suback, err := c.cm.Subscribe(ctx, &paho.Subscribe{
-		Subscriptions: []paho.SubscribeOptions{
-			{Topic: topic, QoS: qos},
-		},
-	})
+	// register router first
+	for _, subTopic := range topics {
+		if _, alreadySub := c.subs[subTopic]; !alreadySub {
+			c.subs[subTopic] = struct{}{}
+			c.router.RegisterHandler(subTopic, func(p *paho.Publish) {
+				callback(ctx, p)
+			})
+			s.Subscriptions = append(s.Subscriptions, paho.SubscribeOptions{
+				Topic: subTopic, QoS: qos,
+			})
+		}
+	}
+	suback, err := c.cm.Subscribe(ctx, s)
 	if err != nil {
 		if suback != nil {
 			if suback.Properties != nil {
@@ -204,22 +210,25 @@ func (c *Client) Publish(ctx api.StreamContext, topic string, qos byte, retained
 func (c *Client) Unsubscribe(ctx api.StreamContext, topic string) error {
 	c.Lock()
 	defer c.Unlock()
-	delete(c.subs, topic)
-	if !c.EnableClientSession {
-		unsuback, err := c.cm.Unsubscribe(ctx, &paho.Unsubscribe{
-			Topics: []string{topic},
-		})
-		c.router.UnregisterHandler(topic)
-		// Do not exit immediately when unsub error. Just remove unsub handler
-		if err != nil {
-			if unsuback != nil {
-				if unsuback.Properties != nil {
-					return fmt.Errorf("unsuscribe to %s error: %s", topic, unsuback.Properties.ReasonString)
-				} else {
-					return fmt.Errorf("unsuscribe to %s error: %s", topic, unsuback.Reasons)
+	topics := strings.Split(topic, ",")
+	for _, subTopic := range topics {
+		delete(c.subs, subTopic)
+		if !c.EnableClientSession {
+			unsuback, err := c.cm.Unsubscribe(ctx, &paho.Unsubscribe{
+				Topics: []string{subTopic},
+			})
+			c.router.UnregisterHandler(subTopic)
+			// Do not exit immediately when unsub error. Just remove unsub handler
+			if err != nil {
+				if unsuback != nil {
+					if unsuback.Properties != nil {
+						return fmt.Errorf("unsuscribe to %s error: %s", topic, unsuback.Properties.ReasonString)
+					} else {
+						return fmt.Errorf("unsuscribe to %s error: %s", topic, unsuback.Reasons)
+					}
 				}
+				return err
 			}
-			return err
 		}
 	}
 	return nil
