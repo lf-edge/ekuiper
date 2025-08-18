@@ -56,11 +56,8 @@ func TestV5MultiTopicSubscribe(t *testing.T) {
 		"datasource": "test1,test2",
 		"qos":        0,
 	}, func(ctx api.StreamContext) {
-
 	}, func(ctx api.StreamContext, e error) {
-
 	}, func(ctx api.StreamContext) {
-
 	})
 	require.NoError(t, err)
 	require.NoError(t, c.Connect(ctx))
