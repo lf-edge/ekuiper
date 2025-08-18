@@ -210,8 +210,7 @@ func (k *KafkaSink) ping(address string) error {
 func (k *KafkaSink) buildKafkaWriter(ctx api.StreamContext) {
 	brokers := strings.Split(k.kc.Brokers, ",")
 	w := &kafkago.Writer{
-		Addr:  kafkago.TCP(brokers...),
-		Topic: k.kc.Topic,
+		Addr: kafkago.TCP(brokers...),
 		// kafka java-client default balancer
 		Balancer:               &kafkago.Murmur2Balancer{},
 		Async:                  false,
@@ -347,6 +346,14 @@ func (k *KafkaSink) collect(ctx api.StreamContext, item api.RawTuple) error {
 
 func (k *KafkaSink) buildMsg(ctx api.StreamContext, item api.RawTuple) (kafkago.Message, error) {
 	msg := kafkago.Message{Value: item.Raw()}
+	msgTopic := k.kc.Topic
+	if dp, ok := item.(api.HasDynamicProps); ok {
+		dynTopic, ok := dp.DynamicProps(k.kc.Topic)
+		if ok {
+			msgTopic = dynTopic
+		}
+	}
+	msg.Topic = msgTopic
 	if len(k.kc.Key) > 0 {
 		newKey := k.kc.Key
 		if dp, ok := item.(api.HasDynamicProps); ok {
