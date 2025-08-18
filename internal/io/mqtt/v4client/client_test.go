@@ -58,4 +58,5 @@ func TestMultiTopicSubscribe(t *testing.T) {
 	require.True(t, ok)
 	require.Equal(t, m2.Payload(), []byte{42})
 	require.NoError(t, c.Unsubscribe(ctx, "test1,test2"))
+	c.Disconnect(ctx)
 }
