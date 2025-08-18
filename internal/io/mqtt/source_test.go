@@ -168,36 +168,3 @@ loop:
 
 	assert.Equal(t, data[:3], result)
 }
-
-func TestMultiTopicSubscribe(t *testing.T) {
-	//url, cancel, err := testx.InitBroker("TestMultiTopicSubscribe")
-	//require.NoError(t, err)
-	//defer func() {
-	//	cancel()
-	//}()
-	//// Create a batch MQTT stream
-	//r := &SourceConnector{}
-	//ctx, cancel := mockContext.NewMockContext("ruleEof", "op1").WithCancel()
-	//err = r.Provision(ctx, map[string]any{
-	//	"server":     url,
-	//	"datasource": "test1,test2",
-	//	"qos":        0,
-	//})
-	//require.NoError(t, err)
-	//err = r.Connect(ctx, func(status string, message string) {
-	//	// do nothing
-	//})
-	//require.NoError(t, err)
-	//// Create a channel to receive the result
-	//resultCh := make(chan any, 10)
-	//err = r.Subscribe(ctx, func(ctx api.StreamContext, payload []byte, meta map[string]any, ts time.Time) {
-	//	resultCh <- payload
-	//}, nil)
-	//require.NoError(t, err)
-	//// Send the data, add eof message at last
-	//data := [][]byte{
-	//	[]byte("{\"humidity\":50,\"status\":\"green\",\"temperature\":22}"),
-	//	[]byte("{\"humidity\":82,\"status\":\"wet\",\"temperature\":25}"),
-	//	[]byte("{\"humidity\":60,\"status\":\"hot\",\"temperature\":33}"),
-	//}
-}
