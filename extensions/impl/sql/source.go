@@ -325,7 +325,7 @@ func buildScanValueByColumnType(ctx api.StreamContext, colName, colType string, 
 			return &sql.NullBool{}
 		}
 		return new(bool)
-	case "INT", "BIGINT", "SMALLINT", "TINYINT":
+	case "INT", "BIGINT", "SMALLINT", "TINYINT", "INT4":
 		if nullable {
 			return &sql.NullInt64{}
 		}
