@@ -17,6 +17,7 @@ package v4client
 import (
 	"crypto/tls"
 	"fmt"
+	"strings"
 	"time"
 
 	pahoMqtt "github.com/eclipse/paho.mqtt.golang"
@@ -104,7 +105,18 @@ func (c *Client) Publish(_ api.StreamContext, topic string, qos byte, retained b
 }
 
 func (c *Client) Subscribe(ctx api.StreamContext, topic string, qos byte, callback client.MessageHandler) error {
-	token := c.cli.Subscribe(topic, qos, func(_ pahoMqtt.Client, message pahoMqtt.Message) {
+	topics := strings.Split(topic, ",")
+	if len(topics) < 2 {
+		token := c.cli.Subscribe(topic, qos, func(_ pahoMqtt.Client, message pahoMqtt.Message) {
+			callback(ctx, message)
+		})
+		return handleToken(token)
+	}
+	filters := make(map[string]byte)
+	for _, subTopic := range topics {
+		filters[subTopic] = qos
+	}
+	token := c.cli.SubscribeMultiple(filters, func(c pahoMqtt.Client, message pahoMqtt.Message) {
 		callback(ctx, message)
 	})
 	return handleToken(token)
@@ -114,8 +126,13 @@ func (c *Client) Unsubscribe(_ api.StreamContext, topic string) error {
 	if c.EnableClientSession {
 		return nil
 	}
-	token := c.cli.Unsubscribe(topic)
-	return handleToken(token)
+	for _, subTopic := range strings.Split(topic, ",") {
+		token := c.cli.Unsubscribe(subTopic)
+		if err := handleToken(token); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (c *Client) Disconnect(_ api.StreamContext) {
