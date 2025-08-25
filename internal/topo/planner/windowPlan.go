@@ -58,6 +58,10 @@ func (p *WindowPlan) GetBeginCondition() ast.Expr {
 	return p.beginCondition
 }
 
+func (p *WindowPlan) GetSingleCondition() ast.Expr {
+	return p.singleCondition
+}
+
 func (p *WindowPlan) GetEmitCondition() ast.Expr {
 	return p.emitCondition
 }

@@ -1047,8 +1047,8 @@ loop:
 func validateWindows(fname string, args []ast.Expr) (ast.WindowType, error) {
 	switch fname {
 	case "statewindow":
-		if len(args) != 2 {
-			return ast.STATE_WINDOW, fmt.Errorf("The arguments for %s should be %d.\n", fname, 2)
+		if len(args) != 2 && len(args) != 1 {
+			return ast.STATE_WINDOW, fmt.Errorf("The arguments for %s should be 1 or 2.\n", fname)
 		}
 		return ast.STATE_WINDOW, nil
 	case "tumblingwindow":
@@ -1125,6 +1125,7 @@ func (p *Parser) ConvertToWindows(wtype ast.WindowType, args []ast.Expr) (*ast.W
 			return win, nil
 		} else if len(args) == 1 {
 			win.SingleCondition = args[0]
+			return win, nil
 		}
 	}
 	if wtype == ast.COUNT_WINDOW {

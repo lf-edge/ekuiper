@@ -105,6 +105,7 @@ func NewStateWindowOp(o *WindowV2Operator) *StateWindowOp {
 		WindowV2Operator: o,
 		BeginCondition:   o.windowConfig.BeginCondition,
 		EmitCondition:    o.windowConfig.EmitCondition,
+		SingleCondition:  o.windowConfig.SingleCondition,
 		stateFuncs:       o.windowConfig.StateFuncs,
 	}
 }
