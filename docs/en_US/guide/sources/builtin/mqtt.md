@@ -195,7 +195,6 @@ Starting from version 1.5.0, eKuiper has modified the MQTT source broker configu
 - If you've been using an MQTT broker as a stream source in earlier versions and plan to upgrade to 1.5.0 or subsequent releases, ensure that the `server` configuration in the `etc/mqtt_source.yaml` file is correctly set.
 - If you've been relying on environment variables to determine the MQTT source address, an adjustment is required. For instance, if your broker address is `tcp://broker.emqx.io:1883`, then the environment variable should be changed from `MQTT_SOURCE__DEFAULT__SERVERS=[tcp://broker.emqx.io:1883]` to `MQTT_SOURCE__DEFAULT__SERVER="tcp://broker.emqx.io:1883"`
 
-
 ## Listening to Multiple Topics
 
 When creating a stream, we can use the following method to listen to multiple topics simultaneously:
