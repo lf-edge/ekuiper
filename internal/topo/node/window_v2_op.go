@@ -146,7 +146,7 @@ func (s *StateWindowOp) handleTupleWithBeginEmitCondition(ctx api.StreamContext,
 		s.scanner.addTuple(row)
 		canEmit := isMatchCondition(ctx, s.EmitCondition, fv, row, s.stateFuncs)
 		if canEmit {
-			s.emitWindow(ctx, time.Time{}, InfTime)
+			s.emitWindow(ctx, s.getStartTime(), s.getEmitTime())
 			s.scanner.gc(InfTime)
 			s.onBegin = false
 		}
@@ -163,13 +163,29 @@ func (s *StateWindowOp) handleTupleWithSingleCondition(ctx api.StreamContext, fv
 	} else {
 		canEmit := isMatchCondition(ctx, s.SingleCondition, fv, row, s.stateFuncs)
 		if canEmit {
-			s.emitWindow(ctx, time.Time{}, InfTime)
+			s.emitWindow(ctx, s.getStartTime(), s.getEmitTime())
 			s.scanner.gc(InfTime)
 			s.onBegin = true
 			s.scanner.addTuple(row)
 		} else {
 			s.scanner.addTuple(row)
 		}
+	}
+}
+
+func (s *StateWindowOp) getStartTime() time.Time {
+	if row := s.scanner.head(); row == nil {
+		return time.Time{}
+	} else {
+		return row.Timestamp.Add(-1)
+	}
+}
+
+func (s *StateWindowOp) getEmitTime() time.Time {
+	if row := s.scanner.tail(); row == nil {
+		return InfTime
+	} else {
+		return row.Timestamp.Add(1)
 	}
 }
 
@@ -273,6 +289,20 @@ type WindowScanner struct {
 
 func (s *WindowScanner) addTuple(tuple *xsql.Tuple) {
 	s.tuples = append(s.tuples, tuple)
+}
+
+func (s *WindowScanner) head() *xsql.Tuple {
+	if len(s.tuples) == 0 {
+		return nil
+	}
+	return s.tuples[0]
+}
+
+func (s *WindowScanner) tail() *xsql.Tuple {
+	if len(s.tuples) == 0 {
+		return nil
+	}
+	return s.tuples[len(s.tuples)-1]
 }
 
 // scan left-open, right-closed window
