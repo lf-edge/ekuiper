@@ -21,6 +21,7 @@ import (
 	"fmt"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/conf/logger"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
@@ -160,6 +161,14 @@ func (p *RuleProcessor) GetRuleByJsonValidated(id, ruleJson string) (*def.Rule, 
 	}
 	if rule.Options == nil {
 		rule.Options = &opt
+	}
+	if rule.Options.Qos2 > rule.Options.Qos {
+		logger.Log.Infof("rule %s replace qos with qos2 %d", id, rule.Options.Qos2)
+		rule.Options.Qos = rule.Options.Qos2
+	}
+	if rule.Options.EnableSaveStateBeforeStop2 {
+		logger.Log.Infof("rule %s replace enableSaveStateBeforeStop with EnableSaveStateBeforeStop2 %v", id, rule.Options.EnableSaveStateBeforeStop2)
+		rule.Options.EnableSaveStateBeforeStop = true
 	}
 	return rule, nil
 }

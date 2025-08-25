@@ -203,6 +203,98 @@ func TestRuleActionParse_Apply(t *testing.T) {
 				},
 			},
 		},
+		{
+			ruleStr: `{
+			  "id": "ruleTest",
+			  "sql": "SELECT * from demo",
+			  "actions": [
+			  	{"log": {}}
+			  ],
+              "triggered": false,
+              "options": {
+					"qos2": 1,
+					"enableSaveStateBeforeStop2": true,
+					"checkpointInterval": "60s"
+				}
+			}`,
+			result: &def.Rule{
+				Triggered: false,
+				Id:        "ruleTest",
+				Sql:       "SELECT * from demo",
+				Actions: []map[string]interface{}{
+					{
+						"log": map[string]interface{}{},
+					},
+				},
+				Options: &def.RuleOption{
+					IsEventTime:                false,
+					LateTol:                    cast.DurationConf(time.Second),
+					Concurrency:                1,
+					BufferLength:               1024,
+					SendMetaToSink:             false,
+					Qos:                        def.AtLeastOnce,
+					Qos2:                       def.AtLeastOnce,
+					CheckpointInterval:         cast.DurationConf(60 * time.Second),
+					EnableSaveStateBeforeStop2: true,
+					EnableSaveStateBeforeStop:  true,
+					SendError:                  false,
+					RestartStrategy: &def.RestartStrategy{
+						Attempts:     0,
+						Delay:        cast.DurationConf(time.Second),
+						Multiplier:   2,
+						MaxDelay:     cast.DurationConf(30 * time.Second),
+						JitterFactor: 0.1,
+					},
+				},
+			},
+		},
+		{
+			ruleStr: `{
+			  "id": "ruleTest",
+			  "sql": "SELECT * from demo",
+			  "actions": [
+			  	{"log": {}}
+			  ],
+              "triggered": false,
+              "options": {
+					"qos2": 1,
+					"qos": 2,
+					"enableSaveStateBeforeStop": true,
+					"enableSaveStateBeforeStop2": true,
+					"checkpointInterval": "60s"
+				}
+			}`,
+			result: &def.Rule{
+				Triggered: false,
+				Id:        "ruleTest",
+				Sql:       "SELECT * from demo",
+				Actions: []map[string]interface{}{
+					{
+						"log": map[string]interface{}{},
+					},
+				},
+				Options: &def.RuleOption{
+					IsEventTime:                false,
+					LateTol:                    cast.DurationConf(time.Second),
+					Concurrency:                1,
+					BufferLength:               1024,
+					SendMetaToSink:             false,
+					Qos:                        def.ExactlyOnce,
+					Qos2:                       def.AtLeastOnce,
+					CheckpointInterval:         cast.DurationConf(60 * time.Second),
+					EnableSaveStateBeforeStop2: true,
+					EnableSaveStateBeforeStop:  true,
+					SendError:                  false,
+					RestartStrategy: &def.RestartStrategy{
+						Attempts:     0,
+						Delay:        cast.DurationConf(time.Second),
+						Multiplier:   2,
+						MaxDelay:     cast.DurationConf(30 * time.Second),
+						JitterFactor: 0.1,
+					},
+				},
+			},
+		},
 	}
 
 	p := NewRuleProcessor()
