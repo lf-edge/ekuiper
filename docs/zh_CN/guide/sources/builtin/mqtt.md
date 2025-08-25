@@ -187,3 +187,11 @@ REST API 为 eKuiper 提供了一种可编程的交互方式，适用于自动�
 
 - 如希望通过配置文件配置，请确保 `etc/mqtt_source.yaml` 文件内的 `server` 已正确配置。
 - 如希望通过环境变量配置，例如针对 `tcp://broker.emqx.io:1883` 地址，配置命令应从 `MQTT_SOURCE__DEFAULT__SERVERS=[tcp://broker.emqx.io:1883]` 改为 `MQTT_SOURCE__DEFAULT__SERVER="tcp://broker.emqx.io:1883"`。
+
+## 监听多个 topic 
+
+在创建流信息时，我们可以通过以下方式同时监听多个 topic:
+
+```sql
+{"sql":"create stream my_stream (id bigint, name string, score float) WITH ( datasource = \"t1,t2\", FORMAT = \"json\", KEY = \"id\")"}
+```
