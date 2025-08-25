@@ -36,8 +36,6 @@ import (
 )
 
 type WindowConfig struct {
-	BeginCondition   ast.Expr
-	EmitCondition    ast.Expr
 	TriggerCondition ast.Expr
 	StateFuncs       []*ast.Call
 	Type             ast.WindowType
@@ -53,6 +51,11 @@ type WindowConfig struct {
 
 	// For SlidingWindow
 	enableSlidingWindowSendTwice bool
+
+	// For state window
+	SingleCondition ast.Expr
+	BeginCondition  ast.Expr
+	EmitCondition   ast.Expr
 }
 
 type WindowOperator struct {

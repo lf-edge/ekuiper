@@ -1119,9 +1119,13 @@ func validateWindow(funcName string, expectLen int, args []ast.Expr) error {
 func (p *Parser) ConvertToWindows(wtype ast.WindowType, args []ast.Expr) (*ast.Window, error) {
 	win := &ast.Window{WindowType: wtype}
 	if wtype == ast.STATE_WINDOW {
-		win.BeginCondition = args[0]
-		win.EmitCondition = args[1]
-		return win, nil
+		if len(args) == 2 {
+			win.BeginCondition = args[0]
+			win.EmitCondition = args[1]
+			return win, nil
+		} else if len(args) == 1 {
+			win.SingleCondition = args[0]
+		}
 	}
 	if wtype == ast.COUNT_WINDOW {
 		win.Length = &ast.IntegerLiteral{Val: args[0].(*ast.IntegerLiteral).Val}

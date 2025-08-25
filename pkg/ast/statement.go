@@ -212,6 +212,7 @@ func (w WindowType) String() string {
 
 type Window struct {
 	TriggerCondition Expr
+	SingleCondition  Expr
 	BeginCondition   Expr
 	EmitCondition    Expr
 	WindowType       WindowType

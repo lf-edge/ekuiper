@@ -93,10 +93,11 @@ type WindowV2Exec interface {
 
 type StateWindowOp struct {
 	*WindowV2Operator
-	BeginCondition ast.Expr
-	EmitCondition  ast.Expr
-	onBegin        bool
-	stateFuncs     []*ast.Call
+	SingleCondition ast.Expr
+	BeginCondition  ast.Expr
+	EmitCondition   ast.Expr
+	onBegin         bool
+	stateFuncs      []*ast.Call
 }
 
 func NewStateWindowOp(o *WindowV2Operator) *StateWindowOp {
@@ -122,23 +123,51 @@ func (s *StateWindowOp) exec(ctx api.StreamContext, errCh chan<- error) {
 			s.onProcessStart(ctx, input)
 			switch row := data.(type) {
 			case *xsql.Tuple:
-				if !s.onBegin {
-					canBegin := isMatchCondition(ctx, s.BeginCondition, fv, row, s.stateFuncs)
-					if canBegin {
-						s.onBegin = true
-						s.scanner.addTuple(row)
-					}
-				} else {
-					s.scanner.addTuple(row)
-					canEmit := isMatchCondition(ctx, s.EmitCondition, fv, row, s.stateFuncs)
-					if canEmit {
-						s.emitWindow(ctx, time.Time{}, InfTime)
-						s.scanner.gc(InfTime)
-						s.onBegin = false
-					}
+				if s.BeginCondition != nil && s.EmitCondition != nil {
+					s.handleTupleWithBeginEmitCondition(ctx, fv, row)
+				} else if s.SingleCondition != nil {
+					s.handleTupleWithSingleCondition(ctx, fv, row)
 				}
 			}
 			s.onProcessEnd(ctx)
+		}
+	}
+}
+
+func (s *StateWindowOp) handleTupleWithBeginEmitCondition(ctx api.StreamContext, fv *xsql.FunctionValuer, row *xsql.Tuple) {
+	if !s.onBegin {
+		canBegin := isMatchCondition(ctx, s.BeginCondition, fv, row, s.stateFuncs)
+		if canBegin {
+			s.onBegin = true
+			s.scanner.addTuple(row)
+		}
+	} else {
+		s.scanner.addTuple(row)
+		canEmit := isMatchCondition(ctx, s.EmitCondition, fv, row, s.stateFuncs)
+		if canEmit {
+			s.emitWindow(ctx, time.Time{}, InfTime)
+			s.scanner.gc(InfTime)
+			s.onBegin = false
+		}
+	}
+}
+
+func (s *StateWindowOp) handleTupleWithSingleCondition(ctx api.StreamContext, fv *xsql.FunctionValuer, row *xsql.Tuple) {
+	if !s.onBegin {
+		canBegin := isMatchCondition(ctx, s.SingleCondition, fv, row, s.stateFuncs)
+		if canBegin {
+			s.onBegin = true
+			s.scanner.addTuple(row)
+		}
+	} else {
+		canEmit := isMatchCondition(ctx, s.SingleCondition, fv, row, s.stateFuncs)
+		if canEmit {
+			s.emitWindow(ctx, time.Time{}, InfTime)
+			s.scanner.gc(InfTime)
+			s.onBegin = true
+			s.scanner.addTuple(row)
+		} else {
+			s.scanner.addTuple(row)
 		}
 	}
 }
