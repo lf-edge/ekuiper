@@ -412,17 +412,26 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *def.RuleOption, sources ma
 			TriggerCondition: t.triggerCondition,
 			BeginCondition:   t.beginCondition,
 			EmitCondition:    t.emitCondition,
+			SingleCondition:  t.singleCondition,
 			StateFuncs:       t.stateFuncs,
 		}
-		if options.PlanOptimizeStrategy.GetWindowVersion() == "v2" {
+		// state window only support v2 window
+		if wc.Type == ast.STATE_WINDOW {
 			op, err = node.NewWindowV2Op(fmt.Sprintf("%d_window", newIndex), wc, options)
 			if err != nil {
 				return nil, 0, err
 			}
 		} else {
-			op, err = node.NewWindowOp(fmt.Sprintf("%d_window", newIndex), wc, options)
-			if err != nil {
-				return nil, 0, err
+			if options.PlanOptimizeStrategy.GetWindowVersion() == "v2" {
+				op, err = node.NewWindowV2Op(fmt.Sprintf("%d_window", newIndex), wc, options)
+				if err != nil {
+					return nil, 0, err
+				}
+			} else {
+				op, err = node.NewWindowOp(fmt.Sprintf("%d_window", newIndex), wc, options)
+				if err != nil {
+					return nil, 0, err
+				}
 			}
 		}
 	case *DedupTriggerPlan:
@@ -619,10 +628,11 @@ func createLogicalPlanFull(stmt *ast.SelectStatement, opt *def.RuleOption, store
 				p = incWp
 			} else {
 				wp := WindowPlan{
-					wtype:          w.WindowType,
-					isEventTime:    opt.IsEventTime,
-					beginCondition: w.BeginCondition,
-					emitCondition:  w.EmitCondition,
+					wtype:           w.WindowType,
+					isEventTime:     opt.IsEventTime,
+					beginCondition:  w.BeginCondition,
+					emitCondition:   w.EmitCondition,
+					singleCondition: w.SingleCondition,
 				}.Init()
 				if w.Length != nil {
 					wp.length = int(w.Length.Val)

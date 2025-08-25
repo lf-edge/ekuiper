@@ -24,6 +24,7 @@ import (
 
 type WindowPlan struct {
 	baseLogicalPlan
+	singleCondition  ast.Expr
 	beginCondition   ast.Expr
 	emitCondition    ast.Expr
 	triggerCondition ast.Expr
@@ -55,6 +56,10 @@ func (p *WindowPlan) GetTriggerCondition() ast.Expr {
 
 func (p *WindowPlan) GetBeginCondition() ast.Expr {
 	return p.beginCondition
+}
+
+func (p *WindowPlan) GetSingleCondition() ast.Expr {
+	return p.singleCondition
 }
 
 func (p *WindowPlan) GetEmitCondition() ast.Expr {
