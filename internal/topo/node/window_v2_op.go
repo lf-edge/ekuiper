@@ -93,6 +93,8 @@ type WindowV2Exec interface {
 
 type StateWindowOp struct {
 	*WindowV2Operator
+	StartTime       time.Time
+	EndTime         time.Time
 	SingleCondition ast.Expr
 	BeginCondition  ast.Expr
 	EmitCondition   ast.Expr
@@ -108,6 +110,19 @@ func NewStateWindowOp(o *WindowV2Operator) *StateWindowOp {
 		SingleCondition:  o.windowConfig.SingleCondition,
 		stateFuncs:       o.windowConfig.StateFuncs,
 	}
+}
+
+func (s *StateWindowOp) emit(ctx api.StreamContext, startTime, endTime time.Time) {
+	tuples := s.scanner.scanWindow(time.Time{}, InfTime)
+	results := &xsql.WindowTuples{
+		Content: make([]xsql.Row, 0),
+	}
+	for _, tuple := range tuples {
+		results.Content = append(results.Content, tuple)
+	}
+	results.WindowRange = xsql.NewWindowRange(startTime.UnixMilli(), endTime.UnixMilli(), endTime.UnixMilli())
+	s.Broadcast(results)
+	s.onSend(ctx, results)
 }
 
 func (s *StateWindowOp) exec(ctx api.StreamContext, errCh chan<- error) {
@@ -139,6 +154,7 @@ func (s *StateWindowOp) handleTupleWithBeginEmitCondition(ctx api.StreamContext,
 	if !s.onBegin {
 		canBegin := isMatchCondition(ctx, s.BeginCondition, fv, row, s.stateFuncs)
 		if canBegin {
+			s.StartTime = row.Timestamp
 			s.onBegin = true
 			s.scanner.addTuple(row)
 		}
@@ -146,7 +162,8 @@ func (s *StateWindowOp) handleTupleWithBeginEmitCondition(ctx api.StreamContext,
 		s.scanner.addTuple(row)
 		canEmit := isMatchCondition(ctx, s.EmitCondition, fv, row, s.stateFuncs)
 		if canEmit {
-			s.emitWindow(ctx, s.getStartTime(), s.getEmitTime())
+			s.EndTime = row.Timestamp
+			s.emit(ctx, s.StartTime, s.EndTime)
 			s.scanner.gc(InfTime)
 			s.onBegin = false
 		}
@@ -157,35 +174,22 @@ func (s *StateWindowOp) handleTupleWithSingleCondition(ctx api.StreamContext, fv
 	if !s.onBegin {
 		canBegin := isMatchCondition(ctx, s.SingleCondition, fv, row, s.stateFuncs)
 		if canBegin {
+			s.StartTime = row.Timestamp
 			s.onBegin = true
 			s.scanner.addTuple(row)
 		}
 	} else {
 		canEmit := isMatchCondition(ctx, s.SingleCondition, fv, row, s.stateFuncs)
 		if canEmit {
-			s.emitWindow(ctx, s.getStartTime(), s.getEmitTime())
+			s.EndTime = row.Timestamp
+			s.emit(ctx, s.StartTime, s.EndTime)
 			s.scanner.gc(InfTime)
 			s.onBegin = true
 			s.scanner.addTuple(row)
+			s.StartTime = row.Timestamp
 		} else {
 			s.scanner.addTuple(row)
 		}
-	}
-}
-
-func (s *StateWindowOp) getStartTime() time.Time {
-	if row := s.scanner.head(); row == nil {
-		return time.Time{}
-	} else {
-		return row.Timestamp.Add(-1)
-	}
-}
-
-func (s *StateWindowOp) getEmitTime() time.Time {
-	if row := s.scanner.tail(); row == nil {
-		return InfTime
-	} else {
-		return row.Timestamp.Add(1)
 	}
 }
 
@@ -289,20 +293,6 @@ type WindowScanner struct {
 
 func (s *WindowScanner) addTuple(tuple *xsql.Tuple) {
 	s.tuples = append(s.tuples, tuple)
-}
-
-func (s *WindowScanner) head() *xsql.Tuple {
-	if len(s.tuples) == 0 {
-		return nil
-	}
-	return s.tuples[0]
-}
-
-func (s *WindowScanner) tail() *xsql.Tuple {
-	if len(s.tuples) == 0 {
-		return nil
-	}
-	return s.tuples[len(s.tuples)-1]
 }
 
 // scan left-open, right-closed window
