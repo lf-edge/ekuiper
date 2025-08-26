@@ -87,14 +87,14 @@ func GetConvertWriter(ctx api.StreamContext, format string, schemaId string, sch
 	return NewStackWriter(ctx, c)
 }
 
-func GetMerger(ctx api.StreamContext, format string, schemaId string, schemaFields map[string]*ast.JsonStreamField) (modules.Merger, error) {
+func GetMerger(ctx api.StreamContext, format string, schemaId string, schemaFields map[string]*ast.JsonStreamField, props map[string]any) (modules.Merger, error) {
 	t := strings.ToLower(format)
 	if mp, ok := modules.Mergers[t]; ok {
 		schemaPath, err := transSchemaId(t, schemaId, map[string]any{})
 		if err != nil {
 			return nil, err
 		}
-		return mp(ctx, schemaPath, schemaFields)
+		return mp(ctx, schemaPath, schemaFields, props)
 	} else {
 		return nil, fmt.Errorf("merger %s not found", t)
 	}
