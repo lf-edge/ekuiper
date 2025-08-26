@@ -56,7 +56,7 @@ type Merger interface {
 	Trigger(ctx api.StreamContext) ([]any, bool)
 }
 
-type MergerProvider func(ctx api.StreamContext, payloadSchema string, logicalSchema map[string]*ast.JsonStreamField) (Merger, error)
+type MergerProvider func(ctx api.StreamContext, payloadSchema string, logicalSchema map[string]*ast.JsonStreamField, props map[string]any) (Merger, error)
 
 // Mergers list, the key is format + payload format such as "jsoncan"
 var Mergers = map[string]MergerProvider{}

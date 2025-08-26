@@ -56,7 +56,7 @@ func TestNewRateLimit(t *testing.T) {
 	_, err = NewRateLimitOp(ctx, "test", &def.RuleOption{BufferLength: 10, SendError: true}, nil, map[string]any{"interval": "1s", "merger": "none", "format": "delimited"})
 	assert.Error(t, err)
 	assert.EqualError(t, err, "fail to initiate merge none: merger none not found")
-	modules.RegisterMerger("none", func(ctx api.StreamContext, schemaId string, logicalSchema map[string]*ast.JsonStreamField) (modules.Merger, error) {
+	modules.RegisterMerger("none", func(ctx api.StreamContext, schemaId string, logicalSchema map[string]*ast.JsonStreamField, _ map[string]any) (modules.Merger, error) {
 		return nil, errors.New("mock error")
 	})
 	_, err = NewRateLimitOp(ctx, "test", &def.RuleOption{BufferLength: 10, SendError: true}, nil, map[string]any{"interval": "1s", "merger": "none", "format": "delimited"})
@@ -290,7 +290,7 @@ func TestRateLimitCustomMerge(t *testing.T) {
 			},
 		},
 	}
-	modules.RegisterMerger("mock", func(ctx api.StreamContext, schemaId string, logicalSchema map[string]*ast.JsonStreamField) (modules.Merger, error) {
+	modules.RegisterMerger("mock", func(ctx api.StreamContext, schemaId string, logicalSchema map[string]*ast.JsonStreamField, _ map[string]any) (modules.Merger, error) {
 		return &message.MockMerger{}, nil
 	})
 	delete(modules.ConverterSchemas, "mock")

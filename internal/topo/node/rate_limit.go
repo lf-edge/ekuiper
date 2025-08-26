@@ -94,7 +94,7 @@ func NewRateLimitOp(ctx api.StreamContext, name string, rOpt *def.RuleOption, sc
 		}
 		o.mergeStrategy = 1
 	} else if c.Merger != "" {
-		cm, err := converter.GetMerger(ctx, c.Merger, c.PayloadSchemaId, schema)
+		cm, err := converter.GetMerger(ctx, c.Merger, c.PayloadSchemaId, schema, props)
 		if err != nil {
 			return nil, fmt.Errorf("fail to initiate merge %s: %v", c.Merger, err)
 		}
