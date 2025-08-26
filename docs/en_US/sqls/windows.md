@@ -92,6 +92,24 @@ A single-condition state window is initially in the untriggered state, in which 
 
 When a single-condition state window is in the triggered state, if data entering the window meets the trigger condition, all previously stored data in the window is sent as a single window, triggering the storage of the next window.
 
+For the following data, the output of `statewindow(had_changed(a))` is as follows:
+
+Input:
+```txt
+{"a":1}
+{"a":1}
+{"a":1}
+{"a":2}
+{"a":2}
+{"a":3}
+```
+
+Output:
+```txt
+[{"a":1},{"a":1},{"a":1}]
+[{"a":2},{"a":2}]
+```
+
 ## Count window
 
 Please notice that the count window does not concern time, it only concern about events count.
