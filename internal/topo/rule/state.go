@@ -405,7 +405,6 @@ func (s *State) Stop() {
 }
 
 func (s *State) StopWithLastWillAndSig(msg string, sig int) {
-	defer s.nextAction()
 	s.logger.Debug("stop RunState")
 	done := s.triggerAction(ActionSignalStop)
 	if done {
