@@ -80,8 +80,17 @@ The conditional state window does not focus on time, but only on the impact of e
 SELECT * from demo group by statewindow(a > 1, a > 5)
 ```
 
-The conditional state window is initially in the untriggered state, at which point all data entering the window will be directly discarded. When the data entering the window meets the start window trigger condition, it changes from the untriggered state to the triggered state, at which point all data entering the window will be stored.
-When the conditional state window is in the triggered state, when the data entering the window meets the send window trigger condition, it changes from the triggered state to the untriggered state, and all data previously stored in the window will be sent as a window.
+### Single Conditional State Window
+
+A conditional state window does not consider time; it only considers the impact of each piece of data on the window state. It has one main parameter: the window trigger condition.
+
+```sql
+SELECT * from demo group by statewindow(a > 1)
+```
+
+A single-condition state window is initially in the untriggered state, in which case all data entering the window is discarded. When data entering the window meets the trigger condition, the state transitions from untriggered to triggered, at which point all data entering the window is stored.
+
+When a single-condition state window is in the triggered state, if data entering the window meets the trigger condition, all previously stored data in the window is sent as a single window, triggering the storage of the next window.
 
 ## Count window
 
