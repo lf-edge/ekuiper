@@ -756,7 +756,10 @@ func createLogicalPlanFull(stmt *ast.SelectStatement, opt *def.RuleOption, store
 		p.SetChildren(children)
 		children = []LogicalPlan{p}
 	}
-	srfMapping := extractSRFMapping(stmt)
+	srfMapping, err := extractSRFMapping(stmt)
+	if err != nil {
+		return nil, nil, nil, err
+	}
 	if stmt.Fields != nil {
 		// extract dedup trigger op
 		fields := make([]ast.Field, 0, len(stmt.Fields))
@@ -845,7 +848,8 @@ func createLogicalPlanFull(stmt *ast.SelectStatement, opt *def.RuleOption, store
 }
 
 // extractSRFMapping extracts the set-returning-function in the field
-func extractSRFMapping(stmt *ast.SelectStatement) map[string]struct{} {
+func extractSRFMapping(stmt *ast.SelectStatement) (map[string]struct{}, error) {
+	srfFuncCnt := 0
 	m := make(map[string]struct{})
 	for _, field := range stmt.Fields {
 		var curExpr ast.Expr
@@ -859,9 +863,13 @@ func extractSRFMapping(stmt *ast.SelectStatement) map[string]struct{} {
 		}
 		if f, ok := curExpr.(*ast.Call); ok && f.FuncType == ast.FuncTypeSrf {
 			m[name] = struct{}{}
+			srfFuncCnt++
 		}
 	}
-	return m
+	if srfFuncCnt > 1 {
+		return nil, fmt.Errorf("set-returning func shouldn't be more than 1")
+	}
+	return m, nil
 }
 
 func Transform(op node.UnOperation, name string, options *def.RuleOption) *node.UnaryOperator {
