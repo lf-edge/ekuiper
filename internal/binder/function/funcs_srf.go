@@ -49,5 +49,4 @@ func registerSetReturningFunc() {
 		val:   ValidateOneArg,
 		check: returnNilIfHasAnyNil,
 	}
-
 }
