@@ -53,6 +53,10 @@ func TestExtractFunc(t *testing.T) {
 			t.Errorf("%d result mismatch,\ngot:\t%v \nwant:\t%v", i, result, tt.result)
 		}
 	}
+	expe, ok := f.exec(fctx, []interface{}{1})
+	require.False(t, ok)
+	_, isErr := expe.(error)
+	require.True(t, isErr)
 }
 
 func TestUnnestFunctions(t *testing.T) {
