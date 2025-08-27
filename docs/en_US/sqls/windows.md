@@ -95,6 +95,7 @@ When a single-condition state window is in the triggered state, if data entering
 For the following data, the output of `statewindow(had_changed(a))` is as follows:
 
 Input:
+
 ```txt
 {"a":1}
 {"a":1}
@@ -105,6 +106,7 @@ Input:
 ```
 
 Output:
+
 ```txt
 [{"a":1},{"a":1},{"a":1}]
 [{"a":2},{"a":2}]

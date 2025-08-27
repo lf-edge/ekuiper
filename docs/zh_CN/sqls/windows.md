@@ -97,6 +97,7 @@ SELECT * from demo group by statewindow(a > 1)
 对于以下数据,对于 `statewindow(had_changed(a))` 的输出如下:
 
 输入:
+
 ```txt
 {"a":1}
 {"a":1}
@@ -107,6 +108,7 @@ SELECT * from demo group by statewindow(a > 1)
 ```
 
 输出:
+
 ```txt
 [{"a":1},{"a":1},{"a":1}]
 [{"a":2},{"a":2}]
