@@ -72,7 +72,7 @@ ___________________________________________________
 {"a":3, "b":4, "c": 5}
 ```
 
-## Extract 
+## Extract
 
 ```text
 extract(map[string]interface{})
@@ -93,7 +93,7 @@ extract(map[string]interface{})
 }
 ```
 
-获取 unnest 结果的规则:
+获取 extract 结果的规则:
 
 ```text
 SQL: SELECT extract(data) FROM demo

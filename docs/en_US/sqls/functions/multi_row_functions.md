@@ -74,7 +74,6 @@ ___________________________________________________
 {"a":3, "b":4, "c": 5}
 ```
 
-
 ## Extract
 
 ```text
@@ -96,7 +95,7 @@ Create a stream called demo and give it the following input.
 }
 ```
 
-Rule to get the unnest result:
+Rule to get the extract result:
 
 ```text
 SQL: SELECT extract(data) FROM demo
