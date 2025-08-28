@@ -33,11 +33,15 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
-func initRuleset() error {
-	loc, err := conf.GetDataLoc()
-	if err != nil {
-		return err
-	}
+func initRuleset() {
+	// init data firstly, so that same version can take precedence
+	loc, _ := conf.GetDataLoc()
+	_ = initFromLoc(loc)
+	loc, _ = conf.GetConfLoc()
+	_ = initFromLoc(loc)
+}
+
+func initFromLoc(loc string) error {
 	initFile := filepath.Join(loc, "init.json")
 	fileInfo, err := os.Stat(initFile)
 	if err != nil {

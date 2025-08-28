@@ -1,0 +1,10 @@
+{
+  "streams": {
+    "nnn": "CREATE STREAM nnn() WITH (TYPE=\"mqtt\",FORMAT=\"json\",DATASOURCE=\"none\", SHARED=\"true\");"
+  },
+  "rules": {
+    "ruleEtc": "{\"id\":\"ruleEtc\",\"name\":\"only in etc\",\"sql\":\"SELECT ts1, ts2 FROM nnn\",\"actions\":[{\"log\":{}}]}",
+    "rrr1": "{\"id\":\"rrr1\",\"name\":\"no version\",\"sql\":\"SELECT ts1, ts2 FROM nnn\",\"actions\":[{\"log\":{}}]}",
+    "rrr2": "{\"id\":\"rrr2\",\"name\":\"even newer version\",\"version\":\"1742960676\",\"sql\":\"SELECT ts1, ts2 FROM nnn\",\"actions\":[{\"log\":{}}]}"
+  }
+}
