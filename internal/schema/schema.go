@@ -27,6 +27,7 @@ type Info struct {
 	Content  string `json:"content,omitempty" yaml:"content,omitempty"`
 	FilePath string `json:"file,omitempty" yaml:"filePath,omitempty"`
 	SoPath   string `json:"soFile,omitempty" yaml:"soPath,omitempty"`
+	Version  string `json:"version,omitempty" yaml:"version,omitempty"`
 }
 
 func (i *Info) InstallScript() string {
