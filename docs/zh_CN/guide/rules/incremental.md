@@ -1,10 +1,61 @@
 # 增量计算
 
-在使用 eKuiper 对窗口内的数据进行聚合函数计算时，之前的实现方法是将源源不断的流数据按照窗口定义切分成窗口，并缓存在内存中。当窗口结束后，再将窗口内的所有数据进行聚合计算。该方法所带来的一个问题是当数据还未被聚合计算时，缓存在内存里容易造成内存放大，引起 OOM 问题。
+## 背景
 
-目前，eKuiper 支持了对窗口内的聚合函数进行增量计算，只要该聚合函数支持增量计算。当流数据进入窗口时，聚合函数的增量计算将会对该数据进行处理并计算成一个中间状态，从而无需再将整条数据缓存在内存中。
+在目前的 ekuiper 中，当我们需要对数据进行聚合计算，往往需要将流数据以窗口的形式进行切分，聚合，然后再进行计算。以如下的 SQL 为例:
 
-我们可以通过以下[函数列表](../../sqls/functions/aggregate_functions.md)查询哪些聚合函数支持增量计算。
+```sql
+select avg(a) from stream group by tumblingWindow(ss,10),b;
+```
+
+在 ekuiper 的算子模型中，对于聚合计算会依次拆分为三个算子:
+
+```txt
+Window 算子 -> Group By 算子 -> Proj （计算) 算子
+```
+
+即流式数据会先在 Window 算子进行集合，然后交给 Group by 算子进行分类，最后在 Project 算子中进行计算。这个做法的对于任何聚合计算都可以适用，但存在以下问题:
+1. 当窗口过大时，会占用更多内存
+2. 有些聚合函数可以流式处理的特性未被利用到
+
+对于聚合函数 avg，当这个聚合函数在处理流式数据时，我们并不需要等待所有数据在窗口中集合完毕才进行计算，我们可以每读取到一个数据时，更新 2 个中间状态，即 sum 和 count。当窗口数据读完以后，我们所需要的 avg 值也可通过 sum/count 来直接获取。
+
+## 如何实现增量计算
+
+在讨论如何实现增量计算之前，我们可以先看下对于如下 SQL，之前的 eKuiper 是如何创建规则的:
+
+```sql
+select sum(b) from demo group by tumblingwindow(ss, 10),c  having avg(a) > 0; 
+```
+
+```sql
+{"op":"ProjectPlan_0","info":"Fields:[ Call:{ name:sum, args:[demo.b] } ]"}
+        {"op":"HavingPlan_1","info":"Condition:{ binaryExpr:{ Call:{ name:avg, args:[demo.a] } > 0 } }, "}
+                        {"op":"AggregatePlan_2","info":"Dimension:{ demo.c }"}
+                                        {"op":"WindowPlan_3","info":"{ length:10, windowType:TUMBLING_WINDOW, limit: 0 }"}
+                                                        {"op":"DataSourcePlan_4","info":"StreamName: demo, StreamFields:[ a, b, c ]"}
+```
+
+从 explain 的结果中可以看到，eKuiper 会创建 5个算子分别对流式数据进行处理。 Datasource 算子会将数据持续从 stream 中读取，而 Window 算子则会将数据按照 tumbling window 所定义的方式进行聚合。当窗口数据聚合完毕后，Aggregate 算子会将数据按照 c 列进行分类，最后 having 算子和 Project 算子会分别算出 avg(a) 和 sum(b) 这两个函数的值，并进行相应的计算。
+
+![img1.png](../../resources/inc_p1.png)
+
+### 算子角度
+
+从算子角度来看，为了实现增量计算，我们需要将推倒之前的将存、聚、算，三者分开实现算子的方案，而是需要一个三者合并为一个算子的方案。
+
+对于增量计算的聚合算子来说，和之前将存、聚、算，三者分开实现算子的方案而言，我们需要将三者合并为一个算子。即当数据来临时，我们需要将数据直接交给聚合算子进行计算，在每个窗口中实时的将数据按照 group by 列进行分类，按照聚合函数进行计算并保存中间结果。如此一来，便无需再保存原本的数据，就能实时的计算结果。而对于后续的 Having 算子和 Proj 算子，则他们并不需要去计算聚合函数的值，而是直接用已经算好的聚合函数的值来进行计算。为了达到这个目的，此我们需要创建一个新的算子来实现这一功能
+
+![img2.png](../../resources/inc_p2.png)
+
+在 eKuiper 的实现中，当开启增量计算后，eKuiper 会在 IncAggWindow 算子中去实现实时的将数据的聚合和计算做出结果，如下图所示。
+
+```sql
+{"op":"ProjectPlan_0","info":"Fields:[ Call:{ name:bypass, args:[$$default.inc_agg_col_1] } ]"}
+        {"op":"HavingPlan_1","info":"Condition:{ binaryExpr:{ Call:{ name:bypass, args:[$$default.inc_agg_col_2] } > 0 } }, "}
+                        {"op":"IncAggWindowPlan_2","info":"wType:TUMBLING_WINDOW, Dimension:[demo.c], funcs:[Call:{ name:inc_sum, args:[demo.b] }->inc_agg_col_1,Call:{ name:inc_avg, args:[demo.a] }->inc_agg_col_2]"}
+                                        {"op":"DataSourcePlan_3","info":"StreamName: demo, StreamFields:[ a, b, c, inc_agg_col_1, inc_agg_col_2 ]"}
+```
 
 ## 启用增量计算
 
@@ -96,3 +147,32 @@
 ```
 
 可以看到由于 `stddev` 是一个不支持增量计算的聚合函数，所以这个规则的查询计划中并没有打开增量计算。
+
+## 开启增量计算前后的内存使用对比
+
+针对以下规则， 我们可以对比开启增量计算和未开启增量计算时，在同样的数据量的情况下，内存的使用对比:
+
+```sql
+{
+  "id": "rule1",
+  "sql": "select sum(b) from demo group by tumblingwindow(ss, 10) having avg(a) > 0;",
+  "options": {
+      "planOptimizeStrategy" : {
+          "enableIncrementalWindow": true
+      }
+  },
+  "actions": [
+      {
+          "log":{}
+      }
+  ]
+}
+```
+
+### 未开启增量计算
+
+![img3.png](../../resources/inc_p3.png)
+
+### 开启增量计算
+
+![img4.png](../../resources/inc_p4.png)
