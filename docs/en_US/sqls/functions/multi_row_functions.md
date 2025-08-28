@@ -73,3 +73,33 @@ ___________________________________________________
 {"a":1, "b":2, "c": 5}
 {"a":3, "b":4, "c": 5}
 ```
+
+
+## Extract
+
+```text
+extract(map[string]interface{})
+```
+
+The argument must be a map object. This function expands the argument map and places it on the current row.
+
+### Example
+
+Create a stream called demo and give it the following input.
+
+```json lines
+{
+  "data": {
+    "k1": "v1",
+    "k2": "v2"
+  }
+}
+```
+
+Rule to get the unnest result:
+
+```text
+SQL: SELECT extract(data) FROM demo
+__________________________________________________
+{"k1":"v1","k2":"v2"}
+```
