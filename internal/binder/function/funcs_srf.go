@@ -15,6 +15,8 @@
 package function
 
 import (
+	"fmt"
+
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
@@ -30,6 +32,19 @@ func registerSetReturningFunc() {
 				return arg, true
 			}
 			return argArray, true
+		},
+		val:   ValidateOneArg,
+		check: returnNilIfHasAnyNil,
+	}
+	builtins["extract"] = builtinFunc{
+		fType: ast.FuncTypeSrf,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			arg := args[0]
+			argMap, ok := arg.(map[string]interface{})
+			if !ok {
+				return fmt.Errorf("extract should use map"), false
+			}
+			return []interface{}{argMap}, true
 		},
 		val:   ValidateOneArg,
 		check: returnNilIfHasAnyNil,

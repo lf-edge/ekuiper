@@ -27,6 +27,38 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/topo/state"
 )
 
+func TestExtractFunc(t *testing.T) {
+	f, ok := builtins["extract"]
+	if !ok {
+		t.Fatal("builtin not found")
+	}
+	contextLogger := conf.Log.WithField("rule", "testExec")
+	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+	tempStore, _ := state.CreateStore("mockRule0", def.AtMostOnce)
+	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
+	tests := []struct {
+		args   []interface{}
+		result interface{}
+	}{
+		{ // 0
+			args: []interface{}{
+				map[string]interface{}{"k": "v"},
+			},
+			result: []interface{}{map[string]interface{}{"k": "v"}},
+		},
+	}
+	for i, tt := range tests {
+		result, _ := f.exec(fctx, tt.args)
+		if !reflect.DeepEqual(result, tt.result) {
+			t.Errorf("%d result mismatch,\ngot:\t%v \nwant:\t%v", i, result, tt.result)
+		}
+	}
+	expe, ok := f.exec(fctx, []interface{}{1})
+	require.False(t, ok)
+	_, isErr := expe.(error)
+	require.True(t, isErr)
+}
+
 func TestUnnestFunctions(t *testing.T) {
 	f, ok := builtins["unnest"]
 	if !ok {
