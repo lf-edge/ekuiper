@@ -31,4 +31,5 @@ const (
 type Files struct {
 	SchemaFile string
 	SoFile     string
+	Version    string
 }

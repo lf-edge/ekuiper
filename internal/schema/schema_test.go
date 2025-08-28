@@ -65,9 +65,10 @@ func TestSchemaInfo(t *testing.T) {
 		{
 			name: "missing content",
 			i: &Info{
-				Type:   "protobuf",
-				Name:   "aa",
-				SoPath: "dd",
+				Type:    "protobuf",
+				Name:    "aa",
+				Version: "1222222",
+				SoPath:  "dd",
 			},
 			err: errors.New("must specify content or file"),
 		},

@@ -58,9 +58,14 @@ func InitRegistry() error {
 	registry = &Registry{
 		schemas: make(map[string]map[string]*modules.Files, len(modules.SchemaTypeDefs)),
 	}
-	dataDir, err := conf.GetDataLoc()
+	// TODO shall we allow to delete etc schema?
+	etcDir, err := conf.GetConfLoc()
 	if err != nil {
 		return fmt.Errorf("cannot find etc folder: %s", err)
+	}
+	dataDir, err := conf.GetDataLoc()
+	if err != nil {
+		return fmt.Errorf("cannot find data folder: %s", err)
 	}
 	schemaDb, err = store.GetKV("schema")
 	if err != nil {
@@ -71,11 +76,53 @@ func InitRegistry() error {
 		return fmt.Errorf("cannot open schemaStatus db: %s", err)
 	}
 	for schemaType, st := range modules.SchemaTypeDefs {
-		schemaDir := filepath.Join(dataDir, "schemas", schemaType)
+		// Read from etcDir firstly, then read from dataDir
+		// Compare version and leave the newer version
+		schemaDir := filepath.Join(etcDir, "schemas", schemaType)
+		etcSchemas, err := st.Def.Scan(conf.Log, schemaDir)
+		if err != nil {
+			conf.Log.Warnf("cannot read schema directory: %s", err)
+			etcSchemas = map[string]*modules.Files{}
+		}
+		for n, s := range etcSchemas {
+			result := strings.Split(n, "@")
+			if len(result) == 2 {
+				s.Version = result[1]
+				etcSchemas[result[0]] = s
+				delete(etcSchemas, n)
+			} else if len(result) > 2 {
+				conf.Log.Warnf("schema definition '%s' has malform version name", n)
+				delete(etcSchemas, n)
+			}
+		}
+		schemaDir = filepath.Join(dataDir, "schemas", schemaType)
 		newSchemas, err := st.Def.Scan(conf.Log, schemaDir)
 		if err != nil {
 			conf.Log.Warnf("cannot read schema directory: %s", err)
-			newSchemas = make(map[string]*modules.Files)
+			newSchemas = map[string]*modules.Files{}
+		}
+		for n, s := range newSchemas {
+			result := strings.Split(n, "@")
+			if len(result) == 2 {
+				s.Version = result[1]
+				newSchemas[result[0]] = s
+				delete(newSchemas, n)
+			} else if len(result) > 2 {
+				conf.Log.Warnf("schema definition '%s' has malform version name", n)
+				delete(newSchemas, n)
+			}
+		}
+		// merge schemas
+		for n, s := range etcSchemas {
+			ss, ok := newSchemas[n]
+			if ok {
+				if s.Version > ss.Version {
+					conf.Log.Infof("schema definition '%s' in etc has version %s greater than %s", n, s.Version, ss.Version)
+					newSchemas[n] = s
+				}
+			} else {
+				newSchemas[n] = s
+			}
 		}
 		registry.schemas[schemaType] = newSchemas
 	}
@@ -100,21 +147,30 @@ func GetAllForType(schemaType string) ([]string, error) {
 }
 
 func Register(info *Info) error {
-	if _, ok := registry.schemas[info.Type]; !ok {
-		return fmt.Errorf("schema type %s not found", info.Type)
-	}
-	if _, ok := registry.schemas[info.Type][info.Name]; ok {
-		return fmt.Errorf("schema %s.%s already registered", info.Type, info.Name)
-	}
-	err := CreateOrUpdateSchema(info)
+	err := func() error {
+		registry.RLock()
+		defer registry.RUnlock()
+		if _, ok := registry.schemas[info.Type]; !ok {
+			return fmt.Errorf("schema type %s not found", info.Type)
+		}
+		if _, ok := registry.schemas[info.Type][info.Name]; ok {
+			return fmt.Errorf("schema %s.%s already registered", info.Type, info.Name)
+		}
+		return nil
+	}()
 	if err != nil {
 		return err
 	}
-	storeSchemaInstallScript(info)
+	err = CreateOrUpdateSchema(info)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
 func CreateOrUpdateSchema(info *Info) error {
+	registry.Lock()
+	defer registry.Unlock()
 	if strings.Contains(info.Type, "/") || strings.Contains(info.Type, "\\") || strings.Contains(info.Type, "..") {
 		return fmt.Errorf("schema type %s is invalid", info.Type)
 	}
@@ -124,6 +180,16 @@ func CreateOrUpdateSchema(info *Info) error {
 	st, ok := modules.SchemaTypeDefs[info.Type]
 	if !ok {
 		return fmt.Errorf("schema type %s not found", info.Type)
+	}
+	// compare version
+	if _, ok := registry.schemas[info.Type]; !ok {
+		return fmt.Errorf("schema type %s not found", info.Type)
+	}
+	offs, ok := registry.schemas[info.Type][info.Name]
+	if ok {
+		if offs.Version != "" && offs.Version > info.Version {
+			return fmt.Errorf("schema %s.%s already registered with a newer version %s", info.Type, info.Name, offs.Version)
+		}
 	}
 	dataDir, _ := conf.GetDataLoc()
 	etcDir := filepath.Join(dataDir, "schemas", info.Type)
@@ -142,7 +208,11 @@ func CreateOrUpdateSchema(info *Info) error {
 		}
 
 		schemaFileName := info.Name + st.Ext
-		schemaFile := filepath.Join(etcDir, schemaFileName)
+		targetName := schemaFileName
+		if info.Version != "" {
+			targetName = fmt.Sprintf("%s@%s%s", info.Name, info.Version, st.Ext)
+		}
+		schemaFile := filepath.Join(etcDir, targetName)
 		if filepath.Ext(info.FilePath) == ".zip" {
 			conf.Log.Infof("unzipping schema file %s", info.FilePath)
 			tmpFile := filepath.Join(etcDir, uuid.New().String()+".zip")
@@ -161,7 +231,7 @@ func CreateOrUpdateSchema(info *Info) error {
 				fileName := file.Name
 				// Check if it's the exact file we want
 				if fileName == schemaFileName {
-					err = filex.UnzipTo(file, etcDir, schemaFileName)
+					err = filex.UnzipTo(file, etcDir, targetName)
 					found = true
 				} else if fileName == info.Name && file.FileInfo().IsDir() {
 					err = filex.UnzipTo(file, etcDir, info.Name)
@@ -209,8 +279,18 @@ func CreateOrUpdateSchema(info *Info) error {
 		}
 		ffs.SoFile = soFile
 	}
-
+	ffs.Version = info.Version
 	registry.schemas[info.Type][info.Name] = ffs
+	storeSchemaInstallScript(info)
+	// clean up old ffs
+	if offs != nil && info.Version != "" {
+		if offs.SchemaFile != "" {
+			err := os.Remove(offs.SchemaFile)
+			if err != nil {
+				conf.Log.Errorf("cannot delete old schema file %s: %s", offs.SchemaFile, err)
+			}
+		}
+	}
 	return nil
 }
 
@@ -230,12 +310,14 @@ func GetSchema(schemaType string, name string) (*Info, error) {
 			Content:  string(content),
 			FilePath: schemaFile.SchemaFile,
 			SoPath:   schemaFile.SoFile,
+			Version:  schemaFile.Version,
 		}, nil
 	} else {
 		return &Info{
-			Type:   schemaType,
-			Name:   name,
-			SoPath: schemaFile.SoFile,
+			Type:    schemaType,
+			Name:    name,
+			SoPath:  schemaFile.SoFile,
+			Version: schemaFile.Version,
 		}, nil
 	}
 }
@@ -264,6 +346,16 @@ func DeleteSchema(schemaType string, name string) error {
 		return fmt.Errorf("schema %s.%s not found", schemaType, name)
 	}
 	schemaFile := registry.schemas[schemaType][name]
+	err := doDelete(name, schemaFile)
+	if err != nil {
+		return err
+	}
+	delete(registry.schemas[schemaType], name)
+	removeSchemaInstallScript(schemaType, name)
+	return nil
+}
+
+func doDelete(name string, schemaFile *modules.Files) error {
 	// If the schema is a folder, delete the folder otherwise delete the single file
 	if schemaFile.SchemaFile != "" {
 		err := os.Remove(schemaFile.SchemaFile)
@@ -284,8 +376,6 @@ func DeleteSchema(schemaType string, name string) error {
 			conf.Log.Errorf("cannot delete schema so file %s: %s", schemaFile.SoFile, err)
 		}
 	}
-	delete(registry.schemas[schemaType], name)
-	removeSchemaInstallScript(schemaType, name)
 	return nil
 }
 
