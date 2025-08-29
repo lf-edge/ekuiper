@@ -201,3 +201,9 @@ SELECT * FROM demo GROUP BY SlidingWindow(ss,1) FILTER(where revenue > 100) OVER
 ```sql
 SELECT * FROM demo GROUP BY SlidingWindow(ss,1) OVER(when revenue > 200)
 ```
+
+## 增量计算
+
+当窗口数据转交给聚合函数去计算时，如果这个聚合函数可以被增量计算，那么整个窗口+计算的流程可以被优化为流式的增量计算，具体可参考:
+
+[增量计算](../guide/rules/incremental.md#增量计算)
