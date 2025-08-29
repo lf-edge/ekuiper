@@ -8,7 +8,6 @@ In the current ekuiper, when performing aggregate calculations on data, we often
 select avg(a) from stream group by tumblingWindow(ss,10),b;
 ```
 
-
 In ekuiper's operator model, aggregate calculations are split into three operators:
 
 ```txt
@@ -43,14 +42,11 @@ select sum(b) from demo group by tumblingwindow(ss, 10),c  having avg(a) > 0;
 
 From an operator perspective, to implement incremental computation, we need to move away from the previous approach of implementing storage, aggregation, and computation as separate operators and instead combine these three into a single operator.
 
-
 For incremental computation aggregation operators, we need to combine storage, aggregation, and computation into a single operator, rather than implementing them separately. That is, as data arrives, we directly pass it to the aggregation operator for computation. Within each window, the data is categorized in real time by the group-by column, computed using the aggregate function, and the intermediate results saved.
-
 
 In this way, there is no need to save the original data and the results can be calculated in real time. As for the subsequent Having operator and Proj operator, they do not need to calculate the value of the aggregate function, but directly use the already calculated aggregate function value for calculation. To achieve this goal, we need to create a new operator to implement this function.
 
 ![img2.png](../../resources/inc_p2.png)
-
 
 In the eKuiper implementation, when incremental computing is enabled, eKuiper aggregates and computes data in real time using the IncAggWindow operator, as shown in the following figure.
 
