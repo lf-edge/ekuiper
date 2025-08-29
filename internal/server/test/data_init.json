@@ -1,0 +1,10 @@
+{
+  "streams": {
+    "nnn": "CREATE STREAM nnn() WITH (TYPE=\"memory\",FORMAT=\"json\",DATASOURCE=\"none\", SHARED=\"true\");"
+  },
+  "rules": {
+    "ruleData": "{\"id\":\"ruleData\",\"name\":\"only in etc\",\"sql\":\"SELECT ts1, ts2 FROM nnn\",\"actions\":[{\"log\":{}}]}",
+    "rrr1": "{\"id\":\"rrr1\",\"name\":\"very new version\",\"version\":\"1742965676\",\"sql\":\"SELECT ts FROM nnn\",\"actions\":[{\"log\":{}}]}",
+    "rrr2": "{\"id\":\"rrr2\",\"name\":\"older version\",\"version\":\"1742865676\",\"sql\":\"SELECT ts1, ts2 FROM nnn\",\"actions\":[{\"log\":{}}]}"
+  }
+}
