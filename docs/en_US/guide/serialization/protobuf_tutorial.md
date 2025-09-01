@@ -25,7 +25,7 @@ message Book {
 2. In the schema creation window, fill in the fields as shown in the following figure. The schema type is `protobuf`; the schema name can be entered as a custom unique name to identify the schema id in the subsequent rule creation; the schema content can be filled in as a file or text content. If you choose file, you need to fill in the url of the file; the schema used in this tutorial is simple, so you can choose content and fill in the text of the proto file in the content box.
    ![create schema detail](./resources/create_detail.png)
 3. Click Submit. You should be able to see the newly created schema in the list of schemas. You can then use the buttons in the action bar to modify or delete it.
-   ![lsit schemas](./resources/list_schema.png)
+   ![list schemas](./resources/list_schema.png)
 
 At this point, we have registered a schema named `schema1`, which defines the type `Book`, and the registered schema can be used in the source and sink of the rule. Users can also continue to register and manage more schemas in this page.
 
