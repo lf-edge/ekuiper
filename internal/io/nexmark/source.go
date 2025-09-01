@@ -9,9 +9,11 @@ import (
 )
 
 type NexmarkSourceConfig struct {
-	Qps        int `json:"qps"`
-	BufferSize int `json:"bufferSize"`
-	generator  *EventGenerator
+	Qps            int  `json:"qps"`
+	BufferSize     int  `json:"bufferSize"`
+	ExcludePerson  bool `json:"excludePerson"`
+	ExcludeAuction bool `json:"excludeAuction"`
+	ExcludeBid     bool `json:"excludeBid"`
 }
 
 type NexmarkSource struct {
@@ -28,7 +30,17 @@ func (n *NexmarkSource) Provision(ctx api.StreamContext, configs map[string]any)
 		return err
 	}
 	n.config = config
-	generator := NewEventGenerator(ctx, n.config.Qps, n.config.BufferSize)
+	ops := make([]WithGenOption, 0)
+	if n.config.ExcludeAuction {
+		ops = append(ops, WithExcludeAuction())
+	}
+	if n.config.ExcludeBid {
+		ops = append(ops, WithExcludeBid())
+	}
+	if n.config.ExcludePerson {
+		ops = append(ops, WithExcludePerson())
+	}
+	generator := NewEventGenerator(ctx, n.config.Qps, n.config.BufferSize, ops...)
 	n.generator = generator
 	return nil
 }
