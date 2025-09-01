@@ -21,6 +21,7 @@ import (
 	"io"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 )
 
 type RulesetProcessor struct {
@@ -112,7 +113,7 @@ func (rs *RulesetProcessor) Import(content []byte) ([]string, []int, error) {
 	counts := make([]int, 3)
 	// restore streams
 	for k, v := range all.Streams {
-		_, e := rs.s.ExecStreamSql(v)
+		_, e := rs.s.ExecReplaceStream(k, v, ast.TypeStream)
 		if e != nil {
 			conf.Log.Warnf("Fail to import stream %s with error: %v", k, e)
 		} else {
@@ -121,7 +122,7 @@ func (rs *RulesetProcessor) Import(content []byte) ([]string, []int, error) {
 	}
 	// restore tables
 	for k, v := range all.Tables {
-		_, e := rs.s.ExecStreamSql(v)
+		_, e := rs.s.ExecReplaceStream(k, v, ast.TypeTable)
 		if e != nil {
 			conf.Log.Warnf("Fail to import table %s with error: %v", k, e)
 		} else {
@@ -156,7 +157,7 @@ func (rs *RulesetProcessor) ImportRuleSet(all Ruleset) Ruleset {
 	counts := make([]int, 3)
 	// restore streams
 	for k, v := range all.Streams {
-		_, e := rs.s.ExecStreamSql(v)
+		_, e := rs.s.ExecReplaceStream(k, v, ast.TypeStream)
 		if e != nil {
 			conf.Log.Errorf("Fail to import stream %s(%s) with error: %v", k, v, e)
 			_ = rs.s.streamStatusDb.Set(k, e.Error())
@@ -167,7 +168,7 @@ func (rs *RulesetProcessor) ImportRuleSet(all Ruleset) Ruleset {
 	}
 	// restore tables
 	for k, v := range all.Tables {
-		_, e := rs.s.ExecStreamSql(v)
+		_, e := rs.s.ExecReplaceStream(k, v, ast.TypeTable)
 		if e != nil {
 			conf.Log.Errorf("Fail to import table %s(%s) with error: %v", k, v, e)
 			_ = rs.s.tableStatusDb.Set(k, e.Error())

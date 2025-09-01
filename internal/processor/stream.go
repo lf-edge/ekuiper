@@ -213,6 +213,11 @@ func (p *StreamProcessor) ExecReplaceStream(name string, statement string, st as
 		if string(s.Name) != name {
 			return "", fmt.Errorf("Replace %s fails: the sql statement must update the %s source.", name, name)
 		}
+		// compare version
+		old, _ := p.DescStream(name, s.StreamType)
+		if old != nil && !CanReplace(old.(*ast.StreamStmt).Options.VERSION, s.Options.VERSION) {
+			return "", fmt.Errorf("source %s already exists with version (%s), new version (%s) is lower", name, old.(*ast.StreamStmt).Options.VERSION, s.Options.VERSION)
+		}
 		err = p.execSave(s, statement, true)
 		if err != nil {
 			return "", fmt.Errorf("Replace %s fails: %v.", stt, err)

@@ -236,6 +236,7 @@ type Options struct {
 	TIMESTAMP_FORMAT  string `json:"timestampFormat,omitempty"`
 	SHARED            bool   `json:"shared,omitempty"`
 	SCHEMAID          string `json:"schemaid,omitempty"`
+	VERSION           string `json:"version,omitempty"`
 	// for scan table only
 	RETAIN_SIZE int `json:"retainSize,omitempty"`
 	// for table only, to distinguish lookup & scan
