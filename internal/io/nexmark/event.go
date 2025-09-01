@@ -189,7 +189,6 @@ func NewBid(eventID int64, time uint64) Bid {
 	price := r.Intn(1000)
 	channel := hotChannels[r.Int()%len(hotChannels)]
 	url := randUrl()
-	//extra :=
 	currentSize := 32
 	extra := randString(currentSize)
 	return Bid{
@@ -204,7 +203,7 @@ func NewBid(eventID int64, time uint64) Bid {
 }
 
 func randString(length int) string {
-	var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+	letters := []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 	b := make([]rune, length)
 	for i := range b {
 		b[i] = letters[rand.Intn(len(letters))]
@@ -213,7 +212,7 @@ func randString(length int) string {
 }
 
 func randNumber(length int) string {
-	var letters = []rune("0123456789")
+	letters := []rune("0123456789")
 	b := make([]rune, length)
 	for i := range b {
 		b[i] = letters[rand.Intn(len(letters))]
