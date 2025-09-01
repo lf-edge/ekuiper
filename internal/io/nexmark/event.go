@@ -50,7 +50,7 @@ type Person struct {
 	City         string `json:"city"`
 	State        string `json:"state"`
 	Datetime     uint64 `json:"datetime"`
-	extra        string `json:"extra"`
+	Extra        string `json:"extra"`
 }
 
 func (p Person) ToMap() map[string]interface{} {
@@ -62,7 +62,7 @@ func (p Person) ToMap() map[string]interface{} {
 	m["city"] = p.City
 	m["state"] = p.State
 	m["datetime"] = p.Datetime
-	m["extra"] = p.extra
+	m["extra"] = p.Extra
 	return m
 }
 
@@ -93,7 +93,7 @@ func NewPerson(eventID int64, time uint64) Person {
 		City:         city,
 		State:        state,
 		Datetime:     time,
-		extra:        extra,
+		Extra:        extra,
 	}
 }
 
