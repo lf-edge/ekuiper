@@ -1,14 +1,64 @@
 # Incremental Computation
 
-When using eKuiper to perform aggregate function calculations on data within a window, the previous implementation method was to segment the continuous stream of data according to the window definition and cache it in memory. Once the window ended, all data within the window would be aggregated and calculated. A problem with this method is that before the data is aggregated and calculated, caching it in memory can easily lead to memory amplification, causing OOM (Out of Memory) issues.
+## Background
 
-Currently, eKuiper supports incremental computation for aggregate functions within a window, provided that the aggregate function supports incremental computation. As stream data enters the window, the incremental computation of the aggregate function will process this data and calculate an intermediate state, thereby eliminating the need to cache the entire data in memory.
+In the current ekuiper, when performing aggregate calculations on data, we often need to split the stream data into windows, aggregate it, and then perform the calculations. Take the following SQL as an example:
 
-We can check which aggregate functions support incremental computation through the [following function list](../../sqls/functions/aggregate_functions.md).
+```sql
+select avg(a) from stream group by tumblingWindow(ss,10),b;
+```
 
-## Enabling Incremental Computation
+In ekuiper's operator model, aggregate calculations are split into three operators:
 
-For the following scenario, we use count for aggregate computation within a window:
+```txt
+Window Operator -> Group By Operator -> Proj (Calculation) Operator
+```
+
+That is, streaming data is first aggregated in the Window operator, then sorted in the Group By operator, and finally calculated in the Project operator. This approach is applicable to any aggregation calculation, but has the following issues:
+1. When the window is too large, it consumes more memory.
+2. The streaming processing capabilities of some aggregation functions are not utilized.
+
+For the avg aggregation function, when processing streaming data, we do not need to wait for all data to be aggregated in the window before performing the calculation. We can update two intermediate states, sum and count, each time a data item is read. After the window data is read, the required avg value can be directly obtained using sum/count.
+
+## How to Implement Incremental Computation
+
+Before discussing how to implement incremental computation, let's first look at how the previous eKuiper created rules for the following SQL statement:
+
+```sql
+select sum(b) from demo group by tumblingwindow(ss, 10),c  having avg(a) > 0; 
+```
+
+```sql
+{"op":"ProjectPlan_0","info":"Fields:[ Call:{ name:sum, args:[demo.b] } ]"}
+        {"op":"HavingPlan_1","info":"Condition:{ binaryExpr:{ Call:{ name:avg, args:[demo.a] } > 0 } }, "}
+                        {"op":"AggregatePlan_2","info":"Dimension:{ demo.c }"}
+                                        {"op":"WindowPlan_3","info":"{ length:10, windowType:TUMBLING_WINDOW, limit: 0 }"}
+                                                        {"op":"DataSourcePlan_4","info":"StreamName: demo, StreamFields:[ a, b, c ]"}
+```
+
+![img1.png](../../resources/inc_p1.png)
+
+### Operator Perspective
+
+From an operator perspective, to implement incremental computation, we need to move away from the previous approach of implementing storage, aggregation, and computation as separate operators and instead combine these three into a single operator.
+
+For incremental computation aggregation operators, we need to combine storage, aggregation, and computation into a single operator, rather than implementing them separately. That is, as data arrives, we directly pass it to the aggregation operator for computation. Within each window, the data is categorized in real time by the group-by column, computed using the aggregate function, and the intermediate results saved.
+
+In this way, there is no need to save the original data and the results can be calculated in real time. As for the subsequent Having operator and Proj operator, they do not need to calculate the value of the aggregate function, but directly use the already calculated aggregate function value for calculation. To achieve this goal, we need to create a new operator to implement this function.
+
+![img2.png](../../resources/inc_p2.png)
+
+In the eKuiper implementation, when incremental computing is enabled, eKuiper aggregates and computes data in real time using the IncAggWindow operator, as shown in the following figure.
+
+```sql
+{"op":"ProjectPlan_0","info":"Fields:[ Call:{ name:bypass, args:[$$default.inc_agg_col_1] } ]"}
+        {"op":"HavingPlan_1","info":"Condition:{ binaryExpr:{ Call:{ name:bypass, args:[$$default.inc_agg_col_2] } > 0 } }, "}
+                        {"op":"IncAggWindowPlan_2","info":"wType:TUMBLING_WINDOW, Dimension:[demo.c], funcs:[Call:{ name:inc_sum, args:[demo.b] }->inc_agg_col_1,Call:{ name:inc_avg, args:[demo.a] }->inc_agg_col_2]"} {"op":"DataSourcePlan_3","info":"StreamName: demo, StreamFields:[ a, b, c, inc_agg_col_1, inc_agg_col_2 ]"}
+```
+
+## Enabling Incremental Calculation
+
+For the following scenario, we use `count` to perform aggregate calculations within a window:
 
 ```json
 {
@@ -25,7 +75,7 @@ For the following scenario, we use count for aggregate computation within a wind
 }
 ```
 
-For the above rule, we can query the rule's execution plan using the [explain api](../../api/restapi/rules.md#query-rule-plan):
+For the above rules, we can query the query plan of the rules through the [explain api](../../api/restapi/rules.md#Query rule plan):
 
 ```txt
 {"op":"ProjectPlan_0","info":"Fields:[ Call:{ name:count, args:[*] } ]"}
@@ -33,7 +83,9 @@ For the above rule, we can query the rule's execution plan using the [explain ap
             {"op":"DataSourcePlan_2","info":"StreamName: demo"}
 ```
 
-We can enable incremental computation in the options, as shown in the following rule example:
+From the query plan above, we can see that when the above rule is actually run, data is cached in memory and recalculated after the window ends, which may result in excessive memory consumption.
+
+We can enable incremental calculation in `options`. Take the following rule as an example:
 
 ```json
 {
@@ -53,7 +105,7 @@ We can enable incremental computation in the options, as shown in the following 
 }
 ```
 
-Then, check the execution plan:
+Then look at the query plan:
 
 ```txt
 {"op":"ProjectPlan_0","info":"Fields:[ Call:{ name:bypass, args:[$$default.inc_agg_col_1] } ]"}
@@ -61,11 +113,11 @@ Then, check the execution plan:
             {"op":"DataSourcePlan_2","info":"StreamName: demo, StreamFields:[ inc_agg_col_1 ]"}
 ```
 
-From the above execution plan, it can be seen that during the execution of this rule, its plan has changed from `WindowPla`n to `IncAggWindowPlan`, indicating that data entering this window will be directly computed rather than cached in memory.
+From the query plan above, you can see that when this rule runs, its plan changes from `WindowPlan` to `IncAggWindowPlan`. This means that data entering this window will be directly calculated instead of being cached in memory.
 
-## Scenarios Where Incremental Computation Cannot Be Used
+## Scenarios Where Incremental Calculation Cannot Be Used
 
-When there is an aggregate function that inherently cannot be computed incrementally, enabling incremental computation will have no effect, as shown in the following rule:
+If an aggregate function itself cannot be incrementally calculated, enabling incremental calculation will have no effect, as shown in the following rule:
 
 ```json
 {
@@ -85,9 +137,7 @@ When there is an aggregate function that inherently cannot be computed increment
 }
 ```
 
-Check the execution plan:
-
-查看查询计划:
+View query plan:
 
 ```txt
 {"op":"ProjectPlan_0","info":"Fields:[ Call:{ name:count, args:[*] }, Call:{ name:stddev, args:[demo.a] } ]"}
@@ -95,4 +145,33 @@ Check the execution plan:
             {"op":"DataSourcePlan_2","info":"StreamName: demo"}
 ```
 
-It can be seen that since `stddev` is an aggregate function that does not support incremental computation, the execution plan for this rule does not enable incremental computation.
+As you can see, because `stddev` is an aggregate function that doesn't support incremental computation, incremental computation is not enabled in the query plan for this rule.
+
+## Comparison of Memory Usage Before and After Enabling Incremental Computation
+
+For the following rules, we can compare memory usage with and without incremental computation enabled, given the same amount of data:
+
+```json
+{
+  "id": "rule1",
+  "sql": "select sum(b) from demo group by tumblingwindow(ss, 10) having avg(a) > 0;",
+  "options": {
+      "planOptimizeStrategy" : {
+          "enableIncrementalWindow": true
+      }
+  },
+  "actions": [
+      {
+          "log":{}
+      }
+  ]
+}
+```
+
+### Incremental calculation disabled
+
+![img3.png](../../resources/inc_p3.png)
+
+### Incremental calculation enabled
+
+![img4.png](../../resources/inc_p4.png)

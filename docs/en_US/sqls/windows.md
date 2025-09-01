@@ -199,3 +199,9 @@ or:
 ```sql
 SELECT * FROM demo GROUP BY SlidingWindow(ss,1) OVER(when revenue > 200)
 ```
+
+## Incremental Computation
+
+When window data is passed to an aggregate function for computation, if the aggregate function can be computed incrementally, the entire windowing and computation process can be optimized to a streaming incremental computation. For more information, see:
+
+[Incremental Computation](../guide/rules/incremental.md#incremental-computation)
