@@ -24,6 +24,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/io/memory"
 	"github.com/lf-edge/ekuiper/v2/internal/io/mqtt"
 	"github.com/lf-edge/ekuiper/v2/internal/io/neuron"
+	"github.com/lf-edge/ekuiper/v2/internal/io/nexmark"
 	"github.com/lf-edge/ekuiper/v2/internal/io/simulator"
 	"github.com/lf-edge/ekuiper/v2/internal/io/sink"
 	"github.com/lf-edge/ekuiper/v2/internal/io/websocket"
@@ -41,6 +42,7 @@ func init() {
 	modules.RegisterSource("neuron", neuron.GetSource)
 	modules.RegisterSource("websocket", func() api.Source { return websocket.GetSource() })
 	modules.RegisterSource("simulator", func() api.Source { return simulator.GetSource() })
+	modules.RegisterSource("nexmark", func() api.Source { return nexmark.GetSource() })
 
 	modules.RegisterSink("log", sink.NewLogSink)
 	modules.RegisterSink("logToMemory", sink.NewLogSinkToMemory)
