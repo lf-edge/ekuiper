@@ -106,12 +106,9 @@ require (
 
 require (
 	github.com/apache/arrow-go/v18 v18.0.0 // indirect
-	github.com/cloudflare/circl v1.3.7 // indirect
-	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.0.1 // indirect
 	github.com/fxamacker/cbor/v2 v2.7.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
-	github.com/tkhq/go-sdk v0.8.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
 )
 
