@@ -532,7 +532,7 @@ func importConfigurations(m *MetaConfiguration) error {
 func importDataSource(m *MetaConfiguration) error {
 	for name, value := range m.Streams {
 		streamProcessor.DropStream(name, ast.TypeStream)
-		_, err := streamProcessor.ExecStreamSql(value.SQL) //nolint:staticcheck
+		_, err := streamProcessor.ExecReplaceStream(name, value.SQL, ast.TypeStream) //nolint:staticcheck
 		err = mockImportErr(err, mockStreamsErr)
 		if err != nil {
 			return fmt.Errorf("replace stream %v failed, err:%v", name, err.Error())
@@ -540,7 +540,7 @@ func importDataSource(m *MetaConfiguration) error {
 	}
 	for name, value := range m.Tables {
 		streamProcessor.DropStream(name, ast.TypeTable)
-		_, err := streamProcessor.ExecStreamSql(value.SQL) //nolint:staticcheck
+		_, err := streamProcessor.ExecReplaceStream(name, value.SQL, ast.TypeTable) //nolint:staticcheck
 		err = mockImportErr(err, mockTablesErr)
 		if err != nil {
 			return fmt.Errorf("replace stream %v failed, err:%v", name, err.Error())

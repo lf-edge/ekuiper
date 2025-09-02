@@ -59,7 +59,7 @@ func (p *RuleProcessor) ExecCreateWithValidation(name, ruleJson string) (*def.Ru
 
 	or, err := p.GetRuleById(rule.Id)
 	if err == nil {
-		if !p.CanReplace(or.Version, rule.Version) { // old rule has newer version
+		if !CanReplace(or.Version, rule.Version) { // old rule has newer version
 			return nil, fmt.Errorf("rule %s already exists with version (%s), new version (%s) is lower", rule.Id, or.Version, rule.Version)
 		}
 	}
@@ -203,7 +203,7 @@ func (p *RuleProcessor) GetRuleByJson(id, ruleJson string) (*def.Rule, error) {
 
 // CanReplace compare which version is newer, return true if new version is newer
 // If both version are empty, need to replace to be backward compatible
-func (p *RuleProcessor) CanReplace(old, new string) bool {
+func CanReplace(old, new string) bool {
 	if old == "" && new == "" {
 		return true
 	}

@@ -462,3 +462,62 @@ func TestErr(t *testing.T) {
 	_, ok = err.(errorx.ErrorWithCode)
 	require.True(t, ok)
 }
+
+func TestStreamReplace(t *testing.T) {
+	p := NewStreamProcessor()
+	p.db.Clean()
+	defer p.db.Clean()
+	tests := []struct {
+		n   string
+		s   string
+		r   string
+		err string
+	}{
+		{
+			n: "init no ver",
+			s: `CREATE STREAM r1 () WITH (DATASOURCE="users", FORMAT="JSON", KEY="USERID");`,
+			r: "Stream r1 is replaced.",
+		},
+		{
+			n: "update from no to no",
+			s: `CREATE STREAM r1 () WITH (DATASOURCE="users", FORMAT="JSON");`,
+			r: "Stream r1 is replaced.",
+		},
+		{
+			n: "update from no to yes",
+			s: `CREATE STREAM r1 () WITH (DATASOURCE="users", FORMAT="JSON", VERSION="12345");`,
+			r: "Stream r1 is replaced.",
+		},
+		{
+			n:   "update from high to low",
+			s:   `CREATE STREAM r1 () WITH (DATASOURCE="users", FORMAT="JSON", VERSION="12345");`,
+			err: "source r1 already exists with version (12345), new version (12345) is lower",
+		},
+		{
+			n:   "update from same ver",
+			s:   `CREATE STREAM r1 () WITH (DATASOURCE="users", FORMAT="JSON", VERSION="12345");`,
+			err: "source r1 already exists with version (12345), new version (12345) is lower",
+		},
+		{
+			n:   "update from ver to none",
+			s:   `CREATE STREAM r1 () WITH (DATASOURCE="users", FORMAT="JSON");`,
+			err: "source r1 already exists with version (12345), new version () is lower",
+		},
+		{
+			n: "update from low to high",
+			s: `CREATE STREAM r1 () WITH (DATASOURCE="users", FORMAT="JSON", VERSION="22345");`,
+			r: "Stream r1 is replaced.",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.n, func(t *testing.T) {
+			result, err := p.ExecReplaceStream("r1", tt.s, ast.TypeStream)
+			if tt.err != "" {
+				require.EqualError(t, err, tt.err)
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, tt.r, result)
+			}
+		})
+	}
+}

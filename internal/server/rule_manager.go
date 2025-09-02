@@ -27,6 +27,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
+	"github.com/lf-edge/ekuiper/v2/internal/processor"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/planner"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/rule"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
@@ -208,7 +209,7 @@ func (rr *RuleRegistry) UpsertRule(ruleId, ruleJson string) error {
 			}
 		})
 	} else {
-		if !ruleProcessor.CanReplace(rs.Rule.Version, r.Version) { // old version is newer
+		if !processor.CanReplace(rs.Rule.Version, r.Version) { // old version is newer
 			return fmt.Errorf("rule %s already exists with version (%s), new version (%s) is lower", ruleId, rs.Rule.Version, r.Version)
 		}
 	}
