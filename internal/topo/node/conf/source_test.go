@@ -122,6 +122,63 @@ func TestGetSourceConf(t *testing.T) {
 				"a":                  1,
 			},
 		},
+		{
+			name: "extra cover confkey",
+			args: args{
+				sourceType: "mqtt",
+				options: &ast.Options{
+					CONF_KEY:   "test11",
+					DATASOURCE: "abc",
+					EXTRA:      "{\"test\":3, \"qos\":2}",
+				},
+			},
+			want: map[string]interface{}{
+				"server":             "tcp://127.0.0.1:1883",
+				"format":             "json",
+				"key":                "",
+				"insecureSkipVerify": false,
+				"protocolVersion":    "3.1.1",
+				"qos":                float64(2),
+				"datasource":         "abc",
+				"delimiter":          "",
+				"retainSize":         0,
+				"schemaId":           "",
+				"strictValidation":   false,
+				"timestamp":          "",
+				"timestampFormat":    "",
+				"connectionSelector": "test11",
+				"a":                  1,
+				"test":               float64(3),
+			},
+		},
+		{
+			name: "extra not cover option",
+			args: args{
+				sourceType: "mqtt",
+				options: &ast.Options{
+					CONF_KEY:   "test11",
+					DATASOURCE: "abc",
+					EXTRA:      "{\"datasource\":\"new\", \"qos\":2}",
+				},
+			},
+			want: map[string]interface{}{
+				"server":             "tcp://127.0.0.1:1883",
+				"format":             "json",
+				"key":                "",
+				"insecureSkipVerify": false,
+				"protocolVersion":    "3.1.1",
+				"qos":                float64(2),
+				"datasource":         "abc",
+				"delimiter":          "",
+				"retainSize":         0,
+				"schemaId":           "",
+				"strictValidation":   false,
+				"timestamp":          "",
+				"timestampFormat":    "",
+				"connectionSelector": "test11",
+				"a":                  1,
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

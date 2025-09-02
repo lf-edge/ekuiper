@@ -430,6 +430,12 @@ func printOptions(opts *ast.Options, buff *bytes.Buffer) {
 	if opts.TYPE != "" {
 		buff.WriteString(fmt.Sprintf("TYPE: %s\n", opts.TYPE))
 	}
+	if opts.EXTRA != "" {
+		buff.WriteString(fmt.Sprintf("EXTRA: %s\n", opts.EXTRA))
+	}
+	if opts.VERSION != "" {
+		buff.WriteString(fmt.Sprintf("VERSION: %s\n", opts.VERSION))
+	}
 }
 
 func (p *StreamProcessor) DescStream(name string, st ast.StreamType) (r ast.Statement, err error) {
