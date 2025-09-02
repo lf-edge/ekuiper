@@ -47,7 +47,7 @@ func (d *Datum) GetI64Val() (int64, error) {
 	}
 }
 
-func (d *Datum) ToF64Val() (float64, error) {
+func (d *Datum) EvalF64Val() (float64, error) {
 	switch d.Kind {
 	case I64Val:
 		return float64(d.I64Val), nil
@@ -68,6 +68,10 @@ func NewF64Datum(v float64) *Datum {
 
 func NewStringDatum(v string) *Datum {
 	return &Datum{Kind: StringVal, StrVal: v}
+}
+
+func NewBoolDatum(v bool) *Datum {
+	return &Datum{Kind: BoolVal, BoolVal: v}
 }
 
 func NewDurDatum(v time.Duration) *Datum {

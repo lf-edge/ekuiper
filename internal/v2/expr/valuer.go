@@ -2,6 +2,7 @@ package expr
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/lf-edge/ekuiper/v2/internal/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/v2/function"
@@ -65,6 +66,8 @@ func (v *ValuerEval) Eval(ctx context.Context, expr ast.Expr) (*api.Datum, error
 		return nil, nil
 	}
 	switch et := expr.(type) {
+	case *ast.BinaryExpr:
+		return v.evalBinaryExpr(ctx, et)
 	case *ast.IntegerLiteral:
 		return api.NewI64Datum(et.Val), nil
 	case *ast.NumberLiteral:
@@ -85,6 +88,41 @@ func (v *ValuerEval) Eval(ctx context.Context, expr ast.Expr) (*api.Datum, error
 		return function.CallFunction(ctx, et.Name, datumArgs)
 	}
 	return nil, nil
+}
+
+func (v *ValuerEval) evalBinaryExpr(ctx context.Context, expr *ast.BinaryExpr) (*api.Datum, error) {
+	lhs, err := v.Eval(ctx, expr.LHS)
+	if err != nil {
+		return nil, err
+	}
+	rhs, err := v.Eval(ctx, expr.RHS)
+	if err != nil {
+		return nil, err
+	}
+	switch expr.OP {
+	case ast.MUL:
+		lf64, err := lhs.EvalF64Val()
+		if err != nil {
+			return nil, err
+		}
+		rf64, err := rhs.EvalF64Val()
+		if err != nil {
+			return nil, err
+		}
+		return api.NewF64Datum(lf64 * rf64), nil
+	case ast.GT:
+		lf64, err := lhs.EvalF64Val()
+		if err != nil {
+			return nil, err
+		}
+		rf64, err := rhs.EvalF64Val()
+		if err != nil {
+			return nil, err
+		}
+		return api.NewBoolDatum(lf64 > rf64), nil
+	default:
+		return nil, fmt.Errorf("unsupported operator '%s'", expr.OP)
+	}
 }
 
 type TupleValuer struct {

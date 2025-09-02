@@ -43,6 +43,29 @@ func CallFunction(ctx context.Context, funcName string, args []*api.Datum) (*api
 }
 
 func registerFunc() {
+	builtinFuncs["mod"] = builtinFunc{
+		calRetType: func(ctx context.Context, args []*api.Datum) (api.DatumType, error) {
+			for _, arg := range args {
+				if arg.Kind != api.I64Val {
+					return 0, fmt.Errorf("mod should use int64 value")
+				}
+			}
+			return api.I64Val, nil
+		},
+		exec: map[api.DatumType]funcExe{
+			api.I64Val: func(ctx context.Context, args []*api.Datum) (*api.Datum, error) {
+				v1, err := args[0].GetI64Val()
+				if err != nil {
+					return nil, err
+				}
+				v2, err := args[1].GetI64Val()
+				if err != nil {
+					return nil, err
+				}
+				return api.NewI64Datum(v1 % v2), nil
+			},
+		},
+	}
 	builtinFuncs["add"] = builtinFunc{
 		calRetType: defaultCalculateRetType,
 		exec: map[api.DatumType]funcExe{
@@ -58,11 +81,11 @@ func registerFunc() {
 				return api.NewI64Datum(v1 + v2), nil
 			},
 			api.F64Val: func(ctx context.Context, args []*api.Datum) (*api.Datum, error) {
-				v1, err := args[0].ToF64Val()
+				v1, err := args[0].EvalF64Val()
 				if err != nil {
 					return nil, err
 				}
-				v2, err := args[1].ToF64Val()
+				v2, err := args[1].EvalF64Val()
 				if err != nil {
 					return nil, err
 				}

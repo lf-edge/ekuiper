@@ -17,7 +17,7 @@ func TestTopo(t *testing.T) {
 	ctx := context.Background()
 	actions := make([]map[string]interface{}, 0)
 	actions = append(actions, map[string]interface{}{"log": map[string]any{}})
-	stmt, err := xsql.NewParser(strings.NewReader("select * from demo")).Parse()
+	stmt, err := xsql.NewParser(strings.NewReader("select a, a as a1, 0.9 * a as a2, b from demo where mod(b, 3) > 0")).Parse()
 	require.NoError(t, err)
 	require.NotNil(t, stmt)
 	lpbuilder := &planner.LogicalPlanBuilder{}

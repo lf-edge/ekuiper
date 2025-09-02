@@ -105,7 +105,7 @@ func (t *Message) Append(stream, k string, v *Datum) {
 func (t *Message) ValueByKey(stream, key string) (*Datum, int, bool) {
 	for index, name := range t.Keys {
 		if name == key {
-			if stream == "" {
+			if stream == "" || stream == "$$default" {
 				return t.Values[index], index, true
 			}
 			if stream == t.Streams[index] {
@@ -147,6 +147,7 @@ func (t *Message) ToDatum() *Datum {
 	return d
 }
 
+// TODO: revise for the same column data
 func MapToMessage(streamName string, m map[string]interface{}) (*Message, error) {
 	columnNames := make([]string, 0, len(m))
 	values := make([]*Datum, 0, len(m))

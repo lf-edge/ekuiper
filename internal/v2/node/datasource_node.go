@@ -47,7 +47,7 @@ func (sn *SourceNode) Run(ctx context.Context) {
 				sn.BroadCast(msg)
 			case <-ticker.C:
 				msg := &NodeMessage{Tuples: make([]*api.Tuple, 0)}
-				t, err := api.NewTupleFromData(sn.Stream.StreamName, map[string]any{"key": "value"})
+				t, err := api.NewTupleFromData(sn.Stream.StreamName, map[string]any{"a": int64(1), "b": int64(2)})
 				if err != nil {
 					msg.Err = err
 				} else {
