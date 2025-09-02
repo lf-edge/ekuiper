@@ -144,7 +144,7 @@ func TestEventGenerator_GenStreamWithZeroQPS(t *testing.T) {
 func TestEventGenerator_Close(t *testing.T) {
 	ctx := context.Background()
 	generator := NewEventGenerator(ctx, 10, 100)
-
+	defer generator.Close()
 	generator.GenStream()
 
 	var events []map[string]any
@@ -173,7 +173,6 @@ func TestEventGenerator_HighQPS(t *testing.T) {
 	ctx := context.Background()
 	generator := NewEventGenerator(ctx, 100, 1000)
 	defer generator.Close()
-
 	generator.GenStream()
 
 	var events []map[string]any
