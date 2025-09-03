@@ -142,6 +142,8 @@ store:
   sqlite:
     #Sqlite file name, if left empty name of db will be sqliteKV.db
     name:
+  pebble:
+    name: "pebble"
 
 # The settings for portable plugin
 portable:
