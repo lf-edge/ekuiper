@@ -15,6 +15,7 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -29,10 +30,10 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/planner"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/rule"
+	"github.com/lf-edge/ekuiper/v2/internal/v2/topology"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/metrics"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
-	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 	"github.com/lf-edge/ekuiper/v2/pkg/replace"
 )
 
@@ -126,31 +127,32 @@ func (rr *RuleRegistry) CreateRule(name, ruleJson string) (id string, err error)
 			conf.Log.Warnf("update trigger error: %v", err)
 		}
 	})
-	// Validate the topo
-	tp, err := rs.Validate()
-	if err != nil {
-		return r.Id, err
-	}
-	// Store to registry and KV
 	err = rr.save(r.Id, ruleJson, rs)
 	if err != nil {
 		return r.Id, fmt.Errorf("store the rule error: %v", err)
 	}
-	// Start the rule asyncly
-	if r.Triggered {
-		rs.WithTopo(tp)
-		go func() {
-			panicOrError := infra.SafeRun(func() error {
-				// Start the rule which runs async
-				return rs.Start()
-			})
-			if panicOrError != nil {
-				logger.Errorf("Rule %s start failed: %s", r.Id, panicOrError)
-			}
-		}()
-	} else if tp != nil {
-		_ = tp.Cancel()
-	}
+	topology.GlobalTopoManager.CreateRule(context.Background(), r.Id, r.Sql)
+	// Validate the topo
+	//tp, err := rs.Validate()
+	//if err != nil {
+	//	return r.Id, err
+	//}
+	//// Store to registry and KV
+	//// Start the rule asyncly
+	//if r.Triggered {
+	//	rs.WithTopo(tp)
+	//	go func() {
+	//		panicOrError := infra.SafeRun(func() error {
+	//			// Start the rule which runs async
+	//			return rs.Start()
+	//		})
+	//		if panicOrError != nil {
+	//			logger.Errorf("Rule %s start failed: %s", r.Id, panicOrError)
+	//		}
+	//	}()
+	//} else if tp != nil {
+	//	_ = tp.Cancel()
+	//}
 	return r.Id, nil
 }
 
@@ -165,18 +167,20 @@ func (rr *RuleRegistry) RecoverRule(r *def.Rule) string {
 		}
 	})
 	rr.register(r.Id, rs)
-	if !r.Triggered {
-		return fmt.Sprintf("Rule %s was stopped.", r.Id)
-	} else {
-		panicOrError := infra.SafeRun(func() error {
-			// Start the rule which runs async
-			return rs.Start()
-		})
-		if panicOrError != nil {
-			return fmt.Sprintf("Rule %s start failed: %s", r.Id, panicOrError)
-		}
-	}
-	return fmt.Sprintf("Rule %s was started.", r.Id)
+	topology.GlobalTopoManager.CreateRule(context.Background(), r.Name, r.Sql)
+	return ""
+	//if !r.Triggered {
+	//	return fmt.Sprintf("Rule %s was stopped.", r.Id)
+	//} else {
+	//	panicOrError := infra.SafeRun(func() error {
+	//		// Start the rule which runs async
+	//		return rs.Start()
+	//	})
+	//	if panicOrError != nil {
+	//		return fmt.Sprintf("Rule %s start failed: %s", r.Id, panicOrError)
+	//	}
+	//}
+	//return fmt.Sprintf("Rule %s was started.", r.Id)
 }
 
 // UpsertRule validates the new rule, then update the db, then restart the rule
@@ -237,15 +241,16 @@ func (rr *RuleRegistry) UpsertRule(ruleId, ruleJson string) error {
 
 func (rr *RuleRegistry) DeleteRule(name string) error {
 	// lock registry and db. rs level has its own lock
-	rs, err := rr.delete(name)
-	if rs != nil {
-		err = rs.Delete()
-		if err != nil {
-			logger.Errorf("delete rule %s error: %v", name, err)
-		}
-		deleteRuleMetrics(name)
-	}
-	deleteRuleData(name)
+	_, err := rr.delete(name)
+	topology.GlobalTopoManager.DeleteRule(name)
+	//if rs != nil {
+	//	err = rs.Delete()
+	//	if err != nil {
+	//		logger.Errorf("delete rule %s error: %v", name, err)
+	//	}
+	//	deleteRuleMetrics(name)
+	//}
+	//deleteRuleData(name)
 	return err
 }
 
@@ -254,47 +259,41 @@ func (rr *RuleRegistry) StartRule(name string) error {
 	if !ok {
 		return errorx.NewWithCode(errorx.NOT_FOUND, fmt.Sprintf("Rule %s is not found in registry, please check if it is created", name))
 	} else {
-		err := rr.updateTrigger(name, true)
-		if err != nil {
-			conf.Log.Warnf("start rule update db status error: %s", err.Error())
-		}
-		if !rs.HasTopo() {
-			// Validate and create the topo
-			tp, err := rs.Validate()
-			if err != nil {
-				return err
-			}
-			rs.WithTopo(tp)
-		}
-		return rs.Start()
+		return topology.GlobalTopoManager.CreateRule(context.Background(), name, rs.Rule.Sql)
+		//err := rr.updateTrigger(name, true)
+		//if err != nil {
+		//	conf.Log.Warnf("start rule update db status error: %s", err.Error())
+		//}
+		//if !rs.HasTopo() {
+		//	// Validate and create the topo
+		//	tp, err := rs.Validate()
+		//	if err != nil {
+		//		return err
+		//	}
+		//	rs.WithTopo(tp)
+		//}
+		//return rs.Start()
 	}
 }
 
 func (rr *RuleRegistry) StopRule(name string) error {
-	if rs, ok := registry.load(name); ok {
-		err := rr.updateTrigger(name, false)
-		if err != nil {
-			conf.Log.Warnf("stop rule update db status error: %s", err.Error())
-		}
-		rs.Stop()
-	} else {
-		return errorx.NewWithCode(errorx.NOT_FOUND, fmt.Sprintf("Rule %s is not found in registry, please check if it is created", name))
-	}
-	return nil
+	return topology.GlobalTopoManager.DeleteRule(name)
+
+	//if rs, ok := registry.load(name); ok {
+	//	err := rr.updateTrigger(name, false)
+	//	if err != nil {
+	//		conf.Log.Warnf("stop rule update db status error: %s", err.Error())
+	//	}
+	//	rs.Stop()
+	//} else {
+	//	return errorx.NewWithCode(errorx.NOT_FOUND, fmt.Sprintf("Rule %s is not found in registry, please check if it is created", name))
+	//}
+	//return nil
 }
 
 func (rr *RuleRegistry) RestartRule(name string) error {
 	if rs, ok := registry.load(name); ok {
-		err := rr.updateTrigger(name, true)
-		if err != nil {
-			conf.Log.Warnf("restart rule update db status error: %s", err.Error())
-		}
-		rs.Stop()
-		rs.Rule, err = ruleProcessor.GetRuleById(name)
-		if err != nil {
-			return err
-		}
-		return rs.Start()
+		return topology.GlobalTopoManager.CreateRule(context.Background(), name, rs.Rule.Sql)
 	} else {
 		return errorx.NewWithCode(errorx.NOT_FOUND, fmt.Sprintf("Rule %s is not found in registry, please check if it is created", name))
 	}

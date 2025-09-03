@@ -9,6 +9,7 @@ import (
 
 type Topo struct {
 	ctx       context.Context
+	cancel    context.CancelFunc
 	operators map[int]NodeOperator
 
 	exitCh    chan struct{}
@@ -16,9 +17,11 @@ type Topo struct {
 	recvCh    chan *NodeMessage
 }
 
-func NewTopo() *Topo {
+func NewTopo(parCtx context.Context) *Topo {
+	ctx, cancel := context.WithCancel(parCtx)
 	t := &Topo{
-		ctx:       context.Background(),
+		ctx:       ctx,
+		cancel:    cancel,
 		operators: make(map[int]NodeOperator),
 		exitCh:    make(chan struct{}),
 		controlCh: make(chan *NodeMessage, 8),
@@ -27,11 +30,11 @@ func NewTopo() *Topo {
 	return t
 }
 
-func (t *Topo) Start(ctx context.Context) error {
+func (t *Topo) Start() error {
 	fmt.Println("topo send start signal")
 	t.controlCh <- NewSignalMsg(StartRuleSignal)
 	select {
-	case <-ctx.Done():
+	case <-t.ctx.Done():
 		return nil
 	case msg := <-t.recvCh:
 		if msg.IsControlSignal(StartRuleSignal) {
@@ -43,12 +46,12 @@ func (t *Topo) Start(ctx context.Context) error {
 	}
 }
 
-func (t *Topo) Stop(ctx context.Context) error {
+func (t *Topo) Stop() error {
 	fmt.Println("topo send start signal")
 	t.controlCh <- NewSignalMsg(StopRuleSignal)
 	for {
 		select {
-		case <-ctx.Done():
+		case <-t.ctx.Done():
 			return nil
 		case msg := <-t.recvCh:
 			if msg.IsControlSignal(StopRuleSignal) {
@@ -59,13 +62,15 @@ func (t *Topo) Stop(ctx context.Context) error {
 	}
 }
 
-func (t *Topo) QuickStop() {
-
+func (t *Topo) Release() {
+	t.cancel()
 }
 
 func CreateTopo(ctx context.Context, physicalPlanEnd planner.PhysicalPlan) (*Topo, error) {
-	t := NewTopo()
-	t.buildNodes(ctx, physicalPlanEnd, "topo", t.recvCh)
+	t := NewTopo(ctx)
+	if err := t.buildNodes(ctx, physicalPlanEnd, "topo", t.recvCh); err != nil {
+		return nil, err
+	}
 	return t, nil
 }
 

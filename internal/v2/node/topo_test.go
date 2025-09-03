@@ -30,10 +30,10 @@ func TestTopo(t *testing.T) {
 	require.NotNil(t, pp)
 	topo, err := CreateTopo(ctx, pp)
 	require.NoError(t, err)
-	err = topo.Start(ctx)
+	err = topo.Start()
 	require.NoError(t, err)
 	time.Sleep(5 * time.Second)
-	err = topo.Stop(ctx)
+	err = topo.Stop()
 	require.NoError(t, err)
 }
 
