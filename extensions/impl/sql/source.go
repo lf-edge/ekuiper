@@ -330,6 +330,11 @@ func buildScanValueByColumnType(ctx api.StreamContext, colName, colType string, 
 			return &sql.NullInt64{}
 		}
 		return new(int64)
+	case "TIMESTAMP":
+		if nullable {
+			return &sql.NullTime{}
+		}
+		return new(time.Time)
 	default:
 		ctx.GetLogger().Debugf("sql source meet column %v unknown columnType:%v", colName, colType)
 		return nil

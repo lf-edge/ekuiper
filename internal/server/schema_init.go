@@ -77,7 +77,7 @@ func schemasHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if err = sch.Validate(); err != nil {
-			handleError(w, nil, "Invalid body", logger)
+			handleError(w, err, "Invalid body", logger)
 			return
 		}
 		err = schema.Register(sch)
@@ -120,7 +120,6 @@ func schemaHandler(w http.ResponseWriter, r *http.Request) {
 			handleError(w, err, "schema update command error", logger)
 			return
 		}
-		w.WriteHeader(http.StatusOK)
 	case http.MethodPut:
 		sch := &schema.Info{Type: def.SchemaType(st), Name: name}
 		err := json.NewDecoder(r.Body).Decode(sch)
