@@ -19,7 +19,8 @@ COPY . /go/kuiper
 
 WORKDIR /go/kuiper
 
-RUN make build_with_edgex
+ARG EXTRA_TAGS=""
+RUN EXTRA_TAGS=$EXTRA_TAGS make build_with_edgex
 
 FROM alpine:3.20.0
 

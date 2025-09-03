@@ -21,7 +21,8 @@ WORKDIR /go/kuiper
 
 RUN sed -i -r "s|([ \t]*version=).*|\1'$(git describe --tags --always --match 'v[0-9]*.[0-9]*.[0-9]*' | sed 's/^v//g' | sed -E 's/^(.*)-([0-9]+)-.*$/\1/ ; s/^(.*)-([0-9]+)$/\1a\2/ ; s/^(.*)-[a-zA-Z]+\.([0-9]+)$/\1a\2/')',|1" sdk/python/setup.py
 RUN cat sdk/python/setup.py
-RUN make build_with_edgex_and_script
+ARG EXTRA_TAGS=""
+RUN EXTRA_TAGS=$EXTRA_TAGS make build_with_edgex_and_script
 
 FROM python:3.12-bookworm AS python-builder
 
