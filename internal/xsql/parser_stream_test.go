@@ -235,6 +235,29 @@ func TestParser_ParseCreateStream(t *testing.T) {
 				},
 			},
 		},
+		{
+			s: `CREATE STREAM demo (NAME string) WITH (DATASOURCE="users", FORMAT="JSON", EXTRA="USERID");`,
+			stmt: &ast.StreamStmt{
+				Name:         ast.StreamName("demo"),
+				StreamFields: nil,
+				Options:      nil,
+			},
+			err: `invalid extra option, expect JSON string`,
+		},
+		{
+			s: `CREATE STREAM demo (NAME string) WITH (DATASOURCE="users", FORMAT="JSON", EXTRA="{\"a\":1}");`,
+			stmt: &ast.StreamStmt{
+				Name: ast.StreamName("demo"),
+				StreamFields: []ast.StreamField{
+					{Name: "NAME", FieldType: &ast.BasicType{Type: ast.STRINGS}},
+				},
+				Options: &ast.Options{
+					DATASOURCE: "users",
+					FORMAT:     "JSON",
+					EXTRA:      "{\"a\":1}",
+				},
+			},
+		},
 
 		{
 			s: `CREATE STREAM demo (NAME string)) WITH (DATASOURCE="users", FORMAT="JSON", KEY="USERID");`,
@@ -273,7 +296,7 @@ func TestParser_ParseCreateStream(t *testing.T) {
 				StreamFields: nil,
 				Options:      nil,
 			},
-			err: `found "SOURCES", unknown option keys(DATASOURCE|FORMAT|KEY|CONF_KEY|SHARED|STRICT_VALIDATION|TYPE|TIMESTAMP|TIMESTAMP_FORMAT|RETAIN_SIZE|SCHEMAID|VERSION).`,
+			err: `found "SOURCES", unknown option keys(DATASOURCE|FORMAT|KEY|CONF_KEY|SHARED|STRICT_VALIDATION|TYPE|TIMESTAMP|TIMESTAMP_FORMAT|RETAIN_SIZE|SCHEMAID|EXTRA|VERSION).`,
 		},
 
 		{

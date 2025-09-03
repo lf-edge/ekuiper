@@ -15,6 +15,7 @@
 package conf
 
 import (
+	"encoding/json"
 	"strings"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
@@ -72,6 +73,12 @@ func GetSourceConf(sourceType string, options *ast.Options) map[string]interface
 		}
 	}
 
+	if options.EXTRA != "" {
+		err = json.Unmarshal([]byte(options.EXTRA), &props)
+		if err != nil {
+			conf.Log.Warnf("load extra option %s failed, err:%v", options.EXTRA, err)
+		}
+	}
 	f := options.FORMAT
 	if f == "" {
 		f = "json"

@@ -146,7 +146,7 @@ func TestTableProcessor(t *testing.T) {
 					NICKNAMES ARRAY(STRING),
 					Gender BOOLEAN,
 					ADDRESS STRUCT(STREET_NAME STRING, NUMBER BIGINT),
-				) WITH (DATASOURCE="users", FORMAT="JSON", KEY="USERID");`,
+				) WITH (DATASOURCE="users", FORMAT="JSON", KEY="USERID", TYPE="mqtt", EXTRA="{\"a\":1}", VERSION="12345");`,
 			r: []string{"Table topic1 is created."},
 		},
 		{
@@ -174,7 +174,7 @@ func TestTableProcessor(t *testing.T) {
 			s: `DESCRIBE TABLE topic1;`,
 			r: []string{"Fields\n--------------------------------------------------------------------------------\nUSERID\tbigint\nFIRST_NAME\tstring\nLAST_NAME\tstring\nNICKNAMES\t" +
 				"array(string)\nGender\tboolean\nADDRESS\tstruct(STREET_NAME string, NUMBER bigint)\n\n" +
-				"DATASOURCE: users\nFORMAT: JSON\nKEY: USERID\n"},
+				"DATASOURCE: users\nFORMAT: JSON\nKEY: USERID\nTYPE: mqtt\nEXTRA: {\"a\":1}\nVERSION: 12345\n"},
 		},
 		{
 			s: `DROP TABLE topic1;`,

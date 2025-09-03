@@ -15,6 +15,7 @@
 package xsql
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"math"
@@ -1573,6 +1574,13 @@ func (p *Parser) parseStreamOptions() (*ast.Options, error) {
 						case ast.VERSION:
 							val := strings.ToLower(lit3)
 							opts.VERSION = val
+						case ast.EXTRA:
+							isValid := json.Valid([]byte(lit3))
+							if isValid {
+								opts.EXTRA = lit3
+							} else {
+								return nil, fmt.Errorf("invalid extra option, expect JSON string")
+							}
 						default:
 							f := v.Elem().FieldByName(lit1)
 							if f.IsValid() {
@@ -1595,7 +1603,7 @@ func (p *Parser) parseStreamOptions() (*ast.Options, error) {
 				}
 				return nil, fmt.Errorf("Parenthesis is not matched in options definition.")
 			} else {
-				return nil, fmt.Errorf("found %q, unknown option keys(DATASOURCE|FORMAT|KEY|CONF_KEY|SHARED|STRICT_VALIDATION|TYPE|TIMESTAMP|TIMESTAMP_FORMAT|RETAIN_SIZE|SCHEMAID|VERSION).", lit1)
+				return nil, fmt.Errorf("found %q, unknown option keys(DATASOURCE|FORMAT|KEY|CONF_KEY|SHARED|STRICT_VALIDATION|TYPE|TIMESTAMP|TIMESTAMP_FORMAT|RETAIN_SIZE|SCHEMAID|EXTRA|VERSION).", lit1)
 			}
 		}
 	} else {
