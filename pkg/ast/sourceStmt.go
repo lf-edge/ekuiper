@@ -237,6 +237,7 @@ type Options struct {
 	SHARED            bool   `json:"shared,omitempty"`
 	SCHEMAID          string `json:"schemaid,omitempty"`
 	VERSION           string `json:"version,omitempty"`
+	EXTRA             string `json:"extra,omitempty"`
 	// for scan table only
 	RETAIN_SIZE int `json:"retainSize,omitempty"`
 	// for table only, to distinguish lookup & scan

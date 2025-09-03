@@ -742,6 +742,63 @@ func TestMapToStruct(t *testing.T) {
 	}
 }
 
+func TestMapToStructNum(t *testing.T) {
+	type args struct {
+		input  interface{}
+		output interface{}
+		expect interface{}
+	}
+
+	type Result struct {
+		Foo int   `json:"foo"`
+		Bar int64 `json:"bar"`
+	}
+
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "normal parse",
+			args: args{
+				input: map[string]interface{}{
+					"foo": 12,
+					"bar": 24,
+				},
+				output: &Result{},
+				expect: &Result{
+					Foo: 12,
+					Bar: 24,
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "from float",
+			args: args{
+				input: map[string]interface{}{
+					"foo": float64(12),
+					"bar": float64(24),
+				},
+				output: &Result{},
+				expect: &Result{
+					Foo: 12,
+					Bar: 24,
+				},
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := MapToStruct(tt.args.input, tt.args.output); (err != nil) != tt.wantErr {
+				t.Errorf("MapToStructure() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
 func TestMapToStructNotCaseSensitive(t *testing.T) {
 	type args struct {
 		input  interface{}
