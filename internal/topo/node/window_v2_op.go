@@ -15,6 +15,7 @@
 package node
 
 import (
+	"encoding/gob"
 	"fmt"
 	"time"
 
@@ -27,7 +28,18 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
+const (
+	V2WindowInputsKey = "$$v2windowInputs"
+)
+
 var InfTime = time.Unix(1<<63-62135596801, 999999999)
+
+func init() {
+	gob.Register([]*xsql.Tuple{})
+	gob.Register(&WindowScanner{})
+	gob.Register(time.Time{})
+	gob.Register(&StateWindowStatus{})
+}
 
 type WindowV2Operator struct {
 	*defaultSinkNode
@@ -93,13 +105,18 @@ type WindowV2Exec interface {
 
 type StateWindowOp struct {
 	*WindowV2Operator
-	StartTime       time.Time
-	EndTime         time.Time
+	*StateWindowStatus
 	SingleCondition ast.Expr
 	BeginCondition  ast.Expr
 	EmitCondition   ast.Expr
-	onBegin         bool
 	stateFuncs      []*ast.Call
+}
+
+type StateWindowStatus struct {
+	StartTime time.Time
+	EndTime   time.Time
+	OnBegin   bool
+	Scanner   *WindowScanner
 }
 
 func NewStateWindowOp(o *WindowV2Operator) *StateWindowOp {
@@ -109,6 +126,9 @@ func NewStateWindowOp(o *WindowV2Operator) *StateWindowOp {
 		EmitCondition:    o.windowConfig.EmitCondition,
 		SingleCondition:  o.windowConfig.SingleCondition,
 		stateFuncs:       o.windowConfig.StateFuncs,
+		StateWindowStatus: &StateWindowStatus{
+			Scanner: o.scanner,
+		},
 	}
 }
 
@@ -126,6 +146,14 @@ func (s *StateWindowOp) emit(ctx api.StreamContext, startTime, endTime time.Time
 }
 
 func (s *StateWindowOp) exec(ctx api.StreamContext, errCh chan<- error) {
+	v, err := ctx.GetState(V2WindowInputsKey)
+	if err == nil && v != nil {
+		preStatus, ok := v.(*StateWindowStatus)
+		if ok {
+			s.StateWindowStatus = preStatus
+			s.WindowV2Operator.scanner = preStatus.Scanner
+		}
+	}
 	fv, _ := xsql.NewFunctionValuersForOp(ctx)
 	for {
 		select {
@@ -145,17 +173,18 @@ func (s *StateWindowOp) exec(ctx api.StreamContext, errCh chan<- error) {
 					s.handleTupleWithSingleCondition(ctx, fv, row)
 				}
 			}
+			ctx.PutState(V2WindowInputsKey, s.StateWindowStatus)
 			s.onProcessEnd(ctx)
 		}
 	}
 }
 
 func (s *StateWindowOp) handleTupleWithBeginEmitCondition(ctx api.StreamContext, fv *xsql.FunctionValuer, row *xsql.Tuple) {
-	if !s.onBegin {
+	if !s.OnBegin {
 		canBegin := isMatchCondition(ctx, s.BeginCondition, fv, row, s.stateFuncs)
 		if canBegin {
 			s.StartTime = row.Timestamp
-			s.onBegin = true
+			s.OnBegin = true
 			s.scanner.addTuple(row)
 		}
 	} else {
@@ -165,17 +194,17 @@ func (s *StateWindowOp) handleTupleWithBeginEmitCondition(ctx api.StreamContext,
 			s.EndTime = row.Timestamp
 			s.emit(ctx, s.StartTime, s.EndTime)
 			s.scanner.gc(InfTime)
-			s.onBegin = false
+			s.OnBegin = false
 		}
 	}
 }
 
 func (s *StateWindowOp) handleTupleWithSingleCondition(ctx api.StreamContext, fv *xsql.FunctionValuer, row *xsql.Tuple) {
-	if !s.onBegin {
+	if !s.OnBegin {
 		canBegin := isMatchCondition(ctx, s.SingleCondition, fv, row, s.stateFuncs)
 		if canBegin {
 			s.StartTime = row.Timestamp
-			s.onBegin = true
+			s.OnBegin = true
 			s.scanner.addTuple(row)
 		}
 	} else {
@@ -184,7 +213,7 @@ func (s *StateWindowOp) handleTupleWithSingleCondition(ctx api.StreamContext, fv
 			s.EndTime = row.Timestamp
 			s.emit(ctx, s.StartTime, s.EndTime)
 			s.scanner.gc(InfTime)
-			s.onBegin = true
+			s.OnBegin = true
 			s.scanner.addTuple(row)
 			s.StartTime = row.Timestamp
 		} else {
