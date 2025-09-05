@@ -81,7 +81,11 @@ func PlanSQLWithSourcesAndSinks(rule *def.Rule, mockSourcesProp map[string]map[s
 	if err != nil {
 		return nil, stmt, err
 	}
-	tp, err := createTopo(rule, lp, mockSourcesProp, streamsFromStmt, getSinkSchema(stmt))
+	sinkS, err := getSinkSchema(stmt)
+	if err != nil {
+		return nil, stmt, err
+	}
+	tp, err := createTopo(rule, lp, mockSourcesProp, streamsFromStmt, sinkS)
 	if err != nil {
 		return nil, stmt, err
 	}
@@ -198,16 +202,22 @@ func doUpdateIndex(ctx api.StreamContext, root ast.Node, index int, aliasIndex m
 	return index
 }
 
-func getSinkSchema(stmt *ast.SelectStatement) map[string]*ast.JsonStreamField {
+func getSinkSchema(stmt *ast.SelectStatement) (map[string]*ast.JsonStreamField, error) {
 	s := make(map[string]*ast.JsonStreamField, len(stmt.Fields))
 	i := 0
 	for _, field := range stmt.Fields {
-		if field.GetName() != "*" && !field.Invisible {
-			s[field.GetName()] = &ast.JsonStreamField{Index: i, HasIndex: true}
-			i++
+		n := field.GetName()
+		if n != "*" && !field.Invisible {
+			_, existed := s[n]
+			if !existed {
+				s[n] = &ast.JsonStreamField{Index: i, HasIndex: true}
+				i++
+			} else {
+				return nil, fmt.Errorf("duplicate field definition %s", n)
+			}
 		}
 	}
-	return s
+	return s, nil
 }
 
 func validateStmt(stmt *ast.SelectStatement) error {
