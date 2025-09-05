@@ -486,8 +486,10 @@ func (s *State) doStop() error {
 		s.topoGraph = s.topology.GetTopo()
 		keys, values := s.topology.GetMetrics()
 		s.stoppedMetrics = []any{keys, values}
-		s.topology.Cancel()
-		s.topology.WaitClose()
+		err := s.topology.Cancel()
+		if err == nil {
+			s.topology.WaitClose()
+		}
 		s.topology = nil
 		return e
 	}
