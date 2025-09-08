@@ -37,6 +37,76 @@ func init() {
 	testx.InitEnv("node_test")
 }
 
+func TestStateWindowState(t *testing.T) {
+	conf.IsTesting = true
+	ctx, cancel := mockContext.NewMockContext("1", "2").WithCancel()
+	now := time.Now()
+	o := &def.RuleOption{
+		BufferLength: 10,
+	}
+	kv, err := store.GetKV("stream")
+	require.NoError(t, err)
+	require.NoError(t, prepareStream())
+	sql := "select count(*) from stream group by statewindow(a)"
+	stmt, err := xsql.NewParser(strings.NewReader(sql)).Parse()
+	require.NoError(t, err)
+	p, err := planner.CreateLogicalPlan(stmt, o, kv)
+	require.NoError(t, err)
+	require.NotNil(t, p)
+	windowPlan := extractWindowPlan(p)
+	require.NotNil(t, windowPlan)
+	op, err := node.NewWindowV2Op("window", node.WindowConfig{
+		Type:            windowPlan.WindowType(),
+		SingleCondition: windowPlan.GetSingleCondition(),
+	}, o)
+	require.NoError(t, err)
+	require.NotNil(t, op)
+	input, _ := op.GetInput()
+	output := make(chan any, 10)
+	op.AddOutput(output, "output")
+	errCh := make(chan error, 10)
+	op.Exec(ctx, errCh)
+	waitExecute()
+	input <- &xsql.Tuple{Message: map[string]any{"a": true}, Timestamp: now}
+	input <- &xsql.Tuple{Message: map[string]any{"a": false}, Timestamp: now.Add(500 * time.Millisecond)}
+	waitExecute()
+	op2, err := node.NewWindowV2Op("window", node.WindowConfig{
+		Type:            windowPlan.WindowType(),
+		SingleCondition: windowPlan.GetSingleCondition(),
+	}, o)
+	require.NoError(t, err)
+	require.NotNil(t, op2)
+	input2, _ := op2.GetInput()
+	output2 := make(chan any, 10)
+	op2.AddOutput(output2, "output")
+	errCh2 := make(chan error, 10)
+	op2.Exec(ctx, errCh2)
+	waitExecute()
+	input2 <- &xsql.Tuple{Message: map[string]any{"a": false}, Timestamp: now.Add(500 * time.Millisecond)}
+	input2 <- &xsql.Tuple{Message: map[string]any{"a": true}, Timestamp: now.Add(500 * time.Millisecond)}
+	waitExecute()
+	got := <-output2
+	wt, ok := got.(*xsql.WindowTuples)
+	require.True(t, ok)
+	require.NotNil(t, wt)
+	d := wt.ToMaps()
+	require.Equal(t, []map[string]any{
+		{
+			"a": true,
+		},
+		{
+			"a": false,
+		},
+		{
+			"a": false,
+		},
+	}, d)
+	cancel()
+	waitExecute()
+	op.Close()
+	op2.Close()
+}
+
 func TestSingleConditionStWindow(t *testing.T) {
 	conf.IsTesting = true
 	now := time.Now()
