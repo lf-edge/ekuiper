@@ -409,6 +409,7 @@ func TestSinkSchema(t *testing.T) {
 		sql  string
 		sc   *node.SinkConf
 		exp  map[string]*ast.JsonStreamField
+		err  string
 	}{
 		{
 			name: "normal",
@@ -490,14 +491,29 @@ func TestSinkSchema(t *testing.T) {
 			},
 			exp: nil,
 		},
+		{
+			name: "duplicate field",
+			sql:  "select a, b, c, d, a from demo where a=b",
+			sc: &node.SinkConf{
+				DataField:     "a",
+				ExcludeFields: []string{"d", "b"},
+			},
+			exp: nil,
+			err: "duplicate field definition a",
+		},
 	}
 	for _, tt := range tc {
 		t.Run(tt.name, func(t *testing.T) {
 			stmt, err := xsql.GetStatementFromSql(tt.sql)
 			require.NoError(t, err)
-			ss := getSinkSchema(stmt)
-			ss = washSchema(tt.sc, ss)
-			require.Equal(t, tt.exp, ss)
+			ss, err := getSinkSchema(stmt)
+			if tt.err != "" {
+				require.EqualError(t, err, tt.err)
+			} else {
+				require.NoError(t, err)
+				ss = washSchema(tt.sc, ss)
+				require.Equal(t, tt.exp, ss)
+			}
 		})
 	}
 }
