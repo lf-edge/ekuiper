@@ -7,6 +7,14 @@ To use in other environment, you need to build the library from source.
 
 ## Build from source
 
+Recommend to use cmake for newer version.
+
+### Newer Version
+
+https://android.googlesource.com/platform/external/tensorflow/+/6b511124eb0/tensorflow/lite/g3doc/guide/build_cmake.md
+
+### Older Version
+
 Here are the steps to build from source in debian.
 
 1. Install [Python](https://www.tensorflow.org/install/pip#1.-install-the-python-development-environment-on-your-system)
