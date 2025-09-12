@@ -56,7 +56,7 @@ build(){
             ;;
         labelImage )
             if [ ! -d "/tmp/tensorflow" ];then
-                git clone -b v2.2.0-rc3 --depth 1 https://github.com/tensorflow/tensorflow.git /tmp/tensorflow;
+                git clone -b v2.18.1 --depth 1 https://github.com/tensorflow/tensorflow.git /tmp/tensorflow;
             fi;
             if [ "$(uname -m)" = "x86_64" ]; then
                 cp $(pwd)/extensions/functions/dependencies/tensorflow/amd64/*.so $(pwd)/extensions/functions/labelImage/lib
@@ -68,7 +68,7 @@ build(){
             ;;
         tfLite )
             if [ ! -d "/tmp/tensorflow" ];then
-                git clone -b v2.2.0-rc3 --depth 1 https://github.com/tensorflow/tensorflow.git /tmp/tensorflow;
+                git clone -b v2.18.1 --depth 1 https://github.com/tensorflow/tensorflow.git /tmp/tensorflow;
             fi;
             if [ "$(uname -m)" = "x86_64" ]; then
                 cp $(pwd)/extensions/functions/dependencies/tensorflow/amd64/*.so $(pwd)/extensions/functions/tfLite/lib
@@ -76,7 +76,7 @@ build(){
             if [ "$(uname -m)" = "aarch64" ]; then
                 cp $(pwd)/extensions/functions/dependencies/tensorflow/arm64/*.so $(pwd)/extensions/functions/tfLite/lib
             fi;
-                CGO_CFLAGS=-I/tmp/tensorflow CGO_LDFLAGS=-L$(pwd)/extensions/functions/tfLite/lib go build -trimpath --buildmode=plugin -o extensions/functions/tfLite/tfLite@$VERSION.so extensions/functions/tfLite/*.go
+                CGO_CFLAGS=-I/tmp/tensorflow CGO_LDFLAGS=-L$(pwd)/extensions/functions/tfLite/lib go build -trimpath -tags tflite --buildmode=plugin -o extensions/functions/tfLite/tfLite@$VERSION.so extensions/functions/tfLite/*.go
             ;;
         * )
             go build -trimpath --buildmode=plugin -o extensions/$PLUGIN_TYPE/$PLUGIN_NAME/$PLUGIN_NAME@$VERSION.so extensions/$PLUGIN_TYPE/$PLUGIN_NAME/*.go
