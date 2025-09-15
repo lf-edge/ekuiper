@@ -35,6 +35,8 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 )
 
+const maxBufferLength = 10000 // Maximum allowed buffer length for channels
+
 type defaultNode struct {
 	name        string
 	concurrency int
@@ -207,9 +209,14 @@ type defaultSinkNode struct {
 }
 
 func newDefaultSinkNode(name string, options *def.RuleOption) *defaultSinkNode {
+	bufferLen := options.BufferLength
+	if bufferLen < 0 || bufferLen > maxBufferLength {
+		// Optionally, log a warning here if you have a logger available
+		bufferLen = maxBufferLength
+	}
 	return &defaultSinkNode{
 		defaultNode: newDefaultNode(name, options),
-		input:       make(chan any, options.BufferLength),
+		input:       make(chan any, bufferLen),
 	}
 }
 
