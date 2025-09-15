@@ -77,7 +77,7 @@ func Provision(ctx api.StreamContext, props map[string]any, onConnect client.Con
 	}
 
 	cli := pahoMqtt.NewClient(opts)
-	return &Client{cli: cli}, nil
+	return &Client{cli: cli, EnableClientSession: c.EnableClientSession}, nil
 }
 
 func (c *Client) Connect(_ api.StreamContext) error {
