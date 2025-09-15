@@ -15,6 +15,7 @@
 package v5client
 
 import (
+	"context"
 	"crypto/tls"
 	"errors"
 	"fmt"
@@ -79,7 +80,7 @@ func Provision(ctx api.StreamContext, props map[string]any, onConnect client.Con
 		// It is important to set this because otherwise, any queued messages will be lost if the connection drops and
 		// the server will not queue messages while it is down. The specific setting will depend upon your needs
 		// (60 = 1 minute, 3600 = 1 hour, 86400 = one day, 0xFFFFFFFE = 136 years, 0xFFFFFFFF = don't expire)
-		SessionExpiryInterval: 60,
+		SessionExpiryInterval: 7200,
 		OnConnectionUp: func(cm *autopaho.ConnectionManager, connAck *paho.Connack) {
 			onConnect(ctx)
 		},
@@ -235,7 +236,9 @@ func (c *Client) Unsubscribe(ctx api.StreamContext, topic string) error {
 }
 
 func (c *Client) Disconnect(ctx api.StreamContext) {
-	err := c.cm.Disconnect(ctx)
+	dctx, dcancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer dcancel()
+	err := c.cm.Disconnect(dctx)
 	if err != nil {
 		ctx.GetLogger().Warnf("disconnect error: %s", err)
 	}
