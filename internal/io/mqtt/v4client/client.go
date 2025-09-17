@@ -135,7 +135,7 @@ func (c *Client) Unsubscribe(_ api.StreamContext, topic string) error {
 	return nil
 }
 
-func (c *Client) Disconnect(ctx api.StreamContext) {
+func (c *Client) Disconnect(_ api.StreamContext) {
 	c.cli.Disconnect(1000)
 }
 
