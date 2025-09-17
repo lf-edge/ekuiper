@@ -46,6 +46,26 @@ func TestWebsocketConn(t *testing.T) {
 	require.NoError(t, conn.Close(ctx))
 }
 
+func TestTestWebsocketClientConnEmptyPath(t *testing.T) {
+	tc := newTC()
+	s := createWServer(tc)
+	defer func() {
+		s.Close()
+	}()
+	ctx := mockContext.NewMockContext("1", "2")
+	props := map[string]any{
+		"datasource": "/ws",
+		"addr":       s.URL[len("http://"):],
+	}
+	conn := CreateWebsocketConnection(ctx).(*WebsocketConnection)
+	err := conn.Provision(ctx, "test", props)
+	require.NoError(t, err)
+	err = conn.Dial(ctx)
+	require.NoError(t, err)
+	require.NoError(t, conn.Ping(ctx))
+	require.NoError(t, conn.Close(ctx))
+}
+
 func TestWebsocketClientConn(t *testing.T) {
 	tc := newTC()
 	s := createWServer(tc)
