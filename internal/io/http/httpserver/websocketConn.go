@@ -41,6 +41,9 @@ func (w *WebsocketConnection) Provision(ctx api.StreamContext, conId string, pro
 	if err := cast.MapToStruct(props, cfg); err != nil {
 		return err
 	}
+	if cfg.Path == "" && len(cfg.Datasource) > 0 {
+		cfg.Path = cfg.Datasource
+	}
 	w.cfg = cfg
 	w.id = conId
 	w.props = props
