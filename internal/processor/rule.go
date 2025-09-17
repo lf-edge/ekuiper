@@ -107,26 +107,36 @@ func (p *RuleProcessor) ExecUpsert(id, ruleJson string) error {
 	return nil
 }
 
-func (p *RuleProcessor) ExecReplaceRuleState(name string, triggered bool) (*def.Rule, error) {
-	rule, err := p.GetRuleById(name)
+func (p *RuleProcessor) ExecReplaceRuleState(name string, triggered bool) error {
+	ruleStr, err := p.GetRuleJson(name)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	rule.Triggered = triggered
-	ruleJson, err := json.Marshal(rule)
+	ruleMap := map[string]interface{}{}
+	err = json.Unmarshal([]byte(ruleStr), &ruleMap)
 	if err != nil {
-		return nil, fmt.Errorf("Marshal rule %s error : %s.", name, err)
+		return fmt.Errorf("Unmarshal rule %s error : %s.", name, err)
+	}
+	ruleMap["triggered"] = triggered
+	ruleJson, err := json.Marshal(ruleMap)
+	if err != nil {
+		return fmt.Errorf("Marshal rule %s error : %s.", name, err)
 	}
 
-	if !rule.Temp {
+	isTemp := false
+	if tempBool, ok := ruleMap["temp"].(bool); ok {
+		isTemp = tempBool
+	}
+
+	if !isTemp {
 		err = p.db.Set(name, string(ruleJson))
 		if err != nil {
-			return nil, err
+			return err
 		}
 	}
 	log.Infof("Rule %s is replaced.", name)
-	return rule, err
+	return err
 }
 
 func (p *RuleProcessor) GetRuleJson(id string) (string, error) {

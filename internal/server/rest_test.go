@@ -498,7 +498,7 @@ func (suite *RestTestSuite) Test_rulesManageHandler() {
 	w1 = httptest.NewRecorder()
 	suite.r.ServeHTTP(w1, req1)
 	returnVal, _ = io.ReadAll(w1.Result().Body)
-	expect = `{"triggered":true,"id":"rule321","sql":"select * from alert","actions":[{"nop":{}}],"options":{"debug":false,"isEventTime":false,"lateTolerance":"1s","concurrency":1,"bufferLength":1024,"sendMetaToSink":false,"sendNilField":false,"sendError":false,"checkpointInterval":"5m0s","restartStrategy":{"delay":"1s","multiplier":2,"maxDelay":"30s","jitterFactor":0.1}}}`
+	expect = "{\"actions\":[{\"nop\":{}}],\"id\":\"rule321\",\"sql\":\"select * from alert\",\"triggered\":true}"
 	assert.Equal(suite.T(), expect, string(returnVal))
 
 	// delete rule

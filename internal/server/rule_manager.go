@@ -100,7 +100,7 @@ func (rr *RuleRegistry) upsert(id string, ruleJson string) error {
 func (rr *RuleRegistry) updateTrigger(id string, trigger bool) error {
 	rr.Lock()
 	defer rr.Unlock()
-	_, err := ruleProcessor.ExecReplaceRuleState(id, trigger)
+	err := ruleProcessor.ExecReplaceRuleState(id, trigger)
 	return err
 }
 
