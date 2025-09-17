@@ -36,6 +36,9 @@ type pprofComp struct {
 
 func (p pprofComp) serve() {
 	if conf.Config.Basic.Pprof {
+		if conf.Config.PprofSameAsRest() {
+			return
+		}
 		go func() {
 			addr := cast.JoinHostPortInt(conf.Config.Basic.PprofIp, conf.Config.Basic.PprofPort)
 			if conf.Config.Basic.ResourceProfileConfig.Enable {
