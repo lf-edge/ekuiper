@@ -77,7 +77,7 @@ func Provision(ctx api.StreamContext, props map[string]any, onConnect client.Con
 	}
 
 	cli := pahoMqtt.NewClient(opts)
-	return &Client{cli: cli}, nil
+	return &Client{cli: cli, EnableClientSession: c.EnableClientSession}, nil
 }
 
 func (c *Client) Connect(_ api.StreamContext) error {
@@ -136,7 +136,7 @@ func (c *Client) Unsubscribe(_ api.StreamContext, topic string) error {
 }
 
 func (c *Client) Disconnect(_ api.StreamContext) {
-	c.cli.Disconnect(1)
+	c.cli.Disconnect(1000)
 }
 
 func ValidateConfig(ctx api.StreamContext, props map[string]any) (*ConnectionConfig, error) {
