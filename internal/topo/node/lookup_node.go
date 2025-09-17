@@ -152,6 +152,27 @@ func (n *LookupNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 					}
 					n.onProcessStart(ctx, data)
 					switch d := data.(type) {
+					case *xsql.JoinTuples:
+						sets := &xsql.JoinTuples{Content: make([]*xsql.JoinTuple, 0), WindowRange: item.(*xsql.JoinTuples).GetWindowRange()}
+						err := d.Range(func(i int, r xsql.ReadonlyRow) (bool, error) {
+							tr, ok := r.(xsql.Row)
+							if !ok {
+								return false, fmt.Errorf("Invalid window element, must be a tuple row but got %v", r)
+							}
+							err := n.lookup(ctx, tr, fv, ns, sets, c)
+							if err != nil {
+								return false, err
+							}
+							return true, nil
+						})
+						if err != nil {
+							n.onError(ctx, err)
+						} else if sets.Len() > 0 {
+							n.Broadcast(sets)
+							n.statManager.IncTotalRecordsOut()
+						} else {
+							ctx.GetLogger().Debugf("lookup return nil")
+						}
 					case xsql.Row:
 						log.Debugf("Lookup Node receive tuple input %s", d)
 						sets := &xsql.JoinTuples{Content: make([]*xsql.JoinTuple, 0)}
