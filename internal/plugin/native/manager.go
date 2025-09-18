@@ -824,6 +824,10 @@ func (rr *Manager) loadRuntime(t plugin2.PluginType, soName, soFilepath, symbolN
 
 // Return the lowercase version of so name. It may be upper case in path.
 func (rr *Manager) getSoFilePath(t plugin2.PluginType, name string, isSoName bool) (string, error) {
+	// Validate plugin name to prevent path traversal or absolute paths
+	if strings.Contains(name, "/") || strings.Contains(name, "\\") || strings.Contains(name, "..") || strings.HasPrefix(name, ".") || strings.HasPrefix(name, "-") {
+		return "", errorx.NewWithCode(errorx.INVALID_PARAMETER, fmt.Sprintf("invalid plugin name '%s': must not contain slashes, dot-dot, or start with dot or dash", name))
+	}
 	var (
 		v      string
 		soname string
