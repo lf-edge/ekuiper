@@ -177,6 +177,9 @@ func CreateOrUpdateSchema(info *Info) error {
 	if strings.Contains(info.Name, "/") || strings.Contains(info.Name, "\\") || strings.Contains(info.Name, "..") {
 		return fmt.Errorf("schema name %s is invalid", info.Name)
 	}
+	if strings.Contains(info.Version, "/") || strings.Contains(info.Version, "\\") || strings.Contains(info.Version, "..") {
+		return fmt.Errorf("schema version %s is invalid", info.Version)
+	}
 	st, ok := modules.SchemaTypeDefs[info.Type]
 	if !ok {
 		return fmt.Errorf("schema type %s not found", info.Type)
