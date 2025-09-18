@@ -25,6 +25,13 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
 
+func (k *KuiperConf) PprofSameAsRest() bool {
+	if !k.Basic.Pprof {
+		return false
+	}
+	return k.Basic.PprofPort == k.Basic.RestPort && k.Basic.PprofIp == k.Basic.RestIp
+}
+
 type KuiperConf struct {
 	Hack struct {
 		Cold bool `yaml:"cold"`
