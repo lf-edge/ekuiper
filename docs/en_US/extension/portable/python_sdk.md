@@ -83,7 +83,7 @@ When `requireAck` is enabled, the user's custom sink plugin **must** return an a
 }
 ```
 
-Sink implementation must call `ctx.ack_ok()` or `ctx.ack_err(msg)` to return acknowledge. In the following example , the
+Sink implementation must call `ctx.ack_ok()` or `ctx.ack_error(msg)` to return acknowledge. In the following example , the
 collect function inside sink returns ack after handling the data.
 
 ```python
@@ -91,6 +91,13 @@ def collect(self, ctx: Context, data: Any):
         print('receive: ', data)
         # only add ack when using with requireAck in the rule
         ctx.ack_ok()
+```
+
+```python
+def collect(self, ctx: Context, data: Any):
+        print('receive: ', data)
+        # only add ack when using with requireAck in the rule
+        ctx.ack_error('error msg')
 ```
 
 Function interface:

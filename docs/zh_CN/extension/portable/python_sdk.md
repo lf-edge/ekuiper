@@ -82,13 +82,20 @@ sink 时可以配置是否等待 ack 再发送下一条数据。例如，假设 
 }
 ```
 
-Sink 插件中调用 `ctx.ack_ok()` 或 `ctx.ack_err(msg)` 返回 ack 信息。以下为示例 collect 函数，调用成功时返回 ack 。
+Sink 插件中调用 `ctx.ack_ok()` 或 `ctx.ack_error(msg)` 返回 ack 信息。以下为示例 collect 函数，调用成功时返回 ack 。
 
 ```python
 def collect(self, ctx: Context, data: Any):
         print('receive: ', data)
         # only add ack when using with requireAck in the rule
         ctx.ack_ok()
+```
+
+```python
+def collect(self, ctx: Context, data: Any):
+        print('receive: ', data)
+        # only add ack when using with requireAck in the rule
+        ctx.ack_error('error msg')
 ```
 
 函数接口:
