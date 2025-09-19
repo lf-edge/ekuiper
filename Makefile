@@ -92,6 +92,18 @@ build_with_fdb: build_prepare
 pkg_with_fdb: build_with_fdb
 	@make real_pkg
 
+.PHONY: build_with_pebble
+build_with_pebble: build_prepare
+	GO111MODULE=on CGO_ENABLED=1 go build -trimpath -ldflags="-s -w -X github.com/lf-edge/ekuiper/v2/cmd.Version=$(VERSION) -X github.com/lf-edge/ekuiper/v2/cmd.LoadFileType=relative" -tags "pebble" -o kuiper cmd/kuiper/main.go
+	GO111MODULE=on CGO_ENABLED=1 go build -trimpath -ldflags="-s -w -X github.com/lf-edge/ekuiper/v2/cmd.Version=$(VERSION) -X github.com/lf-edge/ekuiper/v2/cmd.LoadFileType=relative" -tags "pebble" -o kuiperd cmd/kuiperd/main.go
+	@if [ "$$(uname -s)" = "Linux" ] && [ ! -z $$(which upx) ]; then upx ./kuiper; upx ./kuiperd; fi
+	@mv ./kuiper ./kuiperd $(BUILD_PATH)/$(PACKAGE_NAME)/bin
+	@echo "Build successfully"
+
+.PHONY: pkg_with_pebble
+pkg_with_pebble: build_with_pebble
+	@make real_pkg
+
 .PHONY: build_core
 build_core: build_prepare
 	GO111MODULE=on CGO_ENABLED=0 go build -trimpath -ldflags="-s -w -X github.com/lf-edge/ekuiper/v2/cmd.Version=$(VERSION) -X github.com/lf-edge/ekuiper/v2/cmd.LoadFileType=relative" -tags core -o kuiperd cmd/kuiperd/main.go
