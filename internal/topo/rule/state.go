@@ -84,7 +84,7 @@ type State struct {
 	// concurrent running states
 	currentState RunState
 	actionQ      []ActionSignal
-	// Sync RunState, do not call in concurrent go routines
+	// The physical rule instance for each **run**. control the lifecycle in State.
 	topology    *topo.Topo
 	cancelRetry context.CancelFunc
 	// temporary storage for topo graph to make sure even Rule close, the graph is still available
@@ -110,36 +110,87 @@ func NewState(rule *def.Rule, updateTriggerFunc func(string, bool)) *State {
 	}
 }
 
-func (s *State) WithTopo(topo *topo.Topo) *State {
-	s.topology = topo
-	if topo != nil {
-		s.topoGraph = s.topology.GetTopo()
-	}
-	return s
-}
-
-func (s *State) HasTopo() bool {
-	return s.topology != nil
-}
-
-// Validate tries to plan and return the planned topo and any errors
-// Need to cancel the topo if it is of no use because the input/output channels are set
-// Otherwise, the shared source may send to these channels and hang
-func (s *State) Validate() (*topo.Topo, error) {
+// ValidateAndRun tries to set up the rule in an atomic way
+// It is the only way to update the state rule.
+// 1. validate the new rule
+// 2. set the state rule property and create the new topo
+// 3. stop and clean the old topo if any
+// 4. run the new topo
+// Notice that, the return err is VALIDATION error only. Run error is async and checked from rule status
+// Topo side effect: 1.This function will create and store a new topo if no validation error
+// 2. If there is validation error, this function will destroy the new topo
+func (s *State) ValidateAndRun(newRule *def.Rule) (err error) {
 	s.Lock()
 	defer s.Unlock()
-	var (
-		tp  *topo.Topo
-		err error
-	)
+	if newRule == nil {
+		return errors.New("new rule is nil")
+	}
+	// Try plan with the new json. If err, revert to old rule
+	oldRule := s.Rule
+	s.Rule = newRule
+	defer func() {
+		if err != nil {
+			s.Rule = oldRule
+		}
+	}()
+	// validateRule only check plan is valid, topology shouldn't be changed before ruleState stop
+	tp, err := s.validate()
+	if err != nil {
+		return err
+	}
+	// stop the old run
+	if s.topology != nil {
+		s.Stop()
+		s.topology = nil
+	}
+	// start new rule
+	if newRule.Triggered {
+		s.topology = tp
+		go func() {
+			panicOrError := infra.SafeRun(func() error {
+				// Start the rule which runs async
+				return s.Start()
+			})
+			if panicOrError != nil {
+				s.logger.Errorf("Rule %s start failed: %s", s.Rule.Id, panicOrError)
+			}
+		}()
+	} else {
+		e := tp.Cancel()
+		if e != nil {
+			s.logger.Warnf("clean temp tp %s error: %v", tp.GetName(), err)
+		}
+	}
+	return nil
+}
+
+func (s *State) Bootstrap() error {
+	return s.ValidateAndRun(s.Rule)
+}
+
+// If validate error, the return tp is clean up and set to nil
+func (s *State) validate() (tp *topo.Topo, err error) {
+	// Do validation
+	if s.topology != nil {
+		s.logger.Warn("topology is already exist, should not happen")
+	}
+	defer func() { // clean topo if error happens
+		if err != nil && tp != nil {
+			e := tp.Cancel()
+			if e != nil {
+				s.logger.Warnf("clean invalid tp %s error: %v", tp.GetName(), err)
+			}
+			tp = nil
+		}
+	}()
 	err = infra.SafeRun(func() error {
 		tp, err = planner.Plan(s.Rule)
 		return err
 	})
 	if err != nil {
-		return nil, err
+		return tp, err
 	}
-	return tp, err
+	return tp, nil
 }
 
 func (s *State) transit(newState RunState, err error) {
@@ -180,13 +231,13 @@ func (s *State) GetStartTimestamp() time.Time {
 	return time.UnixMilli(s.lastStartTimestamp)
 }
 
-func (s *State) GetSchema() map[string]*ast.JsonStreamField {
+func (s *State) GetSchema() (map[string]*ast.JsonStreamField, error) {
 	s.RLock()
 	defer s.RUnlock()
 	if s.topology != nil {
-		return s.topology.GetSinkSchema()
+		return s.topology.GetSinkSchema(), nil
 	}
-	return nil
+	return nil, errorx.New(fmt.Sprintf("Fail to get rule %s's topo, make sure the rule has been started before", s.Rule.Id))
 }
 
 // GetStatusMessage return the current RunState of the Rule
