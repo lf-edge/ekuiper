@@ -51,7 +51,7 @@ type WindowV2Operator struct {
 func NewWindowV2Op(name string, w WindowConfig, options *def.RuleOption) (*WindowV2Operator, error) {
 	o := new(WindowV2Operator)
 	o.defaultSinkNode = newDefaultSinkNode(name, options)
-	o.scanner = &WindowScanner{tuples: make([]*xsql.Tuple, 0)}
+	o.scanner = &WindowScanner{Tuples: make([]*xsql.Tuple, 0)}
 	o.windowConfig = w
 	switch w.Type {
 	case ast.SLIDING_WINDOW:
@@ -317,17 +317,17 @@ func isMatchCondition(ctx api.StreamContext, condition ast.Expr, fv *xsql.Functi
 }
 
 type WindowScanner struct {
-	tuples []*xsql.Tuple
+	Tuples []*xsql.Tuple
 }
 
 func (s *WindowScanner) addTuple(tuple *xsql.Tuple) {
-	s.tuples = append(s.tuples, tuple)
+	s.Tuples = append(s.Tuples, tuple)
 }
 
 // scan left-open, right-closed window
 func (s *WindowScanner) scanWindow(windowStart, windowEnd time.Time) []*xsql.Tuple {
 	result := make([]*xsql.Tuple, 0)
-	for _, tuple := range s.tuples {
+	for _, tuple := range s.Tuples {
 		if tuple.Timestamp.After(windowStart) && (tuple.Timestamp.Before(windowEnd) || tuple.Timestamp.Equal(windowEnd)) {
 			result = append(result, tuple)
 		} else if tuple.Timestamp.After(windowEnd) {
@@ -339,19 +339,19 @@ func (s *WindowScanner) scanWindow(windowStart, windowEnd time.Time) []*xsql.Tup
 
 // gc the tuples which earlier than gcTime
 func (s *WindowScanner) gc(gcTime time.Time) {
-	if len(s.tuples) < 1 {
+	if len(s.Tuples) < 1 {
 		return
 	}
 	index := -1
-	for i, tuple := range s.tuples {
+	for i, tuple := range s.Tuples {
 		if tuple.Timestamp.After(gcTime) {
 			index = i
 			break
 		}
 	}
 	if index == -1 {
-		s.tuples = make([]*xsql.Tuple, 0)
+		s.Tuples = make([]*xsql.Tuple, 0)
 		return
 	}
-	s.tuples = s.tuples[index:]
+	s.Tuples = s.Tuples[index:]
 }
