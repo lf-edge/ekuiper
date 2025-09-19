@@ -16,6 +16,7 @@ package planner
 
 import (
 	"encoding/json"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -137,12 +138,17 @@ func prepareStream() error {
 					a BIGINT,
 					b BIGINT,
 				) WITH (DATASOURCE="src1");`,
+		"stream2": `CREATE STREAM stream (
+					a BIGINT,
+					b BIGINT,
+				) WITH (DATASOURCE="src1");`,
 		"memlookup": `CREATE TABLE memlookup() WITH (DATASOURCE="topicB", KEY="key" TYPE="memory", KIND="lookup")`,
 	}
 
 	types := map[string]ast.StreamType{
 		"sharedStream": ast.TypeStream,
 		"stream":       ast.TypeStream,
+		"stream2":      ast.TypeStream,
 		"memlookup":    ast.TypeTable,
 	}
 	for name, sql := range streamSqls {
@@ -309,6 +315,38 @@ func TestExplainAggInWhere(t *testing.T) {
 		require.NoError(t, err)
 		explain, err := ExplainFromLogicalPlan(p, "")
 		require.NoError(t, err)
+		require.Equal(t, tc.explain, explain, tc.sql)
+	}
+}
+
+func TestStreamJoinTableLookup(t *testing.T) {
+	kv, err := store.GetKV("stream")
+	require.NoError(t, err)
+	require.NoError(t, prepareStream())
+	testcases := []struct {
+		sql     string
+		explain string
+	}{
+		{
+			sql: `select stream.a as a1 ,stream2.a as a2, memlookup.a as a3 from stream inner join stream2 on stream.a = stream2.a inner join memlookup on stream.a = memlookup.a group by countwindow(2)`,
+			explain: `{"op":"ProjectPlan_0","info":"Fields:[ $$alias.a1,aliasRef:stream.a, $$alias.a2,aliasRef:stream2.a, $$alias.a3,aliasRef:memlookup.a ]"}
+	{"op":"LookupPlan_1","info":"Join:{ joinType:INNER_JOIN, expr:binaryExpr:{ stream.a = memlookup.a } }"}
+			{"op":"JoinPlan_2","info":"Joins:[ { joinType:INNER_JOIN, binaryExpr:{ stream.a = stream2.a } } ]"}
+					{"op":"WindowPlan_3","info":"{ length:2, windowType:COUNT_WINDOW, limit: 0 }"}
+							{"op":"DataSourcePlan_4","info":"StreamName: stream, StreamFields:[ a ]"}
+							{"op":"DataSourcePlan_5","info":"StreamName: stream, StreamFields:[ a ]"}`,
+		},
+	}
+	for _, tc := range testcases {
+		stmt, err := xsql.NewParser(strings.NewReader(tc.sql)).Parse()
+		require.NoError(t, err)
+		p, err := CreateLogicalPlan(stmt, &def.RuleOption{
+			Qos: 0,
+		}, kv)
+		require.NoError(t, err)
+		explain, err := ExplainFromLogicalPlan(p, "")
+		require.NoError(t, err)
+		fmt.Println(explain)
 		require.Equal(t, tc.explain, explain, tc.sql)
 	}
 }

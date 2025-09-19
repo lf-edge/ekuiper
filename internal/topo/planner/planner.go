@@ -680,27 +680,15 @@ func createLogicalPlanFull(stmt *ast.SelectStatement, opt *def.RuleOption, store
 		if len(lookupTableChildren) == 0 && len(scanTableChildren) == 0 && w == nil {
 			return nil, nil, nil, errors.New("a time window or count window is required to join multiple streams")
 		}
+		var lookupJoins ast.Joins
 		if len(lookupTableChildren) > 0 {
 			var joins []ast.Join
 			for _, join := range stmt.Joins {
-				if streamOpt, ok := lookupTableChildren[join.Name]; ok {
-					lookupPlan := LookupPlan{
-						joinExpr: join,
-						options:  streamOpt,
-					}
-					if !lookupPlan.validateAndExtractCondition() {
-						return nil, nil, nil, fmt.Errorf("join condition %s is invalid, at least one equi-join predicate is required", join.Expr)
-					}
-					p = lookupPlan.Init()
-					p.SetChildren(children)
-					children = []LogicalPlan{p}
-					delete(lookupTableChildren, join.Name)
+				if _, ok := lookupTableChildren[join.Name]; ok {
+					lookupJoins = append(lookupJoins, join)
 				} else {
 					joins = append(joins, join)
 				}
-			}
-			if len(lookupTableChildren) > 0 {
-				return nil, nil, nil, fmt.Errorf("cannot find lookup table %v in any join", lookupTableChildren)
 			}
 			stmt.Joins = joins
 		}
@@ -721,6 +709,28 @@ func createLogicalPlanFull(stmt *ast.SelectStatement, opt *def.RuleOption, store
 			p.SetChildren(children)
 			children = []LogicalPlan{p}
 		}
+		if len(lookupJoins) > 0 {
+			for _, join := range lookupJoins {
+				if streamOpt, ok := lookupTableChildren[join.Name]; ok {
+					lookupJoins = append(lookupJoins, join)
+					lookupPlan := LookupPlan{
+						joinExpr: join,
+						options:  streamOpt,
+					}
+					if !lookupPlan.validateAndExtractCondition() {
+						return nil, nil, nil, fmt.Errorf("join condition %s is invalid, at least one equi-join predicate is required", join.Expr)
+					}
+					p = lookupPlan.Init()
+					p.SetChildren(children)
+					children = []LogicalPlan{p}
+					delete(lookupTableChildren, join.Name)
+				}
+			}
+			if len(lookupTableChildren) > 0 {
+				return nil, nil, nil, fmt.Errorf("cannot find lookup table %v in any join", lookupTableChildren)
+			}
+		}
+
 	}
 	if len(rewriteRes.aggFuncsFieldInWhere) > 0 {
 		p = AggFuncPlan{
