@@ -87,19 +87,21 @@ func (r *rpcComp) close() {
 type Server int
 
 func (t *Server) CreateQuery(sql string, reply *string) error {
-	if _, ok := registry.load(QueryRuleId); ok {
-		stopQuery()
+	stopQuery()
+	logger.Printf("stop the previous query if exists.")
+	tempRule := def.GetDefaultRule(QueryRuleId, sql)
+	tempRule.Temp = true
+	tempRule.Triggered = true
+	tempRule.Actions = []map[string]any{
+		{
+			"logToMemory": map[string]any{},
+		},
 	}
-	tp, err := ruleProcessor.ExecQuery(QueryRuleId, sql)
+	ruleJson, _ := json.Marshal(tempRule)
+	_, err := registry.CreateRule(QueryRuleId, string(ruleJson))
 	if err != nil {
 		return err
 	} else {
-		rs := rule.NewState(def.GetDefaultRule(QueryRuleId, sql), func(string, bool) {
-			// do nothing
-		})
-		rs.WithTopo(tp)
-		registry.register(QueryRuleId, rs)
-		_ = rs.Start()
 		msg := fmt.Sprintf("Query was submit successfully.")
 		logger.Println(msg)
 		*reply = fmt.Sprint(msg)
@@ -114,9 +116,6 @@ func stopQuery() {
 	}
 }
 
-/**
- * qid is not currently used.
- */
 func (t *Server) GetQueryResult(_ string, reply *string) error {
 	if rs, ok := registry.load(QueryRuleId); ok {
 		st := rs.GetState()

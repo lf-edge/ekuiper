@@ -139,7 +139,7 @@ func (rr *RuleRegistry) CreateRule(name, ruleJson string) (id string, err error)
 		}
 	})
 	// Validate the topo
-	tp, err := rs.Validate()
+	err = rs.ValidateAndRun(r)
 	if err != nil {
 		return r.Id, err
 	}
@@ -147,21 +147,6 @@ func (rr *RuleRegistry) CreateRule(name, ruleJson string) (id string, err error)
 	err = rr.save(r.Id, ruleJson, rs)
 	if err != nil {
 		return r.Id, fmt.Errorf("store the rule error: %v", err)
-	}
-	// Start the rule asyncly
-	if r.Triggered {
-		rs.WithTopo(tp)
-		go func() {
-			panicOrError := infra.SafeRun(func() error {
-				// Start the rule which runs async
-				return rs.Start()
-			})
-			if panicOrError != nil {
-				logger.Errorf("Rule %s start failed: %s", r.Id, panicOrError)
-			}
-		}()
-	} else if tp != nil {
-		_ = tp.Cancel()
 	}
 	return r.Id, nil
 }
@@ -213,40 +198,18 @@ func (rr *RuleRegistry) UpsertRule(ruleId, ruleJson string) error {
 			return fmt.Errorf("rule %s already exists with version (%s), new version (%s) is lower", ruleId, rs.Rule.Version, r.Version)
 		}
 	}
-	// Try plan with the new json. If err, revert to old rule
-	oldRule := rs.Rule
-	rs.Rule = r
-	// validateRule only check plan is valid, topology shouldn't be changed before ruleState stop
-	newTopo, err := rs.Validate()
+	err = rs.ValidateAndRun(r)
 	if err != nil {
-		rs.Rule = oldRule
 		return err
 	}
-	var err1 error
-	if isUpdate {
-		if !r.Temp {
-			// Validate successful, save to db
-			err1 = rr.upsert(r.Id, ruleJson)
-		}
-		// ReRun the rule
-		rs.Stop()
-	} else {
-		err = rr.save(r.Id, ruleJson, rs)
-		if err != nil {
-			return fmt.Errorf("store the rule error: %v", err)
+	if !r.Temp {
+		if isUpdate {
+			err = rr.upsert(r.Id, ruleJson)
+		} else {
+			err = rr.save(r.Id, ruleJson, rs)
 		}
 	}
-	rs.WithTopo(newTopo)
-	if r.Triggered {
-		err2 := rs.Start()
-		if err2 != nil {
-			return err2
-		}
-	} else if newTopo != nil {
-		_ = newTopo.Cancel()
-		rs.WithTopo(nil)
-	}
-	return err1
+	return err
 }
 
 func (rr *RuleRegistry) DeleteRule(name string) error {
@@ -272,15 +235,7 @@ func (rr *RuleRegistry) StartRule(name string) error {
 		if err != nil {
 			conf.Log.Warnf("start rule update db status error: %s", err.Error())
 		}
-		if !rs.HasTopo() {
-			// Validate and create the topo
-			tp, err := rs.Validate()
-			if err != nil {
-				return err
-			}
-			rs.WithTopo(tp)
-		}
-		return rs.Start()
+		return rs.Bootstrap()
 	}
 }
 
@@ -440,10 +395,7 @@ func (rr *RuleRegistry) GetRuleTopo(name string) (string, error) {
 
 func (rr *RuleRegistry) GetRuleSinkSchema(name string) (map[string]*ast.JsonStreamField, error) {
 	if rs, ok := registry.load(name); ok {
-		if !rs.HasTopo() {
-			return nil, errorx.New(fmt.Sprintf("Fail to get rule %s's topo, make sure the rule has been started before", name))
-		}
-		return rs.GetSchema(), nil
+		return rs.GetSchema()
 	} else {
 		return nil, errorx.NewWithCode(errorx.NOT_FOUND, fmt.Sprintf("Rule %s is not found", name))
 	}
