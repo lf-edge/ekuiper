@@ -601,7 +601,20 @@ func deleteRuleMetrics(name string) {
 	}
 }
 
+// isSafeFileComponent returns true if the name is safe for use as a single file path component.
+func isSafeFileComponent(name string) bool {
+	// Disallow path separators and parent directory references.
+	if strings.Contains(name, "/") || strings.Contains(name, "\\") || strings.Contains(name, "..") || name == "" {
+		return false
+	}
+	return true
+}
+
 func deleteRuleData(name string) {
+	if !isSafeFileComponent(name) {
+		conf.Log.Errorf("delete rule data aborted: unsafe rule name '%s'", name)
+		return
+	}
 	dataLoc, err := conf.GetDataLoc()
 	if err != nil {
 		conf.Log.Errorf("delete rule data error: %v", err)
