@@ -56,6 +56,7 @@ func init() {
 
 	modules.RegisterLookupSource("memory", memory.GetLookupSource)
 	modules.RegisterLookupSource("httppull", http.GetLookUpSource)
+	modules.RegisterLookupSource("simulator", func() api.Source { return &simulator.SimulatorLookupSource{} })
 
 	modules.RegisterConnection("mqtt", mqtt.CreateConnection)
 	modules.RegisterConnection("nng", nng.CreateConnection)

@@ -567,3 +567,86 @@ func (s *RuleTestSuite) assertSchemaEquality(expected, actual map[string]any) {
 	// 5. Compare the sorted slices to ensure the nested values are identical.
 	s.Equal(expectedValues, actualValues, "The set of nested schema values should be identical")
 }
+
+func (s *RuleTestSuite) TestJoinWithLookup() {
+	client.DeleteRule("ruleSim11")
+	client.DeleteStream("sim11")
+	client.DeleteStream("sim12")
+	client.DeleteTables("sim13")
+	topic := "test11"
+	subCh := pubsub.CreateSub(topic, nil, topic, 1024)
+	defer pubsub.CloseSourceConsumerChannel(topic, topic)
+	data1 := []map[string]any{
+		{
+			"k": "v1",
+		},
+	}
+	conf1 := map[string]any{
+		"data":     data1,
+		"interval": "1ms",
+		"loop":     false,
+	}
+	resp1, err := client.CreateConf("sources/simulator/confKeys/sim11", conf1)
+	s.Require().NoError(err)
+	s.Require().Equal(http.StatusOK, resp1.StatusCode)
+	streamSql1 := `{"sql": "create stream sim11() WITH (TYPE=\"simulator\", CONF_KEY=\"sim11\")"}`
+	resp1, err = client.CreateStream(streamSql1)
+	s.Require().NoError(err)
+	s.T().Log(GetResponseText(resp1))
+	s.Require().Equal(http.StatusCreated, resp1.StatusCode)
+	data2 := []map[string]any{
+		{
+			"k": "v1",
+		},
+	}
+	conf2 := map[string]any{
+		"data":     data2,
+		"interval": "1ms",
+		"loop":     false,
+	}
+	resp2, err := client.CreateConf("sources/simulator/confKeys/sim12", conf2)
+	s.Require().NoError(err)
+	s.Require().Equal(http.StatusOK, resp2.StatusCode)
+	streamSql2 := `{"sql": "create stream sim12() WITH (TYPE=\"simulator\", CONF_KEY=\"sim12\")"}`
+	resp2, err = client.CreateStream(streamSql2)
+	s.Require().NoError(err)
+	s.T().Log(GetResponseText(resp2))
+	s.Require().Equal(http.StatusCreated, resp2.StatusCode)
+
+	data3 := []map[string]any{
+		{
+			"k": "v1",
+		},
+	}
+	conf3 := map[string]any{
+		"data": data3,
+	}
+	resp3, err := client.CreateConf("sources/simulator/confKeys/sim13", conf3)
+	s.Require().NoError(err)
+	s.Require().Equal(http.StatusOK, resp3.StatusCode)
+	tableSql := `{"sql": "create table sim13() WITH (TYPE=\"simulator\", CONF_KEY=\"sim13\", KIND=\"lookup\")"}`
+	resp3, err = client.CreateStream(tableSql)
+	s.Require().NoError(err)
+	s.T().Log(GetResponseText(resp3))
+	s.Require().Equal(http.StatusCreated, resp3.StatusCode)
+
+	ruleSql := `{
+	   "id": "ruleSim11",
+	   "sql": "SELECT sim11.k as k1, sim12.k as k2, sim13.k as k3 from sim11 inner join sim12 on sim11.k = sim12.k inner join sim13 on sim13.k = sim11.k group by countwindow(2)",
+	   "actions": [
+	       {
+	           "memory": {
+	               "topic": "test11"
+	           }
+	       }
+	   ],
+	   "options": {
+	
+	   }
+	}`
+	resp, err := client.CreateRule(ruleSql)
+	s.Require().NoError(err)
+	s.T().Log(GetResponseText(resp))
+	s.Require().Equal(http.StatusCreated, resp.StatusCode)
+	s.assertRecvMemTuple(subCh, []map[string]any{{"k1": "v1", "k2": "v1", "k3": "v1"}})
+}

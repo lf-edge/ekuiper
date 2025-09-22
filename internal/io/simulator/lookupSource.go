@@ -47,7 +47,7 @@ func (s *SimulatorLookupSource) Connect(ctx api.StreamContext, sch api.StatusCha
 func (s *SimulatorLookupSource) Lookup(ctx api.StreamContext, lookupFields []string, cmpKeys []string, cmpValues []any) ([]map[string]any, error) {
 	res := make([]map[string]any, 0)
 	for _, d := range s.cfg.Data {
-		for index, key := range lookupFields {
+		for index, key := range cmpKeys {
 			value, ok := d[key]
 			if ok && value == cmpValues[index] {
 				selectedRow := make(map[string]any)
