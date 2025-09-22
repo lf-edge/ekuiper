@@ -15,6 +15,7 @@ When you need eKuiper as a websocket client, you need to specify the server addr
 ```yaml
 default:
   addr: 127.0.0.1:8080
+  scheme: ws
 ```
 
 ```sql

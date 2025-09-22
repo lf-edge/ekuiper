@@ -15,6 +15,7 @@ eKuiper 可以作为 websocket 客户端，向远端的 websocket 服务器发�
 ```yaml
 default:
   addr: 127.0.0.1:8080
+  scheme: ws
 ```
 
 ```sql
