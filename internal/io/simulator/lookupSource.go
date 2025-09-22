@@ -33,7 +33,6 @@ func (s *SimulatorLookupSource) Provision(ctx api.StreamContext, configs map[str
 	}
 	s.cfg = cfg
 	return nil
-
 }
 
 func (s *SimulatorLookupSource) Close(ctx api.StreamContext) error {
