@@ -103,8 +103,8 @@ func TestSimulatorLookupSource_Lookup(t *testing.T) {
 			},
 		},
 		{
-			name: "empty data",
-			data: []map[string]any{},
+			name:         "empty data",
+			data:         []map[string]any{},
 			lookupFields: []string{"id", "name"},
 			cmpKeys:      []string{"id"},
 			cmpValues:    []any{1},
@@ -116,30 +116,30 @@ func TestSimulatorLookupSource_Lookup(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create SimulatorLookupSource instance
 			source := &SimulatorLookupSource{}
-			
+
 			// Create mock context
 			ctx := mockContext.NewMockContext("test", "Test")
-			
+
 			// Provision the source with test data
 			configs := map[string]any{
 				"data": tt.data,
 			}
 			err := source.Provision(ctx, configs)
 			require.NoError(t, err)
-			
+
 			// Connect the source
 			err = source.Connect(ctx, func(status string, message string) {
 				// do nothing
 			})
 			require.NoError(t, err)
-			
+
 			// Perform lookup
 			result, err := source.Lookup(ctx, tt.lookupFields, tt.cmpKeys, tt.cmpValues)
-			
+
 			// Verify results
 			assert.NoError(t, err)
 			assert.Equal(t, tt.expected, result)
-			
+
 			// Close the source
 			err = source.Close(ctx)
 			require.NoError(t, err)
@@ -149,10 +149,10 @@ func TestSimulatorLookupSource_Lookup(t *testing.T) {
 
 func TestSimulatorLookupSource_Provision(t *testing.T) {
 	tests := []struct {
-		name     string
-		configs  map[string]any
-		wantErr  bool
-		errMsg   string
+		name    string
+		configs map[string]any
+		wantErr bool
+		errMsg  string
 	}{
 		{
 			name: "valid config",
@@ -184,9 +184,9 @@ func TestSimulatorLookupSource_Provision(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			source := &SimulatorLookupSource{}
 			ctx := mockContext.NewMockContext("test", "Test")
-			
+
 			err := source.Provision(ctx, tt.configs)
-			
+
 			if tt.wantErr {
 				assert.Error(t, err)
 				if tt.errMsg != "" {
