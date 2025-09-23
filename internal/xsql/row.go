@@ -604,7 +604,16 @@ func (jt *JoinTuple) doGetValue(key, table string, isVal bool) (interface{}, boo
 		// TODO should use hash here
 		for _, tuple := range tuples {
 			if et, ok := tuple.(EmittedData); ok && et.GetEmitter() == table {
-				return getTupleValue(tuple, key, isVal)
+				v, ok := getTupleValue(tuple, key, isVal)
+				if v != nil && ok {
+					return v, ok
+				}
+			}
+			if subJt, ok := tuple.(*JoinTuple); ok {
+				v, ok := subJt.doGetValue(key, table, isVal)
+				if v != nil && ok {
+					return v, ok
+				}
 			}
 		}
 		return nil, false

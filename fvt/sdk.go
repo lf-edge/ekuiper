@@ -93,8 +93,21 @@ func (sdk *SDK) CreateStream(streamJson string) (resp *http.Response, err error)
 	return http.Post(sdk.baseUrl.JoinPath("streams").String(), ContentTypeJson, bytes.NewBufferString(streamJson))
 }
 
+func (sdk *SDK) CreateTable(tableJson string) (resp *http.Response, err error) {
+	return http.Post(sdk.baseUrl.JoinPath("tables").String(), ContentTypeJson, bytes.NewBufferString(tableJson))
+}
+
 func (sdk *SDK) DeleteStream(name string) (resp *http.Response, err error) {
 	req, err := http.NewRequest(http.MethodDelete, sdk.baseUrl.JoinPath("streams", name).String(), nil)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	return sdk.httpClient.Do(req)
+}
+
+func (sdk *SDK) DeleteTables(name string) (resp *http.Response, err error) {
+	req, err := http.NewRequest(http.MethodDelete, sdk.baseUrl.JoinPath("tables", name).String(), nil)
 	if err != nil {
 		fmt.Println(err)
 		return
