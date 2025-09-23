@@ -32,6 +32,7 @@ type WebsocketClient struct {
 	RecvTopic string
 	SendTopic string
 
+	scheme    string
 	addr      string
 	path      string
 	tlsConfig *tls.Config
@@ -40,8 +41,12 @@ type WebsocketClient struct {
 	cancel    context.CancelFunc
 }
 
-func NewWebsocketClient(addr, path string, tlsConfig *tls.Config) *WebsocketClient {
+func NewWebsocketClient(scheme, addr, path string, tlsConfig *tls.Config) *WebsocketClient {
+	if scheme == "" {
+		scheme = "ws"
+	}
 	return &WebsocketClient{
+		scheme:    scheme,
 		addr:      addr,
 		path:      path,
 		tlsConfig: tlsConfig,
@@ -57,7 +62,7 @@ func (c *WebsocketClient) Connect() error {
 	if len(c.addr) < 1 {
 		return fmt.Errorf("addr should be defined")
 	}
-	u := url.URL{Scheme: "ws", Host: c.addr, Path: c.path}
+	u := url.URL{Scheme: c.scheme, Host: c.addr, Path: c.path}
 	conn, _, err := d.Dial(u.String(), nil)
 	if err != nil {
 		return err

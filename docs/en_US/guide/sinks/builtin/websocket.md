@@ -7,6 +7,7 @@ The action is used for publishing output message into websocket channel.
 | Property name  | Optional | Description                                           |
 | addr           | false    | The address of the websocket sink server, like: 127.0.0.1:8080 |
 | path           | true    | The url path of the websocket sink server, like: /api/data     |
+| scheme           | true    | The url scheme of the websocket sink server, like: ws or wss    |
 | insecureSkipVerify | false | whether to ignore SSL verification |
 | certificationPath  | true | websocket client ssl verification crt file path |
 | privateKeyPath     | true | Key file path for websocket client SSL verification |
