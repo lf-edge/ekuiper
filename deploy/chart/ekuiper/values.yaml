@@ -121,16 +121,37 @@ tls:
 kuiperConfig:
   "kuiper.yaml":
     basic:
+      # debug | info | warn | error | fatal | panic
+      logLevel: info
       # true|false, with debug level, it prints more debug info
       debug: false
       # true|false, if it's set to true, then the log will be print to console
       consoleLog: false
       # true|false, if it's set to true, then the log will be print to log file
       fileLog: true
+      # Whether to disable the log timestamp, useful when output is redirected to logging
+      #	system like syslog that already adds timestamps.
+      logDisableTimestamp: false
+      # syslog settings
+      syslog:
+        # true|false, if it's set to true, then the log will be print to syslog
+        enable: false
+        # The syslog protocol, tcp or udp; Leave empty if no remote syslog server is used
+        network: udp
+        # The syslog server address; Leave empty if no remote syslog server is used
+        address: localhost:514
+        # The syslog level, supports debug, info, warn, error
+        level: info
+        # The syslog tag; Leave empty if no tag is used
+        tag: kuiper
       # How many hours to split the file
       rotateTime: 24
       # Maximum file storage hours
       maxAge: 72
+      # Maximum file size in bytes, if this is set, maxAge will be ignored
+      rotateSize: 10485760 # 10 MB
+      # Maximum log file count
+      rotateCount: 3
       # CLI ip
       ip: 0.0.0.0
       # CLI port
@@ -139,6 +160,8 @@ kuiperConfig:
       restIp: 0.0.0.0
       # REST service port
       restPort: 9081
+      # The global time zone from the IANA time zone database, or Local if not set.
+      timezone: Local
       # true|false, when true, will check the RSA jwt token for rest api
       authentication: false
       #  restTls:
@@ -147,10 +170,34 @@ kuiperConfig:
       # Prometheus settings
       prometheus: false
       prometheusPort: 20499
-      # The URL where hosts all of pre-build plugins. By default it's at packages.emqx.net
+      # pprof settings
+      pprof: true
+      pprofIp: 127.0.0.1
+      pprofPort: 6060
+      # The URL where hosts all of pre-build plugins. By default, it's at packages.emqx.net
       pluginHosts: https://packages.emqx.net
       # Whether to ignore case in SQL processing. Note that, the name of customized function by plugins are case-sensitive.
-      ignoreCase: true
+      ignoreCase: false
+      sql:
+        # maxConnections indicates the max connections for the certain database instance group by driver and dsn sharing between the sources/sinks
+        # 0 indicates unlimited
+        maxConnections: 0
+      rulePatrolInterval: 10s
+      # enableOpenZiti indicates whether to enable OpenZiti for eKuiper REST service. Currently, it is only supported to work with EdgeX secure mode.
+      enableOpenZiti: false
+      # AES Key, base64 encoded
+      aesKey: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3
+      gracefulShutdownTimeout: 10s
+      connection:
+        backoffMaxElapsedDuration: 3m
+      # If it is enabled, the cpu time of the rule will be recorded.
+      ResourceProfileConfig:
+        enable: false
+        interval: 5s
+      metricsDumpConfig:
+        enable: false
+        retainedDuration: 6h
+      enableRestAuditLog: false
 
     # The default options for all rules. Each rule can override this setting by defining its own option
     rule:
@@ -162,10 +209,21 @@ kuiperConfig:
       # The interval duration to run the checkpoint mechanism.
       checkpointInterval: 300s
       # Whether to send errors to sinks
-      sendError: true
-
+      sendError: false
+      # The strategy to retry for rule errors.
+      restartStrategy:
+        # The maximum retry times
+        attempts: 0
+        # The interval to retry
+        delay: 1s
+        # The maximum interval to retry
+        maxDelay: 30s
+        # The exponential to increase the interval. It can be a float value.
+        multiplier: 2
+        # How large random value will be added or subtracted to the delay to prevent restarting multiple rules at the same time.
+        jitterFactor: 0.1
     sink:
-      # Control to disable cache or not. If it's set to true, then the cache will be disabled, otherwise, it will be enabled.
+      # Control to enable cache or not. If it's set to true, then the cache will be enabled, otherwise, it will be disabled.
       enableCache: false
 
       # The maximum number of messages to be cached in memory.
@@ -174,7 +232,7 @@ kuiperConfig:
       # The maximum number of messages to be cached in the disk.
       maxDiskCache: 1024000
 
-      # The number of messages for a buffer page which is the unit to read/write to disk batchly to prevent frequent IO
+      # The number of messages for a buffer page which is the unit to read/write to disk in batch to prevent frequent IO
       bufferPageSize: 256
 
       # The interval duration to resend the cached messages
@@ -183,6 +241,16 @@ kuiperConfig:
       # Whether to clean the cache when the rule stops
       cleanCacheAtStop: false
 
+    source:
+      ## Configurations for the global http data server for httppush source
+      # HTTP data service ip
+      httpServerIp: 0.0.0.0
+      # HTTP data service port
+      httpServerPort: 10081
+      # httpServerTls:
+      #    certfile: /var/https-server.crt
+      #    keyfile: /var/https-server.key
+
     store:
       #Type of store that will be used for keeping state of the application
       type: sqlite
@@ -190,9 +258,8 @@ kuiperConfig:
       redis:
         host: localhost
         port: 6379
-        password: kuiper
-        #Timeout in ms
-        timeout: 1000
+        #Timeout
+        timeout: 1s
       sqlite:
         #Sqlite file name, if left empty name of db will be sqliteKV.db
         name:
@@ -202,6 +269,17 @@ kuiperConfig:
       # The executable of python. Specify this if you have multiple python instances in your system
       # or other circumstance where the python executable cannot be successfully invoked through the default command.
       pythonBin: python
+      # control init timeout. If the init time is longer than this value, the plugin will be terminated.
+      initTimeout: 60s
+      sendTimeout: 5s
+      recvTimeout: 5s
+
+    openTelemetry:
+      serviceName: kuiperd-service
+      enableRemoteCollector: false
+      remoteEndpoint: localhost:4318
+      localTraceCapacity: 2048
+      enableLocalStorage: false
 
 # TODO
 # -- remove this when the mqtt_source configmap is available
