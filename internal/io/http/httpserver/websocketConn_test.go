@@ -157,3 +157,14 @@ func (tc *testcase) handler(w http.ResponseWriter, r *http.Request) {
 	go tc.recvProcess(c)
 	go tc.sendProcess(c)
 }
+
+func TestExtractPathAndQuery(t *testing.T) {
+	p, q, err := extractPathAndQuery("/api/data")
+	require.NoError(t, err)
+	require.Equal(t, "/api/data", p)
+	require.Equal(t, "", q)
+	p, q, err = extractPathAndQuery("/api/data?token=123")
+	require.NoError(t, err)
+	require.Equal(t, "/api/data", p)
+	require.Equal(t, "token=123", q)
+}
