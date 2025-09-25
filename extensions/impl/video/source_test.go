@@ -65,14 +65,14 @@ func TestProvision(t *testing.T) {
 
 func TestPull(t *testing.T) {
 	meta := map[string]any{
-		"url": "https://gcwbcdks.v.kcdnvip.com/gcwbcd/cdrmipanda_1/index.m3u8",
+		"url": "https://hdgcwbcdali.v.myalicdn.com/hdgcwbcd/cdrmipanda1000_1/index.m3u8",
 	}
 	exp := []api.MessageTuple{
 		model.NewDefaultRawTuple(nil, meta, timex.GetNow()),
 	}
 	r := GetSource()
 	mock.TestSourceConnectorCompare(t, r, map[string]any{
-		"url":      "https://gcwbndtxy.liveplay.myqcloud.com/gcwbnd/xiongmao24_2_td.m3u8",
+		"url":      "https://hdgcwbcdali.v.myalicdn.com/hdgcwbcd/cdrmipanda1000_1/index.m3u8",
 		"interval": "15s",
 	}, exp, func(e any, r any) bool {
 		et, ok := e.([]api.MessageTuple)
@@ -94,7 +94,7 @@ func TestPullError(t *testing.T) {
 	exp := errors.New("read frame failed, err:exit status 8")
 	r := GetSource()
 	mock.TestSourceConnector(t, r, map[string]any{
-		"url":      "https://gcwbndtxy.liveplay.myqcloud.com/gcwbnd/xiongmao24_2_td.m3u8",
+		"url":      "https://hdgcwbcdali.v.myalicdn.com/hdgcwbcd/cdrmipanda1000_1/index.m3u8",
 		"codec":    "ogv",
 		"interval": "15s",
 	}, exp, func() {
