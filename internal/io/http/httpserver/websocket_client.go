@@ -62,7 +62,11 @@ func (c *WebsocketClient) Connect() error {
 	if len(c.addr) < 1 {
 		return fmt.Errorf("addr should be defined")
 	}
-	u := url.URL{Scheme: c.scheme, Host: c.addr, Path: c.path}
+	path, rawQuery, err := extractPathAndQuery(c.path)
+	if err != nil {
+		return err
+	}
+	u := url.URL{Scheme: c.scheme, Host: c.addr, Path: path, RawQuery: rawQuery}
 	conn, _, err := d.Dial(u.String(), nil)
 	if err != nil {
 		return err
@@ -92,4 +96,12 @@ func (c *WebsocketClient) Close(ctx api.StreamContext) error {
 	c.cancel()
 	c.wg.Wait()
 	return nil
+}
+
+func extractPathAndQuery(rawURL string) (string, string, error) {
+	parsedURL, err := url.Parse(rawURL)
+	if err != nil {
+		return "", "", err
+	}
+	return parsedURL.Path, parsedURL.RawQuery, nil
 }
