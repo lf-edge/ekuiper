@@ -15,11 +15,15 @@
 package fvt
 
 import (
+	"fmt"
 	"net/http"
+	"sync"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/suite"
+
+	"github.com/lf-edge/ekuiper/v2/internal/io/memory/pubsub"
 )
 
 type RuleStateTestSuite struct {
@@ -304,6 +308,96 @@ func (s *RuleStateTestSuite) TestCreateStoppedRule() {
 		s.Equal(http.StatusOK, res.StatusCode)
 
 		res, e = client.Delete("rules/rule1")
+		s.NoError(e)
+		s.Equal(http.StatusOK, res.StatusCode)
+
+		res, e = client.Delete("streams/simStream")
+		s.NoError(e)
+		s.Equal(http.StatusOK, res.StatusCode)
+	})
+}
+
+func (s *RuleStateTestSuite) TestMultipleStart() {
+	topic := "testmul"
+	subCh := pubsub.CreateSub(topic, nil, topic, 1024)
+	defer pubsub.CloseSourceConsumerChannel(topic, topic)
+	s.Run("init rule1", func() {
+		conf := map[string]any{
+			"interval": "10ms",
+		}
+		resp, err := client.CreateConf("sources/simulator/confKeys/ttt", conf)
+		s.Require().NoError(err)
+		s.Require().Equal(http.StatusOK, resp.StatusCode)
+
+		streamSql := `{"sql": "create stream simStream() WITH (TYPE=\"simulator\", FORMAT=\"json\", CONF_KEY=\"ttt\", SHARED=\"true\")"}`
+		resp, err = client.CreateStream(streamSql)
+		s.Require().NoError(err)
+		s.T().Log(GetResponseText(resp))
+		s.Require().Equal(http.StatusCreated, resp.StatusCode)
+
+		ruleSql := `{
+  "id": "rule1",
+  "name": "keep rule",
+  "triggered": false,
+  "sql": "SELECT * FROM simStream",
+  "actions": [
+    {
+      "memory":{"topic": "testmul"}
+    }
+  ],
+  "options": {
+    "sendError": false
+  }
+}`
+		resp, err = client.CreateRule(ruleSql)
+		s.Require().NoError(err)
+		s.T().Log(GetResponseText(resp))
+		s.Require().Equal(http.StatusCreated, resp.StatusCode)
+	})
+	s.Run("start twice", func() {
+		var wg sync.WaitGroup
+		for i := 0; i < 2; i++ {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				resp, err := client.StartRule("rule1")
+				s.Require().NoError(err)
+				s.Require().Equal(http.StatusOK, resp.StatusCode)
+			}()
+		}
+		wg.Wait()
+	})
+	s.Run("check topo", func() {
+		time.Sleep(50 * time.Millisecond)
+		metrics, err := client.GetRuleStatus("rule1")
+		s.Require().NoError(err)
+		s.Equal("running", metrics["status"])
+		sinkout, existed := metrics["sink_memory_0_0_records_in_total"]
+		s.Require().True(existed)
+		s.Require().True(sinkout.(float64) > 5)
+		s.T().Log(metrics)
+		for i := 0; i < 5; i++ {
+			<-subCh
+			fmt.Printf("receive data %d\n", i)
+		}
+	})
+	s.Run("stop rule", func() {
+		resp, err := client.StopRule("rule1")
+		s.Require().NoError(err)
+		s.Require().Equal(http.StatusOK, resp.StatusCode)
+		noData := false
+		for i := 0; i < 5; i++ {
+			select {
+			case <-subCh:
+				fmt.Println("receive data")
+			case <-time.After(time.Second):
+				noData = true
+			}
+		}
+		s.Require().True(noData)
+	})
+	s.Run("clean up", func() {
+		res, e := client.Delete("rules/rule1")
 		s.NoError(e)
 		s.Equal(http.StatusOK, res.StatusCode)
 

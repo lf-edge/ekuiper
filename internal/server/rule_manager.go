@@ -271,14 +271,6 @@ func (rr *RuleRegistry) StartRule(name string) error {
 		if err != nil {
 			conf.Log.Warnf("start rule update db status error: %s", err.Error())
 		}
-		if !rs.HasTopo() {
-			// Validate and create the topo
-			tp, err := rs.Validate()
-			if err != nil {
-				return err
-			}
-			rs.WithTopo(tp)
-		}
 		return rs.Start()
 	}
 }
