@@ -84,7 +84,7 @@ type State struct {
 	// concurrent running states
 	currentState RunState
 	actionQ      []ActionSignal
-	// Sync RunState, do not call in concurrent go routines
+	// The physical rule instance for each **run**. control the lifecycle in State.
 	topology    *topo.Topo
 	cancelRetry context.CancelFunc
 	// temporary storage for topo graph to make sure even Rule close, the graph is still available
@@ -110,43 +110,99 @@ func NewState(rule *def.Rule, updateTriggerFunc func(string, bool)) *State {
 	}
 }
 
-func (s *State) WithTopo(topo *topo.Topo) *State {
-	s.topology = topo
-	if topo != nil {
-		s.topoGraph = s.topology.GetTopo()
-	}
-	return s
-}
-
-func (s *State) HasTopo() bool {
-	return s.topology != nil
-}
-
-// Validate tries to plan and return the planned topo and any errors
-// Need to cancel the topo if it is of no use because the input/output channels are set
-// Otherwise, the shared source may send to these channels and hang
-func (s *State) Validate() (*topo.Topo, error) {
+// ValidateAndRun tries to set up the rule in an atomic way
+// It is the only way to update the state rule.
+// 1. validate the new rule
+// 2. set the state rule property and create the new topo
+// 3. stop and clean the old topo if any
+// 4. run the new topo
+// Notice that, the return err is VALIDATION error only. Run error is async and checked from rule status
+// Topo side effect: 1.This function will create and store a new topo if no validation error
+// 2. If there is validation error, this function will destroy the new topo
+func (s *State) ValidateAndRun(newRule *def.Rule) error {
 	s.Lock()
 	defer s.Unlock()
-	var (
-		tp  *topo.Topo
-		err error
-	)
+	return s.doValidateAndRun(newRule)
+}
+
+func (s *State) doValidateAndRun(newRule *def.Rule) (err error) {
+	if newRule == nil {
+		return errors.New("new rule is nil")
+	}
+	// Try plan with the new json. If err, revert to old rule
+	oldRule := s.Rule
+	s.Rule = newRule
+	defer func() {
+		if err != nil {
+			s.Rule = oldRule
+		}
+	}()
+	// validateRule only check plan is valid, topology shouldn't be changed before ruleState stop
+	tp, err := s.validate()
+	if err != nil {
+		return err
+	}
+	// stop the old run
+	if s.topology != nil {
+		s.stopOld()
+		s.topology = nil
+	}
+	// start new rule
+	if newRule.Triggered {
+		s.topology = tp
+		go func() {
+			panicOrError := infra.SafeRun(func() error {
+				// Start the rule which runs async
+				return s.Start()
+			})
+			if panicOrError != nil {
+				s.logger.Errorf("Rule %s start failed: %s", s.Rule.Id, panicOrError)
+			}
+		}()
+	} else {
+		e := tp.Cancel()
+		if e != nil {
+			s.logger.Warnf("clean temp tp %s error: %v", tp.GetName(), err)
+		}
+	}
+	return nil
+}
+
+func (s *State) Bootstrap() error {
+	s.Lock()
+	defer s.Unlock()
+	s.Rule.Triggered = true
+	return s.doValidateAndRun(s.Rule)
+}
+
+// If validate error, the return tp is clean up and set to nil
+func (s *State) validate() (tp *topo.Topo, err error) {
+	// Do validation
+	if s.topology != nil {
+		s.logger.Warn("topology is already exist, should not happen")
+	}
+	defer func() { // clean topo if error happens
+		if err != nil && tp != nil {
+			e := tp.Cancel()
+			if e != nil {
+				s.logger.Warnf("clean invalid tp %s error: %v", tp.GetName(), err)
+			}
+			tp = nil
+		}
+	}()
 	err = infra.SafeRun(func() error {
 		tp, err = planner.Plan(s.Rule)
 		return err
 	})
 	if err != nil {
-		return nil, err
+		return tp, err
 	}
-	return tp, err
+	return tp, nil
 }
 
 func (s *State) transit(newState RunState, err error) {
 	chainAction := false
-	s.Lock()
 	defer func() {
-		s.Unlock()
 		if chainAction {
 			s.nextAction()
 		}
@@ -180,13 +236,13 @@ func (s *State) GetStartTimestamp() time.Time {
 	return time.UnixMilli(s.lastStartTimestamp)
 }
 
-func (s *State) GetSchema() map[string]*ast.JsonStreamField {
+func (s *State) GetSchema() (map[string]*ast.JsonStreamField, error) {
 	s.RLock()
 	defer s.RUnlock()
 	if s.topology != nil {
-		return s.topology.GetSinkSchema()
+		return s.topology.GetSinkSchema(), nil
 	}
-	return nil
+	return nil, errorx.New(fmt.Sprintf("Fail to get rule %s's topo, make sure the rule has been started before", s.Rule.Id))
 }
 
 // GetStatusMessage return the current RunState of the Rule
@@ -286,6 +342,8 @@ func (s *State) GetStatusMap() map[string]any {
 // By check state, it assures only one Start function is running at any time. (thread safe)
 // regSchedule: whether need to handle scheduler. If call externally, set it to true
 func (s *State) Start() error {
+	s.Lock()
+	defer s.Unlock()
 	s.logger.Debug("start RunState")
 	done := s.triggerAction(ActionSignalStart)
 	if done {
@@ -310,6 +368,8 @@ func (s *State) Start() error {
 }
 
 func (s *State) ScheduleStart() error {
+	s.Lock()
+	defer s.Unlock()
 	s.logger.Debug("scheduled start RunState")
 	done := s.triggerAction(ActionSignalScheduledStart)
 	if done {
@@ -328,8 +388,6 @@ func (s *State) ScheduleStart() error {
 }
 
 func (s *State) triggerAction(action ActionSignal) bool {
-	s.Lock()
-	defer s.Unlock()
 	if len(s.actionQ) > 0 {
 		if s.actionQ[len(s.actionQ)-1] == action {
 			s.logger.Infof("ignore action %d because last action is the same", action)
@@ -405,6 +463,8 @@ func (s *State) Stop() {
 }
 
 func (s *State) ScheduleStop() {
+	s.Lock()
+	defer s.Unlock()
 	s.logger.Debug("scheduled stop RunState")
 	done := s.triggerAction(ActionSignalScheduledStop)
 	if done {
@@ -423,6 +483,8 @@ func (s *State) ScheduleStop() {
 }
 
 func (s *State) StopWithLastWill(msg string) {
+	s.Lock()
+	defer s.Unlock()
 	s.logger.Debug("stop RunState")
 	done := s.triggerAction(ActionSignalStop)
 	if done {
@@ -440,14 +502,29 @@ func (s *State) StopWithLastWill(msg string) {
 	return
 }
 
+func (s *State) stopOld() {
+	s.logger.Debug("stop RunState")
+	done := s.triggerAction(ActionSignalStop)
+	if done {
+		return
+	}
+	// do stop, stopping action and starting action are mutual exclusive. No concurrent problem here
+	s.logger.Infof("stopping rule %s", s.Rule.Id)
+	err := s.doStop()
+	if err == nil {
+		err = errors.New("stopped by update")
+	}
+	// currentState may be accessed concurrently
+	s.transit(Stopped, err)
+	return
+}
+
 func (s *State) nextAction() {
 	var action ActionSignal = -1
-	s.Lock()
 	if len(s.actionQ) > 0 {
 		action = s.actionQ[0]
 		s.actionQ = s.actionQ[1:]
 	}
-	s.Unlock()
 	var err error
 	switch action {
 	case ActionSignalStart:
