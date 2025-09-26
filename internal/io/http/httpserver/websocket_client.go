@@ -62,7 +62,7 @@ func (c *WebsocketClient) Connect() error {
 	if len(c.addr) < 1 {
 		return fmt.Errorf("addr should be defined")
 	}
-	path, rawQuery, err := extractPathAndQuery(c.addr)
+	path, rawQuery, err := extractPathAndQuery(c.path)
 	if err != nil {
 		return err
 	}
