@@ -14,8 +14,7 @@ helm install my-ekuiper .
 
 - From Helm repo
 ```
-helm repo add emqx https://repos.emqx.io/charts
-helm install my-ekuiper emqx/ekuiper
+helm install my-ekuiper oci://ghcr.io/lf-edge/ekuiper-charts/ekuiper
 ```
 
 
