@@ -20,8 +20,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"math"
-	"math/rand/v2"
 	"strconv"
 	"strings"
 	"sync"
@@ -34,11 +32,9 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/schedule"
 	"github.com/lf-edge/ekuiper/v2/internal/topo"
 	kctx "github.com/lf-edge/ekuiper/v2/internal/topo/context"
-	"github.com/lf-edge/ekuiper/v2/internal/topo/planner"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
-	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
@@ -125,49 +121,6 @@ func (s *State) ValidateAndRun(newRule *def.Rule) error {
 	return s.doValidateAndRun(newRule)
 }
 
-func (s *State) doValidateAndRun(newRule *def.Rule) (err error) {
-	if newRule == nil {
-		return errors.New("new rule is nil")
-	}
-	// Try plan with the new json. If err, revert to old rule
-	oldRule := s.Rule
-	s.Rule = newRule
-	defer func() {
-		if err != nil {
-			s.Rule = oldRule
-		}
-	}()
-	// validateRule only check plan is valid, topology shouldn't be changed before ruleState stop
-	tp, err := s.validate()
-	if err != nil {
-		return err
-	}
-	// stop the old run
-	if s.topology != nil {
-		s.stopOld()
-		s.topology = nil
-	}
-	// start new rule
-	if newRule.Triggered {
-		s.topology = tp
-		go func() {
-			panicOrError := infra.SafeRun(func() error {
-				// Start the rule which runs async
-				return s.Start()
-			})
-			if panicOrError != nil {
-				s.logger.Errorf("Rule %s start failed: %s", s.Rule.Id, panicOrError)
-			}
-		}()
-	} else {
-		e := tp.Cancel()
-		if e != nil {
-			s.logger.Warnf("clean temp tp %s error: %v", tp.GetName(), err)
-		}
-	}
-	return nil
-}
-
 func (s *State) Bootstrap() error {
 	s.Lock()
 	defer s.Unlock()
@@ -175,53 +128,117 @@ func (s *State) Bootstrap() error {
 	return s.doValidateAndRun(s.Rule)
 }
 
-// If validate error, the return tp is clean up and set to nil
-func (s *State) validate() (tp *topo.Topo, err error) {
-	// Do validation
-	if s.topology != nil {
-		s.logger.Warn("topology is already exist, should not happen")
+// Start run start or add the start action to queue
+// By check state, it assures only one Start function is running at any time. (thread safe)
+// regSchedule: whether need to handle scheduler. If call externally, set it to true
+func (s *State) Start() error {
+	s.Lock()
+	defer s.Unlock()
+	s.logger.Debug("start RunState")
+	done := s.triggerAction(ActionSignalStart)
+	if done {
+		return nil
 	}
-	defer func() { // clean topo if error happens
-		if err != nil && tp != nil {
-			e := tp.Cancel()
-			if e != nil {
-				s.logger.Warnf("clean invalid tp %s error: %v", tp.GetName(), err)
-			}
-			tp = nil
-		}
-	}()
-	err = infra.SafeRun(func() error {
-		tp, err = planner.Plan(s.Rule)
-		return err
-	})
+	// delegate to rule patrol checker
+	if s.Rule.IsScheduleRule() {
+		s.transit(ScheduledStop, nil)
+		return nil
+	}
+	// Start normally or start in schedule period Rule
+	// doStart trigger the Rule run. If no trigger error, the Rule will run async and control the state by itself
+	s.logger.Infof("start to run rule %s", s.Rule.Id)
+	err := s.doStart()
 	if err != nil {
-		return tp, err
+		s.transit(StoppedByErr, err)
+		return err
+	} else {
+		s.transit(Running, nil)
 	}
-	return tp, nil
+	return nil
 }
 
-func (s *State) transit(newState RunState, err error) {
-	chainAction := false
+func (s *State) ScheduleStart() error {
+	s.Lock()
+	defer s.Unlock()
+	s.logger.Debug("scheduled start RunState")
+	done := s.triggerAction(ActionSignalScheduledStart)
+	if done {
+		return nil
+	}
+	// doStart trigger the Rule run. If no trigger error, the Rule will run async and control the state by itself
+	s.logger.Infof("schedule to run rule %s", s.Rule.Id)
+	err := s.doStart()
+	if err != nil {
+		s.transit(StoppedByErr, err)
+		return err
+	} else {
+		s.transit(Running, nil)
+	}
+	return nil
+}
+
+// Stop run stop action or add the stop action to queue
+// regSchedule: whether need to handle scheduler. If call externally, set it to true
+func (s *State) Stop() {
+	s.StopWithLastWill("canceled manually")
+}
+
+func (s *State) ScheduleStop() {
+	s.Lock()
+	defer s.Unlock()
+	s.logger.Debug("scheduled stop RunState")
+	done := s.triggerAction(ActionSignalScheduledStop)
+	if done {
+		return
+	}
+	// do stop, stopping action and starting action are mutual exclusive. No concurrent problem here
+	s.logger.Infof("schedule to stop rule %s", s.Rule.Id)
+	err := s.doStop()
+	// currentState may be accessed concurrently
+	if schedule.IsAfterTimeRanges(timex.GetNow(), s.Rule.Options.CronDatetimeRange) {
+		s.transit(ScheduledStop, errors.New("schedule terminated"))
+	} else {
+		s.transit(ScheduledStop, err)
+	}
+	return
+}
+
+func (s *State) StopWithLastWill(msg string) {
+	s.Lock()
+	defer s.Unlock()
+	s.logger.Debug("stop RunState")
+	done := s.triggerAction(ActionSignalStop)
+	if done {
+		return
+	}
+	// do stop, stopping action and starting action are mutual exclusive. No concurrent problem here
+	s.logger.Infof("stopping rule %s", s.Rule.Id)
+	err := s.doStop()
+	if err == nil {
+		err = errors.New(msg)
+	}
+	// currentState may be accessed concurrently
+	s.transit(Stopped, err)
+	s.lastWill = msg
+	return
+}
+
+func (s *State) Delete() (err error) {
 	defer func() {
-		if chainAction {
-			s.nextAction()
+		if err != nil {
+			if _, ok := err.(errorx.ErrorWithCode); !ok {
+				err = errorx.NewWithCode(errorx.RuleErr, err.Error())
+			}
 		}
 	}()
-	s.currentState = newState
-	if err != nil {
-		s.lastWill = err.Error()
+	s.Lock()
+	defer s.Unlock()
+	if s.topology != nil {
+		s.topology.RemoveMetrics()
+		s.topology.Cancel()
+		s.topology.WaitClose()
 	}
-	switch newState {
-	case Running:
-		s.lastStartTimestamp = timex.GetNowInMilli()
-		chainAction = true
-	case Stopped, StoppedByErr, ScheduledStop:
-		s.lastStopTimestamp = timex.GetNowInMilli()
-		chainAction = true
-	default:
-		// do nothing
-	}
-	s.logger.Info(infra.MsgWithStack(fmt.Sprintf("rule %s transit to state %s", s.Rule.Id, StateName[s.currentState])))
+	return nil
 }
 
 func (s *State) GetState() RunState {
@@ -338,336 +355,6 @@ func (s *State) GetStatusMap() map[string]any {
 	return result
 }
 
-// Start run start or add the start action to queue
-// By check state, it assures only one Start function is running at any time. (thread safe)
-// regSchedule: whether need to handle scheduler. If call externally, set it to true
-func (s *State) Start() error {
-	s.Lock()
-	defer s.Unlock()
-	s.logger.Debug("start RunState")
-	done := s.triggerAction(ActionSignalStart)
-	if done {
-		return nil
-	}
-	// delegate to rule patrol checker
-	if s.Rule.IsScheduleRule() {
-		s.transit(ScheduledStop, nil)
-		return nil
-	}
-	// Start normally or start in schedule period Rule
-	// doStart trigger the Rule run. If no trigger error, the Rule will run async and control the state by itself
-	s.logger.Infof("start to run rule %s", s.Rule.Id)
-	err := s.doStart()
-	if err != nil {
-		s.transit(StoppedByErr, err)
-		return err
-	} else {
-		s.transit(Running, nil)
-	}
-	return nil
-}
-
-func (s *State) ScheduleStart() error {
-	s.Lock()
-	defer s.Unlock()
-	s.logger.Debug("scheduled start RunState")
-	done := s.triggerAction(ActionSignalScheduledStart)
-	if done {
-		return nil
-	}
-	// doStart trigger the Rule run. If no trigger error, the Rule will run async and control the state by itself
-	s.logger.Infof("schedule to run rule %s", s.Rule.Id)
-	err := s.doStart()
-	if err != nil {
-		s.transit(StoppedByErr, err)
-		return err
-	} else {
-		s.transit(Running, nil)
-	}
-	return nil
-}
-
-func (s *State) triggerAction(action ActionSignal) bool {
-	if len(s.actionQ) > 0 {
-		if s.actionQ[len(s.actionQ)-1] == action {
-			s.logger.Infof("ignore action %d because last action is the same", action)
-			return true
-		} else {
-			s.actionQ = append(s.actionQ, action)
-			s.logger.Infof("defer action %d to action queue", action)
-			return true
-		}
-	}
-	ss := s.currentState
-	switch action {
-	case ActionSignalStart:
-		switch ss {
-		case Starting, Running, ScheduledStop:
-			// s.logger.Infof("ignore start action, because current RunState is %s", StateName[ss])
-			return true
-		case Stopping:
-			s.actionQ = append(s.actionQ, ActionSignalStart)
-			s.logger.Infof("defer start action to action queue because current RunState is stopping")
-			return true
-		case Stopped, StoppedByErr:
-			s.currentState = Starting
-			return false
-		}
-	case ActionSignalStop:
-		switch ss {
-		case Stopped, StoppedByErr:
-			s.logger.Infof("ignore stop action, because current RunState is %s", StateName[ss])
-			return true
-		case Starting, Stopping:
-			s.actionQ = append(s.actionQ, action)
-			s.logger.Infof("defer stop action to action queue because current RunState is starting")
-			return true
-		case Running, ScheduledStop: // do stop
-			s.currentState = Stopping
-			return false
-		}
-	case ActionSignalScheduledStart:
-		switch ss {
-		case ScheduledStop, Stopped, StoppedByErr:
-			s.currentState = Starting
-			return false
-		case Starting, Running:
-			// s.logger.Infof("ignore schedule start action, because current RunState is %s", StateName[ss])
-			return true
-		case Stopping:
-			s.actionQ = append(s.actionQ, action)
-			s.logger.Infof("defer schedule start action to action queue because current RunState is stopping")
-			return true
-		}
-	case ActionSignalScheduledStop:
-		switch ss {
-		case Running:
-			s.currentState = Stopping
-			return false
-		case ScheduledStop, Stopped, StoppedByErr:
-			s.logger.Infof("ignore schedule stop action, because current RunState is %s", StateName[ss])
-			return true
-		case Starting, Stopping:
-			s.actionQ = append(s.actionQ, action)
-			s.logger.Infof("defer schedule stop action to action queue because current RunState is %s", StateName[ss])
-			return true
-		}
-	}
-	return false
-}
-
-// Stop run stop action or add the stop action to queue
-// regSchedule: whether need to handle scheduler. If call externally, set it to true
-func (s *State) Stop() {
-	s.StopWithLastWill("canceled manually")
-}
-
-func (s *State) ScheduleStop() {
-	s.Lock()
-	defer s.Unlock()
-	s.logger.Debug("scheduled stop RunState")
-	done := s.triggerAction(ActionSignalScheduledStop)
-	if done {
-		return
-	}
-	// do stop, stopping action and starting action are mutual exclusive. No concurrent problem here
-	s.logger.Infof("schedule to stop rule %s", s.Rule.Id)
-	err := s.doStop()
-	// currentState may be accessed concurrently
-	if schedule.IsAfterTimeRanges(timex.GetNow(), s.Rule.Options.CronDatetimeRange) {
-		s.transit(ScheduledStop, errors.New("schedule terminated"))
-	} else {
-		s.transit(ScheduledStop, err)
-	}
-	return
-}
-
-func (s *State) StopWithLastWill(msg string) {
-	s.Lock()
-	defer s.Unlock()
-	s.logger.Debug("stop RunState")
-	done := s.triggerAction(ActionSignalStop)
-	if done {
-		return
-	}
-	// do stop, stopping action and starting action are mutual exclusive. No concurrent problem here
-	s.logger.Infof("stopping rule %s", s.Rule.Id)
-	err := s.doStop()
-	if err == nil {
-		err = errors.New(msg)
-	}
-	// currentState may be accessed concurrently
-	s.transit(Stopped, err)
-	s.lastWill = msg
-	return
-}
-
-func (s *State) stopOld() {
-	s.logger.Debug("stop RunState")
-	done := s.triggerAction(ActionSignalStop)
-	if done {
-		return
-	}
-	// do stop, stopping action and starting action are mutual exclusive. No concurrent problem here
-	s.logger.Infof("stopping rule %s", s.Rule.Id)
-	err := s.doStop()
-	if err == nil {
-		err = errors.New("stopped by update")
-	}
-	// currentState may be accessed concurrently
-	s.transit(Stopped, err)
-	return
-}
-
-func (s *State) nextAction() {
-	var action ActionSignal = -1
-	if len(s.actionQ) > 0 {
-		action = s.actionQ[0]
-		s.actionQ = s.actionQ[1:]
-	}
-	var err error
-	switch action {
-	case ActionSignalStart:
-		err = s.Start()
-	case ActionSignalStop:
-		s.Stop()
-	case ActionSignalScheduledStart:
-		err = s.ScheduleStart()
-	case ActionSignalScheduledStop:
-		s.ScheduleStop()
-	}
-	if err != nil {
-		s.logger.Error(err)
-	}
-}
-
-// doStart/doStop actions are run in sync!!
-// 1. create topo if not exists
-// 2. run topo async
-func (s *State) doStart() error {
-	err := infra.SafeRun(func() error {
-		if s.topology == nil {
-			if tp, err := planner.Plan(s.Rule); err != nil {
-				return err
-			} else {
-				s.topology = tp
-				s.topoGraph = s.topology.GetTopo()
-			}
-		}
-		ctx, cancel := context.WithCancel(context.Background())
-		s.cancelRetry = cancel
-		s.lastStartTimestamp = timex.GetNowInMilli()
-		s.lastWill = ""
-		go s.runTopo(ctx, s.topology, s.Rule.Options.RestartStrategy)
-		return nil
-	})
-	return err
-}
-
-func (s *State) doStop() error {
-	if s.cancelRetry != nil {
-		s.cancelRetry()
-	}
-	if s.topology != nil {
-		e := s.topology.GetContext().Err()
-		s.topoGraph = s.topology.GetTopo()
-		keys, values := s.topology.GetMetrics()
-		s.stoppedMetrics = []any{keys, values}
-		err := s.topology.Cancel()
-		if err == nil {
-			s.topology.WaitClose()
-		}
-		s.topology = nil
-		return e
-	}
-	return nil
-}
-
-const EOFMessage = "done"
-
-// This is called async
-func (s *State) runTopo(ctx context.Context, tp *topo.Topo, rs *def.RestartStrategy) {
-	err := infra.SafeRun(func() error {
-		count := 0
-		d := time.Duration(rs.Delay)
-		var er error
-		ticker := time.NewTicker(d)
-		defer ticker.Stop()
-		for {
-			select {
-			case e := <-tp.Open():
-				er = e
-				if errorx.IsUnexpectedErr(er) { // Only restart Rule for errors
-					tp.GetContext().SetError(er)
-					s.logger.Errorf("closing Rule for error: %v", er)
-					tp.Cancel()
-				} else { // exit normally
-					if errorx.IsEOF(er) {
-						s.lastWill = EOFMessage
-						msg := er.Error()
-						if len(msg) > 0 {
-							s.lastWill = fmt.Sprintf("%s: %s", s.lastWill, msg)
-						}
-						s.updateTrigger(s.Rule.Id, false)
-					}
-					tp.Cancel()
-					return nil
-				}
-				// Although it is stopped, it is still retrying, so the status is still RUNNING
-				s.lastWill = "retrying after error: " + er.Error()
-			}
-			if count < rs.Attempts {
-				if d > time.Duration(rs.MaxDelay) {
-					d = time.Duration(rs.MaxDelay)
-				}
-				if rs.JitterFactor > 0 {
-					d = time.Duration(math.Round(float64(d.Milliseconds())*((rand.Float64()*2-1)*rs.JitterFactor+1))) * time.Millisecond
-					// make sure d is always in range
-					for d <= 0 || d > time.Duration(rs.MaxDelay) {
-						d = time.Duration(math.Round(float64(d.Milliseconds())*((rand.Float64()*2-1)*rs.JitterFactor+1))) * time.Millisecond
-					}
-					s.logger.Infof("Rule will restart with jitterred delay %d", d)
-				} else {
-					s.logger.Infof("Rule will restart with delay %d", d)
-				}
-				// retry after delay
-				select {
-				case <-ticker.C:
-					break
-				case <-ctx.Done():
-					s.logger.Errorf("stop Rule retry as cancelled")
-					return nil
-				}
-				count++
-				if rs.Multiplier > 0 {
-					d = time.Duration(rs.Delay) * time.Duration(math.Pow(rs.Multiplier, float64(count)))
-				}
-			} else {
-				return er
-			}
-		}
-	})
-	if s.topology != nil {
-		s.topoGraph = s.topology.GetTopo()
-		keys, values := s.topology.GetMetrics()
-		s.stoppedMetrics = []any{keys, values}
-	}
-	if err != nil { // Exit after retries
-		s.logger.Error(err)
-		s.transit(StoppedByErr, err)
-		s.topology = nil
-		s.logger.Infof("%s exit by error set tp to nil", s.Rule.Id)
-	} else if strings.HasPrefix(s.lastWill, EOFMessage) {
-		// Two case when err is nil; 1. Manually stop 2.EOF
-		// Only transit status when EOF. Don't do this for manual stop because the state already changed!
-		s.transit(Stopped, nil)
-		s.topology = nil
-		s.logger.Infof("%s exit eof set tp to nil", s.Rule.Id)
-	}
-}
-
-// Other APIs
-
 func (s *State) GetTopoGraph() *def.PrintableTopo {
 	s.RLock()
 	defer s.RUnlock()
@@ -695,24 +382,6 @@ func (s *State) IsTraceEnabled() bool {
 		return s.topology.IsTraceEnabled()
 	}
 	return false
-}
-
-func (s *State) Delete() (err error) {
-	defer func() {
-		if err != nil {
-			if _, ok := err.(errorx.ErrorWithCode); !ok {
-				err = errorx.NewWithCode(errorx.RuleErr, err.Error())
-			}
-		}
-	}()
-	s.Lock()
-	defer s.Unlock()
-	if s.topology != nil {
-		s.topology.RemoveMetrics()
-		s.topology.Cancel()
-		s.topology.WaitClose()
-	}
-	return nil
 }
 
 func (s *State) GetMetrics() ([]string, []any) {
