@@ -27,7 +27,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/schedule"
-	"github.com/lf-edge/ekuiper/v2/internal/topo/rule"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/rule/machine"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
 
@@ -43,7 +43,7 @@ func TestHandleScheduleRule(t *testing.T) {
 	testcases := []struct {
 		Options   *def.RuleOption
 		startTime time.Time
-		state     rule.RunState
+		state     machine.RunState
 		action    scheduleRuleAction
 	}{
 		{
@@ -53,7 +53,7 @@ func TestHandleScheduleRule(t *testing.T) {
 			},
 			action:    doStop,
 			startTime: now.Add(-time.Hour),
-			state:     rule.Running,
+			state:     machine.Running,
 		},
 		{
 			Options: &def.RuleOption{

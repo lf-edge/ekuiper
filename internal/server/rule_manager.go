@@ -30,6 +30,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/processor"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/planner"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/rule"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/rule/machine"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/metrics"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
@@ -311,7 +312,7 @@ func (rr *RuleRegistry) GetAllRulesWithStatus() ([]map[string]any, error) {
 		if err != nil {
 			str = fmt.Sprintf("error: %s", err)
 		} else {
-			str = rule.StateName[s]
+			str = machine.StateName[s]
 		}
 		trace := false
 		if str == "running" {
@@ -474,8 +475,8 @@ func getRuleExceptionStatus(name string) (ruleExceptionStatus, error) {
 	}
 	if rs, ok := registry.load(name); ok {
 		st := rs.GetState()
-		s.Status = rule.StateName[st]
-		if st == rule.Running {
+		s.Status = machine.StateName[st]
+		if st == machine.Running {
 			keys, values := rs.GetMetrics()
 			for i, key := range keys {
 				if strings.Contains(key, "last_exception_time") {
@@ -518,7 +519,7 @@ type ruleExceptionStatus struct {
 
 type ruleWrapper struct {
 	rule      *def.Rule
-	state     rule.RunState
+	state     machine.RunState
 	startTime time.Time
 }
 
@@ -539,11 +540,11 @@ func getAllRulesWithState() ([]ruleWrapper, error) {
 	return rules, nil
 }
 
-func getRuleState(name string) (rule.RunState, error) {
+func getRuleState(name string) (machine.RunState, error) {
 	if rs, ok := registry.load(name); ok {
 		return rs.GetState(), nil
 	} else {
-		return rule.Stopped, fmt.Errorf("Rule %s is not found in registry", name)
+		return machine.Stopped, fmt.Errorf("Rule %s is not found in registry", name)
 	}
 }
 

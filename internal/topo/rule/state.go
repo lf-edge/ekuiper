@@ -18,7 +18,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -32,64 +31,33 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/schedule"
 	"github.com/lf-edge/ekuiper/v2/internal/topo"
 	kctx "github.com/lf-edge/ekuiper/v2/internal/topo/context"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/rule/machine"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
-type ActionSignal int
-
-const (
-	ActionSignalStart ActionSignal = iota
-	ActionSignalStop
-	ActionSignalScheduledStart
-	ActionSignalScheduledStop
-)
-
-type RunState int
-
-const (
-	Stopped RunState = iota
-	Starting
-	Running
-	Stopping
-	ScheduledStop
-	StoppedByErr
-)
-
-var StateName = map[RunState]string{
-	Stopped:       "stopped", // normal stop and schedule terminated are here
-	Starting:      "starting",
-	Running:       "running",
-	Stopping:      "stopping",
-	ScheduledStop: "stopped: waiting for next schedule.",
-	StoppedByErr:  "stopped by error",
-}
-
 // State control the Rule RunState
 // Created when loading from DB or creating. Deleted when Rule deleting
 // May be accessed by multiple go routines, receiving concurrent request to change the RunState
 type State struct {
-	sync.RWMutex
+	// A singleton for state, create at new and never change
+	ruleLock sync.RWMutex
 	// Nearly constant, only change when update the Rule
 	// It is used to construct topo
 	Rule          *def.Rule
 	logger        api.Logger
 	updateTrigger func(string, bool)
-	// concurrent running states
-	currentState RunState
-	actionQ      []ActionSignal
 	// The physical rule instance for each **run**. control the lifecycle in State.
 	topology    *topo.Topo
 	cancelRetry context.CancelFunc
 	// temporary storage for topo graph to make sure even Rule close, the graph is still available
 	topoGraph *def.PrintableTopo
 	// Metric RunState
-	lastStartTimestamp int64
-	lastStopTimestamp  int64
-	lastWill           string
-	stoppedMetrics     []any
+	stoppedMetrics []any
+	// State machine
+	sm machine.StateMachine
 }
 
 // NewState provision a state instance only.
@@ -99,8 +67,7 @@ func NewState(rule *def.Rule, updateTriggerFunc func(string, bool)) *State {
 	contextLogger := conf.Log.WithField("Rule", rule.Id)
 	return &State{
 		Rule:          rule,
-		actionQ:       make([]ActionSignal, 0),
-		currentState:  Stopped,
+		sm:            machine.NewStateMachine(contextLogger),
 		logger:        contextLogger,
 		updateTrigger: updateTriggerFunc,
 	}
@@ -116,14 +83,14 @@ func NewState(rule *def.Rule, updateTriggerFunc func(string, bool)) *State {
 // Topo side effect: 1.This function will create and store a new topo if no validation error
 // 2. If there is validation error, this function will destroy the new topo
 func (s *State) ValidateAndRun(newRule *def.Rule) error {
-	s.Lock()
-	defer s.Unlock()
+	s.ruleLock.Lock()
+	defer s.ruleLock.Unlock()
 	return s.doValidateAndRun(newRule)
 }
 
 func (s *State) Bootstrap() error {
-	s.Lock()
-	defer s.Unlock()
+	s.ruleLock.Lock()
+	defer s.ruleLock.Unlock()
 	s.Rule.Triggered = true
 	return s.doValidateAndRun(s.Rule)
 }
@@ -132,16 +99,16 @@ func (s *State) Bootstrap() error {
 // By check state, it assures only one Start function is running at any time. (thread safe)
 // regSchedule: whether need to handle scheduler. If call externally, set it to true
 func (s *State) Start() error {
-	s.Lock()
-	defer s.Unlock()
 	s.logger.Debug("start RunState")
-	done := s.triggerAction(ActionSignalStart)
+	done := s.sm.TriggerAction(machine.ActionSignalStart)
 	if done {
 		return nil
 	}
+	s.ruleLock.Lock()
+	defer s.ruleLock.Unlock()
 	// delegate to rule patrol checker
 	if s.Rule.IsScheduleRule() {
-		s.transit(ScheduledStop, nil)
+		s.transitState(machine.ScheduledStop, "")
 		return nil
 	}
 	// Start normally or start in schedule period Rule
@@ -149,30 +116,30 @@ func (s *State) Start() error {
 	s.logger.Infof("start to run rule %s", s.Rule.Id)
 	err := s.doStart()
 	if err != nil {
-		s.transit(StoppedByErr, err)
+		s.transitState(machine.StoppedByErr, err.Error())
 		return err
 	} else {
-		s.transit(Running, nil)
+		s.transitState(machine.Running, "")
 	}
 	return nil
 }
 
 func (s *State) ScheduleStart() error {
-	s.Lock()
-	defer s.Unlock()
 	s.logger.Debug("scheduled start RunState")
-	done := s.triggerAction(ActionSignalScheduledStart)
+	done := s.sm.TriggerAction(machine.ActionSignalScheduledStart)
 	if done {
 		return nil
 	}
+	s.ruleLock.Lock()
+	defer s.ruleLock.Unlock()
 	// doStart trigger the Rule run. If no trigger error, the Rule will run async and control the state by itself
 	s.logger.Infof("schedule to run rule %s", s.Rule.Id)
 	err := s.doStart()
 	if err != nil {
-		s.transit(StoppedByErr, err)
+		s.transitState(machine.StoppedByErr, err.Error())
 		return err
 	} else {
-		s.transit(Running, nil)
+		s.transitState(machine.Running, "")
 	}
 	return nil
 }
@@ -184,42 +151,46 @@ func (s *State) Stop() {
 }
 
 func (s *State) ScheduleStop() {
-	s.Lock()
-	defer s.Unlock()
 	s.logger.Debug("scheduled stop RunState")
-	done := s.triggerAction(ActionSignalScheduledStop)
+	done := s.sm.TriggerAction(machine.ActionSignalScheduledStop)
 	if done {
 		return
 	}
+	s.ruleLock.Lock()
+	defer s.ruleLock.Unlock()
 	// do stop, stopping action and starting action are mutual exclusive. No concurrent problem here
 	s.logger.Infof("schedule to stop rule %s", s.Rule.Id)
 	err := s.doStop()
 	// currentState may be accessed concurrently
 	if schedule.IsAfterTimeRanges(timex.GetNow(), s.Rule.Options.CronDatetimeRange) {
-		s.transit(ScheduledStop, errors.New("schedule terminated"))
+		s.transitState(machine.ScheduledStop, "schedule terminated")
 	} else {
-		s.transit(ScheduledStop, err)
+		lastWill := ""
+		if err != nil {
+			lastWill = err.Error()
+		}
+		s.transitState(machine.ScheduledStop, lastWill)
 	}
 	return
 }
 
 func (s *State) StopWithLastWill(msg string) {
-	s.Lock()
-	defer s.Unlock()
 	s.logger.Debug("stop RunState")
-	done := s.triggerAction(ActionSignalStop)
+	done := s.sm.TriggerAction(machine.ActionSignalStop)
 	if done {
 		return
 	}
+	s.ruleLock.Lock()
+	defer s.ruleLock.Unlock()
 	// do stop, stopping action and starting action are mutual exclusive. No concurrent problem here
 	s.logger.Infof("stopping rule %s", s.Rule.Id)
+	lastWill := msg
 	err := s.doStop()
-	if err == nil {
-		err = errors.New(msg)
+	if err != nil {
+		lastWill = err.Error()
 	}
 	// currentState may be accessed concurrently
-	s.transit(Stopped, err)
-	s.lastWill = msg
+	s.transitState(machine.Stopped, lastWill)
 	return
 }
 
@@ -231,8 +202,8 @@ func (s *State) Delete() (err error) {
 			}
 		}
 	}()
-	s.Lock()
-	defer s.Unlock()
+	s.ruleLock.Lock()
+	defer s.ruleLock.Unlock()
 	if s.topology != nil {
 		s.topology.RemoveMetrics()
 		s.topology.Cancel()
@@ -241,21 +212,17 @@ func (s *State) Delete() (err error) {
 	return nil
 }
 
-func (s *State) GetState() RunState {
-	s.RLock()
-	defer s.RUnlock()
-	return s.currentState
+func (s *State) GetState() machine.RunState {
+	return s.sm.CurrentState()
 }
 
 func (s *State) GetStartTimestamp() time.Time {
-	s.RLock()
-	defer s.RUnlock()
-	return time.UnixMilli(s.lastStartTimestamp)
+	return time.UnixMilli(s.sm.LastStartTimestamp())
 }
 
 func (s *State) GetSchema() (map[string]*ast.JsonStreamField, error) {
-	s.RLock()
-	defer s.RUnlock()
+	s.ruleLock.RLock()
+	defer s.ruleLock.RUnlock()
 	if s.topology != nil {
 		return s.topology.GetSinkSchema(), nil
 	}
@@ -265,23 +232,23 @@ func (s *State) GetSchema() (map[string]*ast.JsonStreamField, error) {
 // GetStatusMessage return the current RunState of the Rule
 // No set is provided, RunState are changed according to the action (start, stop)
 func (s *State) GetStatusMessage() string {
-	s.RLock()
-	defer s.RUnlock()
+	s.ruleLock.RLock()
+	defer s.ruleLock.RUnlock()
 	var result strings.Builder
 	result.WriteString("{")
 	// Compose status line
 	result.WriteString(`"status": "`)
-	result.WriteString(StateName[s.currentState])
+	result.WriteString(s.sm.CurrentStateName())
 	result.WriteString(`",`)
 	result.WriteString(`"message": `)
-	result.WriteString(fmt.Sprintf("%q", s.lastWill))
+	result.WriteString(fmt.Sprintf("%q", s.sm.LastWill()))
 	result.WriteString(`,`)
 	// Compose run timing metrics
 	result.WriteString(`"lastStartTimestamp": `)
-	result.WriteString(strconv.FormatInt(s.lastStartTimestamp, 10))
+	result.WriteString(strconv.FormatInt(s.sm.LastStartTimestamp(), 10))
 	result.WriteString(`,`)
 	result.WriteString(`"lastStopTimestamp": `)
-	result.WriteString(strconv.FormatInt(s.lastStopTimestamp, 10))
+	result.WriteString(strconv.FormatInt(s.sm.LastStopTimestamp(), 10))
 	result.WriteString(`,`)
 	nextStartTimestamp := s.Rule.GetNextScheduleStartTime()
 	result.WriteString(`"nextStartTimestamp": `)
@@ -327,13 +294,13 @@ func (s *State) GetStatusMessage() string {
 }
 
 func (s *State) GetStatusMap() map[string]any {
-	s.RLock()
-	defer s.RUnlock()
+	s.ruleLock.RLock()
+	defer s.ruleLock.RUnlock()
 	result := make(map[string]any, 20)
-	result["status"] = StateName[s.currentState]
-	result["message"] = s.lastWill
-	result["lastStartTimestamp"] = s.lastStartTimestamp
-	result["lastStopTimestamp"] = s.lastStopTimestamp
+	result["status"] = s.sm.CurrentStateName()
+	result["message"] = s.sm.LastWill()
+	result["lastStartTimestamp"] = s.sm.LastStartTimestamp()
+	result["lastStopTimestamp"] = s.sm.LastStopTimestamp()
 	nextStartTimestamp := s.Rule.GetNextScheduleStartTime()
 	result["nextStartTimestamp"] = nextStartTimestamp
 	// Compose metrics
@@ -356,8 +323,8 @@ func (s *State) GetStatusMap() map[string]any {
 }
 
 func (s *State) GetTopoGraph() *def.PrintableTopo {
-	s.RLock()
-	defer s.RUnlock()
+	s.ruleLock.RLock()
+	defer s.ruleLock.RUnlock()
 	if s.topology != nil {
 		return s.topology.GetTopo()
 	} else {
@@ -366,8 +333,8 @@ func (s *State) GetTopoGraph() *def.PrintableTopo {
 }
 
 func (s *State) SetIsTraceEnabled(isEnabled bool, stra kctx.TraceStrategy) error {
-	s.Lock()
-	defer s.Unlock()
+	s.ruleLock.Lock()
+	defer s.ruleLock.Unlock()
 	if s.topology != nil {
 		s.topology.EnableTracer(isEnabled, stra)
 		return nil
@@ -376,8 +343,8 @@ func (s *State) SetIsTraceEnabled(isEnabled bool, stra kctx.TraceStrategy) error
 }
 
 func (s *State) IsTraceEnabled() bool {
-	s.Lock()
-	defer s.Unlock()
+	s.ruleLock.RLock()
+	defer s.ruleLock.RUnlock()
 	if s.topology != nil {
 		return s.topology.IsTraceEnabled()
 	}
@@ -385,8 +352,8 @@ func (s *State) IsTraceEnabled() bool {
 }
 
 func (s *State) GetMetrics() ([]string, []any) {
-	s.RLock()
-	defer s.RUnlock()
+	s.ruleLock.RLock()
+	defer s.ruleLock.RUnlock()
 	if s.topology != nil {
 		return s.topology.GetMetrics()
 	}
@@ -394,8 +361,8 @@ func (s *State) GetMetrics() ([]string, []any) {
 }
 
 func (s *State) GetStreams() []string {
-	s.RLock()
-	defer s.RUnlock()
+	s.ruleLock.RLock()
+	defer s.ruleLock.RUnlock()
 	if s.topology != nil {
 		return s.topology.GetStreams()
 	}
@@ -403,14 +370,12 @@ func (s *State) GetStreams() []string {
 }
 
 func (s *State) GetLastWill() string {
-	s.RLock()
-	defer s.RUnlock()
-	return s.lastWill
+	return s.sm.LastWill()
 }
 
 func (s *State) ResetStreamOffset(name string, input map[string]any) error {
-	s.RLock()
-	defer s.RUnlock()
+	s.ruleLock.RLock()
+	defer s.ruleLock.RUnlock()
 	if s.topology != nil {
 		return s.topology.ResetStreamOffset(name, input)
 	}

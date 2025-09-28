@@ -1,37 +1,66 @@
-package rule
+package machine
 
 import (
 	"fmt"
+	"sync"
+
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
-func (s *State) transit(newState RunState, err error) {
-	chainAction := false
-	defer func() {
-		if chainAction {
-			s.nextAction()
-		}
-	}()
-	s.currentState = newState
-	if err != nil {
-		s.lastWill = err.Error()
-	}
-	switch newState {
-	case Running:
-		s.lastStartTimestamp = timex.GetNowInMilli()
-		chainAction = true
-	case Stopped, StoppedByErr, ScheduledStop:
-		s.lastStopTimestamp = timex.GetNowInMilli()
-		chainAction = true
-	default:
-		// do nothing
-	}
-	s.logger.Info(infra.MsgWithStack(fmt.Sprintf("rule %s transit to state %s", s.Rule.Id, StateName[s.currentState])))
+type ActionSignal int
+
+const (
+	ActionSignalStart ActionSignal = iota
+	ActionSignalStop
+	ActionSignalScheduledStart
+	ActionSignalScheduledStop
+)
+
+type RunState int
+
+const (
+	Stopped RunState = iota
+	Starting
+	Running
+	Stopping
+	ScheduledStop
+	StoppedByErr
+)
+
+var StateName = map[RunState]string{
+	Stopped:       "stopped", // normal stop and schedule terminated are here
+	Starting:      "starting",
+	Running:       "running",
+	Stopping:      "stopping",
+	ScheduledStop: "stopped: waiting for next schedule.",
+	StoppedByErr:  "stopped by error",
 }
 
-func (s *State) triggerAction(action ActionSignal) bool {
+type StateMachine struct {
+	sync.RWMutex
+	currentState RunState
+	actionQ      []ActionSignal
+	// Metric RunState
+	lastStartTimestamp int64
+	lastStopTimestamp  int64
+	lastWill           string
+	logger             api.Logger
+}
+
+func NewStateMachine(logger api.Logger) StateMachine {
+	return StateMachine{
+		actionQ:      make([]ActionSignal, 0),
+		currentState: Stopped,
+		logger:       logger,
+	}
+}
+
+func (s *StateMachine) TriggerAction(action ActionSignal) bool {
+	s.Lock()
+	defer s.Unlock()
 	if len(s.actionQ) > 0 {
 		if s.actionQ[len(s.actionQ)-1] == action {
 			s.logger.Infof("ignore action %d because last action is the same", action)
@@ -100,24 +129,63 @@ func (s *State) triggerAction(action ActionSignal) bool {
 	return false
 }
 
-func (s *State) nextAction() {
+func (s *StateMachine) Transit(newState RunState, lastWill string) (chainAction bool) {
+	s.Lock()
+	defer s.Unlock()
+	s.currentState = newState
+	s.lastWill = lastWill
+	switch newState {
+	case Running:
+		s.lastStartTimestamp = timex.GetNowInMilli()
+		s.lastWill = ""
+		chainAction = true
+	case Stopped, StoppedByErr, ScheduledStop:
+		s.lastStopTimestamp = timex.GetNowInMilli()
+		chainAction = true
+	default:
+		// do nothing
+	}
+	s.logger.Info(infra.MsgWithStack(fmt.Sprintf("rule transit to state %s", StateName[s.currentState])))
+	return
+}
+
+func (s *StateMachine) PopAction() ActionSignal {
+	s.Lock()
+	defer s.Unlock()
 	var action ActionSignal = -1
 	if len(s.actionQ) > 0 {
 		action = s.actionQ[0]
 		s.actionQ = s.actionQ[1:]
 	}
-	var err error
-	switch action {
-	case ActionSignalStart:
-		err = s.Start()
-	case ActionSignalStop:
-		s.Stop()
-	case ActionSignalScheduledStart:
-		err = s.ScheduleStart()
-	case ActionSignalScheduledStop:
-		s.ScheduleStop()
-	}
-	if err != nil {
-		s.logger.Error(err)
-	}
+	return action
+}
+
+func (s *StateMachine) LastWill() string {
+	s.RLock()
+	defer s.RUnlock()
+	return s.lastWill
+}
+
+func (s *StateMachine) CurrentState() RunState {
+	s.RLock()
+	defer s.RUnlock()
+	return s.currentState
+}
+
+func (s *StateMachine) LastStartTimestamp() int64 {
+	s.RLock()
+	defer s.RUnlock()
+	return s.lastStartTimestamp
+}
+
+func (s *StateMachine) CurrentStateName() string {
+	s.RLock()
+	defer s.RUnlock()
+	return StateName[s.currentState]
+}
+
+func (s *StateMachine) LastStopTimestamp() int64 {
+	s.RLock()
+	defer s.RUnlock()
+	return s.lastStopTimestamp
 }

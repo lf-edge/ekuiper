@@ -12,9 +12,9 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/topo"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/planner"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/rule/machine"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
-	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 const EOFMessage = "done"
@@ -102,8 +102,6 @@ func (s *State) doStart() error {
 		}
 		ctx, cancel := context.WithCancel(context.Background())
 		s.cancelRetry = cancel
-		s.lastStartTimestamp = timex.GetNowInMilli()
-		s.lastWill = ""
 		go s.runTopo(ctx, s.topology, s.Rule.Options.RestartStrategy)
 		return nil
 	})
@@ -130,19 +128,19 @@ func (s *State) doStop() error {
 }
 
 func (s *State) stopOld() {
-	s.logger.Debug("stop RunState")
-	done := s.triggerAction(ActionSignalStop)
+	done := s.sm.TriggerAction(machine.ActionSignalStop)
 	if done {
 		return
 	}
 	// do stop, stopping action and starting action are mutual exclusive. No concurrent problem here
 	s.logger.Infof("stopping rule %s", s.Rule.Id)
+	lastWill := "stopped by update"
 	err := s.doStop()
-	if err == nil {
-		err = errors.New("stopped by update")
+	if err != nil {
+		lastWill = fmt.Sprintf("stopped by update with error: %v", err)
 	}
 	// currentState may be accessed concurrently
-	s.transit(Stopped, err)
+	s.transitState(machine.Stopped, lastWill)
 	return
 }
 
@@ -162,20 +160,22 @@ func (s *State) runTopo(ctx context.Context, tp *topo.Topo, rs *def.RestartStrat
 					tp.GetContext().SetError(er)
 					s.logger.Errorf("closing Rule for error: %v", er)
 					tp.Cancel()
-				} else { // exit normally
+					s.transitState(machine.Stopped, "retrying after error: "+er.Error())
+				} else {
+					// exit normally
+					lastWill := "cancelled manually"
 					if errorx.IsEOF(er) {
-						s.lastWill = EOFMessage
+						lastWill = EOFMessage
 						msg := er.Error()
 						if len(msg) > 0 {
-							s.lastWill = fmt.Sprintf("%s: %s", s.lastWill, msg)
+							lastWill = fmt.Sprintf("%s: %s", lastWill, msg)
 						}
 						s.updateTrigger(s.Rule.Id, false)
 					}
 					tp.Cancel()
+					s.transitState(machine.Stopped, lastWill)
 					return nil
 				}
-				// Although it is stopped, it is still retrying, so the status is still RUNNING
-				s.lastWill = "retrying after error: " + er.Error()
 			}
 			if count < rs.Attempts {
 				if d > time.Duration(rs.MaxDelay) {
@@ -208,6 +208,12 @@ func (s *State) runTopo(ctx context.Context, tp *topo.Topo, rs *def.RestartStrat
 			}
 		}
 	})
+	s.cleanRule(err)
+}
+
+func (s *State) cleanRule(err error) {
+	s.ruleLock.Lock()
+	defer s.ruleLock.Unlock()
 	if s.topology != nil {
 		s.topoGraph = s.topology.GetTopo()
 		keys, values := s.topology.GetMetrics()
@@ -215,13 +221,13 @@ func (s *State) runTopo(ctx context.Context, tp *topo.Topo, rs *def.RestartStrat
 	}
 	if err != nil { // Exit after retries
 		s.logger.Error(err)
-		s.transit(StoppedByErr, err)
+		s.transitState(machine.StoppedByErr, err.Error())
 		s.topology = nil
 		s.logger.Infof("%s exit by error set tp to nil", s.Rule.Id)
-	} else if strings.HasPrefix(s.lastWill, EOFMessage) {
+	} else if strings.HasPrefix(s.sm.LastWill(), EOFMessage) {
 		// Two case when err is nil; 1. Manually stop 2.EOF
 		// Only transit status when EOF. Don't do this for manual stop because the state already changed!
-		s.transit(Stopped, nil)
+		s.transitState(machine.Stopped, "")
 		s.topology = nil
 		s.logger.Infof("%s exit eof set tp to nil", s.Rule.Id)
 	}
