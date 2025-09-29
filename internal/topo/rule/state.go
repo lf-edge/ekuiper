@@ -16,7 +16,6 @@ package rule
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"strconv"
@@ -28,14 +27,12 @@ import (
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
-	"github.com/lf-edge/ekuiper/v2/internal/pkg/schedule"
 	"github.com/lf-edge/ekuiper/v2/internal/topo"
 	kctx "github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/rule/machine"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
-	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 // State control the Rule RunState
@@ -50,8 +47,7 @@ type State struct {
 	logger        api.Logger
 	updateTrigger func(string, bool)
 	// The physical rule instance for each **run**. control the lifecycle in State.
-	topology    *topo.Topo
-	cancelRetry context.CancelFunc
+	topology *topo.Topo
 	// temporary storage for topo graph to make sure even Rule close, the graph is still available
 	topoGraph *def.PrintableTopo
 	// Metric RunState
@@ -99,7 +95,6 @@ func (s *State) Bootstrap() error {
 // By check state, it assures only one Start function is running at any time. (thread safe)
 // regSchedule: whether need to handle scheduler. If call externally, set it to true
 func (s *State) Start() error {
-	s.logger.Debug("start RunState")
 	done := s.sm.TriggerAction(machine.ActionSignalStart)
 	if done {
 		return nil
@@ -111,21 +106,10 @@ func (s *State) Start() error {
 		s.transitState(machine.ScheduledStop, "")
 		return nil
 	}
-	// Start normally or start in schedule period Rule
-	// doStart trigger the Rule run. If no trigger error, the Rule will run async and control the state by itself
-	s.logger.Infof("start to run rule %s", s.Rule.Id)
-	err := s.doStart()
-	if err != nil {
-		s.transitState(machine.StoppedByErr, err.Error())
-		return err
-	} else {
-		s.transitState(machine.Running, "")
-	}
-	return nil
+	return s.doStart()
 }
 
 func (s *State) ScheduleStart() error {
-	s.logger.Debug("scheduled start RunState")
 	done := s.sm.TriggerAction(machine.ActionSignalScheduledStart)
 	if done {
 		return nil
@@ -134,14 +118,7 @@ func (s *State) ScheduleStart() error {
 	defer s.ruleLock.Unlock()
 	// doStart trigger the Rule run. If no trigger error, the Rule will run async and control the state by itself
 	s.logger.Infof("schedule to run rule %s", s.Rule.Id)
-	err := s.doStart()
-	if err != nil {
-		s.transitState(machine.StoppedByErr, err.Error())
-		return err
-	} else {
-		s.transitState(machine.Running, "")
-	}
-	return nil
+	return s.doStart()
 }
 
 // Stop run stop action or add the stop action to queue
@@ -160,38 +137,17 @@ func (s *State) ScheduleStop() {
 	defer s.ruleLock.Unlock()
 	// do stop, stopping action and starting action are mutual exclusive. No concurrent problem here
 	s.logger.Infof("schedule to stop rule %s", s.Rule.Id)
-	err := s.doStop()
-	// currentState may be accessed concurrently
-	if schedule.IsAfterTimeRanges(timex.GetNow(), s.Rule.Options.CronDatetimeRange) {
-		s.transitState(machine.ScheduledStop, "schedule terminated")
-	} else {
-		lastWill := ""
-		if err != nil {
-			lastWill = err.Error()
-		}
-		s.transitState(machine.ScheduledStop, lastWill)
-	}
-	return
+	s.doStop(machine.ScheduledStop, "schedule terminated")
 }
 
 func (s *State) StopWithLastWill(msg string) {
-	s.logger.Debug("stop RunState")
 	done := s.sm.TriggerAction(machine.ActionSignalStop)
 	if done {
 		return
 	}
 	s.ruleLock.Lock()
 	defer s.ruleLock.Unlock()
-	// do stop, stopping action and starting action are mutual exclusive. No concurrent problem here
-	s.logger.Infof("stopping rule %s", s.Rule.Id)
-	lastWill := msg
-	err := s.doStop()
-	if err != nil {
-		lastWill = err.Error()
-	}
-	// currentState may be accessed concurrently
-	s.transitState(machine.Stopped, lastWill)
-	return
+	s.doStop(machine.Stopped, msg)
 }
 
 func (s *State) Delete() (err error) {
