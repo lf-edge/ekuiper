@@ -110,10 +110,7 @@ func (t *Server) CreateQuery(sql string, reply *string) error {
 }
 
 func stopQuery() {
-	if rs, ok := registry.load(QueryRuleId); ok {
-		logger.Printf("stop the query.")
-		_ = rs.Delete()
-	}
+	_ = registry.DeleteRule(QueryRuleId)
 }
 
 func (t *Server) GetQueryResult(_ string, reply *string) error {

@@ -161,9 +161,9 @@ func (s *State) Delete() (err error) {
 	s.ruleLock.Lock()
 	defer s.ruleLock.Unlock()
 	if s.topology != nil {
-		s.topology.RemoveMetrics()
 		s.topology.Cancel()
-		s.topology.WaitClose()
+		s.topology.RemoveMetrics()
+		s.topology = nil
 	}
 	return nil
 }

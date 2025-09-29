@@ -46,10 +46,8 @@ func (s *State) doValidateAndRun(newRule *def.Rule) (err error) {
 			s.logger.Errorf("Rule %s start failed: %s", s.Rule.Id, panicOrError)
 		}
 	} else {
-		e := tp.Cancel()
-		if e != nil {
-			s.logger.Warnf("clean temp tp %s error: %v", tp.GetName(), err)
-		}
+		// Discard the temp topo
+		tp.Cancel()
 	}
 	return nil
 }
@@ -62,10 +60,7 @@ func (s *State) validate() (tp *topo.Topo, err error) {
 	}
 	defer func() { // clean topo if error happens
 		if err != nil && tp != nil {
-			e := tp.Cancel()
-			if e != nil {
-				s.logger.Warnf("clean invalid tp %s error: %v", tp.GetName(), err)
-			}
+			tp.Cancel()
 			tp = nil
 		}
 	}()
@@ -111,9 +106,9 @@ func (s *State) doStop(stateType machine.RunState, msg string) {
 		s.topoGraph = s.topology.GetTopo()
 		keys, values := s.topology.GetMetrics()
 		s.stoppedMetrics = []any{keys, values}
-		err := s.topology.Cancel()
-		if err == nil {
-			s.topology.WaitClose()
+		err := s.topology.GracefulStop(0)
+		if err != nil {
+			s.logger.Errorf("graceful stop error, just cancel forcely: %v", err)
 		}
 		s.topology = nil
 	}
@@ -146,7 +141,7 @@ func (s *State) runTopo(tp *topo.Topo) {
 	// The run exit may be caused by user action or rule itself
 	// Only do clean up when it is exit automatically
 	if !tp.IsClosed() {
-		tp.Cancel()
+		_ = tp.GracefulStop(0)
 		s.cleanRule(hasError, lastWill)
 	}
 }

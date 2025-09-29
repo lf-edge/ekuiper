@@ -131,20 +131,52 @@ func (s *Topo) Open() <-chan error {
 	if err != nil {
 		infra.DrainError(s.ctx, err, s.drain)
 	}
-	s.ctx.GetLogger().Infof("Rule %s with topo %d is running", s.name, s.runId)
+	s.ctx.GetLogger().Infof("rule %s with topo %d is running", s.name, s.runId)
 	return s.drain
 }
 
-// Cancel may be called multiple times so must be idempotent
-func (s *Topo) Cancel() error {
+func (s *Topo) doClose() (closed bool) {
 	if !s.state.CompareAndSwap(StateOpened, StateClosed) {
 		s.ctx.GetLogger().Warn("cancel non-starting rule")
-		for _, src := range s.sources {
-			if rt, ok := src.(node.MergeableTopo); ok {
-				rt.Close(s.ctx, s.name, s.runId)
-			}
+		closed = true
+	}
+	for _, src := range s.sources {
+		if rt, ok := src.(node.MergeableTopo); ok {
+			rt.Close(s.ctx, s.name, s.runId)
 		}
+	}
+	return closed
+}
+
+func (s *Topo) doClean() {
+	// completion signal to inform topo.Open receiver
+	infra.DrainError(s.ctx, nil, s.drain)
+	// inform the operators to exit
+	s.cancel()
+	conf.Log.Info(infra.MsgWithStack("run cancel"))
+	go func() {
+		time.Sleep(3 * time.Second)
+		debug.FreeOSMemory()
+		conf.Log.Infof("free os memory")
+	}()
+}
+
+// Cancel may be called multiple times so must be idempotent
+func (s *Topo) Cancel() {
+	done := s.doClose()
+	if done {
+		return
+	}
+	s.doClean()
+}
+
+func (s *Topo) GracefulStop(timeout time.Duration) error {
+	closed := s.doClose()
+	if closed {
 		return nil
+	}
+	if timeout == 0 {
+		timeout = time.Second * 5
 	}
 	if s.coordinator.IsActivated() && s.options.EnableSaveStateBeforeStop {
 		notify, err := s.coordinator.ForceSaveState()
@@ -153,27 +185,25 @@ func (s *Topo) Cancel() error {
 			return fmt.Errorf("rule %v duplicated cancel", s.name)
 		}
 		s.ctx.GetLogger().Infof("rule %v is saving last state", s.name)
-		<-notify
-	}
-	// completion signal
-	infra.DrainError(s.ctx, nil, s.drain)
-	if s.cancel != nil {
-		s.cancel()
-	}
-	s.store = nil
-	s.coordinator = nil
-	for _, src := range s.sources {
-		if rt, ok := src.(node.MergeableTopo); ok {
-			rt.Close(s.ctx, s.name, s.runId)
+		select {
+		case <-notify:
+			s.ctx.GetLogger().Infof("rule %v saved last state", s.name)
+		case <-time.After(timeout):
+			s.ctx.GetLogger().Infof("rule %v saved last state timeout", s.name)
 		}
 	}
-	conf.Log.Info(infra.MsgWithStack("run cancel"))
+	s.doClean()
+	done := make(chan struct{})
 	go func() {
-		time.Sleep(3 * time.Second)
-		debug.FreeOSMemory()
-		conf.Log.Infof("free os memory")
+		defer close(done)
+		s.waitClose()
 	}()
-	return nil
+	select {
+	case <-done:
+		return nil
+	case <-time.After(timeout):
+		return fmt.Errorf("timeout waiting for operators to close after %v", timeout)
+	}
 }
 
 // GetSourceNodes only for test
@@ -485,10 +515,7 @@ func (s *Topo) ResetStreamOffset(name string, input map[string]interface{}) erro
 	return fmt.Errorf("stream %v not found in topo", name)
 }
 
-func (s *Topo) WaitClose() {
-	if s == nil {
-		return
-	}
+func (s *Topo) waitClose() {
 	// wait all operators close
 	if s.opsWg != nil {
 		s.opsWg.Wait()

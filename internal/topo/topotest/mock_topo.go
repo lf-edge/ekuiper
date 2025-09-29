@@ -131,7 +131,7 @@ func DoRuleTestWithResultFunc(t *testing.T, tests []RuleTest, opt *def.RuleOptio
 				// the done signal is sent when all sources are EOF. The mock source is bounded so this will be triggered.
 				case err := <-errCh:
 					conf.Log.Debugf("test %s receive error signal: %v", id, err)
-					tp.Cancel()
+					_ = tp.GracefulStop(0)
 					break outerloop
 				case tuple := <-consumer:
 					sinkResult = append(sinkResult, tuple)
@@ -140,7 +140,7 @@ func DoRuleTestWithResultFunc(t *testing.T, tests []RuleTest, opt *def.RuleOptio
 						break outerloop
 					}
 				case <-ticker:
-					tp.Cancel()
+					_ = tp.GracefulStop(0)
 					assert.Fail(t, "timeout")
 					break outerloop
 				}
@@ -484,7 +484,7 @@ func DoCheckpointRuleTest(t *testing.T, tests []RuleCheckpointTest, opt *def.Rul
 				time.Sleep(500 * time.Millisecond)
 			}
 			cc := tp.GetCoordinator().GetCompleteCount()
-			tp.Cancel()
+			_ = tp.GracefulStop(0)
 			if retry == 0 {
 				t.Errorf("%d-%d. checkpoint count\n\nresult mismatch:\n\nexp=%#v\n\ngot=%d\n\n", i, w, tt.Cc, cc)
 				return
@@ -494,7 +494,12 @@ func DoCheckpointRuleTest(t *testing.T, tests []RuleCheckpointTest, opt *def.Rul
 			time.Sleep(10 * time.Millisecond)
 			// resume stream
 			conf.Log.Debugf("Resume stream at %d", timex.GetNowInMilli())
-			errCh := tp.Open()
+			_, _, tp, errCh := createTestRule(t, id, tt.RuleTest, opt)
+			if tp == nil {
+				t.Errorf("topo is not created successfully")
+				return
+			}
+
 			conf.Log.Debugf("After open stream at %d", timex.GetNowInMilli())
 			go sendData(dataLength-tt.PauseSize, [][]*xsql.Tuple{datas[0][tt.PauseSize:]}, tp, POSTLEAP, 10)
 			// Receive data
@@ -508,13 +513,13 @@ func DoCheckpointRuleTest(t *testing.T, tests []RuleCheckpointTest, opt *def.Rul
 				select {
 				case <-errCh:
 					conf.Log.Debugf("test %s receive error signal", id)
-					tp.Cancel()
+					_ = tp.GracefulStop(0)
 					break outerloop
 				case tuple := <-consumer:
 					sinkResult = append(sinkResult, tuple)
 					conf.Log.Debugf("test %s append result %v", id, tuple)
 				case <-ticker:
-					tp.Cancel()
+					_ = tp.GracefulStop(0)
 					assert.Fail(t, "timeout")
 					break outerloop
 				}
