@@ -28,4 +28,5 @@ type KeyValue interface {
 	All() (all map[string]string, err error)
 	Clean() error
 	Drop() error
+	GetByPrefix(prefix string) (map[string][]byte, error)
 }

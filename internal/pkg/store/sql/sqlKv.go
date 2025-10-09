@@ -179,6 +179,29 @@ func (kv *sqlKvStore) Delete(key string) error {
 	})
 }
 
+func (kv *sqlKvStore) GetByPrefix(prefix string) (map[string][]byte, error) {
+	result := make(map[string][]byte)
+	err := kv.database.Apply(func(db *sql.DB) error {
+		query := fmt.Sprintf("SELECT key, val FROM %s WHERE key LIKE '%s'", kv.table, prefix+"%")
+		row, err := db.Query(query)
+		if nil != err {
+			return err
+		}
+		defer row.Close()
+		for row.Next() {
+			var key string
+			var tmp []byte
+			err := row.Scan(&key, &tmp)
+			if err != nil {
+				return nil
+			}
+			result[key] = tmp
+		}
+		return nil
+	})
+	return result, err
+}
+
 func (kv *sqlKvStore) Keys() ([]string, error) {
 	keys := make([]string, 0)
 	err := kv.database.Apply(func(db *sql.DB) error {

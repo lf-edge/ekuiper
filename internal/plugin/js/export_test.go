@@ -133,6 +133,10 @@ func (m mockInvalidDB) Get(key string, val interface{}) (bool, error) {
 	return false, fmt.Errorf("db is nil")
 }
 
+func (m mockInvalidDB) GetByPrefix(prefix string) (map[string][]byte, error) {
+	return nil, fmt.Errorf("db is nil")
+}
+
 func (m mockInvalidDB) GetKeyedState(key string) (interface{}, error) {
 	return false, fmt.Errorf("db is nil")
 }

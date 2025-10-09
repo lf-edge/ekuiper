@@ -108,6 +108,24 @@ func (kv redisKvStore) Keys() ([]string, error) {
 	return result, nil
 }
 
+func (kv redisKvStore) GetByPrefix(prefix string) (map[string][]byte, error) {
+	keys, err := kv.Keys()
+	if err != nil {
+		return nil, err
+	}
+	r := make(map[string][]byte)
+	for _, k := range keys {
+		if strings.HasPrefix(k, prefix) {
+			val, err := kv.database.Get(context.Background(), kv.tableKey(k)).Bytes()
+			if err != nil {
+				return nil, err
+			}
+			r[k] = val
+		}
+	}
+	return r, nil
+}
+
 func (kv redisKvStore) All() (map[string]string, error) {
 	keys, err := kv.metaKeys()
 	if err != nil {
