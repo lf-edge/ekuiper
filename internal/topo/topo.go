@@ -142,7 +142,7 @@ func (s *Topo) doClose() (closed bool) {
 	}
 	for _, src := range s.sources {
 		if rt, ok := src.(node.MergeableTopo); ok {
-			rt.Close(s.ctx, s.name, s.runId)
+			rt.Close(s.ctx)
 		}
 	}
 	return closed
@@ -356,7 +356,7 @@ func (s *Topo) prepareContext() {
 	ctx := kctx.WithValue(kctx.RuleBackground(s.name), kctx.LoggerKey, contextLogger)
 	ctx = kctx.WithValue(ctx, kctx.RuleStartKey, timex.GetNowInMilli())
 	ctx = kctx.WithValue(ctx, kctx.RuleWaitGroupKey, s.opsWg)
-	nctx := ctx.WithRuleId(s.name).WithInstance(s.runId)
+	nctx := ctx.WithRuleId(s.name).WithRun(s.runId)
 	s.ctx, s.cancel = nctx.WithCancel()
 	s.drain = make(chan error, 2)
 }

@@ -43,15 +43,12 @@ func GetOrCreateSubTopo(ctx api.StreamContext, name string, isSliceMode bool) (*
 				Edges:   make(map[string][]any),
 			},
 			schemaLayer: schema.GetStream(name).(*schema.SharedLayer),
-			refRules:    make(map[string]chan<- error),
+			refRules:    make(map[string]map[int]chan<- error),
 			isSliceMode: isSliceMode,
 		}
 		subTopoPool[name] = ac
 	}
-	// shared connection can create without reference, so the ctx may be nil
-	if ctx != nil {
-		ac.AddRef(ctx, nil)
-	}
+	ac.Init(ctx)
 	return ac, ok
 }
 

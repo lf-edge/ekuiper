@@ -85,7 +85,7 @@ type MergeableTopo interface {
 	// SubMetrics return the metrics of the sub nodes
 	SubMetrics() ([]string, []any)
 	// Close notifies subtopo to deref
-	Close(ctx api.StreamContext, ruleId string, runId int)
+	Close(ctx api.StreamContext)
 }
 
 type SchemaNode interface {

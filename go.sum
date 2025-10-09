@@ -1111,8 +1111,8 @@ github.com/lestrrat-go/strftime v0.0.0-20180821113735-8b31f9c59b0f/go.mod h1:RMl
 github.com/lestrrat-go/strftime v1.1.0 h1:gMESpZy44/4pXLO/m+sL0yBd1W6LjgjrrD4a68Gapyg=
 github.com/lestrrat-go/strftime v1.1.0/go.mod h1:uzeIB52CeUJenCo1syghlugshMysrqUT51HlxphXVeI=
 github.com/lestrrat/go-envload v0.0.0-20180220120943-6ed08b54a570/go.mod h1:BLt8L9ld7wVsvEWQbuLrUZnCMnUmLZ+CGDzKtclrTlE=
-github.com/lf-edge/ekuiper/contract/v2 v2.3.0 h1:+OylRbz73KwJSQMFr8iKA+fx80+fZqpJYXgZHzEXL78=
-github.com/lf-edge/ekuiper/contract/v2 v2.3.0/go.mod h1:3Ox1JmJ4Dn03ALK/+Z8u/49dCOy/2h4oVsi1LTvdtxE=
+github.com/lf-edge/ekuiper/contract/v2 v2.3.1 h1:ANhBqgkAZEVMeF+BFPn61kOD08P5wS72Ct3pOPKKnxg=
+github.com/lf-edge/ekuiper/contract/v2 v2.3.1/go.mod h1:3Ox1JmJ4Dn03ALK/+Z8u/49dCOy/2h4oVsi1LTvdtxE=
 github.com/lib/pq v1.0.0/go.mod h1:5WUZQaWbwv1U+lTReE5YruASi9Al49XbQIvNi/34Woo=
 github.com/lib/pq v1.1.0/go.mod h1:5WUZQaWbwv1U+lTReE5YruASi9Al49XbQIvNi/34Woo=
 github.com/lib/pq v1.2.0/go.mod h1:5WUZQaWbwv1U+lTReE5YruASi9Al49XbQIvNi/34Woo=
