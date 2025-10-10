@@ -33,6 +33,7 @@ type sqlKvStore struct {
 	preparedSetStmt         *sql.Stmt
 	preparedDeleteQueryStmt *sql.Stmt
 	preparedDeleteStmt      *sql.Stmt
+	preparedGetByPrefixStmt *sql.Stmt
 }
 
 func createSqlKvStore(database Database, table string) (*sqlKvStore, error) {
@@ -73,6 +74,10 @@ func (kv *sqlKvStore) initPreparedStmt() error {
 			return err
 		}
 		kv.preparedDeleteQueryStmt, err = db.Prepare(fmt.Sprintf("SELECT key FROM '%s' WHERE key=?;", kv.table))
+		if err != nil {
+			return err
+		}
+		kv.preparedGetByPrefixStmt, err = db.Prepare(fmt.Sprintf("SELECT key, val FROM %s WHERE key LIKE ?", kv.table))
 		if err != nil {
 			return err
 		}
@@ -182,16 +187,16 @@ func (kv *sqlKvStore) Delete(key string) error {
 func (kv *sqlKvStore) GetByPrefix(prefix string) (map[string][]byte, error) {
 	result := make(map[string][]byte)
 	err := kv.database.Apply(func(db *sql.DB) error {
-		query := fmt.Sprintf("SELECT key, val FROM %s WHERE key LIKE '%s'", kv.table, prefix+"%")
-		row, err := db.Query(query)
-		if nil != err {
+		var err error
+		rows, err := kv.preparedGetByPrefixStmt.Query(prefix + "%")
+		if err != nil {
 			return err
 		}
-		defer row.Close()
-		for row.Next() {
+		defer rows.Close()
+		for rows.Next() {
 			var key string
 			var tmp []byte
-			err := row.Scan(&key, &tmp)
+			err := rows.Scan(&key, &tmp)
 			if err != nil {
 				return nil
 			}
