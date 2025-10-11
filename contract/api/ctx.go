@@ -44,10 +44,12 @@ type StreamContext interface {
 	GetRuleId() string
 	GetOpId() string
 	GetInstanceId() int
+	GetRunId() int
 	GetRootPath() string
 
 	WithMeta(ruleId string, opId string, store Store) StreamContext
 	WithInstance(instanceId int) StreamContext
+	WithRun(runId int) StreamContext
 	WithCancel() (StreamContext, context.CancelFunc)
 	EnableTracer(enabled bool)
 	IsTraceEnabled() bool
