@@ -1,13 +1,8 @@
 package rule
 
 import (
-	"context"
 	"errors"
 	"fmt"
-	"math"
-	"math/rand/v2"
-	"strings"
-	"time"
 
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/topo"
@@ -38,26 +33,21 @@ func (s *State) doValidateAndRun(newRule *def.Rule) (err error) {
 	}
 	// stop the old run
 	if s.topology != nil {
-		s.stopOld()
-		s.topology = nil
+		s.doStop(machine.Stopped, "stopped by update")
 	}
 	// start new rule
 	if newRule.Triggered {
 		s.topology = tp
-		go func() {
-			panicOrError := infra.SafeRun(func() error {
-				// Start the rule which runs async
-				return s.Start()
-			})
-			if panicOrError != nil {
-				s.logger.Errorf("Rule %s start failed: %s", s.Rule.Id, panicOrError)
-			}
-		}()
-	} else {
-		e := tp.Cancel()
-		if e != nil {
-			s.logger.Warnf("clean temp tp %s error: %v", tp.GetName(), err)
+		panicOrError := infra.SafeRun(func() error {
+			// Start the rule which runs async
+			return s.doStart()
+		})
+		if panicOrError != nil {
+			s.logger.Errorf("Rule %s start failed: %s", s.Rule.Id, panicOrError)
 		}
+	} else {
+		// Discard the temp topo
+		tp.Cancel()
 	}
 	return nil
 }
@@ -70,10 +60,7 @@ func (s *State) validate() (tp *topo.Topo, err error) {
 	}
 	defer func() { // clean topo if error happens
 		if err != nil && tp != nil {
-			e := tp.Cancel()
-			if e != nil {
-				s.logger.Warnf("clean invalid tp %s error: %v", tp.GetName(), err)
-			}
+			tp.Cancel()
 			tp = nil
 		}
 	}()
@@ -87,10 +74,11 @@ func (s *State) validate() (tp *topo.Topo, err error) {
 	return tp, nil
 }
 
-// doStart/doStop actions are run in sync!!
-// 1. create topo if not exists
-// 2. run topo async
+// DoStart runs internally
 func (s *State) doStart() error {
+	// Start normally or start in schedule period Rule
+	// doStart trigger the Rule run. If no trigger error, the Rule will run async and control the state by itself
+	s.logger.Infof("start to run rule %s", s.Rule.Id)
 	err := infra.SafeRun(func() error {
 		if s.topology == nil {
 			if tp, err := planner.Plan(s.Rule); err != nil {
@@ -100,118 +88,65 @@ func (s *State) doStart() error {
 				s.topoGraph = s.topology.GetTopo()
 			}
 		}
-		ctx, cancel := context.WithCancel(context.Background())
-		s.cancelRetry = cancel
-		go s.runTopo(ctx, s.topology, s.Rule.Options.RestartStrategy)
+		go s.runTopo(s.topology)
 		return nil
 	})
-	return err
-}
-
-func (s *State) doStop() error {
-	if s.cancelRetry != nil {
-		s.cancelRetry()
-	}
-	if s.topology != nil {
-		e := s.topology.GetContext().Err()
-		s.topoGraph = s.topology.GetTopo()
-		keys, values := s.topology.GetMetrics()
-		s.stoppedMetrics = []any{keys, values}
-		err := s.topology.Cancel()
-		if err == nil {
-			s.topology.WaitClose()
-		}
-		s.topology = nil
-		return e
+	if err != nil {
+		s.transitState(machine.StoppedByErr, err.Error())
+		return err
+	} else {
+		s.transitState(machine.Running, "")
 	}
 	return nil
 }
 
-func (s *State) stopOld() {
-	done := s.sm.TriggerAction(machine.ActionSignalStop)
-	if done {
-		return
-	}
-	// do stop, stopping action and starting action are mutual exclusive. No concurrent problem here
+func (s *State) doStop(stateType machine.RunState, msg string) {
 	s.logger.Infof("stopping rule %s", s.Rule.Id)
-	lastWill := "stopped by update"
-	err := s.doStop()
-	if err != nil {
-		lastWill = fmt.Sprintf("stopped by update with error: %v", err)
+	if s.topology != nil {
+		s.topoGraph = s.topology.GetTopo()
+		keys, values := s.topology.GetMetrics()
+		s.stoppedMetrics = []any{keys, values}
+		err := s.topology.GracefulStop(0)
+		if err != nil {
+			s.logger.Errorf("graceful stop error, just cancel forcely: %v", err)
+		}
+		s.topology = nil
 	}
-	// currentState may be accessed concurrently
-	s.transitState(machine.Stopped, lastWill)
-	return
+	s.transitState(stateType, msg)
 }
 
 // This is called async
-func (s *State) runTopo(ctx context.Context, tp *topo.Topo, rs *def.RestartStrategy) {
-	err := infra.SafeRun(func() error {
-		count := 0
-		d := time.Duration(rs.Delay)
-		var er error
-		ticker := time.NewTicker(d)
-		defer ticker.Stop()
-		for {
-			select {
-			case e := <-tp.Open():
-				er = e
-				if errorx.IsUnexpectedErr(er) { // Only restart Rule for errors
-					tp.GetContext().SetError(er)
-					s.logger.Errorf("closing Rule for error: %v", er)
-					tp.Cancel()
-					s.transitState(machine.Stopped, "retrying after error: "+er.Error())
-				} else {
-					// exit normally
-					lastWill := "cancelled manually"
-					if errorx.IsEOF(er) {
-						lastWill = EOFMessage
-						msg := er.Error()
-						if len(msg) > 0 {
-							lastWill = fmt.Sprintf("%s: %s", lastWill, msg)
-						}
-						s.updateTrigger(s.Rule.Id, false)
-					}
-					tp.Cancel()
-					s.transitState(machine.Stopped, lastWill)
-					return nil
-				}
+func (s *State) runTopo(tp *topo.Topo) {
+	s.logger.Infof("topo %d opens", tp.GetRunId())
+	e := <-tp.Open()
+	s.logger.Infof("topo %d stops", tp.GetRunId())
+	lastWill := ""
+	hasError := false
+	if errorx.IsUnexpectedErr(e) { // Only restart Rule for errors
+		tp.GetContext().SetError(e)
+		hasError = true
+		s.logger.Errorf("closing Rule for error: %v", e)
+	} else {
+		// exit normally
+		lastWill = "canceled manually"
+		if errorx.IsEOF(e) {
+			lastWill = EOFMessage
+			msg := e.Error()
+			if len(msg) > 0 {
+				lastWill = fmt.Sprintf("%s: %s", lastWill, msg)
 			}
-			if count < rs.Attempts {
-				if d > time.Duration(rs.MaxDelay) {
-					d = time.Duration(rs.MaxDelay)
-				}
-				if rs.JitterFactor > 0 {
-					d = time.Duration(math.Round(float64(d.Milliseconds())*((rand.Float64()*2-1)*rs.JitterFactor+1))) * time.Millisecond
-					// make sure d is always in range
-					for d <= 0 || d > time.Duration(rs.MaxDelay) {
-						d = time.Duration(math.Round(float64(d.Milliseconds())*((rand.Float64()*2-1)*rs.JitterFactor+1))) * time.Millisecond
-					}
-					s.logger.Infof("Rule will restart with jitterred delay %d", d)
-				} else {
-					s.logger.Infof("Rule will restart with delay %d", d)
-				}
-				// retry after delay
-				select {
-				case <-ticker.C:
-					break
-				case <-ctx.Done():
-					s.logger.Errorf("stop Rule retry as cancelled")
-					return nil
-				}
-				count++
-				if rs.Multiplier > 0 {
-					d = time.Duration(rs.Delay) * time.Duration(math.Pow(rs.Multiplier, float64(count)))
-				}
-			} else {
-				return er
-			}
+			s.updateTrigger(s.Rule.Id, false)
 		}
-	})
-	s.cleanRule(err)
+	}
+	// The run exit may be caused by user action or rule itself
+	// Only do clean up when it is exit automatically
+	if !tp.IsClosed() {
+		_ = tp.GracefulStop(0)
+		s.cleanRule(hasError, lastWill)
+	}
 }
 
-func (s *State) cleanRule(err error) {
+func (s *State) cleanRule(hasError bool, lastWill string) {
 	s.ruleLock.Lock()
 	defer s.ruleLock.Unlock()
 	if s.topology != nil {
@@ -219,16 +154,10 @@ func (s *State) cleanRule(err error) {
 		keys, values := s.topology.GetMetrics()
 		s.stoppedMetrics = []any{keys, values}
 	}
-	if err != nil { // Exit after retries
-		s.logger.Error(err)
-		s.transitState(machine.StoppedByErr, err.Error())
-		s.topology = nil
-		s.logger.Infof("%s exit by error set tp to nil", s.Rule.Id)
-	} else if strings.HasPrefix(s.sm.LastWill(), EOFMessage) {
-		// Two case when err is nil; 1. Manually stop 2.EOF
-		// Only transit status when EOF. Don't do this for manual stop because the state already changed!
-		s.transitState(machine.Stopped, "")
-		s.topology = nil
-		s.logger.Infof("%s exit eof set tp to nil", s.Rule.Id)
+	if hasError {
+		s.transitState(machine.StoppedByErr, lastWill)
+	} else {
+		s.transitState(machine.Stopped, lastWill)
 	}
+	s.topology = nil
 }

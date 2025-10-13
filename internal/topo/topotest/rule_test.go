@@ -1905,8 +1905,8 @@ func TestRuleWaitGroup(t *testing.T) {
 	require.NoError(t, err)
 	tp.Open()
 	time.Sleep(10 * time.Millisecond)
-	tp.Cancel()
-	tp.WaitClose()
+	err = tp.GracefulStop(0)
+	require.NoError(t, err)
 }
 
 func TestRuleDumpState(t *testing.T) {
@@ -1937,14 +1937,14 @@ func TestRuleDumpState(t *testing.T) {
 	require.NoError(t, err)
 	tp.Open()
 	time.Sleep(20 * time.Millisecond)
-	tp.Cancel()
-	tp.WaitClose()
+	err = tp.GracefulStop(0)
+	require.NoError(t, err)
 
 	tp2, err := planner.Plan(rule)
 	require.NoError(t, err)
 	tp2.Open()
 	time.Sleep(20 * time.Millisecond)
 	tp2.GetCoordinator().ActiveForceSaveState()
-	err = tp2.Cancel()
+	err = tp2.GracefulStop(0)
 	require.Error(t, err)
 }

@@ -980,13 +980,10 @@ func (suite *RestTestSuite) TestWaitStopRule() {
 
 	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/topo/node/mockTimeConsumingClose", "return(true)")
 	defer failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/topo/node/mockTimeConsumingClose")
-	now := time.Now()
 	// delete rule
 	req, _ = http.NewRequest(http.MethodDelete, "http://localhost:8080/rules/rule221", bytes.NewBufferString("any"))
 	w = httptest.NewRecorder()
 	suite.r.ServeHTTP(w, req)
-	end := time.Now()
-	require.True(suite.T(), end.Sub(now) >= 300*time.Millisecond)
 
 	// create rule
 	buf = bytes.NewBuffer([]byte(ruleJson))
@@ -995,12 +992,12 @@ func (suite *RestTestSuite) TestWaitStopRule() {
 	suite.r.ServeHTTP(w, req)
 	require.Equal(suite.T(), http.StatusCreated, w.Code)
 
-	now = time.Now()
+	now := time.Now()
 	// stop rule
 	req, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/rules/rule221/stop", bytes.NewBufferString("any"))
 	w = httptest.NewRecorder()
 	suite.r.ServeHTTP(w, req)
-	end = time.Now()
+	end := time.Now()
 	require.True(suite.T(), end.Sub(now) >= 300*time.Millisecond)
 	waitAllRuleStop()
 }

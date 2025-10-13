@@ -17,13 +17,14 @@ func (s *State) nextAction() {
 	var err error
 	switch action {
 	case machine.ActionSignalStart:
-		err = s.Start()
+		err = s.doStart()
 	case machine.ActionSignalStop:
-		s.Stop()
+		s.doStop(machine.Stopped, "canceled manually")
 	case machine.ActionSignalScheduledStart:
-		err = s.ScheduleStart()
+		s.logger.Infof("schedule to run rule %s", s.Rule.Id)
+		err = s.doStart()
 	case machine.ActionSignalScheduledStop:
-		s.ScheduleStop()
+		s.doStop(machine.ScheduledStop, "canceled manually")
 	}
 	if err != nil {
 		s.logger.Error(err)

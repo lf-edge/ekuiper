@@ -43,6 +43,15 @@ import (
 
 var uid atomic.Uint32
 
+// State represents the lifecycle state
+type State int
+
+const (
+	StateInitialized State = iota
+	StateOpened
+	StateClosed
+)
+
 // Topo is the runtime DAG for a rule
 // It only runs once. If the rule restarts, another topo is created.
 type Topo struct {
@@ -60,11 +69,10 @@ type Topo struct {
 	store        api.Store
 	coordinator  *checkpoint.Coordinator
 	topo         *def.PrintableTopo
-	mu           sync.Mutex
-	hasOpened    atomic.Bool
 	sinkSchema   map[string]*ast.JsonStreamField
-
-	opsWg *sync.WaitGroup
+	opsWg        *sync.WaitGroup
+	// all other things are read only during lifecycle except state
+	state atomic.Value
 }
 
 func NewWithNameAndOptions(name string, options *def.RuleOption) (*Topo, error) {
@@ -79,14 +87,136 @@ func NewWithNameAndOptions(name string, options *def.RuleOption) (*Topo, error) 
 		},
 		opsWg:        &sync.WaitGroup{},
 		subSrcOpsMap: make(map[string]struct{}),
+		state:        atomic.Value{},
 	}
 	tp.prepareContext() // ensure context is set
+	tp.state.Store(StateInitialized)
+	tp.ctx.GetLogger().Infof("topo %d created", tp.runId)
 	return tp, nil
+}
+
+func (s *Topo) Open() <-chan error {
+	if !s.state.CompareAndSwap(StateInitialized, StateOpened) {
+		return s.drain
+	}
+	log := s.ctx.GetLogger()
+	log.Info("Opening stream")
+	err := infra.SafeRun(func() error {
+		var err error
+		if s.store, err = state.CreateStore(s.name, s.options.Qos); err != nil {
+			return fmt.Errorf("topo %s create store error %v", s.name, err)
+		}
+		if err := s.enableCheckpoint(s.ctx); err != nil {
+			return err
+		}
+		topoStore := s.store
+		// open stream sink, after log sink is ready.
+		for _, snk := range s.sinks {
+			snk.Exec(s.ctx.WithMeta(s.name, snk.GetName(), topoStore), s.drain)
+		}
+
+		for _, op := range s.ops {
+			op.Exec(s.ctx.WithMeta(s.name, op.GetName(), topoStore), s.drain)
+		}
+
+		for _, source := range s.sources {
+			source.Open(s.ctx.WithMeta(s.name, source.GetName(), topoStore), s.drain)
+		}
+		// activate checkpoint
+		if s.coordinator != nil {
+			return s.coordinator.Activate()
+		}
+		return nil
+	})
+	if err != nil {
+		infra.DrainError(s.ctx, err, s.drain)
+	}
+	s.ctx.GetLogger().Infof("rule %s with topo %d is running", s.name, s.runId)
+	return s.drain
+}
+
+func (s *Topo) doClose() (closed bool) {
+	if !s.state.CompareAndSwap(StateOpened, StateClosed) {
+		s.ctx.GetLogger().Warn("cancel non-starting rule")
+		closed = true
+	}
+	for _, src := range s.sources {
+		if rt, ok := src.(node.MergeableTopo); ok {
+			rt.Close(s.ctx, s.name, s.runId)
+		}
+	}
+	return closed
+}
+
+func (s *Topo) doClean() {
+	// completion signal to inform topo.Open receiver
+	infra.DrainError(s.ctx, nil, s.drain)
+	// inform the operators to exit
+	s.cancel()
+	conf.Log.Info(infra.MsgWithStack("run cancel"))
+	go func() {
+		time.Sleep(3 * time.Second)
+		debug.FreeOSMemory()
+		conf.Log.Infof("free os memory")
+	}()
+}
+
+// Cancel may be called multiple times so must be idempotent
+func (s *Topo) Cancel() {
+	done := s.doClose()
+	if done {
+		return
+	}
+	s.doClean()
+}
+
+func (s *Topo) GracefulStop(timeout time.Duration) error {
+	closed := s.doClose()
+	if closed {
+		return nil
+	}
+	if timeout == 0 {
+		timeout = time.Second * 5
+	}
+	if s.coordinator.IsActivated() && s.options.EnableSaveStateBeforeStop {
+		notify, err := s.coordinator.ForceSaveState()
+		if err != nil {
+			s.ctx.GetLogger().Infof("rule %v duplicated cancel", s.name)
+			return fmt.Errorf("rule %v duplicated cancel", s.name)
+		}
+		s.ctx.GetLogger().Infof("rule %v is saving last state", s.name)
+		select {
+		case <-notify:
+			s.ctx.GetLogger().Infof("rule %v saved last state", s.name)
+		case <-time.After(timeout):
+			s.ctx.GetLogger().Infof("rule %v saved last state timeout", s.name)
+		}
+	}
+	s.doClean()
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		s.waitClose()
+	}()
+	select {
+	case <-done:
+		return nil
+	case <-time.After(timeout):
+		return fmt.Errorf("timeout waiting for operators to close after %v", timeout)
+	}
 }
 
 // GetSourceNodes only for test
 func (s *Topo) GetSourceNodes() []node.DataSourceNode {
 	return s.sources
+}
+
+func (s *Topo) GetRunId() int {
+	return s.runId
+}
+
+func (s *Topo) IsClosed() bool {
+	return s.state.Load() == StateClosed
 }
 
 func (s *Topo) SetStreams(streams []string) {
@@ -117,44 +247,6 @@ func (s *Topo) GetContext() api.StreamContext {
 
 func (s *Topo) GetName() string {
 	return s.name
-}
-
-// Cancel may be called multiple times so must be idempotent
-func (s *Topo) Cancel() error {
-	if s == nil {
-		return nil
-	}
-	s.hasOpened.Store(false)
-	if s.coordinator.IsActivated() && s.options.EnableSaveStateBeforeStop {
-		notify, err := s.coordinator.ForceSaveState()
-		if err != nil {
-			s.ctx.GetLogger().Infof("rule %v duplicated cancel", s.name)
-			return fmt.Errorf("rule %v duplicated cancel", s.name)
-		}
-		s.ctx.GetLogger().Infof("rule %v is saving last state", s.name)
-		<-notify
-	}
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	// completion signal
-	infra.DrainError(s.ctx, nil, s.drain)
-	if s.cancel != nil {
-		s.cancel()
-	}
-	s.store = nil
-	s.coordinator = nil
-	for _, src := range s.sources {
-		if rt, ok := src.(node.MergeableTopo); ok {
-			rt.Close(s.ctx, s.name, s.runId)
-		}
-	}
-	conf.Log.Info(infra.MsgWithStack("run cancel"))
-	go func() {
-		time.Sleep(3 * time.Second)
-		debug.FreeOSMemory()
-		conf.Log.Infof("free os memory")
-	}()
-	return nil
 }
 
 func (s *Topo) AddSrc(src node.DataSourceNode) *Topo {
@@ -226,48 +318,47 @@ func (s *Topo) addEdge(from node.TopNode, to node.TopNode, toType string) {
 }
 
 // prepareContext setups internal context before
-// stream starts execution.
+// Only run once when new topo
 func (s *Topo) prepareContext() {
-	if s.ctx == nil || s.ctx.Err() != nil {
-		contextLogger := conf.Log.WithField("rule", s.name)
-		if s.options != nil && (s.options.Debug || s.options.LogFilename != "") {
-			contextLogger.Logger = &logrus.Logger{
-				Out:          conf.Log.Out,
-				Hooks:        conf.Log.Hooks,
-				Level:        conf.Log.Level,
-				Formatter:    conf.Log.Formatter,
-				ReportCaller: conf.Log.ReportCaller,
-				ExitFunc:     conf.Log.ExitFunc,
-				BufferPool:   conf.Log.BufferPool,
-			}
-			if conf.Config.Basic.Debug || s.options.Debug {
-				contextLogger.Logger.SetLevel(logrus.DebugLevel)
-			}
-			if s.options.LogFilename != "" {
-				logDir, _ := conf.GetLogLoc()
+	contextLogger := conf.Log.WithField("rule", s.name)
+	if s.options != nil && (s.options.Debug || s.options.LogFilename != "") {
+		contextLogger.Logger = &logrus.Logger{
+			Out:          conf.Log.Out,
+			Hooks:        conf.Log.Hooks,
+			Level:        conf.Log.Level,
+			Formatter:    conf.Log.Formatter,
+			ReportCaller: conf.Log.ReportCaller,
+			ExitFunc:     conf.Log.ExitFunc,
+			BufferPool:   conf.Log.BufferPool,
+		}
+		if conf.Config.Basic.Debug || s.options.Debug {
+			contextLogger.Logger.SetLevel(logrus.DebugLevel)
+		}
+		if s.options.LogFilename != "" {
+			logDir, _ := conf.GetLogLoc()
 
-				file := path.Join(logDir, path.Base(s.options.LogFilename))
-				output, err := rotatelogs.New(
-					file+".%Y-%m-%d_%H-%M-%S",
-					rotatelogs.WithLinkName(file),
-					rotatelogs.WithRotationTime(time.Hour*time.Duration(conf.Config.Basic.RotateTime)),
-					rotatelogs.WithMaxAge(time.Hour*time.Duration(conf.Config.Basic.MaxAge)),
-				)
-				if err != nil {
-					conf.Log.Warnf("Create rule log file failed: %s", file)
-				} else if conf.Config.Basic.ConsoleLog {
-					contextLogger.Logger.SetOutput(io.MultiWriter(output, os.Stdout))
-				} else if !conf.Config.Basic.ConsoleLog {
-					contextLogger.Logger.SetOutput(output)
-				}
+			file := path.Join(logDir, path.Base(s.options.LogFilename))
+			output, err := rotatelogs.New(
+				file+".%Y-%m-%d_%H-%M-%S",
+				rotatelogs.WithLinkName(file),
+				rotatelogs.WithRotationTime(time.Hour*time.Duration(conf.Config.Basic.RotateTime)),
+				rotatelogs.WithMaxAge(time.Hour*time.Duration(conf.Config.Basic.MaxAge)),
+			)
+			if err != nil {
+				conf.Log.Warnf("Create rule log file failed: %s", file)
+			} else if conf.Config.Basic.ConsoleLog {
+				contextLogger.Logger.SetOutput(io.MultiWriter(output, os.Stdout))
+			} else if !conf.Config.Basic.ConsoleLog {
+				contextLogger.Logger.SetOutput(output)
 			}
 		}
-		ctx := kctx.WithValue(kctx.RuleBackground(s.name), kctx.LoggerKey, contextLogger)
-		ctx = kctx.WithValue(ctx, kctx.RuleStartKey, timex.GetNowInMilli())
-		ctx = kctx.WithValue(ctx, kctx.RuleWaitGroupKey, s.opsWg)
-		nctx := ctx.WithRuleId(s.name)
-		s.ctx, s.cancel = nctx.WithCancel()
 	}
+	ctx := kctx.WithValue(kctx.RuleBackground(s.name), kctx.LoggerKey, contextLogger)
+	ctx = kctx.WithValue(ctx, kctx.RuleStartKey, timex.GetNowInMilli())
+	ctx = kctx.WithValue(ctx, kctx.RuleWaitGroupKey, s.opsWg)
+	nctx := ctx.WithRuleId(s.name).WithInstance(s.runId)
+	s.ctx, s.cancel = nctx.WithCancel()
+	s.drain = make(chan error, 2)
 }
 
 func (s *Topo) EnableTracer(isEnabled bool, strategy kctx.TraceStrategy) {
@@ -280,55 +371,6 @@ func (s *Topo) EnableTracer(isEnabled bool, strategy kctx.TraceStrategy) {
 
 func (s *Topo) IsTraceEnabled() bool {
 	return s.ctx.IsTraceEnabled()
-}
-
-func (s *Topo) Open() <-chan error {
-	// if stream has opened, do nothing
-	if s.hasOpened.Load() && !conf.IsTesting {
-		s.ctx.GetLogger().Info("rule is already running, do nothing")
-		return s.drain
-	}
-	s.hasOpened.Store(true)
-	s.prepareContext() // ensure context is set
-	s.drain = make(chan error, 2)
-	log := s.ctx.GetLogger()
-	log.Info("Opening stream")
-	err := infra.SafeRun(func() error {
-		var err error
-		if s.store, err = state.CreateStore(s.name, s.options.Qos); err != nil {
-			return fmt.Errorf("topo %s create store error %v", s.name, err)
-		}
-		if err := s.enableCheckpoint(s.ctx); err != nil {
-			return err
-		}
-		topoStore := s.store
-		// open stream sink, after log sink is ready.
-		for _, snk := range s.sinks {
-			snk.Exec(s.ctx.WithMeta(s.name, snk.GetName(), topoStore), s.drain)
-		}
-
-		for _, op := range s.ops {
-			op.Exec(s.ctx.WithMeta(s.name, op.GetName(), topoStore), s.drain)
-		}
-
-		for _, source := range s.sources {
-			source.Open(s.ctx.WithMeta(s.name, source.GetName(), topoStore), s.drain)
-		}
-		// activate checkpoint
-		if s.coordinator != nil {
-			return s.coordinator.Activate()
-		}
-		return nil
-	})
-	if err != nil {
-		infra.DrainError(s.ctx, err, s.drain)
-	}
-	s.ctx.GetLogger().Infof("Rule %s with topo %d is running", s.name, s.runId)
-	return s.drain
-}
-
-func (s *Topo) HasOpen() bool {
-	return s.hasOpened.Load()
 }
 
 func (s *Topo) enableCheckpoint(ctx api.StreamContext) error {
@@ -473,10 +515,7 @@ func (s *Topo) ResetStreamOffset(name string, input map[string]interface{}) erro
 	return fmt.Errorf("stream %v not found in topo", name)
 }
 
-func (s *Topo) WaitClose() {
-	if s == nil {
-		return
-	}
+func (s *Topo) waitClose() {
 	// wait all operators close
 	if s.opsWg != nil {
 		s.opsWg.Wait()
