@@ -2,8 +2,11 @@ name: Release Charts
 
 on:
   push:
+    branches:
+      - ci/*
     tags:
       - "v*.*.*"
+  workflow_dispatch:
 
 permissions: write-all
 
@@ -12,19 +15,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
+        uses: actions/checkout@v4
 
-      - name: Configure Git
+      - name: Set up Helm
+        uses: azure/setup-helm@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Package Helm Charts
         run: |
-          git config user.name "$GITHUB_ACTOR"
-          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
-
-      - name: Run chart-releaser
-        id: cr
-        uses: helm/chart-releaser-action@v1.5.0
-        env:
-          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-        with:
-          charts_dir: ./deploy/chart
+          helm package deploy/chart/ekuiper --destination ./packages
+          helm push ./packages/*.tgz oci://ghcr.io/${{ github.repository_owner }}/ekuiper-charts/ekuiper
