@@ -150,14 +150,7 @@ func (s *State) StopWithLastWill(msg string) {
 	s.doStop(machine.Stopped, msg)
 }
 
-func (s *State) Delete() (err error) {
-	defer func() {
-		if err != nil {
-			if _, ok := err.(errorx.ErrorWithCode); !ok {
-				err = errorx.NewWithCode(errorx.RuleErr, err.Error())
-			}
-		}
-	}()
+func (s *State) Delete() {
 	s.ruleLock.Lock()
 	defer s.ruleLock.Unlock()
 	if s.topology != nil {
@@ -165,7 +158,6 @@ func (s *State) Delete() (err error) {
 		s.topology.RemoveMetrics()
 		s.topology = nil
 	}
-	return nil
 }
 
 func (s *State) GetState() machine.RunState {

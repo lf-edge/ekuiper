@@ -57,6 +57,7 @@ type DefaultContext struct {
 	ruleId         string
 	opId           string
 	instanceId     int
+	runId          int
 	ctx            context.Context
 	err            error
 	isTraceEnabled *atomic.Bool
@@ -159,6 +160,10 @@ func (c *DefaultContext) GetInstanceId() int {
 	return c.instanceId
 }
 
+func (c *DefaultContext) GetRunId() int {
+	return c.runId
+}
+
 func (c *DefaultContext) GetRootPath() string {
 	loc, _ := conf.GetLoc("")
 	return loc
@@ -229,7 +234,8 @@ func (c *DefaultContext) WithMeta(ruleId string, opId string, store api.Store) a
 	return &DefaultContext{
 		ruleId:         ruleId,
 		opId:           opId,
-		instanceId:     0,
+		runId:          c.runId,
+		instanceId:     c.instanceId,
 		ctx:            c.ctx,
 		store:          store,
 		state:          s,
@@ -243,6 +249,7 @@ func (c *DefaultContext) WithMeta(ruleId string, opId string, store api.Store) a
 func (c *DefaultContext) WithInstance(instanceId int) api.StreamContext {
 	return &DefaultContext{
 		instanceId:     instanceId,
+		runId:          c.runId,
 		ruleId:         c.ruleId,
 		opId:           c.opId,
 		ctx:            c.ctx,
@@ -255,6 +262,7 @@ func (c *DefaultContext) WithInstance(instanceId int) api.StreamContext {
 func (c *DefaultContext) WithRuleId(ruleId string) api.StreamContext {
 	return &DefaultContext{
 		instanceId:     c.instanceId,
+		runId:          c.runId,
 		ruleId:         ruleId,
 		opId:           c.opId,
 		ctx:            c.ctx,
@@ -267,8 +275,22 @@ func (c *DefaultContext) WithRuleId(ruleId string) api.StreamContext {
 func (c *DefaultContext) WithOpId(opId string) api.StreamContext {
 	return &DefaultContext{
 		instanceId:     c.instanceId,
+		runId:          c.runId,
 		ruleId:         c.ruleId,
 		opId:           opId,
+		ctx:            c.ctx,
+		state:          c.state,
+		isTraceEnabled: c.isTraceEnabled,
+		strategy:       c.strategy,
+	}
+}
+
+func (c *DefaultContext) WithRun(runId int) api.StreamContext {
+	return &DefaultContext{
+		instanceId:     c.instanceId,
+		runId:          runId,
+		ruleId:         c.ruleId,
+		opId:           c.opId,
 		ctx:            c.ctx,
 		state:          c.state,
 		isTraceEnabled: c.isTraceEnabled,
@@ -282,6 +304,7 @@ func (c *DefaultContext) WithCancel() (api.StreamContext, context.CancelFunc) {
 		ruleId:         c.ruleId,
 		opId:           c.opId,
 		instanceId:     c.instanceId,
+		runId:          c.runId,
 		ctx:            ctx,
 		state:          c.state,
 		isTraceEnabled: c.isTraceEnabled,

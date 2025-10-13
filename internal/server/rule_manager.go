@@ -121,6 +121,7 @@ func (rr *RuleRegistry) delete(key string) (*rule.State, error) {
 }
 
 //// APIs for REST service
+//// Keep consistent by DB. Rollback when db errors happen
 
 func (rr *RuleRegistry) CreateRule(name, ruleJson string) (id string, err error) {
 	// Validate the rule json
@@ -147,6 +148,8 @@ func (rr *RuleRegistry) CreateRule(name, ruleJson string) (id string, err error)
 	// Store to registry and KV
 	err = rr.save(r.Id, ruleJson, rs)
 	if err != nil {
+		// rollback clean up
+		rs.Delete()
 		return r.Id, fmt.Errorf("store the rule error: %v", err)
 	}
 	return r.Id, nil
@@ -210,6 +213,10 @@ func (rr *RuleRegistry) UpsertRule(ruleId, ruleJson string) error {
 			err = rr.save(r.Id, ruleJson, rs)
 		}
 	}
+	if err != nil {
+		// rollback clean up
+		rs.Delete()
+	}
 	return err
 }
 
@@ -217,11 +224,7 @@ func (rr *RuleRegistry) DeleteRule(name string) error {
 	// lock registry and db. rs level has its own lock
 	rs, err := rr.delete(name)
 	if rs != nil {
-		err = rs.Delete()
-		if err != nil {
-			logger.Errorf("delete rule %s error: %v", name, err)
-		}
-		deleteRuleMetrics(name)
+		rs.Delete()
 	}
 	deleteRuleData(name)
 	return err

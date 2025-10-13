@@ -49,11 +49,129 @@ type SrcSubTopo struct {
 	// runtime state
 	// Ref state, affect the pool. Update when rule created or stopped
 	sync.RWMutex
-	refRules map[string]chan<- error // map[ruleId]errCh, notify the rule for errors
+	refRules map[string]map[int]chan<- error // map[ruleId][runId]errCh, notify the rule for errors
 	// Runtime state, affect the running loop. Update when any rule opened or all rules stopped
-	opened           atomic.Bool
+	opened           atomic.Int32 // 0 is init, 1 is open, -1 is close
 	cancel           context.CancelFunc
+	pctx             api.StreamContext
 	enableCheckpoint bool
+}
+
+const (
+	InitState  int32 = 0
+	OpenState  int32 = 1
+	CloseState int32 = -1
+)
+
+func (s *SrcSubTopo) Init(ctx api.StreamContext) {
+	s.Lock()
+	defer s.Unlock()
+	if ctx != nil { // shared connection can create without reference, so the ctx may be nil
+		s.updateRef(ctx, nil)
+	}
+}
+
+// Open is different from main topo because this will run multiple times.
+// Each new ref rule will run open subtopo
+func (s *SrcSubTopo) Open(ctx api.StreamContext, parentErrCh chan<- error) {
+	s.Lock()
+	defer s.Unlock()
+	// Update the ref count
+	rl := s.updateRef(ctx, parentErrCh)
+	if !rl {
+		ctx.GetLogger().Infof("subtopo %s already close, so ignore open", s.name)
+		return
+	}
+	// Attach schemas
+	err := s.schemaLayer.Attach(ctx)
+	if err != nil {
+		ctx.GetLogger().Warnf("attach schema layer failed: %s", err)
+	} else {
+		for _, op := range s.ops {
+			if so, ok := op.(node.SchemaNode); ok {
+				ctx.GetLogger().Infof("reset schema to op %s", op.GetName())
+				so.ResetSchema(ctx, s.schemaLayer.GetSchema())
+			}
+		}
+	}
+	// If not opened yet, open it. Each ref rule start will try to run this.
+	if s.opened.CompareAndSwap(InitState, OpenState) {
+		poe := infra.SafeRun(func() error {
+			ctx.GetLogger().Infof("Opening subtopo %s by rule %s", s.name, ctx.GetRuleId())
+			qos := def.AtMostOnce
+			if s.enableCheckpoint {
+				qos = def.AtLeastOnce
+			}
+			pctx, cancel, err := prepareSharedContext(ctx, s.name, qos)
+			if err != nil {
+				return err
+			}
+			errCh := make(chan error, 1)
+			for _, op := range s.ops {
+				op.Exec(pctx, errCh)
+			}
+			s.source.Open(pctx, errCh)
+			s.cancel = cancel
+			s.pctx = pctx
+			ctx.GetLogger().Infof("subtopo %s opened by rule %s with 1 ref", s.name, ctx.GetRuleId())
+			go func() {
+				defer func() {
+					s.opened.Store(CloseState)
+					conf.Log.Infof("subtopo %s closed", s.name)
+				}()
+				for {
+					select {
+					case e := <-errCh:
+						pctx.GetLogger().Infof("subtopo %s exit for error %v", s.name, e)
+						s.notifyError(e)
+						return
+					case <-pctx.Done():
+						return
+					}
+				}
+			}()
+			return nil
+		})
+		if poe != nil {
+			s.notifyError(poe)
+		}
+	} else {
+		ctx.GetLogger().Infof("subtopo %s already started by other rule", s.name)
+	}
+}
+
+// Close is different from main topo because this will run multiple times.
+// Close ref rule will run close subtopo
+func (s *SrcSubTopo) Close(ctx api.StreamContext) {
+	s.Lock()
+	defer s.Unlock()
+	isStop, isDestroy := s.removeRef(ctx)
+	if isDestroy { // destroy this subtopo
+		if s.cancel != nil {
+			s.cancel()
+		}
+		pctx := s.pctx
+		if ss, ok := s.source.(*SrcSubTopo); ok {
+			if pctx == nil {
+				pctx, _, _ = prepareSharedContext(ctx, s.name, 0)
+			}
+			ss.Close(pctx)
+		}
+		ctx.GetLogger().Infof("subtopo %s removed", s.name)
+	} else {
+		ctx.GetLogger().Infof("subtopo %s update schema for rule %s change", s.name, ctx.GetRuleId())
+		err := s.schemaLayer.Detach(ctx, isStop)
+		if err != nil {
+			ctx.GetLogger().Warnf("detach schema layer failed: %s", err)
+		} else {
+			for _, op := range s.ops {
+				if so, ok := op.(node.SchemaNode); ok {
+					so.ResetSchema(ctx, s.schemaLayer.GetSchema())
+				}
+			}
+		}
+	}
+	_ = s.RemoveOutput(fmt.Sprintf("%s.%d", ctx.GetRuleId(), ctx.GetRunId()))
 }
 
 // IsSliceMode this is a constant set when creating new subtopo
@@ -69,85 +187,60 @@ func (s *SrcSubTopo) RemoveOutput(name string) error {
 	return s.tail.RemoveOutput(name)
 }
 
-func (s *SrcSubTopo) AddRef(ctx api.StreamContext, parentErrCh chan<- error) {
-	s.Lock()
-	defer s.Unlock()
-	if _, ok := s.refRules[ctx.GetRuleId()]; !ok {
-		ctx.GetLogger().Infof("Sub topo %s created for rule %s with %d ref", s.name, ctx.GetRuleId(), len(s.refRules))
+func (s *SrcSubTopo) updateRef(ctx api.StreamContext, parentErrCh chan<- error) bool {
+	if s.opened.Load() == CloseState {
+		return false
+	}
+	rr, ok := s.refRules[ctx.GetRuleId()]
+	if !ok {
+		rr = map[int]chan<- error{}
+		s.refRules[ctx.GetRuleId()] = rr
+		ctx.GetLogger().Infof("subtopo %s add rule ref: %s, count: %d", s.name, ctx.GetRuleId(), len(s.refRules))
+	}
+	_, hasRun := rr[ctx.GetRunId()]
+	if hasRun {
+		if parentErrCh != nil {
+			ctx.GetLogger().Infof("subtopo %s for rule %s replaced, count: %d", s.name, ctx.GetRuleId(), len(s.refRules))
+		} else {
+			ctx.GetLogger().Warnf("subtopo %s for rule %s reset, count: %d", s.name, ctx.GetRuleId(), len(s.refRules))
+		}
 	} else {
 		if parentErrCh != nil {
-			ctx.GetLogger().Infof("Sub topo %s for rule %s opened with %d ref", s.name, ctx.GetRuleId(), len(s.refRules))
+			ctx.GetLogger().Infof("subtopo %s for rule %s opened, count: %d", s.name, ctx.GetRuleId(), len(s.refRules))
 		} else {
-			ctx.GetLogger().Infof("Sub topo %s for rule %s reset with %d ref", s.name, ctx.GetRuleId(), len(s.refRules))
+			ctx.GetLogger().Infof("subtopo %s for rule %s init, count: %d", s.name, ctx.GetRuleId(), len(s.refRules))
 		}
 	}
-	s.refRules[ctx.GetRuleId()] = parentErrCh
+	rr[ctx.GetRunId()] = parentErrCh
+	return true
 }
 
-func (s *SrcSubTopo) Open(ctx api.StreamContext, parentErrCh chan<- error) {
-	// Update the ref count
-	s.AddRef(ctx, parentErrCh)
-	// Attach schemas
-	err := s.schemaLayer.Attach(ctx)
-	if err != nil {
-		ctx.GetLogger().Warnf("attach schema layer failed: %s", err)
-	}
-	for _, op := range s.ops {
-		if so, ok := op.(node.SchemaNode); ok {
-			ctx.GetLogger().Infof("reset schema to op %s", op.GetName())
-			so.ResetSchema(ctx, s.schemaLayer.GetSchema())
+func (s *SrcSubTopo) removeRef(ctx api.StreamContext) (ruleClose bool, destroy bool) {
+	rr, ok := s.refRules[ctx.GetRuleId()]
+	if ok { // Run inside ok to make sure clean up only run once
+		delete(rr, ctx.GetRunId())
+		if len(rr) == 0 {
+			delete(s.refRules, ctx.GetRuleId())
+			ruleClose = true
+			ctx.GetLogger().Infof("subtopo %s for rule %s closed, count: %d", s.name, ctx.GetRuleId(), len(s.refRules))
+		}
+		if len(s.refRules) == 0 {
+			RemoveSubTopo(s.name)
+			destroy = true
+			s.opened.Store(CloseState)
+			ctx.GetLogger().Infof("subtopo %s closed", s.name)
 		}
 	}
-	// If not opened yet, open it. It may be opened before, but failed to open. In this case, try to open it again.
-	if s.opened.CompareAndSwap(false, true) {
-		poe := infra.SafeRun(func() error {
-			ctx.GetLogger().Infof("Opening sub topo %s by rule %s", s.name, ctx.GetRuleId())
-			qos := def.AtMostOnce
-			if s.enableCheckpoint {
-				qos = def.AtLeastOnce
-			}
-			pctx, cancel, err := prepareSharedContext(ctx, s.name, qos)
-			if err != nil {
-				return err
-			}
-			errCh := make(chan error, 1)
-			for _, op := range s.ops {
-				op.Exec(pctx, errCh)
-			}
-			s.source.Open(pctx, errCh)
-			s.cancel = cancel
-			ctx.GetLogger().Infof("Sub topo %s opened by rule %s with 1 ref", s.name, ctx.GetRuleId())
-			go func() {
-				defer func() {
-					conf.Log.Infof("Sub topo %s closed", s.name)
-					s.opened.Store(false)
-				}()
-				for {
-					select {
-					case e := <-errCh:
-						pctx.GetLogger().Infof("Sub topo %s exit for error %v", s.name, e)
-						s.notifyError(e)
-						return
-					case <-pctx.Done():
-						return
-					}
-				}
-			}()
-			return nil
-		})
-		if poe != nil {
-			s.notifyError(poe)
-		}
-	}
+	return
 }
 
 func (s *SrcSubTopo) notifyError(poe error) {
-	s.RLock()
-	defer s.RUnlock()
 	// Notify error to all ref rules
-	for k, ch := range s.refRules {
+	for k, rr := range s.refRules {
 		conf.Log.Debugf("Notify error %v to rule %s", poe, k)
-		infra.DrainError(nil, poe, ch)
+		for _, e := range rr {
+			infra.DrainError(nil, poe, e)
+		}
 	}
 }
 
@@ -189,41 +282,6 @@ func (s *SrcSubTopo) StoreSchema(ruleID, dataSource string, schema map[string]*a
 	s.schemaLayer.RegSchema(ruleID, dataSource, schema, isWildCard)
 }
 
-func (s *SrcSubTopo) Close(ctx api.StreamContext, ruleId string, runId int) {
-	s.Lock()
-	defer s.Unlock()
-	if ch, ok := s.refRules[ruleId]; ok {
-		isStopped := ch != nil
-		// Only do clean up when rule is deleted instead of updated
-		if isStopped {
-			delete(s.refRules, ruleId)
-			if len(s.refRules) == 0 {
-				if s.cancel != nil {
-					s.cancel()
-				}
-				if ss, ok := s.source.(*SrcSubTopo); ok {
-					ss.Close(ctx, "$$subtopo_"+s.name, runId)
-				}
-				RemoveSubTopo(s.name)
-			}
-			ctx.GetLogger().Infof("Sub topo %s dereference %s with %d ref", s.name, ctx.GetRuleId(), len(s.refRules))
-		}
-		ctx.GetLogger().Infof("Sub topo %s update schema for rule %s change", s.name, ctx.GetRuleId())
-		err := s.schemaLayer.Detach(ctx, isStopped)
-		if err != nil {
-			ctx.GetLogger().Warnf("detach schema layer failed: %s", err)
-		}
-		if isStopped {
-			for _, op := range s.ops {
-				if so, ok := op.(node.SchemaNode); ok {
-					so.ResetSchema(ctx, s.schemaLayer.GetSchema())
-				}
-			}
-		}
-	}
-	_ = s.RemoveOutput(fmt.Sprintf("%s.%d", ruleId, runId))
-}
-
 // RemoveMetrics is called when the rule is deleted
 func (s *SrcSubTopo) RemoveMetrics(ruleId string) {
 	s.RLock()
@@ -258,7 +316,7 @@ func prepareSharedContext(parCtx api.StreamContext, k string, qos def.Qos) (api.
 		return nil, nil, err
 	}
 	sctx, cancel := ctx.WithCancel()
-	return sctx.WithMeta(ruleId, opId, store), cancel, nil
+	return sctx.WithMeta(ruleId, opId, store).WithRun(0), cancel, nil
 }
 
 var (

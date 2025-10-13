@@ -16,15 +16,18 @@ package rule
 
 import (
 	"regexp"
+	"sync"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/schedule"
 	"github.com/lf-edge/ekuiper/v2/internal/processor"
 	"github.com/lf-edge/ekuiper/v2/internal/testx"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/rule/machine"
+	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 func init() {
@@ -134,136 +137,143 @@ func TestAPIs(t *testing.T) {
 	rsm = re.ReplaceAllString(sm, `connection_last_connected_time": 1`)
 	em = "{\n  \"status\": \"running\",\n  \"message\": \"\",\n  \"lastStartTimestamp\": 0,\n  \"lastStopTimestamp\": 0,\n  \"nextStartTimestamp\": 0,\n  \"source_demo_0_records_in_total\": 0,\n  \"source_demo_0_records_out_total\": 0,\n  \"source_demo_0_messages_processed_total\": 0,\n  \"source_demo_0_process_latency_us\": 0,\n  \"source_demo_0_buffer_length\": 0,\n  \"source_demo_0_last_invocation\": 0,\n  \"source_demo_0_exceptions_total\": 0,\n  \"source_demo_0_last_exception\": \"\",\n  \"source_demo_0_last_exception_time\": 0,\n  \"source_demo_0_connection_status\": 1,\n  \"source_demo_0_connection_last_connected_time\": 1,\n  \"source_demo_0_connection_last_disconnected_time\": 0,\n  \"source_demo_0_connection_last_disconnected_message\": \"\",\n  \"source_demo_0_connection_last_try_time\": 0,\n  \"op_2_filter_0_records_in_total\": 0,\n  \"op_2_filter_0_records_out_total\": 0,\n  \"op_2_filter_0_messages_processed_total\": 0,\n  \"op_2_filter_0_process_latency_us\": 0,\n  \"op_2_filter_0_buffer_length\": 0,\n  \"op_2_filter_0_last_invocation\": 0,\n  \"op_2_filter_0_exceptions_total\": 0,\n  \"op_2_filter_0_last_exception\": \"\",\n  \"op_2_filter_0_last_exception_time\": 0,\n  \"op_3_project_0_records_in_total\": 0,\n  \"op_3_project_0_records_out_total\": 0,\n  \"op_3_project_0_messages_processed_total\": 0,\n  \"op_3_project_0_process_latency_us\": 0,\n  \"op_3_project_0_buffer_length\": 0,\n  \"op_3_project_0_last_invocation\": 0,\n  \"op_3_project_0_exceptions_total\": 0,\n  \"op_3_project_0_last_exception\": \"\",\n  \"op_3_project_0_last_exception_time\": 0,\n  \"op_logToMemory_0_0_transform_0_records_in_total\": 0,\n  \"op_logToMemory_0_0_transform_0_records_out_total\": 0,\n  \"op_logToMemory_0_0_transform_0_messages_processed_total\": 0,\n  \"op_logToMemory_0_0_transform_0_process_latency_us\": 0,\n  \"op_logToMemory_0_0_transform_0_buffer_length\": 0,\n  \"op_logToMemory_0_0_transform_0_last_invocation\": 0,\n  \"op_logToMemory_0_0_transform_0_exceptions_total\": 0,\n  \"op_logToMemory_0_0_transform_0_last_exception\": \"\",\n  \"op_logToMemory_0_0_transform_0_last_exception_time\": 0,\n  \"op_logToMemory_0_1_encode_0_records_in_total\": 0,\n  \"op_logToMemory_0_1_encode_0_records_out_total\": 0,\n  \"op_logToMemory_0_1_encode_0_messages_processed_total\": 0,\n  \"op_logToMemory_0_1_encode_0_process_latency_us\": 0,\n  \"op_logToMemory_0_1_encode_0_buffer_length\": 0,\n  \"op_logToMemory_0_1_encode_0_last_invocation\": 0,\n  \"op_logToMemory_0_1_encode_0_exceptions_total\": 0,\n  \"op_logToMemory_0_1_encode_0_last_exception\": \"\",\n  \"op_logToMemory_0_1_encode_0_last_exception_time\": 0,\n  \"sink_logToMemory_0_0_records_in_total\": 0,\n  \"sink_logToMemory_0_0_records_out_total\": 0,\n  \"sink_logToMemory_0_0_messages_processed_total\": 0,\n  \"sink_logToMemory_0_0_process_latency_us\": 0,\n  \"sink_logToMemory_0_0_buffer_length\": 0,\n  \"sink_logToMemory_0_0_last_invocation\": 0,\n  \"sink_logToMemory_0_0_exceptions_total\": 0,\n  \"sink_logToMemory_0_0_last_exception\": \"\",\n  \"sink_logToMemory_0_0_last_exception_time\": 0,\n  \"sink_logToMemory_0_0_connection_status\": 1,\n  \"sink_logToMemory_0_0_connection_last_connected_time\": 1,\n  \"sink_logToMemory_0_0_connection_last_disconnected_time\": 0,\n  \"sink_logToMemory_0_0_connection_last_disconnected_message\": \"\",\n  \"sink_logToMemory_0_0_connection_last_try_time\": 0\n}"
 	assert.Equal(t, em, rsm)
-	e = st.Delete()
-	assert.NoError(t, e)
+	st.Delete()
 }
 
-//func TestStateTransit(t *testing.T) {
-//	t.Skip()
-//	sp := processor.NewStreamProcessor()
-//	_, err := sp.ExecStmt(`CREATE STREAM demo () WITH (FORMAT="JSON", TYPE="memory", DATASOURCE="test")`)
-//	assert.NoError(t, err)
-//	defer sp.ExecStmt(`DROP STREAM demo`)
-//	tests := []struct {
-//		name       string
-//		r          *def.Rule
-//		actions    []machine.ActionSignal
-//		async      bool
-//		finalState machine.RunState
-//	}{
-//		{
-//			name:       "fast start stop",
-//			r:          def.GetDefaultRule("testNormal", "select * from demo"),
-//			actions:    []machine.ActionSignal{machine.ActionSignalStart, machine.ActionSignalStart, machine.ActionSignalStop, machine.ActionSignalStart, machine.ActionSignalStart, machine.ActionSignalStop},
-//			finalState: machine.Stopped,
-//		},
-//		//{
-//		//	name:       "async fast start stop",
-//		//	r:          def.GetDefaultRule("testAsync1", "select * from demo"),
-//		//	actions:    []ActionSignal{ActionSignalStart, ActionSignalStop, ActionSignalStop, ActionSignalStart, ActionSignalStop, ActionSignalStart, ActionSignalStart},
-//		//	finalState: Running,
-//		//	async:      true,
-//		//},
-//		{
-//			name:       "invalid",
-//			r:          def.GetDefaultRule("testAsync2", "select * from demo2"),
-//			actions:    []machine.ActionSignal{machine.ActionSignalStart, machine.ActionSignalStop, machine.ActionSignalStop, machine.ActionSignalStart, machine.ActionSignalStop, machine.ActionSignalStop, machine.ActionSignalStart},
-//			finalState: machine.StoppedByErr,
-//			async:      true,
-//		},
-//	}
-//	for _, v := range tests {
-//		t.Run(v.name, func(t *testing.T) {
-//			st := NewState(v.r, func(string, bool) {})
-//			defer st.Delete()
-//			st.actionQ = []machine.ActionSignal{machine.ActionSignalStart}
-//			st.nextAction()
-//			var wg sync.WaitGroup
-//			if v.async {
-//				wg.Add(len(v.actions) - 1)
-//			}
-//			for i, a := range v.actions {
-//				if i == len(v.actions)-1 {
-//					break
-//				}
-//				if v.async {
-//					go func() {
-//						sendAction(st, a)
-//						wg.Done()
-//					}()
-//				} else {
-//					sendAction(st, a)
-//				}
-//			}
-//			if v.async {
-//				wg.Wait()
-//			}
-//			sendAction(st, v.actions[len(v.actions)-1])
-//			time.Sleep(500 * time.Millisecond)
-//			assert.Equal(t, v.finalState, st.GetState())
-//		})
-//	}
-//}
+func TestStateTransit(t *testing.T) {
+	sp := processor.NewStreamProcessor()
+	_, err := sp.ExecStmt(`CREATE STREAM demo () WITH (FORMAT="JSON", TYPE="memory", DATASOURCE="test")`)
+	assert.NoError(t, err)
+	defer sp.ExecStmt(`DROP STREAM demo`)
+	tests := []struct {
+		name       string
+		r          *def.Rule
+		actions    []machine.ActionSignal
+		async      bool
+		finalState machine.RunState
+	}{
+		{
+			name:       "fast start stop",
+			r:          def.GetDefaultRule("testNormal", "select * from demo"),
+			actions:    []machine.ActionSignal{machine.ActionSignalStart, machine.ActionSignalStart, machine.ActionSignalStop, machine.ActionSignalStart, machine.ActionSignalStart, machine.ActionSignalStop},
+			finalState: machine.Stopped,
+		},
+		{
+			name:       "async fast start stop",
+			r:          def.GetDefaultRule("testAsync1", "select * from demo"),
+			actions:    []machine.ActionSignal{machine.ActionSignalStart, machine.ActionSignalStop, machine.ActionSignalStop, machine.ActionSignalStart, machine.ActionSignalStop, machine.ActionSignalStart, machine.ActionSignalStart},
+			finalState: machine.Running,
+			async:      true,
+		},
+		{
+			name:       "invalid",
+			r:          def.GetDefaultRule("testAsync2", "select * from demo2"),
+			actions:    []machine.ActionSignal{machine.ActionSignalStart, machine.ActionSignalStop, machine.ActionSignalStop, machine.ActionSignalStart, machine.ActionSignalStop, machine.ActionSignalStop, machine.ActionSignalStart},
+			finalState: machine.StoppedByErr,
+			async:      true,
+		},
+	}
+	for _, v := range tests {
+		t.Run(v.name, func(t *testing.T) {
+			st := NewState(v.r, func(string, bool) {})
+			defer st.Delete()
+			var wg sync.WaitGroup
+			if v.async {
+				wg.Add(len(v.actions) - 1)
+			}
+			for i, a := range v.actions {
+				if i == len(v.actions)-1 {
+					break
+				}
+				if v.async {
+					go func() {
+						sendAction(st, a)
+						wg.Done()
+					}()
+				} else {
+					sendAction(st, a)
+				}
+			}
+			if v.async {
+				wg.Wait()
+			}
+			sendAction(st, v.actions[len(v.actions)-1])
+			time.Sleep(500 * time.Millisecond)
+			assert.Equal(t, v.finalState, st.GetState())
+		})
+	}
+}
 
-//func TestLongScheduleTransit(t *testing.T) {
-//	sp := processor.NewStreamProcessor()
-//	_, err := sp.ExecStmt(`CREATE STREAM demo () WITH (FORMAT="JSON", TYPE="memory", DATASOURCE="test")`)
-//	assert.NoError(t, err)
-//	defer sp.ExecStmt(`DROP STREAM demo`)
-//	// set now for schedule rule
-//	now := time.Date(2024, time.August, 8, 15, 38, 0, 0, time.UTC)
-//	timex.Set(now.UnixMilli())
-//	sr := def.GetDefaultRule("testScheduleNotIn", "select * from demo")
-//	sr.Options.CronDatetimeRange = []schedule.DatetimeRange{
-//		{
-//			Begin: "2024-08-08 16:04:01",
-//			End:   "2024-08-08 16:30:01",
-//		},
-//	}
-//	st := NewState(sr, func(string, bool) {})
-//	defer st.Delete()
-//	// Start run, but not in schedule
-//	e := st.Start()
-//	assert.NoError(t, e)
-//	assert.Equal(t, machine.ScheduledStop, st.GetState())
-//	// Scheduled stop to start, no change
-//	_ = st.Start()
-//	assert.Equal(t, machine.ScheduledStop, st.GetState())
-//	// Scheduled stop to stop, stop
-//	st.Stop()
-//	assert.Equal(t, machine.Stopped, st.GetState())
-//	// Time move to schedule, should start
-//	timex.Add(30 * time.Minute)
-//	_ = st.ScheduleStart()
-//	// Notice: mock the action queue. The action must be the same as the next otherwise it will loop infinitely
-//	st.actionQ = append(st.actionQ, machine.ActionSignalScheduledStart)
-//	_ = st.ScheduleStart()
-//	st.nextAction()
-//	time.Sleep(100 * time.Millisecond)
-//	assert.Equal(t, machine.Running, st.GetState())
-//	// Time move out of schedule, scheduled stop
-//	timex.Add(30 * time.Minute)
-//	st.ScheduleStop()
-//	// Notice: mock the action queue. The action must be the same as the next otherwise it will loop infinitely
-//	st.actionQ = append(st.actionQ, machine.ActionSignalScheduledStop)
-//	time.Sleep(100 * time.Millisecond)
-//	assert.Equal(t, machine.ScheduledStop, st.GetState())
-//	st.ScheduleStop()
-//	assert.Equal(t, machine.ScheduledStop, st.GetState())
-//}
-//
-//func sendAction(st *State, a machine.ActionSignal) {
-//	switch a {
-//	case machine.ActionSignalStart:
-//		_ = st.Start()
-//	case machine.ActionSignalStop:
-//		st.Stop()
-//	case machine.ActionSignalScheduledStart:
-//		_ = st.ScheduleStart()
-//	case machine.ActionSignalScheduledStop:
-//		st.ScheduleStop()
-//	}
-//}
+func TestLongScheduleTransit(t *testing.T) {
+	sp := processor.NewStreamProcessor()
+	_, err := sp.ExecStmt(`CREATE STREAM demo () WITH (FORMAT="JSON", TYPE="memory", DATASOURCE="test")`)
+	assert.NoError(t, err)
+	defer sp.ExecStmt(`DROP STREAM demo`)
+	// set now for schedule rule
+	now := time.Date(2024, time.August, 8, 15, 38, 0, 0, time.UTC)
+	timex.Set(now.UnixMilli())
+	sr := def.GetDefaultRule("testScheduleNotIn", "select * from demo")
+	sr.Options.CronDatetimeRange = []schedule.DatetimeRange{
+		{
+			Begin: "2024-08-08 16:04:01",
+			End:   "2024-08-08 16:30:01",
+		},
+	}
+	st := NewState(sr, func(string, bool) {})
+	defer st.Delete()
+	// Start run, but not in schedule
+	e := st.Start()
+	assert.NoError(t, e)
+	assert.Equal(t, machine.ScheduledStop, st.GetState())
+	// Scheduled stop to start, no change
+	_ = st.Start()
+	assert.Equal(t, machine.ScheduledStop, st.GetState())
+	// Scheduled stop to stop, stop
+	st.Stop()
+	assert.Equal(t, machine.Stopped, st.GetState())
+	// Time move to schedule, should start
+	timex.Add(30 * time.Minute)
+	_ = st.ScheduleStart()
+	// Notice: mock the action queue. The action must be the same as the next otherwise it will loop infinitely
+	wg1 := sync.WaitGroup{}
+	wg1.Add(2)
+	go func() {
+		_ = st.ScheduleStart()
+		wg1.Done()
+	}()
+	go func() {
+		_ = st.ScheduleStart()
+		wg1.Done()
+	}()
+	wg1.Wait()
+	st.nextAction()
+	time.Sleep(100 * time.Millisecond)
+	assert.Equal(t, machine.Running, st.GetState())
+	// Time move out of schedule, scheduled stop
+	timex.Add(30 * time.Minute)
+	st.ScheduleStop()
+	// Notice: mock the action queue. The action must be the same as the next otherwise it will loop infinitely
+	go func() {
+		st.ScheduleStop()
+	}()
+	time.Sleep(100 * time.Millisecond)
+	assert.Equal(t, machine.ScheduledStop, st.GetState())
+	st.ScheduleStop()
+	assert.Equal(t, machine.ScheduledStop, st.GetState())
+}
+
+func sendAction(st *State, a machine.ActionSignal) {
+	switch a {
+	case machine.ActionSignalStart:
+		_ = st.Start()
+	case machine.ActionSignalStop:
+		st.Stop()
+	case machine.ActionSignalScheduledStart:
+		_ = st.ScheduleStart()
+	case machine.ActionSignalScheduledStop:
+		st.ScheduleStop()
+	}
+}
 
 func TestRuleRestart(t *testing.T) {
 	// TODO added later
