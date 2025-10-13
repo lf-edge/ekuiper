@@ -22,7 +22,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/pingcap/failpoint"
 
-	"github.com/lf-edge/ekuiper/v2/internal/topo/rule"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/rule/machine"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
 
@@ -79,16 +79,16 @@ func updateRuleOffset(ruleID string, param map[string]interface{}) error {
 		switch val.(int) {
 		case 1:
 			StateErr = nil
-			s = rule.Running
+			s = machine.Running
 		case 2:
 			StateErr = nil
-			s = rule.Stopped
+			s = machine.Stopped
 		}
 	})
 	if StateErr != nil {
 		return StateErr
 	}
-	if s != rule.Running {
+	if s != machine.Running {
 		return fmt.Errorf("rule %v should be running when modify state", ruleID)
 	}
 

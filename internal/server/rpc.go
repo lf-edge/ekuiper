@@ -32,7 +32,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/io/sink"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/model"
-	"github.com/lf-edge/ekuiper/v2/internal/topo/rule"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/rule/machine"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 )
@@ -119,7 +119,7 @@ func stopQuery() {
 func (t *Server) GetQueryResult(_ string, reply *string) error {
 	if rs, ok := registry.load(QueryRuleId); ok {
 		st := rs.GetState()
-		if st == rule.Stopped || st == rule.StoppedByErr {
+		if st == machine.Stopped || st == machine.StoppedByErr {
 			return fmt.Errorf("query rule is stopped: %s", rs.GetLastWill())
 		}
 	}

@@ -27,7 +27,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/schedule"
-	"github.com/lf-edge/ekuiper/v2/internal/topo/rule"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/rule/machine"
 	"github.com/lf-edge/ekuiper/v2/metrics"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
@@ -208,10 +208,10 @@ func handleAllRuleStatusMetrics(rs []ruleWrapper) {
 		for _, r := range rs {
 			id := r.rule.Id
 			switch r.state {
-			case rule.Running:
+			case machine.Running:
 				runningCount++
 				v = RuleRunning
-			case rule.StoppedByErr:
+			case machine.StoppedByErr:
 				stopCount++
 				v = RuleStoppedByError
 			default:
@@ -303,7 +303,7 @@ func scheduleCronRuleAction(now time.Time, rw ruleWrapper) scheduleRuleAction {
 			}
 
 		} else {
-			if rw.state == rule.Running && !rw.startTime.IsZero() && now.Sub(rw.startTime) >= d {
+			if rw.state == machine.Running && !rw.startTime.IsZero() && now.Sub(rw.startTime) >= d {
 				return doStop
 			}
 		}
