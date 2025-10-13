@@ -17,11 +17,14 @@
 package redis
 
 import (
+	"bytes"
+	"encoding/gob"
 	"strconv"
 	"testing"
 
 	"github.com/alicebob/miniredis/v2"
 	"github.com/redis/go-redis/v9"
+	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store/test/common"
 	"github.com/lf-edge/ekuiper/v2/pkg/kv"
@@ -72,6 +75,26 @@ func TestRedisKvGetKeyedState(t *testing.T) {
 	defer cleanRedisKv(db, minRedis)
 
 	common.TestKvGetKeyedState(ks, t)
+}
+
+func TestRedisGetByPrefix(t *testing.T) {
+	ks, db, minRedis := setupRedisKv()
+	defer cleanRedisKv(db, minRedis)
+	require.NoError(t, ks.Set("prefix1", int64(1)))
+	require.NoError(t, ks.Set("prefix2", int64(1)))
+	m, err := ks.GetByPrefix("prefix")
+	require.NoError(t, err)
+	k1, ok := m["prefix1"]
+	require.True(t, ok)
+	dec := gob.NewDecoder(bytes.NewBuffer(k1))
+	var v1 int64
+	require.NoError(t, dec.Decode(&v1))
+	require.Equal(t, int64(1), v1)
+	k1, ok = m["prefix2"]
+	require.True(t, ok)
+	dec = gob.NewDecoder(bytes.NewBuffer(k1))
+	require.NoError(t, dec.Decode(&v1))
+	require.Equal(t, int64(1), v1)
 }
 
 func setupRedisKv() (kv.KeyValue, *redis.Client, *miniredis.Miniredis) {

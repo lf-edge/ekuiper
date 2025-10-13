@@ -16,6 +16,7 @@ package conf
 
 import (
 	"bytes"
+	"encoding/gob"
 	"errors"
 	"fmt"
 	"strings"
@@ -207,22 +208,18 @@ func (s *sqlKVStore) Delete(k string) error {
 }
 
 func (s *sqlKVStore) GetByPrefix(prefix string) (map[string]map[string]interface{}, error) {
-	keys, err := s.kv.Keys()
+	r := make(map[string]map[string]interface{})
+	v, err := s.kv.GetByPrefix(prefix)
 	if err != nil {
 		return nil, err
 	}
-	r := make(map[string]map[string]interface{})
-	for _, key := range keys {
-		if strings.HasPrefix(key, prefix) {
-			d := map[string]interface{}{}
-			find, err := s.kv.Get(key, &d)
-			if err != nil {
-				return nil, err
-			}
-			if find {
-				r[key] = d
-			}
+	for key, valueBytes := range v {
+		props := map[string]interface{}{}
+		dec := gob.NewDecoder(bytes.NewBuffer(valueBytes))
+		if err := dec.Decode(&props); err != nil {
+			return nil, err
 		}
+		r[key] = props
 	}
 	return r, nil
 }

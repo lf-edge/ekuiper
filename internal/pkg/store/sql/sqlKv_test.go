@@ -15,6 +15,8 @@
 package sql
 
 import (
+	"bytes"
+	"encoding/gob"
 	"os"
 	"path"
 	"path/filepath"
@@ -112,6 +114,26 @@ func TestSqlKvGetKeyedState(t *testing.T) {
 	defer cleanSqlKv(db, abs)
 
 	common.TestKvGetKeyedState(ks, t)
+}
+
+func TestSqlGetByPrefix(t *testing.T) {
+	ks, db, abs := setupSqlKv()
+	defer cleanSqlKv(db, abs)
+	require.NoError(t, ks.Set("prefix1", int64(1)))
+	require.NoError(t, ks.Set("prefix2", int64(1)))
+	m, err := ks.GetByPrefix("prefix")
+	require.NoError(t, err)
+	k1, ok := m["prefix1"]
+	require.True(t, ok)
+	dec := gob.NewDecoder(bytes.NewBuffer(k1))
+	var v1 int64
+	require.NoError(t, dec.Decode(&v1))
+	require.Equal(t, int64(1), v1)
+	k1, ok = m["prefix2"]
+	require.True(t, ok)
+	dec = gob.NewDecoder(bytes.NewBuffer(k1))
+	require.NoError(t, dec.Decode(&v1))
+	require.Equal(t, int64(1), v1)
 }
 
 func TestInvalidTableName(t *testing.T) {
