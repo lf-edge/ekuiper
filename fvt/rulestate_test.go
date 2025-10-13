@@ -15,7 +15,9 @@
 package fvt
 
 import (
+	"fmt"
 	"net/http"
+	"sync"
 	"testing"
 	"time"
 
@@ -383,5 +385,208 @@ func (s *RuleStateTestSuite) TestRuleTags() {
 	s.Run("clean up", func() {
 		client.DeleteStream("simStream1")
 		client.DeleteRule("ruleTags")
+	})
+}
+
+// Test two rules with shared stream
+func (s *RuleStateTestSuite) TestMulShared() {
+	ruleSql := `{
+  "id": "mul1",
+  "sql": "SELECT * FROM sims",
+  "actions": [
+    {
+      "nop":{}
+    }
+  ],
+  "options": {
+    "sendError": false
+  }
+}`
+	ruleSql2 := `{
+  "id": "mul2",
+  "sql": "SELECT * FROM sims",
+  "actions": [
+    {
+      "nop":{}
+    }
+  ],
+  "options": {
+    "sendError": false,
+	"bufferLength": 2
+  }
+}`
+	// Start two rules
+	s.Run("init rules", func() {
+		conf := map[string]any{
+			"interval": "10ms",
+		}
+		resp, err := client.CreateConf("sources/simulator/confKeys/mul1", conf)
+		s.Require().NoError(err)
+		s.Require().Equal(http.StatusOK, resp.StatusCode)
+
+		streamSql := `{"sql": "create stream sims() WITH (TYPE=\"simulator\", FORMAT=\"json\", CONF_KEY=\"mul1\", SHARED=\"true\")"}`
+		resp, err = client.CreateStream(streamSql)
+		s.Require().NoError(err)
+		s.T().Log(GetResponseText(resp))
+		s.Require().Equal(http.StatusCreated, resp.StatusCode)
+
+		resp, err = client.CreateRule(ruleSql)
+		s.Require().NoError(err)
+		s.T().Log(GetResponseText(resp))
+		s.Require().Equal(http.StatusCreated, resp.StatusCode)
+
+		resp, err = client.CreateRule(ruleSql2)
+		s.Require().NoError(err)
+		s.T().Log(GetResponseText(resp))
+		s.Require().Equal(http.StatusCreated, resp.StatusCode)
+	})
+	// Chain start/stop
+	s.Run("continuous start/stop", func() {
+		metrics, err := client.GetRuleStatus("mul1")
+		s.Require().NoError(err)
+		s.Equal("running", metrics["status"])
+		s.T().Log(metrics)
+
+		resp, err := client.StartRule("mul1")
+		s.Require().NoError(err)
+		s.Require().Equal(http.StatusOK, resp.StatusCode)
+
+		time.Sleep(50 * time.Millisecond)
+		metrics, err = client.GetRuleStatus("mul1")
+		s.Require().NoError(err)
+		s.Equal("running", metrics["status"])
+		s.T().Log(metrics)
+
+		resp, err = client.StopRule("mul1")
+		s.Require().NoError(err)
+		s.Require().Equal(http.StatusOK, resp.StatusCode)
+
+		time.Sleep(50 * time.Millisecond)
+		metrics, err = client.GetRuleStatus("mul1")
+		s.Require().NoError(err)
+		s.Equal("stopped", metrics["status"])
+		s.T().Log(metrics)
+
+		resp, err = client.StartRule("mul1")
+		s.Require().NoError(err)
+		s.Require().Equal(http.StatusOK, resp.StatusCode)
+
+		time.Sleep(50 * time.Millisecond)
+		metrics, err = client.GetRuleStatus("mul1")
+		s.Require().NoError(err)
+		s.Equal("running", metrics["status"])
+		s.T().Log(metrics)
+	})
+	// Chain update
+	s.Run("chain update", func() {
+		resp, err := client.UpdateRule("mul1", ruleSql)
+		s.Require().NoError(err)
+		s.T().Log(GetResponseText(resp))
+		s.Require().Equal(http.StatusOK, resp.StatusCode)
+
+		metrics, err := client.GetRuleStatus("mul1")
+		s.Require().NoError(err)
+		s.Equal("running", metrics["status"])
+		s.T().Log(metrics)
+
+		resp, err = client.UpdateRule("mul2", ruleSql2)
+		s.Require().NoError(err)
+		s.T().Log(GetResponseText(resp))
+		s.Require().Equal(http.StatusOK, resp.StatusCode)
+
+		metrics, err = client.GetRuleStatus("mul2")
+		s.Require().NoError(err)
+		s.Equal("running", metrics["status"])
+		s.T().Log(metrics)
+	})
+	// Async update and start/stop
+	s.Run("async run", func() {
+		wg := sync.WaitGroup{}
+		wg.Add(6)
+		final := 0
+		go func() {
+			defer wg.Done()
+			fmt.Println("start 1")
+			resp, err := client.StartRule("mul1")
+			s.Require().NoError(err)
+			s.Require().Equal(http.StatusOK, resp.StatusCode)
+			final = 0
+		}()
+		go func() {
+			defer wg.Done()
+			fmt.Println("stop 1")
+			resp, err := client.StopRule("mul1")
+			s.Require().NoError(err)
+			s.Require().Equal(http.StatusOK, resp.StatusCode)
+			final = 1
+		}()
+		go func() {
+			defer wg.Done()
+			fmt.Println("update 1")
+			resp, err := client.UpdateRule("mul1", ruleSql)
+			s.Require().NoError(err)
+			s.T().Log(GetResponseText(resp))
+			s.Require().Equal(http.StatusOK, resp.StatusCode)
+			final = 2
+		}()
+		go func() {
+			defer wg.Done()
+			fmt.Println("update 2")
+			resp, err := client.UpdateRule("mul2", ruleSql2)
+			s.Require().NoError(err)
+			s.T().Log(GetResponseText(resp))
+			s.Require().Equal(http.StatusOK, resp.StatusCode)
+			final = 3
+		}()
+		go func() {
+			defer wg.Done()
+			fmt.Println("stop 2")
+			resp, err := client.StopRule("mul1")
+			s.Require().NoError(err)
+			s.Require().Equal(http.StatusOK, resp.StatusCode)
+			final = 4
+		}()
+		go func() {
+			defer wg.Done()
+			fmt.Println("start 2")
+			resp, err := client.StartRule("mul1")
+			s.Require().NoError(err)
+			s.Require().Equal(http.StatusOK, resp.StatusCode)
+			final = 5
+		}()
+		wg.Wait()
+		metrics, err := client.GetRuleStatus("mul2")
+		s.Require().NoError(err)
+		s.Equal("running", metrics["status"])
+		s.T().Log(metrics)
+		exp, ok := metrics["source_sims_0_exceptions_total"]
+		s.True(ok)
+		s.Require().True(exp.(float64) == 0)
+		sinkOut1, ok := metrics["source_sims_0_records_in_total"]
+		s.True(ok)
+		s.True(sinkOut1.(float64) > 0)
+		// mul1 status depends on the final command
+		metrics, err = client.GetRuleStatus("mul1")
+		s.Require().NoError(err)
+		fmt.Println("final", final)
+		if final == 1 || final == 4 {
+			s.Equal("stopped", metrics["status"])
+		} else {
+			s.Equal("running", metrics["status"])
+		}
+	})
+	// Clean
+	s.Run("clean up", func() {
+		res, e := client.Delete("rules/mul2")
+		s.NoError(e)
+		s.Equal(http.StatusOK, res.StatusCode)
+
+		res, e = client.Delete("rules/mul1")
+		s.NoError(e)
+		s.Equal(http.StatusOK, res.StatusCode)
+
+		res, e = client.Delete("streams/sims")
+		s.NoError(e)
+		s.Equal(http.StatusOK, res.StatusCode)
 	})
 }
