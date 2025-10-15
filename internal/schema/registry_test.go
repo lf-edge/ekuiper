@@ -38,12 +38,19 @@ func init() {
 }
 
 func TestPartialImpoart(t *testing.T) {
-	err := InitRegistry()
+	etcDir, err := conf.GetDataLoc()
 	require.NoError(t, err)
-	errMap := SchemaPartialImport(context.Background(), map[string]string{"key": "value"})
+	etcDir = filepath.Join(etcDir, "schemas", "protobuf")
+	err = os.MkdirAll(etcDir, os.ModePerm)
+	require.NoError(t, err)
+	pt := &PbType{}
+	modules.RegisterSchemaType(modules.PROTOBUF, pt, ".proto")
+	err = InitRegistry()
+	require.NoError(t, err)
+	errMap := SchemaPartialImport(context.Background(), map[string]string{"protobuf_test111": `{"type":"protobuf","name":"test111","content":"message Book {required string a = 1; oneof b {string c = 3;string d = 4; }}","file":"","soFile":""}`})
 	require.Equal(t, 0, len(errMap))
 	result := GetAllSchema()
-	require.Equal(t, map[string]string{"key": "value"}, result)
+	require.Equal(t, map[string]string{"protobuf_test111": `{"type":"protobuf","name":"test111","content":"message Book {required string a = 1; oneof b {string c = 3;string d = 4; }}","file":"","soFile":""}`}, result)
 }
 
 func TestProtoRegistry(t *testing.T) {
