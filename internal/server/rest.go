@@ -30,6 +30,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gorilla/handlers"
@@ -290,6 +291,10 @@ func (f *fileContent) Validate() error {
 	}
 	if f.Name == "" {
 		return fmt.Errorf("invalid body: name is required")
+	}
+	// Disallow path traversal and path separators in name
+	if strings.Contains(f.Name, "/") || strings.Contains(f.Name, "\\") || strings.Contains(f.Name, "..") {
+		return fmt.Errorf("invalid body: name must not contain path separators or '..'")
 	}
 	return nil
 }
