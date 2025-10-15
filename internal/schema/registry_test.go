@@ -51,6 +51,7 @@ func TestPartialImpoart(t *testing.T) {
 	require.Equal(t, 0, len(errMap))
 	result := GetAllSchema()
 	require.Equal(t, map[string]string{"protobuf_test111": `{"type":"protobuf","name":"test111","content":"message Book {required string a = 1; oneof b {string c = 3;string d = 4; }}","file":"","soFile":""}`}, result)
+	DeleteSchema(modules.PROTOBUF, "test111")
 }
 
 func TestProtoRegistry(t *testing.T) {
