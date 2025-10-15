@@ -15,6 +15,7 @@
 package schema
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -34,6 +35,15 @@ import (
 
 func init() {
 	testx.InitEnv("schema")
+}
+
+func TestPartialImpoart(t *testing.T) {
+	err := InitRegistry()
+	require.NoError(t, err)
+	errMap := SchemaPartialImport(context.Background(), map[string]string{"key": "value"})
+	require.Equal(t, 0, len(errMap))
+	result := GetAllSchema()
+	require.Equal(t, map[string]string{"key": "value"}, result)
 }
 
 func TestProtoRegistry(t *testing.T) {
