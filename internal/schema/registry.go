@@ -461,6 +461,12 @@ func SchemaPartialImport(ctx context.Context, schemas map[string]string) map[str
 			err := schemaRegisterForImport(k, v)
 			if err != nil {
 				errMap[k] = err.Error()
+				continue
+			}
+			err = schemaDb.Set(k, v)
+			if err != nil {
+				errMap[k] = err.Error()
+				continue
 			}
 		}
 	}
