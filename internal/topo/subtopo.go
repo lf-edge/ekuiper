@@ -114,16 +114,20 @@ func (s *SrcSubTopo) Open(ctx api.StreamContext, parentErrCh chan<- error) {
 			s.cancel = cancel
 			s.pctx = pctx
 			ctx.GetLogger().Infof("subtopo %s opened by rule %s with 1 ref", s.name, ctx.GetRuleId())
-			go func() {
+			go func() (e error) {
 				defer func() {
+					s.Lock()
 					s.opened.Store(CloseState)
 					conf.Log.Infof("subtopo %s closed", s.name)
+					if e != nil {
+						s.notifyError(e)
+					}
+					s.Unlock()
 				}()
 				for {
 					select {
-					case e := <-errCh:
+					case e = <-errCh:
 						pctx.GetLogger().Infof("subtopo %s exit for error %v", s.name, e)
-						s.notifyError(e)
 						return
 					case <-pctx.Done():
 						return
