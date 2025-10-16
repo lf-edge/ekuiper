@@ -310,26 +310,20 @@ func StartUp(Version string) {
 	defer cancel()
 	waitRuleStopCh := make(chan any, 0)
 	go func() {
-		wg1 := sync.WaitGroup{}
-		wg1.Add(1)
-		go func() {
-			conf.Log.Info("start to stop rest server")
-			if err = srvRest.Shutdown(ctx); err != nil {
-				logger.Errorf("rest server shutdown error: %v", err)
-			}
-			logger.Info("rest server successfully shutdown.")
-			wg1.Done()
-		}()
-		wg1.Wait()
-		wg2 := sync.WaitGroup{}
-		wg2.Add(1)
+		conf.Log.Info("start to stop rest server")
+		if err = srvRest.Shutdown(ctx); err != nil {
+			logger.Errorf("rest server shutdown error: %v", err)
+		}
+		logger.Info("rest server successfully shutdown.")
+		wg := sync.WaitGroup{}
+		wg.Add(1)
 		go func() {
 			conf.Log.Info("start to stop all rules")
 			waitAllRuleStop()
-			wg2.Done()
+			wg.Done()
 			conf.Log.Info("stop all rules success")
 		}()
-		wg2.Wait()
+		wg.Wait()
 		close(waitRuleStopCh)
 	}()
 	select {
