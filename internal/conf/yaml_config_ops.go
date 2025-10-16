@@ -118,7 +118,10 @@ func (c *ConfigKeys) CopyConfContent() map[string]map[string]interface{} {
 	defer c.lock.RUnlock()
 
 	for key, kvs := range c.etcCfg {
-		aux := make(map[string]interface{})
+		aux, ok := cf[key]
+		if !ok {
+			aux = make(map[string]interface{}, len(kvs))
+		}
 		for k, v := range kvs {
 			aux[k] = v
 		}
@@ -127,7 +130,10 @@ func (c *ConfigKeys) CopyConfContent() map[string]map[string]interface{} {
 
 	// note: config keys in data directory will overwrite those in etc directory with same name
 	for key, kvs := range c.dataCfg {
-		aux := make(map[string]interface{})
+		aux, ok := cf[key]
+		if !ok {
+			aux = make(map[string]interface{}, len(kvs))
+		}
 		for k, v := range kvs {
 			aux[k] = v
 		}
