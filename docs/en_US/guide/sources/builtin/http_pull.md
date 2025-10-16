@@ -140,6 +140,67 @@ State updates are dynamically updated at runtime. When creating the http_pull so
 
 State can also be updated based on the results of the http_pull result. When QOS is set to 1, the state will be periodically flushed to disk and loaded after the next boot.
 
+For the following http_pull source configuration
+
+```yaml
+
+default:
+# URL to request the server address
+
+url: http://localhost/path?key1={{.key1}}&key2={{.key2}}
+# post, get, put, delete
+
+method: get
+# Interval between requests, in milliseconds
+
+interval: 10000
+# HTTP request timeout, in milliseconds
+
+timeout: 5000
+# Request body, for example, '{"data": "data", "method": 1}'
+
+body: '{}'
+# Body type, none, text, json, html, xml, javascript, form
+
+bodyType: json
+# Required HTTP headers for the request
+
+headers:
+
+Accept: application/json
+# How to check the response status, either by status code or body
+
+states:
+
+key1: value1
+
+key2: value2
+# Parameters used for state rendering in the URL
+
+responseType: code
+```
+
+In this When the http_pull source sends its first request, it will send the following request:
+
+```txt
+GET http://localhost/path?key1=value1&key2=value2
+```
+
+When the response received is as follows:
+
+```json
+{
+"key1": "value3",
+"key2": "value4"
+}
+```
+
+The http_pull source will record the corresponding key1/key2 status and send the following request the next time:
+
+```txt
+GET http://localhost/path?key1=value3&key2=value4
+```
+
 #### Dynamic Properties
 
 Dynamic properties adapt in real time and can be employed to customize the HTTP request's URL, body, and header. The format for these properties is based on the [data template](../../sinks/data_template.md) syntax.

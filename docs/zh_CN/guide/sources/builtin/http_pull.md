@@ -139,6 +139,54 @@ OAuth 2.0 是一个授权协议，让 API 客户端有限度地访问网络服�
 
 并且状态可以根据 http_pull 的结果进行更新。当开启了 QOS 为 1 后，状态将会被定期落盘，并在下一次启动后加载。
 
+对于以下 http_pull source 的配置
+
+```yaml
+default:
+  # 请求服务器地址的URL
+  url: http://localhost/path?key1={{.key1}}&key2={{.key2}}
+  # post, get, put, delete
+  method: get
+  # 请求之间的间隔，时间单位为 ms
+  interval: 10000
+  # http请求超时，时间单位为 ms
+  timeout: 5000
+  # 请求正文，例如'{"data": "data", "method": 1}'
+  body: '{}'
+  # 正文类型, none、text、json、html、xml、javascript、form
+  bodyType: json
+  # 请求所需的HTTP标头
+  headers:
+    Accept: application/json
+  # 如何检查响应状态，支持通过状态码或 body
+  states:
+    key1: value1
+    key2: value2
+  # 用于在 url 中进行状态渲染的参数
+  responseType: code
+```
+
+在该 http_pull source 发送第一次请求时，他会发送如下请求:
+
+```txt
+GET http://localhost/path?key1=value1&key2=value2
+```
+
+当收到的 response 如下时
+
+```json
+{
+  "key1": "value3",
+  "key2": "value4"
+}
+```
+
+该 http_pull source 则会将对应的 key1/key2 的状态记录，并在下次发送请求时发送如下请求:
+
+```txt
+GET http://localhost/path?key1=value3&key2=value4
+```
+
 #### 动态属性
 
 动态属性是指在运行时会动态更新的属性。您可以使用动态属性来指定 HTTP 请求的 URL、正文和标头。其语法基于[数据模板](../../sinks/data_template.md)格式的动态属性。
