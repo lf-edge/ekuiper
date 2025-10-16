@@ -141,7 +141,7 @@ OAuth 2.0 是一个授权协议，让 API 客户端有限度地访问网络服�
 
 对于以下 http_pull source 的配置
 
-```yaml 
+```yaml
 default:
   # 请求服务器地址的URL
   url: http://localhost/path?key1={{.key1}}&key2={{.key2}}
