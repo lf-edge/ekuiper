@@ -120,7 +120,7 @@ func (c *ConfigKeys) CopyConfContent() map[string]map[string]interface{} {
 	for key, kvs := range c.etcCfg {
 		aux, ok := cf[key]
 		if !ok {
-			aux = make(map[string]interface{})
+			aux = make(map[string]interface{}, len(kvs))
 		}
 		for k, v := range kvs {
 			aux[k] = v
@@ -132,7 +132,7 @@ func (c *ConfigKeys) CopyConfContent() map[string]map[string]interface{} {
 	for key, kvs := range c.dataCfg {
 		aux, ok := cf[key]
 		if !ok {
-			aux = make(map[string]interface{})
+			aux = make(map[string]interface{}, len(kvs))
 		}
 		for k, v := range kvs {
 			aux[k] = v
