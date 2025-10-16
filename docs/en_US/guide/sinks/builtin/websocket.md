@@ -4,18 +4,19 @@ The action is used for publishing output message into websocket channel.
 
 ## Properties
 
-| Property name  | Optional | Description                                           |
-| addr           | false    | The address of the websocket sink server, like: 127.0.0.1:8080 |
-| path           | true    | The url path of the websocket sink server, like: /api/data     |
-| scheme           | true    | The url scheme of the websocket sink server, like: ws or wss    |
-| insecureSkipVerify | false | whether to ignore SSL verification |
-| certificationPath  | true | websocket client ssl verification crt file path |
-| privateKeyPath     | true | Key file path for websocket client SSL verification |
-| rootCaPath         | true | websocket client ssl verified ca certificate file path |
-| certficationRaw    | true | base64 encoded original text of cert, use `certificationPath` first if both defined |
-| privateKeyRaw      | true | base64 encoded original text of key, use `privateKeyPath` first if both defined |
-| rootCARaw          | true | base64 encoded original text of CA, use `rootCAPath` first if both defined |
-| checkConnection    | false | check wehther websocket connection exists              |
+| Property name      | Optional | Description                                                                         |
+|--------------------|----------|-------------------------------------------------------------------------------------|
+| addr               | false    | The address of the websocket sink server, like: 127.0.0.1:8080                      |
+| path               | true     | The url path of the websocket sink server, like: /api/data                          |
+| scheme          Ω  | true     | The url scheme of the websocket sink server, like: ws or wss                        |
+| insecureSkipVerify | false    | whether to ignore SSL verification                                                  |
+| certificationPath  | true     | websocket client ssl verification crt file path                                     |
+| privateKeyPath     | true     | Key file path for websocket client SSL verification                                 |
+| rootCaPath         | true     | websocket client ssl verified ca certificate file path                              |
+| certficationRaw    | true     | base64 encoded original text of cert, use `certificationPath` first if both defined |
+| privateKeyRaw      | true     | base64 encoded original text of key, use `privateKeyPath` first if both defined     |
+| rootCARaw          | true     | base64 encoded original text of CA, use `rootCAPath` first if both defined          |
+| checkConnection    | false    | check wehther websocket connection exists                                           |
 
 Other common sink properties are supported. Please refer to the [sink common properties](../overview.md#common-properties) for more information.
 
