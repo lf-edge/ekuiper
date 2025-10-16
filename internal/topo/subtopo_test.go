@@ -16,6 +16,7 @@ package topo
 
 import (
 	"fmt"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -32,7 +33,7 @@ import (
 func TestSubtopoLC(t *testing.T) {
 	ctx1 := mockContext.NewMockContext("rule1", "abc").WithRun(1)
 	assert.Equal(t, 0, len(subTopoPool))
-	subTopo, existed := GetOrCreateSubTopo(ctx1, "shared", false)
+	subTopo, existed := GetOrCreateSubTopo(ctx1, "lc", false)
 	assert.False(t, existed)
 	// Test creation
 	srcNode := &mockSrc{name: "shared"}
@@ -54,7 +55,7 @@ func TestSubtopoLC(t *testing.T) {
 	ptopo := &def.PrintableTopo{
 		Sources: []string{"source_shared"},
 		Edges: map[string][]any{
-			"source_shared": {"op_shared_op1"},
+			"source_shared": {"op_lc_op1"},
 		},
 	}
 	assert.Equal(t, ptopo, subTopo.topo)
@@ -64,7 +65,7 @@ func TestSubtopoLC(t *testing.T) {
 	assert.Equal(t, 1, opNode.schemaCount)
 	// Run another
 	ctx2 := mockContext.NewMockContext("rule2", "abc").WithRun(2)
-	subTopo2, existed := GetOrCreateSubTopo(ctx2, "shared", false)
+	subTopo2, existed := GetOrCreateSubTopo(ctx2, "lc", false)
 	assert.True(t, existed)
 	assert.Equal(t, subTopo, subTopo2)
 	subTopo.StoreSchema("rule2", "shared", map[string]*ast.JsonStreamField{
@@ -76,7 +77,7 @@ func TestSubtopoLC(t *testing.T) {
 	// Metrics test
 	metrics := []any{0, 0, 0, 0, 0, 0, 0, "", 0, 0, 0, 0, 0, 0, 0, 0, "", 0}
 	assert.Equal(t, metrics, subTopo.GetMetrics())
-	keys := []string{"source_shared_0_records_in_total", "source_shared_0_records_out_total", "source_shared_0_messages_processed_total", "source_shared_0_process_latency_us", "source_shared_0_buffer_length", "source_shared_0_last_invocation", "source_shared_0_exceptions_total", "source_shared_0_last_exception", "source_shared_0_last_exception_time", "op_shared_op1_0_records_in_total", "op_shared_op1_0_records_out_total", "op_shared_op1_0_messages_processed_total", "op_shared_op1_0_process_latency_us", "op_shared_op1_0_buffer_length", "op_shared_op1_0_last_invocation", "op_shared_op1_0_exceptions_total", "op_shared_op1_0_last_exception", "op_shared_op1_0_last_exception_time"}
+	keys := []string{"source_shared_0_records_in_total", "source_shared_0_records_out_total", "source_shared_0_messages_processed_total", "source_shared_0_process_latency_us", "source_shared_0_buffer_length", "source_shared_0_last_invocation", "source_shared_0_exceptions_total", "source_shared_0_last_exception", "source_shared_0_last_exception_time", "op_lc_op1_0_records_in_total", "op_lc_op1_0_records_out_total", "op_lc_op1_0_messages_processed_total", "op_lc_op1_0_process_latency_us", "op_lc_op1_0_buffer_length", "op_lc_op1_0_last_invocation", "op_lc_op1_0_exceptions_total", "op_lc_op1_0_last_exception", "op_lc_op1_0_last_exception_time"}
 	kk, vv := subTopo2.SubMetrics()
 	assert.Equal(t, len(keys), len(metrics))
 	assert.Equal(t, keys, kk)
@@ -117,7 +118,7 @@ func TestSubtopoRunError(t *testing.T) {
 	assert.Equal(t, 0, len(subTopoPool))
 	subTopo, existed := GetOrCreateSubTopo(ctx0, "re", false)
 	assert.False(t, existed)
-	srcNode := &mockSrc{name: "src1", sentError: true}
+	srcNode := &mockSrc{name: "src1"}
 	opNode := &mockOp{name: "op1", ch: make(chan any)}
 	subTopo.AddSrc(srcNode)
 	subTopo.AddOperator([]node.Emitter{srcNode}, opNode)
@@ -129,7 +130,7 @@ func TestSubtopoRunError(t *testing.T) {
 	assert.Equal(t, 1, len(subTopoPool))
 	assert.Equal(t, InitState, subTopo.opened.Load())
 	subTopo.Open(ctx0, make(chan<- error))
-	// Test run secondly and thirdly, should fail
+	// Test run secondly and thirdly.
 	errCh1 := make(chan error, 1)
 	subTopo.Open(ctx1, errCh1)
 	assert.Equal(t, 2, len(subTopo.refRules))
@@ -138,6 +139,7 @@ func TestSubtopoRunError(t *testing.T) {
 	ctx2 := mockContext.NewMockContext("rule2", "abc").WithRun(2)
 	subTopo.Open(ctx2, errCh2)
 	assert.Equal(t, 3, len(subTopo.refRules))
+	srcNode.sentError.Store(true)
 	select {
 	case err := <-errCh1:
 		assert.Equal(t, assert.AnError, err)
@@ -156,6 +158,36 @@ func TestSubtopoRunError(t *testing.T) {
 	assert.Equal(t, 1, len(subTopo.refRules))
 	subTopo.Close(ctx0)
 	assert.Equal(t, 0, len(subTopoPool))
+}
+
+func TestErrorClose(t *testing.T) {
+	ctx0 := mockContext.NewMockContext("rule0", "abc").WithRun(0)
+	assert.Equal(t, 0, len(subTopoPool))
+	subTopo, existed := GetOrCreateSubTopo(ctx0, "ee", false)
+	assert.False(t, existed)
+	srcNode := &mockSrc{name: "src1"}
+	opNode := &mockOp{name: "op1", ch: make(chan any)}
+	subTopo.AddSrc(srcNode)
+	subTopo.AddOperator([]node.Emitter{srcNode}, opNode)
+	// create and run subtopo
+	ctx1 := mockContext.NewMockContext("rule1", "abc").WithRun(1)
+	errCh1 := make(chan error, 1)
+	subTopo.Open(ctx1, errCh1)
+	assert.Equal(t, 2, len(subTopo.refRules))
+	assert.Equal(t, OpenState, subTopo.opened.Load())
+	// send error
+	srcNode.sentError.Store(true)
+	// add another subtopo
+	errCh2 := make(chan error, 1)
+	ctx2 := mockContext.NewMockContext("rule2", "abc").WithRun(2)
+	subTopo.Open(ctx2, errCh2)
+	select {
+	case err := <-errCh2:
+		assert.Equal(t, assert.AnError, err)
+		subTopo.Close(ctx2)
+	case <-time.After(1 * time.Second):
+	}
+	assert.Equal(t, 2, len(subTopo.refRules))
 }
 
 func TestSubtopoPrint(t *testing.T) {
@@ -192,6 +224,7 @@ func TestSubtopoPrint(t *testing.T) {
 // because subtopo create and open is not atomic
 // test close in-between, which is supposed to close finally
 func TestSubtopoConcurrency(t *testing.T) {
+	subTopoPool = make(map[string]*SrcSubTopo)
 	// These are happened during planning syncly
 	ctx := mockContext.NewMockContext("rule1", "abc").WithRun(1)
 	assert.Equal(t, 0, len(subTopoPool))
@@ -219,7 +252,7 @@ func TestSubtopoConcurrency(t *testing.T) {
 type mockSrc struct {
 	name      string
 	outputs   []chan<- any
-	sentError bool
+	sentError atomic.Bool
 }
 
 func (m *mockSrc) Broadcast(data interface{}) {
@@ -248,13 +281,17 @@ func (m *mockSrc) RemoveOutput(s string) error {
 }
 
 func (m *mockSrc) Open(ctx api.StreamContext, errCh chan<- error) {
-	if m.sentError {
-		select {
-		case errCh <- assert.AnError:
-		default:
-			fmt.Println("error is not sent")
+	go func() {
+		for {
+			if m.sentError.Load() {
+				select {
+				case errCh <- assert.AnError:
+					fmt.Println("send error")
+				default:
+				}
+			}
 		}
-	}
+	}()
 }
 
 func (m *mockSrc) GetName() string {
