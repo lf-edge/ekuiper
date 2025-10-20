@@ -23,6 +23,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/binder/io"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/topo"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node"
 	nodeConf "github.com/lf-edge/ekuiper/v2/internal/topo/node/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/operator"
@@ -108,7 +109,12 @@ func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, option
 			subId = us.SubId(props)
 		}
 		selName := fmt.Sprintf("%s/%s", conId, subId)
-		srcSubtopo, existed := topo.GetOrCreateSubTopo(nil, selName, false)
+		subCtx := ctx
+		if t.streamStmt.Options.SHARED && !t.inRuleTest {
+			// For shared stream, the rule id is the shared subtopo. Subtopo only has one run so runId is always 0
+			subCtx = subCtx.(*context.DefaultContext).WithRuleId(fmt.Sprintf("$$subtopo_%s", t.name)).WithRun(0)
+		}
+		srcSubtopo, existed := topo.GetOrCreateSubTopo(subCtx, selName, false)
 		if !existed {
 			var scn node.DataSourceNode
 			scn, err = node.NewSourceNode(ctx, selName, ss, props, options)

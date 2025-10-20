@@ -53,7 +53,6 @@ type SrcSubTopo struct {
 	// Runtime state, affect the running loop. Update when any rule opened or all rules stopped
 	opened           atomic.Int32 // 0 is init, 1 is open, -1 is close
 	cancel           context.CancelFunc
-	pctx             api.StreamContext
 	enableCheckpoint bool
 }
 
@@ -66,9 +65,7 @@ const (
 func (s *SrcSubTopo) Init(ctx api.StreamContext) {
 	s.Lock()
 	defer s.Unlock()
-	if ctx != nil { // shared connection can create without reference, so the ctx may be nil
-		s.updateRef(ctx, nil)
-	}
+	s.updateRef(ctx, nil)
 }
 
 // Open is different from main topo because this will run multiple times.
@@ -112,7 +109,6 @@ func (s *SrcSubTopo) Open(ctx api.StreamContext, parentErrCh chan<- error) {
 			}
 			s.source.Open(pctx, errCh)
 			s.cancel = cancel
-			s.pctx = pctx
 			ctx.GetLogger().Infof("subtopo %s opened by rule %s with 1 ref", s.name, ctx.GetRuleId())
 			go func() (e error) {
 				defer func() {
@@ -154,12 +150,9 @@ func (s *SrcSubTopo) Close(ctx api.StreamContext) {
 		if s.cancel != nil {
 			s.cancel()
 		}
-		pctx := s.pctx
+		subCtx := ctx.(*kctx.DefaultContext).WithRuleId(fmt.Sprintf("$$subtopo_%s", s.name)).WithRun(0)
 		if ss, ok := s.source.(*SrcSubTopo); ok {
-			if pctx == nil {
-				pctx, _, _ = prepareSharedContext(ctx, s.name, 0)
-			}
-			ss.Close(pctx)
+			ss.Close(subCtx)
 		}
 		ctx.GetLogger().Infof("subtopo %s removed", s.name)
 	} else {
