@@ -235,6 +235,7 @@ func tupleCollect(ctx api.StreamContext, sink api.Sink, data any) (err error) {
 	case api.MessageTuple:
 		err = sink.(api.TupleCollector).Collect(ctx, d)
 	case *xsql.RawTuple: // may receive raw tuple from data template
+		// TODO: whether needs to consider json list?
 		var message map[string]any
 		err = json.Unmarshal(d.Rawdata, &message)
 		if err != nil {

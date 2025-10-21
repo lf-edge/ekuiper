@@ -210,16 +210,30 @@ func splitSink(tp *topo.Topo, s api.Sink, sinkName string, options *def.RuleOpti
 	}
 	index++
 	result = append(result, transformOp)
+	_, isTupleCollector := s.(api.TupleCollector)
+	_, isBytesCollector := s.(api.BytesCollector)
+	if !isBytesCollector && !isTupleCollector {
+		return nil, fmt.Errorf("sink %s does not implement any collector", sinkName)
+	}
 	if batchEnabled {
-		batchWriterOp, err := node.NewBatchWriterOp(tp.GetContext(), fmt.Sprintf("%s_%d_batchWriter", sinkName, index), options, schema, sc)
-		if err != nil {
-			return nil, err
+		if isBytesCollector {
+			batchWriterOp, err := node.NewBatchWriterOp(tp.GetContext(), fmt.Sprintf("%s_%d_batchWriter", sinkName, index), options, schema, sc)
+			if err != nil {
+				return nil, err
+			}
+			index++
+			result = append(result, batchWriterOp)
+		} else if isTupleCollector {
+			batchMergerOp, err := node.NewBatchMergerOp(fmt.Sprintf("%s_%d_batchWriter", sinkName, index), options)
+			if err != nil {
+				return nil, err
+			}
+			index++
+			result = append(result, batchMergerOp)
 		}
-		index++
-		result = append(result, batchWriterOp)
 	}
 	// Encode will convert the result to []byte
-	if _, ok := s.(api.BytesCollector); ok {
+	if isBytesCollector {
 		if !batchEnabled {
 			encodeOp, err := node.NewEncodeOp(tp.GetContext(), fmt.Sprintf("%s_%d_encode", sinkName, index), options, schema, sc)
 			if err != nil {
