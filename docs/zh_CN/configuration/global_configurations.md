@@ -42,6 +42,8 @@ basic:
   rulePatrolInterval: 10s
   # cfgStorageType indicates the storage type to store the config, support `file` and `kv`. When `cfgStorageType` is file, it will save configuration into File. When `cfgStorageType` is `kv`, it will save configuration into the storage defined in `store`
   cfgStorageType: file
+  # If it is enabled, each REST API call will print logs
+  enableRestAuditLog: false
 ```
 
 将basic项目下debug的值设置为true是有效的 `KUIPER__BASIC__DEBUG=true`。
@@ -327,7 +329,8 @@ SQL 中的 [get_keyed_state](../sqls/functions/other_functions.md#getkeyedstate)
 
 ## 初始化规则集
 
-支持基于文件的流和规则的启动时配置。用户可以将名为 `init.json` 的[规则集](../api/restapi/ruleset.md#规则集格式)文件放入 `data` 目录，以初始化规则集。该规则集只在eKuiper 第一次启动时被导入。
+支持基于文件的流和规则的启动时配置。用户可以将名为 `init.json` 的[规则集](../api/restapi/ruleset.md#规则集格式)文件放入
+`etc` 目录，以初始化规则集。该规则集只在eKuiper 第一次启动时被导入。
 
 ## 配置 FoundationDB 作为存储
 

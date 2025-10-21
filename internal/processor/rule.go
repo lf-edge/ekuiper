@@ -235,11 +235,7 @@ func clone(opt def.RuleOption) *def.RuleOption {
 		Qos:                opt.Qos,
 		CheckpointInterval: opt.CheckpointInterval,
 		RestartStrategy: &def.RestartStrategy{
-			Attempts:     opt.RestartStrategy.Attempts,
-			Delay:        opt.RestartStrategy.Delay,
-			Multiplier:   opt.RestartStrategy.Multiplier,
-			MaxDelay:     opt.RestartStrategy.MaxDelay,
-			JitterFactor: opt.RestartStrategy.JitterFactor,
+			Attempts: opt.RestartStrategy.Attempts,
 		},
 	}
 }

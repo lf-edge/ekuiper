@@ -66,11 +66,7 @@ func InitConf() {
 			CheckpointInterval: cast.DurationConf(5 * time.Minute), // 5 minutes
 			SendError:          false,
 			RestartStrategy: &def.RestartStrategy{
-				Attempts:     0,
-				Delay:        1000,
-				Multiplier:   2,
-				MaxDelay:     30000,
-				JitterFactor: 0.1,
+				Attempts: 0,
 			},
 		},
 	}
@@ -279,30 +275,10 @@ func ValidateRuleOption(option *def.RuleOption) error {
 		errs = errors.Join(errs, errors.New("invalidLateTol:lateTol must be greater than 0"))
 	}
 	if option.RestartStrategy != nil {
-		if option.RestartStrategy.Multiplier <= 0 {
-			option.RestartStrategy.Multiplier = 2
-			Log.Warnf("restart multiplier is negative, set to 2")
-			errs = errors.Join(errs, errors.New("invalidRestartMultiplier:restart multiplier must be greater than 0"))
-		}
 		if option.RestartStrategy.Attempts < 0 {
 			option.RestartStrategy.Attempts = 0
 			Log.Warnf("restart attempts is negative, set to 0")
 			errs = errors.Join(errs, errors.New("invalidRestartAttempts:restart attempts must be greater than 0"))
-		}
-		if option.RestartStrategy.Delay <= 0 {
-			option.RestartStrategy.Delay = 1000
-			Log.Warnf("restart delay is negative, set to 1000")
-			errs = errors.Join(errs, errors.New("invalidRestartDelay:restart delay must be greater than 0"))
-		}
-		if option.RestartStrategy.MaxDelay <= 0 {
-			option.RestartStrategy.MaxDelay = option.RestartStrategy.Delay
-			Log.Warnf("restart maxDelay is negative, set to %d", option.RestartStrategy.Delay)
-			errs = errors.Join(errs, errors.New("invalidRestartMaxDelay:restart maxDelay must be greater than 0"))
-		}
-		if option.RestartStrategy.JitterFactor <= 0 || option.RestartStrategy.JitterFactor >= 1 {
-			option.RestartStrategy.JitterFactor = 0.1
-			Log.Warnf("restart jitterFactor must between 0 and 1, set to 0.1")
-			errs = errors.Join(errs, errors.New("invalidRestartJitterFactor:restart jitterFactor must between [0, 1)"))
 		}
 	}
 	if err := schedule.ValidateRanges(option.CronDatetimeRange); err != nil {

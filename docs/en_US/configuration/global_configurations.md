@@ -46,6 +46,8 @@ basic:
   rulePatrolInterval: 10s
   # cfgStorageType indicates the storage type to store the config, support `file` and `kv`. When `cfgStorageType` is file, it will save configuration into File. When `cfgStorageType` is `kv`, it will save configuration into the storage defined in `store`
   cfgStorageType: file
+  # If it is enabled, each REST API call will print logs
+  enableRestAuditLog: false
 ```
 
 for debug option in basic following env is valid `KUIPER__BASIC__DEBUG=true` and if used debug value will be set to true.
@@ -340,7 +342,9 @@ This section configures the portable plugin runtime.
 
 ## Ruleset Provision
 
-Support file based stream and rule provisioning on startup. Users can put a [ruleset](../api/restapi/ruleset.md#ruleset-format) file named `init.json` into `data` directory to initialize the ruleset. The ruleset will only be import on the first startup of eKuiper.
+Support file based stream and rule provisioning on startup. Users can put
+a [ruleset](../api/restapi/ruleset.md#ruleset-format) file named `init.json` into `etc` directory to initialize the
+ruleset. The ruleset will only be import on the first startup of eKuiper.
 
 ## Configure FoundationDB as storage
 

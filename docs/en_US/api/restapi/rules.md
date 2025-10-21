@@ -100,9 +100,10 @@ Example response when using slice mode:
 }
 ```
 
-## update a rule
+## upsert a rule
 
-The API accepts a JSON content and update a rule.
+The API accepts a JSON content and upsert a rule which means if the rule is not existed, create it; otherwise, update
+it. If update fails, the original rule will continue running.
 
 ```shell
 PUT http://localhost:9081/rules/{id}
@@ -132,7 +133,9 @@ DELETE http://localhost:9081/rules/{id}
 
 ## start a rule
 
-The API is used to start running the rule.
+The API is used to start running the rule. Please note that the command only indicates the successful transmission of
+the start instruction. To verify if the rule has completed startup, the rule status must be checked. If the rule is
+currently in the process of starting or stopping, the start instruction will be added to the rule's command queue.
 
 ```shell
 POST http://localhost:9081/rules/{id}/start
@@ -140,7 +143,9 @@ POST http://localhost:9081/rules/{id}/start
 
 ## stop a rule
 
-The API is used to stop running the rule.
+The API is used to stop running the rule. Please note that the command only indicates the successful transmission of the
+stop instruction. To verify if the rule has completed startup, the rule status must be checked. If the rule is currently
+in the process of starting or stopping, the start instruction will be added to the rule's command queue.
 
 ```shell
 POST http://localhost:9081/rules/{id}/stop
