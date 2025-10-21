@@ -247,9 +247,11 @@ The configuration items of `planOptimizeStrategy` are as follows:
 
 ## View Rule Status
 
-When a rule is deployed to eKuiper, we can use the rule indicator to understand the current running status of the rule.
-
-We can get the running status of all rules and the detailed status of a single rule through the rest API.
+The rule startup process is asynchronous. When a user sends a start command, eKuiper performs necessary static checks
+and then asynchronously executes the rule's startup operation. Therefore, the command response received by the user only
+indicates that eKuiper has accepted the startup request and set the rule's Expected Status to 'started'. This does not
+mean the rule has begun running. Furthermore, a rule that is already running may stop due to runtime exceptions. We can
+get the running status of all rules and the detailed status of a single rule through the rest API.
 
 The status of all rules can be obtained through [Show Rules](../../api/restapi/rules.md#show-rules), and the status of a single rule can be obtained through [getting the status of a rule](../../api/restapi/rules.md#get-the-status-of-a-rule).
 

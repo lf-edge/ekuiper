@@ -74,10 +74,6 @@ GET http://localhost:9081/rules/{id}
 }
 ```
 
-### 中文技术文档翻译（符合API文档规范）
-
----
-
 ## 获取规则输出模式
 
 本接口用于获取指定规则生成的输出模式。该模式描述了规则通过SELECT语句生成的字段及其属性（如`hasIndex`和`index`）。
@@ -106,7 +102,7 @@ GET http://localhost:9081/rules/{id}
 
 ## 更新规则
 
-该 API 接受 JSON 内容并更新规则。
+该 API 接受 JSON 内容并更新规则。请注意，该 API 执行 upsert 操作，即规则不存在则创建，存在则更新。更新失败将继续运行原规则。
 
 ```shell
 PUT http://localhost:9081/rules/{id}
@@ -136,7 +132,7 @@ DELETE http://localhost:9081/rules/{id}
 
 ## 启动规则
 
-该 API 用于开始运行规则。
+该 API 用于发送规则启动指令。请注意，该命令仅表示发送启动指令成功，规则是否启动完成需要调用规则状态查看。若规则正在启动或正在停止中，启动指令会加入规则命令队列中。
 
 ```shell
 POST http://localhost:9081/rules/{id}/start
@@ -144,7 +140,7 @@ POST http://localhost:9081/rules/{id}/start
 
 ## 停止规则
 
-该 API 用于停止运行规则。
+该 API 用于停止运行规则。请注意，该命令仅表示发送启动指令成功，规则是否启动完成需要调用规则状态查看。规则正在启动或正在停止中，启动指令会加入规则命令队列中。
 
 ```shell
 POST http://localhost:9081/rules/{id}/stop

@@ -108,6 +108,13 @@ demo (
     ) WITH (DATASOURCE="test", FORMAT="JSON", KEY="USERID", SHARED="true");
 ```
 
+When a shared stream is used, multiple rules are no longer independent. During runtime, the shared stream and all its
+downstream sub-rules collectively form a large topological structure, logically equivalent to a single large composite
+rule.
+
+Functional Limitations: Due to this coupled topological structure, some features that rely on rule independence (such as
+Checkpoint) cannot currently be implemented on the shared stream's source component.
+
 ## Schema
 
 The schema of a stream contains two parts. One is the data structure defined in the data source definition, i.e. the logical schema, and the other is the SchemaId specified when using strongly typed data formats, i.e. the physical schema, such as those defined in Protobuf and Custom formats.
