@@ -504,9 +504,9 @@ func TestStreamReplace(t *testing.T) {
 			err: "source r1 already exists with version (12345), new version () is lower",
 		},
 		{
-			n: "update from low to high",
-			s: `CREATE STREAM r1 () WITH (DATASOURCE="users", FORMAT="JSON", VERSION="22345");`,
-			r: "Stream r1 is replaced.",
+			n:   "update from low to high",
+			s:   `CREATE STREAM r1 () WITH (DATASOURCE="users", FORMAT="JSON", SHARED="true");`,
+			err: "Replace r1 fails: do not support to change stream SHARED option.",
 		},
 	}
 	for _, tt := range tests {
