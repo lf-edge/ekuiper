@@ -37,8 +37,7 @@ func NewBatchMergerOp(name string, rOpt *def.RuleOption) (*BatchMergerOp, error)
 	}, nil
 }
 
-// Exec decode op receives map/[]map and converts it to bytes.
-// If receiving bytes, just return it.
+// Exec decode op receives map/[]map and converts it to []map.
 func (o *BatchMergerOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 	o.prepareExec(ctx, errCh, "op")
 	go func() {
