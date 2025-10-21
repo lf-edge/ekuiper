@@ -88,18 +88,6 @@ rule:
   checkpointInterval: 300s
   # Whether to send errors to sinks
   sendError: false
-  # The strategy to retry for rule errors.
-  restartStrategy:
-    # The maximum retry times
-    attempts: 0
-    # The interval to retry
-    delay: 1s
-    # The maximum interval to retry
-    maxDelay: 30s
-    # The exponential to increase the interval. It can be a float value.
-    multiplier: 2
-    # How large random value will be added or subtracted to the delay to prevent restarting multiple rules at the same time.
-    jitterFactor: 0.1
 sink:
   # Control to enable cache or not. If it's set to true, then the cache will be enabled, otherwise, it will be disabled.
   enableCache: false

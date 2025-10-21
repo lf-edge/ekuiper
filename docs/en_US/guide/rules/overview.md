@@ -30,16 +30,17 @@ Key components of a rule:
 
 The table below is a detailed explanation of the row component:
 
-| Parameter name | Optional                         | Description                                                                  |
-|----------------|----------------------------------|------------------------------------------------------------------------------|
-| id             | false                            | The id of the rule. The rule id must be unique in the same eKuiper instance. |
-| name           | true                             | The display name or description of a rule                                    |
-| sql            | required if graph is not defined | The sql query to run for the rule                                            |
-| actions        | required if graph is not defined | An array of sink actions                                                     |
-| graph          | required if sql is not defined   | The json presentation of the rule's DAG(directed acyclic graph)              |
-| options        | true                             | A map of options                                                             |
-| triggerd       | true                             | Whether to start the rule after creation. Default is true.                   |
-| tags           | yes                              | string list, rule tags, used to filter rules                                 |
+| Parameter name | Optional                         | Description                                                                                                                                               |
+|----------------|----------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------|
+| id             | false                            | The id of the rule. The rule id must be unique in the same eKuiper instance.                                                                              |
+| name           | true                             | The display name or description of a rule                                                                                                                 |
+| sql            | required if graph is not defined | The sql query to run for the rule                                                                                                                         |
+| actions        | required if graph is not defined | An array of sink actions                                                                                                                                  |
+| graph          | required if sql is not defined   | The json presentation of the rule's DAG(directed acyclic graph)                                                                                           |
+| options        | true                             | A map of options                                                                                                                                          |
+| triggerd       | true                             | Whether to start the rule after creation. Default is true.                                                                                                |
+| tags           | true                             | string list, rule tags, used to filter rules                                                                                                              |
+| temp           | true                             | Whether it is temporary. Temporary rules are not persisted and will only run during the current session. They will be eliminated upon restarting eKuiper. |
 
 ## Rule Logic
 
@@ -143,7 +144,7 @@ Since eKuiper 1.6.0, eKuiper provides graph property in the rule model as an alt
 
 The `graph` property is a json structure with `nodes` to define the nodes presented in the graph and `topo` to define the edge between nodes. The node type can be built-in node types such as window node and filter node etc. It can also be a user-defined node from plugins. Please refer to [graph rule](./graph_rule.md) for more detail.
 
-## Fine Tuning
+## Fine-Tuning
 
 eKuiper provides a slew of options to fine-tune rule behavior, including:
 
@@ -158,82 +159,30 @@ eKuiper provides a slew of options to fine-tune rule behavior, including:
 
 See the table below for a detailed explanation of each rule behavior:
 
-| Option name        | Type & Default Value | Description                                                                                                                                                                                                                                                                                                                                       |
-|--------------------|----------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| debug              | bool: false          | Specify whether to enable the debug level for this rule. By default, it will inherit the Debug configuration parameters in the global configuration.                                                                                                                                                                                              |
-| logFilename        | string: ""           | Specify the name of a separate log file for this rule, and the log will be saved in the global log folder. By default, the log configuration parameters in the global configuration will be used.                                                                                                                                                 |
-| isEventTime        | boolean: false       | Whether to use event time or processing time as the timestamp for an event. If event time is used, the timestamp will be extracted from the payload. The timestamp filed must be specified by the [stream](../../sqls/streams.md) definition.                                                                                                     |
-| lateTolerance      | int64:0              | When working with event-time windowing, it can happen that elements arrive late. LateTolerance can specify by how much time(unit is millisecond) elements can be late before they are dropped. By default, the value is 0 which means late elements are dropped.                                                                                  |
-| concurrency        | int: 1               | A rule is processed by several phases of plans according to the sql statement. This option will specify how many instances will be run for each plan. If the value is bigger than 1, the order of the messages may not be retained.                                                                                                               |
-| bufferLength       | int: 1024            | Specify how many messages can be buffered in memory for each plan. If the buffered messages exceed the limit, the plan will block message receiving until the buffered messages have been sent out so that the buffered size is less than the limit. A bigger value will accommodate more throughput but will also take up more memory footprint. |
-| sendMetaToSink     | bool:false           | Specify whether the meta data of an event will be sent to the sink. If true, the sink can get te meta data information.                                                                                                                                                                                                                           |
-| sendError          | bool: false          | Whether to send the error to sink. If true, any runtime error will be sent through the whole rule into sinks. Otherwise, the error will only be printed out in the log.                                                                                                                                                                           |
-| qos                | int:0                | Specify the qos of the stream. The options are 0: At most once; 1: At least once and 2: Exactly once. If qos is bigger than 0, the checkpoint mechanism will be activated to save states periodically so that the rule can be resumed from errors.                                                                                                |
-| checkpointInterval | int:300000           | Specify the time interval in milliseconds to trigger a checkpoint. This is only effective when qos is bigger than 0.                                                                                                                                                                                                                              |
-| restartStrategy    | struct               | Specify the strategy to automatic restarting rule after failures. This can help to get over recoverable failures without manual operations. Please check [Rule Restart Strategy](#rule-restart-strategy) for detail configuration items.                                                                                                          |
-| cron               | string: ""           | Specify the periodic trigger strategy of the rule, which is described by [cron expression](https://en.wikipedia.org/wiki/Cron)                                                                                                                                                                                                                    |
-| duration           | string: ""           | Specifies the running duration of the rule, only valid when cron is specified. The duration should not exceed the time interval between two cron cycles, otherwise it will cause unexpected behavior.                                                                                                                                             |
-| cronDatetimeRange  | lists of struct      | Specify the effective time period of the Scheduled Rule, which is only valid when `cron` is specified. When this `cronDatetimeRange` is specified, the Scheduled Rule will only take effect within the time range specified. Please see [Scheduled Rule](#Scheduled Rule) for detailed configuration items                                        |
-| enableRuleTracer   | bool: false          | Specify whether the rule enables rule-level data tracing                                                                                                                                                                                                                                                                                          |
-| sendNilField       | bool: false          | Specify whether to output columns with a value of nil as specified by the rules.                                                                                                                                                                                                                                                                  |
-| planOptimizeStrategy | struct | Specify whether the rule turns on the corresponding optimization |
-| disableBufferFullDiscard | bool: false | Whether to enable the behavior of discarding data when the buffer is full                                                                           |
+| Option name              | Type & Default Value | Description                                                                                                                                                                                                                                                                                                                                       |
+|--------------------------|----------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| debug                    | bool: false          | Specify whether to enable the debug level for this rule. By default, it will inherit the Debug configuration parameters in the global configuration.                                                                                                                                                                                              |
+| logFilename              | string: ""           | Specify the name of a separate log file for this rule, and the log will be saved in the global log folder. By default, the log configuration parameters in the global configuration will be used.                                                                                                                                                 |
+| isEventTime              | boolean: false       | Whether to use event time or processing time as the timestamp for an event. If event time is used, the timestamp will be extracted from the payload. The timestamp filed must be specified by the [stream](../../sqls/streams.md) definition.                                                                                                     |
+| lateTolerance            | int64:0              | When working with event-time windowing, it can happen that elements arrive late. LateTolerance can specify by how much time(unit is millisecond) elements can be late before they are dropped. By default, the value is 0 which means late elements are dropped.                                                                                  |
+| concurrency              | int: 1               | A rule is processed by several phases of plans according to the sql statement. This option will specify how many instances will be run for each plan. If the value is bigger than 1, the order of the messages may not be retained.                                                                                                               |
+| bufferLength             | int: 1024            | Specify how many messages can be buffered in memory for each plan. If the buffered messages exceed the limit, the plan will block message receiving until the buffered messages have been sent out so that the buffered size is less than the limit. A bigger value will accommodate more throughput but will also take up more memory footprint. |
+| sendMetaToSink           | bool:false           | Specify whether the meta data of an event will be sent to the sink. If true, the sink can get te meta data information.                                                                                                                                                                                                                           |
+| sendError                | bool: false          | Whether to send the error to sink. If true, any runtime error will be sent through the whole rule into sinks. Otherwise, the error will only be printed out in the log.                                                                                                                                                                           |
+| qos                      | int:0                | Specify the qos of the stream. The options are 0: At most once; 1: At least once and 2: Exactly once. If qos is bigger than 0, the checkpoint mechanism will be activated to save states periodically so that the rule can be resumed from errors.                                                                                                |
+| checkpointInterval       | int:300000           | Specify the time interval in milliseconds to trigger a checkpoint. This is only effective when qos is bigger than 0.                                                                                                                                                                                                                              |
+| restartStrategy          | struct               | Specify the strategy to automatic restarting rule after failures. This can help to get over recoverable failures without manual operations. Please check [Rule Restart Strategy](#rule-restart-strategy) for detail configuration items.                                                                                                          |
+| cron                     | string: ""           | Specify the periodic trigger strategy of the rule, which is described by [cron expression](https://en.wikipedia.org/wiki/Cron)                                                                                                                                                                                                                    |
+| duration                 | string: ""           | Specifies the running duration of the rule, only valid when cron is specified. The duration should not exceed the time interval between two cron cycles, otherwise it will cause unexpected behavior.                                                                                                                                             |
+| cronDatetimeRange        | lists of struct      | Specify the effective time period of the Scheduled Rule, which is only valid when `cron` is specified. When this `cronDatetimeRange` is specified, the Scheduled Rule will only take effect within the time range specified. Please see [Scheduled Rule](#Scheduled Rule) for detailed configuration items                                        |
+| enableRuleTracer         | bool: false          | Specify whether the rule enables rule-level data tracing                                                                                                                                                                                                                                                                                          |
+| sendNilField             | bool: false          | Specify whether to output columns with a value of nil as specified by the rules.                                                                                                                                                                                                                                                                  |
+| planOptimizeStrategy     | struct               | Specify whether the rule turns on the corresponding optimization                                                                                                                                                                                                                                                                                  |
+| disableBufferFullDiscard | bool: false          | Whether to enable the behavior of discarding data when the buffer is full                                                                                                                                                                                                                                                                         |
 
 For detail about `qos` and `checkpointInterval`, please check [state and fault tolerance](./state_and_fault_tolerance.md).
 
 The rule options can be defined globally in `etc/kuiper.yaml` under the `rules` section. The options defined in the rule json will override the global setting.
-
-### Rule Restart Strategy
-
-The restart strategy options include:
-
-| Option name  | Type & Default Value | Description                                                                                                                           |
-|--------------|----------------------|---------------------------------------------------------------------------------------------------------------------------------------|
-| attempts     | int: 0               | The maximum retry times. If set to 0, the rule will fail immediately without retrying.                                                |
-| delay        | int: 1000            | The default interval in millisecond to retry. If `multiplier` is not set, the retry interval will be fixed to this value.             |
-| maxDelay     | int: 30000           | The maximum interval in millisecond to retry. Only effective when `multiplier` is set so that the delay will increase for each retry. |
-| multiplier   | float: 2             | The exponential to increase the interval.                                                                                             |
-| jitterFactor | float: 0.1           | How large random value will be added or subtracted to the delay to prevent restarting multiple rules at the same time.                |
-
-The default values can be changed by editing the `etc/kuiper.yaml` file.
-
-### Scheduled Rule
-
-Rules support periodic start, run and pause. In options, `cron` expresses the starting policy of the periodic rule, such as starting every 1 hour, and `duration` expresses the running time when the rule is started each time, such as running for 30 minutes.
-
-When `cron` is every 1 hour and `duration` is 30 minutes, then the rule will be started every 1 hour, and will be suspended after 30 minutes each time, waiting for the next startup.
-
-When a periodic rule is stopped by [stop rule](../../api/restapi/rules.md#stop-a-rule), the rule will be removed from the periodic scheduler and will no longer be scheduled to run. If the rule is running, it will also be paused.
-
-`cronDatetimeRange`configuration items are like following:
-
-| Option name | Type & Default Value | Description                                                                                       |
-|-------------|----------------------|---------------------------------------------------------------------------------------------------|
-| begin       | string               | The begin time of the effective period of the scheduled rule, the format is `YYYY-MM-DD hh:mm:ss' |
-| end         | string               | The end time of the effective period of the scheduled rule, the format is `YYYY-MM-DD hh:mm:ss'   |
-| beginTimestamp | int | The starting unix timestamp of the period in which the periodic rule takes effect, in ms |
-| endTimestamp | int | The end unix timestamp of the period in which the periodic rule takes effect, in ms |
-
-`cronDatetimeRange` supports lists of struct, you can declare a set of time ranges to express multiple time ranges for scheduled rules to take effect:
-
-```json
-{
-    "cronDatetimeRange": [
-        {
-            "begin": "2023-06-26 10:00:00",
-            "end": "2023-06-26 20:00:00"
-        },
-        {
-            "beginTimestamp": 1701401478000,
-            "endTimestamp": 1701401578000
-        }
-    ]
-}
-```
-
-#### Phase run rules
-
-When `cronDatetimeRange` is configured but `cron` and `duration` are empty, the rule will run according to the time period specified by `cronDatetimeRange` until the time period is exceeded.
 
 ### Rule optimization switch
 
@@ -321,6 +270,71 @@ It can be seen that `records_in_total` and `records_out_total` of each operator 
 
 If Prometheus configuration is enabled, these metrics will also be collected by Prometheus. For a complete list of
 operational metrics, please refer to the [Metrics List](../../operation/usage/monitor_with_prometheus.md#metric-types).
+
+## Automatic Rule Operation Strategies
+
+In addition to manual start and stop control via API, eKuiper also supports the following **automatic startup strategies
+**:
+
+1. **Rule Restart Strategy:** Ensures that a rule is automatically brought up and resumes running after a runtime error
+   occurs.
+2. **Periodic Rules:** Allows users to define the rule's operational cycle and schedule.
+
+The automatic operation of rules is achieved through a **global patrol mechanism**. eKuiper inspects all rules at fixed
+time intervals and executes the corresponding operational strategies. The global patrol interval can be configured in
+the `etc/kuiper.yaml` configuration file using the `rulePatrolInterval` parameter under the `basic` section (e.g.,
+`rulePatrolInterval: 10s`).
+
+### Rule Restart Strategy
+
+This setting controls whether the rule should automatically restart upon encountering a runtime error.
+
+The rule restart policy is enabled via the **`attempts`** configuration. A value greater than 0 indicates that restarts
+will be attempted.
+
+### Scheduled Rule
+
+Rules support periodic start, run and pause. In options, `cron` expresses the starting policy of the periodic rule, such
+as starting every 1 hour, and `duration` expresses the running time when the rule is started each time, such as running
+for 30 minutes.
+
+When `cron` is every 1 hour and `duration` is 30 minutes, then the rule will be started every 1 hour, and will be
+suspended after 30 minutes each time, waiting for the next startup.
+
+When a periodic rule is stopped by [stop rule](../../api/restapi/rules.md#stop-a-rule), the rule will be removed from
+the periodic scheduler and will no longer be scheduled to run. If the rule is running, it will also be paused.
+
+`cronDatetimeRange`configuration items are like following:
+
+| Option name    | Type & Default Value | Description                                                                                       |
+|----------------|----------------------|---------------------------------------------------------------------------------------------------|
+| begin          | string               | The begin time of the effective period of the scheduled rule, the format is `YYYY-MM-DD hh:mm:ss' |
+| end            | string               | The end time of the effective period of the scheduled rule, the format is `YYYY-MM-DD hh:mm:ss'   |
+| beginTimestamp | int                  | The starting unix timestamp of the period in which the periodic rule takes effect, in ms          |
+| endTimestamp   | int                  | The end unix timestamp of the period in which the periodic rule takes effect, in ms               |
+
+`cronDatetimeRange` supports lists of struct, you can declare a set of time ranges to express multiple time ranges for
+scheduled rules to take effect:
+
+```json
+{
+    "cronDatetimeRange": [
+        {
+            "begin": "2023-06-26 10:00:00",
+            "end": "2023-06-26 20:00:00"
+        },
+        {
+            "beginTimestamp": 1701401478000,
+            "endTimestamp": 1701401578000
+        }
+    ]
+}
+```
+
+#### Phase run rules
+
+When `cronDatetimeRange` is configured but `cron` and `duration` are empty, the rule will run according to the time
+period specified by `cronDatetimeRange` until the time period is exceeded.
 
 ## Versioning
 
