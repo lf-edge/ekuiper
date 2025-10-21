@@ -75,6 +75,7 @@ basic:
   metricsDumpConfig:
     enable: false
     retainedDuration: 6h
+  # If it is enabled, each REST API call will print logs
   enableRestAuditLog: false
 
 # The default options for all rules. Each rule can override this setting by defining its own option
