@@ -56,11 +56,7 @@ var defaultOption = &def.RuleOption{
 	Qos:                def.AtMostOnce,
 	CheckpointInterval: cast.DurationConf(5 * time.Minute),
 	RestartStrategy: &def.RestartStrategy{
-		Attempts:     0,
-		Delay:        cast.DurationConf(time.Second),
-		Multiplier:   2,
-		MaxDelay:     cast.DurationConf(30 * time.Second),
-		JitterFactor: 0.1,
+		Attempts: 0,
 	},
 }
 

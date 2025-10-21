@@ -116,11 +116,7 @@ func (p *PlanOptimizeStrategy) IsSlidingWindowSendTwiceEnable() bool {
 }
 
 type RestartStrategy struct {
-	Attempts     int               `json:"attempts,omitempty" yaml:"attempts,omitempty"`
-	Delay        cast.DurationConf `json:"delay,omitempty" yaml:"delay,omitempty"`
-	Multiplier   float64           `json:"multiplier,omitempty" yaml:"multiplier,omitempty"`
-	MaxDelay     cast.DurationConf `json:"maxDelay,omitempty" yaml:"maxDelay,omitempty"`
-	JitterFactor float64           `json:"jitterFactor,omitempty" yaml:"jitterFactor,omitempty"`
+	Attempts int `json:"attempts,omitempty" yaml:"attempts,omitempty"`
 }
 
 type PrintableTopo struct {
@@ -230,11 +226,7 @@ func GetDefaultRule(name, sql string) *Rule {
 			Qos:                AtMostOnce,
 			CheckpointInterval: cast.DurationConf(5 * time.Minute),
 			RestartStrategy: &RestartStrategy{
-				Attempts:     0,
-				Delay:        1000,
-				Multiplier:   2,
-				MaxDelay:     30000,
-				JitterFactor: 0.1,
+				Attempts: 0,
 			},
 			PlanOptimizeStrategy: &PlanOptimizeStrategy{},
 			Experiment:           &ExpOpts{UseSliceTuple: false},
