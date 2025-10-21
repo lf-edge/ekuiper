@@ -241,9 +241,9 @@ The rule optimization switch `planOptimizeStrategy` can control whether the rule
 
 The configuration items of `planOptimizeStrategy` are as follows:
 
-| option name | type and default value | description |
-|-------|--------|-------------------------------- ----------|
-| enableIncrementalWindow | bool: false | Enable incremental calculation when the rule contains both a time window and an aggregate function that supports incremental calculation |
+| option name             | type and default value | description                                                                                                                              |
+|-------------------------|------------------------|------------------------------------------------------------------------------------------------------------------------------------------|
+| enableIncrementalWindow | bool: false            | Enable incremental calculation when the rule contains both a time window and an aggregate function that supports incremental calculation |
 
 ## View Rule Status
 
@@ -321,3 +321,27 @@ It can be seen that `records_in_total` and `records_out_total` of each operator 
 
 If Prometheus configuration is enabled, these metrics will also be collected by Prometheus. For a complete list of
 operational metrics, please refer to the [Metrics List](../../operation/usage/monitor_with_prometheus.md#metric-types).
+
+## Versioning
+
+The rule can have an optional **version** field to control updates. When you update a rule, the system compares the new
+version string to the existing one.
+An update is only accepted if the new version is **lexically greater** than the old one. This comparison is a
+character-by-character string comparison, not a numerical one. The control logic for all versioned APIs is the same;
+please refer to the [Versioning Logic](#versioning-logic) for details.
+
+### Versioning Logic
+
+- **No Version Specified:** If neither the old nor the new schema has a `version` field, the update will proceed. This
+  behavior aligns with the original, unversioned logic.
+- **Versioning Set:** If a `version` field is present in either the old or the new schema, the system will always
+  perform a version comparison. The presence of any version string triggers the new comparison logic.
+- **Lexical Comparison:** Updates are based on a lexical (string) comparison. The new schema's `version` must be
+  lexicographically greater than the current one for the update to be successful.
+- **Smallest Version:** A schema without a `version` field is considered to have the "smallest possible" version. This
+  means that adding a version field to an existing, unversioned schema will always result in a successful update, as any
+  new version string will be lexically greater than the non-existent one.
+
+To avoid confusion and ensure correct ordering, it's highly recommended to use a **timestamp** as the version string.
+Timestamps, such as Unix epoch time, provide a universally unique and monotonically increasing value that naturally
+satisfies the lexical comparison rule.

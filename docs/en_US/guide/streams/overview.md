@@ -52,10 +52,12 @@ Below is the list of data types supported.
 | KEY              | true     | Reserved key, currently the field is not used. It will be used for GROUP BY statements.                                                                                                                                                     |
 | TYPE             | true     | The source type, if not specified, the value is "mqtt".                                                                                                                                                                                     |
 | StrictValidation | true     | To control validation behavior of message field against stream schema. See [Strict Validation](#strict-validation) for more info.                                                                                                           |
-| CONF_KEY         | true     | If additional configuration items are requied to be configured, then specify the config key here. See [MQTT stream](../sources/builtin/mqtt.md) for more info.                                                                              |
+| CONF_KEY         | true     | If additional configuration items are required to be configured, then specify the config key here. Check [Conf_Key Configuration](#conf_key-configuration).                                                                                 |
+| EXTRA            | true     | Quick config to override stream configurations. Check [Extra Configuration](#extra-configuration).                                                                                                                                          |
 | SHARED           | true     | Whether the source instance will be shared across all rules using this stream                                                                                                                                                               |
 | TIMESTAMP        | true     | The field to represent the event's timestamp. If specified, the rule will run with event time. Otherwise, it will run with processing time. Please refer to [timestamp management](../../sqls/windows.md#timestamp-management) for details. |
 | TIMESTAMP_FORMAT | true     | The default format to be used when converting string to or from datetime type.                                                                                                                                                              |
+| VERSION          | true     | Version of the stream, check [versioning](#versioning)。                                                                                                                                                                                     |
 
 **Example 1,**
 
@@ -96,7 +98,50 @@ The stream will subscribe to MQTT topic `test/` and using PROTOBUF format to dec
 
 - See [rules and streams CLI docs](../../api/cli/overview.md) for more information of rules & streams management.
 
-### Share source instance across rules
+## Configuration
+
+Stream properties can be configured in two ways:
+
+1. CONF_KEY: Points to a configuration item within a configuration file using `conf_key`.
+2. EXTRA: A shortcut for configuring properties that overrides a configuration item with the same name in `conf_key`.
+
+### CONF_KEY Configuration
+
+The source configuration files are located at: `\$ekuiper/etc/sources/{\$source_type}.yaml`. The YAML file contains
+multiple configurations. The example file below includes three sets of configurations: `default`, `myconf`, and
+`myconf2`. The CONF_KEY points to one of these keys.
+
+```yaml
+default:
+  conf1: value
+  conf2: 2
+myconf:
+  conf1: value2
+  conf2: 3
+myconf2:
+  conf1: value3
+  conf2: 2
+```
+
+The following example uses the `myconf` configuration group.
+
+```sql
+demo
+() WITH (DATASOURCE="topic", CONF_KEY="myconf");
+```
+
+### Extra Configuration
+
+The `EXTRA` configuration allows attributes to be quickly configured directly within the stream definition SQL using a
+JSON string format. In the example below, the stream uses the `myconf` configuration, and the `extra` configuration
+overrides the value of `conf2`. The final configuration will be `{"conf1":"value2","conf2":1}`.
+
+```sql
+demo
+() WITH (DATASOURCE="topic", CONF_KEY="myconf", EXTRA="{\"conf2\":1}");
+```
+
+## Share source instance across rules
 
 By default, each rule will instantiate its own source instance. In some scenarios, users may need to manipulate the exact same data stream with different rules. For example, for the data of temperature from a sensor. They may want to trigger an alert when the average for a period of time is higher than 30 degree and trigger another alert when it is lower than 0. With default configuration, each rule creates a source instance and may receive data in different order due to network delay or other factors so that the average calculation may happen with different context. By sharing the instance, we can assure both rules are processing the same data. Additionally, it will have better performance by eliminating the overhead of instantiation.
 
@@ -156,3 +201,16 @@ demoBin (
 ```
 
 If "BINARY" format stream is defined as schemaless, a default field named `self` will be assigned for the binary payload.
+
+## Versioning
+
+The stream can have an optional **version** field to control updates. When you update a stream, the system compares the
+new version string to the existing one.
+An update is only accepted if the new version is **lexically greater** than the old one. This comparison is a
+character-by-character string comparison, not a numerical one. The control logic for all versioned APIs is the same;
+please refer to the [Versioning Logic](../../guide/rules/overview.md#versioning-logic) for details.
+
+```sql
+version_stream
+() WITH ( datasource = "topic", FORMAT = "json", VERSION = "1756436910");
+```

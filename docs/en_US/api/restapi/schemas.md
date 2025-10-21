@@ -117,23 +117,8 @@ PUT http://localhost:9081/schemas/protobuf/{name}
 The schema can have an optional **version** field. This field is essential for controlling updates and ensuring that new
 schemas are correctly applied. When you update a schema, the system compares the new version string to the existing one.
 An update is only accepted if the new version is **lexically greater** than the old one. This comparison is a
-character-by-character string comparison, not a numerical one.
-
-### Versioning Logic
-
-- **No Version Specified:** If neither the old nor the new schema has a `version` field, the update will proceed. This
-  behavior aligns with the original, unversioned logic.
-- **Versioning Set:** If a `version` field is present in either the old or the new schema, the system will always
-  perform a version comparison. The presence of any version string triggers the new comparison logic.
-- **Lexical Comparison:** Updates are based on a lexical (string) comparison. The new schema's `version` must be
-  lexicographically greater than the current one for the update to be successful.
-- **Smallest Version:** A schema without a `version` field is considered to have the "smallest possible" version. This
-  means that adding a version field to an existing, unversioned schema will always result in a successful update, as any
-  new version string will be lexically greater than the non-existent one.
-
-To avoid confusion and ensure correct ordering, it's highly recommended to use a **timestamp** as the version string.
-Timestamps, such as Unix epoch time, provide a universally unique and monotonically increasing value that naturally
-satisfies the lexical comparison rule.
+character-by-character string comparison, not a numerical one. The control logic for all versioned APIs is the same;
+please refer to the [Versioning Logic](../../guide/rules/overview.md#versioning-logic) for details.
 
 Below is an example schema request with version:
 
