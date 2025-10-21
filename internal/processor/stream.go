@@ -215,6 +215,9 @@ func (p *StreamProcessor) ExecReplaceStream(name string, statement string, st as
 		}
 		// compare version
 		old, _ := p.DescStream(name, s.StreamType)
+		if old != nil && s.Options.SHARED != old.(*ast.StreamStmt).Options.SHARED {
+			return "", fmt.Errorf("Replace %s fails: do not support to change stream SHARED option.", name)
+		}
 		if old != nil && !CanReplace(old.(*ast.StreamStmt).Options.VERSION, s.Options.VERSION) {
 			return "", fmt.Errorf("source %s already exists with version (%s), new version (%s) is lower", name, old.(*ast.StreamStmt).Options.VERSION, s.Options.VERSION)
 		}
