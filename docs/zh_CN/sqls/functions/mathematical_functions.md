@@ -177,10 +177,15 @@ rand()
 ## ROUND
 
 ```text
-round(col)
+round(v, [s])
 ```
 
-将值四舍五入到最接近的 BIGINT 值。
+将值四舍五入到 s 位小数。若未指定 s，则四舍五入到最近的整数值。
+
+```text
+round(42.4)  -> 42
+round(42.4382, 2) -> 42.44
+```
 
 ## SIGN
 
