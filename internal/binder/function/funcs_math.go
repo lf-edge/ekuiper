@@ -18,6 +18,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"math/big"
 	"math/cmplx"
 	"math/rand"
 	"strconv"
@@ -378,14 +379,41 @@ func registerMathFunc() {
 	}
 	builtins["round"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
-		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			if v, e := cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND); e == nil {
-				return math.Round(v), true
-			} else {
+		exec: func(ctx api.FunctionContext, args []any) (any, bool) {
+			var e error
+			precision := 0
+			if len(args) > 1 {
+				precision, e = cast.ToInt(args[1], cast.CONVERT_SAMEKIND)
+				if e != nil {
+					return fmt.Errorf("The second argument must be an integer: %v", e), false
+				}
+			}
+			v, e := cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND)
+			if e != nil {
 				return e, false
 			}
+			factor := math.Pow(10, float64(precision))
+			scaled := v * factor
+			if math.IsInf(scaled, 0) || math.IsInf(factor, 0) {
+				// Overflow detected - fall back to big.Float
+				return roundWithBigFloat(v, precision), true
+			}
+			return math.Round(scaled) / factor, true
 		},
-		val:   ValidateOneNumberArg,
+		val: func(ctx api.FunctionContext, args []ast.Expr) error {
+			if len(args) != 1 && len(args) != 2 {
+				return errors.New("Expect 1 or 2 arguments only")
+			}
+			if ast.IsStringArg(args[0]) || ast.IsTimeArg(args[0]) || ast.IsBooleanArg(args[0]) {
+				return ProduceErrInfo(0, "number - float or int")
+			}
+			if len(args) == 2 {
+				if ast.IsStringArg(args[1]) || ast.IsTimeArg(args[1]) || ast.IsBooleanArg(args[1]) {
+					return ProduceErrInfo(1, "number - float or int")
+				}
+			}
+			return nil
+		},
 		check: returnNilIfHasAnyNil,
 	}
 	builtins["sign"] = builtinFunc{
@@ -688,4 +716,65 @@ Loop:
 		return s[1:validLen]
 	}
 	return s[:validLen]
+}
+
+// roundWithBigFloat handles rounding using arbitrary precision arithmetic
+func roundWithBigFloat(v float64, precision int) float64 {
+	const bigFloatPrec = 256 // Precision in bits for big.Float
+
+	// Convert to big.Float with high precision
+	bf := big.NewFloat(v).SetPrec(bigFloatPrec)
+
+	// Create multiplier as 10^precision
+	multiplier := new(big.Float).SetPrec(bigFloatPrec)
+	ten := big.NewFloat(10).SetPrec(bigFloatPrec)
+
+	if precision == 0 {
+		multiplier.SetInt64(1)
+	} else if precision > 0 {
+		// Positive precision: 10^precision
+		multiplier.Copy(ten)
+		for i := 1; i < precision; i++ {
+			multiplier.Mul(multiplier, ten)
+		}
+	} else {
+		// Negative precision: 10^precision = 1 / 10^abs(precision)
+		multiplier.SetInt64(1)
+		for i := 0; i < -precision; i++ {
+			multiplier.Quo(multiplier, ten)
+		}
+	}
+
+	// Multiply value by multiplier
+	scaled := new(big.Float).SetPrec(bigFloatPrec)
+	scaled.Mul(bf, multiplier)
+
+	// Round to nearest integer (away from zero for .5)
+	intPart := new(big.Int)
+	scaled.Int(intPart)
+
+	// Get fractional part
+	fracPart := new(big.Float).SetPrec(bigFloatPrec)
+	fracPart.Sub(scaled, new(big.Float).SetInt(intPart))
+
+	// Check if we need to round up or down
+	half := big.NewFloat(0.5).SetPrec(bigFloatPrec)
+	negHalf := big.NewFloat(-0.5).SetPrec(bigFloatPrec)
+
+	if fracPart.Cmp(half) >= 0 {
+		// Round up for positive
+		intPart.Add(intPart, big.NewInt(1))
+	} else if fracPart.Cmp(negHalf) <= 0 {
+		// Round down for negative (away from zero)
+		intPart.Sub(intPart, big.NewInt(1))
+	}
+
+	// Convert back and divide by multiplier
+	result := new(big.Float).SetPrec(bigFloatPrec)
+	result.SetInt(intPart)
+	result.Quo(result, multiplier)
+
+	// Convert back to float64
+	f64, _ := result.Float64()
+	return f64
 }

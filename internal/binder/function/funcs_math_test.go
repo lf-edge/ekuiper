@@ -27,6 +27,8 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	kctx "github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/state"
+	"github.com/lf-edge/ekuiper/v2/pkg/ast"
+	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
 
 func TestFuncMath(t *testing.T) {
@@ -247,7 +249,7 @@ func TestFuncMath(t *testing.T) {
 				math.Cos(-10.5),
 				math.Cosh(-10.5),
 				-0.5,
-				float64(-11),
+				-10.5,
 				-1,
 				math.Sin(-10.5),
 				math.Sinh(-10.5),
@@ -282,7 +284,7 @@ func TestFuncMath(t *testing.T) {
 				math.Cos(10.5),
 				math.Cosh(10.5),
 				0.5,
-				float64(11),
+				10.5,
 				1,
 				math.Sin(10.5),
 				math.Sinh(10.5),
@@ -566,5 +568,67 @@ func TestConvFunc(t *testing.T) {
 		if got != c.expected {
 			t.Errorf("%s:Expected %s, but got %s", c.args[0], c.expected, got)
 		}
+	}
+}
+
+func TestRoundFunc(t *testing.T) {
+	ctx := mockContext.NewMockContext("testRound", "op1")
+	fctx := kctx.NewDefaultFuncContext(ctx, 2)
+	registerMathFunc()
+
+	f := builtins["round"]
+	cases := []struct {
+		name   string
+		args   []any
+		valErr string
+		runErr string
+		exp    float64
+	}{
+		{name: "round int", args: []any{16, 2}, exp: 16.0},
+		{name: "trunc ceiling", args: []any{25.987, 2}, exp: 25.99},
+		{name: "trunc floor", args: []any{25.919, 1}, exp: 25.9},
+		{name: "trunc mul ceil", args: []any{9.9999, 3}, exp: 10},
+		{name: "negative", args: []any{56788.34, -3}, exp: 57000},
+		{name: "overflow v", args: []any{1.8e+306 + 0.56784, 2}, exp: 1.8e+306 + 0.57},
+		{name: "val error", args: []any{1, 2, 3}, exp: 1.8e+306 + 0.57, valErr: "Expect 1 or 2 arguments only"},
+		{name: "type 1 error", args: []any{"1", "2"}, exp: 1.8e+306 + 0.57, valErr: "Expect number - float or int type for parameter 1"},
+		{name: "type 2 error", args: []any{1, "2"}, exp: 1.8e+306 + 0.57, valErr: "Expect number - float or int type for parameter 2"},
+		{name: "rt 2 error", args: []any{1, []string{"sa"}}, exp: 1.8e+306 + 0.57, runErr: "The second argument must be an integer: cannot convert []string([sa]) to int"},
+		{name: "rt 1 error", args: []any{[]string{"sa"}, 23}, exp: 1.8e+306 + 0.57, runErr: "cannot convert []string([sa]) to float64"},
+		{name: "round 1 arg", args: []any{10.5}, exp: 11},
+		{name: "round 1 negative", args: []any{-10.5}, exp: -11},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			ee := make([]ast.Expr, len(c.args))
+			for i, arg := range c.args {
+				switch at := arg.(type) {
+				case int:
+					ee[i] = &ast.IntegerLiteral{Val: int64(at)}
+				case float64:
+					ee[i] = &ast.NumberLiteral{Val: at}
+				case string:
+					ee[i] = &ast.StringLiteral{Val: at}
+				default:
+					ee[i] = &ast.NumberLiteral{Val: 0.0}
+				}
+			}
+			err := f.val(fctx, ee)
+			if c.valErr != "" {
+				require.EqualError(t, err, c.valErr)
+				return
+			} else {
+				require.NoError(t, err)
+			}
+			got, re := f.exec(fctx, c.args)
+			if c.runErr != "" {
+				require.False(t, re)
+				eee := got.(error)
+				require.EqualError(t, eee, c.runErr)
+			} else {
+				require.True(t, re)
+				require.Equal(t, c.exp, got)
+			}
+		})
 	}
 }
