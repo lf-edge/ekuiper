@@ -24,6 +24,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/io/memory/pubsub"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
+	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
@@ -87,11 +88,12 @@ func (w *WebsocketSource) Subscribe(ctx api.StreamContext, ingest api.BytesInges
 			case <-ctx.Done():
 				return
 			case d := <-ch:
-				data, ok := d.([]byte)
-				if !ok {
-					continue
+				switch recv := d.(type) {
+				case error:
+					ingestError(ctx, errorx.NewEOF(recv.Error()))
+				case []byte:
+					ingest(ctx, recv, nil, timex.GetNow())
 				}
-				ingest(ctx, data, nil, timex.GetNow())
 			}
 		}
 	}()

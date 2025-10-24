@@ -32,25 +32,27 @@ type WebsocketClient struct {
 	RecvTopic string
 	SendTopic string
 
-	scheme    string
-	addr      string
-	path      string
-	tlsConfig *tls.Config
-	conn      *websocket.Conn
-	wg        *sync.WaitGroup
-	cancel    context.CancelFunc
+	requestHeader map[string][]string
+	scheme        string
+	addr          string
+	path          string
+	tlsConfig     *tls.Config
+	conn          *websocket.Conn
+	wg            *sync.WaitGroup
+	cancel        context.CancelFunc
 }
 
-func NewWebsocketClient(scheme, addr, path string, tlsConfig *tls.Config) *WebsocketClient {
+func NewWebsocketClient(scheme, addr, path string, tlsConfig *tls.Config, requestHeader map[string][]string) *WebsocketClient {
 	if scheme == "" {
 		scheme = "ws"
 	}
 	return &WebsocketClient{
-		scheme:    scheme,
-		addr:      addr,
-		path:      path,
-		tlsConfig: tlsConfig,
-		wg:        &sync.WaitGroup{},
+		requestHeader: requestHeader,
+		scheme:        scheme,
+		addr:          addr,
+		path:          path,
+		tlsConfig:     tlsConfig,
+		wg:            &sync.WaitGroup{},
 	}
 }
 
@@ -67,7 +69,7 @@ func (c *WebsocketClient) Connect() error {
 		return err
 	}
 	u := url.URL{Scheme: c.scheme, Host: c.addr, Path: path, RawQuery: rawQuery}
-	conn, _, err := d.Dial(u.String(), nil)
+	conn, _, err := d.Dial(u.String(), c.requestHeader)
 	if err != nil {
 		return err
 	}
