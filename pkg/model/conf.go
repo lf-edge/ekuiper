@@ -89,6 +89,10 @@ type KuiperConf struct {
 		Fdb struct {
 			Path string `yaml:"path"`
 		}
+		Pebble struct {
+			Path string `yaml:"path"`
+			Name string `yaml:"name"`
+		}
 	}
 	Portable struct {
 		PythonBin   string            `yaml:"pythonBin"`

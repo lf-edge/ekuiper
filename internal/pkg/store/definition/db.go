@@ -27,6 +27,7 @@ type Config struct {
 	Redis        RedisConfig
 	Sqlite       SqliteConfig
 	Fdb          FdbConfig
+	Pebble       PebbleConfig
 }
 
 type RedisConfig struct {
@@ -45,4 +46,9 @@ type FdbConfig struct {
 	Path       string
 	APIVersion int
 	Timeout    int64
+}
+
+type PebbleConfig struct {
+	Path string
+	Name string
 }
