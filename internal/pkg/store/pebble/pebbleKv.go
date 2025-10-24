@@ -211,3 +211,29 @@ func (p *pebbleKvStore) Drop() error {
 		return db.Apply(batch, pebble.Sync)
 	})
 }
+
+func (p *pebbleKvStore) GetByPrefix(prefix string) (map[string][]byte, error) {
+	results := make(map[string][]byte)
+	err := p.database.Apply(func(db *pebble.DB) error {
+		iter, err := db.NewIter(nil)
+		if err != nil {
+			return err
+		}
+		defer iter.Close()
+
+		fullPrefix := []byte(fmt.Sprintf("%s:%s", p.table, prefix))
+		for iter.SeekGE(fullPrefix); iter.Valid(); iter.Next() {
+			k := iter.Key()
+			if !bytes.HasPrefix(k, fullPrefix) {
+				break
+			}
+			v := iter.Value()
+			keyWithoutTable := string(k[len(p.table)+1:])
+			results[keyWithoutTable] = append([]byte{}, v...)
+		}
+
+		return nil
+	})
+
+	return results, err
+}

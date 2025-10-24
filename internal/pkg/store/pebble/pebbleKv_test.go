@@ -15,6 +15,8 @@
 package pebble
 
 import (
+	"bytes"
+	"encoding/gob"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -155,6 +157,36 @@ func TestPebbleKv_DecodeError_Clean_Drop_DeleteNotFound(t *testing.T) {
 	require.Len(t, keys, 0)
 
 	require.Error(t, ks.Delete("not_exists"))
+}
+
+func TestPebbleGetByPrefix(t *testing.T) {
+	ks, db, abs := setupPebbleKv()
+	defer cleanPebbleKv(db, abs)
+
+	require.NoError(t, ks.Set("prefix1", int64(1)))
+	require.NoError(t, ks.Set("prefix2", int64(1)))
+	require.NoError(t, ks.Set("other", int64(999)))
+
+	m, err := ks.GetByPrefix("prefix")
+	require.NoError(t, err)
+
+	k1, ok := m["prefix1"]
+	require.True(t, ok)
+
+	dec := gob.NewDecoder(bytes.NewBuffer(k1))
+	var v1 int64
+	require.NoError(t, dec.Decode(&v1))
+	require.Equal(t, int64(1), v1)
+
+	k2, ok := m["prefix2"]
+	require.True(t, ok)
+
+	dec = gob.NewDecoder(bytes.NewBuffer(k2))
+	require.NoError(t, dec.Decode(&v1))
+	require.Equal(t, int64(1), v1)
+
+	_, ok = m["other"]
+	require.False(t, ok)
 }
 
 func setupPebbleKv() (kv.KeyValue, definition.Database, string) {
