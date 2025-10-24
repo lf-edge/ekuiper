@@ -31,7 +31,7 @@ func TestWebsocketClient(t *testing.T) {
 		s.Close()
 	}()
 	ctx := mockContext.NewMockContext("1", "2")
-	wc := NewWebsocketClient("ws", s.URL[len("http://"):], "/ws", nil)
+	wc := NewWebsocketClient("ws", s.URL[len("http://"):], "/ws", nil, nil)
 	require.NoError(t, wc.Connect())
 	rt, st := wc.Run(ctx)
 	pubsub.CreatePub(st)

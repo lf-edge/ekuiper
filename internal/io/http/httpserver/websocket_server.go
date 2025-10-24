@@ -113,6 +113,7 @@ func recvProcess(ctx api.StreamContext, topic string, c *websocket.Conn, cancel 
 		msgType, data, err := c.ReadMessage()
 		if err != nil {
 			conf.Log.Errorf("read websocket msg err:%v, topic:%v", err, topic)
+			pubsub.ProduceAny(ctx, topic, err)
 			return
 		}
 		switch msgType {
