@@ -178,10 +178,15 @@ Returns a random number between 0.0 (inclusive) and 1.0 (exclusive).
 ## ROUND
 
 ```text
-round(col)
+round(v, [s])
 ```
 
-Returns the closest BIGINT value to the argument.
+Round to s decimal places. If s is not specified, round to nearest integer.
+
+```text
+round(42.4)  -> 42
+round(42.4382, 2) -> 42.44
+```
 
 ## SIGN
 
