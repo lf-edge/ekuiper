@@ -45,6 +45,10 @@ type MockMerger struct {
 	frames []map[string]any
 }
 
+func (m *MockMerger) Split(ctx api.StreamContext, b []byte) [][]byte {
+	return [][]byte{b}
+}
+
 func (m *MockMerger) Merging(ctx api.StreamContext, b []byte) error {
 	if m.frames == nil {
 		m.frames = make([]map[string]any, 2)
