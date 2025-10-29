@@ -40,6 +40,7 @@ type sinkConf struct {
 	RollingNamePattern string            `json:"rollingNamePattern"` // where to add the timestamp to the file name
 	RollingHook        string            `json:"rollingHook"`
 	RollingHookProps   map[string]any    `json:"rollingHookProps"`
+	RollingSize        int64             `json:"rollingSize"`
 	CheckInterval      cast.DurationConf `json:"checkInterval"`
 	Path               string            `json:"path"` // support dynamic property, when rolling, make sure the path is updated
 	FileType           FileType          `json:"fileType"`
@@ -80,8 +81,8 @@ func (m *fileSink) Provision(ctx api.StreamContext, props map[string]interface{}
 	if c.CheckInterval < 0 {
 		return fmt.Errorf("checkInterval must be positive")
 	}
-	if c.RollingInterval == 0 && c.RollingCount == 0 {
-		return fmt.Errorf("one of rollingInterval and rollingCount must be set")
+	if c.RollingInterval == 0 && c.RollingCount == 0 && c.RollingSize == 0 {
+		return fmt.Errorf("one of rollingInterval, rollingCount, or rollingSize must be set")
 	}
 	if c.RollingInterval > 0 && c.RollingInterval < c.CheckInterval {
 		c.CheckInterval = c.RollingInterval
@@ -182,9 +183,13 @@ func (m *fileSink) Collect(ctx api.StreamContext, tuple api.RawTuple) error {
 	m.mux.Lock()
 	defer m.mux.Unlock()
 	if fw.Written {
-		_, e := fw.Writer.Write(fw.Hook.Line())
+		lineBytes := fw.Hook.Line()
+		_, e := fw.Writer.Write(lineBytes)
 		if e != nil {
 			return e
+		}
+		if m.c.RollingSize > 0 {
+			fw.Size += int64(len(lineBytes))
 		}
 	} else {
 		fw.Written = true
@@ -196,6 +201,12 @@ func (m *fileSink) Collect(ctx api.StreamContext, tuple api.RawTuple) error {
 	if m.c.RollingCount > 0 {
 		fw.Count++
 		if fw.Count >= m.c.RollingCount {
+			return m.roll(ctx, fn, fw)
+		}
+	}
+	if m.c.RollingSize > 0 {
+		fw.Size += int64(len(item))
+		if fw.Size >= m.c.RollingSize {
 			return m.roll(ctx, fn, fw)
 		}
 	}
