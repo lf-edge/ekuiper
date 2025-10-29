@@ -42,10 +42,10 @@ func SetupDefault(dataDir string) error {
 		Fdb: definition.FdbConfig{},
 	}
 
-	return Setup(c)
+	return Setup(c, false)
 }
 
-func SetupWithConfig(sc *StoreConf) error {
+func SetupWithConfig(sc *StoreConf, setupCheckpointDB bool) error {
 	c := definition.Config{
 		Type:         sc.Type,
 		ExtStateType: sc.ExtStateType,
@@ -54,15 +54,29 @@ func SetupWithConfig(sc *StoreConf) error {
 		Fdb:          sc.FdbConfig,
 		Pebble:       sc.PebbleConfig,
 	}
-	return Setup(c)
+	return Setup(c, setupCheckpointDB)
 }
 
-func Setup(config definition.Config) error {
+func Setup(config definition.Config, setupCheckpointDB bool) error {
 	s, err := newStores(config, "sqliteKV.db")
 	if err != nil {
 		return err
 	}
 	globalStores = s
+	if setupCheckpointDB {
+		s, err = newStores(config, "checkpoint.db")
+		if err != nil {
+			return err
+		}
+		checkpointStores = s
+		db, err := checkpointStores.GetKV("init_checkpointdb")
+		if err != nil {
+			checkpointStores = nil
+		} else {
+			// write sth to ensure checkpoint.db created
+			db.Set("init", "init")
+		}
+	}
 	s, err = newStores(config, "cache.db")
 	if err != nil {
 		return err

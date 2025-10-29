@@ -31,9 +31,10 @@ var (
 	storeBuilders = map[string]StoreCreator{
 		"sqlite": sql.BuildStores,
 	}
-	globalStores   *stores = nil
-	cacheStores    *stores = nil
-	extStateStores *stores = nil
+	globalStores     *stores = nil
+	cacheStores      *stores = nil
+	extStateStores   *stores = nil
+	checkpointStores *stores = nil
 
 	TraceStores sql.Database
 )
@@ -154,6 +155,9 @@ func GetKV(table string) (kv.KeyValue, error) {
 }
 
 func GetTS(table string) (kv.Tskv, error) {
+	if checkpointStores != nil {
+		return checkpointStores.GetTS(table)
+	}
 	if globalStores == nil {
 		return nil, fmt.Errorf("global stores are not initialized")
 	}
@@ -161,6 +165,10 @@ func GetTS(table string) (kv.Tskv, error) {
 }
 
 func DropTS(table string) error {
+	if checkpointStores != nil {
+		checkpointStores.DropTS(table)
+		return nil
+	}
 	if globalStores == nil {
 		return fmt.Errorf("global stores are not initialized")
 	}
