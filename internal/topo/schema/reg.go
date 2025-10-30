@@ -84,14 +84,8 @@ func AddRuleSchema(ruleID, dataSource string, schema map[string]*ast.JsonStreamF
 	if _, ok := GlobalSchemaStore.wildcardMap[ruleID]; !ok {
 		GlobalSchemaStore.wildcardMap[ruleID] = make(map[string]bool)
 	}
-
-	if !isWildcard {
-		GlobalSchemaStore.schemaMap[ruleID][dataSource] = schema
-		GlobalSchemaStore.wildcardMap[ruleID][dataSource] = false
-		return
-	}
-	GlobalSchemaStore.schemaMap[ruleID][dataSource] = nil
-	GlobalSchemaStore.wildcardMap[ruleID][dataSource] = true
+	GlobalSchemaStore.schemaMap[ruleID][dataSource] = schema
+	GlobalSchemaStore.wildcardMap[ruleID][dataSource] = isWildcard
 }
 
 func RemoveRuleSchema(ruleID string) {

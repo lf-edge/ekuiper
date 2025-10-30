@@ -444,7 +444,7 @@ func (p *DataSourcePlan) getAllFields() {
 			if p.useSliceTuple {
 				if v != nil {
 					v.HasIndex = true
-					v.Index = 0
+					v.Index = index
 				} else {
 					v = &ast.JsonStreamField{
 						Index:    index,
@@ -460,7 +460,7 @@ func (p *DataSourcePlan) getAllFields() {
 			if p.useSliceTuple {
 				if v != nil {
 					v.HasIndex = true
-					v.Index = 0
+					v.Index = index
 				} else {
 					v = &ast.JsonStreamField{
 						Index:    index,

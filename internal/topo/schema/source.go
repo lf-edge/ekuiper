@@ -76,14 +76,8 @@ func (s *SharedLayer) RegSchema(ruleID, dataSource string, schema map[string]*as
 }
 
 func (s *SharedLayer) updateReg() {
-	if len(s.wildcardMap) > 0 {
-		for ruleID := range s.reg {
-			AddRuleSchema(ruleID, s.streamMap[ruleID], nil, true)
-		}
-		return
-	}
 	for ruleID := range s.reg {
-		AddRuleSchema(ruleID, s.streamMap[ruleID], s.schema, false)
+		AddRuleSchema(ruleID, s.streamMap[ruleID], s.schema, len(s.wildcardMap) > 0)
 	}
 }
 
@@ -98,8 +92,10 @@ func (s *SharedLayer) Attach(ctx api.StreamContext) error {
 	s.streamMap[ruleID] = info.datasource
 	if info.isWildcard {
 		s.wildcardMap[ruleID] = struct{}{}
-	} else {
-		delete(s.wildcardMap, ruleID)
+		s.schema = info.schema
+	}
+	isWildCard := len(s.wildcardMap) > 0
+	if !isWildCard { // If it is wildcard, the schema is already the biggest, no need to recalculate
 		mergedSchema, err := s.merge(s.schema, info.schema)
 		if err != nil {
 			return err
@@ -139,9 +135,9 @@ func (s *SharedLayer) Detach(ctx api.StreamContext, isClose bool) error {
 func (s *SharedLayer) GetSchema() map[string]*ast.JsonStreamField {
 	s.RLock()
 	defer s.RUnlock()
-	if len(s.wildcardMap) > 0 {
-		return nil
-	}
+	//if len(s.wildcardMap) > 0 {
+	//	return nil
+	//}
 	return s.schema
 }
 

@@ -166,9 +166,9 @@ func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, option
 
 	if featureSet.needDecode {
 		schema := t.streamFields
-		if t.isWildCard {
-			schema = nil
-		}
+		//if t.isWildCard {
+		//	schema = nil
+		//}
 		// Create the decode node
 		decodeNode, err := node.NewDecodeOp(ctx, false, fmt.Sprintf("%d_decoder", index), options, schema, props)
 		if err != nil {
@@ -189,9 +189,9 @@ func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, option
 
 	if featureSet.needPayloadDecode {
 		schema := t.streamFields
-		if t.isWildCard {
-			schema = nil
-		}
+		//if t.isWildCard {
+		//	schema = nil
+		//}
 		// Create the decode node
 		payloadDecodeNode, err := node.NewDecodeOp(ctx, true, fmt.Sprintf("%d_payload_decoder", index), options, schema, props)
 		if err != nil {
