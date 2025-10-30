@@ -37,6 +37,7 @@ type fileWriter struct {
 	Hook       writerHooks
 	Start      time.Time
 	Count      int
+	Size       int64
 	Compress   string
 	fileBuffer *writer.BufioWrapWriter
 	// Whether the file has written any data. It is only used to determine if new line is needed when writing data.
@@ -87,9 +88,13 @@ func (m *fileSink) createFileWriter(ctx api.StreamContext, fn string, ft FileTyp
 	if err != nil {
 		return nil, err
 	}
-	_, err = fws.Writer.Write(fws.Hook.Header())
+	header := fws.Hook.Header()
+	_, err = fws.Writer.Write(header)
 	if err != nil {
 		return nil, err
+	}
+	if m.c.RollingSize > 0 {
+		fws.Size = int64(len(header))
 	}
 	return fws, nil
 }

@@ -90,6 +90,7 @@ func TestWatchDir(t *testing.T) {
 	r := &WatchWrapper{f: &Source{}}
 	go func() {
 		time.Sleep(100 * time.Millisecond)
+		timex.Set(654321)
 		src, err := os.Open(filepath.Join(path, "test", "test.lines"))
 		require.NoError(t, err)
 		defer src.Close()

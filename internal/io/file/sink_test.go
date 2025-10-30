@@ -198,6 +198,20 @@ func TestFileSink_Configure(t *testing.T) {
 				"fields":          []string{"c", "a", "b"},
 			},
 		},
+		{ // only set rolling size
+			name: "rollingSize",
+			c: &sinkConf{
+				CheckInterval: cast.DurationConf(defaultCheckInterval),
+				Path:          "cache",
+				FileType:      LINES_TYPE,
+				RollingSize:   1024,
+				RollingCount:  0,
+			},
+			p: map[string]interface{}{
+				"rollingSize":  1024,
+				"rollingCount": 0,
+			},
+		},
 	}
 	ctx := mockContext.NewMockContext("test1", "test")
 	for _, tt := range tests {
@@ -780,4 +794,177 @@ func Decrypt(contents []byte) []byte {
 	decrypted := make([]byte, len(secret))
 	dstream.XORKeyStream(decrypted, secret)
 	return decrypted
+}
+
+// Test size-based rolling
+func TestFileSinkRollingSize_Collect(t *testing.T) {
+	// Remove existing files
+	err := filepath.Walk(".", func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if filepath.Ext(path) == ".log" {
+			fmt.Println("Deleting file:", path)
+			return os.Remove(path)
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	conf.IsTesting = true
+
+	tests := []struct {
+		name          string
+		ft            FileType
+		fname         string
+		rollingSize   int64
+		dataSize      int
+		dataCount     int
+		expectedFiles int
+		compress      string
+	}{
+		{
+			name:          "lines_size_rolling",
+			ft:            LINES_TYPE,
+			fname:         "test_size_lines.log",
+			rollingSize:   100, // 100 bytes
+			dataSize:      33,  // actual: {"index":N,"data":"test_value_N"} = 33 bytes
+			dataCount:     10,  // 10 items: 33 + (1+33) + (1+33) = 101 bytes -> roll after 3 items
+			expectedFiles: 4,   // Post-write check: 3+3+3+1 items = 4 files
+		},
+		{
+			name:          "json_size_rolling",
+			ft:            JSON_TYPE,
+			fname:         "test_size_json.log",
+			rollingSize:   100, // 100 bytes
+			dataSize:      33,  // same data size
+			dataCount:     10,  // JSON: "[" (1) + item (33) + "," (1) + item (33) + "," (1) + item (33) = 103
+			expectedFiles: 4,   // Post-write check: 3+3+3+1 items = 4 files
+		},
+		{
+			name:          "lines_size_rolling_gzip",
+			ft:            LINES_TYPE,
+			fname:         "test_size_lines_gzip.log",
+			rollingSize:   100, // 100 bytes (before compression)
+			dataSize:      33,
+			dataCount:     10,
+			expectedFiles: 4, // Same as lines without compression
+			compress:      GZIP,
+		},
+		{
+			name:          "json_size_rolling_zstd",
+			ft:            JSON_TYPE,
+			fname:         "test_size_json_zstd.log",
+			rollingSize:   100,
+			dataSize:      33,
+			dataCount:     10,
+			expectedFiles: 4, // Same as JSON without compression
+			compress:      ZSTD,
+		},
+	}
+
+	ctx := mockContext.NewMockContext("rule", "testRollingSize")
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			sink := &fileSink{}
+			err := sink.Provision(ctx, map[string]interface{}{
+				"path":               tt.fname,
+				"fileType":           tt.ft,
+				"rollingSize":        tt.rollingSize,
+				"rollingCount":       0,
+				"rollingInterval":    0,
+				"rollingNamePattern": "suffix",
+				"compression":        tt.compress,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			// Use mockclock to generate unique timestamps
+			mockclock.ResetClock(100)
+			err = sink.Connect(ctx, func(status string, message string) {})
+			if err != nil {
+				t.Fatal(err)
+			}
+			c := mockclock.GetMockClock()
+
+			// Collect data
+			for i := 0; i < tt.dataCount; i++ {
+				// Advance clock to ensure unique timestamps for each roll
+				c.Add(10 * time.Millisecond)
+				data := fmt.Sprintf("{\"index\":%d,\"data\":\"test_value_%d\"}", i, i)
+				if err := sink.Collect(ctx, &xsql.RawTuple{Rawdata: []byte(data)}); err != nil {
+					t.Errorf("unexpected error: %s", err)
+				}
+			}
+
+			if err = sink.Close(ctx); err != nil {
+				t.Errorf("unexpected close error: %s", err)
+			}
+
+			// Check if the expected number of files were created
+			files, err := filepath.Glob(fmt.Sprintf("test_size_%s*.log", tt.ft))
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if len(files) != tt.expectedFiles {
+				t.Errorf("expected %d files, but got %d files: %v", tt.expectedFiles, len(files), files)
+			}
+
+			// Cleanup
+			for _, f := range files {
+				os.Remove(f)
+			}
+		})
+	}
+}
+
+// Test provision validation for rolling size
+func TestFileSink_ProvisionRollingSize(t *testing.T) {
+	ctx := mockContext.NewMockContext("test1", "test")
+
+	// Valid: only rollingSize set
+	m := &fileSink{}
+	err := m.Provision(ctx, map[string]interface{}{
+		"path":        "test.log",
+		"rollingSize": 1024,
+	})
+	if err != nil {
+		t.Errorf("Provision with rollingSize should succeed, got error: %v", err)
+	}
+	if m.c.RollingSize != 1024 {
+		t.Errorf("Expected RollingSize 1024, got %d", m.c.RollingSize)
+	}
+
+	// Invalid: no rolling condition set
+	m2 := &fileSink{}
+	err = m2.Provision(ctx, map[string]interface{}{
+		"path":            "test.log",
+		"rollingSize":     0,
+		"rollingCount":    0,
+		"rollingInterval": 0,
+	})
+	if err == nil {
+		t.Error("Provision should fail when no rolling condition is set")
+	}
+
+	// Valid: rollingSize + rollingCount
+	m3 := &fileSink{}
+	err = m3.Provision(ctx, map[string]interface{}{
+		"path":         "test.log",
+		"rollingSize":  2048,
+		"rollingCount": 100,
+	})
+	if err != nil {
+		t.Errorf("Provision with multiple rolling conditions should succeed, got error: %v", err)
+	}
+	if m3.c.RollingSize != 2048 {
+		t.Errorf("Expected RollingSize 2048, got %d", m3.c.RollingSize)
+	}
+	if m3.c.RollingCount != 100 {
+		t.Errorf("Expected RollingCount 100, got %d", m3.c.RollingCount)
+	}
 }
