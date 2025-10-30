@@ -28,7 +28,7 @@ import (
 
 func UnzipTo(f *zip.File, folder, name string) (err error) {
 	// Validate name to avoid path traversal and directory escape
-	if strings.Contains(name, "/") || strings.Contains(name, "\\") || strings.Contains(name, "..") || filepath.IsAbs(name) {
+	if strings.Contains(name, "..") || filepath.IsAbs(name) {
 		return fmt.Errorf("invalid file name: path traversal or absolute paths are not allowed: %q", name)
 	}
 	defer func() {
