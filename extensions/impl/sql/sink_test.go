@@ -197,34 +197,29 @@ func TestSQLSinkConfigKV(t *testing.T) {
 	config := &sqlSinkConfig{
 		Fields: []string{"a"},
 	}
-	_, _, err := config.getKeyValues(ctx, nil)
+	_, err := config.getValuesByKeys(ctx, nil, config.Fields)
 	require.Error(t, err)
 
-	keys, values, err := config.getKeyValues(ctx, map[string]interface{}{
+	values, err := config.getValuesByKeys(ctx, map[string]interface{}{
 		"a": "value",
-	})
+	}, config.Fields)
 	require.NoError(t, err)
-	require.Equal(t, []string{"a"}, keys)
 	require.Equal(t, []string{"'value'"}, values)
 
 	config = &sqlSinkConfig{
 		Fields: []string{"a"},
 	}
-	keys, values, err = config.getKeyValues(ctx, map[string]interface{}{
+	values, err = config.getValuesByKeys(ctx, map[string]interface{}{
 		"b": "value",
-	})
+	}, config.Fields)
 	require.NoError(t, err)
-	require.NoError(t, err)
-	require.Equal(t, []string{"a"}, keys)
 	require.Equal(t, []string{"NULL"}, values)
 
 	config = &sqlSinkConfig{}
-	keys, values, err = config.getKeyValues(ctx, map[string]interface{}{
+	values, err = config.getValuesByKeys(ctx, map[string]interface{}{
 		"a": "value",
-	})
+	}, []string{"a"})
 	require.NoError(t, err)
-	require.NoError(t, err)
-	require.Equal(t, []string{"a"}, keys)
 	require.Equal(t, []string{"'value'"}, values)
 }
 
