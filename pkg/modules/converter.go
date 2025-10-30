@@ -50,6 +50,7 @@ func RegisterWriterConverter(name string, provider ConvertWriterProvider) {
 
 // Merger is used to merge multiple frames. It is currently called by rate limiter only
 type Merger interface {
+	Split(ctx api.StreamContext, b []byte) [][]byte
 	// Merging is called when read in a new frame
 	Merging(ctx api.StreamContext, b []byte) error
 	// Trigger is called when rate limiter is trigger to send out a message

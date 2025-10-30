@@ -246,9 +246,12 @@ func (o *RateLimitOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 					var err error
 					switch dt := dd.(type) {
 					case *xsql.RawTuple:
-						err = o.merger.Merging(ctx, dt.Raw())
-						if err == nil {
-							o.latest = dt
+						bbs := o.merger.Split(ctx, dt.Raw())
+						for _, bb := range bbs {
+							err = o.merger.Merging(ctx, bb)
+							if err == nil {
+								o.latest = dt
+							}
 						}
 					default:
 						err = fmt.Errorf("rate limit merge only supports raw but got %v", d)
