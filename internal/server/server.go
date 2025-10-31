@@ -140,10 +140,34 @@ func getStoreConfigByKuiperConfig(c *model.KuiperConf) (*store.StoreConf, error)
 	return sc, nil
 }
 
+func canSetupCheckpointDB() (setup bool) {
+	s, err := conf.GetDataLoc()
+	if err != nil {
+		return false
+	}
+	_, err = os.Stat(filepath.Join(s, "checkpoint.db"))
+	// checkpoint.db already exists, setup it.
+	if err == nil {
+		return true
+	}
+	_, err = os.Stat(filepath.Join(s, "sqliteKV.db"))
+	if err != nil {
+		// sqliteKV.db not exists, setup checkpoint.db.
+		if os.IsNotExist(err) {
+			return true
+		}
+		// unexpected error happened
+		return false
+	}
+	// sqliteKV.db exists/ checkpoint.db not exists, don't setup.
+	return false
+}
+
 func StartUp(Version string) {
 	version = Version
 	startTimeStamp = time.Now().Unix()
 	createPaths()
+	needSetup := canSetupCheckpointDB()
 	conf.SetupEnv()
 	conf.InitConf()
 	if modules.ConfHook != nil {
@@ -184,7 +208,7 @@ func StartUp(Version string) {
 	if err != nil {
 		panic(err)
 	}
-	err = store.SetupWithConfig(sc)
+	err = store.SetupWithConfig(sc, needSetup)
 	if err != nil {
 		panic(err)
 	}
