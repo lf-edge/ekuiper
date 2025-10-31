@@ -180,10 +180,61 @@ func Test_createLogicalPlan(t *testing.T) {
 	}
 	arrowPRef.SetRefSource([]string{"src3"})
 	tests := []struct {
-		sql string
-		p   LogicalPlan
-		err string
+		sql       string
+		p         LogicalPlan
+		slicemode bool
+		err       string
 	}{
+		{
+			sql:       "select * from src2",
+			slicemode: true,
+			p: ProjectPlan{
+				baseLogicalPlan: baseLogicalPlan{
+					children: []LogicalPlan{
+						DataSourcePlan{
+							baseLogicalPlan: baseLogicalPlan{},
+							name:            "src2",
+							useSliceTuple:   true,
+							timestampFormat: "YYYY-MM-dd HH:mm:ss",
+							streamFields: map[string]*ast.JsonStreamField{
+								"id2": {
+									Type:     "bigint",
+									HasIndex: true,
+									Index:    1,
+								},
+								"hum": {
+									Type:     "bigint",
+									HasIndex: true,
+									Index:    0,
+								},
+							},
+							streamStmt:  streams["src2"],
+							metaFields:  []string{},
+							pruneFields: []string{},
+						}.Init(),
+					},
+				},
+				fieldLen: 2,
+				fields: []ast.Field{
+					{
+						Name:  "id2",
+						AName: "",
+						Expr: &ast.FieldRef{
+							StreamName: "src2",
+							Name:       "id2",
+						},
+					},
+					{
+						Name:  "hum",
+						AName: "",
+						Expr: &ast.FieldRef{
+							StreamName: "src2",
+							Name:       "hum",
+						},
+					},
+				},
+			}.Init(),
+		},
 		{
 			sql: "select a.b.c as c, a.e as e, a2 from src3",
 			p: ProjectPlan{
@@ -2567,6 +2618,9 @@ func Test_createLogicalPlan(t *testing.T) {
 				Qos:                0,
 				CheckpointInterval: 0,
 				SendError:          true,
+				Experiment: &def.ExpOpts{
+					UseSliceTuple: tt.slicemode,
+				},
 			}, kv)
 			if tt.err != "" {
 				assert.EqualError(t, err, tt.err)

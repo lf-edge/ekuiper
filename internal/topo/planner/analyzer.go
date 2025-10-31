@@ -80,6 +80,29 @@ func decorateStmt(s *ast.SelectStatement, store kv.KeyValue, opt *def.RuleOption
 		analyticFuncs      []*ast.Call
 	)
 
+	// unfold the wildcard for slice mode
+	if opt.Experiment != nil && opt.Experiment.UseSliceTuple {
+		var wcIndex []int
+		for i, f := range s.Fields {
+			if _, ok := f.Expr.(*ast.Wildcard); ok {
+				wcIndex = append(wcIndex, i)
+			}
+		}
+		if len(wcIndex) > 0 {
+			for i := len(wcIndex) - 1; i >= 0; i-- {
+				index := wcIndex[i]
+				copy(s.Fields[index:], s.Fields[index+1:])
+				s.Fields = s.Fields[:len(s.Fields)-1]
+			}
+		}
+		// flat wildcard
+		for _, streamStmt := range streamStmts {
+			for _, field := range streamStmt.schema {
+				s.Fields = append(s.Fields, buildField(field.Name, streamStmt.stmt.Name))
+			}
+		}
+	}
+
 	// Scan columns fields: bind all field refs, collect alias
 	for i, f := range s.Fields {
 		ast.WalkFunc(f.Expr, func(n ast.Node) bool {
