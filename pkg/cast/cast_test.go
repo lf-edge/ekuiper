@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestToStringAlways(t *testing.T) {
@@ -1057,4 +1058,11 @@ func BenchmarkToString(b *testing.B) {
 			_ = strconv.FormatFloat(f, 'f', -1, 64)
 		}
 	})
+}
+
+func TestToUint32Slice(t *testing.T) {
+	data := []interface{}{1, 2, 3}
+	got, err := ToUint32Slice(data, CONVERT_ALL)
+	require.NoError(t, err)
+	require.Equal(t, []uint32{1, 2, 3}, got)
 }

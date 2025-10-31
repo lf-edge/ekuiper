@@ -928,6 +928,22 @@ func ToInt64Slice(input interface{}, sn Strictness) ([]int64, error) {
 	return result, nil
 }
 
+func ToUint32Slice(input interface{}, sn Strictness) ([]uint32, error) {
+	s := reflect.ValueOf(input)
+	if s.Kind() != reflect.Slice {
+		return nil, fmt.Errorf("cannot convert %[1]T(%[1]v) to uint slice)", input)
+	}
+	var result []uint32
+	for i := 0; i < s.Len(); i++ {
+		ele, err := ToUint32(s.Index(i).Interface(), sn)
+		if err != nil {
+			return nil, fmt.Errorf("cannot convert %[1]T(%[1]v) to uint slice for the %d element: %v", input, i, err)
+		}
+		result = append(result, ele)
+	}
+	return result, nil
+}
+
 func ToUint64Slice(input interface{}, sn Strictness) ([]uint64, error) {
 	s := reflect.ValueOf(input)
 	if s.Kind() != reflect.Slice {
