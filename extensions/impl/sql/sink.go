@@ -56,47 +56,35 @@ type sqlSinkConfig struct {
 	KeyField     string   `json:"keyField"`
 }
 
-func (c *sqlSinkConfig) buildInsertSql(ctx api.StreamContext, mapData map[string]interface{}) ([]string, string, error) {
-	keys, vals, err := c.getKeyValues(ctx, mapData)
+func (c *sqlSinkConfig) buildInsertSql(ctx api.StreamContext, mapData map[string]interface{}, keys []string) (string, error) {
+	vals, err := c.getValuesByKeys(ctx, mapData, keys)
 	if err != nil {
-		return keys, "", err
+		return "", err
 	}
 	sqlStr := "(" + strings.Join(vals, ",") + ")"
-	return keys, sqlStr, nil
+	return sqlStr, nil
 }
 
-func (c *sqlSinkConfig) getKeyValues(ctx api.StreamContext, mapData map[string]interface{}) ([]string, []string, error) {
+func (c *sqlSinkConfig) getValuesByKeys(ctx api.StreamContext, mapData map[string]interface{}, keys []string) ([]string, error) {
 	if 0 == len(mapData) {
-		return nil, nil, fmt.Errorf("data is empty.")
+		return nil, fmt.Errorf("data is empty.")
 	}
+	var vals []string
 	logger := ctx.GetLogger()
-	var keys, vals []string
-
-	if len(c.Fields) != 0 {
-		for _, k := range c.Fields {
-			keys = append(keys, k)
-			if v, ok := mapData[k]; ok && v != nil {
-				if reflect.String == reflect.TypeOf(v).Kind() {
-					vals = append(vals, fmt.Sprintf("'%v'", v))
-				} else {
-					vals = append(vals, fmt.Sprintf(`%v`, v))
-				}
-			} else {
-				logger.Warn("not found field:", k)
-				vals = append(vals, fmt.Sprintf(`NULL`))
-			}
-		}
-	} else {
-		for k, v := range mapData {
-			keys = append(keys, k)
+	for _, k := range keys {
+		v, ok := mapData[k]
+		if ok && v != nil {
 			if reflect.String == reflect.TypeOf(v).Kind() {
 				vals = append(vals, fmt.Sprintf("'%v'", v))
 			} else {
 				vals = append(vals, fmt.Sprintf(`%v`, v))
 			}
+		} else {
+			logger.Warn("not found field:", k)
+			vals = append(vals, fmt.Sprintf(`NULL`))
 		}
 	}
-	return keys, vals, nil
+	return vals, nil
 }
 
 func (s *SQLSinkConnector) Ping(ctx api.StreamContext, props map[string]any) error {
@@ -177,10 +165,10 @@ func (s *SQLSinkConnector) Collect(ctx api.StreamContext, item api.MessageTuple)
 
 func (s *SQLSinkConnector) collect(ctx api.StreamContext, item map[string]any) (err error) {
 	if len(s.config.RowKindField) < 1 {
-		var keys []string = nil
+		keys := s.extractKeys(item)
 		var values []string = nil
 		var vars string
-		keys, vars, err = s.config.buildInsertSql(ctx, item)
+		vars, err = s.config.buildInsertSql(ctx, item, keys)
 		if err != nil {
 			return err
 		}
@@ -205,12 +193,15 @@ func (s *SQLSinkConnector) CollectList(ctx api.StreamContext, items api.MessageT
 }
 
 func (s *SQLSinkConnector) collectList(ctx api.StreamContext, items []map[string]any) (err error) {
-	var keys []string = nil
+	if len(items) < 1 {
+		return nil
+	}
+	keys := s.extractKeys(items[0])
 	var values []string = nil
 	var vars string
 	if len(s.config.RowKindField) < 1 {
 		for _, mapData := range items {
-			keys, vars, err = s.config.buildInsertSql(ctx, mapData)
+			vars, err = s.config.buildInsertSql(ctx, mapData, keys)
 			if err != nil {
 				return err
 			}
@@ -244,10 +235,11 @@ func (s *SQLSinkConnector) save(ctx api.StreamContext, table string, data map[st
 			return fmt.Errorf("invalid rowkind %s", rowkind)
 		}
 	}
+	keys := s.extractKeys(data)
 	var sqlStr string
 	switch rowkind {
 	case ast.RowkindInsert:
-		keys, vars, err := s.config.buildInsertSql(ctx, data)
+		vars, err := s.config.buildInsertSql(ctx, data, keys)
 		if err != nil {
 			return err
 		}
@@ -260,7 +252,7 @@ func (s *SQLSinkConnector) save(ctx api.StreamContext, table string, data map[st
 		if !ok {
 			return fmt.Errorf("field %s does not exist in data %v", s.config.KeyField, data)
 		}
-		keys, vals, err := s.config.getKeyValues(ctx, data)
+		vals, err := s.config.getValuesByKeys(ctx, data, keys)
 		if err != nil {
 			return err
 		}
@@ -318,6 +310,17 @@ func (s *SQLSinkConnector) writeToDB(ctx api.StreamContext, sqlStr string) error
 	}
 	ctx.GetLogger().Debugf("Rows affected: %d", d)
 	return nil
+}
+
+func (s *SQLSinkConnector) extractKeys(item map[string]any) []string {
+	if len(s.config.Fields) > 0 {
+		return s.config.Fields
+	}
+	keys := make([]string, 0, len(item))
+	for k := range item {
+		keys = append(keys, k)
+	}
+	return keys
 }
 
 func buildInsertSQL(table string, keys []string, values []string) string {
