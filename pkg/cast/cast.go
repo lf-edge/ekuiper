@@ -814,7 +814,7 @@ func ToBool(input interface{}, sn Strictness) (bool, error) {
 		if sn == CONVERT_ALL {
 			return false, nil
 		}
-	case int:
+	case int, int8, int32, int64, uint, uint8, uint16, uint32, uint64:
 		if sn == CONVERT_ALL {
 			if b != 0 {
 				return true, nil
@@ -825,7 +825,7 @@ func ToBool(input interface{}, sn Strictness) (bool, error) {
 		if sn == CONVERT_ALL {
 			return strconv.ParseBool(b)
 		}
-	case float64:
+	case float64, float32:
 		if sn == CONVERT_ALL {
 			if b != 0 {
 				return true, nil
