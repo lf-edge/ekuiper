@@ -825,15 +825,34 @@ func ToBool(input interface{}, sn Strictness) (bool, error) {
 		if sn == CONVERT_ALL {
 			return strconv.ParseBool(b)
 		}
-	case float64, float32:
+	case float64:
 		if sn == CONVERT_ALL {
-			if b != 0 {
+			if isZeroEpsilon64(b) {
+				return false, nil
+			} else {
 				return true, nil
 			}
-			return false, nil
 		}
+		return false, nil
+	case float32:
+		if sn == CONVERT_ALL {
+			if isZeroEpsilon32(b) {
+				return false, nil
+			} else {
+				return true, nil
+			}
+		}
+		return false, nil
 	}
 	return false, fmt.Errorf("cannot convert %[1]T(%[1]v) to bool", input)
+}
+
+func isZeroEpsilon64(f float64) bool {
+	return math.Abs(f) < math.SmallestNonzeroFloat64
+}
+
+func isZeroEpsilon32(f float32) bool {
+	return math.Abs(float64(f)) < math.SmallestNonzeroFloat32
 }
 
 func ToBytes(input interface{}, sn Strictness) ([]byte, error) {
