@@ -749,13 +749,15 @@ func createLogicalPlanFull(stmt *ast.SelectStatement, opt *def.RuleOption, store
 		children = []LogicalPlan{p}
 	}
 	if dimensions != nil && len(rewriteRes.incAggFields) < 1 {
-		ds = dimensions.GetGroups()
-		if ds != nil && len(ds) > 0 {
-			p = AggregatePlan{
-				dimensions: ds,
-			}.Init()
-			p.SetChildren(children)
-			children = []LogicalPlan{p}
+		if w != nil && w.WindowType != ast.STATE_WINDOW {
+			ds = dimensions.GetGroups()
+			if ds != nil && len(ds) > 0 {
+				p = AggregatePlan{
+					dimensions: ds,
+				}.Init()
+				p.SetChildren(children)
+				children = []LogicalPlan{p}
+			}
 		}
 	}
 	if stmt.Having != nil {
