@@ -105,7 +105,8 @@ type WindowV2Exec interface {
 
 type StateWindowOp struct {
 	*WindowV2Operator
-	*StateWindowStatus
+	status          map[string]*StateWindowStatus
+	Dimensions      ast.Dimensions
 	SingleCondition ast.Expr
 	BeginCondition  ast.Expr
 	EmitCondition   ast.Expr
@@ -126,21 +127,20 @@ func NewStateWindowOp(o *WindowV2Operator) *StateWindowOp {
 		EmitCondition:    o.windowConfig.EmitCondition,
 		SingleCondition:  o.windowConfig.SingleCondition,
 		stateFuncs:       o.windowConfig.StateFuncs,
-		StateWindowStatus: &StateWindowStatus{
-			Scanner: o.scanner,
-		},
+		Dimensions:       o.windowConfig.Dimensions,
+		status:           make(map[string]*StateWindowStatus),
 	}
 }
 
-func (s *StateWindowOp) emit(ctx api.StreamContext, startTime, endTime time.Time) {
-	tuples := s.scanner.scanWindow(time.Time{}, InfTime)
+func (s *StateWindowOp) emit(ctx api.StreamContext, status *StateWindowStatus) {
+	tuples := status.Scanner.scanWindow(time.Time{}, InfTime)
 	results := &xsql.WindowTuples{
 		Content: make([]xsql.Row, 0),
 	}
 	for _, tuple := range tuples {
 		results.Content = append(results.Content, tuple)
 	}
-	results.WindowRange = xsql.NewWindowRange(startTime.UnixMilli(), endTime.UnixMilli(), endTime.UnixMilli())
+	results.WindowRange = xsql.NewWindowRange(status.StartTime.UnixMilli(), status.EndTime.UnixMilli(), status.EndTime.UnixMilli())
 	s.Broadcast(results)
 	s.onSend(ctx, results)
 }
@@ -148,10 +148,9 @@ func (s *StateWindowOp) emit(ctx api.StreamContext, startTime, endTime time.Time
 func (s *StateWindowOp) exec(ctx api.StreamContext, errCh chan<- error) {
 	v, err := ctx.GetState(V2WindowInputsKey)
 	if err == nil && v != nil {
-		preStatus, ok := v.(*StateWindowStatus)
+		preStatus, ok := v.(map[string]*StateWindowStatus)
 		if ok {
-			s.StateWindowStatus = preStatus
-			s.WindowV2Operator.scanner = preStatus.Scanner
+			s.status = preStatus
 		}
 	}
 	fv, _ := xsql.NewFunctionValuersForOp(ctx)
@@ -167,57 +166,65 @@ func (s *StateWindowOp) exec(ctx api.StreamContext, errCh chan<- error) {
 			s.onProcessStart(ctx, input)
 			switch row := data.(type) {
 			case *xsql.Tuple:
+				name := calDimension(fv, s.Dimensions, row)
+				status, ok := s.status[name]
+				if !ok {
+					status = &StateWindowStatus{
+						Scanner: &WindowScanner{Tuples: make([]*xsql.Tuple, 0)},
+					}
+					s.status[name] = status
+				}
 				if s.BeginCondition != nil && s.EmitCondition != nil {
-					s.handleTupleWithBeginEmitCondition(ctx, fv, row)
+					s.handleTupleWithBeginEmitCondition(ctx, fv, row, status)
 				} else if s.SingleCondition != nil {
-					s.handleTupleWithSingleCondition(ctx, fv, row)
+					s.handleTupleWithSingleCondition(ctx, fv, row, status)
 				}
 			}
-			ctx.PutState(V2WindowInputsKey, s.StateWindowStatus)
+			ctx.PutState(V2WindowInputsKey, s.status)
 			s.onProcessEnd(ctx)
 		}
 	}
 }
 
-func (s *StateWindowOp) handleTupleWithBeginEmitCondition(ctx api.StreamContext, fv *xsql.FunctionValuer, row *xsql.Tuple) {
-	if !s.OnBegin {
+func (s *StateWindowOp) handleTupleWithBeginEmitCondition(ctx api.StreamContext, fv *xsql.FunctionValuer, row *xsql.Tuple, status *StateWindowStatus) {
+	if !status.OnBegin {
 		canBegin := isMatchCondition(ctx, s.BeginCondition, fv, row, s.stateFuncs)
 		if canBegin {
-			s.StartTime = row.Timestamp
-			s.OnBegin = true
-			s.scanner.addTuple(row)
+			status.StartTime = row.Timestamp
+			status.OnBegin = true
+			status.Scanner.addTuple(row)
 		}
 	} else {
-		s.scanner.addTuple(row)
+		status.Scanner.addTuple(row)
 		canEmit := isMatchCondition(ctx, s.EmitCondition, fv, row, s.stateFuncs)
 		if canEmit {
-			s.EndTime = row.Timestamp
-			s.emit(ctx, s.StartTime, s.EndTime)
-			s.scanner.gc(InfTime)
-			s.OnBegin = false
+			status.EndTime = row.Timestamp
+			s.emit(ctx, status)
+			status.Scanner.gc(InfTime)
+			status.OnBegin = false
 		}
 	}
 }
 
-func (s *StateWindowOp) handleTupleWithSingleCondition(ctx api.StreamContext, fv *xsql.FunctionValuer, row *xsql.Tuple) {
-	if !s.OnBegin {
+func (s *StateWindowOp) handleTupleWithSingleCondition(ctx api.StreamContext, fv *xsql.FunctionValuer, row *xsql.Tuple, status *StateWindowStatus) {
+	if !status.OnBegin {
 		canBegin := isMatchCondition(ctx, s.SingleCondition, fv, row, s.stateFuncs)
 		if canBegin {
-			s.StartTime = row.Timestamp
-			s.OnBegin = true
-			s.scanner.addTuple(row)
+			status.StartTime = row.Timestamp
+			status.OnBegin = true
+			status.Scanner.addTuple(row)
 		}
 	} else {
 		canEmit := isMatchCondition(ctx, s.SingleCondition, fv, row, s.stateFuncs)
 		if canEmit {
-			s.EndTime = row.Timestamp
-			s.emit(ctx, s.StartTime, s.EndTime)
-			s.scanner.gc(InfTime)
-			s.OnBegin = true
-			s.scanner.addTuple(row)
-			s.StartTime = row.Timestamp
+			status.EndTime = row.Timestamp
+			s.emit(ctx, status)
+			status.Scanner.gc(InfTime)
+			status.OnBegin = true
+			status.Scanner.addTuple(row)
+			status.StartTime = row.Timestamp
 		} else {
-			s.scanner.addTuple(row)
+			status.Scanner.addTuple(row)
 		}
 	}
 }

@@ -423,6 +423,7 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *def.RuleOption, sources ma
 			BeginCondition:   t.beginCondition,
 			EmitCondition:    t.emitCondition,
 			SingleCondition:  t.singleCondition,
+			Dimensions:       t.dimensions,
 			StateFuncs:       t.stateFuncs,
 		}
 		// state window only support v2 window
@@ -643,6 +644,7 @@ func createLogicalPlanFull(stmt *ast.SelectStatement, opt *def.RuleOption, store
 					beginCondition:  w.BeginCondition,
 					emitCondition:   w.EmitCondition,
 					singleCondition: w.SingleCondition,
+					dimensions:      dimensions.GetGroups(),
 				}.Init()
 				if w.Length != nil {
 					wp.length = int(w.Length.Val)
@@ -747,13 +749,15 @@ func createLogicalPlanFull(stmt *ast.SelectStatement, opt *def.RuleOption, store
 		children = []LogicalPlan{p}
 	}
 	if dimensions != nil && len(rewriteRes.incAggFields) < 1 {
-		ds = dimensions.GetGroups()
-		if ds != nil && len(ds) > 0 {
-			p = AggregatePlan{
-				dimensions: ds,
-			}.Init()
-			p.SetChildren(children)
-			children = []LogicalPlan{p}
+		if w != nil && w.WindowType != ast.STATE_WINDOW {
+			ds = dimensions.GetGroups()
+			if ds != nil && len(ds) > 0 {
+				p = AggregatePlan{
+					dimensions: ds,
+				}.Init()
+				p.SetChildren(children)
+				children = []LogicalPlan{p}
+			}
 		}
 	}
 	if stmt.Having != nil {
@@ -845,7 +849,7 @@ func createLogicalPlanFull(stmt *ast.SelectStatement, opt *def.RuleOption, store
 		p = ProjectPlan{
 			fields:      fields,
 			fieldLen:    fieldLen,
-			isAggregate: xsql.WithAggFields(stmt) && len(rewriteRes.incAggFields) < 1,
+			isAggregate: xsql.WithAggFields(stmt) && len(rewriteRes.incAggFields) < 1 && xsql.HasAggFuncs(stmt),
 			sendMeta:    opt.SendMetaToSink,
 			sendNil:     opt.SendNil,
 			enableLimit: enableLimit,
