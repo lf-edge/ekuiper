@@ -845,7 +845,7 @@ func createLogicalPlanFull(stmt *ast.SelectStatement, opt *def.RuleOption, store
 		p = ProjectPlan{
 			fields:      fields,
 			fieldLen:    fieldLen,
-			isAggregate: xsql.WithAggFields(stmt) && len(rewriteRes.incAggFields) < 1,
+			isAggregate: xsql.WithAggFields(stmt) && len(rewriteRes.incAggFields) < 1 && xsql.HasAggFuncs(stmt),
 			sendMeta:    opt.SendMetaToSink,
 			sendNil:     opt.SendNil,
 			enableLimit: enableLimit,
