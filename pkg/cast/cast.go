@@ -821,9 +821,75 @@ func ToBool(input interface{}, sn Strictness) (bool, error) {
 			}
 			return false, nil
 		}
-	case string:
+	case int8:
 		if sn == CONVERT_ALL {
-			return strconv.ParseBool(b)
+			if b != 0 {
+				return true, nil
+			}
+			return false, nil
+		}
+	case int16:
+		if sn == CONVERT_ALL {
+			if b != 0 {
+				return true, nil
+			}
+			return false, nil
+		}
+	case int32:
+		if sn == CONVERT_ALL {
+			if b != 0 {
+				return true, nil
+			}
+			return false, nil
+		}
+	case int64:
+		if sn == CONVERT_ALL {
+			if b != 0 {
+				return true, nil
+			}
+			return false, nil
+		}
+	case uint:
+		if sn == CONVERT_ALL {
+			if b != 0 {
+				return true, nil
+			}
+			return false, nil
+		}
+	case uint8:
+		if sn == CONVERT_ALL {
+			if b != 0 {
+				return true, nil
+			}
+			return false, nil
+		}
+	case uint16:
+		if sn == CONVERT_ALL {
+			if b != 0 {
+				return true, nil
+			}
+			return false, nil
+		}
+	case uint32:
+		if sn == CONVERT_ALL {
+			if b != 0 {
+				return true, nil
+			}
+			return false, nil
+		}
+	case uint64:
+		if sn == CONVERT_ALL {
+			if b != 0 {
+				return true, nil
+			}
+			return false, nil
+		}
+	case float32:
+		if sn == CONVERT_ALL {
+			if b != 0 {
+				return true, nil
+			}
+			return false, nil
 		}
 	case float64:
 		if sn == CONVERT_ALL {
@@ -832,8 +898,20 @@ func ToBool(input interface{}, sn Strictness) (bool, error) {
 			}
 			return false, nil
 		}
+	case string:
+		if sn == CONVERT_ALL {
+			return strconv.ParseBool(b)
+		}
 	}
 	return false, fmt.Errorf("cannot convert %[1]T(%[1]v) to bool", input)
+}
+
+func isZeroEpsilon64(f float64) bool {
+	return math.Abs(f) < math.SmallestNonzeroFloat64
+}
+
+func isZeroEpsilon32(f float32) bool {
+	return math.Abs(float64(f)) < math.SmallestNonzeroFloat32
 }
 
 func ToBytes(input interface{}, sn Strictness) ([]byte, error) {
