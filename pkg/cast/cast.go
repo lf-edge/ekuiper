@@ -814,7 +814,84 @@ func ToBool(input interface{}, sn Strictness) (bool, error) {
 		if sn == CONVERT_ALL {
 			return false, nil
 		}
-	case int, int8, int32, int64, uint, uint8, uint16, uint32, uint64:
+	case int:
+		if sn == CONVERT_ALL {
+			if b != 0 {
+				return true, nil
+			}
+			return false, nil
+		}
+	case int8:
+		if sn == CONVERT_ALL {
+			if b != 0 {
+				return true, nil
+			}
+			return false, nil
+		}
+	case int16:
+		if sn == CONVERT_ALL {
+			if b != 0 {
+				return true, nil
+			}
+			return false, nil
+		}
+	case int32:
+		if sn == CONVERT_ALL {
+			if b != 0 {
+				return true, nil
+			}
+			return false, nil
+		}
+	case int64:
+		if sn == CONVERT_ALL {
+			if b != 0 {
+				return true, nil
+			}
+			return false, nil
+		}
+	case uint:
+		if sn == CONVERT_ALL {
+			if b != 0 {
+				return true, nil
+			}
+			return false, nil
+		}
+	case uint8:
+		if sn == CONVERT_ALL {
+			if b != 0 {
+				return true, nil
+			}
+			return false, nil
+		}
+	case uint16:
+		if sn == CONVERT_ALL {
+			if b != 0 {
+				return true, nil
+			}
+			return false, nil
+		}
+	case uint32:
+		if sn == CONVERT_ALL {
+			if b != 0 {
+				return true, nil
+			}
+			return false, nil
+		}
+	case uint64:
+		if sn == CONVERT_ALL {
+			if b != 0 {
+				return true, nil
+			}
+			return false, nil
+		}
+	case float32:
+		if sn == CONVERT_ALL {
+			if b != 0 {
+				return true, nil
+			}
+			return false, nil
+		}
+	case float64:
 		if sn == CONVERT_ALL {
 			if b != 0 {
 				return true, nil
@@ -825,24 +902,6 @@ func ToBool(input interface{}, sn Strictness) (bool, error) {
 		if sn == CONVERT_ALL {
 			return strconv.ParseBool(b)
 		}
-	case float64:
-		if sn == CONVERT_ALL {
-			if isZeroEpsilon64(b) {
-				return false, nil
-			} else {
-				return true, nil
-			}
-		}
-		return false, nil
-	case float32:
-		if sn == CONVERT_ALL {
-			if isZeroEpsilon32(b) {
-				return false, nil
-			} else {
-				return true, nil
-			}
-		}
-		return false, nil
 	}
 	return false, fmt.Errorf("cannot convert %[1]T(%[1]v) to bool", input)
 }
