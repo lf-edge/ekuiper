@@ -510,6 +510,115 @@ func TestToUintResult(t *testing.T) {
 	}
 }
 
+func TestToBoolResult(t *testing.T) {
+	tests := []struct {
+		input any
+		want  bool
+	}{
+		{
+			1,
+			true,
+		},
+		{
+			int8(0),
+			false,
+		},
+		{
+			int16(1),
+			true,
+		},
+		{
+			int16(0),
+			false,
+		},
+		{
+			int32(100),
+			true,
+		},
+		{
+			int64(0),
+			false,
+		},
+		{
+			uint(1),
+			true,
+		},
+		{
+			uint8(0),
+			false,
+		},
+		{
+			uint16(0),
+			false,
+		},
+		{
+			uint32(1),
+			true,
+		},
+		{
+			uint64(0),
+			false,
+		},
+		{
+			float32(0),
+			false,
+		},
+		{
+			float32(1),
+			true,
+		},
+		{
+			0.2,
+			true,
+		},
+		{
+			float64(0),
+			false,
+		},
+		{
+			"true",
+			true,
+		},
+		{
+			false,
+			false,
+		},
+		{
+			true,
+			true,
+		},
+		{
+			nil,
+			false,
+		},
+	}
+	for i, tt := range tests {
+		var (
+			got any
+			err error
+		)
+		got, err = ToBool(tt.input, CONVERT_ALL)
+		assert.NoError(t, err)
+		assert.Equal(t, tt.want, got, "test[%d]", i)
+	}
+
+	errTests := []any{
+		-1,
+		int8(-1),
+		int16(-1),
+		int32(-1),
+		int64(-1),
+		float32(-1),
+		float64(-1),
+		nil,
+		"any",
+	}
+	for _, input := range errTests {
+		_, err := ToBool(input, STRICT)
+		assert.Error(t, err)
+	}
+}
+
 func TestMapConvert(t *testing.T) {
 	source := map[interface{}]interface{}{
 		"QUERY_TABLE": "VBAP",
