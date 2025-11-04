@@ -828,6 +828,9 @@ func newIncAggWindow(ctx api.StreamContext, now time.Time) *IncAggWindow {
 
 func calDimension(fv *xsql.FunctionValuer, dimensions ast.Dimensions, row *xsql.Tuple) string {
 	name := "dim_"
+	if dimensions == nil {
+		return name
+	}
 	ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(row, fv, &xsql.WildcardValuer{Data: row})}
 	for _, d := range dimensions {
 		r := ve.Eval(d.Expr)

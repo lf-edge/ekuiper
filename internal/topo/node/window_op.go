@@ -56,6 +56,7 @@ type WindowConfig struct {
 	SingleCondition ast.Expr
 	BeginCondition  ast.Expr
 	EmitCondition   ast.Expr
+	Dimensions      ast.Dimensions
 }
 
 type WindowOperator struct {

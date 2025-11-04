@@ -24,6 +24,7 @@ import (
 
 type WindowPlan struct {
 	baseLogicalPlan
+	dimensions       ast.Dimensions
 	singleCondition  ast.Expr
 	beginCondition   ast.Expr
 	emitCondition    ast.Expr
