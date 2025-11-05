@@ -21,15 +21,16 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/pingcap/failpoint"
+
+	"github.com/lf-edge/ekuiper/v2/pkg/path"
 )
 
 func UnzipTo(f *zip.File, folder, name string) (err error) {
 	// Validate name to avoid path traversal and directory escape
-	if strings.Contains(name, "..") || filepath.IsAbs(name) {
-		return fmt.Errorf("invalid file name: path traversal or absolute paths are not allowed: %q", name)
+	if err := path.VerifyFileName(name); err != nil {
+		return err
 	}
 	defer func() {
 		failpoint.Inject("UnzipToErr", func() {
