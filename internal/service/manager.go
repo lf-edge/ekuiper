@@ -35,8 +35,8 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/plugin"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/kv"
-	"github.com/lf-edge/ekuiper/v2/pkg/validate"
 	pathutil "github.com/lf-edge/ekuiper/v2/pkg/path"
+	"github.com/lf-edge/ekuiper/v2/pkg/validate"
 )
 
 var (
