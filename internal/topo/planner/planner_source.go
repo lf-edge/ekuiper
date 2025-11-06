@@ -42,6 +42,7 @@ func transformSourceNode(ctx api.StreamContext, t *DataSourcePlan, mockSourcesPr
 	if isMock {
 		t.streamStmt.Options.TYPE = "simulator"
 		t.inRuleTest = true
+		t.name = "$$mock_" + t.name
 	}
 	strType := t.streamStmt.Options.TYPE
 	if strType == "" {
