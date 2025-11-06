@@ -23,9 +23,15 @@ import (
 	"path/filepath"
 
 	"github.com/pingcap/failpoint"
+
+	"github.com/lf-edge/ekuiper/v2/pkg/path"
 )
 
 func UnzipTo(f *zip.File, folder, name string) (err error) {
+	// Validate name to avoid path traversal and directory escape
+	if err := path.VerifyFileName(name); err != nil {
+		return err
+	}
 	defer func() {
 		failpoint.Inject("UnzipToErr", func() {
 			err = errors.New("UnzipToErr")
