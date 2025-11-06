@@ -53,6 +53,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 	"github.com/lf-edge/ekuiper/v2/pkg/kv"
 	"github.com/lf-edge/ekuiper/v2/pkg/memory"
+	"github.com/lf-edge/ekuiper/v2/pkg/path"
 	"github.com/lf-edge/ekuiper/v2/pkg/tracer"
 	"github.com/lf-edge/ekuiper/v2/pkg/validate"
 )
@@ -290,6 +291,10 @@ func (f *fileContent) Validate() error {
 	}
 	if f.Name == "" {
 		return fmt.Errorf("invalid body: name is required")
+	}
+	// Disallow path traversal and path separators in name
+	if err := path.VerifyFileName(f.Name); err != nil {
+		return err
 	}
 	return nil
 }
