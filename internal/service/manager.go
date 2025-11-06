@@ -35,6 +35,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/plugin"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/kv"
+	pathutil "github.com/lf-edge/ekuiper/v2/pkg/path"
 	"github.com/lf-edge/ekuiper/v2/pkg/validate"
 )
 
@@ -140,6 +141,13 @@ func (m *Manager) InitByFiles() error {
 }
 
 func (m *Manager) initFile(baseName string) error {
+	// Validate baseName to prevent directory traversal and absolute path
+	if err := pathutil.VerifyFileName(baseName); err != nil {
+		return err
+	}
+	if filepath.IsAbs(baseName) || strings.Contains(baseName, "/") || strings.Contains(baseName, "\\") || strings.Contains(baseName, "..") {
+		return fmt.Errorf("invalid service file name: %q", baseName)
+	}
 	serviceConf := &conf{}
 	err := filex.ReadJsonUnmarshal(filepath.Join(m.etcDir, baseName), serviceConf)
 	if err != nil {
