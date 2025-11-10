@@ -51,6 +51,20 @@ func handleGet(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(resp)
 }
 
+func handleAuthGet(w http.ResponseWriter, r *http.Request) {
+	token := r.Header.Get("token")
+	if token != "auth" {
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte("Unauthorized"))
+	}
+	resp := Response{
+		Message: "Hello, GET!",
+		Code:    200,
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(resp)
+}
+
 func handlePost(w http.ResponseWriter, r *http.Request) {
 	resp := Response{
 		Message: "Hello, POST!",
@@ -108,6 +122,7 @@ func createServer() *httptest.Server {
 	router.HandleFunc("/auth", handleAuth)
 	router.HandleFunc("/refresh", handleRefresh)
 	router.HandleFunc("/param", handleParam)
+	router.HandleFunc("/auth_get", handleAuthGet)
 	server := httptest.NewServer(router)
 	return server
 }

@@ -66,18 +66,22 @@ func (r *RestSink) Collect(ctx api.StreamContext, item api.RawTuple) error {
 	bodyType := r.config.BodyType
 	method := r.config.Method
 	u := r.config.Url
+	// if auth is set, the auth is handled by the client connect
 	headers := r.config.Headers
+	if r.accessConf != nil {
+		headers = r.parsedHeaders
+	}
 	formData := r.config.FormData
 
 	if dp, ok := item.(api.HasDynamicProps); ok {
 		if !r.noHeaderTemplate {
 			r.noHeaderTemplate = true
-			headers = make(map[string]string, len(r.config.Headers))
-			for k, v := range r.config.Headers {
+			headers = make(map[string]string, len(r.parsedHeaders))
+			for k, v := range r.parsedHeaders {
 				nv, ok := dp.DynamicProps(v)
 				if ok {
-					headers[k] = nv
 					r.noHeaderTemplate = false
+					headers[k] = nv
 				} else {
 					headers[k] = v
 				}

@@ -35,6 +35,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/cert"
 	"github.com/lf-edge/ekuiper/v2/pkg/message"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
+	"github.com/lf-edge/ekuiper/v2/pkg/replace"
 )
 
 // ClientConf is the configuration for http client
@@ -45,10 +46,12 @@ type ClientConf struct {
 	decompressor message.Decompressor // decompressor used to payload decompression when specifies compressAlgorithm
 
 	// auth related
-	accessConf        *AccessTokenConf
-	refreshConf       *RefreshTokenConf
+	accessConf  *AccessTokenConf
+	refreshConf *RefreshTokenConf
+
 	tokenLastUpdateAt time.Time
 	tokens            map[string]interface{}
+	parsedHeaders     map[string]string
 }
 
 type AccessTokenConf struct {
@@ -230,14 +233,14 @@ func (cc *ClientConf) auth(ctx api.StreamContext) error {
 		return err
 	}
 	cc.tokens = tokens[0]
-	ctx.GetLogger().Infof("Got access token %v", cc.tokens)
-	expireIn, err := ctx.ParseTemplate(cc.accessConf.Expire, cc.tokens)
+	ctx.GetLogger().Infof("Got access token %v", replace.HidePassword(cc.tokens))
+	cc.parsedHeaders, err = cc.parseHeaders(ctx, cc.tokens)
 	if err != nil {
-		return fmt.Errorf("fail to parse the expire time for access token: %v", err)
+		return fmt.Errorf("fail to parse header with access token: %v", err)
 	}
-	cc.accessConf.ExpireInSecond, err = cast.ToInt(expireIn, cast.CONVERT_ALL)
+	cc.accessConf.ExpireInSecond, err = cast.ToInt(cc.accessConf.Expire, cast.CONVERT_ALL)
 	if err != nil {
-		return fmt.Errorf("fail to covert the expire time %s for access token: %v", expireIn, err)
+		return fmt.Errorf("fail to covert the expire time %s for access token: %v", cc.accessConf.Expire, err)
 	}
 	if cc.refreshConf != nil {
 		err := cc.refresh(ctx)
@@ -256,7 +259,7 @@ func parseHeaders(ctx api.StreamContext, oHeaders map[string]string, data map[st
 	for k, v := range oHeaders {
 		headers[k], err = ctx.ParseTemplate(v, data)
 		if err != nil {
-			return nil, fmt.Errorf("fail to parse the header for refresh token request %s: %v", k, err)
+			return nil, fmt.Errorf("fail to parse the header for http request %s: %v", k, err)
 		}
 	}
 	return headers, nil
