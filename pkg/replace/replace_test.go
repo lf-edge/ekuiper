@@ -186,3 +186,126 @@ func TestReplaceCacheTtl(t *testing.T) {
 		"a": "b",
 	}, newProps)
 }
+
+func TestHidePassword(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    map[string]any
+		expected map[string]any
+	}{
+		{
+			name: "top-level password fields",
+			input: map[string]any{
+				"username": "admin",
+				"password": "secret123",
+				"token":    "abc123",
+			},
+			expected: map[string]any{
+				"username": "admin",
+				"password": "*",
+				"token":    "*",
+			},
+		},
+		{
+			name: "nested map with password fields",
+			input: map[string]any{
+				"user": map[string]any{
+					"name":     "Alice",
+					"password": "secret123",
+				},
+				"config": map[string]any{
+					"access_token": "token123",
+				},
+			},
+			expected: map[string]any{
+				"user": map[string]any{
+					"name":     "Alice",
+					"password": "*",
+				},
+				"config": map[string]any{
+					"access_token": "*",
+				},
+			},
+		},
+		{
+			name: "deeply nested maps",
+			input: map[string]any{
+				"level1": map[string]any{
+					"level2": map[string]any{
+						"refresh_token": "refresh123",
+						"data":          "keep",
+					},
+				},
+			},
+			expected: map[string]any{
+				"level1": map[string]any{
+					"level2": map[string]any{
+						"refresh_token": "*",
+						"data":          "keep",
+					},
+				},
+			},
+		},
+		{
+			name: "non-password fields preserved",
+			input: map[string]any{
+				"id":       123,
+				"active":   true,
+				"password": "secret",
+				"details": map[string]any{
+					"count": 42,
+					"pass":  "nested",
+				},
+			},
+			expected: map[string]any{
+				"id":       123,
+				"active":   true,
+				"password": "*",
+				"details": map[string]any{
+					"count": 42,
+					"pass":  "*",
+				},
+			},
+		},
+		{
+			name:     "empty map",
+			input:    map[string]any{},
+			expected: map[string]any{},
+		},
+		{
+			name: "no password fields",
+			input: map[string]any{
+				"foo": "bar",
+				"num": 123,
+			},
+			expected: map[string]any{
+				"foo": "bar",
+				"num": 123,
+			},
+		},
+		{
+			name: "all password variants",
+			input: map[string]any{
+				"password":      "pwd",
+				"pass":          "p",
+				"token":         "t",
+				"access_token":  "at",
+				"refresh_token": "rt",
+			},
+			expected: map[string]any{
+				"password":      "*",
+				"pass":          "*",
+				"token":         "*",
+				"access_token":  "*",
+				"refresh_token": "*",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := HidePassword(tt.input)
+			require.Equal(t, tt.expected, result)
+		})
+	}
+}

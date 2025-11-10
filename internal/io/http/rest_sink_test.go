@@ -366,3 +366,35 @@ func TestFormDataErr(t *testing.T) {
 	err := s.Close(ctx)
 	assert.NoError(t, err)
 }
+
+func TestRestSinkAuth(t *testing.T) {
+	server := createServer()
+	defer func() {
+		server.Close()
+	}()
+	ctx := mockContext.NewMockContext("1", "2")
+	s := &RestSink{}
+	require.NoError(t, s.Provision(ctx, map[string]any{
+		"url":       fmt.Sprintf("%s/auth_get", server.URL),
+		"method":    "get",
+		"debugResp": true,
+		"headers": map[string]interface{}{
+			"token": "{{.message}}",
+		},
+		"oauth": map[string]interface{}{
+			"access": map[string]interface{}{
+				"url":    fmt.Sprintf("%s/auth", server.URL),
+				"expire": "3600",
+				"body":   `{"a":1}`,
+			},
+		},
+	}))
+	data := &xsql.RawTuple{
+		Rawdata: []byte(`{"a":1}`),
+	}
+	require.NoError(t, s.Connect(ctx, func(status string, message string) {
+		// do nothing
+	}))
+	require.NoError(t, s.Collect(ctx, data))
+	require.NoError(t, s.Close(ctx))
+}
