@@ -34,7 +34,6 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cert"
 	"github.com/lf-edge/ekuiper/v2/pkg/message"
-	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/replace"
 )
 
@@ -45,13 +44,17 @@ type ClientConf struct {
 	client       *http.Client
 	decompressor message.Decompressor // decompressor used to payload decompression when specifies compressAlgorithm
 
-	// auth related
+	// auth related, all handled inside client sync
+	// In Conn, try to auth
+	// In Send, do refreshing
 	accessConf  *AccessTokenConf
 	refreshConf *RefreshTokenConf
 
-	tokenLastUpdateAt time.Time
-	tokens            map[string]interface{}
-	parsedHeaders     map[string]string
+	tokenLastUpdateAt   time.Time
+	parsedHeaders       map[string]string
+	parsedBody          string
+	parsedRefreshHeader map[string]string
+	parsedRefreshBody   string
 }
 
 type AccessTokenConf struct {
@@ -171,8 +174,11 @@ func (cc *ClientConf) InitConf(ctx api.StreamContext, device string, props map[s
 				conf.Log.Warnf("access token url is not set, so ignored the oauth setting")
 				c.OAuth = nil
 			} else {
-				// expire time will update every time when access token is refreshed if expired is set
 				cc.accessConf = accessConf
+				cc.accessConf.ExpireInSecond, err = cast.ToInt(cc.accessConf.Expire, cast.CONVERT_ALL)
+				if err != nil {
+					return fmt.Errorf("fail to covert the expire time %s for access token: %v", cc.accessConf.Expire, err)
+				}
 			}
 		} else {
 			return fmt.Errorf("if setting oAuth, `access` property is required")
@@ -209,16 +215,37 @@ func (cc *ClientConf) InitConf(ctx api.StreamContext, device string, props map[s
 			return fmt.Errorf("init payload decompressor failed, %w", err)
 		}
 	}
+	return nil
+}
+
+func (cc *ClientConf) Conn(ctx api.StreamContext) error {
 	if cc.accessConf != nil {
 		conf.Log.Infof("Try to get access token from %s", cc.accessConf.Url)
-		ctx := mockContext.NewMockContext("none", "httppull_init")
-		cc.tokens = make(map[string]interface{})
 		err := cc.auth(ctx)
 		if err != nil {
 			return fmt.Errorf("fail to authorize by oAuth: %v", err)
 		}
 	}
 	return nil
+}
+
+func (cc *ClientConf) Send(ctx api.StreamContext, bodyType string, method string, u string, headers map[string]string, formData map[string]string, formFieldName string, v any) (*http.Response, error) {
+	resp, err := httpx.SendWithFormData(ctx.GetLogger(), cc.client, bodyType, method, u, headers, formData, formFieldName, v)
+	// Check token refresh after send
+	if cc.accessConf != nil && cc.accessConf.ExpireInSecond > 0 &&
+		int(time.Now().Sub(cc.tokenLastUpdateAt).Abs().Seconds())/2 > cc.accessConf.ExpireInSecond {
+		ctx.GetLogger().Debugf("Refreshing token for REST sink")
+		if cc.refreshConf != nil {
+			if err := cc.refresh(ctx); err != nil {
+				ctx.GetLogger().Warnf("Refresh REST sink token error: %v", err)
+			}
+		} else {
+			if err := cc.auth(ctx); err != nil {
+				ctx.GetLogger().Warnf("Authorize REST sink token error: %v", err)
+			}
+		}
+	}
+	return resp, err
 }
 
 // initialize the oAuth access token
@@ -232,25 +259,7 @@ func (cc *ClientConf) auth(ctx api.StreamContext) error {
 	if err != nil {
 		return err
 	}
-	cc.tokens = tokens[0]
-	ctx.GetLogger().Infof("Got access token %v", replace.HidePassword(cc.tokens))
-	cc.parsedHeaders, err = cc.parseHeaders(ctx, cc.tokens)
-	if err != nil {
-		return fmt.Errorf("fail to parse header with access token: %v", err)
-	}
-	cc.accessConf.ExpireInSecond, err = cast.ToInt(cc.accessConf.Expire, cast.CONVERT_ALL)
-	if err != nil {
-		return fmt.Errorf("fail to covert the expire time %s for access token: %v", cc.accessConf.Expire, err)
-	}
-	if cc.refreshConf != nil {
-		err := cc.refresh(ctx)
-		if err != nil {
-			return err
-		}
-	} else {
-		cc.tokenLastUpdateAt = time.Now()
-	}
-	return nil
+	return cc.updateToken(ctx, tokens[0])
 }
 
 func parseHeaders(ctx api.StreamContext, oHeaders map[string]string, data map[string]interface{}) (map[string]string, error) {
@@ -267,15 +276,7 @@ func parseHeaders(ctx api.StreamContext, oHeaders map[string]string, data map[st
 
 func (cc *ClientConf) refresh(ctx api.StreamContext) error {
 	if cc.refreshConf != nil {
-		headers := make(map[string]string, len(cc.refreshConf.Headers))
-		var err error
-		for k, v := range cc.refreshConf.Headers {
-			headers[k], err = ctx.ParseTemplate(v, cc.tokens)
-			if err != nil {
-				return fmt.Errorf("fail to parse the header for refresh token request %s: %v", k, err)
-			}
-		}
-		resp, err := httpx.Send(conf.Log, cc.client, "json", http.MethodPost, cc.refreshConf.Url, headers, cc.refreshConf.Body)
+		resp, err := httpx.Send(conf.Log, cc.client, "json", http.MethodPost, cc.refreshConf.Url, cc.parsedRefreshHeader, cc.parsedRefreshBody)
 		if err != nil {
 			return fmt.Errorf("fail to get refresh token: %v", err)
 		}
@@ -284,16 +285,40 @@ func (cc *ClientConf) refresh(ctx api.StreamContext) error {
 		if err != nil {
 			return fmt.Errorf("Cannot parse refresh token response to json: %v", err)
 		}
-		for k, v := range nt[0] {
-			if v != nil {
-				cc.tokens[k] = v
-			}
-		}
-		cc.tokenLastUpdateAt = time.Now()
-		return nil
+		return cc.updateToken(ctx, nt[0])
 	} else {
 		return fmt.Errorf("no oAuth config")
 	}
+}
+
+func (cc *ClientConf) updateToken(ctx api.StreamContext, tk map[string]interface{}) error {
+	cc.tokenLastUpdateAt = time.Now()
+	var err error
+	ctx.GetLogger().Infof("Got access token %v", replace.HidePassword(tk))
+	cc.parsedHeaders, err = cc.parseHeaders(ctx, tk)
+	if err != nil {
+		return fmt.Errorf("fail to parse header with access token: %v", err)
+	}
+	cc.parsedBody, err = ctx.ParseTemplate(cc.config.Body, tk)
+	if err != nil {
+		return fmt.Errorf("fail to parse body with access token: %v", err)
+	}
+	if cc.refreshConf != nil {
+		headers := make(map[string]string, len(cc.refreshConf.Headers))
+		for k, v := range cc.refreshConf.Headers {
+			headers[k], err = ctx.ParseTemplate(v, tk)
+			if err != nil {
+				return fmt.Errorf("fail to parse the header for refresh token request %s: %v", k, err)
+			}
+		}
+		cc.parsedRefreshHeader = headers
+		pb, err := ctx.ParseTemplate(cc.refreshConf.Body, tk)
+		if err != nil {
+			return fmt.Errorf("fail to parse body with refresh token request: %v", err)
+		}
+		cc.parsedRefreshBody = pb
+	}
+	return nil
 }
 
 const (
