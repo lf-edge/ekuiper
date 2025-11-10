@@ -35,6 +35,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/cert"
 	"github.com/lf-edge/ekuiper/v2/pkg/message"
 	"github.com/lf-edge/ekuiper/v2/pkg/replace"
+	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 // ClientConf is the configuration for http client
@@ -233,7 +234,7 @@ func (cc *ClientConf) Send(ctx api.StreamContext, bodyType string, method string
 	resp, err := httpx.SendWithFormData(ctx.GetLogger(), cc.client, bodyType, method, u, headers, formData, formFieldName, v)
 	// Check token refresh after send
 	if cc.accessConf != nil && cc.accessConf.ExpireInSecond > 0 &&
-		int(time.Now().Sub(cc.tokenLastUpdateAt).Abs().Seconds())/2 > cc.accessConf.ExpireInSecond {
+		int(timex.GetNow().Sub(cc.tokenLastUpdateAt).Abs().Seconds())*2 > cc.accessConf.ExpireInSecond {
 		ctx.GetLogger().Debugf("Refreshing token for REST sink")
 		if cc.refreshConf != nil {
 			if err := cc.refresh(ctx); err != nil {
@@ -292,7 +293,7 @@ func (cc *ClientConf) refresh(ctx api.StreamContext) error {
 }
 
 func (cc *ClientConf) updateToken(ctx api.StreamContext, tk map[string]interface{}) error {
-	cc.tokenLastUpdateAt = time.Now()
+	cc.tokenLastUpdateAt = timex.GetNow()
 	var err error
 	ctx.GetLogger().Infof("Got access token %v", replace.HidePassword(tk))
 	cc.parsedHeaders, err = cc.parseHeaders(ctx, tk)
