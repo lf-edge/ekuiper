@@ -95,9 +95,10 @@ func (hps *HttpPullSource) doPull(ctx api.StreamContext) ([]map[string]any, erro
 }
 
 func (hps *HttpPullSource) doPullInternal(ctx api.StreamContext, c *ClientConf, lastMD5 string) ([]map[string]any, string, error) {
-	headers, err := c.parseHeaders(ctx, c.tokens)
-	if err != nil {
-		return nil, "", err
+	// if auth is set, the auth is handled by the client connect
+	headers := c.config.Headers
+	if c.accessConf != nil {
+		headers = c.parsedHeaders
 	}
 	newBody, err := ctx.ParseTemplate(c.config.Body, c.tokens)
 	if err != nil {

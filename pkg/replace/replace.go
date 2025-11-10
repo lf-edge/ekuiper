@@ -175,3 +175,29 @@ type ReplacePropsConfig struct {
 	DisableReplacePassword bool
 	DisableReplaceDuration bool
 }
+
+var passwordDict = map[string]struct{}{
+	"password":      {},
+	"pass":          {},
+	"token":         {},
+	"access_token":  {},
+	"refresh_token": {},
+}
+
+func HidePassword(props map[string]any) map[string]any {
+	return hide(props)
+}
+
+func hide(props map[string]any) map[string]any {
+	result := make(map[string]any, len(props))
+	for k, v := range props {
+		if _, ok := passwordDict[k]; ok {
+			result[k] = "*"
+		} else if vm, isMap := v.(map[string]any); isMap {
+			result[k] = hide(vm)
+		} else {
+			result[k] = v
+		}
+	}
+	return result
+}
