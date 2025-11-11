@@ -47,6 +47,27 @@ var (
 		Help:      "counter of Kafka Source IO",
 	}, []string{metrics.LblType, metrics.LblRuleIDType, metrics.LblOpIDType})
 
+	KafkaSourceTopicsCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: "kuiper",
+		Subsystem: "kafka_source",
+		Name:      "topics_counter",
+		Help:      "counter of topic occurrences",
+	}, []string{LblTopic, LblPartition, metrics.LblRuleIDType, metrics.LblOpIDType})
+
+	KafkaSourceKeysCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: "kuiper",
+		Subsystem: "kafka_source",
+		Name:      "keys_counter",
+		Help:      "counter of key occurrences",
+	}, []string{LblKey, metrics.LblRuleIDType, metrics.LblOpIDType})
+
+	KafkaSourceHeadersCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: "kuiper",
+		Subsystem: "kafka_source",
+		Name:      "headers_counter",
+		Help:      "counter of header occurrences",
+	}, []string{LblHeaders, metrics.LblRuleIDType, metrics.LblOpIDType})
+
 	KafkaSourceGauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: "kuiper",
 		Subsystem: "kafka_source",

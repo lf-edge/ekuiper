@@ -15,9 +15,11 @@
 package kafka
 
 import (
+	"bytes"
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -213,8 +215,32 @@ func (k *KafkaSource) Subscribe(ctx api.StreamContext, ingest api.BytesIngest, i
 		}
 		KafkaSourceCounter.WithLabelValues(LblMsg, ctx.GetRuleId(), ctx.GetOpId()).Inc()
 		KafkaSourceCounter.WithLabelValues(LblBytes, ctx.GetRuleId(), ctx.GetOpId()).Add(float64(len(msg.Value)))
+		KafkaSourceCounter.WithLabelValues(LblPartition, ctx.GetRuleId(), ctx.GetOpId()).Inc()
 		KafkaSourceGauge.WithLabelValues(LblOffset, ctx.GetRuleId(), ctx.GetOpId()).Set(float64(msg.Offset))
+		k.pushMsgMetadataToMonitoring(ctx, msg.Key, msg.Topic, msg.Headers, msg.Partition)
 		ingest(ctx, msg.Value, nil, timex.GetNow())
+	}
+}
+
+func (k *KafkaSource) pushMsgMetadataToMonitoring(
+	ctx api.StreamContext,
+	key []byte,
+	topic string,
+	headers []kafkago.Header,
+	partition int,
+) {
+	KafkaSourceTopicsCounter.WithLabelValues(topic, strconv.Itoa(partition), ctx.GetRuleId(), ctx.GetOpId()).Inc()
+	var (
+		buf          = bytes.NewBuffer(key)
+		convertedKey = buf.String()
+	)
+
+	KafkaSourceKeysCounter.WithLabelValues(convertedKey, ctx.GetRuleId(), ctx.GetOpId()).Inc()
+	buf.Reset()
+
+	for _, header := range headers {
+		joinedHeader := fmt.Sprintf("%s:%s", header.Key, header.Value)
+		KafkaSourceHeadersCounter.WithLabelValues(joinedHeader, ctx.GetRuleId(), ctx.GetOpId()).Inc()
 	}
 }
 
