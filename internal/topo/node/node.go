@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"go.opentelemetry.io/otel/codes"
@@ -51,6 +52,7 @@ type defaultNode struct {
 	spanCtx                  api.StreamContext
 	disableBufferFullDiscard bool
 	isStatManagerHostBySink  bool
+	lastExpPrint             time.Time
 }
 
 func newDefaultNode(name string, options *def.RuleOption) *defaultNode {
@@ -338,9 +340,14 @@ func (o *defaultNode) onError(ctx api.StreamContext, err error) {
 
 // onError do the common works(metric, trace) after throwing an error
 func (o *defaultNode) onErrorOpt(ctx api.StreamContext, err error, sendOut bool) {
-	ctx.GetLogger().Errorf("Operation %s error %v", ctx.GetOpId(), err)
 	if sendOut && o.sendError {
 		o.Broadcast(err)
+	}
+	// only print error once in a minute to avoid frequent printing
+	now := time.Now()
+	if now.Sub(o.lastExpPrint) > time.Minute || now.Sub(o.lastExpPrint) < 0 {
+		ctx.GetLogger().Errorf("Operation %s error %v", ctx.GetOpId(), err)
+		o.lastExpPrint = now
 	}
 	if !o.isStatManagerHostBySink {
 		o.statManager.IncTotalExceptions(err.Error())
