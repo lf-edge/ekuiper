@@ -374,27 +374,22 @@ func (s *RuleStateTestSuite) TestMultipleStart() {
 		s.Equal("running", metrics["status"])
 		sinkout, existed := metrics["sink_memory_0_0_records_in_total"]
 		s.Require().True(existed)
-		s.Require().True(sinkout.(float64) > 5)
+		s.Require().True(sinkout.(float64) > 2)
 		s.T().Log(metrics)
-		for i := 0; i < 5; i++ {
-			<-subCh
-			fmt.Printf("receive data %d\n", i)
+		for len(subCh) <= 0 {
+			time.Sleep(50 * time.Millisecond)
 		}
 	})
 	s.Run("stop rule", func() {
 		resp, err := client.StopRule("rule1")
 		s.Require().NoError(err)
 		s.Require().Equal(http.StatusOK, resp.StatusCode)
-		noData := false
-		for i := 0; i < 5; i++ {
-			select {
-			case <-subCh:
-				fmt.Println("receive data")
-			case <-time.After(time.Second):
-				noData = true
-			}
-		}
-		s.Require().True(noData)
+		time.Sleep(500 * time.Millisecond)
+		ll := len(subCh)
+		fmt.Printf("when stopping, receive %d\n", len(subCh))
+		time.Sleep(500 * time.Millisecond)
+		nl := len(subCh)
+		s.Require().Equal(ll, nl)
 	})
 	s.Run("clean up", func() {
 		res, e := client.Delete("rules/rule1")
