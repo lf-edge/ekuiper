@@ -88,6 +88,37 @@ func TestInitConf(t *testing.T) {
 	}
 	c = &ClientConf{}
 	require.Error(t, c.InitConf(ctx, "", m))
+
+	m = map[string]interface{}{
+		"oauth": map[string]any{
+			"access": map[string]interface{}{
+				"url":    "http://example.com/auth",
+				"expire": "hello",
+			},
+		},
+	}
+	c = &ClientConf{}
+	require.Error(t, c.InitConf(ctx, "", m))
+
+	m = map[string]interface{}{
+		"oauth": map[string]any{
+			"access": map[string]interface{}{
+				"expire": "hello",
+			},
+		},
+	}
+	c = &ClientConf{}
+	require.NoError(t, c.InitConf(ctx, "", m))
+
+	m = map[string]interface{}{
+		"oauth": map[string]any{
+			"refresh": map[string]interface{}{
+				"expire": "hello",
+			},
+		},
+	}
+	c = &ClientConf{}
+	require.Error(t, c.InitConf(ctx, "", m))
 }
 
 func TestDecode(t *testing.T) {

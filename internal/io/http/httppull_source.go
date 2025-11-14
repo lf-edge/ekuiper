@@ -19,7 +19,6 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
-	"github.com/lf-edge/ekuiper/v2/internal/pkg/httpx"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
 
@@ -64,6 +63,10 @@ func (hps *HttpPullSource) Close(ctx api.StreamContext) error {
 }
 
 func (hps *HttpPullSource) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) error {
+	err := hps.Conn(ctx)
+	if err != nil {
+		return err
+	}
 	sch(api.ConnectionConnected, "")
 	return nil
 }
@@ -100,10 +103,11 @@ func (hps *HttpPullSource) doPullInternal(ctx api.StreamContext, c *ClientConf, 
 	if c.accessConf != nil {
 		headers = c.parsedHeaders
 	}
-	newBody, err := ctx.ParseTemplate(c.config.Body, c.tokens)
-	if err != nil {
-		return nil, "", err
+	newBody := c.config.Body
+	if c.accessConf != nil {
+		newBody = c.parsedBody
 	}
+	var err error
 	newUrl := c.config.Url
 	if len(hps.psc.States) > 0 {
 		newUrl, err = ctx.ParseTemplate(c.config.Url, hps.psc.States)
@@ -111,7 +115,7 @@ func (hps *HttpPullSource) doPullInternal(ctx api.StreamContext, c *ClientConf, 
 			return nil, "", err
 		}
 	}
-	resp, err := httpx.Send(ctx.GetLogger(), c.client, c.config.BodyType, c.config.Method, newUrl, headers, []byte(newBody))
+	resp, err := hps.Send(ctx, c.config.BodyType, c.config.Method, newUrl, headers, nil, "", []byte(newBody))
 	if err != nil {
 		return nil, "", err
 	}

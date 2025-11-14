@@ -21,6 +21,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/pingcap/failpoint"
 	"github.com/stretchr/testify/assert"
@@ -30,6 +31,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
+	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 type request struct {
@@ -372,29 +374,59 @@ func TestRestSinkAuth(t *testing.T) {
 	defer func() {
 		server.Close()
 	}()
-	ctx := mockContext.NewMockContext("1", "2")
-	s := &RestSink{}
-	require.NoError(t, s.Provision(ctx, map[string]any{
-		"url":       fmt.Sprintf("%s/auth_get", server.URL),
-		"method":    "get",
-		"debugResp": true,
-		"headers": map[string]interface{}{
-			"token": "{{.message}}",
-		},
-		"oauth": map[string]interface{}{
-			"access": map[string]interface{}{
-				"url":    fmt.Sprintf("%s/auth", server.URL),
-				"expire": "3600",
-				"body":   `{"a":1}`,
+	tests := []struct {
+		name        string
+		authSetting map[string]any
+	}{
+		{
+			name: "has refresh",
+			authSetting: map[string]any{
+				"access": map[string]interface{}{
+					"url":    fmt.Sprintf("%s/auth", server.URL),
+					"expire": "300",
+					"body":   `{"a":1}`,
+				},
+				"refresh": map[string]interface{}{
+					"url":  fmt.Sprintf("%s/auth", server.URL),
+					"body": `{"a":{{.message}}}`,
+				},
 			},
 		},
-	}))
-	data := &xsql.RawTuple{
-		Rawdata: []byte(`{"a":1}`),
+		{
+			name: "no refresh",
+			authSetting: map[string]any{
+				"access": map[string]interface{}{
+					"url":    fmt.Sprintf("%s/auth", server.URL),
+					"expire": "300",
+					"body":   `{"a":1}`,
+				},
+			},
+		},
 	}
-	require.NoError(t, s.Connect(ctx, func(status string, message string) {
-		// do nothing
-	}))
-	require.NoError(t, s.Collect(ctx, data))
-	require.NoError(t, s.Close(ctx))
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			timex.Set(1777)
+			ctx := mockContext.NewMockContext("1", "2")
+			s := &RestSink{}
+			require.NoError(t, s.Provision(ctx, map[string]any{
+				"url":       fmt.Sprintf("%s/auth_get", server.URL),
+				"method":    "get",
+				"debugResp": true,
+				"headers": map[string]interface{}{
+					"token": "{{.message}}",
+				},
+				"oauth": tt.authSetting,
+			}))
+			data := &xsql.RawTuple{
+				Rawdata: []byte(`{"a":1}`),
+			}
+			require.NoError(t, s.Connect(ctx, func(status string, message string) {
+				// do nothing
+			}))
+			timex.Add(200 * time.Second)
+			require.NoError(t, s.Collect(ctx, data))
+			require.NoError(t, s.Collect(ctx, data))
+			require.NoError(t, s.Close(ctx))
+		})
+	}
 }
