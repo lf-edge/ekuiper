@@ -94,11 +94,11 @@ func decorateStmt(s *ast.SelectStatement, store kv.KeyValue, opt *def.RuleOption
 				copy(s.Fields[index:], s.Fields[index+1:])
 				s.Fields = s.Fields[:len(s.Fields)-1]
 			}
-		}
-		// flat wildcard
-		for _, streamStmt := range streamStmts {
-			for _, field := range streamStmt.schema {
-				s.Fields = append(s.Fields, buildField(field.Name, streamStmt.stmt.Name))
+			// flat wildcard
+			for _, streamStmt := range streamStmts {
+				for _, field := range streamStmt.schema {
+					s.Fields = append(s.Fields, buildField(field.Name, streamStmt.stmt.Name))
+				}
 			}
 		}
 	}
