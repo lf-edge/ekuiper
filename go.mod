@@ -402,4 +402,4 @@ replace (
 	google.golang.org/genproto/googleapis/rpc => google.golang.org/genproto/googleapis/rpc v0.0.0-20240701130421-f6361c86f094
 )
 
-go 1.24.1
+go 1.25.4
