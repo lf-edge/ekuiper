@@ -118,7 +118,7 @@ func absolutePath(loc string) (dir string, err error) {
 			break
 		}
 	}
-	if 0 == len(dir) {
+	if len(dir) == 0 {
 		return "", fmt.Errorf("location %s is not allowed for absolute mode", loc)
 	}
 	return dir, nil
@@ -129,13 +129,14 @@ func GetLoc(subdir string) (string, error) {
 	if subdir == "" {
 		return os.Getenv(KuiperBaseKey), nil
 	}
-	if "relative" == PathConfig.LoadFileType {
+	switch PathConfig.LoadFileType {
+	case "relative":
 		return relativePath(subdir)
-	}
-	if "absolute" == PathConfig.LoadFileType {
+	case "absolute":
 		return absolutePath(subdir)
+	default:
+		return "", fmt.Errorf("unrecognized loading method")
 	}
-	return "", fmt.Errorf("Unrecognized loading method.")
 }
 
 func relativePath(subdir string) (dir string, err error) {

@@ -333,7 +333,7 @@ func (c *CaseExpr) String() string {
 		v += "value:{ " + c.Value.String() + " }"
 	}
 	w := ""
-	if c.WhenClauses != nil && len(c.WhenClauses) != 0 {
+	if len(c.WhenClauses) != 0 {
 		if c.Value != nil {
 			w += ", "
 		}
@@ -360,7 +360,7 @@ func (c *ValueSetExpr) expr() {}
 func (c *ValueSetExpr) node() {}
 func (c *ValueSetExpr) String() string {
 	le := ""
-	if c.LiteralExprs != nil && len(c.LiteralExprs) != 0 {
+	if len(c.LiteralExprs) != 0 {
 		le += "literalExprs:["
 		for i, expr := range c.LiteralExprs {
 			le += expr.String()
@@ -372,7 +372,7 @@ func (c *ValueSetExpr) String() string {
 	}
 	a := ""
 	if c.ArrayExpr != nil {
-		if c.LiteralExprs != nil && len(c.LiteralExprs) != 0 {
+		if len(c.LiteralExprs) > 0 {
 			a += ", "
 		}
 		a += "arrayExpr:{ " + c.ArrayExpr.String() + " }"

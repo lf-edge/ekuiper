@@ -158,9 +158,7 @@ func (kv redisKvStore) Clean() error {
 		return err
 	}
 	keysToRemove := make([]string, len(keys))
-	for i, v := range keys {
-		keysToRemove[i] = v
-	}
+	copy(keysToRemove, keys)
 	return kv.database.Del(context.Background(), keysToRemove...).Err()
 }
 

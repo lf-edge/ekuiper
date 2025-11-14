@@ -32,7 +32,7 @@ func (p AnalyticFuncsPlan) Init() *AnalyticFuncsPlan {
 
 func (p *AnalyticFuncsPlan) BuildExplainInfo() {
 	info := ""
-	if p.funcs != nil && len(p.funcs) != 0 {
+	if len(p.funcs) != 0 {
 		info += "Funcs:[ "
 		for i, v := range p.funcs {
 			info += v.String()
@@ -42,7 +42,7 @@ func (p *AnalyticFuncsPlan) BuildExplainInfo() {
 		}
 		info += " ], "
 	}
-	if p.fieldFuncs != nil && len(p.fieldFuncs) != 0 {
+	if len(p.fieldFuncs) != 0 {
 		info += "FieldFuncs:[ "
 		for i, v := range p.fieldFuncs {
 			info += v.String()

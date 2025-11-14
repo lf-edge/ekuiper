@@ -66,8 +66,8 @@ func (c *sqlSinkConfig) buildInsertSql(ctx api.StreamContext, mapData map[string
 }
 
 func (c *sqlSinkConfig) getValuesByKeys(ctx api.StreamContext, mapData map[string]interface{}, keys []string) ([]string, error) {
-	if 0 == len(mapData) {
-		return nil, fmt.Errorf("data is empty.")
+	if len(mapData) == 0 {
+		return nil, fmt.Errorf("data is empty")
 	}
 	var vals []string
 	logger := ctx.GetLogger()
@@ -81,7 +81,7 @@ func (c *sqlSinkConfig) getValuesByKeys(ctx api.StreamContext, mapData map[strin
 			}
 		} else {
 			logger.Warn("not found field:", k)
-			vals = append(vals, fmt.Sprintf(`NULL`))
+			vals = append(vals, `NULL`)
 		}
 	}
 	return vals, nil

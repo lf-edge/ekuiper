@@ -136,17 +136,15 @@ func (d *grpcExecutor) InvokeFunction(_ api.FunctionContext, name string, params
 			return e
 		})
 
-		select {
-		case <-dialCtx.Done():
-			err := dialCtx.Err()
-			switch err {
-			case context.Canceled:
-				// connect successfully, do nothing
-			case context.DeadlineExceeded:
-				return nil, fmt.Errorf("connect to %s timeout", d.addr.String())
-			default:
-				return nil, fmt.Errorf("connect to %s error: %v", d.addr.String(), err)
-			}
+		<-dialCtx.Done()
+		err := dialCtx.Err()
+		switch err {
+		case context.Canceled:
+			// connect successfully, do nothing
+		case context.DeadlineExceeded:
+			return nil, fmt.Errorf("connect to %s timeout", d.addr.String())
+		default:
+			return nil, fmt.Errorf("connect to %s error: %v", d.addr.String(), err)
 		}
 		if e != nil {
 			return nil, e
@@ -171,17 +169,15 @@ func (d *grpcExecutor) InvokeFunction(_ api.FunctionContext, name string, params
 		return e
 	})
 
-	select {
-	case <-timeoutCtx.Done():
-		err := timeoutCtx.Err()
-		switch err {
-		case context.Canceled:
-			// connect successfully, do nothing
-		case context.DeadlineExceeded:
-			return nil, fmt.Errorf("invoke %s timeout", name)
-		default:
-			return nil, fmt.Errorf("invoke %s error: %v", name, err)
-		}
+	<-timeoutCtx.Done()
+	err = timeoutCtx.Err()
+	switch err {
+	case context.Canceled:
+		// connect successfully, do nothing
+	case context.DeadlineExceeded:
+		return nil, fmt.Errorf("invoke %s timeout", name)
+	default:
+		return nil, fmt.Errorf("invoke %s error: %v", name, err)
 	}
 	if e != nil {
 		return nil, fmt.Errorf("error invoking method %s in proto: %v", name, e)

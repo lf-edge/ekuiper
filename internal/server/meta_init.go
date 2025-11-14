@@ -75,7 +75,6 @@ func sinksMetaHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	sinks := meta.GetSinks()
 	jsonResponse(sinks, w, logger)
-	return
 }
 
 // Get sink metadata when creating rules
@@ -98,7 +97,6 @@ func functionsMetaHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	funcs := meta.GetFunctions()
 	jsonByteResponse(funcs, w, logger)
-	return
 }
 
 // list operators
@@ -106,7 +104,6 @@ func operatorsMetaHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	ops := meta.GetOperators()
 	jsonByteResponse(ops, w, logger)
-	return
 }
 
 // list source plugin
@@ -205,7 +202,6 @@ func connectionConfHandler(w http.ResponseWriter, r *http.Request) {
 	ret, err := meta.GetYamlConf(configOperatorKey, language)
 	if err != nil {
 		handleError(w, err, "", logger)
-		return
 	} else {
 		w.Header().Add(ContentType, ContentTypeJSON)
 		_, _ = w.Write(ret)
@@ -329,7 +325,7 @@ func resourcesHandler(w http.ResponseWriter, r *http.Request) {
 
 func getLanguage(r *http.Request) string {
 	language := r.Header.Get("Content-Language")
-	if 0 == len(language) {
+	if len(language) == 0 {
 		language = "en_US"
 	} else {
 		language = strings.ReplaceAll(language, "-", "_")

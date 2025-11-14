@@ -1,23 +1,43 @@
+version: "2"
 run:
-  timeout: 10m
+  go: "1.25"
   build-tags:
     - full
-  go: '1.25'
-
 linters:
-  disable-all: true
+  default: none
+  enable:
+    - govet
+    - misspell
+    - staticcheck
+    - unconvert
+    - usestdlibvars
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+  settings:
+    staticcheck:
+      checks: [ "all", "-ST1000", "-ST1003", "-ST1005", "-ST1016", "-ST1020", "-ST1021", "-ST1022", "-QF1001", "-QF1008","-QF1012" ]
+formatters:
   enable:
     - gci
     - gofumpt
-    - govet
-    - staticcheck
-    - misspell
-    - unconvert
-    - usestdlibvars
-
-linters-settings:
-  gci:
-    sections:
-      - standard
-      - default
-      - prefix(github.com/lf-edge/ekuiper/v2)
+  settings:
+    gci:
+      sections:
+        - standard
+        - default
+        - prefix(github.com/lf-edge/ekuiper/v2)
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

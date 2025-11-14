@@ -274,7 +274,7 @@ func StartUp(Version string) {
 				continue
 			}
 			reply = registry.RecoverRule(rule)
-			if 0 != len(reply) {
+			if len(reply) != 0 {
 				logger.Info(reply)
 			}
 		}
@@ -336,7 +336,7 @@ func StartUp(Version string) {
 
 	ctx, cancel := context.WithTimeout(context.TODO(), time.Duration(conf.Config.Basic.GracefulShutdownTimeout))
 	defer cancel()
-	waitRuleStopCh := make(chan any, 0)
+	waitRuleStopCh := make(chan any)
 	go func() {
 		conf.Log.Info("start to stop rest server")
 		if err = srvRest.Shutdown(ctx); err != nil {

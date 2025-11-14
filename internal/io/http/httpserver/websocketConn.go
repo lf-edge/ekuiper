@@ -102,8 +102,5 @@ func CreateWebsocketConnection(ctx api.StreamContext) modules.Connection {
 }
 
 func getWsType(cfg *wscConfig) bool {
-	if len(cfg.Addr) < 1 {
-		return true
-	}
-	return false
+	return len(cfg.Addr) < 1
 }

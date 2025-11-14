@@ -44,7 +44,7 @@ func (d *ZitiUnderlayDialer) Dial(network, address string) (net.Conn, error) {
 }
 
 func newZeroTrustTransport(tlscfg *tls.Config, logger *logrus.Logger) *http.Transport {
-	if conf.Config != nil && conf.Config.Basic.EnableOpenZiti == true {
+	if conf.Config != nil && conf.Config.Basic.EnableOpenZiti {
 		logger.Info("using Transport 'zerotrust'")
 		// attempt to locate an existing client for this existing token
 		if zitiTransport != nil {

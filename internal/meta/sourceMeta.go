@@ -92,7 +92,7 @@ func UninstallSource(name string) {
 
 func ReadSourceMetaFile(filePath string, isScan bool, isLookup bool) error {
 	fileName := path.Base(filePath)
-	if "mqtt_source.json" == fileName {
+	if fileName == "mqtt_source.json" {
 		fileName = "mqtt.json"
 	}
 	ptrMeta := new(fileSource)

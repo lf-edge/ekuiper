@@ -426,11 +426,11 @@ func genNodesInOrder(toNodes []string, edges map[string][]interface{}, flatRever
 		i++
 		tns := make([]string, 0, len(edges[src]))
 		for _, toNode := range edges[src] {
-			switch toNode.(type) {
+			switch tt := toNode.(type) {
 			case string:
-				tns = append(tns, toNode.(string))
-			case []interface{}:
-				for _, tni := range toNode.([]interface{}) {
+				tns = append(tns, tt)
+			case []any:
+				for _, tni := range tt {
 					tns = append(tns, tni.(string))
 				}
 			}

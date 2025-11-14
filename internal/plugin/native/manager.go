@@ -470,9 +470,7 @@ func (rr *Manager) Delete(t plugin2.PluginType, name string, stop bool) error {
 
 func (rr *Manager) GetPluginInfo(t plugin2.PluginType, name string) (map[string]interface{}, bool) {
 	v, ok := rr.get(t, name)
-	if strings.HasPrefix(v, "v") {
-		v = v[1:]
-	}
+	v = strings.TrimPrefix(v, "v")
 	if ok {
 		r := map[string]interface{}{
 			"name":    name,
@@ -615,7 +613,7 @@ func (rr *Manager) install(t plugin2.PluginType, name, src string, shellParas []
 		copy(shell, shellParas)
 		spath := path.Join(tempPath, "install.sh")
 		shell = append(shell, spath)
-		if 1 != len(shell) {
+		if len(shell) != 1 {
 			copy(shell[1:], shell[0:])
 			shell[0] = spath
 		}

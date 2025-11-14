@@ -61,7 +61,7 @@ func (w *EventTimeTrigger) getNextWindow(inputs []xsql.EventRow, current time.Ti
 			return current.Add(w.interval)
 		} else { // first run without a previous window
 			nextTs := getEarliestEventTs(inputs, current, watermark)
-			if nextTs == timex.Maxtime {
+			if nextTs.Equal(timex.Maxtime) {
 				return nextTs
 			}
 			return getAlignedWindowEndTime(nextTs, w.window.RawInterval, w.window.TimeUnit)

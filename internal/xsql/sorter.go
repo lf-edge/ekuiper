@@ -63,8 +63,8 @@ func (ms *MultiSorter) Less(i, j int) bool {
 	v := &ValuerEval{Valuer: MultiValuer(ms.valuer)}
 	for _, field := range ms.fields {
 		n := field.Uname
-		vp, _ := p[n]
-		vq, _ := q[n]
+		vp := p[n]
+		vq := q[n]
 		if vp == nil && vq != nil {
 			return false
 		} else if vp != nil && vq == nil {

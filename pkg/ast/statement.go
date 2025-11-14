@@ -79,10 +79,7 @@ func (f *Field) IsSelectionField() bool {
 		return true
 	}
 	_, ok := f.Expr.(*FieldRef)
-	if ok {
-		return true
-	}
-	return false
+	return ok
 }
 
 func (f *Field) IsColumn() bool {
@@ -90,10 +87,7 @@ func (f *Field) IsColumn() bool {
 		return false
 	}
 	_, ok := f.Expr.(*FieldRef)
-	if ok {
-		return true
-	}
-	return false
+	return ok
 }
 
 type Sources []Source

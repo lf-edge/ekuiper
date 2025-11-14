@@ -159,13 +159,9 @@ func (s *SliceTuple) Pick(allWildcard bool, cols [][]string, wildcardEmitters ma
 func (s *SliceTuple) Clone() Row {
 	newS := &SliceTuple{ctx: s.ctx, SourceContent: s.SourceContent, Timestamp: s.Timestamp}
 	newS.SinkContent = make(model.SliceVal, len(s.SinkContent))
-	for i, v := range s.SinkContent {
-		newS.SinkContent[i] = v
-	}
+	copy(newS.SinkContent, s.SinkContent)
 	newS.TempCalContent = make(model.SliceVal, len(s.TempCalContent))
-	for i, v := range s.TempCalContent {
-		newS.TempCalContent[i] = v
-	}
+	copy(newS.TempCalContent, s.TempCalContent)
 	return newS
 }
 

@@ -30,7 +30,7 @@ type JoinAlignPlan struct {
 
 func (p *JoinAlignPlan) BuildExplainInfo() {
 	info := ""
-	if p.Emitters != nil && len(p.Emitters) != 0 {
+	if len(p.Emitters) != 0 {
 		info += "Emitters:[ "
 		for i, emitter := range p.Emitters {
 			info += emitter

@@ -25,7 +25,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/http/pprof"
-	_ "net/http/pprof"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -525,11 +524,12 @@ func sourceDetailsManageHandler(w http.ResponseWriter, r *http.Request, st ast.S
 	)
 	if st == ast.TypeTable {
 		kind = r.URL.Query().Get("kind")
-		if kind == "scan" {
+		switch kind {
+		case "scan":
 			kind = ast.StreamKindScan
-		} else if kind == "lookup" {
+		case "lookup":
 			kind = ast.StreamKindLookup
-		} else {
+		default:
 			kind = ""
 		}
 	}
@@ -552,11 +552,12 @@ func sourcesManageHandler(w http.ResponseWriter, r *http.Request, st ast.StreamT
 		)
 		if st == ast.TypeTable {
 			kind = r.URL.Query().Get("kind")
-			if kind == "scan" {
+			switch kind {
+			case "scan":
 				kind = ast.StreamKindScan
-			} else if kind == "lookup" {
+			case "lookup":
 				kind = ast.StreamKindLookup
-			} else {
+			default:
 				kind = ""
 			}
 		}

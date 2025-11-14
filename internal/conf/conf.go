@@ -77,10 +77,10 @@ func InitConf() {
 		panic(err)
 	}
 	Config = &kc
-	if 0 == len(Config.Basic.Ip) {
+	if len(Config.Basic.Ip) == 0 {
 		Config.Basic.Ip = "0.0.0.0"
 	}
-	if 0 == len(Config.Basic.RestIp) {
+	if len(Config.Basic.RestIp) == 0 {
 		Config.Basic.RestIp = "0.0.0.0"
 	}
 

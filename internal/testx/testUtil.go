@@ -69,11 +69,9 @@ func InitBroker(id string) (string, func(), error) {
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 	go func() {
-		select {
-		case <-ctx.Done():
-			server.Close()
-			wg.Done()
-		}
+		<-ctx.Done()
+		server.Close()
+		wg.Done()
 	}()
 	go func() {
 		err := server.Serve()

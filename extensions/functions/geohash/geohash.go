@@ -197,7 +197,7 @@ func (r *geohashEncodeInt) Exec(args []any, _ api.FunctionContext) (any, bool) {
 
 func (r *geohashDecode) Exec(args []any, _ api.FunctionContext) (any, bool) {
 	hash, ok := args[0].(string)
-	if !ok || 0 == len(hash) {
+	if !ok || len(hash) == 0 {
 		return fmt.Errorf("arg[0] is not a string, got %v", args[0]), false
 	}
 	if err := geohash.Validate(hash); nil != err {
@@ -218,7 +218,7 @@ func (r *geohashDecodeInt) Exec(args []any, _ api.FunctionContext) (any, bool) {
 
 func (r *geohashBoundingBox) Exec(args []any, _ api.FunctionContext) (any, bool) {
 	hash, ok := args[0].(string)
-	if !ok || 0 == len(hash) {
+	if !ok || len(hash) == 0 {
 		return fmt.Errorf("arg[0] is not a string, got %v", args[0]), false
 	}
 	if err := geohash.Validate(hash); nil != err {
@@ -237,7 +237,7 @@ func (r *geohashBoundingBoxInt) Exec(args []any, _ api.FunctionContext) (any, bo
 
 func (r *geohashNeighbor) Exec(args []any, _ api.FunctionContext) (any, bool) {
 	hash, ok := args[0].(string)
-	if !ok || 0 == len(hash) {
+	if !ok || len(hash) == 0 {
 		return fmt.Errorf("arg[0] is not a string, got %v", args[0]), false
 	}
 	if err := geohash.Validate(hash); nil != err {
@@ -245,7 +245,7 @@ func (r *geohashNeighbor) Exec(args []any, _ api.FunctionContext) (any, bool) {
 	}
 	var directionCode geohash.Direction
 	direction, ok := args[1].(string)
-	if !ok || 0 == len(direction) {
+	if !ok || len(direction) == 0 {
 		return fmt.Errorf("arg[1] is not a string, got %v", args[1]), false
 	} else {
 		directionCode, ok = g_direction[direction]
@@ -264,7 +264,7 @@ func (r *geohashNeighborInt) Exec(args []any, _ api.FunctionContext) (any, bool)
 	}
 	var directionCode geohash.Direction
 	direction, ok := args[1].(string)
-	if !ok || 0 == len(direction) {
+	if !ok || len(direction) == 0 {
 		return fmt.Errorf("arg[1] is not a string, got %v", args[1]), false
 	} else {
 		directionCode, ok = g_direction[direction]
@@ -277,7 +277,7 @@ func (r *geohashNeighborInt) Exec(args []any, _ api.FunctionContext) (any, bool)
 
 func (r *geohashNeighbors) Exec(args []any, _ api.FunctionContext) (any, bool) {
 	hash, ok := args[0].(string)
-	if !ok || 0 == len(hash) {
+	if !ok || len(hash) == 0 {
 		return fmt.Errorf("arg[0] is not a string, got %v", args[0]), false
 	}
 	if err := geohash.Validate(hash); nil != err {

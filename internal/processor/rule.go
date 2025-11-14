@@ -196,7 +196,7 @@ func (p *RuleProcessor) GetRuleByJson(id, ruleJson string) (*def.Rule, error) {
 		if _, err := xsql.GetStatementFromSql(rule.Sql); err != nil {
 			return nil, err
 		}
-		if rule.Actions == nil || len(rule.Actions) == 0 {
+		if len(rule.Actions) == 0 {
 			return nil, fmt.Errorf("Missing rule actions.")
 		}
 	} else {

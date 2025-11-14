@@ -150,7 +150,7 @@ func (s *TraceTestSuite) TestLookup() {
 			err = json.Unmarshal(all, &exp)
 			s.NoError(err)
 			if s.compareTrace(exp, resultMap) == false {
-				fmt.Println(fmt.Sprintf("lookup%d.json", i+1))
+				fmt.Printf("lookup%d.json\n", i+1)
 				fmt.Println(string(act))
 				s.Fail(fmt.Sprintf("trace lookup %d compares fail", i+1))
 			}

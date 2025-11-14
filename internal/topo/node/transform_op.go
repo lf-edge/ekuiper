@@ -146,7 +146,7 @@ func (t *TransformOp) Worker(ctx api.StreamContext, item any) []any {
 	if t.sendSingle {
 		result = make([]any, 0, len(outs))
 		for _, out := range outs {
-			if t.omitIfEmpty && (out == nil || len(out) == 0) {
+			if t.omitIfEmpty && len(out) == 0 {
 				ctx.GetLogger().Debugf("receive empty single result %v in sink, dropped", out)
 				continue
 			}
@@ -297,19 +297,14 @@ func itemToMap(item interface{}) []map[string]any {
 		outs = []map[string]any{
 			{"error": val.Error()},
 		}
-		break
 	case xsql.Collection: // The order is important here, because some element is both a collection and a row, such as WindowTuples, JoinTuples, etc.
 		maps := val.ToMaps()
 		outs = make([]map[string]any, len(maps))
-		for i, m := range maps {
-			outs[i] = m
-		}
-		break
+		copy(outs, maps)
 	case xsql.Row:
 		outs = []map[string]any{
 			val.ToMap(),
 		}
-		break
 	default:
 		outs = []map[string]any{
 			{"error": fmt.Sprintf("result is not a map slice but found %#v", val)},

@@ -133,7 +133,7 @@ func main() {
 
 					text, _ := reader.ReadString('\n')
 					// convert CRLF to LF
-					text = strings.Replace(text, "\n", "", -1)
+					text = strings.ReplaceAll(text, "\n", "")
 
 					if strings.EqualFold(text, "quit") || strings.EqualFold(text, "exit") {
 						break

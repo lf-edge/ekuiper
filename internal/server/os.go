@@ -142,9 +142,9 @@ func parseLine(line string) (key string, value string, err error) {
 	}
 
 	// expand anything else that could be escaped
-	value = strings.Replace(value, `\"`, `"`, -1)
-	value = strings.Replace(value, `\$`, `$`, -1)
-	value = strings.Replace(value, `\\`, `\`, -1)
-	value = strings.Replace(value, "\\`", "`", -1)
+	value = strings.ReplaceAll(value, `\"`, `"`)
+	value = strings.ReplaceAll(value, `\$`, `$`)
+	value = strings.ReplaceAll(value, `\\`, `\`)
+	value = strings.ReplaceAll(value, "\\`", "`")
 	return
 }

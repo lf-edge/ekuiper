@@ -182,7 +182,7 @@ func (c *Client) Publish(ctx api.StreamContext, topic string, qos byte, retained
 		Retain:  retained,
 		Payload: payload,
 	}
-	if properties != nil && len(properties) > 0 {
+	if len(properties) > 0 {
 		props := make([]paho.UserProperty, 0, len(properties))
 		for k, v := range properties {
 			props = append(props, paho.UserProperty{

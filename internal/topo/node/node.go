@@ -127,7 +127,6 @@ func (o *defaultNode) BroadcastCustomized(val any, broadcastFunc func(val any)) 
 		return
 	}
 	broadcastFunc(val)
-	return
 }
 
 func (o *defaultNode) doBroadcast(val any) {

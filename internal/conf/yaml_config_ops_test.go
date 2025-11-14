@@ -377,7 +377,7 @@ func isDelData(js string, cf map[string]interface{}) error {
 
 		switch t := delv.(type) {
 		case string:
-			if 0 == len(t) {
+			if len(t) == 0 {
 				if _, ok := cf[delk]; ok {
 					return fmt.Errorf("%s still exists", delk)
 				}

@@ -751,7 +751,7 @@ func createLogicalPlanFull(stmt *ast.SelectStatement, opt *def.RuleOption, store
 	if dimensions != nil && len(rewriteRes.incAggFields) < 1 {
 		if w != nil && w.WindowType != ast.STATE_WINDOW {
 			ds = dimensions.GetGroups()
-			if ds != nil && len(ds) > 0 {
+			if len(ds) > 0 {
 				p = AggregatePlan{
 					dimensions: ds,
 				}.Init()

@@ -121,7 +121,7 @@ func (s *randomSource) isDup(ctx api.StreamContext, next map[string]interface{})
 		return true
 	}
 	for _, ps := range s.list {
-		if bytes.Compare(ns, ps) == 0 {
+		if bytes.Equal(ns, ps) {
 			logger.Debugf("got duplicate %s", ns)
 			return true
 		}

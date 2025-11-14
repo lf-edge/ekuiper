@@ -89,10 +89,11 @@ func ruleTraverse(rule *def.Rule, de *dependencies) {
 			if err != nil {
 				continue
 			}
-			if streamStmt.StreamType == ast.TypeStream {
+			switch streamStmt.StreamType {
+			case ast.TypeStream:
 				// get streams
 				de.streams = append(de.streams, string(streamStmt.Name))
-			} else if streamStmt.StreamType == ast.TypeTable {
+			case ast.TypeTable:
 				// get tables
 				de.tables = append(de.tables, string(streamStmt.Name))
 			}

@@ -183,7 +183,7 @@ func (ip *InterPreter) GetEmptyOutputTensors() ([]ort.ArbitraryTensor, error) {
 			return nil, errors.New("output tensorElementDataType should be same ~")
 		}
 	}
-	var dataType ort.TensorElementDataType = ip.outputInfo[0].DataType
+	dataType := ip.outputInfo[0].DataType
 	var emptyOutputTensors []ort.ArbitraryTensor
 	for _, outputInfo := range ip.outputInfo {
 		emptyOutputTensor, err := newEmptyArbitraryTensorBydataType(dataType, outputInfo.Dimensions)

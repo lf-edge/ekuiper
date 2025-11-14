@@ -23,7 +23,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace"
 
-	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	topoContext "github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/mock"
@@ -261,7 +260,7 @@ func (m *mockData) GetTracerCtx() api.StreamContext {
 	for i := 0; i < 8; i++ {
 		spanID[i] = m.spanID[i]
 	}
-	ctx := trace.ContextWithSpanContext(context.Background(), trace.NewSpanContext(trace.SpanContextConfig{
+	ctx := trace.ContextWithSpanContext(topoContext.Background(), trace.NewSpanContext(trace.SpanContextConfig{
 		TraceID: traceID,
 		SpanID:  spanID,
 	}))

@@ -96,7 +96,7 @@ func (s *SQLConnection) Ping(ctx api.StreamContext) error {
 }
 
 func (s *SQLConnection) DetachSub(ctx api.StreamContext, props map[string]any) {
-	return
+	// do nothing
 }
 
 func (s *SQLConnection) Close(ctx api.StreamContext) error {

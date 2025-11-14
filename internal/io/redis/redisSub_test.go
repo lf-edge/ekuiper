@@ -63,7 +63,7 @@ func TestSourcePingRedisError(t *testing.T) {
 		"db":       0,
 		"channels": []string{DefaultChannel},
 	}
-	expErrStr := fmt.Sprintf("Ping Redis failed with error")
+	expErrStr := "Ping Redis failed with error"
 	err := s.Ping(context.Background(), prop)
 	if err == nil {
 		t.Errorf("should have error")

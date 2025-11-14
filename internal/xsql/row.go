@@ -168,13 +168,13 @@ func (d *AffiliateRow) Clone() AffiliateRow {
 	d.lock.RLock()
 	defer d.lock.RUnlock()
 	nd := &AffiliateRow{}
-	if d.CalCols != nil && len(d.CalCols) > 0 {
+	if len(d.CalCols) > 0 {
 		nd.CalCols = make(map[string]interface{}, len(d.CalCols))
 		for k, v := range d.CalCols {
 			nd.CalCols[k] = v
 		}
 	}
-	if d.AliasMap != nil && len(d.AliasMap) > 0 {
+	if len(d.AliasMap) > 0 {
 		nd.AliasMap = make(map[string]interface{}, len(d.AliasMap))
 		for k, v := range d.AliasMap {
 			nd.AliasMap[k] = v
@@ -666,7 +666,7 @@ func (jt *JoinTuple) All(stream string) (map[string]interface{}, bool) {
 func (jt *JoinTuple) Clone() Row {
 	ts := make([]Row, len(jt.Tuples))
 	for i, t := range jt.Tuples {
-		ts[i] = t.Clone().(Row)
+		ts[i] = t.Clone()
 	}
 	c := &JoinTuple{
 		Tuples:       ts,
@@ -701,7 +701,7 @@ func (jt *JoinTuple) Pick(allWildcard bool, cols [][]string, wildcardEmitters ma
 						continue
 					}
 				}
-				nt := tuple.Clone().(Row)
+				nt := tuple.Clone()
 				nt.Pick(allWildcard, cols, wildcardEmitters, except, sendNil)
 				jt.Tuples[i] = nt
 			}
@@ -758,9 +758,7 @@ func (s *GroupedTuples) ToMap() map[string]interface{} {
 
 func (s *GroupedTuples) Clone() Row {
 	ts := make([]Row, len(s.Content))
-	for i, t := range s.Content {
-		ts[i] = t
-	}
+	copy(ts, s.Content)
 	c := &GroupedTuples{
 		Content:      ts,
 		WindowRange:  s.WindowRange,

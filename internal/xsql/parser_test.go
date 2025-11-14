@@ -33,7 +33,7 @@ import (
 func TestParser_ParseStatement(t *testing.T) {
 	re1, _ := regexp.Compile("^foo$")
 	re2, _ := regexp.Compile("^fo.o.*$")
-	re3, _ := regexp.Compile("^foo\\\\%$")
+	re3, _ := regexp.Compile(`^foo\\%$`)
 	tests := []struct {
 		s    string
 		stmt *ast.SelectStatement
