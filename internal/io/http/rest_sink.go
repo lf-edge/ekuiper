@@ -22,7 +22,6 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/pingcap/failpoint"
 
-	"github.com/lf-edge/ekuiper/v2/internal/pkg/httpx"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 )
 
@@ -57,6 +56,10 @@ func (r *RestSink) Close(ctx api.StreamContext) error {
 }
 
 func (r *RestSink) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) error {
+	err := r.Conn(ctx)
+	if err != nil {
+		return err
+	}
 	sch(api.ConnectionConnected, "")
 	return nil
 }
@@ -127,7 +130,7 @@ func (r *RestSink) Collect(ctx api.StreamContext, item api.RawTuple) error {
 		headers["Content-Encoding"] = "gzip"
 	}
 
-	resp, err := httpx.SendWithFormData(ctx.GetLogger(), r.client, bodyType, method, u, headers, formData, r.config.FileFieldName, item.Raw())
+	resp, err := r.Send(ctx, bodyType, method, u, headers, formData, r.config.FileFieldName, item.Raw())
 	failpoint.Inject("recoverAbleErr", func() {
 		err = errors.New("connection reset by peer")
 	})
