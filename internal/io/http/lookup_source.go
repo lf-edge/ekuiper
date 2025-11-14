@@ -17,7 +17,6 @@ package http
 import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
-	"github.com/lf-edge/ekuiper/v2/internal/pkg/httpx"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
 
@@ -99,15 +98,15 @@ func GetLookUpSource() api.Source {
 var _ api.LookupSource = &HttpLookupSource{}
 
 func doPull(ctx api.StreamContext, c *ClientConf, lastMD5 string) ([]map[string]any, string, error) {
-	headers, err := c.parseHeaders(ctx, c.tokens)
-	if err != nil {
-		return nil, "", err
+	headers := c.config.Headers
+	if c.accessConf != nil {
+		headers = c.parsedHeaders
 	}
-	newBody, err := ctx.ParseTemplate(c.config.Body, c.tokens)
-	if err != nil {
-		return nil, "", err
+	newBody := c.config.Body
+	if c.accessConf != nil {
+		newBody = c.parsedBody
 	}
-	resp, err := httpx.Send(ctx.GetLogger(), c.client, c.config.BodyType, c.config.Method, c.config.Url, headers, []byte(newBody))
+	resp, err := c.Send(ctx, c.config.BodyType, c.config.Method, c.config.Url, headers, nil, "", []byte(newBody))
 	if err != nil {
 		return nil, "", err
 	}
