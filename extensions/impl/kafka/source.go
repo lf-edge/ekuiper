@@ -229,18 +229,33 @@ func (k *KafkaSource) pushMsgMetadataToMonitoring(
 	headers []kafkago.Header,
 	partition int,
 ) {
-	KafkaSourceTopicsCounter.WithLabelValues(topic, strconv.Itoa(partition), ctx.GetRuleId(), ctx.GetOpId()).Inc()
 	var (
 		buf          = bytes.NewBuffer(key)
 		convertedKey = buf.String()
 	)
 
-	KafkaSourceKeysCounter.WithLabelValues(convertedKey, ctx.GetRuleId(), ctx.GetOpId()).Inc()
-	buf.Reset()
+	if len(headers) == 0 {
+		KafkaSourceMessageCounter.WithLabelValues(
+			topic,
+			strconv.Itoa(partition),
+			convertedKey,
+			"none",
+			ctx.GetRuleId(),
+			ctx.GetOpId(),
+		).Inc()
+		return
+	}
 
 	for _, header := range headers {
 		joinedHeader := fmt.Sprintf("%s:%s", header.Key, header.Value)
-		KafkaSourceHeadersCounter.WithLabelValues(joinedHeader, ctx.GetRuleId(), ctx.GetOpId()).Inc()
+		KafkaSourceMessageCounter.WithLabelValues(
+			topic,
+			strconv.Itoa(partition),
+			convertedKey,
+			joinedHeader,
+			ctx.GetRuleId(),
+			ctx.GetOpId(),
+		).Inc()
 	}
 }
 
