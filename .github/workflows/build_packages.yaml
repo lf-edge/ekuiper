@@ -11,6 +11,9 @@ on:
     types:
       - published
 
+permissions:
+  contents: read
+
 jobs:
   prepare:
     runs-on: ubuntu-24.04
@@ -72,6 +75,8 @@ jobs:
 
   build-on-mac:
     runs-on: macos-latest
+    permissions:
+      contents: write
 
     steps:
     - uses: actions/checkout@v4
@@ -181,6 +186,8 @@ jobs:
   build-plugins:
     runs-on: ${{ matrix.arch == 'linux/arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
     needs: prepare
+    permissions:
+      contents: write
 
     strategy:
       fail-fast: false
@@ -352,6 +359,8 @@ jobs:
 
   release:
     runs-on: ubuntu-22.04
+    permissions:
+      contents: write
 
     needs:
     - build

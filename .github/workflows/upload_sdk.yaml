@@ -9,6 +9,9 @@ on:
     types:
       - published
 
+permissions:
+  contents: read
+
 jobs:
   python:
     runs-on: ubuntu-latest

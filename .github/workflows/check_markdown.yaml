@@ -5,6 +5,9 @@ on:
     paths:
       - 'docs/**'
 
+permissions:
+  contents: read
+
 jobs:
   markdown_check:
     runs-on: ubuntu-latest

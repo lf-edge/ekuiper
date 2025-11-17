@@ -10,6 +10,9 @@ on:
 env:
   DEBIAN_FRONTEND: noninteractive
 
+permissions:
+  contents: read
+
 jobs:
   fvt_tests_with_edgex:
     runs-on: ubuntu-latest

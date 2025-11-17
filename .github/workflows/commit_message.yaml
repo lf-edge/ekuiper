@@ -12,6 +12,9 @@ on:
       - reopened
       - synchronize
 
+permissions:
+  contents: read
+
 jobs:
   check_commit_message:
     runs-on: ubuntu-latest

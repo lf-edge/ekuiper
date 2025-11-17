@@ -17,6 +17,9 @@ on:
     types:
       - published
 
+permissions:
+  contents: read
+
 jobs:
   run_unit_tests:
     runs-on: ubuntu-latest
