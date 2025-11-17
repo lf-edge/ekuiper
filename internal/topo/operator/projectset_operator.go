@@ -62,8 +62,7 @@ func (ps *ProjectSetOperator) Apply(ctx api.StreamContext, data interface{}, _ *
 			return err
 		}
 		if ps.EnableLimit && ps.LimitCount > 0 && input.Len() > ps.LimitCount {
-			var sel []int
-			sel = make([]int, ps.LimitCount, ps.LimitCount)
+			sel := make([]int, ps.LimitCount)
 			for i := 0; i < ps.LimitCount; i++ {
 				sel[i] = i
 			}
@@ -130,7 +129,7 @@ func (ps *ProjectSetOperator) handleSRFRow(ctx api.StreamContext, row xsql.Row) 
 	}
 	res := newResultWrapper(len(aValues), row)
 	for i, v := range aValues {
-		newRow := row.Clone().(xsql.Row)
+		newRow := row.Clone()
 		newRow.SetTracerCtx(row.GetTracerCtx())
 		// clear original column value
 		newRow.Del(srfName)

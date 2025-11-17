@@ -279,12 +279,9 @@ func newSqlspanStorage() *sqlSpanStorage {
 	go func() {
 		ticker := time.NewTicker(time.Hour)
 		defer ticker.Stop()
-		for {
-			select {
-			case <-ticker.C:
-				if err := gcSqliteSpan(); err != nil {
-					conf.Log.Warnf("gc sqlite trace span err:%v", err.Error())
-				}
+		for range ticker.C {
+			if err := gcSqliteSpan(); err != nil {
+				conf.Log.Warnf("gc sqlite trace span err:%v", err.Error())
 			}
 		}
 	}()

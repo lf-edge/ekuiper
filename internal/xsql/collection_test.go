@@ -206,7 +206,7 @@ func TestCollectionAgg(t *testing.T) {
 		for si, set := range tt.set {
 			wg.Add(1)
 			go func(si int, set []map[string]interface{}) {
-				nr := tt.collO.Clone().(Collection)
+				nr := tt.collO.Clone()
 				nr.RangeSet(func(_ int, row Row) (bool, error) {
 					for k, v := range set[0] {
 						if strings.HasPrefix(k, "@") {
@@ -223,7 +223,7 @@ func TestCollectionAgg(t *testing.T) {
 				for j := 1; j < len(set); j++ {
 					wg2.Add(1)
 					go func(j int) {
-						nnr := nr.Clone().(Collection)
+						nnr := nr.Clone()
 						nnr.SetIsAgg(true)
 						nnr.GroupRange(func(_ int, aggRow CollectionRow) (bool, error) {
 							for k, v := range set[j] {

@@ -198,7 +198,7 @@ func (w *WindowTuples) RangeSet(f func(i int, r Row) (bool, error)) error {
 		if !b {
 			break
 		}
-		w.Content[i] = rc.(Row)
+		w.Content[i] = rc
 	}
 	return nil
 }

@@ -176,7 +176,7 @@ func (kv *sqlKvStore) Delete(key string) error {
 		row := kv.preparedDeleteQueryStmt.QueryRow(key)
 		var tmp []byte
 		err = row.Scan(&tmp)
-		if nil != err || 0 == len(tmp) {
+		if nil != err || len(tmp) == 0 {
 			return errorx.NewWithCode(errorx.NOT_FOUND, fmt.Sprintf("%s is not found", key))
 		}
 		_, err = kv.preparedDeleteStmt.Exec(key)

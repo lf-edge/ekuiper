@@ -208,7 +208,7 @@ func (test *testProfile) StartCPUProfiler(ctx context.Context, t time.Duration) 
 }
 
 func (test *testProfile) EnableWindowAggregator(window int) {
-	return
+	// do nothing
 }
 
 func (test *testProfile) GetWindowData() cpuprofile.DataSetAggregateMap {
@@ -216,7 +216,7 @@ func (test *testProfile) GetWindowData() cpuprofile.DataSetAggregateMap {
 }
 
 func (test *testProfile) RegisterTag(tag string, ch chan *cpuprofile.DataSetAggregate) {
-	return
+	// do nothing
 }
 
 func TestStartCPUProfiling(t *testing.T) {

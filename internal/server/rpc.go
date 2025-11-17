@@ -102,7 +102,7 @@ func (t *Server) CreateQuery(sql string, reply *string) error {
 	if err != nil {
 		return err
 	} else {
-		msg := fmt.Sprintf("Query was submit successfully.")
+		msg := "Query was submit successfully."
 		logger.Println(msg)
 		*reply = fmt.Sprint(msg)
 	}
@@ -376,7 +376,7 @@ func (t *Server) ExportConfiguration(arg *model.ExportDataDesc, reply *string) e
 	if err != nil {
 		return fmt.Errorf("fail to save to file %s:%v", file, err)
 	}
-	*reply = fmt.Sprintf("export configuration success")
+	*reply = "export configuration success"
 	return nil
 }
 

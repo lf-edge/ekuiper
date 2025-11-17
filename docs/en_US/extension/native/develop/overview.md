@@ -17,7 +17,7 @@ project.
 
 For example, when developing a plugin for the eKuiper v2.0.0 version, you need to first check the `go.mod` file
 corresponding to the eKuiper version. Ensure that the Go version and the contract mod version in the plugin project are
-consistent. For instance, in the following plugin `go.mod`, the contract mod v2.0.0 version and Go 1.24.0 version are
+consistent. For instance, in the following plugin `go.mod`, the contract mod v2.0.0 version and Go 1.25.0 version are
 used.
 
 ```go.mod
@@ -25,7 +25,7 @@ module mycompany.com/myplugin
 
 require github.com/lf-edge/ekuiper/contract/v2 v2.0.0
 
-go 1.24.0
+go 1.25.4
 ```
 
 ### Plugin development

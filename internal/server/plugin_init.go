@@ -271,14 +271,20 @@ func prebuildPluginsHandler(w http.ResponseWriter, _ *http.Request, t plugin.Plu
 }
 
 func fetchPluginList(t plugin.PluginType, hosts, os, arch string) (result map[string]string, err error) {
-	ptype := "sources"
-	plugins := NativeSourcePlugin
-	if t == plugin.SINK {
+	var (
+		ptype   string
+		plugins []string
+	)
+	switch t {
+	case plugin.SINK:
 		ptype = "sinks"
 		plugins = NativeSinkPlugin
-	} else if t == plugin.FUNCTION {
+	case plugin.FUNCTION:
 		ptype = "functions"
 		plugins = NativeFunctionPlugin
+	default:
+		ptype = "sources"
+		plugins = NativeSourcePlugin
 	}
 
 	if hosts == "" || ptype == "" || os == "" {

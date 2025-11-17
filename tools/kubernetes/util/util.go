@@ -53,16 +53,12 @@ func (c *command) call(host string) bool {
 	switch strings.ToUpper(c.Method) {
 	case http.MethodPost:
 		resp, err = kconf.Post(head, string(body))
-		break
 	case http.MethodGet:
 		resp, err = kconf.Get(head)
-		break
 	case http.MethodDelete:
 		resp, err = kconf.Delete(head)
-		break
 	case http.MethodPut:
 		resp, err = kconf.Put(head, string(body))
-		break
 	default:
 		c.strLog = fmt.Sprintf("no such method : %s", c.Method)
 		return false
@@ -212,13 +208,9 @@ func (s *server) watchFolders() {
 	s.printLogs()
 	chTimer := time.NewTicker(time.Second * time.Duration(conf.GetIntervalTime()))
 	defer chTimer.Stop()
-	for {
-		select {
-		case <-chTimer.C:
-			s.processDir()
-			s.printLogs()
-		}
-	}
+	<-chTimer.C
+	s.processDir()
+	s.printLogs()
 }
 
 func Process() {

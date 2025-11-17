@@ -623,11 +623,12 @@ func (s *streamFieldMap) ref(k ast.StreamName, v *ast.AliasRef) error {
 		// the key must exist after the schema travers, do validation
 		if k == ast.DefaultStream { // In schema mode, default stream won't be a key
 			l := len(s.content)
-			if l == 0 {
+			switch l {
+			case 0:
 				return fmt.Errorf("unknow field ")
-			} else if l == 1 {
+			case 1:
 				// valid, do nothing
-			} else {
+			default:
 				return fmt.Errorf("ambiguous field ")
 			}
 		} else {

@@ -122,10 +122,7 @@ func (d *wrappedProtoDescriptor) parseHttpOptions() error {
 							default:
 								err = fmt.Errorf("unsupported option %s", din.Name())
 							}
-							if err != nil {
-								return false
-							}
-							return true
+							return err == nil
 						})
 						if err != nil {
 							return false

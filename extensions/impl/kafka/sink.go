@@ -229,7 +229,6 @@ func (k *KafkaSink) buildKafkaWriter(ctx api.StreamContext) {
 		OpID:        ctx.GetOpId(),
 	}
 	k.writer = w
-	return
 }
 
 func (k *KafkaSink) Close(ctx api.StreamContext) error {

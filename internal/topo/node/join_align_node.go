@@ -135,10 +135,8 @@ func (n *JoinAlignNode) alignBatch(ctx api.StreamContext, input any) {
 		w = t
 	}
 	for _, contents := range n.batch {
-		if contents != nil {
-			for _, v := range contents {
-				w = w.AddTuple(v)
-			}
+		for _, v := range contents {
+			w = w.AddTuple(v)
 		}
 	}
 	n.Broadcast(w)

@@ -103,7 +103,6 @@ func (n *SwitchNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 						}
 					default:
 						n.onError(ctx, fmt.Errorf("run switch node error: invalid input type but got %[1]T(%[1]v)", d))
-						break
 					}
 				caseLoop:
 					for i, c := range n.conf.Cases {

@@ -42,19 +42,19 @@ func TransItem(input interface{}, dataField string, fields []string, excludeFiel
 	}
 
 	if dataField != "" {
-		switch input.(type) {
-		case map[string]interface{}:
-			input = input.(map[string]interface{})[dataField]
-		case []interface{}:
-			if len(input.([]interface{})) == 0 {
+		switch it := input.(type) {
+		case map[string]any:
+			input = it[dataField]
+		case []any:
+			if len(it) == 0 {
 				return nil, false, nil
 			}
-			input = input.([]interface{})[0].(map[string]interface{})[dataField]
-		case []map[string]interface{}:
-			if len(input.([]map[string]interface{})) == 0 {
+			input = it[0].(map[string]any)[dataField]
+		case []map[string]any:
+			if len(it) == 0 {
 				return nil, false, nil
 			}
-			input = input.([]map[string]interface{})[0][dataField]
+			input = it[0][dataField]
 		default:
 			return nil, false, fmt.Errorf("fail to decode data %v", input)
 		}

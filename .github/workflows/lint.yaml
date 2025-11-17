@@ -50,21 +50,19 @@ jobs:
           sudo apt-get update && sudo apt-get install -y --no-install-recommends pkg-config libzmq3-dev
 
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@v8
         with:
           version: latest
-          args: "--out-${NO_FUTURE}format line-number"
 
       - name: golangci-lint (tools/kubernetes)
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@v8
         with:
           version: latest
           working-directory: tools/kubernetes
-          args: "--out-${NO_FUTURE}format line-number"
 
       - name: golangci-lint (sdk/go)
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@v8
         with:
           version: latest
           working-directory: sdk/go
-          args: "--out-${NO_FUTURE}format line-number --config=.gosdkci.yaml"
+          args: --config=.gosdkci.yaml

@@ -36,7 +36,7 @@ func (p *FilterPlan) BuildExplainInfo() {
 	if p.condition != nil {
 		info += "Condition:{ " + p.condition.String() + " }, "
 	}
-	if p.stateFuncs != nil && len(p.stateFuncs) != 0 {
+	if len(p.stateFuncs) != 0 {
 		info += "StateFuncs:["
 		for i := 0; i < len(p.stateFuncs); i++ {
 			info += p.stateFuncs[i].String()

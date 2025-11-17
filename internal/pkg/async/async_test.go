@@ -65,9 +65,7 @@ func TestAsyncManager(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, TaskRunningStatus, s.Status)
 	require.NoError(t, m.CancelTask(id))
-	select {
-	case <-taskCtx.Done():
-	}
+	<-taskCtx.Done()
 	s, err = m.GetTask(id)
 	require.NoError(t, err)
 	require.Equal(t, TaskCancelStatus, s.Status)

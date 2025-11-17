@@ -56,7 +56,7 @@ func getOrCalculateAgg(f *ast.FieldRef) bool {
 func WithAggFields(stmt *ast.SelectStatement) bool {
 	if stmt.Dimensions != nil {
 		ds := stmt.Dimensions.GetGroups()
-		if ds != nil && len(ds) > 0 {
+		if len(ds) > 0 {
 			return true
 		}
 	}

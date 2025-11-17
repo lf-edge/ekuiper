@@ -396,14 +396,11 @@ func (m *MockRewindSource) Connect(ctx api.StreamContext, _ api.StatusChangeHand
 
 func (m *MockRewindSource) Subscribe(ctx api.StreamContext, ingest api.TupleIngest, ingestError api.ErrorIngest) error {
 	go func() {
-		for {
-			select {
-			case <-m.notify:
-				ingest(ctx, map[string]any{
-					"key": m.state,
-				}, nil, time.Now())
-				m.state++
-			}
+		for range m.notify {
+			ingest(ctx, map[string]any{
+				"key": m.state,
+			}, nil, time.Now())
+			m.state++
 		}
 	}()
 	return nil

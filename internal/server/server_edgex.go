@@ -30,7 +30,7 @@ func init() {
 }
 
 func newZitifiedNetListener(addr string, logger *logrus.Logger) (net.Listener, error) {
-	if conf.Config != nil && conf.Config.Basic.EnableOpenZiti == true {
+	if conf.Config != nil && conf.Config.Basic.EnableOpenZiti {
 		logger.Info("using ListenMode 'zerotrust'")
 		ctx := edgex_vault.AuthenicatedContext(logger)
 		serviceName := "edgex.rules-engine"

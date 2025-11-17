@@ -19,7 +19,6 @@ import (
 	"encoding/binary"
 	"encoding/gob"
 	"errors"
-	"fmt"
 
 	"github.com/cockroachdb/pebble"
 
@@ -44,7 +43,7 @@ func createPebbleTs(database KVDatabase, table string) (kv.Tskv, error) {
 
 func (t *pebbleTsStore) key(k int64) []byte {
 	buf := new(bytes.Buffer)
-	buf.WriteString(fmt.Sprintf("%s", t.table))
+	buf.WriteString(t.table)
 	_ = binary.Write(buf, binary.BigEndian, k)
 	return buf.Bytes()
 }
@@ -120,7 +119,7 @@ func (t *pebbleTsStore) DeleteBefore(key int64) error {
 		defer iter.Close()
 
 		batch := db.NewBatch()
-		prefix := []byte(fmt.Sprintf("%s", t.table))
+		prefix := []byte(t.table)
 
 		for iter.First(); iter.Valid(); iter.Next() {
 			k := iter.Key()

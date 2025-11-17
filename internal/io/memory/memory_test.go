@@ -343,7 +343,7 @@ func TestMultipleTopics(t *testing.T) {
 		result := make([]*xsql.Tuple, 0, limit)
 		nc, cancel := ctx.WithMeta("rule1", fmt.Sprintf("op%d", i), &state.MemoryStore{}).WithCancel()
 		err = src.Subscribe(nc, func(ctx api.StreamContext, res any, meta map[string]any, ts time.Time) {
-			rid, _ := res.(*xsql.Tuple).Message["id"]
+			rid := res.(*xsql.Tuple).Message["id"]
 			fmt.Printf("%d(%s) receive %v\n", i, topic, rid)
 			result = append(result, res.(*xsql.Tuple))
 			limit--

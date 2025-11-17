@@ -13,7 +13,6 @@
 // limitations under the License.
 
 //go:build template || !core
-// +build template !core
 
 package server
 

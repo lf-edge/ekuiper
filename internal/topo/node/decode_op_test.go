@@ -109,7 +109,7 @@ func BenchmarkThrougput(b *testing.B) {
 		}
 	}()
 	for i := 0; i < 100; i++ {
-		_ = <-out
+		<-out
 	}
 }
 

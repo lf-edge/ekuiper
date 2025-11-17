@@ -555,7 +555,6 @@ func (p *Parser) ParseExpr() (ast.Expr, error) {
 			case ast.IN: // IN is a special token, need to unscan
 				op = ast.NOTIN
 				p.unscan()
-				break
 			case ast.BETWEEN:
 				op = ast.NOTBETWEEN
 				node := root
@@ -783,10 +782,11 @@ func (p *Parser) parseValueSetExpr() (ast.Expr, error) {
 
 func (p *Parser) parseBracketExpr() (ast.Expr, error) {
 	tok2, lit2 := p.scanIgnoreWhiteSpaceWithNegativeNum()
-	if tok2 == ast.RBRACKET {
+	switch tok2 {
+	case ast.RBRACKET:
 		// field[]
 		return &ast.ColonExpr{Start: &ast.IntegerLiteral{Val: 0}, End: &ast.IntegerLiteral{Val: math.MinInt32}}, nil
-	} else if tok2 == ast.INTEGER {
+	case ast.INTEGER:
 		start, err := strconv.Atoi(lit2)
 		if err != nil {
 			return nil, fmt.Errorf("The start index %s is not an int value in bracket expression.", lit2)
@@ -798,10 +798,10 @@ func (p *Parser) parseBracketExpr() (ast.Expr, error) {
 			// Such as field[2:] or field[2:4]
 			return p.parseColonExpr(&ast.IntegerLiteral{Val: int64(start)})
 		}
-	} else if tok2 == ast.COLON {
+	case ast.COLON:
 		// Such as field[:3] or [:]
 		return p.parseColonExpr(&ast.IntegerLiteral{Val: 0})
-	} else {
+	default:
 		p.unscan()
 		start, err := p.ParseExpr()
 		if err != nil {
@@ -820,7 +820,8 @@ func (p *Parser) parseBracketExpr() (ast.Expr, error) {
 
 func (p *Parser) parseColonExpr(start ast.Expr) (ast.Expr, error) {
 	tok, lit := p.scanIgnoreWhiteSpaceWithNegativeNum()
-	if tok == ast.INTEGER {
+	switch tok {
+	case ast.INTEGER:
 		end, err := strconv.Atoi(lit)
 		if err != nil {
 			return nil, fmt.Errorf("The end index %s is not an int value in bracket expression.", lit)
@@ -831,7 +832,7 @@ func (p *Parser) parseColonExpr(start ast.Expr) (ast.Expr, error) {
 		} else {
 			return nil, fmt.Errorf("Found %q, expected right bracket.", lit1)
 		}
-	} else if tok == ast.RBRACKET {
+	case ast.RBRACKET:
 		return &ast.ColonExpr{Start: start, End: &ast.IntegerLiteral{Val: math.MinInt32}}, nil
 	}
 	p.unscan()

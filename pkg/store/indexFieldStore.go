@@ -38,9 +38,7 @@ func NewIndexFieldWrap(fields ...*IndexField) *IndexFieldStoreWrap {
 	wrap := &IndexFieldStoreWrap{}
 	wrap.store = &IndexFieldStore{}
 	wrap.store.IndexFieldValueList = make([]*IndexField, 0)
-	for _, f := range fields {
-		wrap.store.IndexFieldValueList = append(wrap.store.IndexFieldValueList, f)
-	}
+	wrap.store.IndexFieldValueList = append(wrap.store.IndexFieldValueList, fields...)
 	wrap.LoadFromList()
 	return wrap
 }

@@ -93,7 +93,7 @@ func (p *DataSourcePlan) BuildExplainInfo() {
 	if p.name != "" {
 		info += "StreamName: " + string(p.name)
 	}
-	if p.fields != nil && len(p.fields) != 0 {
+	if len(p.fields) != 0 {
 		info += ", Fields:[ "
 		keys := make([]string, 0, len(p.fields))
 		for k := range p.fields {
@@ -108,7 +108,7 @@ func (p *DataSourcePlan) BuildExplainInfo() {
 		}
 		info += " ]"
 	}
-	if p.streamFields != nil && len(p.streamFields) != 0 {
+	if len(p.streamFields) != 0 {
 		info += ", StreamFields:[ "
 		keys := make([]string, 0, len(p.streamFields))
 		for k := range p.streamFields {

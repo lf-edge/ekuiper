@@ -29,7 +29,7 @@ func (p AggregatePlan) Init() *AggregatePlan {
 
 func (p *AggregatePlan) BuildExplainInfo() {
 	info := ""
-	if p.dimensions != nil && len(p.dimensions) != 0 {
+	if len(p.dimensions) != 0 {
 		info += "Dimension:{ "
 		for i, dimension := range p.dimensions {
 			if dimension.Expr != nil {

@@ -292,7 +292,7 @@ func (suite *RestTestSuite) Test_rulesManageHandler() {
 			}
 			// err = server.StartRule(rule, &reply)
 			reply = registry.RecoverRule(rule)
-			if 0 != len(reply) {
+			if len(reply) != 0 {
 				logger.Info(reply)
 			}
 		}

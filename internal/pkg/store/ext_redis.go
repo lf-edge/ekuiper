@@ -13,7 +13,6 @@
 // limitations under the License.
 
 //go:build redisdb || !core
-// +build redisdb !core
 
 package store
 

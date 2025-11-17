@@ -159,11 +159,12 @@ func NewCoordinator(ruleId string, sources []StreamTask, operators []NonSourceTa
 }
 
 func createBarrierHandler(re Responder, inputCount int, qos def.Qos) BarrierHandler {
-	if qos == def.AtLeastOnce {
+	switch qos {
+	case def.AtLeastOnce:
 		return NewBarrierTracker(re, inputCount)
-	} else if qos == def.ExactlyOnce {
+	case def.ExactlyOnce:
 		return NewBarrierAligner(re, inputCount)
-	} else {
+	default:
 		return nil
 	}
 }

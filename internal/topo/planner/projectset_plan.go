@@ -35,7 +35,7 @@ func (p ProjectSetPlan) Init() *ProjectSetPlan {
 
 func (p *ProjectSetPlan) BuildExplainInfo() {
 	info := ""
-	if p.SrfMapping != nil && len(p.SrfMapping) != 0 {
+	if len(p.SrfMapping) != 0 {
 		info += "SrfMap:{"
 		for str, s := range p.SrfMapping {
 			ty := reflect.TypeOf(s)

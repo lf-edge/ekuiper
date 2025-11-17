@@ -268,18 +268,16 @@ func (n *LookupNode) lookup(ctx api.StreamContext, d xsql.Row, fv *xsql.Function
 				return nil
 			}
 		}
-		if r != nil {
-			for _, mm := range r {
-				merged := &xsql.JoinTuple{}
-				merged.AddTuple(d)
-				t := &xsql.Tuple{
-					Emitter:   n.name,
-					Message:   mm,
-					Timestamp: timex.GetNow(),
-				}
-				merged.AddTuple(t)
-				tuples.Content = append(tuples.Content, merged)
+		for _, mm := range r {
+			merged := &xsql.JoinTuple{}
+			merged.AddTuple(d)
+			t := &xsql.Tuple{
+				Emitter:   n.name,
+				Message:   mm,
+				Timestamp: timex.GetNow(),
 			}
+			merged.AddTuple(t)
+			tuples.Content = append(tuples.Content, merged)
 		}
 		return nil
 	}

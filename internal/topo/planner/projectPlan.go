@@ -71,7 +71,7 @@ func (p ProjectPlan) Init() *ProjectPlan {
 
 func (p *ProjectPlan) BuildExplainInfo() {
 	info := ""
-	if p.fields != nil && len(p.fields) != 0 {
+	if len(p.fields) != 0 {
 		info += "Fields:[ "
 		for i, field := range p.fields {
 			if field.Expr != nil {

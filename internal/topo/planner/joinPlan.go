@@ -30,7 +30,7 @@ func (p JoinPlan) Init() *JoinPlan {
 
 func (p *JoinPlan) BuildExplainInfo() {
 	info := ""
-	if p.joins != nil && len(p.joins) != 0 {
+	if len(p.joins) != 0 {
 		info += "Joins:[ "
 		for i, join := range p.joins {
 			info += "{ joinType:" + join.JoinType.String() + ", "

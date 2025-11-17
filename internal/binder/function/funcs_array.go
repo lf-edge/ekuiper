@@ -599,7 +599,7 @@ func registerArrayFunc() {
 			if !ok {
 				return errorArrayFirstArgumentNotArrayError, false
 			}
-			array := make([]interface{}, len(arr))
+			array := make([]any, len(arr))
 			copy(array, arr)
 			rand.Shuffle(len(array), func(i, j int) {
 				array[i], array[j] = array[j], array[i]

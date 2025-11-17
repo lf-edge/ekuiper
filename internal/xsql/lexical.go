@@ -377,12 +377,12 @@ func (s *Scanner) skipUntilEndComment() error {
 			// We might be at the end.
 		star:
 			ch2 := s.read()
-			if ch2 == '/' {
+			switch ch2 {
+			case '/':
 				return nil
-			} else if ch2 == '*' {
-				// We are back in the state machine since we see a star.
+			case '*':
 				goto star
-			} else if ch2 == eof {
+			case eof:
 				return io.EOF
 			}
 		} else if ch1 == eof {

@@ -400,7 +400,7 @@ func (m *Manager) install(name, src string, shellParas []string) (resultErr erro
 		copy(shell, shellParas)
 		spath := path.Join(pluginTarget, "install.sh")
 		shell = append(shell, spath)
-		if 1 != len(shell) {
+		if len(shell) != 1 {
 			copy(shell[1:], shell[0:])
 			shell[0] = spath
 		}

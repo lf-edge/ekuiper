@@ -459,26 +459,26 @@ func (f *FastJsonConverter) extractNumberValue(name string, v *fastjson.Value, f
 	if field == nil || field.Type == "" {
 		return f.extractNumber(v)
 	}
-	switch {
-	case field.Type == "float", field.Type == "datetime":
+	switch field.Type {
+	case "float", "datetime":
 		f64, err := v.Float64()
 		if err != nil {
 			return nil, err
 		}
 		return f64, nil
-	case field.Type == "bigint":
+	case "bigint":
 		i64, err := v.Int64()
 		if err != nil {
 			return nil, err
 		}
 		return i64, nil
-	case field.Type == "string":
+	case "string":
 		f64, err := v.Float64()
 		if err != nil {
 			return nil, err
 		}
 		return cast.ToStringAlways(f64), nil
-	case field.Type == "boolean":
+	case "boolean":
 		bv, err := getBooleanFromValue(v)
 		if err != nil {
 			return nil, err
@@ -496,20 +496,20 @@ func (f *FastJsonConverter) extractStringValue(name string, v *fastjson.Value, f
 		}
 		return string(bs), nil
 	}
-	switch {
-	case field.Type == "string", field.Type == "datetime":
+	switch field.Type {
+	case "string", "datetime":
 		bs, err := v.StringBytes()
 		if err != nil {
 			return nil, err
 		}
 		return string(bs), nil
-	case field.Type == "bytea":
+	case "bytea":
 		s, err := v.StringBytes()
 		if err != nil {
 			return nil, err
 		}
 		return cast.ToByteA(string(s), cast.CONVERT_ALL)
-	case field.Type == "boolean":
+	case "boolean":
 		return getBooleanFromValue(v)
 	}
 	return nil, fmt.Errorf("%v has wrong type:%v, expect:%v", name, fastjson.TypeString.String(), getType(field))

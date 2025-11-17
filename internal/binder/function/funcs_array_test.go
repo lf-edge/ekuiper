@@ -835,7 +835,7 @@ func TestArrayShuffle(t *testing.T) {
 	for i, tt := range tests {
 		f, ok := builtins[tt.name]
 		if !ok {
-			t.Fatal(fmt.Sprintf("builtin %v not found", tt.name))
+			t.Fatalf("builtin %v not found", tt.name)
 		}
 		result, _ := f.exec(fctx, tt.args)
 		flag := false
@@ -890,7 +890,7 @@ func TestArraySort(t *testing.T) {
 	for i, tt := range tests {
 		f, ok := builtins[tt.name]
 		if !ok {
-			t.Fatal(fmt.Sprintf("builtin %v not found", tt.name))
+			t.Fatalf("builtin %v not found", tt.name)
 		}
 		result, _ := f.exec(fctx, tt.args)
 		flag := false

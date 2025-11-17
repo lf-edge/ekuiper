@@ -93,7 +93,6 @@ func TestExtensions(t *testing.T) {
 				case pubsub.MemTuple:
 					m := rt.ToMap()
 					maps = append(maps, []map[string]any{m})
-					break
 				case []pubsub.MemTuple:
 					nm := make([]map[string]any, 0, len(rt))
 					for _, mm := range rt {
@@ -101,7 +100,6 @@ func TestExtensions(t *testing.T) {
 						break
 					}
 					maps = append(maps, nm)
-					break
 				default:
 					conf.Log.Errorf("receive wrong tuple %v", rt)
 				}

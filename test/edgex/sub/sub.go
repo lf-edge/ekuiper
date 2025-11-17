@@ -46,7 +46,6 @@ func subEventsFromMQTT(host string) {
 			topics := []types.TopicChannel{{Topic: "result", Messages: messages}}
 			err := make(chan error)
 			if e := msgClient.Subscribe(topics, err); e != nil {
-				// log.Errorf("Failed to subscribe to edgex messagebus topic %s.\n", e)
 				conf.Log.Fatal(e)
 			} else {
 				count := 0

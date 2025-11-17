@@ -261,7 +261,7 @@ func recursionDelMap(cf, fields map[string]interface{}) error {
 		}
 
 		if delKey, ok := v.(string); ok {
-			if 0 == len(delKey) {
+			if len(delKey) == 0 {
 				delete(cf, k)
 				continue
 			}
@@ -399,7 +399,7 @@ func NewConfigOperatorFromSourceStorage(pluginName string) (ConfigOperator, erro
 	}
 	dir := path.Join(confDir, "sources")
 	fileName := pluginName
-	if "mqtt" == pluginName {
+	if pluginName == "mqtt" {
 		fileName = "mqtt_source"
 		dir = confDir
 	}

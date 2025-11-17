@@ -99,7 +99,7 @@ func (m *imageSink) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) 
 func (m *imageSink) delFile(logger api.Logger) error {
 	logger.Debugf("deleting images")
 	dirEntries, err := os.ReadDir(m.c.Path)
-	if nil != err || 0 == len(dirEntries) {
+	if nil != err || len(dirEntries) == 0 {
 		logger.Error("read dir fail")
 		return err
 	}

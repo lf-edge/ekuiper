@@ -31,15 +31,8 @@ func (f *funcExecutor) ValidateWithName(args []ast.Expr, name string) error {
 		return errors.New("unknown name")
 	}
 
-	var eargs []ast.Expr
-	for _, arg := range args {
-		if t, ok := arg.(ast.Expr); ok {
-			eargs = append(eargs, t)
-		} else {
-			// should never happen
-			return fmt.Errorf("receive invalid arg %v", arg)
-		}
-	}
+	eargs := make([]ast.Expr, len(args))
+	copy(eargs, args)
 	// TODO pass in ctx
 	err := fs.val(nil, eargs)
 	if err != nil {

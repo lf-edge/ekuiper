@@ -221,8 +221,7 @@ func TestCollectRolling(t *testing.T) {
 			// Should write to 2 files
 			for i := 0; i < 2; i++ {
 				// Read the contents of the temporary file and check if they match the collected items
-				var fn string
-				fn = fmt.Sprintf("test_%s-%d.log", LINES_TYPE, 460+1350*i)
+				fn := fmt.Sprintf("test_%s-%d.log", LINES_TYPE, 460+1350*i)
 
 				var contents []byte
 				contents, err := os.ReadFile(fn)

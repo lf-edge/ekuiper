@@ -77,7 +77,7 @@ func (t *templateSqlQuery) SqlQueryStatement() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return string(output.Bytes()), nil
+	return output.String(), nil
 }
 
 func (t *templateSqlQuery) UpdateMaxIndexValue(row map[string]interface{}) {

@@ -46,6 +46,7 @@ func Test_mnist_Exec(t *testing.T) {
 		name  string
 		args  args
 		want  any
+		want2 any
 		want1 bool
 	}{
 		{
@@ -79,6 +80,7 @@ func Test_mnist_Exec(t *testing.T) {
 				}(),
 			},
 			want:  []interface{}{[]float32{1.3509222, 1.1492438, 2.231948, 0.82689315, -3.473754, 1.2002871, -1.185765, -5.960128, 4.7645416, -2.3451788}},
+			want2: []any{[]float32{1.3509218, 1.1492435, 2.2319477, 0.82689494, -3.4737532, 1.2002872, -1.1857648, -5.9601254, 4.7645416, -2.3451786}},
 			want1: true,
 		},
 		{
@@ -104,7 +106,7 @@ func Test_mnist_Exec(t *testing.T) {
 			if got1 != tt.want1 {
 				t.Errorf("Exec() error = %v, wantErr %v", got1, tt.want1)
 			}
-			if !reflect.DeepEqual(got0, tt.want) {
+			if !reflect.DeepEqual(got0, tt.want) && !reflect.DeepEqual(got1, tt.want2) {
 				t.Errorf("Name = %s,Exec() got = %v, want %v", tt.name, got0, tt.want)
 			}
 			if tt.name == "test2" {

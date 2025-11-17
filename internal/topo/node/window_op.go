@@ -413,7 +413,7 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []xs
 					o.msgCount = 0
 
 					if tl, er := NewTupleList(inputs, o.window.CountLength); er != nil {
-						log.Error(fmt.Sprintf("Found error when trying to "))
+						log.Error("Found error when trying to ")
 						infra.DrainError(ctx, er, errCh)
 						return
 					} else {
@@ -525,7 +525,7 @@ type TupleList struct {
 func NewTupleList(tuples []xsql.EventRow, windowSize int) (TupleList, error) {
 	if windowSize <= 0 {
 		return TupleList{}, fmt.Errorf("Window size should not be less than zero.")
-	} else if tuples == nil || len(tuples) == 0 {
+	} else if len(tuples) == 0 {
 		return TupleList{}, fmt.Errorf("The tuples should not be nil or empty.")
 	}
 	tl := TupleList{tuples: tuples, size: windowSize}
@@ -551,8 +551,7 @@ func (tl *TupleList) nextCountWindow() *xsql.WindowTuples {
 	results := &xsql.WindowTuples{
 		Content: make([]xsql.Row, 0),
 	}
-	var subT []xsql.EventRow
-	subT = tl.tuples[len(tl.tuples)-tl.size : len(tl.tuples)]
+	subT := tl.tuples[len(tl.tuples)-tl.size : len(tl.tuples)]
 	for _, tuple := range subT {
 		results = results.AddTuple(tuple)
 	}
@@ -593,8 +592,7 @@ func isOverlapWindow(winType ast.WindowType) bool {
 func (o *WindowOperator) handleInputsForSlidingWindow(ctx api.StreamContext, inputs []xsql.EventRow, windowStart, windowEnd time.Time) ([]xsql.EventRow, []xsql.EventRow, []xsql.EventRow) {
 	log := ctx.GetLogger()
 	log.Debugf("window %s triggered at %s(%d)", o.name, windowEnd, windowEnd.UnixMilli())
-	var delta time.Duration
-	delta = o.calDelta(windowEnd, log)
+	delta := o.calDelta(windowEnd, log)
 	content := make([]xsql.EventRow, 0, len(inputs))
 	discardedLeft := windowEnd.Add(-(o.window.Length + o.window.Delay)).Add(-delta)
 	log.Debugf("triggerTime: %d, length: %d, delta: %d, leftmost: %d", windowEnd.UnixMilli(), windowEnd.Sub(windowStart), delta, discardedLeft.UnixMilli())

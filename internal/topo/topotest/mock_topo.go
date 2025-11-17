@@ -190,7 +190,7 @@ func CompareMetrics(tp *topo.Topo, m map[string]interface{}) (err error) {
 		if matched {
 			continue
 		}
-		if conf.Config.Basic.Debug == true {
+		if conf.Config.Basic.Debug {
 			for i, k := range keys {
 				conf.Log.Printf("%s:%v", k, values[i])
 			}

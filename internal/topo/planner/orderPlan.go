@@ -29,7 +29,7 @@ func (p OrderPlan) Init() *OrderPlan {
 
 func (p *OrderPlan) BuildExplainInfo() {
 	info := ""
-	if p.SortFields != nil && len(p.SortFields) != 0 {
+	if len(p.SortFields) != 0 {
 		info += "SortFields:[ "
 		for i, field := range p.SortFields {
 			info += field.String()

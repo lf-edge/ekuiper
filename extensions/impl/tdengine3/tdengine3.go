@@ -125,7 +125,7 @@ func (t *tdengineSink3) CollectList(ctx api.StreamContext, items api.MessageTupl
 func (cfg *TaosConfig) buildSql(item api.MessageTuple) (string, error) {
 	mapData := item.ToMap()
 	var keys, vals, tags []string
-	if 0 == len(mapData) {
+	if len(mapData) == 0 {
 		return "", fmt.Errorf("data is empty")
 	}
 	table := cfg.Table

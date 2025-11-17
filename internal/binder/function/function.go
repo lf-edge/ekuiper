@@ -157,13 +157,13 @@ func returnNilIfHasAnyNil(args []interface{}) (returned interface{}, skipExec bo
 		if arg == nil {
 			return nil, true
 		}
-		switch arg.(type) {
+		switch at := arg.(type) {
 		case []interface{}:
-			if len(arg.([]interface{})) == 0 {
+			if len(at) == 0 {
 				return nil, true
 			}
 		case map[string]interface{}:
-			if len(arg.(map[string]interface{})) == 0 {
+			if len(at) == 0 {
 				return nil, true
 			}
 		}
@@ -176,13 +176,13 @@ func returnFalseIfHasAnyNil(args []interface{}) (returned interface{}, skipExec 
 		if arg == nil {
 			return false, true
 		}
-		switch arg.(type) {
+		switch at := arg.(type) {
 		case []interface{}:
-			if len(arg.([]interface{})) == 0 {
+			if len(at) == 0 {
 				return false, true
 			}
 		case map[string]interface{}:
-			if len(arg.(map[string]interface{})) == 0 {
+			if len(at) == 0 {
 				return false, true
 			}
 		}
@@ -195,13 +195,13 @@ func return0IfHasAnyNil(args []interface{}) (returned interface{}, skipExec bool
 		if arg == nil {
 			return 0, true
 		}
-		switch arg.(type) {
+		switch at := arg.(type) {
 		case []interface{}:
-			if len(arg.([]interface{})) == 0 {
+			if len(at) == 0 {
 				return 0, true
 			}
 		case map[string]interface{}:
-			if len(arg.(map[string]interface{})) == 0 {
+			if len(at) == 0 {
 				return 0, true
 			}
 		}

@@ -267,7 +267,6 @@ func (so *SlidingWindowIncAggEventOp) appendIncAggWindowInEvent(ctx api.StreamCo
 		emitWindow.StartTime = row.GetTimestamp()
 		so.EmitList = append(so.EmitList, emitWindow)
 	}
-	return
 }
 
 func (so *SlidingWindowIncAggEventOp) appendDelayIncAggWindowInEvent(ctx api.StreamContext, errCh chan<- error, fv *xsql.FunctionValuer, row *xsql.Tuple) {
