@@ -181,7 +181,7 @@ func (g defaultSQLGen) buildQuery(fields []string, keys []string, values []inter
 		}
 		switch v := values[i].(type) {
 		case string:
-			query += fmt.Sprintf("`%s` = '%s'", k, v)
+			query += fmt.Sprintf("`%s` = '%s'", k, strings.ReplaceAll(v, "'", "''"))
 		default:
 			query += fmt.Sprintf("`%s` = %v", k, v)
 		}
@@ -210,7 +210,7 @@ func (g noQuoteSQLGen) buildQuery(fields []string, keys []string, values []inter
 		}
 		switch v := values[i].(type) {
 		case string:
-			query += fmt.Sprintf("%s = '%s'", k, v)
+			query += fmt.Sprintf("%s = '%s'", k, strings.ReplaceAll(v, "'", "''"))
 		default:
 			query += fmt.Sprintf("%s = %v", k, v)
 		}
