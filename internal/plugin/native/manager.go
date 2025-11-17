@@ -48,6 +48,32 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/kv"
 )
 
+// isSafeArchiveEntry checks if the entry name is safe for extraction
+func isSafeArchiveEntry(name string) bool {
+	// Disallow absolute paths
+	if strings.HasPrefix(name, "/") || strings.HasPrefix(name, "\\") {
+		return false
+	}
+	// Disallow parent traversal
+	parts := strings.Split(name, "/")
+	for _, p := range parts {
+		if p == ".." {
+			return false
+		}
+	}
+	parts = strings.Split(name, "\\")
+	for _, p := range parts {
+		if p == ".." {
+			return false
+		}
+	}
+	// Prevent special device files (on Windows)
+	if strings.HasPrefix(name, "CON") || strings.HasPrefix(name, "PRN") || strings.HasPrefix(name, "AUX") || strings.HasPrefix(name, "NUL") {
+		return false
+	}
+	return true
+}
+
 // Manager Initialized in the binder
 var (
 	manager *Manager
@@ -538,6 +564,11 @@ func (rr *Manager) install(t plugin2.PluginType, name, src string, shellParas []
 	for _, file := range r.File {
 		zipFiles = append(zipFiles, file.Name)
 		fileName := file.Name
+		// Prevent Zip Slip: only allow safe archive entries
+		if !isSafeArchiveEntry(fileName) {
+			conf.Log.Errorf("Refuse to extract potentially unsafe archive entry: %s", fileName)
+			continue
+		}
 		switch {
 		case yamlFile == fileName:
 			yamlFileChecked = true
