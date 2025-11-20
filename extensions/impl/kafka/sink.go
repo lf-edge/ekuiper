@@ -47,6 +47,10 @@ const (
 	LblSend      = "send"
 	LblBytes     = "bytes"
 	LblOffset    = "offset"
+	LblTopic     = "topic"
+	LblKey       = "key"
+	LblHeaders   = "headers"
+	LblPartition = "partition"
 )
 
 type KafkaSink struct {

@@ -47,6 +47,13 @@ var (
 		Help:      "counter of Kafka Source IO",
 	}, []string{metrics.LblType, metrics.LblRuleIDType, metrics.LblOpIDType})
 
+	KafkaSourceMessageCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: "kuiper",
+		Subsystem: "kafka_source",
+		Name:      "messages_counter",
+		Help:      "Kafka messages processed per rule, labeled by topic, partition, key and headers",
+	}, []string{LblTopic, LblPartition, LblKey, LblHeaders, metrics.LblRuleIDType, metrics.LblOpIDType})
+
 	KafkaSourceGauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: "kuiper",
 		Subsystem: "kafka_source",
