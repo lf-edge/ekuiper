@@ -205,6 +205,7 @@ func (w WindowType) String() string {
 }
 
 type Window struct {
+	PartitionExpr    *PartitionExpr
 	TriggerCondition Expr
 	SingleCondition  Expr
 	BeginCondition   Expr
