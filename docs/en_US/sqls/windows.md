@@ -112,6 +112,28 @@ Output:
 [{"a":2},{"a":2}]
 ```
 
+#### State Window Partitioning
+
+We can perform partitioning calculations on a state window using the `partition by` clause, as follows:
+
+```sql
+SELECT * from demo group by statewindow(a = 1, a = 5) over (partition by b)
+```
+
+For the following input:
+
+```txt
+{"a":1,"b=1"}
+{"a":1,"b"=2"}
+{"a":5,"b=1"}
+```
+
+The output is as follows:
+
+```txt
+[{"a":1,"b=1"},{"a":5,"b=1"}]
+```
+
 ## Count window
 
 Please notice that the count window does not concern time, it only concern about events count.
