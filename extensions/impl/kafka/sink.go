@@ -48,8 +48,6 @@ const (
 	LblBytes     = "bytes"
 	LblOffset    = "offset"
 	LblTopic     = "topic"
-	LblKey       = "key"
-	LblHeaders   = "headers"
 	LblPartition = "partition"
 )
 

@@ -51,8 +51,8 @@ var (
 		Namespace: "kuiper",
 		Subsystem: "kafka_source",
 		Name:      "messages_counter",
-		Help:      "Kafka messages processed per rule, labeled by topic, partition, key and headers",
-	}, []string{LblTopic, LblPartition, LblKey, LblHeaders, metrics.LblRuleIDType, metrics.LblOpIDType})
+		Help:      "Kafka messages processed per rule, labeled by topic and partition",
+	}, []string{LblTopic, LblPartition, metrics.LblRuleIDType, metrics.LblOpIDType})
 
 	KafkaSourceGauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: "kuiper",
