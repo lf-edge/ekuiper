@@ -12,7 +12,7 @@ require (
 	github.com/alicebob/miniredis/v2 v2.30.0
 	github.com/amsokol/ignite-go-client v0.12.2
 	github.com/apache/calcite-avatica-go/v5 v5.3.0
-	github.com/apple/foundationdb/bindings/go v0.0.0-20240904211458-9b3a2f0f068f
+	github.com/apple/foundationdb/bindings/go v0.0.0-20250221231555-5140696da2df
 	github.com/benbjohnson/clock v1.3.5
 	github.com/bippio/go-impala v2.1.0+incompatible
 	github.com/btnguyen2k/gocosmos v1.1.0

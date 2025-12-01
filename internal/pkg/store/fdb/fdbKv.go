@@ -80,6 +80,25 @@ func (kv fdbKvStore) Set(key string, value interface{}) error {
 	return err
 }
 
+func (kv fdbKvStore) GetByPrefix(prefix string) (map[string][]byte, error) {
+	keys, err := kv.Keys()
+	if err != nil {
+		return nil, err
+	}
+	results := make(map[string][]byte)
+	for _, key := range keys {
+		if strings.HasPrefix(key, prefix) {
+			data := make([]byte, 0)
+			_, err := kv.Get(key, &data)
+			if err != nil {
+				return nil, err
+			}
+			results[key] = data
+		}
+	}
+	return results, nil
+}
+
 func (kv fdbKvStore) Get(key string, value interface{}) (bool, error) {
 	val, err := kv.database.Transact(func(tr fdb.Transaction) (ret interface{}, e error) {
 		ret, e = tr.Get(kv.subspace.Pack(tuple.Tuple{key})).Get()
