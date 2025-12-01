@@ -39,6 +39,7 @@ func init() {
 	gob.Register(&WindowScanner{})
 	gob.Register(time.Time{})
 	gob.Register(&StateWindowStatus{})
+	gob.Register(map[string]*StateWindowStatus{})
 }
 
 type WindowV2Operator struct {

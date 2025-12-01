@@ -124,15 +124,17 @@ For the following input:
 
 ```txt
 {"a":1,"b=1"}
-{"a":1,"b"=2"}
+{"a":1,"b"=2}
 {"a":5,"b=1"}
 ```
 
 The output is as follows:
 
 ```txt
-[{"a":1,"b=1"},{"a":5,"b=1"}]
+[{"a":1,"b"=1},{"a":5,"b"=1}]
 ```
+
+The partition `b=2` didn't be output due to the partition haven't trigger the condition yet.
 
 ## Count window
 
