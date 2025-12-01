@@ -423,7 +423,7 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *def.RuleOption, sources ma
 			BeginCondition:   t.beginCondition,
 			EmitCondition:    t.emitCondition,
 			SingleCondition:  t.singleCondition,
-			Dimensions:       t.dimensions,
+			PartitionExpr:    t.PartitionExpr,
 			StateFuncs:       t.stateFuncs,
 		}
 		// state window only support v2 window
@@ -644,7 +644,7 @@ func createLogicalPlanFull(stmt *ast.SelectStatement, opt *def.RuleOption, store
 					beginCondition:  w.BeginCondition,
 					emitCondition:   w.EmitCondition,
 					singleCondition: w.SingleCondition,
-					dimensions:      dimensions.GetGroups(),
+					PartitionExpr:   w.PartitionExpr,
 				}.Init()
 				if w.Length != nil {
 					wp.length = int(w.Length.Val)

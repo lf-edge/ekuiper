@@ -114,6 +114,30 @@ SELECT * from demo group by statewindow(a > 1)
 [{"a":2},{"a":2}]
 ```
 
+#### 条件窗口分区
+
+我们可以通过 partition by 子句对条件窗口进行分区计算，如下:
+
+```sql
+SELECT * from demo group by statewindow(a = 1, a = 5) over (partition by b)
+```
+
+此时对于如下输入:
+
+```txt
+{"a":1,"b":1}
+{"a":1,"b":2}
+{"a":5,"b":1}
+```
+
+输出如下:
+
+```txt
+[{"a":1,"b":1},{"a":5,"b":1}]
+```
+
+`b=2` 的数据并没有被输出，因为该分区窗口并未满足条件。
+
 ## 计数窗口
 
 请注意计数窗口不关注时间，只关注事件发生的次数。

@@ -39,6 +39,7 @@ func init() {
 	gob.Register(&WindowScanner{})
 	gob.Register(time.Time{})
 	gob.Register(&StateWindowStatus{})
+	gob.Register(map[string]*StateWindowStatus{})
 }
 
 type WindowV2Operator struct {
@@ -106,7 +107,7 @@ type WindowV2Exec interface {
 type StateWindowOp struct {
 	*WindowV2Operator
 	status          map[string]*StateWindowStatus
-	Dimensions      ast.Dimensions
+	PartitionExpr   *ast.PartitionExpr
 	SingleCondition ast.Expr
 	BeginCondition  ast.Expr
 	EmitCondition   ast.Expr
@@ -127,8 +128,8 @@ func NewStateWindowOp(o *WindowV2Operator) *StateWindowOp {
 		EmitCondition:    o.windowConfig.EmitCondition,
 		SingleCondition:  o.windowConfig.SingleCondition,
 		stateFuncs:       o.windowConfig.StateFuncs,
-		Dimensions:       o.windowConfig.Dimensions,
 		status:           make(map[string]*StateWindowStatus),
+		PartitionExpr:    o.windowConfig.PartitionExpr,
 	}
 }
 
@@ -143,6 +144,23 @@ func (s *StateWindowOp) emit(ctx api.StreamContext, status *StateWindowStatus) {
 	results.WindowRange = xsql.NewWindowRange(status.StartTime.UnixMilli(), status.EndTime.UnixMilli(), status.EndTime.UnixMilli())
 	s.Broadcast(results)
 	s.onSend(ctx, results)
+}
+
+func calPartition(fv *xsql.FunctionValuer, partitionExpr *ast.PartitionExpr, row *xsql.Tuple) string {
+	name := "parKey_"
+	if partitionExpr == nil {
+		return name
+	}
+	ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(row, fv, &xsql.WildcardValuer{Data: row})}
+	for _, expr := range partitionExpr.Exprs {
+		r := ve.Eval(expr)
+		if _, ok := r.(error); ok {
+			continue
+		} else {
+			name += fmt.Sprintf("%v,", r)
+		}
+	}
+	return name
 }
 
 func (s *StateWindowOp) exec(ctx api.StreamContext, errCh chan<- error) {
@@ -166,7 +184,7 @@ func (s *StateWindowOp) exec(ctx api.StreamContext, errCh chan<- error) {
 			s.onProcessStart(ctx, input)
 			switch row := data.(type) {
 			case *xsql.Tuple:
-				name := calDimension(fv, s.Dimensions, row)
+				name := calPartition(fv, s.PartitionExpr, row)
 				status, ok := s.status[name]
 				if !ok {
 					status = &StateWindowStatus{

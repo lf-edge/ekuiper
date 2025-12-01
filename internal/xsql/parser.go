@@ -972,13 +972,10 @@ func (p *Parser) parseCall(n string) (ast.Expr, error) {
 			win.Filter = f
 		}
 		// parse over when clause
-		c, err := p.ParseOver4Window()
+		err = p.ParseOver4Window(win)
 		if err != nil {
 			return nil, err
-		} else if c != nil {
-			win.TriggerCondition = c
 		}
-
 		return win, nil
 	}
 }
@@ -1616,25 +1613,28 @@ func (p *Parser) parseStreamOptions() (*ast.Options, error) {
 	return opts, nil
 }
 
-func (p *Parser) ParseOver4Window() (ast.Expr, error) {
+func (p *Parser) ParseOver4Window(win *ast.Window) error {
 	if tok, _ := p.scanIgnoreWhitespace(); tok != ast.OVER {
 		p.unscan()
-		return nil, nil
+		return nil
 	}
 	if tok, lit := p.scanIgnoreWhitespace(); tok != ast.LPAREN {
-		return nil, fmt.Errorf("Found %q after OVER, expect parentheses.", lit)
+		return fmt.Errorf("Found %q after OVER, expect parentheses.", lit)
 	}
-	if tok, lit := p.scanIgnoreWhitespace(); tok != ast.WHEN {
-		return nil, fmt.Errorf("Found %q after OVER(, expect WHEN.", lit)
-	}
-	expr, err := p.ParseExpr()
+	var err error
+	win.TriggerCondition, err = p.parseWhen()
 	if err != nil {
-		return nil, err
+		return err
 	}
+	win.PartitionExpr, err = p.parsePartitionBy()
+	if err != nil {
+		return err
+	}
+
 	if tok, lit := p.scanIgnoreWhitespace(); tok != ast.RPAREN {
-		return nil, fmt.Errorf("Found %q after OVER, expect right parentheses.", lit)
+		return fmt.Errorf("Found %q after OVER, expect right parentheses.", lit)
 	}
-	return expr, nil
+	return nil
 }
 
 // Only support filter on window now

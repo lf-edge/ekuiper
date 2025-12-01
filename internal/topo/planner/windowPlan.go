@@ -24,7 +24,7 @@ import (
 
 type WindowPlan struct {
 	baseLogicalPlan
-	dimensions       ast.Dimensions
+	PartitionExpr    *ast.PartitionExpr
 	singleCondition  ast.Expr
 	beginCondition   ast.Expr
 	emitCondition    ast.Expr
@@ -65,6 +65,10 @@ func (p *WindowPlan) GetSingleCondition() ast.Expr {
 
 func (p *WindowPlan) GetEmitCondition() ast.Expr {
 	return p.emitCondition
+}
+
+func (p *WindowPlan) GetPartitionExpr() *ast.PartitionExpr {
+	return p.PartitionExpr
 }
 
 func (p *WindowPlan) BuildExplainInfo() {

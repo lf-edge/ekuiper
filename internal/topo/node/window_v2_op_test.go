@@ -37,6 +37,65 @@ func init() {
 	testx.InitEnv("node_test")
 }
 
+func TestStateWindowStatePartition(t *testing.T) {
+	conf.IsTesting = true
+	ctx, cancel := mockContext.NewMockContext("1", "2").WithCancel()
+	now := time.Now()
+	o := &def.RuleOption{
+		BufferLength: 10,
+	}
+	kv, err := store.GetKV("stream")
+	require.NoError(t, err)
+	require.NoError(t, prepareStream())
+	sql := "select count(*) from stream group by statewindow(a =1 , a = 2) over (partition by b)"
+	stmt, err := xsql.NewParser(strings.NewReader(sql)).Parse()
+	require.NoError(t, err)
+	p, err := planner.CreateLogicalPlan(stmt, o, kv)
+	require.NoError(t, err)
+	require.NotNil(t, p)
+	windowPlan := extractWindowPlan(p)
+	require.NotNil(t, windowPlan)
+	op, err := node.NewWindowV2Op("window", node.WindowConfig{
+		Type:           windowPlan.WindowType(),
+		BeginCondition: windowPlan.GetBeginCondition(),
+		EmitCondition:  windowPlan.GetEmitCondition(),
+		PartitionExpr:  windowPlan.GetPartitionExpr(),
+	}, o)
+	require.NoError(t, err)
+	require.NotNil(t, op)
+	input, _ := op.GetInput()
+	output := make(chan any, 10)
+	op.AddOutput(output, "output")
+	errCh := make(chan error, 10)
+	op.Exec(ctx, errCh)
+	waitExecute()
+	input <- &xsql.Tuple{Message: map[string]any{"a": true}, Timestamp: now}
+	input <- &xsql.Tuple{Message: map[string]any{"a": false}, Timestamp: now.Add(500 * time.Millisecond)}
+	waitExecute()
+	input <- &xsql.Tuple{Message: map[string]any{"a": int64(1), "b": int64(1)}, Timestamp: now}
+	input <- &xsql.Tuple{Message: map[string]any{"a": int64(1), "b": int64(2)}, Timestamp: now}
+	input <- &xsql.Tuple{Message: map[string]any{"a": int64(2), "b": int64(1)}, Timestamp: now.Add(500 * time.Millisecond)}
+	waitExecute()
+	got := <-output
+	wt, ok := got.(*xsql.WindowTuples)
+	require.True(t, ok)
+	require.NotNil(t, wt)
+	d := wt.ToMaps()
+	require.Equal(t, []map[string]any{
+		{
+			"a": int64(1),
+			"b": int64(1),
+		},
+		{
+			"a": int64(2),
+			"b": int64(1),
+		},
+	}, d)
+	cancel()
+	waitExecute()
+	op.Close()
+}
+
 func TestStateWindowState(t *testing.T) {
 	conf.IsTesting = true
 	ctx, cancel := mockContext.NewMockContext("1", "2").WithCancel()
