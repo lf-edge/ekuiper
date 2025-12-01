@@ -125,9 +125,9 @@ SELECT * from demo group by statewindow(a = 1, a = 5) over (partition by b)
 此时对于如下输入:
 
 ```txt
-{"a":1,"b=1"}
+{"a":1,"b"=1}
 {"a":1,"b"=2}
-{"a":5,"b=1"}
+{"a":5,"b"=1}
 ```
 
 输出如下:
