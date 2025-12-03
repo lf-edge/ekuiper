@@ -25,7 +25,7 @@ require (
 	github.com/dolthub/go-mysql-server v0.18.1
 	github.com/dop251/goja v0.0.0-20240828124009-016eb7256539
 	github.com/eclipse/paho.golang v0.21.0
-	github.com/eclipse/paho.mqtt.golang v1.5.0
+	github.com/eclipse/paho.mqtt.golang v1.5.1
 	github.com/edgexfoundry/go-mod-core-contracts/v4 v4.0.1
 	github.com/edgexfoundry/go-mod-messaging/v4 v4.0.1
 	github.com/gdexlab/go-render v1.0.1

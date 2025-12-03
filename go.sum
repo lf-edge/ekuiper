@@ -591,8 +591,8 @@ github.com/dvsekhvalnov/jose2go v1.7.0 h1:bnQc8+GMnidJZA8zc6lLEAb4xNrIqHwO+9Tzqv
 github.com/dvsekhvalnov/jose2go v1.7.0/go.mod h1:QsHjhyTlD/lAVqn/NSbVZmSCGeDehTB/mPZadG+mhXU=
 github.com/eclipse/paho.golang v0.21.0 h1:cxxEReu+iFbA5RrHfRGxJOh8tXZKDywuehneoeBeyn8=
 github.com/eclipse/paho.golang v0.21.0/go.mod h1:GHF6vy7SvDbDHBguaUpfuBkEB5G6j0zKxMG4gbh6QRQ=
-github.com/eclipse/paho.mqtt.golang v1.5.0 h1:EH+bUVJNgttidWFkLLVKaQPGmkTUfQQqjOsyvMGvD6o=
-github.com/eclipse/paho.mqtt.golang v1.5.0/go.mod h1:du/2qNQVqJf/Sqs4MEL77kR8QTqANF7XU7Fk0aOTAgk=
+github.com/eclipse/paho.mqtt.golang v1.5.1 h1:/VSOv3oDLlpqR2Epjn1Q7b2bSTplJIeV2ISgCl2W7nE=
+github.com/eclipse/paho.mqtt.golang v1.5.1/go.mod h1:1/yJCneuyOoCOzKSsOTUc0AJfpsItBGWvYpBLimhArU=
 github.com/edgexfoundry/go-mod-core-contracts/v4 v4.0.1 h1:gLgs/oTNdIb0qbyhPGFOhS7t+mNuLmlDvdgu9qVtVnw=
 github.com/edgexfoundry/go-mod-core-contracts/v4 v4.0.1/go.mod h1:AF1bbO7aA1ZdtZ7r/lQHV4OjiHtSzK5iDiW+PqWDCUc=
 github.com/edgexfoundry/go-mod-messaging/v4 v4.0.1 h1:q2FZ+O1CYs5W2crQaDZ0WYyIWFh9pNUumdbQ2SP0YWs=
