@@ -22,7 +22,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/v2/internal/binder/function"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
-	store2 "github.com/lf-edge/ekuiper/v2/internal/pkg/store"
+	"github.com/lf-edge/ekuiper/v2/internal/processor"
 	"github.com/lf-edge/ekuiper/v2/internal/topo"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/graph"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node"
@@ -453,13 +453,7 @@ func parseSource(nodeName string, gn *def.GraphNode, rule *def.Rule, tp *topo.To
 	}
 	// If source name is specified, find the created stream/table from store
 	if sourceMeta.SourceName != "" {
-		if store == nil {
-			store, err = store2.GetKV("stream")
-			if err != nil {
-				return nil, ILLEGAL, "", nil, err
-			}
-		}
-		streamStmt, e := xsql.GetDataSource(store, sourceMeta.SourceName)
+		streamStmt, e := processor.GetStreamProcessorDataSource(sourceMeta.SourceName)
 		if e != nil {
 			return nil, ILLEGAL, "", nil, fmt.Errorf("fail to get stream %s, please check if stream is created", sourceMeta.SourceName)
 		}

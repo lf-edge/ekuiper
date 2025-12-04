@@ -51,6 +51,9 @@ type StreamDetail struct {
 	Format string `json:"format"`
 }
 
+// globalStreamProcessor is the singleton instance of StreamProcessor
+var globalStreamProcessor *StreamProcessor
+
 func NewStreamProcessor() *StreamProcessor {
 	db, err := store.GetKV("stream")
 	if err != nil {
@@ -70,7 +73,29 @@ func NewStreamProcessor() *StreamProcessor {
 		tableStatusDb:  tableDb,
 		tempDb:         memory.NewMemoryKV(),
 	}
+	globalStreamProcessor = processor
 	return processor
+}
+
+// GetDataSource retrieves a stream/table definition by name from both persistent and temp stores.
+// It first checks the persistent store, then falls back to the temp store if not found.
+func (p *StreamProcessor) GetDataSource(name string) (*ast.StreamStmt, error) {
+	// Try persistent store first
+	stmt, err := xsql.GetDataSource(p.db, name)
+	if err == nil {
+		return stmt, nil
+	}
+	// Try temp store
+	return xsql.GetDataSource(p.tempDb, name)
+}
+
+// GetStreamProcessorDataSource is a global function that uses the global StreamProcessor instance
+// to retrieve stream/table definitions from both persistent and temp stores.
+func GetStreamProcessorDataSource(name string) (*ast.StreamStmt, error) {
+	if globalStreamProcessor == nil {
+		return nil, fmt.Errorf("stream processor not initialized")
+	}
+	return globalStreamProcessor.GetDataSource(name)
 }
 
 func (p *StreamProcessor) ExecStmt(statement string) (result []string, err error) {

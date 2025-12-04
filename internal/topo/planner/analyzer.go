@@ -21,10 +21,10 @@ import (
 
 	"github.com/lf-edge/ekuiper/v2/internal/binder/function"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
+	"github.com/lf-edge/ekuiper/v2/internal/processor"
 	"github.com/lf-edge/ekuiper/v2/internal/schema"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
-	"github.com/lf-edge/ekuiper/v2/pkg/kv"
 )
 
 type streamInfo struct {
@@ -34,12 +34,12 @@ type streamInfo struct {
 
 // Analyze the select statement by decorating the info from stream statement.
 // Typically, set the correct stream name for fieldRefs
-func decorateStmt(s *ast.SelectStatement, store kv.KeyValue, opt *def.RuleOption) ([]*streamInfo, []*ast.Call, []*ast.Call, error) {
+func decorateStmt(s *ast.SelectStatement, opt *def.RuleOption) ([]*streamInfo, []*ast.Call, []*ast.Call, error) {
 	streamsFromStmt := xsql.GetStreams(s)
 	streamStmts := make([]*streamInfo, len(streamsFromStmt))
 	isSchemaless := false
 	for i, s := range streamsFromStmt {
-		streamStmt, err := xsql.GetDataSource(store, s)
+		streamStmt, err := processor.GetStreamProcessorDataSource(s)
 		if err != nil {
 			return nil, nil, nil, fmt.Errorf("fail to get stream %s, please check if stream is created", s)
 		}
