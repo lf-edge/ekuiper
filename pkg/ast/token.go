@@ -236,6 +236,7 @@ const (
 	DELIMITER         = "DELIMITER"
 	VERSION           = "VERSION"
 	EXTRA             = "EXTRA"
+	TEMP              = "TEMP"
 
 	XBIGINT   = "BIGINT"
 	XFLOAT    = "FLOAT"
@@ -263,6 +264,7 @@ var StreamTokens = map[string]struct{}{
 	DELIMITER:         {},
 	VERSION:           {},
 	EXTRA:             {},
+	TEMP:              {},
 }
 
 var StreamDataTypes = map[string]DataType{
