@@ -68,6 +68,11 @@ func loadVersionFromStorage() (int, error) {
 		err = errors.New("loadVersionError")
 	})
 	if err != nil {
+		// for the initialized case
+		if strings.Contains(strings.ToLower(err.Error()), "eof") {
+			GlobalBumpManager.store.Set("version", 0)
+			return 0, nil
+		}
 		return 0, fmt.Errorf("init bump manager failed, err:%v", err)
 	}
 	if got {
