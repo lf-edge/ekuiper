@@ -291,3 +291,56 @@ func TestTempStream_MultipleOperations(t *testing.T) {
 		require.NotContains(t, results, streamName)
 	}
 }
+
+func TestGetDataSource(t *testing.T) {
+	p := NewStreamProcessor()
+	p.db.Clean()
+	defer p.db.Clean()
+
+	// Create a temp stream
+	_, err := p.ExecStmt(`CREATE STREAM temp_stream1 (id BIGINT) WITH (DATASOURCE="test", FORMAT="JSON", TEMP=true);`)
+	require.NoError(t, err)
+
+	// Create a normal stream
+	_, err = p.ExecStmt(`CREATE STREAM normal_stream1 (id BIGINT) WITH (DATASOURCE="test", FORMAT="JSON");`)
+	require.NoError(t, err)
+
+	// Test GetDataSource for temp stream
+	stmt, err := p.GetDataSource("temp_stream1")
+	require.NoError(t, err)
+	require.NotNil(t, stmt)
+	require.Equal(t, "temp_stream1", string(stmt.Name))
+	require.True(t, stmt.Options.Temp)
+
+	// Test GetDataSource for normal stream
+	stmt, err = p.GetDataSource("normal_stream1")
+	require.NoError(t, err)
+	require.NotNil(t, stmt)
+	require.Equal(t, "normal_stream1", string(stmt.Name))
+	require.False(t, stmt.Options.Temp)
+
+	// Test GetDataSource for non-existent stream
+	_, err = p.GetDataSource("nonexistent")
+	require.Error(t, err)
+}
+
+func TestGetStreamProcessorDataSource(t *testing.T) {
+	p := NewStreamProcessor()
+	p.db.Clean()
+	defer p.db.Clean()
+
+	// Create a temp stream
+	_, err := p.ExecStmt(`CREATE STREAM temp_stream1 (id BIGINT) WITH (DATASOURCE="test", FORMAT="JSON", TEMP=true);`)
+	require.NoError(t, err)
+
+	// Test GetStreamProcessorDataSource for temp stream
+	stmt, err := GetStreamProcessorDataSource("temp_stream1")
+	require.NoError(t, err)
+	require.NotNil(t, stmt)
+	require.Equal(t, "temp_stream1", string(stmt.Name))
+	require.True(t, stmt.Options.Temp)
+
+	// Test GetStreamProcessorDataSource for non-existent stream
+	_, err = GetStreamProcessorDataSource("nonexistent")
+	require.Error(t, err)
+}

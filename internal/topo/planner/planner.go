@@ -77,7 +77,7 @@ func PlanSQLWithSourcesAndSinks(rule *def.Rule, mockSourcesProp map[string]map[s
 		return nil, stmt, err
 	}
 	// Create the logical plan and optimize. Logical plans are a linked list
-	lp, af, aff, err := createLogicalPlanFull(stmt, rule.Options, store)
+	lp, af, aff, err := createLogicalPlanFull(stmt, rule.Options, store, rule.Temp)
 	if err != nil {
 		return nil, stmt, err
 	}
@@ -501,7 +501,7 @@ func convertFromDuration(timeUnit ast.Token, length, interval int, delay int64) 
 }
 
 func CreateLogicalPlan(stmt *ast.SelectStatement, opt *def.RuleOption, store kv.KeyValue) (LogicalPlan, error) {
-	lp, _, _, err := createLogicalPlanFull(stmt, opt, store)
+	lp, _, _, err := createLogicalPlanFull(stmt, opt, store, false)
 	return lp, err
 }
 
@@ -517,7 +517,7 @@ func checkSharedSourceOption(streams []*streamInfo, opt *def.RuleOption) error {
 	return nil
 }
 
-func createLogicalPlanFull(stmt *ast.SelectStatement, opt *def.RuleOption, store kv.KeyValue) (LogicalPlan, []*ast.Call, []*ast.Call, error) {
+func createLogicalPlanFull(stmt *ast.SelectStatement, opt *def.RuleOption, store kv.KeyValue, isTemp bool) (LogicalPlan, []*ast.Call, []*ast.Call, error) {
 	dimensions := stmt.Dimensions
 	var (
 		p        LogicalPlan
@@ -532,7 +532,7 @@ func createLogicalPlanFull(stmt *ast.SelectStatement, opt *def.RuleOption, store
 		ds                  ast.Dimensions
 	)
 
-	streamStmts, analyticFuncs, analyticFieldFuncs, err := decorateStmt(stmt, opt)
+	streamStmts, analyticFuncs, analyticFieldFuncs, err := decorateStmt(stmt, opt, isTemp)
 	if err != nil {
 		return nil, nil, nil, err
 	}

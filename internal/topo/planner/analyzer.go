@@ -34,7 +34,7 @@ type streamInfo struct {
 
 // Analyze the select statement by decorating the info from stream statement.
 // Typically, set the correct stream name for fieldRefs
-func decorateStmt(s *ast.SelectStatement, opt *def.RuleOption) ([]*streamInfo, []*ast.Call, []*ast.Call, error) {
+func decorateStmt(s *ast.SelectStatement, opt *def.RuleOption, isTemp bool) ([]*streamInfo, []*ast.Call, []*ast.Call, error) {
 	streamsFromStmt := xsql.GetStreams(s)
 	streamStmts := make([]*streamInfo, len(streamsFromStmt))
 	isSchemaless := false
@@ -50,6 +50,12 @@ func decorateStmt(s *ast.SelectStatement, opt *def.RuleOption) ([]*streamInfo, [
 		streamStmts[i] = si
 		if si.schema == nil {
 			isSchemaless = true
+		}
+	}
+	// Validate temp streams can only be used by temp rules
+	for _, si := range streamStmts {
+		if si.stmt.Options.Temp && !isTemp {
+			return nil, nil, nil, fmt.Errorf("temp stream %s can only be used by temp rules", si.stmt.Name)
 		}
 	}
 	if checkAliasReferenceCycle(s) {

@@ -74,7 +74,7 @@ func PlanByGraph(rule *def.Rule) (*topo.Topo, error) {
 		if _, ok := ruleGraph.Topo.Edges[srcName]; !ok {
 			return nil, fmt.Errorf("no edge defined for source node %s", srcName)
 		}
-		srcNode, srcType, name, ops, err := parseSource(srcName, gn, rule, tp, store, lookupTableChildren)
+		srcNode, srcType, name, ops, err := parseSource(srcName, gn, rule, tp, store, lookupTableChildren, rule.Temp)
 		if err != nil {
 			return nil, fmt.Errorf("parse source %s with %v error: %w", srcName, gn.Props, err)
 		}
@@ -440,7 +440,7 @@ func genNodesInOrder(toNodes []string, edges map[string][]interface{}, flatRever
 	return i
 }
 
-func parseSource(nodeName string, gn *def.GraphNode, rule *def.Rule, tp *topo.Topo, store kv.KeyValue, lookupTableChildren map[string]*ast.Options) (node.DataSourceNode, sourceType, string, []node.OperatorNode, error) {
+func parseSource(nodeName string, gn *def.GraphNode, rule *def.Rule, tp *topo.Topo, store kv.KeyValue, lookupTableChildren map[string]*ast.Options, isTemp bool) (node.DataSourceNode, sourceType, string, []node.OperatorNode, error) {
 	sourceMeta := &def.SourceMeta{
 		SourceType: "stream",
 	}
@@ -456,6 +456,10 @@ func parseSource(nodeName string, gn *def.GraphNode, rule *def.Rule, tp *topo.To
 		streamStmt, e := processor.GetStreamProcessorDataSource(sourceMeta.SourceName)
 		if e != nil {
 			return nil, ILLEGAL, "", nil, fmt.Errorf("fail to get stream %s, please check if stream is created", sourceMeta.SourceName)
+		}
+		// Validate temp streams can only be used by temp rules
+		if streamStmt.Options.Temp && !isTemp {
+			return nil, ILLEGAL, "", nil, fmt.Errorf("temp stream %s can only be used by temp rules", sourceMeta.SourceName)
 		}
 		if streamStmt.StreamType == ast.TypeStream && sourceMeta.SourceType == "table" {
 			return nil, ILLEGAL, "", nil, fmt.Errorf("stream %s is not a table", sourceMeta.SourceName)
