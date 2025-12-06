@@ -24,6 +24,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
+	"github.com/lf-edge/ekuiper/v2/internal/processor"
 	"github.com/lf-edge/ekuiper/v2/internal/testx"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/planner"
@@ -35,6 +36,7 @@ import (
 
 func init() {
 	testx.InitEnv("node_test")
+	processor.NewStreamProcessor()
 }
 
 func TestStateWindowStatePartition(t *testing.T) {

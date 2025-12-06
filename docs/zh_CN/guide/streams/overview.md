@@ -58,6 +58,7 @@ CREATE STREAM
 | TIMESTAMP        | 是  | 代表该事件时间戳的字段名。如果有设置，则使用此流的规则将采用事件时间；否则将采用处理时间。详情请看[时间戳管理](../../sqls/windows.md#时间戳管理)。                                                                                  |
 | TIMESTAMP_FORMAT | 是  | 字符串和时间格式转换时使用的默认格式。                                                                                                                                                     |
 | VERSION          | 是  | 流的版本号，详情情况[版本控制](#版本控制)。                                                                                                                                                |
+| TEMP             | 是  | 流是否为临时流。临时流仅存储在内存中，eKuiper 重启后会丢失。默认为 false。详情请参阅[临时流](#临时流)。                                                                                                           |
 
 **示例1**
 
@@ -195,6 +196,26 @@ demoBin (
 ```
 
 如果 "BINARY" 格式流定义为 schemaless，数据将会解析到默认的名为 `self` 的字段。
+
+## 临时流
+
+临时流是仅存储在内存中的流，不会持久化到磁盘。它们适用于中间数据处理或测试场景，在这些场景中不需要持久化。临时流具有以下特性:
+
+- **内存存储**: 流定义仅存储在内存中，eKuiper 重启后会丢失。
+- **不可替换**: 一旦创建，临时流不能使用 `REPLACE STREAM` 语句进行替换。
+- **使用限制**: 临时流只能被临时规则使用。非临时规则不能引用临时流。
+
+### 创建临时流
+
+要创建临时流，请将 `TEMP` 选项设置为 `true`:
+
+```sql
+CREATE
+STREAM temp_sensor (
+    temperature FLOAT,
+    humidity FLOAT
+) WITH (DATASOURCE="sensor/data", FORMAT="json", TEMP="true");
+```
 
 ## 版本控制
 

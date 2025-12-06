@@ -119,7 +119,7 @@ func (s *RuleTestSuite) TestRuleDisableBufferFullDiscard() {
 	resp, err := client.CreateConf("sources/simulator/confKeys/sim1", conf)
 	s.Require().NoError(err)
 	s.Require().Equal(http.StatusOK, resp.StatusCode)
-	streamSql := `{"sql": "create stream sim1() WITH (TYPE=\"simulator\", CONF_KEY=\"sim1\")"}`
+	streamSql := `{"sql": "create stream sim1() WITH (TYPE=\"simulator\", CONF_KEY=\"sim1\", TEMP=\"true\")"}`
 	resp, err = client.CreateStream(streamSql)
 	s.Require().NoError(err)
 	s.T().Log(GetResponseText(resp))
@@ -127,6 +127,7 @@ func (s *RuleTestSuite) TestRuleDisableBufferFullDiscard() {
 	ruleSql := `{
   "id": "ruleSim1",
   "sql": "SELECT * FROM sim1",
+  "temp":true,
   "actions": [
     {
       "memory":{

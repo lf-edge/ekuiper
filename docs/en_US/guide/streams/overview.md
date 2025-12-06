@@ -58,6 +58,7 @@ Below is the list of data types supported.
 | TIMESTAMP        | true     | The field to represent the event's timestamp. If specified, the rule will run with event time. Otherwise, it will run with processing time. Please refer to [timestamp management](../../sqls/windows.md#timestamp-management) for details. |
 | TIMESTAMP_FORMAT | true     | The default format to be used when converting string to or from datetime type.                                                                                                                                                              |
 | VERSION          | true     | Version of the stream, check [versioning](#versioning)。                                                                                                                                                                                     |
+| TEMP             | true     | Whether the stream is temporary. Temporary streams are stored in memory only and will be lost when eKuiper restarts. Default is false. Check [Temporary Streams](#temporary-streams) for more details.                                      |
 
 **Example 1,**
 
@@ -201,6 +202,28 @@ demoBin (
 ```
 
 If "BINARY" format stream is defined as schemaless, a default field named `self` will be assigned for the binary payload.
+
+## Temporary Streams
+
+Temporary streams are in-memory streams that are not persisted to disk. They are useful for intermediate data processing
+or testing scenarios where persistence is not required. Temporary streams have the following characteristics:
+
+- **In-memory storage**: Stream definitions are stored in memory only and will be lost when eKuiper restarts.
+- **Cannot be replaced**: Once created, temporary streams cannot be replaced using `REPLACE STREAM` statement.
+- **Usage restriction**: Temporary streams can only be used by temporary rules. Non-temporary rules cannot reference
+  temporary streams.
+
+### Creating a Temporary Stream
+
+To create a temporary stream, set the `TEMP` option to `true`:
+
+```sql
+CREATE
+STREAM temp_sensor (
+    temperature FLOAT,
+    humidity FLOAT
+) WITH (DATASOURCE="sensor/data", FORMAT="json", TEMP="true");
+```
 
 ## Versioning
 

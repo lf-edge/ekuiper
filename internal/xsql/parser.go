@@ -1546,7 +1546,8 @@ func (p *Parser) parseStreamOptions() (*ast.Options, error) {
 			lit1 = strings.ToUpper(lit1)
 			if ast.IsStreamOptionKeyword(tok1, lit1) {
 				if tok2, lit2 := p.scanIgnoreWhitespace(); tok2 == ast.EQ {
-					if tok3, lit3 := p.scanIgnoreWhitespace(); tok3 == ast.STRING {
+					tok3, lit3 := p.scanIgnoreWhitespace()
+					if tok3 == ast.STRING || tok3 == ast.TRUE || tok3 == ast.FALSE {
 						switch lit1 {
 						case ast.STRICT_VALIDATION:
 							if val := strings.ToUpper(lit3); (val != "TRUE") && (val != "FALSE") {
@@ -1579,6 +1580,12 @@ func (p *Parser) parseStreamOptions() (*ast.Options, error) {
 							} else {
 								return nil, fmt.Errorf("invalid extra option, expect JSON string")
 							}
+						case ast.TEMP:
+							if val := strings.ToUpper(lit3); (val != "TRUE") && (val != "FALSE") {
+								return nil, fmt.Errorf("found %q, expect TRUE/FALSE value in %s option.", lit3, lit1)
+							} else {
+								opts.Temp = val == "TRUE"
+							}
 						default:
 							f := v.Elem().FieldByName(lit1)
 							if f.IsValid() {
@@ -1588,7 +1595,7 @@ func (p *Parser) parseStreamOptions() (*ast.Options, error) {
 							}
 						}
 					} else {
-						return nil, fmt.Errorf("found %q, expect string value in option.", lit3)
+						return nil, fmt.Errorf("found %q, expect string or boolean value in option.", lit3)
 					}
 				} else {
 					return nil, fmt.Errorf("found %q, expect equals(=) in options.", lit2)
@@ -1601,7 +1608,7 @@ func (p *Parser) parseStreamOptions() (*ast.Options, error) {
 				}
 				return nil, fmt.Errorf("Parenthesis is not matched in options definition.")
 			} else {
-				return nil, fmt.Errorf("found %q, unknown option keys(DATASOURCE|FORMAT|KEY|CONF_KEY|SHARED|STRICT_VALIDATION|TYPE|TIMESTAMP|TIMESTAMP_FORMAT|RETAIN_SIZE|SCHEMAID|EXTRA|VERSION).", lit1)
+				return nil, fmt.Errorf("found %q, unknown option keys(DATASOURCE|FORMAT|KEY|CONF_KEY|SHARED|STRICT_VALIDATION|TYPE|TIMESTAMP|TIMESTAMP_FORMAT|RETAIN_SIZE|SCHEMAID|EXTRA|VERSION|TEMP|KIND|DELIMITER).", lit1)
 			}
 		}
 	} else {
