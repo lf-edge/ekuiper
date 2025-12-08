@@ -238,6 +238,7 @@ type Options struct {
 	SCHEMAID          string `json:"schemaid,omitempty"`
 	VERSION           string `json:"version,omitempty"`
 	EXTRA             string `json:"extra,omitempty"`
+	Temp              bool   `json:"temp,omitempty"`
 	// for scan table only
 	RETAIN_SIZE int `json:"retainSize,omitempty"`
 	// for table only, to distinguish lookup & scan

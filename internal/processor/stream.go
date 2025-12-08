@@ -25,6 +25,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/store/memory"
 	"github.com/lf-edge/ekuiper/v2/internal/schema"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/lookup"
 	streamSchema "github.com/lf-edge/ekuiper/v2/internal/topo/schema"
@@ -41,6 +42,7 @@ type StreamProcessor struct {
 	db             kv.KeyValue
 	streamStatusDb kv.KeyValue
 	tableStatusDb  kv.KeyValue
+	tempDb         kv.KeyValue
 }
 
 type StreamDetail struct {
@@ -48,6 +50,9 @@ type StreamDetail struct {
 	Type   string `json:"type"`
 	Format string `json:"format"`
 }
+
+// globalStreamProcessor is the singleton instance of StreamProcessor
+var globalStreamProcessor *StreamProcessor
 
 func NewStreamProcessor() *StreamProcessor {
 	db, err := store.GetKV("stream")
@@ -66,8 +71,31 @@ func NewStreamProcessor() *StreamProcessor {
 		db:             db,
 		streamStatusDb: streamDb,
 		tableStatusDb:  tableDb,
+		tempDb:         memory.NewMemoryKV(),
 	}
+	globalStreamProcessor = processor
 	return processor
+}
+
+// GetDataSource retrieves a stream/table definition by name from both persistent and temp stores.
+// It first checks the persistent store, then falls back to the temp store if not found.
+func (p *StreamProcessor) GetDataSource(name string) (*ast.StreamStmt, error) {
+	// Try persistent store first
+	stmt, err := xsql.GetDataSource(p.db, name)
+	if err == nil {
+		return stmt, nil
+	}
+	// Try temp store
+	return xsql.GetDataSource(p.tempDb, name)
+}
+
+// GetStreamProcessorDataSource is a global function that uses the global StreamProcessor instance
+// to retrieve stream/table definitions from both persistent and temp stores.
+func GetStreamProcessorDataSource(name string) (*ast.StreamStmt, error) {
+	if globalStreamProcessor == nil {
+		return nil, fmt.Errorf("stream processor not initialized")
+	}
+	return globalStreamProcessor.GetDataSource(name)
 }
 
 func (p *StreamProcessor) ExecStmt(statement string) (result []string, err error) {
@@ -178,14 +206,23 @@ func (p *StreamProcessor) execSave(stmt *ast.StreamStmt, statement string, repla
 		StreamType: stmt.StreamType,
 		Statement:  statement,
 		StreamKind: stmt.Options.KIND,
+		Temp:       stmt.Options.Temp,
 	})
 	if err != nil {
 		return fmt.Errorf("error when saving to db: %v.", err)
 	}
-	if replace {
-		err = p.db.Set(string(stmt.Name), string(s))
+	if !stmt.Options.Temp {
+		if replace {
+			err = p.db.Set(string(stmt.Name), string(s))
+		} else {
+			err = p.db.Setnx(string(stmt.Name), string(s))
+		}
 	} else {
-		err = p.db.Setnx(string(stmt.Name), string(s))
+		if replace {
+			err = p.tempDb.Set(string(stmt.Name), string(s))
+		} else {
+			err = p.tempDb.Setnx(string(stmt.Name), string(s))
+		}
 	}
 	return err
 }
@@ -212,6 +249,9 @@ func (p *StreamProcessor) ExecReplaceStream(name string, statement string, st as
 		}
 		if string(s.Name) != name {
 			return "", fmt.Errorf("Replace %s fails: the sql statement must update the %s source.", name, name)
+		}
+		if s.Options.Temp {
+			return "", fmt.Errorf("Replace %s fails: cannot replace with temp option.", name)
 		}
 		// compare version
 		old, _ := p.DescStream(name, s.StreamType)
@@ -268,16 +308,24 @@ func (p *StreamProcessor) ShowStream(st ast.StreamType) (res []string, err error
 	if err != nil {
 		return nil, fmt.Errorf("Show %ss fails, error when loading data from db: %v.", stt, err)
 	}
+	keys2, err := p.tempDb.Keys()
+	if err != nil {
+		return nil, fmt.Errorf("Show %ss fails, error when loading data from temp db: %v.", stt, err)
+	}
+	keys = append(keys, keys2...)
 	var (
 		v      string
 		vs     = &xsql.StreamInfo{}
 		result = make([]string, 0)
 	)
 	for _, k := range keys {
-		if ok, _ := p.db.Get(k, &v); ok {
-			if err := json.Unmarshal(cast.StringToBytes(v), vs); err == nil && vs.StreamType == st {
-				result = append(result, k)
+		if ok, _ := p.db.Get(k, &v); !ok {
+			if ok, _ := p.tempDb.Get(k, &v); !ok {
+				continue
 			}
+		}
+		if err := json.Unmarshal(cast.StringToBytes(v), vs); err == nil && vs.StreamType == st {
+			result = append(result, k)
 		}
 	}
 	return result, nil
@@ -333,19 +381,28 @@ func (p *StreamProcessor) ShowTable(kind string) (res []string, err error) {
 	if err != nil {
 		return nil, fmt.Errorf("Show tables fails, error when loading data from db: %v.", err)
 	}
+	keys2, err := p.tempDb.Keys()
+	if err != nil {
+		return nil, fmt.Errorf("Show tables fails, error when loading data from temp db: %v.", err)
+	}
+	keys = append(keys, keys2...)
+
 	var (
 		v      string
 		vs     = &xsql.StreamInfo{}
 		result = make([]string, 0)
 	)
 	for _, k := range keys {
-		if ok, _ := p.db.Get(k, &v); ok {
-			if err := json.Unmarshal(cast.StringToBytes(v), vs); err == nil && vs.StreamType == ast.TypeTable {
-				if kind == "scan" && (vs.StreamKind == ast.StreamKindScan || vs.StreamKind == "") {
-					result = append(result, k)
-				} else if kind == "lookup" && vs.StreamKind == ast.StreamKindLookup {
-					result = append(result, k)
-				}
+		if ok, _ := p.db.Get(k, &v); !ok {
+			if ok, _ := p.tempDb.Get(k, &v); !ok {
+				continue
+			}
+		}
+		if err := json.Unmarshal(cast.StringToBytes(v), vs); err == nil && vs.StreamType == ast.TypeTable {
+			if kind == "scan" && (vs.StreamKind == ast.StreamKindScan || vs.StreamKind == "") {
+				result = append(result, k)
+			} else if kind == "lookup" && vs.StreamKind == ast.StreamKindLookup {
+				result = append(result, k)
 			}
 		}
 	}
@@ -361,6 +418,9 @@ func (p *StreamProcessor) GetStream(name string, st ast.StreamType) (res string,
 		}
 	}()
 	vs, err := xsql.GetDataSourceStatement(p.db, name)
+	if err != nil {
+		vs, err = xsql.GetDataSourceStatement(p.tempDb, name)
+	}
 	if vs != nil && vs.StreamType == st {
 		return vs.Statement, nil
 	}
@@ -562,11 +622,14 @@ func (p *StreamProcessor) DropStream(name string, st ast.StreamType) (r string, 
 
 	err = p.db.Delete(name)
 	if err != nil {
-		return "", err
-	} else {
-		streamSchema.RemoveStreamSchema(name)
-		return fmt.Sprintf("%s %s is dropped.", cases.Title(language.Und).String(ast.StreamTypeMap[st]), name), nil
+		// try delete from temp db
+		err = p.tempDb.Delete(name)
+		if err != nil {
+			return "", err
+		}
 	}
+	streamSchema.RemoveStreamSchema(name)
+	return fmt.Sprintf("%s %s is dropped.", cases.Title(language.Und).String(ast.StreamTypeMap[st]), name), nil
 }
 
 func printFieldType(ft ast.FieldType) (result string) {
@@ -603,6 +666,14 @@ func (p *StreamProcessor) GetAll() (result map[string]map[string]string, err err
 	if e != nil {
 		err = e
 		return
+	}
+	tempDefs, e := p.tempDb.All()
+	if e != nil {
+		err = e
+		return
+	}
+	for k, v := range tempDefs {
+		defs[k] = v
 	}
 	vs := &xsql.StreamInfo{}
 	result = map[string]map[string]string{
