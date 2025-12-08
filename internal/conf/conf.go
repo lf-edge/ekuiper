@@ -35,6 +35,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/schedule"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/model"
+	ekruntime "github.com/lf-edge/ekuiper/v2/pkg/runtime"
 )
 
 const (
@@ -182,6 +183,7 @@ func InitConf() {
 	}
 
 	_ = ValidateRuleOption(&Config.Rule)
+	ekruntime.SetAppConf(Config)
 }
 
 func SetLogLevel(level string, debug bool) {
