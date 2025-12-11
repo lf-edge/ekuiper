@@ -145,7 +145,7 @@ func (suite *ServerTestSuite) TestRule() {
 	reply = ""
 	err = suite.s.DescRule(ruleId, &reply)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), "{\n  \"sql\": \"SELECT * from test;\",\n  \"actions\": [\n    {\n      \"file\": {\n        \"path\": \"../internal/server/rpc_test_data/data/result.txt\",\n        \"interval\": 5000,\n        \"fileType\": \"lines\",\n        \"format\": \"json\"\n      }\n    }\n  ]\n}\n", reply)
+	assert.Equal(suite.T(), "{\n  \"triggered\": true,\n  \"id\": \"myRule\",\n  \"sql\": \"SELECT * from test;\",\n  \"actions\": [\n    {\n      \"file\": {\n        \"fileType\": \"lines\",\n        \"format\": \"json\",\n        \"interval\": 5000,\n        \"path\": \"../internal/server/rpc_test_data/data/result.txt\"\n      }\n    }\n  ],\n  \"options\": {\n    \"debug\": false,\n    \"isEventTime\": false,\n    \"lateTolerance\": \"1s\",\n    \"concurrency\": 1,\n    \"bufferLength\": 1024,\n    \"sendMetaToSink\": false,\n    \"sendNilField\": false,\n    \"sendError\": false,\n    \"checkpointInterval\": \"5m0s\",\n    \"restartStrategy\": {}\n  }\n}\n", reply)
 
 	reply = ""
 	err = suite.s.GetTopoRule(ruleId, &reply)

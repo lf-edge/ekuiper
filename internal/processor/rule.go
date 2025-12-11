@@ -252,8 +252,17 @@ func (p *RuleProcessor) ExecDesc(name string) (string, error) {
 	if !f {
 		return "", fmt.Errorf("Rule %s is not found.", name)
 	}
+	// Parse into def.Rule and re-marshal to ensure consistent field ordering
+	rule, err := p.GetRuleByJsonValidated(name, s1)
+	if err != nil {
+		return "", err
+	}
+	result, err := json.Marshal(rule)
+	if err != nil {
+		return "", err
+	}
 	dst := &bytes.Buffer{}
-	if err := json.Indent(dst, cast.StringToBytes(s1), "", "  "); err != nil {
+	if err := json.Indent(dst, result, "", "  "); err != nil {
 		return "", err
 	}
 
