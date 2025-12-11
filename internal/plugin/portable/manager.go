@@ -254,7 +254,7 @@ func (m *Manager) Register(p plugin.Plugin) error {
 
 	zipPath := path.Join(m.pluginDir, name+".zip")
 	// download
-	err := httpx.DownloadZipFile(m.pluginDir, name+".zip", uri)
+	err := httpx.DownloadFile(m.pluginDir, name+".zip", uri)
 	if err != nil {
 		return fmt.Errorf("fail to download file %s: %s", uri, err)
 	}

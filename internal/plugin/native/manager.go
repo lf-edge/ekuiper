@@ -311,7 +311,7 @@ func (rr *Manager) Register(t plugin2.PluginType, j plugin2.Plugin) error {
 	// clean up: delete zip file and unzip files in error
 	defer func(name string) { _ = os.Remove(name) }(zipPath)
 	// download
-	err = httpx.DownloadFile(zipPath, uri)
+	err = httpx.DownloadFile(rr.pluginDir, name+".zip", uri)
 	if err != nil {
 		return fmt.Errorf("fail to download file %s: %s", uri, err)
 	}

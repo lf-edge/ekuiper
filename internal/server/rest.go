@@ -319,9 +319,8 @@ func getFile(file *fileContent) error {
 		return err
 	}
 	defer dst.Close()
-	filePath := filepath.Join(uploadDir, file.Name)
 	if file.FilePath != "" {
-		err := httpx.DownloadFile(filePath, file.FilePath)
+		err := httpx.DownloadFile(uploadDir, file.Name, file.FilePath)
 		if err != nil {
 			return err
 		}
