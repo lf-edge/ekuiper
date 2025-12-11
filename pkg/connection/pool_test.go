@@ -178,6 +178,8 @@ var blockCh chan any
 func init() {
 	blockCh = make(chan any, 10)
 	modules.RegisterConnection("blockconn", CreateBlockConnection)
+	modules.RegisterConnection("mock", CreateMockConnection)
+	modules.RegisterConnection("mockerr", CreateMockErrConnection)
 }
 
 type blockConnection struct {

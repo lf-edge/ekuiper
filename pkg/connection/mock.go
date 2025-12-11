@@ -16,20 +16,12 @@ package connection
 
 import (
 	"errors"
-	"strings"
 
 	"github.com/cenkalti/backoff/v4"
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
-
-func InitMockTest() {
-	conf.IsTesting = true
-	modules.ConnectionRegister["mock"] = CreateMockConnection
-	modules.ConnectionRegister[strings.ToLower("mockErr")] = CreateMockErrConnection
-}
 
 type mockConnection struct {
 	id  string
