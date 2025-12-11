@@ -17,7 +17,6 @@ package httpx
 import (
 	"bytes"
 	"crypto/tls"
-	"errors"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -29,7 +28,6 @@ import (
 	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
-	"github.com/pingcap/failpoint"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
@@ -197,7 +195,7 @@ func ReadFile(uri string) (io.ReadCloser, error) {
 	return src, nil
 }
 
-func DownloadZipFile(folder string, name string, uri string) (err error) {
+func DownloadFile(folder string, name string, uri string) (err error) {
 	src, err := ReadFile(uri)
 	if err != nil {
 		return err
@@ -213,29 +211,6 @@ func DownloadZipFile(folder string, name string, uri string) (err error) {
 		return err
 	}
 	defer out.Close()
-	// Write the body to file
-	_, err = io.Copy(out, src)
-	return err
-}
-
-func DownloadFile(filepath string, uri string) (err error) {
-	defer func() {
-		failpoint.Inject("DownloadFileErr", func() {
-			err = errors.New("DownloadFileErr")
-		})
-	}()
-	src, err := ReadFile(uri)
-	if err != nil {
-		return err
-	}
-	defer src.Close()
-	// Create the file
-	out, err := os.Create(filepath)
-	if err != nil {
-		return err
-	}
-	defer out.Close()
-
 	// Write the body to file
 	_, err = io.Copy(out, src)
 	return err

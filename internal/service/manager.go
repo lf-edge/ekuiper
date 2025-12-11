@@ -385,7 +385,7 @@ func (m *Manager) Create(r *ServiceCreationRequest) error {
 	// clean up: delete zip file and unzip files in error
 	defer os.Remove(zipPath)
 	// download
-	err := httpx.DownloadFile(zipPath, uri)
+	err := httpx.DownloadFile(m.etcDir, name+".zip", uri)
 	if err != nil {
 		return fmt.Errorf("fail to download file %s: %s", uri, err)
 	}
