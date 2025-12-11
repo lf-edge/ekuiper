@@ -25,7 +25,12 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
+	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
+
+func init() {
+	modules.RegisterConnection("mock", connection.CreateMockConnection)
+}
 
 func (suite *RestTestSuite) TestGetConnectionStatus() {
 	connection.InitConnectionManager4Test()
