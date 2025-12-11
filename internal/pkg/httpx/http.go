@@ -222,25 +222,29 @@ func GetSSRFDialContext(timeout time.Duration) func(ctx context.Context, network
 	}
 }
 
-func DownloadFile(folder string, name string, uri string) (err error) {
+func DownloadFile(folder string, name string, uri string) (string, error) {
 	src, err := ReadFile(uri)
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer src.Close()
 	root, err := os.OpenRoot(folder)
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer root.Close()
 	out, err := root.Create(name)
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer out.Close()
 	// Write the body to file
 	_, err = io.Copy(out, src)
-	return err
+	if err != nil {
+		_ = os.Remove(out.Name())
+		return "", err
+	}
+	return out.Name(), nil
 }
 
 func IsHttpUrl(str string) error {

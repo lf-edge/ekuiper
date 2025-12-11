@@ -252,9 +252,8 @@ func (m *Manager) Register(p plugin.Plugin) error {
 		return fmt.Errorf("invalid name %s: duplicate", name)
 	}
 
-	zipPath := path.Join(m.pluginDir, name+".zip")
 	// download
-	err := httpx.DownloadFile(m.pluginDir, name+".zip", uri)
+	zipPath, err := httpx.DownloadFile(m.pluginDir, name+".zip", uri)
 	if err != nil {
 		return fmt.Errorf("fail to download file %s: %s", uri, err)
 	}

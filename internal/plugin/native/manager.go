@@ -305,16 +305,16 @@ func (rr *Manager) Register(t plugin2.PluginType, j plugin2.Plugin) error {
 		}
 	}
 
-	var err error
-	zipPath := path.Join(rr.pluginDir, name+".zip")
-
-	// clean up: delete zip file and unzip files in error
-	defer func(name string) { _ = os.Remove(name) }(zipPath)
 	// download
-	err = httpx.DownloadFile(rr.pluginDir, name+".zip", uri)
+	var zipPath string
+	var err error
+	zipPath, err = httpx.DownloadFile(rr.pluginDir, name+".zip", uri)
 	if err != nil {
 		return fmt.Errorf("fail to download file %s: %s", uri, err)
 	}
+
+	// clean up: delete zip file and unzip files in error
+	defer func(name string) { _ = os.Remove(name) }(zipPath)
 
 	if t == plugin2.FUNCTION {
 		if len(j.GetSymbols()) > 0 {
