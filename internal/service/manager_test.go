@@ -30,12 +30,15 @@ import (
 
 	"github.com/lf-edge/ekuiper/v2/internal/binder"
 	"github.com/lf-edge/ekuiper/v2/internal/binder/function"
+	kconf "github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 )
 
 var m *Manager
 
 func init() {
+	kconf.InitConf()
+	kconf.Config.Basic.EnablePrivateNet = true
 	serviceManager, err := InitManager()
 	if err != nil {
 		panic(err)
@@ -389,6 +392,7 @@ func TestInitByFiles(t *testing.T) {
 }
 
 func TestManage(t *testing.T) {
+	_ = m.serviceStatusInstallKV.Clean()
 	// Test HasFunctionSet
 	if m.HasFunctionSet("sample") {
 		t.Error("HasFunctionSet failed, got true should be false")

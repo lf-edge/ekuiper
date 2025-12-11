@@ -28,6 +28,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/meta"
 	"github.com/lf-edge/ekuiper/v2/internal/plugin"
 	"github.com/lf-edge/ekuiper/v2/internal/testx"
@@ -37,6 +38,7 @@ import (
 
 func init() {
 	testx.InitEnv("portable")
+	conf.Config.Basic.EnablePrivateNet = true
 	// Wait for other db tests to finish to avoid db lock
 	for i := 0; i < 10; i++ {
 		if _, err := InitManager(); err != nil {

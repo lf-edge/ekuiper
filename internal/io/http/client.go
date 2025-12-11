@@ -204,6 +204,7 @@ func (cc *ClientConf) InitConf(ctx api.StreamContext, device string, props map[s
 		return err
 	}
 	tr := newTransport(tlscfg, conf.Log)
+	tr.DialContext = httpx.GetSSRFDialContext(time.Duration(c.Timeout))
 	cc.client = &http.Client{
 		Transport: tr,
 		Timeout:   time.Duration(c.Timeout),

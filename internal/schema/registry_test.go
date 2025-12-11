@@ -35,6 +35,7 @@ import (
 
 func init() {
 	testx.InitEnv("schema")
+	conf.Config.Basic.EnablePrivateNet = true
 }
 
 func TestPartialImpoart(t *testing.T) {

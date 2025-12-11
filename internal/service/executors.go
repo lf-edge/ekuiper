@@ -238,6 +238,7 @@ func (h *httpExecutor) invokeFunction(ctx api.FunctionContext, name string, para
 	if h.conn == nil {
 		tr := &http.Transport{
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: h.restOpt.InsecureSkipVerify},
+			DialContext:     httpx.GetSSRFDialContext(h.timeout),
 		}
 		h.conn = &http.Client{
 			Transport: tr,
