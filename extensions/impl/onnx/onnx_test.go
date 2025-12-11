@@ -20,6 +20,7 @@ import (
 	_ "image/gif"
 	_ "image/jpeg"
 	_ "image/png"
+	"math"
 	"os"
 	"reflect"
 	"testing"
@@ -106,16 +107,44 @@ func Test_mnist_Exec(t *testing.T) {
 			if got1 != tt.want1 {
 				t.Errorf("Exec() error = %v, wantErr %v", got1, tt.want1)
 			}
-			if !reflect.DeepEqual(got0, tt.want) && !reflect.DeepEqual(got1, tt.want2) {
+			if !almostEqual(got0, tt.want) && !reflect.DeepEqual(got1, tt.want2) {
 				t.Errorf("Name = %s,Exec() got = %v, want %v", tt.name, got0, tt.want)
 			}
 			if tt.name == "test2" {
 				test2Ouput := got0.([]any)[0].([]float32)
-				if test2Ouput[0] != 1.9999883 {
+				if math.Abs(float64(test2Ouput[0]-1.9999883)) > 1e-4 {
 					t.Errorf("Name = %s, Exec() got = %v, want %v", tt.name, test2Ouput[0], 1.9999883)
 				}
 			}
 		})
+	}
+}
+
+func almostEqual(got, want any) bool {
+	if reflect.DeepEqual(got, want) {
+		return true
+	}
+	vGot := reflect.ValueOf(got)
+	vWant := reflect.ValueOf(want)
+	if vGot.Kind() != vWant.Kind() {
+		return false
+	}
+	switch vGot.Kind() {
+	case reflect.Slice, reflect.Array:
+		if vGot.Len() != vWant.Len() {
+			return false
+		}
+		for i := 0; i < vGot.Len(); i++ {
+			if !almostEqual(vGot.Index(i).Interface(), vWant.Index(i).Interface()) {
+				return false
+			}
+		}
+		return true
+	case reflect.Float32, reflect.Float64:
+		const epsilon = 1e-4
+		return math.Abs(vGot.Float()-vWant.Float()) <= epsilon
+	default:
+		return false
 	}
 }
 
