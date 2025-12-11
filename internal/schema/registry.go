@@ -219,8 +219,7 @@ func CreateOrUpdateSchema(info *Info) error {
 		if filepath.Ext(info.FilePath) == ".zip" {
 			conf.Log.Infof("unzipping schema file %s", info.FilePath)
 			tmpFileName := uuid.New().String() + ".zip"
-			tmpFile := filepath.Join(etcDir, tmpFileName)
-			err := httpx.DownloadFile(etcDir, tmpFileName, info.FilePath)
+			tmpFile, err := httpx.DownloadFile(etcDir, tmpFileName, info.FilePath)
 			if err != nil {
 				return err
 			}
@@ -266,7 +265,7 @@ func CreateOrUpdateSchema(info *Info) error {
 					return err
 				}
 			} else {
-				err := httpx.DownloadFile(etcDir, targetName, info.FilePath)
+				_, err := httpx.DownloadFile(etcDir, targetName, info.FilePath)
 				if err != nil {
 					return err
 				}
@@ -277,7 +276,7 @@ func CreateOrUpdateSchema(info *Info) error {
 
 	if info.SoPath != "" {
 		soFile := filepath.Join(etcDir, info.Name+".so")
-		err := httpx.DownloadFile(etcDir, info.Name+".so", info.SoPath)
+		_, err := httpx.DownloadFile(etcDir, info.Name+".so", info.SoPath)
 		if err != nil {
 			return err
 		}

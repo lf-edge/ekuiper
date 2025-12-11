@@ -320,7 +320,7 @@ func getFile(file *fileContent) error {
 	}
 	defer dst.Close()
 	if file.FilePath != "" {
-		err := httpx.DownloadFile(uploadDir, file.Name, file.FilePath)
+		_, err := httpx.DownloadFile(uploadDir, file.Name, file.FilePath)
 		if err != nil {
 			return err
 		}

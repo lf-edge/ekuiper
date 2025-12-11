@@ -10,7 +10,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/plugin"
 )
 
-func TestManager_Register_PathTraversal(t *testing.T) {
+func TestManager_Register_Security_PathTraversal(t *testing.T) {
 	s := httptest.NewServer(
 		http.FileServer(http.Dir("../testzips")),
 	)
