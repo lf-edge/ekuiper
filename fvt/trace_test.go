@@ -24,6 +24,7 @@ import (
 	"path"
 	"path/filepath"
 	"reflect"
+	"sort"
 	"testing"
 	"time"
 
@@ -138,20 +139,36 @@ func (s *TraceTestSuite) TestLookup() {
 		})
 		s.Require().True(r)
 		// assert each trace, just check 1/2/3
-		for i, tid := range ruleIds {
+		// assert each trace, just check 1/2/3
+		var results []struct {
+			act       []byte
+			resultMap map[string]any
+		}
+		for _, tid := range ruleIds {
 			resp, e := client.Get(path.Join("trace", tid))
 			s.NoError(e)
 			s.Equal(http.StatusOK, resp.StatusCode)
 			act, resultMap, err := GetResponseResultTextAndMap(resp)
 			s.NoError(err)
+			results = append(results, struct {
+				act       []byte
+				resultMap map[string]any
+			}{act, resultMap})
+		}
+		sort.Slice(results, func(i, j int) bool {
+			attrI := results[i].resultMap["attribute"].(map[string]any)
+			attrJ := results[j].resultMap["attribute"].(map[string]any)
+			return attrI["data"].(string) > attrJ["data"].(string)
+		})
+		for i, res := range results {
 			all, err := os.ReadFile(filepath.Join("result", "trace", fmt.Sprintf("lookup%d.json", i+1)))
 			s.NoError(err)
 			exp := make(map[string]any)
 			err = json.Unmarshal(all, &exp)
 			s.NoError(err)
-			if s.compareTrace(exp, resultMap) == false {
+			if s.compareTrace(exp, res.resultMap) == false {
 				fmt.Printf("lookup%d.json\n", i+1)
-				fmt.Println(string(act))
+				fmt.Println(string(res.act))
 				s.Fail(fmt.Sprintf("trace lookup %d compares fail", i+1))
 			}
 		}
