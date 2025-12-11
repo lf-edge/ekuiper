@@ -4,36 +4,11 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/lf-edge/ekuiper/v2/internal/binder"
-	"github.com/lf-edge/ekuiper/v2/internal/binder/function"
-	"github.com/lf-edge/ekuiper/v2/internal/meta"
 	"github.com/lf-edge/ekuiper/v2/internal/plugin"
-	"github.com/lf-edge/ekuiper/v2/internal/testx"
 )
-
-func init() {
-	testx.InitEnv("native")
-	meta.InitYamlConfigManager()
-	var (
-		nativeManager *Manager
-		err           error
-	)
-	for i := 0; i < 10; i++ {
-		if nativeManager, err = InitManager(); err != nil {
-			time.Sleep(10 * time.Millisecond)
-		} else {
-			break
-		}
-	}
-	err = function.Initialize([]binder.FactoryEntry{{Name: "native plugin", Factory: nativeManager}})
-	if err != nil {
-		panic(err)
-	}
-}
 
 func TestManager_Register_PathTraversal(t *testing.T) {
 	s := httptest.NewServer(

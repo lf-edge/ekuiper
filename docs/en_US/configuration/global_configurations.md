@@ -48,7 +48,18 @@ basic:
   cfgStorageType: file
   # If it is enabled, each REST API call will print logs
   enableRestAuditLog: false
+  # If it is enabled, the rule functions can access the private network.
+  enablePrivateNet: false
 ```
+
+The configuration item **enablePrivateNet** is used to specify whether the rule functions (e.g. valid func, sinks)
+can access the private network (e.g. localhost, 127.0.0.1). If it is true, the private network can be accessed. Default
+is false for security.
+
+> [!WARNING]
+> Since version v2.4.0, the default value of `enablePrivateNet` is `false`, which means accessing private network
+> addresses is blocked by default. If your rules rely on accessing local resources (e.g., local REST services, local
+> files), you MUST set this configuration to `true`.
 
 for debug option in basic following env is valid `KUIPER__BASIC__DEBUG=true` and if used debug value will be set to true.
 

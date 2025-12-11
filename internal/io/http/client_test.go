@@ -21,8 +21,15 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/testx"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
+
+func init() {
+	testx.InitEnv("http")
+	conf.Config.Basic.EnablePrivateNet = true
+}
 
 func TestInitConf(t *testing.T) {
 	m := map[string]interface{}{}

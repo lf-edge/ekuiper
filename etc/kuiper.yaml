@@ -77,6 +77,8 @@ basic:
     retainedDuration: 6h
   # If it is enabled, each REST API call will print logs
   enableRestAuditLog: false
+  # If it is enabled, the rule functions can access the private network.
+  enablePrivateNet: false
 
 # The default options for all rules. Each rule can override this setting by defining its own option
 rule:

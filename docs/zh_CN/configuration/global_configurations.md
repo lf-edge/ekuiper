@@ -44,7 +44,16 @@ basic:
   cfgStorageType: file
   # If it is enabled, each REST API call will print logs
   enableRestAuditLog: false
+  # If it is enabled, the rule functions can access the private network.
+  enablePrivateNet: false
 ```
+
+配置项 **enablePrivateNet** 用于指定规则函数（例如 valid func、sinks）是否可以访问私有网络（例如 localhost、127.0.0.1）。如果为
+true，则可以访问私有网络。出于安全考虑，默认为 false。
+
+> [!WARNING]
+> 自版本 v2.4.0 起，`enablePrivateNet` 的默认值为 `false`，这意味着默认情况下会阻止访问私有网络地址。如果您的规则依赖于访问本地资源（例如本地
+> REST 服务、本地文件），您必须将此配置设置为 `true`。
 
 将basic项目下debug的值设置为true是有效的 `KUIPER__BASIC__DEBUG=true`。
 

@@ -16,15 +16,18 @@ package httpx
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"fmt"
 	"io"
 	"mime/multipart"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
@@ -179,6 +182,7 @@ func ReadFile(uri string) (io.ReadCloser, error) {
 			Timeout: timeout,
 			Transport: &http.Transport{
 				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+				DialContext:     GetSSRFDialContext(timeout),
 			},
 		}
 		resp, err := client.Get(uri)
@@ -193,6 +197,29 @@ func ReadFile(uri string) (io.ReadCloser, error) {
 		return nil, fmt.Errorf("unsupported url scheme %s", u.Scheme)
 	}
 	return src, nil
+}
+
+func GetSSRFDialContext(timeout time.Duration) func(ctx context.Context, network, addr string) (net.Conn, error) {
+	return func(ctx context.Context, network, addr string) (net.Conn, error) {
+		d := net.Dialer{
+			Timeout: timeout,
+			Control: func(network, address string, c syscall.RawConn) error {
+				if conf.Config != nil && conf.Config.Basic.EnablePrivateNet {
+					return nil
+				}
+				host, _, err := net.SplitHostPort(address)
+				if err != nil {
+					return err
+				}
+				ip := net.ParseIP(host)
+				if ip != nil && (ip.IsLoopback() || ip.IsPrivate() || ip.IsUnspecified() || ip.IsMulticast() || ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast()) {
+					return fmt.Errorf("ip %s is in internal network", ip.String())
+				}
+				return nil
+			},
+		}
+		return d.DialContext(ctx, network, addr)
+	}
 }
 
 func DownloadFile(folder string, name string, uri string) (err error) {

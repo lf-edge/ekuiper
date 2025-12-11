@@ -69,6 +69,7 @@ type KuiperConf struct {
 		ResourceProfileConfig   ResourceProfileConfig `yaml:"ResourceProfileConfig"`
 		MetricsDumpConfig       MetricsDumpConfig     `yaml:"metricsDumpConfig"`
 		EnableRestAuditLog      bool                  `yaml:"enableRestAuditLog"`
+		EnablePrivateNet        bool                  `yaml:"enablePrivateNet"`
 	}
 	Rule   def.RuleOption
 	Sink   *SinkConf

@@ -31,6 +31,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/v2/internal/binder"
 	"github.com/lf-edge/ekuiper/v2/internal/binder/function"
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/meta"
 	"github.com/lf-edge/ekuiper/v2/internal/plugin"
 	"github.com/lf-edge/ekuiper/v2/internal/testx"
@@ -38,6 +39,7 @@ import (
 
 func init() {
 	testx.InitEnv("native")
+	conf.Config.Basic.EnablePrivateNet = true
 	meta.InitYamlConfigManager()
 	var (
 		nativeManager *Manager

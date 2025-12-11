@@ -26,6 +26,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/plugin"
 )
 
@@ -36,6 +37,7 @@ type PluginTestSuite struct {
 }
 
 func (suite *PluginTestSuite) SetupTest() {
+	conf.Config.Basic.EnablePrivateNet = true
 	suite.m = pluginComp{}
 	suite.r = mux.NewRouter()
 	suite.m.rest(suite.r)
