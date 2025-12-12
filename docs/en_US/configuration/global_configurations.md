@@ -50,6 +50,8 @@ basic:
   enableRestAuditLog: false
   # If it is enabled, the rule functions can access the private network.
   enablePrivateNet: false
+  # If it is enabled, APIs can access files outside the data/uploads directory.
+  allowExternalFileAccess: false
 ```
 
 The configuration item **enablePrivateNet** is used to specify whether the rule functions (e.g. valid func, sinks)
@@ -60,6 +62,11 @@ is false for security.
 > Since version v2.4.0, the default value of `enablePrivateNet` is `false`, which means accessing private network
 > addresses is blocked by default. If your rules rely on accessing local resources (e.g., local REST services, local
 > files), you MUST set this configuration to `true`.
+
+The configuration item **allowExternalFileAccess** is used to specify whether file access APIs (e.g. file:// URLs in plugins/schemas) can access files outside the `data/uploads` directory. Default is false for security - only files in the uploads directory are accessible. This prevents path traversal attacks.
+
+> [!WARNING]
+> When `allowExternalFileAccess` is `false` (default), all file:// URL access is restricted to the `data/uploads` directory. Set to `true` only if you need to access files from other locations on the filesystem.
 
 for debug option in basic following env is valid `KUIPER__BASIC__DEBUG=true` and if used debug value will be set to true.
 

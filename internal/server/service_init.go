@@ -27,7 +27,6 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/binder"
 	"github.com/lf-edge/ekuiper/v2/internal/service"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
-	"github.com/lf-edge/ekuiper/v2/pkg/validate"
 )
 
 var serviceManager *service.Manager
@@ -74,10 +73,6 @@ func servicesHandler(w http.ResponseWriter, r *http.Request) {
 		// Problems decoding
 		if err != nil {
 			handleError(w, err, "Invalid body: Error decoding the %s service request payload", logger)
-			return
-		}
-		if err := validate.ValidatePath(sd.File); err != nil {
-			handleError(w, err, "", logger)
 			return
 		}
 		err = serviceManager.Create(sd)

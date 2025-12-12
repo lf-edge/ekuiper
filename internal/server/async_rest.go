@@ -23,7 +23,6 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/async"
-	"github.com/lf-edge/ekuiper/v2/pkg/validate"
 )
 
 const (
@@ -43,10 +42,6 @@ func registerDataImportTask(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(rsi)
 	if err != nil {
 		handleError(w, err, "Invalid body: Error decoding json", logger)
-		return
-	}
-	if err := validate.ValidatePath(rsi.FilePath); err != nil {
-		handleError(w, err, "Invalid file path", logger)
 		return
 	}
 	taskID, err := handleDataImportAsyncTask(rsi, partial, stop)

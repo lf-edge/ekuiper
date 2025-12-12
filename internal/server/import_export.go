@@ -34,7 +34,6 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
-	"github.com/lf-edge/ekuiper/v2/pkg/validate"
 )
 
 type ConfManager interface {
@@ -403,11 +402,6 @@ func configurationImportHandler(w http.ResponseWriter, r *http.Request) {
 		handleError(w, err, "Invalid body: Error decoding json", logger)
 		return
 	}
-	if err := validate.ValidatePath(rsi.FilePath); err != nil {
-		handleError(w, err, "", logger)
-		return
-	}
-
 	result, err := handleConfigurationImport(context.Background(), rsi, partial, stop)
 	if err != nil {
 		if result != nil && err.Error() == ProcessErr {

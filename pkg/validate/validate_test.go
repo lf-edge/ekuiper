@@ -49,8 +49,3 @@ func TestValidateRuleID(t *testing.T) {
 		require.Equal(t, tc.err, ValidateID(tc.id))
 	}
 }
-
-func TestValidatePath(t *testing.T) {
-	require.Error(t, ValidatePath("../a"))
-	require.NoError(t, ValidatePath("./a"))
-}

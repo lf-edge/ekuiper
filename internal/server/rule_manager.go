@@ -32,7 +32,6 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/topo/rule"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/rule/machine"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
-	"github.com/lf-edge/ekuiper/v2/metrics"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
@@ -549,12 +548,6 @@ func getRuleState(name string) (machine.RunState, error) {
 		return rs.GetState(), nil
 	} else {
 		return machine.Stopped, fmt.Errorf("Rule %s is not found in registry", name)
-	}
-}
-
-func deleteRuleMetrics(name string) {
-	if conf.Config != nil && conf.Config.Basic.Prometheus {
-		metrics.RemoveRuleStatus(name)
 	}
 }
 

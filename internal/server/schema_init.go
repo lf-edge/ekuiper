@@ -25,7 +25,6 @@ import (
 
 	"github.com/lf-edge/ekuiper/v2/internal/schema"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
-	"github.com/lf-edge/ekuiper/v2/pkg/validate"
 )
 
 func init() {
@@ -67,10 +66,6 @@ func schemasHandler(w http.ResponseWriter, r *http.Request) {
 		err := json.NewDecoder(r.Body).Decode(sch)
 		if err != nil {
 			handleError(w, err, "Invalid body: Error decoding schema json", logger)
-			return
-		}
-		if err := validate.ValidatePath(sch.FilePath); err != nil {
-			handleError(w, err, "", logger)
 			return
 		}
 		if err = sch.Validate(); err != nil {

@@ -393,6 +393,7 @@ func TestInitByFiles(t *testing.T) {
 
 func TestManage(t *testing.T) {
 	_ = m.serviceStatusInstallKV.Clean()
+	kconf.Config.Basic.AllowExternalFileAccess = true
 	// Test HasFunctionSet
 	if m.HasFunctionSet("sample") {
 		t.Error("HasFunctionSet failed, got true should be false")

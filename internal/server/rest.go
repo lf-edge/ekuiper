@@ -52,9 +52,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 	"github.com/lf-edge/ekuiper/v2/pkg/kv"
 	"github.com/lf-edge/ekuiper/v2/pkg/memory"
-	"github.com/lf-edge/ekuiper/v2/pkg/path"
 	"github.com/lf-edge/ekuiper/v2/pkg/tracer"
-	"github.com/lf-edge/ekuiper/v2/pkg/validate"
 )
 
 const (
@@ -291,10 +289,6 @@ func (f *fileContent) Validate() error {
 	if f.Name == "" {
 		return fmt.Errorf("invalid body: name is required")
 	}
-	// Disallow path traversal and path separators in name
-	if err := path.VerifyFileName(f.Name); err != nil {
-		return err
-	}
 	return nil
 }
 
@@ -380,10 +374,6 @@ func fileUploadHandler(w http.ResponseWriter, r *http.Request) {
 				handleError(w, err, "Invalid body: missing necessary field", logger)
 				return
 			}
-			if err := validate.ValidatePath(fc.FilePath); err != nil {
-				handleError(w, err, "", logger)
-				return
-			}
 			filePath := filepath.Join(uploadDir, fc.Name)
 			err = upload(fc)
 			if err != nil {
@@ -453,13 +443,13 @@ func fileUploadHandler(w http.ResponseWriter, r *http.Request) {
 func fileDeleteHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	name := vars["name"]
-	filePath := filepath.Join(uploadDir, name)
-	if err := validate.ValidatePath(filePath); err != nil {
-		handleError(w, err, "", logger)
+	root, err := os.OpenRoot(uploadDir)
+	if err != nil {
+		handleError(w, err, "Error opening upload directory", logger)
 		return
 	}
-
-	e := os.Remove(filePath)
+	defer root.Close()
+	e := root.Remove(name)
 	if e != nil {
 		handleError(w, e, "Error deleting the file", logger)
 		return
