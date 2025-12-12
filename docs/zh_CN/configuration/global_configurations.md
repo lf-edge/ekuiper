@@ -46,6 +46,8 @@ basic:
   enableRestAuditLog: false
   # If it is enabled, the rule functions can access the private network.
   enablePrivateNet: false
+  # If it is enabled, APIs can access files outside the data/uploads directory.
+  allowExternalFileAccess: false
 ```
 
 配置项 **enablePrivateNet** 用于指定规则函数（例如 valid func、sinks）是否可以访问私有网络（例如 localhost、127.0.0.1）。如果为
@@ -54,6 +56,11 @@ true，则可以访问私有网络。出于安全考虑，默认为 false。
 > [!WARNING]
 > 自版本 v2.4.0 起，`enablePrivateNet` 的默认值为 `false`，这意味着默认情况下会阻止访问私有网络地址。如果您的规则依赖于访问本地资源（例如本地
 > REST 服务、本地文件），您必须将此配置设置为 `true`。
+
+配置项 **allowExternalFileAccess** 用于指定文件访问 API（例如插件/模式中的 file:// URL）是否可以访问 `data/uploads` 目录之外的文件。为了安全，默认值为 false - 只有上传目录中的文件可以被访问。这可以防止路径遍历攻击。
+
+> [!WARNING]
+> 当 `allowExternalFileAccess` 为 `false`（默认值）时，所有 file:// URL 访问都限制在 `data/uploads` 目录内。仅当您需要从文件系统的其他位置访问文件时才设置为 `true`。
 
 将basic项目下debug的值设置为true是有效的 `KUIPER__BASIC__DEBUG=true`。
 

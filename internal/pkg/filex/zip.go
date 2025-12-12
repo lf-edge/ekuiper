@@ -17,7 +17,6 @@ package filex
 import (
 	"archive/zip"
 	"errors"
-	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -31,45 +30,50 @@ func UnzipTo(f *zip.File, folder, name string) (err error) {
 			err = errors.New("UnzipToErr")
 		})
 	}()
-	fpath := filepath.Join(folder, name)
-	_, err = os.Stat(fpath)
 
-	if f.FileInfo().IsDir() {
-		// Make Folder
-		if _, err := os.Stat(fpath); os.IsNotExist(err) {
-			if err := os.MkdirAll(fpath, os.ModePerm); err != nil {
-				return err
-			}
-		}
-		return nil
+	// Ensure destination folder exists (restore previous behavior)
+	if err := os.MkdirAll(folder, os.ModePerm); err != nil {
+		return err
 	}
 
-	if err == nil || !os.IsNotExist(err) {
-		if err = os.RemoveAll(fpath); err != nil {
-			return fmt.Errorf("failed to delete file %s", fpath)
-		}
-	}
-	if _, err := os.Stat(filepath.Dir(fpath)); os.IsNotExist(err) {
-		if err := os.MkdirAll(filepath.Dir(fpath), os.ModePerm); err != nil {
-			return err
-		}
-	}
-
+	// Open the folder as a sandboxed root first to prevent path traversal
 	root, err := os.OpenRoot(folder)
 	if err != nil {
 		return err
 	}
 	defer root.Close()
+
+	if f.FileInfo().IsDir() {
+		// Make Folder using sandboxed root
+		if err := root.Mkdir(name, os.ModePerm); err != nil && !os.IsExist(err) {
+			return err
+		}
+		return nil
+	}
+
+	// For files, create parent directory if needed
+	dir := filepath.Dir(name)
+	if dir != "." && dir != "" {
+		if err := root.Mkdir(dir, os.ModePerm); err != nil && !os.IsExist(err) {
+			return err
+		}
+	}
+
+	// Remove existing file if present
+	_ = root.Remove(name)
+
 	outFile, err := root.OpenFile(name, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
 	if err != nil {
 		return err
 	}
+	defer outFile.Close()
+
 	rc, err := f.Open()
 	if err != nil {
 		return err
 	}
+	defer rc.Close()
+
 	_, err = io.Copy(outFile, rc)
-	outFile.Close()
-	rc.Close()
 	return err
 }

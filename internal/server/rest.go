@@ -443,8 +443,13 @@ func fileUploadHandler(w http.ResponseWriter, r *http.Request) {
 func fileDeleteHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	name := vars["name"]
-	filePath := filepath.Join(uploadDir, name)
-	e := os.Remove(filePath)
+	root, err := os.OpenRoot(uploadDir)
+	if err != nil {
+		handleError(w, err, "Error opening upload directory", logger)
+		return
+	}
+	defer root.Close()
+	e := root.Remove(name)
 	if e != nil {
 		handleError(w, e, "Error deleting the file", logger)
 		return
