@@ -24,6 +24,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
+	"github.com/lf-edge/ekuiper/v2/pkg/validate"
 )
 
 type ConnectionRequest struct {
@@ -44,6 +45,10 @@ func connectionsHandler(w http.ResponseWriter, r *http.Request) {
 		req := &ConnectionRequest{}
 		if err := json.Unmarshal(body, req); err != nil {
 			handleError(w, err, "Invalid body", logger)
+			return
+		}
+		if err := validate.ValidateID(req.ID); err != nil {
+			handleError(w, err, "", logger)
 			return
 		}
 		_, err = connection.CreateNamedConnection(context.Background(), req.ID, req.Typ, req.Props)
@@ -78,6 +83,10 @@ type ConnectionResponse struct {
 func connectionHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	id := mux.Vars(r)["id"]
+	if err := validate.ValidateID(id); err != nil {
+		handleError(w, err, "", logger)
+		return
+	}
 	switch r.Method {
 	case http.MethodGet:
 		meta, err := connection.GetConnectionDetail(context.Background(), id)

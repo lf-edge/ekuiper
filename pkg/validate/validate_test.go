@@ -24,17 +24,30 @@ func TestValidateRuleID(t *testing.T) {
 			"123",
 			nil,
 		},
+
 		{
 			"1/2",
-			fmt.Errorf("ruleID:%s contains invalidChar:%v", "1/2", "/"),
+			fmt.Errorf("ruleID:%s contains invalidChar", "1/2"),
 		},
 		{
 			"1#2",
-			fmt.Errorf("ruleID:%s contains invalidChar:%v", "1#2", "#"),
+			fmt.Errorf("ruleID:%s contains invalidChar", "1#2"),
 		},
 		{
 			"1%2",
-			fmt.Errorf("ruleID:%s contains invalidChar:%v", "1%2", "%"),
+			fmt.Errorf("ruleID:%s contains invalidChar", "1%2"),
+		},
+		{
+			"1-2",
+			nil,
+		},
+		{
+			"1.2",
+			fmt.Errorf("ruleID:%s contains invalidChar", "1.2"),
+		},
+		{
+			"valid_id_123",
+			nil,
 		},
 		{
 			id:  "\t123",
@@ -46,6 +59,11 @@ func TestValidateRuleID(t *testing.T) {
 		},
 	}
 	for _, tc := range testcases {
-		require.Equal(t, tc.err, ValidateID(tc.id))
+		err := ValidateID(tc.id)
+		if tc.err != nil {
+			require.Error(t, err)
+		} else {
+			require.NoError(t, err)
+		}
 	}
 }

@@ -34,6 +34,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/plugin"
 	"github.com/lf-edge/ekuiper/v2/internal/plugin/native"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
+	"github.com/lf-edge/ekuiper/v2/pkg/validate"
 )
 
 var nativeManager *native.Manager
@@ -87,6 +88,11 @@ func pluginsHandler(w http.ResponseWriter, r *http.Request, t plugin.PluginType)
 			return
 		}
 
+		if err := validate.ValidateID(sd.GetName()); err != nil {
+			handleError(w, err, "", logger)
+			return
+		}
+
 		err = nativeManager.Register(t, sd)
 		if err != nil {
 			handleError(w, err, fmt.Sprintf("%s plugins create command error", plugin.PluginTypes[t]), logger)
@@ -101,6 +107,10 @@ func pluginHandler(w http.ResponseWriter, r *http.Request, t plugin.PluginType) 
 	defer func(Body io.ReadCloser) { _ = Body.Close() }(r.Body)
 	vars := mux.Vars(r)
 	name := vars["name"]
+	if err := validate.ValidateID(name); err != nil {
+		handleError(w, err, "", logger)
+		return
+	}
 	cb := r.URL.Query().Get("stop")
 	switch r.Method {
 	case http.MethodDelete:
@@ -183,6 +193,10 @@ func functionsListHandler(w http.ResponseWriter, _ *http.Request) {
 func functionsGetHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	name := vars["name"]
+	if err := validate.ValidateID(name); err != nil {
+		handleError(w, err, "", logger)
+		return
+	}
 	j, ok := nativeManager.GetPluginBySymbol(plugin.FUNCTION, name)
 	if !ok {
 		handleError(w, errorx.NewWithCode(errorx.NOT_FOUND, "not found"), fmt.Sprintf("describe function %s error", name), logger)
@@ -207,6 +221,10 @@ func functionRegisterHandler(w http.ResponseWriter, r *http.Request) {
 	defer func(Body io.ReadCloser) { _ = Body.Close() }(r.Body)
 	vars := mux.Vars(r)
 	name := vars["name"]
+	if err := validate.ValidateID(name); err != nil {
+		handleError(w, err, "", logger)
+		return
+	}
 	_, ok := nativeManager.GetPluginInfo(plugin.FUNCTION, name)
 	if !ok {
 		handleError(w, errorx.NewWithCode(errorx.NOT_FOUND, "not found"), fmt.Sprintf("register %s plugin %s error", plugin.PluginTypes[plugin.FUNCTION], name), logger)

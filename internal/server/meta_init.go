@@ -233,6 +233,10 @@ func sourceConfKeyHandler(w http.ResponseWriter, r *http.Request) {
 	pluginName := vars["name"]
 	confKey := vars["confKey"]
 	language := getLanguage(r)
+	if err := validate.ValidateID(confKey); err != nil {
+		handleError(w, err, "Invalid confKey", logger)
+		return
+	}
 	switch r.Method {
 	case http.MethodDelete:
 		err = meta.DelSourceConfKey(pluginName, confKey, language)
@@ -258,6 +262,10 @@ func sinkConfKeyHandler(w http.ResponseWriter, r *http.Request) {
 	pluginName := vars["name"]
 	confKey := vars["confKey"]
 	language := getLanguage(r)
+	if err := validate.ValidateID(confKey); err != nil {
+		handleError(w, err, "Invalid confKey", logger)
+		return
+	}
 	switch r.Method {
 	case http.MethodDelete:
 		err = meta.DelSinkConfKey(pluginName, confKey, language)
@@ -283,14 +291,14 @@ func connectionConfKeyHandler(w http.ResponseWriter, r *http.Request) {
 	pluginName := vars["name"]
 	confKey := vars["confKey"]
 	language := getLanguage(r)
+	if err := validate.ValidateID(confKey); err != nil {
+		handleError(w, err, "Invalid confKey", logger)
+		return
+	}
 	switch r.Method {
 	case http.MethodDelete:
 		err = meta.DelConnectionConfKey(pluginName, confKey, language)
 	case http.MethodPut:
-		if err := validate.ValidateID(confKey); err != nil {
-			handleError(w, err, "Invalid confKey", logger)
-			return
-		}
 		v, err1 := io.ReadAll(r.Body)
 		if err1 != nil {
 			handleError(w, err1, "Invalid body", logger)
