@@ -705,7 +705,7 @@ func (suite *RestTestSuite) Test_fileUpload() {
 	fileJson := `{"Name": "test.txt", "Content": "test"}`
 	req, _ := http.NewRequest(http.MethodPost, "http://localhost:8080/config/uploads", bytes.NewBufferString(fileJson))
 	req.Header["Content-Type"] = []string{"application/json"}
-	os.Mkdir(uploadDir, 0o777)
+	os.MkdirAll(uploadDir, 0o755)
 	w := httptest.NewRecorder()
 	suite.r.ServeHTTP(w, req)
 	assert.Equal(suite.T(), http.StatusCreated, w.Code)
@@ -775,6 +775,29 @@ func (suite *RestTestSuite) Test_fileUploadValidate() {
 	assert.Equal(suite.T(), http.StatusBadRequest, w.Code)
 
 	os.Remove(uploadDir)
+}
+
+func (suite *RestTestSuite) Test_fileUpload_AutoCreateSubDir() {
+	// Test Case: Auto-create Subdirectory
+	// "subdir/test.txt"
+	// We need to use valid path separator for the OS, but the handler logic (which we will fix)
+	// currently just joins strings. We should send "subdir/sub_test.txt" as name.
+	fileJson := `{"Name": "subdir/sub_test.txt", "Content": "subdir content"}`
+	req, _ := http.NewRequest(http.MethodPost, "http://localhost:8080/config/uploads", bytes.NewBufferString(fileJson))
+	req.Header["Content-Type"] = []string{"application/json"}
+
+	// Ensure uploadDir exists (it should be created in SetupTest, but good to double check or re-create if needed)
+	os.MkdirAll(uploadDir, 0o755)
+
+	w := httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+
+	// Should succeed (StatusCreated 201)
+	assert.Equal(suite.T(), http.StatusCreated, w.Code)
+
+	// Verify file exists
+	_, err := os.Stat(filepath.Join(uploadDir, "subdir", "sub_test.txt"))
+	assert.NoError(suite.T(), err)
 }
 
 func TestRestTestSuite(t *testing.T) {

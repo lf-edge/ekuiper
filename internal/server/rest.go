@@ -29,6 +29,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gorilla/handlers"
@@ -302,29 +303,52 @@ func upload(file *fileContent) error {
 	return uploadsDb.Set(file.Name, file.InstallScript())
 }
 
-func getFile(file *fileContent) error {
+func saveUploadFile(filename string, src io.Reader) (string, error) {
 	root, err := os.OpenRoot(uploadDir)
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer root.Close()
-	dst, err := root.Create(file.Name)
+
+	// Create parent dir for the file if needed
+	if dir := filepath.Dir(filename); dir != "." {
+		fullDir := filepath.Join(uploadDir, dir)
+		if err := os.MkdirAll(fullDir, 0o755); err != nil {
+			return "", err
+		}
+	}
+
+	dst, err := root.Create(filename)
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer dst.Close()
-	if file.FilePath != "" {
-		_, err := httpx.DownloadFile(uploadDir, file.Name, file.FilePath)
-		if err != nil {
-			return err
-		}
-	} else {
-		_, err := dst.Write([]byte(file.Content))
-		if err != nil {
-			return err
-		}
+
+	if _, err := io.Copy(dst, src); err != nil {
+		// Clean up the file if copy fails
+		// Close the file explicit before remove, otherwise it will fail on windows
+		dst.Close()
+		_ = root.Remove(filename)
+		return "", err
 	}
-	return nil
+	return filepath.Join(uploadDir, filename), nil
+}
+
+func getFile(file *fileContent) error {
+	var src io.Reader
+	if file.FilePath != "" {
+		closer, err := httpx.ReadFile(file.FilePath)
+		if err != nil {
+			return err
+		}
+		defer closer.Close()
+		src = closer
+	} else {
+		src = strings.NewReader(file.Content)
+	}
+
+	_, err := saveUploadFile(file.Name, src)
+	return err
 }
 
 func explainRuleHandler(w http.ResponseWriter, r *http.Request) {
@@ -399,24 +423,9 @@ func fileUploadHandler(w http.ResponseWriter, r *http.Request) {
 			}
 			defer file.Close()
 
-			root, err := os.OpenRoot(uploadDir)
+			filePath, err := saveUploadFile(handler.Filename, file)
 			if err != nil {
-				handleError(w, err, "", logger)
-				return
-			}
-			defer root.Close()
-			// Create file
-			filePath := filepath.Join(uploadDir, handler.Filename)
-			dst, err := root.Create(handler.Filename)
-			defer dst.Close()
-			if err != nil {
-				handleError(w, err, "Error creating the file", logger)
-				return
-			}
-
-			// Copy the uploaded file to the created file on the filesystem
-			if _, err := io.Copy(dst, file); err != nil {
-				handleError(w, err, "Error writing the file", logger)
+				handleError(w, err, "Error saving the file", logger)
 				return
 			}
 
