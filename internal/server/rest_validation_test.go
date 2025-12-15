@@ -28,10 +28,12 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/plugin/js"
 	"github.com/lf-edge/ekuiper/v2/internal/plugin/native"
 	"github.com/lf-edge/ekuiper/v2/internal/service"
+    "github.com/gorilla/mux"
 )
 
 type RestValidationTestSuite struct {
-	RestTestSuite
+	suite.Suite
+	r *mux.Router
 }
 
 func (suite *RestValidationTestSuite) TestStreamValidation() {
@@ -133,7 +135,7 @@ func (suite *RestValidationTestSuite) TestRuleValidation() {
 }
 
 func (suite *RestValidationTestSuite) SetupTest() {
-	suite.RestTestSuite.SetupTest()
+	suite.r = mux.NewRouter()
 	var err error
 	serviceManager, err = service.InitManager()
 	if err != nil {
