@@ -108,9 +108,9 @@ func TestStreamCreateProcessor(t *testing.T) {
 			r: []string{"Stream stream is dropped."},
 		},
 		{
-			s: `CREATE STREAM "invalid.topic" (
-					USERID BIGINT,
-				) WITH (DATASOURCE="users", FORMAT="JSON", KEY="USERID");`,
+			s: "CREATE STREAM `invalid.topic` (" +
+				"USERID BIGINT," +
+				") WITH (DATASOURCE=\"users\", FORMAT=\"JSON\", KEY=\"USERID\");",
 			err: "Create stream fails: ruleID:invalid.topic contains invalidChar",
 		},
 	}
