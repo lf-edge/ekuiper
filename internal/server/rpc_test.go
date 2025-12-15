@@ -164,6 +164,11 @@ func (suite *ServerTestSuite) TestRule() {
 	assert.Equal(suite.T(), "Rule myRule was started", reply)
 	fmt.Println("rule started")
 
+	// Validate StartRule failure with invalid name
+	err = suite.s.StartRule("invalid/name", &reply)
+	assert.Error(suite.T(), err)
+	assert.Contains(suite.T(), err.Error(), "invalidChar")
+
 	reply = ""
 	err = suite.s.RestartRule(ruleId, &reply)
 	assert.Nil(suite.T(), err)
