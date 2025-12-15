@@ -35,6 +35,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/topo/rule/machine"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
+	"github.com/lf-edge/ekuiper/v2/pkg/validate"
 )
 
 const QueryRuleId = "internal-ekuiper_query_rule"
@@ -156,6 +157,9 @@ func (t *Server) CreateRule(rule *model.RPCArgDesc, reply *string) error {
 }
 
 func (t *Server) GetStatusRule(name string, reply *string) error {
+	if err := validate.ValidateID(name); err != nil {
+		return err
+	}
 	if r, err := registry.GetRuleStatus(name); err != nil {
 		return err
 	} else {
@@ -165,6 +169,9 @@ func (t *Server) GetStatusRule(name string, reply *string) error {
 }
 
 func (t *Server) GetTopoRule(name string, reply *string) error {
+	if err := validate.ValidateID(name); err != nil {
+		return err
+	}
 	if r, err := registry.GetRuleTopo(name); err != nil {
 		return err
 	} else {
@@ -179,6 +186,9 @@ func (t *Server) GetTopoRule(name string, reply *string) error {
 }
 
 func (t *Server) StartRule(name string, reply *string) error {
+	if err := validate.ValidateID(name); err != nil {
+		return err
+	}
 	if err := registry.StartRule(name); err != nil {
 		return err
 	} else {
@@ -188,6 +198,9 @@ func (t *Server) StartRule(name string, reply *string) error {
 }
 
 func (t *Server) StopRule(name string, reply *string) error {
+	if err := validate.ValidateID(name); err != nil {
+		return err
+	}
 	if err := registry.StopRule(name); err != nil {
 		return err
 	} else {
@@ -197,6 +210,9 @@ func (t *Server) StopRule(name string, reply *string) error {
 }
 
 func (t *Server) RestartRule(name string, reply *string) error {
+	if err := validate.ValidateID(name); err != nil {
+		return err
+	}
 	err := registry.RestartRule(name)
 	if err != nil {
 		return err
@@ -206,6 +222,9 @@ func (t *Server) RestartRule(name string, reply *string) error {
 }
 
 func (t *Server) DescRule(name string, reply *string) error {
+	if err := validate.ValidateID(name); err != nil {
+		return err
+	}
 	r, err := ruleProcessor.ExecDesc(name)
 	if err != nil {
 		return fmt.Errorf("Desc rule error : %s.", err)
@@ -237,6 +256,9 @@ func (t *Server) ShowRules(_ int, reply *string) error {
 }
 
 func (t *Server) DropRule(name string, reply *string) error {
+	if err := validate.ValidateID(name); err != nil {
+		return err
+	}
 	err := registry.DeleteRule(name)
 	if err != nil {
 		return fmt.Errorf("Drop rule error : %s.", err)
