@@ -50,6 +50,14 @@ func (suite *RestTestSuite) TestGetConnectionStatus() {
 	suite.r.ServeHTTP(w, req)
 	require.Equal(suite.T(), http.StatusCreated, w.Code)
 
+	// test invalid id
+	connInvalid := `{"id": "inv/conn", "typ":"mock", "props": {"method": "post", "datasource": "/test1"}}`
+	buf = bytes.NewBuffer([]byte(connInvalid))
+	req, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/connections", buf)
+	w = httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	require.Equal(suite.T(), http.StatusBadRequest, w.Code)
+
 	time.Sleep(100 * time.Millisecond)
 	req, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/connections?forceAll=true", bytes.NewBufferString("any"))
 	w = httptest.NewRecorder()
