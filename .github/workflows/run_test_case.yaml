@@ -85,6 +85,7 @@ jobs:
           rm -r plugins/portable/mirror
       - name: Run fvt
         run: |
+          export KUIPER__BASIC__ALLOWEXTERNALFILEACCESS="true"
           go test -trimpath -tags="full" --cover -covermode=atomic -coverpkg=./... -coverprofile=fvt_coverage.xml ./fvt
           total_coverage=$(go tool cover -func=coverage.xml 2>/dev/null | grep total | awk '{print $3}')
           echo "Total coverage: $total_coverage"

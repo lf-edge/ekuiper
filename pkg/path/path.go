@@ -15,7 +15,6 @@
 package path
 
 import (
-	"fmt"
 	"path/filepath"
 	"strings"
 
@@ -27,13 +26,6 @@ func AbsPath(ctx api.StreamContext, path string) string {
 		return path
 	}
 	return filepath.Join(ctx.GetRootPath(), path)
-}
-
-func VerifyFileName(name string) error {
-	if strings.Contains(name, "..") || filepath.IsAbs(name) {
-		return fmt.Errorf("invalid file name: path traversal or absolute paths are not allowed: %q", name)
-	}
-	return nil
 }
 
 func IsSafeFileComponent(name string) bool {

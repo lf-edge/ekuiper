@@ -25,6 +25,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"syscall"
@@ -162,19 +163,52 @@ func ReadFile(uri string) (io.ReadCloser, error) {
 			u.Path = u.Path[1:]
 		}
 		conf.Log.Debug(u.Path)
-		sourceFileStat, err := os.Stat(u.Path)
-		if err != nil {
-			return nil, err
-		}
+		// When external file access is not allowed, restrict to data/uploads dir
+		if conf.Config == nil || !conf.Config.Basic.AllowExternalFileAccess {
+			dataDir, err := conf.GetDataLoc()
+			if err != nil {
+				return nil, fmt.Errorf("failed to get data directory: %w", err)
+			}
+			uploadsDir := filepath.Join(dataDir, "uploads")
+			// Check if path is under uploads directory
+			absPath, err := filepath.Abs(u.Path)
+			if err != nil {
+				return nil, fmt.Errorf("failed to resolve path: %w", err)
+			}
+			absUploadsDir, err := filepath.Abs(uploadsDir)
+			if err != nil {
+				return nil, fmt.Errorf("failed to resolve uploads directory: %w", err)
+			}
+			relPath, err := filepath.Rel(absUploadsDir, absPath)
+			if err != nil || strings.HasPrefix(relPath, "..") {
+				return nil, fmt.Errorf("file access denied: path must be under %s", uploadsDir)
+			}
+			// Use OpenRoot for sandboxed file access
+			root, err := os.OpenRoot(absUploadsDir)
+			if err != nil {
+				return nil, fmt.Errorf("failed to open uploads directory: %w", err)
+			}
+			defer root.Close()
+			srcFile, err := root.Open(relPath)
+			if err != nil {
+				return nil, err
+			}
+			src = srcFile
+		} else {
+			sourceFileStat, err := os.Stat(u.Path)
+			if err != nil {
+				return nil, err
+			}
 
-		if !sourceFileStat.Mode().IsRegular() {
-			return nil, fmt.Errorf("%s is not a regular file", u.Path)
+			if !sourceFileStat.Mode().IsRegular() {
+				return nil, fmt.Errorf("%s is not a regular file", u.Path)
+			}
+			srcFile, err := os.Open(u.Path)
+			if err != nil {
+				return nil, err
+			}
+			src = srcFile
 		}
-		srcFile, err := os.Open(u.Path)
-		if err != nil {
-			return nil, err
-		}
-		src = srcFile
 	case "http", "https":
 		// Get the data
 		timeout := 5 * time.Minute

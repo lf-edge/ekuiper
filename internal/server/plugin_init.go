@@ -34,7 +34,6 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/plugin"
 	"github.com/lf-edge/ekuiper/v2/internal/plugin/native"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
-	"github.com/lf-edge/ekuiper/v2/pkg/validate"
 )
 
 var nativeManager *native.Manager
@@ -85,10 +84,6 @@ func pluginsHandler(w http.ResponseWriter, r *http.Request, t plugin.PluginType)
 		// Problems decoding
 		if err != nil {
 			handleError(w, err, fmt.Sprintf("Invalid body: Error decoding the %s plugin json", plugin.PluginTypes[t]), logger)
-			return
-		}
-		if err := validate.ValidatePath(sd.GetFile()); err != nil {
-			handleError(w, err, "", logger)
 			return
 		}
 
