@@ -445,10 +445,6 @@ func fileUploadHandler(w http.ResponseWriter, r *http.Request) {
 func fileDeleteHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	name := vars["name"]
-	if err := validate.ValidateID(name); err != nil {
-		handleError(w, err, "", logger)
-		return
-	}
 	root, err := os.OpenRoot(uploadDir)
 	if err != nil {
 		handleError(w, err, "Error opening upload directory", logger)

@@ -20,7 +20,6 @@ import (
 	"strings"
 )
 
-
 var idRegex = regexp.MustCompile(`^[a-zA-Z0-9_\-]+$`)
 
 func ValidateID(id string) error {
