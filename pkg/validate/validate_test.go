@@ -27,15 +27,15 @@ func TestValidateRuleID(t *testing.T) {
 
 		{
 			"1/2",
-			fmt.Errorf("ruleID:%s contains invalidChar", "1/2"),
+			fmt.Errorf("id '%s' contains invalid characters: only alphanumeric, hyphens and underscores are allowed", "1/2"),
 		},
 		{
 			"1#2",
-			fmt.Errorf("ruleID:%s contains invalidChar", "1#2"),
+			fmt.Errorf("id '%s' contains invalid characters: only alphanumeric, hyphens and underscores are allowed", "1#2"),
 		},
 		{
 			"1%2",
-			fmt.Errorf("ruleID:%s contains invalidChar", "1%2"),
+			fmt.Errorf("id '%s' contains invalid characters: only alphanumeric, hyphens and underscores are allowed", "1%%2"),
 		},
 		{
 			"1-2",
@@ -43,7 +43,7 @@ func TestValidateRuleID(t *testing.T) {
 		},
 		{
 			"1.2",
-			fmt.Errorf("ruleID:%s contains invalidChar", "1.2"),
+			fmt.Errorf("id '%s' contains invalid characters: only alphanumeric, hyphens and underscores are allowed", "1.2"),
 		},
 		{
 			"valid_id_123",
@@ -51,11 +51,11 @@ func TestValidateRuleID(t *testing.T) {
 		},
 		{
 			id:  "\t123",
-			err: fmt.Errorf("ruleID: %v should be trimed", "\t123"),
+			err: fmt.Errorf("id '%s' contains leading or trailing whitespace", "\t123"),
 		},
 		{
 			id:  "123\t",
-			err: fmt.Errorf("ruleID: %v should be trimed", "123\t"),
+			err: fmt.Errorf("id '%s' contains leading or trailing whitespace", "123\t"),
 		},
 	}
 	for _, tc := range testcases {

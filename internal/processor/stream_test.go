@@ -111,7 +111,7 @@ func TestStreamCreateProcessor(t *testing.T) {
 			s: "CREATE STREAM `invalid.topic` (" +
 				"USERID BIGINT," +
 				") WITH (DATASOURCE=\"users\", FORMAT=\"JSON\", KEY=\"USERID\");",
-			err: "Create stream fails: ruleID:invalid.topic contains invalidChar",
+			err: "id 'invalid.topic' contains invalid characters: only alphanumeric, hyphens and underscores are allowed",
 		},
 	}
 
