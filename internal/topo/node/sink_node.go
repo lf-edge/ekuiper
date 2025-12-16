@@ -15,18 +15,19 @@
 package node
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
+	"github.com/lf-edge/ekuiper/v2/internal/converter"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	kctx "github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
+	"github.com/lf-edge/ekuiper/v2/pkg/message"
 	"github.com/lf-edge/ekuiper/v2/pkg/model"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
@@ -222,40 +223,86 @@ func NewTupleSinkNode(ctx api.StreamContext, name string, sink api.TupleCollecto
 	ctx.GetLogger().Infof("create message sink node %s", name)
 	n := newSinkNode(ctx, name, rOpt, eoflimit, sc, isRetry)
 	n.sink = sink
-	n.doCollect = tupleCollect
+	// Create converter for decoding RawTuple
+	conv, err := converter.GetOrCreateConverter(ctx, sc.Format, sc.SchemaId, nil, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create converter for format %s: %v", sc.Format, err)
+	}
+	n.doCollect = createTupleCollect(conv)
 	return n, nil
 }
 
-// return error that cannot be sent
-func tupleCollect(ctx api.StreamContext, sink api.Sink, data any) (err error) {
-	switch d := data.(type) {
-	// Some tuple list type also implements tuple. So need to handle list firstly
-	case api.MessageTupleList:
-		err = sink.(api.TupleCollector).CollectList(ctx, d)
-	case api.MessageTuple:
-		err = sink.(api.TupleCollector).Collect(ctx, d)
-	case *xsql.RawTuple: // may receive raw tuple from data template
-		// TODO: whether needs to consider json list?
-		var message map[string]any
-		err = json.Unmarshal(d.Rawdata, &message)
-		if err != nil {
-			return err
+// createTupleCollect creates a tupleCollect function with the given converter
+func createTupleCollect(conv message.Converter) func(ctx api.StreamContext, sink api.Sink, data any) error {
+	return func(ctx api.StreamContext, sink api.Sink, data any) (err error) {
+		switch d := data.(type) {
+		// Some tuple list type also implements tuple. So need to handle list firstly
+		case api.MessageTupleList:
+			err = sink.(api.TupleCollector).CollectList(ctx, d)
+		case api.MessageTuple:
+			err = sink.(api.TupleCollector).Collect(ctx, d)
+		case *xsql.RawTuple: // may receive raw tuple from data template
+			err = decodeAndCollect(ctx, sink.(api.TupleCollector), d, conv)
+		case error:
+			err = sink.(api.TupleCollector).Collect(ctx, model.NewDefaultSourceTuple(xsql.Message{"error": d.Error()}, nil, timex.GetNow()))
+		default:
+			err = fmt.Errorf("expect tuple data type but got %T", d)
 		}
+		return err
+	}
+}
+
+// decodeAndCollect decodes RawTuple and calls Collect or CollectList based on result
+func decodeAndCollect(ctx api.StreamContext, sink api.TupleCollector, d *xsql.RawTuple, conv message.Converter) error {
+	result, err := conv.Decode(ctx, d.Rawdata)
+	if err != nil {
+		return err
+	}
+
+	switch r := result.(type) {
+	case map[string]any:
 		t := &xsql.Tuple{
 			Ctx:       d.Ctx,
 			Metadata:  d.Metadata,
 			Timestamp: d.Timestamp,
 			Emitter:   d.Emitter,
 			Props:     d.Props,
-			Message:   message,
+			Message:   r,
 		}
-		err = sink.(api.TupleCollector).Collect(ctx, t)
-	case error:
-		err = sink.(api.TupleCollector).Collect(ctx, model.NewDefaultSourceTuple(xsql.Message{"error": d.Error()}, nil, timex.GetNow()))
+		return sink.Collect(ctx, t)
+	case []map[string]any:
+		tuples := make([]api.MessageTuple, len(r))
+		for i, m := range r {
+			tuples[i] = &xsql.Tuple{
+				Ctx:       d.Ctx,
+				Metadata:  d.Metadata,
+				Timestamp: d.Timestamp,
+				Emitter:   d.Emitter,
+				Props:     d.Props,
+				Message:   m,
+			}
+		}
+		return sink.CollectList(ctx, &xsql.TransformedTupleList{Content: tuples})
+	case []any:
+		tuples := make([]api.MessageTuple, 0, len(r))
+		for _, v := range r {
+			if m, ok := v.(map[string]any); ok {
+				tuples = append(tuples, &xsql.Tuple{
+					Ctx:       d.Ctx,
+					Metadata:  d.Metadata,
+					Timestamp: d.Timestamp,
+					Emitter:   d.Emitter,
+					Props:     d.Props,
+					Message:   m,
+				})
+			} else {
+				return fmt.Errorf("only map[string]any inside a list is supported but got: %T", v)
+			}
+		}
+		return sink.CollectList(ctx, &xsql.TransformedTupleList{Content: tuples})
 	default:
-		err = fmt.Errorf("expect tuple data type but got %T", d)
+		return fmt.Errorf("unsupported decode result type: %T", r)
 	}
-	return err
 }
 
 var _ DataSinkNode = (*SinkNode)(nil)

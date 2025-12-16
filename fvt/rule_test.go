@@ -651,3 +651,135 @@ func (s *RuleTestSuite) TestJoinWithLookup() {
 	s.Require().Equal(http.StatusCreated, resp.StatusCode)
 	s.assertRecvMemTuple(subCh, []map[string]any{{"k1": "v1", "k2": "v1", "k3": "v1"}})
 }
+
+// TestRawTupleDecodeInMemorySink tests that dataTemplate output (RawTuple) is correctly
+// decoded by the memory sink using the format setting.
+func (s *RuleTestSuite) TestRawTupleDecodeInMemorySink() {
+	client.DeleteRule("ruleRawDecode")
+	client.DeleteStream("simRaw")
+	defer client.DeleteRule("ruleRawDecode")
+	defer client.DeleteStream("simRaw")
+
+	topic := "rawDecodeResult"
+	subCh := pubsub.CreateSub(topic, nil, topic, 1024)
+	defer pubsub.CloseSourceConsumerChannel(topic, topic)
+
+	// Configure simulator source with input data
+	data := []map[string]any{
+		{"id": float64(1), "name": "Alice", "score": float64(85)},
+		{"id": float64(2), "name": "Bob", "score": float64(92)},
+	}
+	conf := map[string]any{
+		"data":     data,
+		"interval": "10ms",
+		"loop":     false,
+	}
+	resp, err := client.CreateConf("sources/simulator/confKeys/simRaw", conf)
+	s.Require().NoError(err)
+	s.Require().Equal(http.StatusOK, resp.StatusCode)
+
+	// Create stream with simulator source
+	streamSql := `{"sql": "create stream simRaw() WITH (TYPE=\"simulator\", CONF_KEY=\"simRaw\")"}`
+	resp, err = client.CreateStream(streamSql)
+	s.Require().NoError(err)
+	s.T().Log(GetResponseText(resp))
+	s.Require().Equal(http.StatusCreated, resp.StatusCode)
+
+	// Create rule with dataTemplate that transforms data to JSON string (creates RawTuple)
+	// The memory sink with format=json should decode this RawTuple back to MessageTuple
+	ruleSql := `{
+		"id": "ruleRawDecode",
+		"sql": "SELECT * FROM simRaw",
+		"actions": [
+			{
+				"memory": {
+					"topic": "rawDecodeResult",
+					"format": "json",
+					"dataTemplate": "{\"user_id\":{{.id}},\"user_name\":\"{{.name}}\",\"user_score\":{{.score}}}",
+					"sendSingle": true
+				}
+			}
+		],
+		"options": {
+			"sendError": false
+		}
+	}`
+	resp, err = client.CreateRule(ruleSql)
+	s.Require().NoError(err)
+	s.T().Log(GetResponseText(resp))
+	s.Require().Equal(http.StatusCreated, resp.StatusCode)
+
+	// Assert the decoded results
+	expected := []map[string]any{
+		{"user_id": float64(1), "user_name": "Alice", "user_score": float64(85)},
+		{"user_id": float64(2), "user_name": "Bob", "user_score": float64(92)},
+	}
+	s.assertRecvMemTuple(subCh, expected)
+}
+
+// TestRawTupleDecodeListInMemorySink tests decoding RawTuple that contains a JSON array
+func (s *RuleTestSuite) TestRawTupleDecodeListInMemorySink() {
+	client.DeleteRule("ruleRawDecodeList")
+	client.DeleteStream("simRawList")
+	defer client.DeleteRule("ruleRawDecodeList")
+	defer client.DeleteStream("simRawList")
+
+	topic := "rawDecodeListResult"
+	subCh := pubsub.CreateSub(topic, nil, topic, 1024)
+	defer pubsub.CloseSourceConsumerChannel(topic, topic)
+
+	// Configure simulator source
+	data := []map[string]any{
+		{"values": []any{float64(1), float64(2), float64(3)}},
+	}
+	conf := map[string]any{
+		"data":     data,
+		"interval": "10ms",
+		"loop":     false,
+	}
+	resp, err := client.CreateConf("sources/simulator/confKeys/simRawList", conf)
+	s.Require().NoError(err)
+	s.Require().Equal(http.StatusOK, resp.StatusCode)
+
+	streamSql := `{"sql": "create stream simRawList() WITH (TYPE=\"simulator\", CONF_KEY=\"simRawList\")"}`
+	resp, err = client.CreateStream(streamSql)
+	s.Require().NoError(err)
+	s.Require().Equal(http.StatusCreated, resp.StatusCode)
+
+	// Create rule with dataTemplate that outputs JSON array (list of objects)
+	ruleSql := `{
+		"id": "ruleRawDecodeList",
+		"sql": "SELECT * FROM simRawList",
+		"actions": [
+			{
+				"memory": {
+					"topic": "rawDecodeListResult",
+					"format": "json",
+					"dataTemplate": "[{\"v\":1},{\"v\":2}]",
+					"sendSingle": true
+				}
+			}
+		]
+	}`
+	resp, err = client.CreateRule(ruleSql)
+	s.Require().NoError(err)
+	s.Require().Equal(http.StatusCreated, resp.StatusCode)
+
+	// When the decoder returns a list, it should call CollectList
+	// Expect 2 separate tuples from the decoded list
+	expected := []map[string]any{
+		{"v": float64(1)},
+		{"v": float64(2)},
+	}
+	s.assertRecvMemTupleList(subCh, expected)
+}
+
+func (s *RuleTestSuite) assertRecvMemTupleList(subCh chan any, expect []map[string]any) {
+	d := <-subCh
+	mt, ok := d.([]pubsub.MemTuple)
+	s.Require().True(ok, "expected []pubsub.MemTuple but got %T", d)
+	s.Require().Len(mt, len(expect))
+	for i, e := range expect {
+		s.Require().Equal(e, mt[i].ToMap())
+	}
+}
