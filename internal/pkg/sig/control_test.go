@@ -37,7 +37,7 @@ func TestInstances(ta *testing.T) {
 		cli    paho.Client
 		lock   sync.Mutex
 	)
-	
+
 	setupBroker := func() {
 		lock.Lock()
 		defer lock.Unlock()
@@ -52,15 +52,12 @@ func TestInstances(ta *testing.T) {
 			panic(err)
 		}
 		go func() {
-			err = server.Serve()
-			if err != nil {
-				// panic(err) // might panic on close
-			}
+			server.Serve()
 		}()
 		// Wait for server? usually Serve is async, but listener is added.
 		time.Sleep(100 * time.Millisecond)
 	}
-	
+
 	setupClient := func(t *testing.T) {
 		lock.Lock()
 		defer lock.Unlock()
@@ -88,10 +85,10 @@ func TestInstances(ta *testing.T) {
 		cins1.Add("stream1")
 		cins1.Add("stream2")
 		time.Sleep(1 * time.Second)
-		
+
 		setupBroker()
 		setupClient(t)
-		
+
 		messages := make([]string, 0, 2)
 		wg := &sync.WaitGroup{}
 		wg.Add(1)
@@ -104,23 +101,23 @@ func TestInstances(ta *testing.T) {
 			}
 		})
 		require.NoError(t, handleToken(token))
-		
+
 		if waitTimeout(wg, 5*time.Second) {
 			t.Fatal("timeout waiting for messages")
 		}
-		
+
 		exp1 := []string{"stream1", "stream2"}
 		exp2 := []string{"stream2", "stream1"}
 		require.True(t, reflect.DeepEqual(messages, exp1) || reflect.DeepEqual(messages, exp2))
-		
+
 		token = cli.Unsubscribe(CtrlTopic)
 		require.NoError(t, handleToken(token))
-		
+
 		// Test Ack
 		token = cli.Publish(CtrlAckTopic, 0, false, "stream1")
 		require.NoError(t, handleToken(token))
 		time.Sleep(time.Second)
-		
+
 		wg = &sync.WaitGroup{}
 		wg.Add(1)
 		token = cli.Subscribe(CtrlTopic, 1, func(client paho.Client, message paho.Message) {
@@ -128,7 +125,7 @@ func TestInstances(ta *testing.T) {
 			wg.Done()
 		})
 		require.NoError(t, handleToken(token))
-		
+
 		if waitTimeout(wg, 5*time.Second) {
 			t.Fatal("timeout waiting for stream2")
 		}
@@ -143,10 +140,10 @@ func TestInstances(ta *testing.T) {
 		// Ensure broker is running (if run standalone, this ensures it starts)
 		setupBroker()
 		setupClient(t)
-		
+
 		cins2 := NewMQTTControl(addr, "c2")
 		cins2.Add("stream1")
-		
+
 		wg := &sync.WaitGroup{}
 		wg.Add(1)
 		token := cli.Subscribe(CtrlTopic, 1, func(client paho.Client, message paho.Message) {
@@ -155,7 +152,7 @@ func TestInstances(ta *testing.T) {
 			}
 		})
 		require.NoError(t, handleToken(token))
-		
+
 		if waitTimeout(wg, 5*time.Second) {
 			// It might be missed if we subscribed too late relative to publish?
 			// cins2 is new, it connects then publishes.
@@ -168,9 +165,9 @@ func TestInstances(ta *testing.T) {
 
 		cins2.Rem("stream1")
 		require.Nil(t, cins2.cancel)
-		
+
 		cins2.Add("stream2")
-		
+
 		wg2 := &sync.WaitGroup{}
 		wg2.Add(1)
 		token = cli.Subscribe(CtrlTopic, 1, func(client paho.Client, message paho.Message) {
@@ -179,7 +176,7 @@ func TestInstances(ta *testing.T) {
 			}
 		})
 		require.NoError(t, handleToken(token))
-		
+
 		if waitTimeout(wg2, 5*time.Second) {
 			t.Fatal("timeout waiting for stream2")
 		}
