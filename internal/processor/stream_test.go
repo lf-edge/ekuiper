@@ -107,6 +107,12 @@ func TestStreamCreateProcessor(t *testing.T) {
 			s: "DROP STREAM `stream`;",
 			r: []string{"Stream stream is dropped."},
 		},
+		{
+			s: "CREATE STREAM `invalid.topic` (" +
+				"USERID BIGINT," +
+				") WITH (DATASOURCE=\"users\", FORMAT=\"JSON\", KEY=\"USERID\");",
+			err: "id 'invalid.topic' contains invalid characters: only alphanumeric, hyphens and underscores are allowed",
+		},
 	}
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))

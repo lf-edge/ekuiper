@@ -59,6 +59,13 @@ func (suite *ScriptTestSuite) TestAPI() {
 	suite.r.ServeHTTP(w, req)
 	suite.Equal(http.StatusBadRequest, w.Code)
 
+	// invalid id
+	invalidId := `{"id": "inv/alid", "description": "function to calculate area", "script": "function area(x, y) { return x * y; }", "is_agg": false}`
+	req, _ = http.NewRequest(http.MethodPost, "/udf/javascript", bytes.NewBufferString(invalidId))
+	w = httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	suite.Equal(http.StatusBadRequest, w.Code)
+
 	// get correct
 	req, _ = http.NewRequest(http.MethodGet, "/udf/javascript/area", bytes.NewBufferString("any"))
 	w = httptest.NewRecorder()

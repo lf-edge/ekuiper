@@ -23,6 +23,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/model"
 	"github.com/lf-edge/ekuiper/v2/internal/plugin"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/validate"
 )
 
 func (t *Server) CreatePlugin(arg *model.PluginDesc, reply *string) error {
@@ -30,6 +31,9 @@ func (t *Server) CreatePlugin(arg *model.PluginDesc, reply *string) error {
 	p, err := getPluginByJson(arg, pt)
 	if err != nil {
 		return fmt.Errorf("Create plugin error: %s", err)
+	}
+	if err := validate.ValidateID(p.GetName()); err != nil {
+		return err
 	}
 	if p.GetFile() == "" {
 		return fmt.Errorf("Create plugin error: Missing plugin file url.")
@@ -49,6 +53,9 @@ func (t *Server) DropPlugin(arg *model.PluginDesc, reply *string) error {
 	p, err := getPluginByJson(arg, pt)
 	if err != nil {
 		return fmt.Errorf("Drop plugin error: %s", err)
+	}
+	if err := validate.ValidateID(p.GetName()); err != nil {
+		return err
 	}
 	err = t.doDelete(pt, p.GetName(), arg.Stop)
 	if err != nil {
@@ -73,6 +80,9 @@ func (t *Server) DescPlugin(arg *model.PluginDesc, reply *string) error {
 	p, err := getPluginByJson(arg, pt)
 	if err != nil {
 		return fmt.Errorf("Describe plugin error: %s", err)
+	}
+	if err := validate.ValidateID(p.GetName()); err != nil {
+		return err
 	}
 	m, err := t.doDesc(pt, p.GetName())
 	if err != nil {

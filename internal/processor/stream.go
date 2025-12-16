@@ -34,6 +34,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	"github.com/lf-edge/ekuiper/v2/pkg/kv"
+	"github.com/lf-edge/ekuiper/v2/pkg/validate"
 )
 
 var log = conf.Log
@@ -114,6 +115,9 @@ func (p *StreamProcessor) ExecStmt(statement string) (result []string, err error
 	}
 	switch s := stmt.(type) {
 	case *ast.StreamStmt: // Table is also StreamStmt
+		if err := validate.ValidateID(string(s.Name)); err != nil {
+			return nil, err
+		}
 		var r string
 		err = p.execSave(s, statement, false)
 		stt := ast.StreamTypeMap[s.StreamType]

@@ -23,6 +23,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/model"
 	"github.com/lf-edge/ekuiper/v2/internal/service"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/validate"
 )
 
 func (t *Server) CreateService(arg *model.RPCArgDesc, reply *string) error {
@@ -34,6 +35,9 @@ func (t *Server) CreateService(arg *model.RPCArgDesc, reply *string) error {
 	}
 	if sd.Name != arg.Name {
 		return fmt.Errorf("Create service error: name mismatch.")
+	}
+	if err := validate.ValidateID(sd.Name); err != nil {
+		return err
 	}
 	if sd.File == "" {
 		return fmt.Errorf("Create service error: Missing service file url.")
@@ -48,6 +52,9 @@ func (t *Server) CreateService(arg *model.RPCArgDesc, reply *string) error {
 }
 
 func (t *Server) DescService(name string, reply *string) error {
+	if err := validate.ValidateID(name); err != nil {
+		return err
+	}
 	s, err := serviceManager.Get(name)
 	if err != nil {
 		return fmt.Errorf("Desc service error : %s.", err)
@@ -62,6 +69,9 @@ func (t *Server) DescService(name string, reply *string) error {
 }
 
 func (t *Server) DescServiceFunc(name string, reply *string) error {
+	if err := validate.ValidateID(name); err != nil {
+		return err
+	}
 	s, err := serviceManager.GetFunction(name)
 	if err != nil {
 		return fmt.Errorf("Desc service func error : %s.", err)
@@ -76,6 +86,9 @@ func (t *Server) DescServiceFunc(name string, reply *string) error {
 }
 
 func (t *Server) DropService(name string, reply *string) error {
+	if err := validate.ValidateID(name); err != nil {
+		return err
+	}
 	err := serviceManager.Delete(name)
 	if err != nil {
 		return fmt.Errorf("Drop service error : %s.", err)

@@ -44,6 +44,13 @@ func (suite *SchemaTestSuite) TestSchema() {
 	suite.r.ServeHTTP(w, req)
 	suite.Equal(http.StatusCreated, w.Code)
 
+	// test invalid id
+	protoInvalid := `{"name": "test.invalid", "Content": "message ListOfDoubles {repeated double doubles=1;}"}`
+	req, _ = http.NewRequest(http.MethodPost, "/schemas/protobuf", bytes.NewBufferString(protoInvalid))
+	w = httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	suite.Equal(http.StatusBadRequest, w.Code)
+
 	req, _ = http.NewRequest(http.MethodGet, "/schemas/protobuf", bytes.NewBufferString("any"))
 	w = httptest.NewRecorder()
 	suite.r.ServeHTTP(w, req)

@@ -25,6 +25,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/v2/internal/schema"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
+	"github.com/lf-edge/ekuiper/v2/pkg/validate"
 )
 
 func init() {
@@ -72,6 +73,10 @@ func schemasHandler(w http.ResponseWriter, r *http.Request) {
 			handleError(w, err, "Invalid body", logger)
 			return
 		}
+		if err = validate.ValidateID(sch.Name); err != nil {
+			handleError(w, err, "", logger)
+			return
+		}
 		err = schema.Register(sch)
 		if err != nil {
 			handleError(w, err, "schema create command error", logger)
@@ -88,6 +93,10 @@ func schemaHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	st := vars["type"]
 	name := vars["name"]
+	if err := validate.ValidateID(name); err != nil {
+		handleError(w, err, "", logger)
+		return
+	}
 	switch r.Method {
 	case http.MethodGet:
 		j, err := schema.GetSchema(st, name)

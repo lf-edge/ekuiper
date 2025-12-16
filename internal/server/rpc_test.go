@@ -164,6 +164,41 @@ func (suite *ServerTestSuite) TestRule() {
 	assert.Equal(suite.T(), "Rule myRule was started", reply)
 	fmt.Println("rule started")
 
+	// Validate StartRule failure with invalid name
+	err = suite.s.StartRule("invalid/name", &reply)
+	assert.Error(suite.T(), err)
+	assert.Contains(suite.T(), err.Error(), "invalid characters")
+
+	// Validate validation failures for rule management
+	invalidID := "invalid/name"
+	err = suite.s.StartRule(invalidID, &reply)
+	assert.Error(suite.T(), err)
+	assert.Contains(suite.T(), err.Error(), "invalid characters")
+
+	err = suite.s.StopRule(invalidID, &reply)
+	assert.Error(suite.T(), err)
+	assert.Contains(suite.T(), err.Error(), "invalid characters")
+
+	err = suite.s.GetStatusRule(invalidID, &reply)
+	assert.Error(suite.T(), err)
+	assert.Contains(suite.T(), err.Error(), "invalid characters")
+
+	err = suite.s.GetTopoRule(invalidID, &reply)
+	assert.Error(suite.T(), err)
+	assert.Contains(suite.T(), err.Error(), "invalid characters")
+
+	err = suite.s.DescRule(invalidID, &reply)
+	assert.Error(suite.T(), err)
+	assert.Contains(suite.T(), err.Error(), "invalid characters")
+
+	err = suite.s.RestartRule(invalidID, &reply)
+	assert.Error(suite.T(), err)
+	assert.Contains(suite.T(), err.Error(), "invalid characters")
+
+	err = suite.s.DropRule(invalidID, &reply)
+	assert.Error(suite.T(), err)
+	assert.Contains(suite.T(), err.Error(), "invalid characters")
+
 	reply = ""
 	err = suite.s.RestartRule(ruleId, &reply)
 	assert.Nil(suite.T(), err)

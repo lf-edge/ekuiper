@@ -23,7 +23,6 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
@@ -83,7 +82,7 @@ func (suite *RestTestSuite) TestRuleTest() {
 	require.Equal(suite.T(), http.StatusOK, w2.Code)
 	u := url.URL{Scheme: "ws", Host: "localhost:10087", Path: "/test/mock1"}
 	c1, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
-	assert.NoError(suite.T(), err)
+	require.NoError(suite.T(), err)
 	defer c1.Close()
 
 	recvCh := make(chan []byte, 10)

@@ -185,6 +185,12 @@ func (suite *MetaTestSuite) TestSourceConfKeyHandler() {
 	assert.Equal(suite.T(), http.StatusOK, w.Code)
 	os.Remove(path.Join(DataDir, "sources", "mqtt.yaml"))
 	os.Remove(path.Join(DataDir, "sources"))
+
+	// Test invalid confKey
+	req, _ = http.NewRequest(http.MethodPut, "/metadata/sources/mqtt/confKeys/invalid.test", bytes.NewBufferString(`{"qos": 0, "server": "tcp://10.211.55.6:1883"}`))
+	w = httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusBadRequest, w.Code)
 }
 
 func (suite *MetaTestSuite) TestConnectionConfKeyHandler() {
@@ -199,6 +205,12 @@ func (suite *MetaTestSuite) TestConnectionConfKeyHandler() {
 	assert.Equal(suite.T(), http.StatusOK, w.Code)
 	os.Remove(path.Join(DataDir, "connections", "connection.yaml"))
 	os.Remove(path.Join(DataDir, "connections"))
+
+	// Test invalid confKey
+	req, _ = http.NewRequest(http.MethodPut, "/metadata/connections/mqtt/confKeys/invalid.test", bytes.NewBufferString(`{"qos": 0, "server": "tcp://10.211.55.6:1883"}`))
+	w = httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusBadRequest, w.Code)
 }
 
 func (suite *MetaTestSuite) TestSinkConfKeyHandler() {
@@ -213,6 +225,12 @@ func (suite *MetaTestSuite) TestSinkConfKeyHandler() {
 	assert.Equal(suite.T(), http.StatusOK, w.Code)
 	os.Remove(path.Join(DataDir, "sinks", "mqtt.yaml"))
 	os.Remove(path.Join(DataDir, "sinks"))
+
+	// Test invalid confKey
+	req, _ = http.NewRequest(http.MethodPut, "/metadata/sinks/mqtt/confKeys/invalid.test", bytes.NewBufferString(`{"qos": 0, "server": "tcp://10.211.55.6:1883", "password":"123456"}`))
+	w = httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusBadRequest, w.Code)
 }
 
 func (suite *MetaTestSuite) TestResourcesHandler() {

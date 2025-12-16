@@ -53,6 +53,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/kv"
 	"github.com/lf-edge/ekuiper/v2/pkg/memory"
 	"github.com/lf-edge/ekuiper/v2/pkg/tracer"
+	"github.com/lf-edge/ekuiper/v2/pkg/validate"
 )
 
 const (
@@ -174,6 +175,7 @@ func createRestServer(ip string, port int, needToken bool) *http.Server {
 	r := mux.NewRouter()
 	router = r
 	r.Use(traceMiddleware)
+
 	r.HandleFunc("/", rootHandler).Methods(http.MethodGet, http.MethodPost)
 	r.HandleFunc("/stop", stopHandler).Methods(http.MethodGet, http.MethodPost)
 	r.HandleFunc("/ping", pingHandler).Methods(http.MethodGet)
@@ -597,6 +599,10 @@ func sourceManageHandler(w http.ResponseWriter, r *http.Request, st ast.StreamTy
 	defer r.Body.Close()
 	vars := mux.Vars(r)
 	name := vars["name"]
+	if err := validate.ValidateID(name); err != nil {
+		handleError(w, err, "", logger)
+		return
+	}
 
 	switch r.Method {
 	case http.MethodGet:
@@ -723,6 +729,10 @@ func ruleHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	vars := mux.Vars(r)
 	name := vars["name"]
+	if err := validate.ValidateID(name); err != nil {
+		handleError(w, err, "", logger)
+		return
+	}
 
 	switch r.Method {
 	case http.MethodGet:

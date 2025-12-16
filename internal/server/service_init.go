@@ -27,6 +27,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/binder"
 	"github.com/lf-edge/ekuiper/v2/internal/service"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
+	"github.com/lf-edge/ekuiper/v2/pkg/validate"
 )
 
 var serviceManager *service.Manager
@@ -75,6 +76,10 @@ func servicesHandler(w http.ResponseWriter, r *http.Request) {
 			handleError(w, err, "Invalid body: Error decoding the %s service request payload", logger)
 			return
 		}
+		if err := validate.ValidateID(sd.Name); err != nil {
+			handleError(w, err, "", logger)
+			return
+		}
 		err = serviceManager.Create(sd)
 		if err != nil {
 			handleError(w, err, "service create command error", logger)
@@ -89,6 +94,10 @@ func serviceHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	vars := mux.Vars(r)
 	name := vars["name"]
+	if err := validate.ValidateID(name); err != nil {
+		handleError(w, err, "", logger)
+		return
+	}
 	switch r.Method {
 	case http.MethodDelete:
 		err := serviceManager.Delete(name)
@@ -136,6 +145,10 @@ func serviceFunctionsHandler(w http.ResponseWriter, r *http.Request) {
 func serviceFunctionHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	name := vars["name"]
+	if err := validate.ValidateID(name); err != nil {
+		handleError(w, err, "", logger)
+		return
+	}
 	j, err := serviceManager.GetFunction(name)
 	if err != nil {
 		handleError(w, errorx.NewWithCode(errorx.NOT_FOUND, "not found"), fmt.Sprintf("describe function %s error", name), logger)

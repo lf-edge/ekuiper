@@ -16,7 +16,6 @@ package path
 
 import (
 	"path/filepath"
-	"strings"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 )
@@ -26,12 +25,4 @@ func AbsPath(ctx api.StreamContext, path string) string {
 		return path
 	}
 	return filepath.Join(ctx.GetRootPath(), path)
-}
-
-func IsSafeFileComponent(name string) bool {
-	// Disallow path separators and parent directory references.
-	if strings.Contains(name, "/") || strings.Contains(name, "\\") || strings.Contains(name, "..") || name == "" {
-		return false
-	}
-	return true
 }

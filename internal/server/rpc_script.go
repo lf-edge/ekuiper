@@ -22,12 +22,16 @@ import (
 
 	"github.com/lf-edge/ekuiper/v2/internal/plugin/js"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/validate"
 )
 
 func (t *Server) CreateScript(j string, reply *string) error {
 	sd := &js.Script{}
 	if err := json.Unmarshal(cast.StringToBytes(j), sd); err != nil {
 		return fmt.Errorf("Parse JavaScript function error : %s.", err)
+	}
+	if err := validate.ValidateID(sd.Id); err != nil {
+		return err
 	}
 	err := js.GetManager().Create(sd)
 	if err != nil {
@@ -39,6 +43,9 @@ func (t *Server) CreateScript(j string, reply *string) error {
 }
 
 func (t *Server) DescScript(name string, reply *string) error {
+	if err := validate.ValidateID(name); err != nil {
+		return err
+	}
 	j, err := js.GetManager().GetScript(name)
 	if err != nil {
 		return fmt.Errorf("Describe JavaScript function error : %s.", err)
@@ -53,6 +60,9 @@ func (t *Server) DescScript(name string, reply *string) error {
 }
 
 func (t *Server) DropScript(name string, reply *string) error {
+	if err := validate.ValidateID(name); err != nil {
+		return err
+	}
 	err := js.GetManager().Delete(name)
 	if err != nil {
 		return fmt.Errorf("Drop JavaScript function error : %s.", err)

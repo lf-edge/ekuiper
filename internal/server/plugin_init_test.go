@@ -178,6 +178,17 @@ func (suite *PluginTestSuite) TestFunctionsUpdateHandler() {
 	w = httptest.NewRecorder()
 	suite.r.ServeHTTP(w, req)
 	assert.Equal(suite.T(), http.StatusOK, w.Code)
+
+	// Test invalid id
+	req, _ = http.NewRequest(http.MethodPost, "/plugins/functions", bytes.NewBufferString("{\"name\":\"invalid.echo2\", \"file\": \""+endpoint+"/functions/echo2.zip\"}"))
+	w = httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusBadRequest, w.Code)
+
+	req, _ = http.NewRequest(http.MethodDelete, "/plugins/functions/invalid.echo2", bytes.NewBufferString(""))
+	w = httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusBadRequest, w.Code)
 }
 
 func (suite *PluginTestSuite) TestUdfsHandler() {

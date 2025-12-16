@@ -25,6 +25,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/v2/internal/binder"
 	"github.com/lf-edge/ekuiper/v2/internal/plugin/js"
+	"github.com/lf-edge/ekuiper/v2/pkg/validate"
 )
 
 func init() {
@@ -68,6 +69,10 @@ func jsfuncsHandler(w http.ResponseWriter, r *http.Request) {
 			handleError(w, err, "Invalid body: Error decoding the new javascript function json", logger)
 			return
 		}
+		if err := validate.ValidateID(sd.Id); err != nil {
+			handleError(w, err, "", logger)
+			return
+		}
 		err = js.GetManager().Create(sd)
 		if err != nil {
 			handleError(w, err, "javascript function create command error", logger)
@@ -82,6 +87,10 @@ func jsfuncHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	vars := mux.Vars(r)
 	name := vars["id"]
+	if err := validate.ValidateID(name); err != nil {
+		handleError(w, err, "", logger)
+		return
+	}
 	switch r.Method {
 	case http.MethodDelete:
 		err := js.GetManager().Delete(name)
@@ -104,6 +113,10 @@ func jsfuncHandler(w http.ResponseWriter, r *http.Request) {
 		// Problems decoding
 		if err != nil {
 			handleError(w, err, "Invalid body: Error decoding the javascript function json", logger)
+			return
+		}
+		if err := validate.ValidateID(sd.Id); err != nil {
+			handleError(w, err, "", logger)
 			return
 		}
 		err = js.GetManager().Update(sd)

@@ -16,21 +16,21 @@ package validate
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 )
 
-var invalidRuleChars = []string{
-	"/", "#", "%",
-}
+var idRegex = regexp.MustCompile(`^[a-zA-Z0-9_\-]+$`)
 
 func ValidateID(id string) error {
-	if id != strings.TrimSpace(id) {
-		return fmt.Errorf("ruleID: %v should be trimed", id)
+	if id == "" {
+		return fmt.Errorf("id cannot be empty")
 	}
-	for _, invalidChar := range invalidRuleChars {
-		if strings.Contains(id, invalidChar) {
-			return fmt.Errorf("ruleID:%s contains invalidChar:%v", id, invalidChar)
-		}
+	if id != strings.TrimSpace(id) {
+		return fmt.Errorf("id '%s' contains leading or trailing whitespace", id)
+	}
+	if !idRegex.MatchString(id) {
+		return fmt.Errorf("id '%s' contains invalid characters: only alphanumeric, hyphens and underscores are allowed", id)
 	}
 	return nil
 }

@@ -186,7 +186,7 @@ func (p *RuleProcessor) GetRuleByJson(id, ruleJson string) (*def.Rule, error) {
 	if id != "" && rule.Id != "" && id != rule.Id {
 		return nil, fmt.Errorf("RuleId is not consistent with rule id.")
 	}
-	if err := validateRuleID(rule.Id); err != nil {
+	if err := validate.ValidateID(rule.Id); err != nil {
 		return nil, err
 	}
 	if rule.Sql != "" {
@@ -218,10 +218,6 @@ func CanReplace(old, new string) bool {
 		return true
 	}
 	return new > old
-}
-
-func validateRuleID(id string) error {
-	return validate.ValidateID(id)
 }
 
 func clone(opt def.RuleOption) *def.RuleOption {
