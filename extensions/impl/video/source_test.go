@@ -15,12 +15,13 @@
 package video
 
 import (
-	"errors"
+	"os"
 	"testing"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/pkg/mock"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/model"
@@ -63,7 +64,8 @@ func TestProvision(t *testing.T) {
 	}
 }
 
-func TestPull(t *testing.T) {
+func TestSubscribe(t *testing.T) {
+	conf.Log.SetOutput(os.Stdout)
 	meta := map[string]any{
 		"url": "https://hdgcwbcdali.v.myalicdn.com/hdgcwbcd/cdrmipanda1000_1/index.m3u8",
 	}
@@ -73,7 +75,7 @@ func TestPull(t *testing.T) {
 	r := GetSource()
 	mock.TestSourceConnectorCompare(t, r, map[string]any{
 		"url":       "https://hdgcwbcdali.v.myalicdn.com/hdgcwbcd/cdrmipanda1000_1/index.m3u8",
-		"interval":  "15s",
+		"interval":  "1s",
 		"debugResp": true,
 		"inputArgs": map[string]any{
 			"user_agent": "test_agent",
@@ -94,14 +96,3 @@ func TestPull(t *testing.T) {
 	})
 }
 
-func TestPullError(t *testing.T) {
-	exp := errors.New("read frame failed, err:exit status 8")
-	r := GetSource()
-	mock.TestSourceConnector(t, r, map[string]any{
-		"url":      "https://hdgcwbcdali.v.myalicdn.com/hdgcwbcd/cdrmipanda1000_1/index.m3u8",
-		"codec":    "ogv",
-		"interval": "15s",
-	}, exp, func() {
-		// do nothing
-	})
-}

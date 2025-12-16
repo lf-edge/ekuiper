@@ -15,10 +15,9 @@
 package video
 
 import (
-	"bytes"
+	"bufio"
 	"errors"
 	"fmt"
-	"io"
 	"net/url"
 	"os/exec"
 	"strings"
@@ -35,9 +34,10 @@ type Source struct {
 	// Run ffmpeg -formats to get all supported format, default to 'image2'
 	Format string `json:"vformat"`
 	// Check https://www.ffmpeg.org/general.html#Video-Codecs, default to 'mjpeg'
-	Codec     string         `json:"codec"`
-	DebugResp bool           `json:"debugResp"`
-	InputArgs map[string]any `json:"inputArgs"`
+	Codec     string            `json:"codec"`
+	DebugResp bool              `json:"debugResp"`
+	InputArgs map[string]any    `json:"inputArgs"`
+	Interval  cast.DurationConf `json:"interval"`
 	meta      map[string]any
 }
 
@@ -54,7 +54,7 @@ func (s *Source) Provision(ctx api.StreamContext, props map[string]any) error {
 		return errors.New("ffmpeg dependency check failed")
 	}
 
-	s.Format = "image2"
+	s.Format = "image2pipe"
 	s.Codec = "mjpeg"
 	err = cast.MapToStruct(props, s)
 	if err != nil {
@@ -81,42 +81,115 @@ func (s *Source) Connect(_ api.StreamContext, sch api.StatusChangeHandler) error
 	return nil
 }
 
-func (s *Source) Pull(ctx api.StreamContext, trigger time.Time, ingest api.BytesIngest, ingestError api.ErrorIngest) {
-	buf, err := s.readFrameAsJpeg(ctx)
-	if err != nil {
-		ingestError(ctx, err)
-	} else {
-		ingest(ctx, buf.Bytes(), s.meta, trigger)
+func (s *Source) Subscribe(ctx api.StreamContext, ingest api.BytesIngest, ingestError api.ErrorIngest) error {
+	ctx.GetLogger().Infof("start video source subscribe with interval %s", s.Interval)
+	var fps string
+	if s.Interval > 0 {
+		fps = fmt.Sprintf("1/%f", time.Duration(s.Interval).Seconds())
+	}
+
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		default:
+			start := time.Now()
+			err := s.runCurrent(ctx, fps, ingest)
+			if err != nil {
+				// check if recoverable
+				// If process exit too fast (less than 2s) with specific error, return error
+				if time.Since(start) < 2*time.Second && isFatalError(err) {
+					ingestError(ctx, err)
+					return err
+				}
+				ctx.GetLogger().Errorf("ffmpeg run failed: %v, restarting...", err)
+				ingestError(ctx, err)
+			}
+			// backoff
+			select {
+			case <-ctx.Done():
+				return nil
+			case <-time.After(1 * time.Second):
+			}
+		}
 	}
 }
 
-func (s *Source) readFrameAsJpeg(ctx api.StreamContext) (*bytes.Buffer, error) {
-	ctx.GetLogger().Debugf("read frame at %v", time.Now())
-	buf := bytes.NewBuffer(nil)
-	err := s.readTo(ctx, buf)
-	if err != nil {
-		return nil, fmt.Errorf("read frame failed, err:%v", err)
-	}
-	return buf, nil
+func isFatalError(err error) bool {
+	msg := err.Error()
+	return strings.Contains(msg, "Invalid argument") || strings.Contains(msg, "Option not found")
 }
 
-func (s *Source) readTo(ctx api.StreamContext, out io.Writer) error {
-	ctx.GetLogger().Debugf("read frame at %v", time.Now())
-	stream := ffmpeg.Input(s.Url, s.InputArgs).
-		Output("pipe:", ffmpeg.KwArgs{"vframes": 1, "format": s.Format, "vcodec": s.Codec}).
-		WithOutput(out)
-	if s.DebugResp {
-		var errBuf bytes.Buffer
-		stream = stream.WithErrorOutput(&errBuf)
-		err := stream.Run()
-		ctx.GetLogger().Infof("ffmpeg output: %s", errBuf.String())
+func (s *Source) runCurrent(ctx api.StreamContext, fps string, ingest api.BytesIngest) error {
+	input := ffmpeg.Input(s.Url, s.InputArgs)
+	if fps != "" {
+		input = input.Filter("fps", ffmpeg.Args{fps})
+	}
+	cmd := input.Output("pipe:", ffmpeg.KwArgs{
+		"format": s.Format,
+		"vcodec": s.Codec,
+		"q:v":    "2",
+	}).Compile()
+
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
 		return err
 	}
-	return stream.Run()
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		return err
+	}
+
+	if err := cmd.Start(); err != nil {
+		return err
+	}
+
+	done := make(chan error, 1)
+	go func() {
+		done <- cmd.Wait()
+	}()
+
+	go func() {
+		scanner := bufio.NewScanner(stderr)
+		for scanner.Scan() {
+			if s.DebugResp {
+				ctx.GetLogger().Infof("ffmpeg stderr: %s", scanner.Text())
+			}
+		}
+	}()
+
+	scanner := bufio.NewScanner(stdout)
+	scanner.Split(splitJPEGs)
+	// Larger buffer for high res images
+	buf := make([]byte, 0, 64*1024)
+	scanner.Buffer(buf, 1024*1024*10)
+
+	for scanner.Scan() {
+		data := scanner.Bytes()
+		// Copy data because scanner bytes are reused
+		out := make([]byte, len(data))
+		copy(out, data)
+		ingest(ctx, out, s.meta, time.Now())
+	}
+
+	if err := scanner.Err(); err != nil {
+		ctx.GetLogger().Errorf("scanner error: %v", err)
+	}
+
+	// wait for cmd to exit
+	select {
+	case <-ctx.Done():
+		if cmd.Process != nil {
+			cmd.Process.Kill()
+		}
+		return nil
+	case err := <-done:
+		return err
+	}
 }
 
 func GetSource() api.Source {
 	return &Source{}
 }
 
-var _ api.PullBytesSource = &Source{}
+var _ api.BytesSource = &Source{}
