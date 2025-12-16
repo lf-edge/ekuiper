@@ -72,8 +72,9 @@ func TestPull(t *testing.T) {
 	}
 	r := GetSource()
 	mock.TestSourceConnectorCompare(t, r, map[string]any{
-		"url":      "https://hdgcwbcdali.v.myalicdn.com/hdgcwbcd/cdrmipanda1000_1/index.m3u8",
-		"interval": "15s",
+		"url":       "https://hdgcwbcdali.v.myalicdn.com/hdgcwbcd/cdrmipanda1000_1/index.m3u8",
+		"interval":  "15s",
+		"debugResp": true,
 	}, exp, func(e any, r any) bool {
 		et, ok := e.([]api.MessageTuple)
 		b := assert.True(t, ok)
