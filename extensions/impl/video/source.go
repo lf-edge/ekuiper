@@ -30,7 +30,6 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
 
-
 type Source struct {
 	Url string `json:"url"`
 	// Run ffmpeg -formats to get all supported format, default to 'image2'
