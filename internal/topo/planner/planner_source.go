@@ -283,12 +283,16 @@ func checkFeatures(ss api.Source, sp *SourcePropsForSplit, props map[string]any)
 		needPayloadDecode: sp.PayloadFormat != "",
 	}
 	if sp.Interval > 0 {
-		switch ss.(type) {
-		// pull source already pull internally which is also a rate limiter
-		case api.PullTupleSource, api.PullBytesSource:
+		if info.HasInterval {
 			r.needRatelimit = false
-		default:
-			r.needRatelimit = true
+		} else {
+			switch ss.(type) {
+			// pull source already pull internally which is also a rate limiter
+			case api.PullTupleSource, api.PullBytesSource:
+				r.needRatelimit = false
+			default:
+				r.needRatelimit = true
+			}
 		}
 	}
 	if r.needRatelimit && sp.MergeField != "" && r.needDecode {

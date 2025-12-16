@@ -27,6 +27,7 @@ import (
 	ffmpeg "github.com/u2takey/ffmpeg-go"
 
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/model"
 )
 
 type Source struct {
@@ -188,8 +189,23 @@ func (s *Source) runCurrent(ctx api.StreamContext, fps string, ingest api.BytesI
 	}
 }
 
+func (s *Source) Info() model.NodeInfo {
+	return model.NodeInfo{
+		HasInterval:     true,
+		NeedDecode:      true,
+		NeedBatchDecode: true,
+	}
+}
+
+func (s *Source) TransformType() api.Source {
+	return s
+}
+
 func GetSource() api.Source {
 	return &Source{}
 }
 
-var _ api.BytesSource = &Source{}
+var (
+	_ api.BytesSource = &Source{}
+	_ model.InfoNode  = &Source{}
+)
