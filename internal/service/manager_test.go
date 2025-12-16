@@ -127,7 +127,7 @@ func TestInitByFiles(t *testing.T) {
 				},
 			},
 			"tsschemaless": {
-				Addr:     "http://localhost:51234",
+				Addr:     "http://localhost:51235",
 				Protocol: REST,
 				Schema: &schemaInfo{
 					Schemaless: true,
@@ -351,7 +351,7 @@ func TestInitByFiles(t *testing.T) {
 		},
 		"tsschemaless": {
 			ServiceName:   "sample",
-			Addr:          "http://localhost:51234",
+			Addr:          "http://localhost:51235",
 			InterfaceName: "tsschemaless",
 			MethodName:    "tsschemaless",
 			FuncName:      "tsschemaless",
