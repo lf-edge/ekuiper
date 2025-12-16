@@ -66,7 +66,7 @@ jobs:
       - name: Run test case
         run: |
           make failpoint-enable
-          go test -trimpath -tags="edgex msgpack script parquet test" --cover -covermode=atomic -coverpkg=./... -coverprofile=coverage.xml $(go list ./... | grep -v "github.com/lf-edge/ekuiper/v2/fvt")
+          go test -trimpath -tags="edgex msgpack script parquet test rpc" --cover -covermode=atomic -coverpkg=./... -coverprofile=coverage.xml $(go list ./... | grep -v "github.com/lf-edge/ekuiper/v2/fvt")
           total_coverage=$(go tool cover -func=coverage.xml 2>/dev/null | grep total | awk '{print $3}')
           make failpoint-disable          
           echo "Total coverage: $total_coverage"
