@@ -30,15 +30,15 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
 
-const FRAMENUMBER = 5
 
 type Source struct {
 	Url string `json:"url"`
 	// Run ffmpeg -formats to get all supported format, default to 'image2'
 	Format string `json:"vformat"`
 	// Check https://www.ffmpeg.org/general.html#Video-Codecs, default to 'mjpeg'
-	Codec     string `json:"codec"`
-	DebugResp bool   `json:"debugResp"`
+	Codec     string         `json:"codec"`
+	DebugResp bool           `json:"debugResp"`
+	InputArgs map[string]any `json:"inputArgs"`
 	meta      map[string]any
 }
 
@@ -103,8 +103,7 @@ func (s *Source) readFrameAsJpeg(ctx api.StreamContext) (*bytes.Buffer, error) {
 
 func (s *Source) readTo(ctx api.StreamContext, out io.Writer) error {
 	ctx.GetLogger().Debugf("read frame at %v", time.Now())
-	stream := ffmpeg.Input(s.Url).
-		Filter("select", ffmpeg.Args{fmt.Sprintf("gte(n,%d)", FRAMENUMBER)}).
+	stream := ffmpeg.Input(s.Url, s.InputArgs).
 		Output("pipe:", ffmpeg.KwArgs{"vframes": 1, "format": s.Format, "vcodec": s.Codec}).
 		WithOutput(out)
 	if s.DebugResp {
