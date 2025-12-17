@@ -53,6 +53,22 @@ dedup:
 
 视频编码。访问 https://www.ffmpeg.org/general.html#Video-Codecs 以获取所有支持的编码。默认为 'mjpeg'。
 
+### debugResp
+
+是否将 ffmpeg 的响应输出到日志以进行调试。默认为 `false`。
+
+### inputArgs
+
+传递给 ffmpeg 输入的参数映射。这允许自定义 ffmpeg 输入选项，如 `-rtsp_transport`、`-fflags` 等。例如：
+
+```yaml
+default:
+  url: rtsp://localhost:8554/stream
+  inputArgs:
+    rtsp_transport: tcp
+    fflags: nobuffer
+```
+
 ## 覆盖默认设置
 
 如果您有特定的连接需要覆盖默认设置，则可以创建一个自定义部分。 在上一个示例中，我们创建一个名为 `ext` 的特定设置。 然后，您可以在创建流定义时使用选项 `CONF_KEY` 指定配置（有关更多信息，请参见 [stream specs](../../../sqls/streams.md)）。
