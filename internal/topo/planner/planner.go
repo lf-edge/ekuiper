@@ -114,7 +114,7 @@ func updateFieldIndex(ctx api.StreamContext, stmt *ast.SelectStatement, af []*as
 							ctx.GetLogger().Debugf("update field source index %s to %d", nf.Name, nf.SourceIndex)
 						}
 					} else {
-						panic("field not found in schema index")
+						panic(fmt.Sprintf("field %s.%s not found in schema index", nf.StreamName, nf.Name))
 					}
 				} else {
 					nf.SourceIndex = -1
@@ -179,7 +179,7 @@ func doUpdateIndex(ctx api.StreamContext, root ast.Node, index int, aliasIndex m
 						ctx.GetLogger().Debugf("update field source index %s to %d", nf.Name, nf.SourceIndex)
 					}
 				} else {
-					panic("field not found in schema index")
+					panic(fmt.Sprintf("field %s.%s not found in schema index", nf.StreamName, nf.Name))
 				}
 			} else if nf.IsAlias() {
 				ai, ok := aliasIndex[nf.Name]
