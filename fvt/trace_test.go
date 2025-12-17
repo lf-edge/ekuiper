@@ -265,8 +265,13 @@ func (s *TraceTestSuite) compareTrace(exp map[string]any, act map[string]any) bo
 	}
 	for k, v := range act {
 		switch k {
-		case "name", "attribute":
+		case "name":
 			if reflect.DeepEqual(exp[k], v) == false {
+				fmt.Printf("compare %s, expect %s, actual %s\n", k, exp[k], v)
+				return false
+			}
+		case "attribute":
+			if !s.compareAttribute(exp[k], v) {
 				fmt.Printf("compare %s, expect %s, actual %s\n", k, exp[k], v)
 				return false
 			}
@@ -354,4 +359,56 @@ func (s *TraceTestSuite) compareTrace(exp map[string]any, act map[string]any) bo
 		}
 	}
 	return true
+}
+
+// compareAttribute compares two attribute maps, handling the "data" field's JSON content specially
+// to account for non-deterministic field ordering in JSON serialization
+func (s *TraceTestSuite) compareAttribute(exp, act any) bool {
+	expMap, ok := exp.(map[string]any)
+	if !ok {
+		return reflect.DeepEqual(exp, act)
+	}
+	actMap, ok := act.(map[string]any)
+	if !ok {
+		return false
+	}
+	if len(expMap) != len(actMap) {
+		return false
+	}
+	for k, ev := range expMap {
+		av, ok := actMap[k]
+		if !ok {
+			return false
+		}
+		if k == "data" {
+			// Compare data field: could be JSON string, need semantic comparison
+			if !s.compareDataField(ev, av) {
+				return false
+			}
+		} else {
+			if !reflect.DeepEqual(ev, av) {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+// compareDataField compares data fields which may contain JSON strings
+func (s *TraceTestSuite) compareDataField(exp, act any) bool {
+	expStr, ok1 := exp.(string)
+	actStr, ok2 := act.(string)
+	if !ok1 || !ok2 {
+		return reflect.DeepEqual(exp, act)
+	}
+	// Try to parse as JSON array or object
+	var expData, actData any
+	err1 := json.Unmarshal([]byte(expStr), &expData)
+	err2 := json.Unmarshal([]byte(actStr), &actData)
+	// If both are valid JSON, compare semantically
+	if err1 == nil && err2 == nil {
+		return reflect.DeepEqual(expData, actData)
+	}
+	// Otherwise compare as strings
+	return expStr == actStr
 }
