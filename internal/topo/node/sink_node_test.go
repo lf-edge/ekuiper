@@ -197,3 +197,185 @@ func (m *mockResendSink) Collect(ctx api.StreamContext, item api.RawTuple) error
 }
 
 var _ api.BytesCollector = &mockResendSink{}
+
+// mockTupleCollector is a mock sink for testing tuple collection
+type mockTupleCollector struct {
+	collected     []api.MessageTuple
+	collectedList []api.MessageTuple
+}
+
+func (m *mockTupleCollector) Provision(ctx api.StreamContext, configs map[string]any) error {
+	return nil
+}
+
+func (m *mockTupleCollector) Close(ctx api.StreamContext) error {
+	return nil
+}
+
+func (m *mockTupleCollector) Connect(ctx api.StreamContext, _ api.StatusChangeHandler) error {
+	return nil
+}
+
+func (m *mockTupleCollector) Collect(ctx api.StreamContext, item api.MessageTuple) error {
+	m.collected = append(m.collected, item)
+	return nil
+}
+
+func (m *mockTupleCollector) CollectList(ctx api.StreamContext, items api.MessageTupleList) error {
+	items.RangeOfTuples(func(index int, tuple api.MessageTuple) bool {
+		m.collectedList = append(m.collectedList, tuple)
+		return true
+	})
+	return nil
+}
+
+var _ api.TupleCollector = &mockTupleCollector{}
+
+// mockConverter is a mock converter for testing
+type mockConverter struct {
+	result any
+	err    error
+}
+
+func (m *mockConverter) Encode(ctx api.StreamContext, d any) ([]byte, error) {
+	return nil, nil
+}
+
+func (m *mockConverter) Decode(ctx api.StreamContext, b []byte) (any, error) {
+	return m.result, m.err
+}
+
+func TestDecodeAndCollect(t *testing.T) {
+	ctx := mockContext.NewMockContext("testDecode", "sink")
+
+	tests := []struct {
+		name            string
+		decodeResult    any
+		decodeErr       error
+		expectError     bool
+		expectCollected int
+		expectList      int
+	}{
+		{
+			name:            "single map result",
+			decodeResult:    map[string]any{"id": 1, "name": "test"},
+			expectCollected: 1,
+			expectList:      0,
+		},
+		{
+			name:            "[]map result",
+			decodeResult:    []map[string]any{{"id": 1}, {"id": 2}},
+			expectCollected: 0,
+			expectList:      2,
+		},
+		{
+			name:            "[]any with maps result",
+			decodeResult:    []any{map[string]any{"id": 1}, map[string]any{"id": 2}, map[string]any{"id": 3}},
+			expectCollected: 0,
+			expectList:      3,
+		},
+		{
+			name:            "[]any with non-map result",
+			decodeResult:    []any{"not a map"},
+			expectError:     true,
+			expectCollected: 0,
+			expectList:      0,
+		},
+		{
+			name:            "unsupported type result",
+			decodeResult:    "string result",
+			expectError:     true,
+			expectCollected: 0,
+			expectList:      0,
+		},
+		{
+			name:            "decode error",
+			decodeErr:       assert.AnError,
+			expectError:     true,
+			expectCollected: 0,
+			expectList:      0,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			sink := &mockTupleCollector{}
+			conv := &mockConverter{result: tt.decodeResult, err: tt.decodeErr}
+			rawTuple := &xsql.RawTuple{
+				Rawdata:   []byte(`{"test": "data"}`),
+				Timestamp: time.Now(),
+				Metadata:  map[string]any{"source": "test"},
+			}
+
+			err := decodeAndCollect(ctx, sink, rawTuple, conv)
+
+			if tt.expectError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+			assert.Equal(t, tt.expectCollected, len(sink.collected), "collected count")
+			assert.Equal(t, tt.expectList, len(sink.collectedList), "collectList count")
+		})
+	}
+}
+
+func TestCreateTupleCollect(t *testing.T) {
+	ctx := mockContext.NewMockContext("testTupleCollect", "sink")
+	conv := &mockConverter{result: map[string]any{"decoded": true}}
+
+	collectFn := createTupleCollect(conv)
+	assert.NotNil(t, collectFn)
+
+	t.Run("handles RawTuple", func(t *testing.T) {
+		sink := &mockTupleCollector{}
+		rawTuple := &xsql.RawTuple{
+			Rawdata:   []byte(`{}`),
+			Timestamp: time.Now(),
+		}
+
+		err := collectFn(ctx, sink, rawTuple)
+		assert.NoError(t, err)
+		assert.Equal(t, 1, len(sink.collected))
+	})
+
+	t.Run("handles MessageTuple", func(t *testing.T) {
+		sink := &mockTupleCollector{}
+		tuple := &xsql.Tuple{
+			Message: map[string]any{"key": "value"},
+		}
+
+		err := collectFn(ctx, sink, tuple)
+		assert.NoError(t, err)
+		assert.Equal(t, 1, len(sink.collected))
+	})
+
+	t.Run("handles MessageTupleList", func(t *testing.T) {
+		sink := &mockTupleCollector{}
+		tuples := &xsql.TransformedTupleList{
+			Content: []api.MessageTuple{
+				&xsql.Tuple{Message: map[string]any{"id": 1}},
+				&xsql.Tuple{Message: map[string]any{"id": 2}},
+			},
+		}
+
+		err := collectFn(ctx, sink, tuples)
+		assert.NoError(t, err)
+		assert.Equal(t, 2, len(sink.collectedList))
+	})
+
+	t.Run("handles error type", func(t *testing.T) {
+		sink := &mockTupleCollector{}
+		err := collectFn(ctx, sink, assert.AnError)
+		assert.NoError(t, err)
+		assert.Equal(t, 1, len(sink.collected))
+		// Check error message is in the tuple
+		assert.NotNil(t, sink.collected[0].ToMap()["error"])
+	})
+
+	t.Run("returns error for unknown type", func(t *testing.T) {
+		sink := &mockTupleCollector{}
+		err := collectFn(ctx, sink, "unknown type")
+		assert.Error(t, err)
+	})
+}

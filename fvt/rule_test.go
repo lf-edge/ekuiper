@@ -651,3 +651,73 @@ func (s *RuleTestSuite) TestJoinWithLookup() {
 	s.Require().Equal(http.StatusCreated, resp.StatusCode)
 	s.assertRecvMemTuple(subCh, []map[string]any{{"k1": "v1", "k2": "v1", "k3": "v1"}})
 }
+
+// TestDataTemplateArrayDecode tests that dataTemplate producing a JSON array `[{},{}]`
+// is correctly decoded by sink_node and produces a list for memory sink/source
+func (s *RuleTestSuite) TestDataTemplateArrayDecode() {
+	client.DeleteRule("ruleArrayDecode")
+	client.DeleteStream("simArray")
+	defer client.DeleteRule("ruleArrayDecode")
+	defer client.DeleteStream("simArray")
+
+	topic := "arrayDecodeResult"
+	subCh := pubsub.CreateSub(topic, nil, topic, 1024)
+	defer pubsub.CloseSourceConsumerChannel(topic, topic)
+
+	// Configure simulator source with single input that will be expanded to array
+	data := []map[string]any{
+		{"a": float64(1), "b": float64(2)},
+	}
+	conf := map[string]any{
+		"data":     data,
+		"interval": "10ms",
+		"loop":     false,
+	}
+	resp, err := client.CreateConf("sources/simulator/confKeys/simArray", conf)
+	s.Require().NoError(err)
+	s.Require().Equal(http.StatusOK, resp.StatusCode)
+
+	streamSql := `{"sql": "create stream simArray() WITH (TYPE=\"simulator\", CONF_KEY=\"simArray\")"}`
+	resp, err = client.CreateStream(streamSql)
+	s.Require().NoError(err)
+	s.T().Log(GetResponseText(resp))
+	s.Require().Equal(http.StatusCreated, resp.StatusCode)
+
+	// Create rule with dataTemplate that outputs JSON array
+	// The sink_node should decode this and call CollectList
+	ruleSql := `{
+		"id": "ruleArrayDecode",
+		"sql": "SELECT * FROM simArray",
+		"actions": [
+			{
+				"memory": {
+					"topic": "arrayDecodeResult",
+					"format": "json",
+					"dataTemplate": "[{\"v\":{{.a}}},{\"v\":{{.b}}}]",
+					"sendSingle": true
+				}
+			}
+		]
+	}`
+	resp, err = client.CreateRule(ruleSql)
+	s.Require().NoError(err)
+	s.T().Log(GetResponseText(resp))
+	s.Require().Equal(http.StatusCreated, resp.StatusCode)
+
+	// When the decoder returns a list, memory source should receive a list
+	expected := []map[string]any{
+		{"v": float64(1)},
+		{"v": float64(2)},
+	}
+	s.assertRecvMemTupleList(subCh, expected)
+}
+
+func (s *RuleTestSuite) assertRecvMemTupleList(subCh chan any, expect []map[string]any) {
+	d := <-subCh
+	mt, ok := d.([]pubsub.MemTuple)
+	s.Require().True(ok, "expected []pubsub.MemTuple but got %T", d)
+	s.Require().Len(mt, len(expect))
+	for i, e := range expect {
+		s.Require().Equal(e, mt[i].ToMap())
+	}
+}
