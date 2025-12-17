@@ -54,6 +54,23 @@ The video format. Run `ffmpeg -formats` to get all supported format, default to 
 
 The video codec. Check https://www.ffmpeg.org/general.html#Video-Codecs for all supported codec, default to 'mjpeg'
 
+### debugResp
+
+Whether to output the ffmpeg response to the log for debugging. Default to `false`.
+
+### inputArgs
+
+A map of input arguments to pass to ffmpeg input. This allows customizing ffmpeg input options like `-rtsp_transport`,
+`-fflags`, etc. For example:
+
+```yaml
+default:
+  url: rtsp://localhost:8554/stream
+  inputArgs:
+    rtsp_transport: tcp
+    fflags: nobuffer
+```
+
 ## Override the default settings
 
 If you have a specific connection that need to overwrite the default settings, you can create a customized section. In the previous sample, we create a specific setting named with `ext`.  Then you can specify the configuration with option `CONF_KEY` when creating the stream definition (see [stream specs](../../../sqls/streams.md) for more info).
