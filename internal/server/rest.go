@@ -312,11 +312,23 @@ func saveUploadFile(filename string, src io.Reader) (string, error) {
 	}
 	defer root.Close()
 
-	// Create parent dir for the file if needed
+	// Create parent dir for the file if needed, recursively within root
 	if dir := filepath.Dir(filename); dir != "." {
-		fullDir := filepath.Join(uploadDir, dir)
-		if err := os.MkdirAll(fullDir, 0o755); err != nil {
-			return "", err
+		// Split path and create each level
+		parts := strings.Split(filepath.ToSlash(dir), "/")
+		current := ""
+		for _, part := range parts {
+			if part == "" {
+				continue
+			}
+			if current == "" {
+				current = part
+			} else {
+				current = current + "/" + part
+			}
+			if err := root.Mkdir(current, 0o755); err != nil && !os.IsExist(err) {
+				return "", err
+			}
 		}
 	}
 
