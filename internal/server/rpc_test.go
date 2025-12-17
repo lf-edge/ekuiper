@@ -142,9 +142,19 @@ func (suite *ServerTestSuite) TestRule() {
 	err = suite.s.ShowRules(1, &reply)
 	assert.Nil(suite.T(), err)
 
-	reply = ""
-	err = suite.s.DescRule(ruleId, &reply)
-	assert.Nil(suite.T(), err)
+	// Wait for the rule to be triggered before asserting
+	var triggered bool
+	for i := 0; i < 10; i++ {
+		reply = ""
+		err = suite.s.DescRule(ruleId, &reply)
+		assert.Nil(suite.T(), err)
+		if strings.Contains(reply, "\"triggered\": true") {
+			triggered = true
+			break
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+	assert.True(suite.T(), triggered, "Rule should be triggered within timeout")
 	assert.Equal(suite.T(), "{\n  \"triggered\": true,\n  \"id\": \"myRule\",\n  \"sql\": \"SELECT * from test;\",\n  \"actions\": [\n    {\n      \"file\": {\n        \"fileType\": \"lines\",\n        \"format\": \"json\",\n        \"interval\": 5000,\n        \"path\": \"../internal/server/rpc_test_data/data/result.txt\"\n      }\n    }\n  ],\n  \"options\": {\n    \"debug\": false,\n    \"isEventTime\": false,\n    \"lateTolerance\": \"1s\",\n    \"concurrency\": 1,\n    \"bufferLength\": 1024,\n    \"sendMetaToSink\": false,\n    \"sendNilField\": false,\n    \"sendError\": false,\n    \"checkpointInterval\": \"5m0s\",\n    \"restartStrategy\": {}\n  }\n}\n", reply)
 
 	reply = ""
