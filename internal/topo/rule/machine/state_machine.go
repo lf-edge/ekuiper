@@ -58,6 +58,18 @@ func NewStateMachine(logger api.Logger) StateMachine {
 	}
 }
 
+// TriggerAction attempts to trigger an action on the state machine.
+// Returns true if the action was handled (either executed, queued, or ignored).
+// Returns false if the caller should proceed to execute the action.
+//
+// Action serialization:
+// - If an action is already in progress (actionQ not empty), new actions are queued
+// - Duplicate consecutive actions are ignored (e.g., Stop while already stopping)
+// - The queued actions are executed via Transit() -> chainAction -> nextAction()
+//
+// This provides lock-free serialized action execution without blocking the caller.
+// Note: The caller (State) still needs its own lock (ruleLock) to protect shared
+// fields from concurrent reads by query methods.
 func (s *StateMachine) TriggerAction(action ActionSignal) bool {
 	s.Lock()
 	defer s.Unlock()
