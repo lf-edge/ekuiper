@@ -15,7 +15,9 @@
 package video
 
 import (
+	"bytes"
 	"fmt"
+	"image/jpeg"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -100,11 +102,9 @@ func TestSubscribe(t *testing.T) {
 		assert.True(t, ok)
 		rt, ok := r.([]api.MessageTuple)
 		assert.True(t, ok, "result is not []api.MessageTuple")
-		
 		if !assert.Equal(t, len(et), len(rt)) {
 			return false
 		}
-		
 		b := true
 		for i := range et {
 			rti, ok := rt[i].(*model.DefaultSourceTuple)
@@ -113,6 +113,12 @@ func TestSubscribe(t *testing.T) {
 			}
 			raw := rti.Raw()
 			b = b && assert.True(t, len(raw) > 100)
+			cfg, err := jpeg.DecodeConfig(bytes.NewReader(raw))
+			if !assert.NoError(t, err, "item %d is not a valid jpeg", i) {
+				return false
+			}
+			b = b && assert.Equal(t, 640, cfg.Width)
+			b = b && assert.Equal(t, 480, cfg.Height)
 		}
 		return b
 	}, func() {
