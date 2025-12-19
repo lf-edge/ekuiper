@@ -84,7 +84,7 @@ func (s *TraceTestSuite) TestLookup() {
 
 	s.Run("init rate limit and lookup rule", func() {
 		conf := map[string]any{
-			"interval": "100ms",
+			"interval": "500ms",
 		}
 		resp, err := client.CreateConf("sources/httppush/confKeys/onesec", conf)
 		s.Require().NoError(err)
@@ -119,6 +119,8 @@ func (s *TraceTestSuite) TestLookup() {
 		resp, err := http.Post("http://127.0.0.1:10081/test/push2", ContentTypeJson, bytes.NewBufferString("{\"id\":1}"))
 		s.Require().NoError(err)
 		s.Require().Equal(http.StatusOK, resp.StatusCode)
+
+		time.Sleep(20 * time.Millisecond)
 
 		resp, err = http.Post("http://127.0.0.1:10081/test/push2", ContentTypeJson, bytes.NewBufferString("{\"id\":2}"))
 		s.Require().NoError(err)
