@@ -15,7 +15,10 @@
 package video
 
 import (
+	"fmt"
 	"os"
+	"os/exec"
+	"path/filepath"
 	"testing"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
@@ -27,6 +30,19 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/model"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
+
+func TestMain(m *testing.M) {
+	// Generate mock video file
+	_ = os.Remove("test.mp4")
+	cmd := exec.Command("ffmpeg", "-f", "lavfi", "-i", "testsrc=duration=5:size=640x480:rate=10", "-vcodec", "libx264", "-y", "test.mp4")
+	if err := cmd.Run(); err != nil {
+		fmt.Printf("failed to generate test.mp4: %v\n", err)
+		os.Exit(1)
+	}
+	code := m.Run()
+	_ = os.Remove("test.mp4")
+	os.Exit(code)
+}
 
 func TestProvision(t *testing.T) {
 	tests := []struct {
@@ -66,29 +82,37 @@ func TestProvision(t *testing.T) {
 
 func TestSubscribe(t *testing.T) {
 	conf.Log.SetOutput(os.Stdout)
+	pwd, _ := os.Getwd()
+	testFile := "file://" + filepath.Join(pwd, "test.mp4")
 	meta := map[string]any{
-		"url": "https://hdgcwbcdali.v.myalicdn.com/hdgcwbcd/cdrmipanda1000_1/index.m3u8",
+		"url": testFile,
 	}
 	exp := []api.MessageTuple{
 		model.NewDefaultRawTuple(nil, meta, timex.GetNow()),
 	}
 	r := GetSource()
 	mock.TestSourceConnectorCompare(t, r, map[string]any{
-		"url":       "https://hdgcwbcdali.v.myalicdn.com/hdgcwbcd/cdrmipanda1000_1/index.m3u8",
+		"url":       testFile,
 		"interval":  "1s",
 		"debugResp": true,
-		"inputArgs": map[string]any{
-			"user_agent": "test_agent",
-		},
 	}, exp, func(e any, r any) bool {
 		et, ok := e.([]api.MessageTuple)
-		b := assert.True(t, ok)
+		assert.True(t, ok)
 		rt, ok := r.([]api.MessageTuple)
-		b = b && assert.True(t, ok, "result is not []api.MessageTuple")
-		b = b && assert.Equal(t, len(et), len(rt))
+		assert.True(t, ok, "result is not []api.MessageTuple")
+		
+		if !assert.Equal(t, len(et), len(rt)) {
+			return false
+		}
+		
+		b := true
 		for i := range et {
-			rti := rt[i].(*model.DefaultSourceTuple)
-			b = b && assert.True(t, len(rti.Raw()) > 100)
+			rti, ok := rt[i].(*model.DefaultSourceTuple)
+			if !assert.True(t, ok, "item %d is not *model.DefaultSourceTuple", i) {
+				return false
+			}
+			raw := rti.Raw()
+			b = b && assert.True(t, len(raw) > 100)
 		}
 		return b
 	}, func() {

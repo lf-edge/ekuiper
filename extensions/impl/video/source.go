@@ -127,7 +127,7 @@ func (s *Source) runCurrent(ctx api.StreamContext, fps string, ingest api.BytesI
 		input = input.Filter("fps", ffmpeg.Args{fps})
 	}
 	cmd := input.Output("pipe:", ffmpeg.KwArgs{
-		"format": s.Format,
+		"f":      s.Format,
 		"vcodec": s.Codec,
 		"q:v":    "2",
 	}).Compile()
