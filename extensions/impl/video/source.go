@@ -100,6 +100,7 @@ func (s *Source) Subscribe(ctx api.StreamContext, ingest api.BytesIngest, ingest
 				// check if recoverable
 				// If process exit too fast (less than 2s) with specific error, return error
 				if time.Since(start) < 2*time.Second && isFatalError(err) {
+					ctx.GetLogger().Errorf("ffmpeg unrecoverable error: %v", err)
 					ingestError(ctx, err)
 					return err
 				}
@@ -146,15 +147,36 @@ func (s *Source) runCurrent(ctx api.StreamContext, fps string, ingest api.BytesI
 	}
 
 	done := make(chan error, 1)
+	finished := make(chan struct{})
+	// Goroutine 1: wait for process exit
 	go func() {
 		done <- cmd.Wait()
+		close(finished)
 	}()
 
+	// Goroutine 2: monitor context cancellation to unblock pipe scanners.
+	// We must kill the process immediately on cancellation, otherwise the scanner.Scan()
+	// loops below will block indefinitely waiting for data that will never come.
+	go func() {
+		select {
+		case <-ctx.Done():
+			if cmd.Process != nil {
+				_ = cmd.Process.Kill()
+			}
+		case <-finished:
+		}
+	}()
+
+	// We must read stderr even if DebugResp is false to prevent the ffmpeg pipe from
+	// blocking and to capture the last error message for diagnostics.
+	var lastStderr string
 	go func() {
 		scanner := bufio.NewScanner(stderr)
 		for scanner.Scan() {
+			line := scanner.Text()
+			lastStderr = line
 			if s.DebugResp {
-				ctx.GetLogger().Infof("ffmpeg stderr: %s", scanner.Text())
+				ctx.GetLogger().Infof("ffmpeg stderr: %s", line)
 			}
 		}
 	}()
@@ -177,14 +199,16 @@ func (s *Source) runCurrent(ctx api.StreamContext, fps string, ingest api.BytesI
 		ctx.GetLogger().Errorf("scanner error: %v", err)
 	}
 
-	// wait for cmd to exit
+	// Wait for process completion or cancellation.
+	// If context was cancelled, Goroutine 2 has already killed the process,
+	// which unblocked the scanners above.
 	select {
 	case <-ctx.Done():
-		if cmd.Process != nil {
-			cmd.Process.Kill()
-		}
 		return nil
 	case err := <-done:
+		if err != nil && lastStderr != "" {
+			return fmt.Errorf("%v: %s", err, lastStderr)
+		}
 		return err
 	}
 }

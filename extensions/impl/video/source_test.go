@@ -22,6 +22,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/stretchr/testify/assert"
@@ -41,6 +42,7 @@ func TestMain(m *testing.M) {
 		fmt.Printf("failed to generate test.mp4: %v\n", err)
 		os.Exit(1)
 	}
+	conf.Log.SetOutput(os.Stdout)
 	code := m.Run()
 	_ = os.Remove("test.mp4")
 	os.Exit(code)
@@ -124,4 +126,97 @@ func TestSubscribe(t *testing.T) {
 	}, func() {
 		// do nothing
 	})
+}
+
+func TestInfo(t *testing.T) {
+	s := GetSource().(*Source)
+	info := s.Info()
+	assert.True(t, info.HasInterval)
+	assert.True(t, info.NeedDecode)
+	assert.True(t, info.NeedBatchDecode)
+}
+
+func TestTransformType(t *testing.T) {
+	s := GetSource().(*Source)
+	assert.Equal(t, s, s.TransformType())
+}
+
+func TestIsFatalErrorDet(t *testing.T) {
+	assert.True(t, isFatalError(fmt.Errorf("Invalid argument: foo")))
+	assert.True(t, isFatalError(fmt.Errorf("Option not found: bar")))
+	assert.False(t, isFatalError(fmt.Errorf("other error")))
+}
+
+func TestSubscribeFatalError(t *testing.T) {
+	s := GetSource().(*Source)
+	// Use an invalid option to trigger a fatal exit from ffmpeg
+	s.Url = "testsrc"
+	s.Codec = "mjpeg"
+	s.Format = "image2pipe"
+	s.InputArgs = map[string]any{"f": "lavfi", "invalid_option": "trigger_fatal"}
+
+	ctx := mockContext.NewMockContext("test", "test")
+
+	errCh := make(chan error, 1)
+	go func() {
+		err := s.Subscribe(ctx, func(ctx api.StreamContext, data []byte, meta map[string]any, ts time.Time) {
+		}, func(ctx api.StreamContext, err error) {
+			t.Logf("Got expected async error: %v", err)
+		})
+		errCh <- err
+	}()
+
+	select {
+	case err := <-errCh:
+		assert.Error(t, err)
+		assert.True(t, isFatalError(err), "Expected fatal error, got %v", err)
+	case <-time.After(5 * time.Second):
+		t.Fatal("Subscribe did not return in time")
+	}
+}
+
+func TestSubscribeContextDone(t *testing.T) {
+	s := GetSource().(*Source)
+	s.Url = "testsrc"
+	s.Codec = "mjpeg"
+	s.Format = "image2pipe"
+	s.InputArgs = map[string]any{"f": "lavfi"}
+
+	// Very long interval to ensure we hit the loop
+	s.Interval = 0
+
+	baseCtx := mockContext.NewMockContext("test", "test")
+	ctx, cancel := baseCtx.WithCancel()
+
+	done := make(chan struct{})
+	go func() {
+		err := s.Subscribe(ctx, func(ctx api.StreamContext, data []byte, meta map[string]any, ts time.Time) {
+		}, func(ctx api.StreamContext, err error) {
+		})
+		assert.NoError(t, err)
+		close(done)
+	}()
+
+	time.Sleep(500 * time.Millisecond)
+	cancel()
+
+	select {
+	case <-done:
+		// Success
+	case <-time.After(5 * time.Second):
+		t.Fatal("Subscribe did not honor context cancellation")
+	}
+}
+
+func TestRunCurrentWaitError(t *testing.T) {
+	s := GetSource().(*Source)
+	s.Url = "non_existent_file.mp4"
+	s.Codec = "mjpeg"
+	s.Format = "image2pipe"
+
+	ctx := mockContext.NewMockContext("test", "test")
+	err := s.runCurrent(ctx, "", func(ctx api.StreamContext, data []byte, meta map[string]any, ts time.Time) {
+	})
+	assert.Error(t, err)
+	t.Logf("runCurrent error: %v", err)
 }
