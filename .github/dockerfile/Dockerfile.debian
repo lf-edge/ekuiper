@@ -16,30 +16,46 @@
 FROM debian:bullseye
 
 ARG GO_VERSION
+# Keep this version in sync with .github/workflows/run_test_case.yaml (DUCKDB_VERSION)
+ARG DUCKDB_VERSION=1.4.3
 ARG DEBIAN_FRONTEND="noninteractive"
 
 RUN apt-get update -y \
-    && apt-get install -y make cmake wget git curl procps zip libucl-dev zlib1g-dev \
-    pkg-config libczmq-dev build-essential debhelper jq zip
-
-RUN case $(dpkg --print-architecture) in \
-        arm|armhf|armv7) \
-            ARCH=armv6l \
-        ;; \
-        *) \
-            ARCH=$(dpkg --print-architecture)\
-        ;; \
+    && apt-get install -y --no-install-recommends \
+        ca-certificates make cmake wget git curl procps zip unzip libucl-dev zlib1g-dev \
+        pkg-config libczmq-dev build-essential debhelper jq \
+    && rm -rf /var/lib/apt/lists/* \
+    # Install DuckDB library
+    && case $(dpkg --print-architecture) in \
+        amd64) DUCKDB_ARCH=amd64 ;; \
+        arm64) DUCKDB_ARCH=arm64 ;; \
+        *) echo "Unsupported architecture for DuckDB" && exit 1 ;; \
+    esac \
+    && wget --no-verbose https://github.com/duckdb/duckdb/releases/download/v${DUCKDB_VERSION}/libduckdb-linux-${DUCKDB_ARCH}.zip -O /tmp/libduckdb.zip \
+    && unzip /tmp/libduckdb.zip -d /tmp/libduckdb \
+    && cp /tmp/libduckdb/libduckdb.so /usr/local/lib/ \
+    && cp /tmp/libduckdb/libduckdb_static.a /usr/local/lib/ \
+    && cp /tmp/libduckdb/duckdb.h /usr/local/include/ \
+    && cp /tmp/libduckdb/duckdb.hpp /usr/local/include/ \
+    && ldconfig \
+    && rm -rf /tmp/libduckdb.zip /tmp/libduckdb \
+    # Install Go
+    && case $(dpkg --print-architecture) in \
+        arm|armhf|armv7) ARCH=armv6l ;; \
+        *) ARCH=$(dpkg --print-architecture) ;; \
     esac \
     && wget --no-verbose https://golang.org/dl/go$GO_VERSION.linux-$ARCH.tar.gz \
-    && tar -C /usr/local -xzf go$GO_VERSION.linux-$ARCH.tar.gz
-
-RUN if [ "$(dpkg --print-architecture)" = "amd64" ]; then \
-        wget https://github.com/apple/foundationdb/releases/download/7.3.19/foundationdb-clients_7.3.19-1_amd64.deb \
-        && dpkg -i foundationdb-clients_7.3.19-1_amd64.deb; \
-    fi
+    && tar -C /usr/local -xzf go$GO_VERSION.linux-$ARCH.tar.gz \
+    && rm go$GO_VERSION.linux-$ARCH.tar.gz \
+    # Install FoundationDB client (amd64 only)
+    && if [ "$(dpkg --print-architecture)" = "amd64" ]; then \
+        wget --no-verbose https://github.com/apple/foundationdb/releases/download/7.3.19/foundationdb-clients_7.3.19-1_amd64.deb \
+        && dpkg -i foundationdb-clients_7.3.19-1_amd64.deb \
+        && rm foundationdb-clients_7.3.19-1_amd64.deb; \
+    fi \
+    # Install UPX
+    && wget --no-verbose https://github.com/upx/upx/releases/download/v4.2.4/upx-4.2.4-src.tar.xz -O - | tar -xJC /usr/local \
+    && cd /usr/local/upx-4.2.4-src && make all \
+    && ln -s /usr/local/upx-4.2.4-src/src/upx.out /usr/bin/upx
 
 ENV PATH=$PATH:/usr/local/go/bin
-
-RUN wget --no-verbose https://github.com/upx/upx/releases/download/v4.2.4/upx-4.2.4-src.tar.xz -O - | tar -xvJC /usr/local \
-   && cd /usr/local/upx-4.2.4-src && make all \
-   && ln -s /usr/local/upx-4.2.4-src/src/upx.out /usr/bin/upx
