@@ -71,3 +71,76 @@ func Test_parseTemplates(t *testing.T) {
 		})
 	}
 }
+
+func TestSinkTransform_Fields(t *testing.T) {
+	tests := []struct {
+		name string
+		conf WriteOptions
+		data map[string]any
+		exp  map[string]any
+	}{
+		{
+			name: "no fields",
+			conf: WriteOptions{
+				PrecisionStr: "ms",
+			},
+			data: map[string]any{
+				"a": 1,
+				"b": 2,
+			},
+			exp: map[string]any{
+				"a": 1,
+				"b": 2,
+			},
+		},
+		{
+			name: "with fields",
+			conf: WriteOptions{
+				PrecisionStr: "ms",
+				Fields:       []string{"a"},
+			},
+			data: map[string]any{
+				"a": 1,
+				"b": 2,
+			},
+			exp: map[string]any{
+				"a": 1,
+			},
+		},
+		{
+			name: "with fields, not exist",
+			conf: WriteOptions{
+				PrecisionStr: "ms",
+				Fields:       []string{"c"},
+			},
+			data: map[string]any{
+				"a": 1,
+				"b": 2,
+			},
+			exp: map[string]any{},
+		},
+		{
+			name: "with fields, partial exist",
+			conf: WriteOptions{
+				PrecisionStr: "ms",
+				Fields:       []string{"a", "c"},
+			},
+			data: map[string]any{
+				"a": 1,
+				"b": 2,
+			},
+			exp: map[string]any{
+				"a": 1,
+			},
+		},
+	}
+	ctx := mockContext.NewMockContext("parseTemplate", "op")
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			pts, err := SinkTransform(ctx, tt.data, &tt.conf)
+			assert.NoError(t, err)
+			assert.Len(t, pts, 1)
+			assert.Equal(t, tt.exp, pts[0].Fields)
+		})
+	}
+}

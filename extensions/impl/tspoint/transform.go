@@ -30,6 +30,7 @@ type WriteOptions struct {
 
 	Tags        map[string]string `json:"tags"`
 	TsFieldName string            `json:"tsFieldName"`
+	Fields      []string          `json:"fields"`
 }
 
 func (o *WriteOptions) Validate() error {
@@ -109,8 +110,21 @@ func mapToPoint(ctx api.StreamContext, mm map[string]any, options *WriteOptions,
 		vs, _ := cast.ToString(vv, cast.CONVERT_ALL)
 		tagEval[k] = vs
 	}
+
+	var fields map[string]any
+	if len(options.Fields) > 0 {
+		fields = make(map[string]any, len(options.Fields))
+		for _, f := range options.Fields {
+			if v, ok := mm[f]; ok {
+				fields[f] = v
+			}
+		}
+	} else {
+		fields = mm
+	}
+
 	return &RawPoint{
-		Fields: mm,
+		Fields: fields,
 		Tags:   tagEval,
 		Tt:     tt,
 		Ts:     ts,

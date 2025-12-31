@@ -26,6 +26,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/util"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cert"
+	"github.com/lf-edge/ekuiper/v2/pkg/model"
 )
 
 // c is the configuration for influx2 sink
@@ -209,7 +210,14 @@ func GetSink() api.Sink {
 	return &influxSink{}
 }
 
+func (m *influxSink) Info() model.SinkInfo {
+	return model.SinkInfo{
+		HasFields: true,
+	}
+}
+
 var (
 	_ api.TupleCollector = &influxSink{}
 	_ util.PingableConn  = &influxSink{}
+	_ model.SinkInfoNode = &influxSink{}
 )

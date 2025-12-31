@@ -202,9 +202,18 @@ func splitSink(tp *topo.Topo, s api.Sink, sinkName string, options *def.RuleOpti
 		index++
 		result = append(result, batchOp)
 	}
+
+	scForTransform := sc
+	if sinkInfo.HasFields {
+		// Shallow copy sc to avoid modifying the original
+		tempSc := *sc
+		tempSc.Fields = nil
+		scForTransform = &tempSc
+	}
+
 	// Transform enabled
 	// Currently, the row to map is done here and is required. TODO: eliminate map and this could become optional
-	transformOp, err := node.NewTransformOp(fmt.Sprintf("%s_%d_transform", sinkName, index), options, sc, templates)
+	transformOp, err := node.NewTransformOp(fmt.Sprintf("%s_%d_transform", sinkName, index), options, scForTransform, templates)
 	if err != nil {
 		return nil, err
 	}
