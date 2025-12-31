@@ -64,6 +64,7 @@ func TestConfig(t *testing.T) {
 					},
 					TsFieldName:  "ts",
 					PrecisionStr: "ms",
+					Fields:       []string{"temperature"},
 				},
 				BatchSize: 1,
 			},

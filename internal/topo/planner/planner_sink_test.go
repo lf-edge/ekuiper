@@ -18,10 +18,9 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"github.com/lf-edge/ekuiper/contract/v2/api"
 
 	"github.com/lf-edge/ekuiper/v2/internal/binder/io"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
@@ -523,8 +522,7 @@ func TestSinkSchema(t *testing.T) {
 }
 
 // MockHasFieldsSink implements api.Sink and model.SinkInfoNode
-type MockHasFieldsSink struct {
-}
+type MockHasFieldsSink struct{}
 
 func (m *MockHasFieldsSink) Open(ctx api.StreamContext) error                           { return nil }
 func (m *MockHasFieldsSink) Close(ctx api.StreamContext) error                          { return nil }
@@ -533,12 +531,15 @@ func (m *MockHasFieldsSink) Collect(ctx api.StreamContext, item api.MessageTuple
 func (m *MockHasFieldsSink) CollectList(ctx api.StreamContext, items api.MessageTupleList) error {
 	return nil
 }
+
 func (m *MockHasFieldsSink) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) error {
 	return nil
 }
+
 func (m *MockHasFieldsSink) Ping(ctx api.StreamContext, props map[string]interface{}) error {
 	return nil
 }
+
 func (m *MockHasFieldsSink) Provision(ctx api.StreamContext, props map[string]interface{}) error {
 	return nil
 }
