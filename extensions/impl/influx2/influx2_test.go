@@ -64,6 +64,7 @@ func TestConfig(t *testing.T) {
 					},
 					TsFieldName:  "ts",
 					PrecisionStr: "ms",
+					Fields:       []string{"temperature"},
 				},
 				BatchSize: 1,
 			},
@@ -352,6 +353,30 @@ func TestCollectPoints(t *testing.T) {
 				}, time.Unix(0, 100)),
 			},
 		},
+		{
+			name: "single with fields",
+			conf: c{
+				Measurement: "test_fields",
+				WriteOptions: tspoint.WriteOptions{
+					Tags: map[string]string{
+						"tag1": "value1",
+					},
+					Fields:       []string{"t"},
+					PrecisionStr: "ns",
+				},
+			},
+			data: map[string]any{
+				"t": 20,
+				"h": 50,
+			},
+			result: []*write.Point{
+				client.NewPoint("test_fields", map[string]string{
+					"tag1": "value1",
+				}, map[string]any{
+					"t": 20,
+				}, time.UnixMilli(10)),
+			},
+		},
 	}
 
 	for _, test := range tests {
@@ -365,6 +390,12 @@ func TestCollectPoints(t *testing.T) {
 			assert.Equal(t, test.result, points)
 		})
 	}
+}
+
+func TestInfo(t *testing.T) {
+	s := &influxSink2{}
+	info := s.Info()
+	assert.True(t, info.HasFields)
 }
 
 func TestCollectPointsError(t *testing.T) {
@@ -534,6 +565,27 @@ func TestCollectLines(t *testing.T) {
 			},
 			result:  []string{"test5,tag2=50 humidity=50,ts=100 100"},
 			result2: []string{"test5,tag2=50 ts=100,humidity=50 100"},
+		},
+		{
+			name: "single with filtering fields",
+			conf: c{
+				Measurement: "test_fields",
+				WriteOptions: tspoint.WriteOptions{
+					Tags: map[string]string{
+						"tag": "v1",
+					},
+					PrecisionStr: "s",
+					TsFieldName:  "ts",
+					Fields:       []string{"humidity"},
+				},
+				UseLineProtocol: true,
+			},
+			data: map[string]any{
+				"humidity": 50,
+				"ts":       100,
+				"other":    20,
+			},
+			result: []string{"test_fields,tag=v1 humidity=50 100"},
 		},
 	}
 
