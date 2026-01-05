@@ -17,12 +17,14 @@ import time
 from typing import Callable
 
 from pynng import Req0, Push0, Pull0, Timeout
+from pynng.exceptions import BadState
 
 
 class PairChannel:
 
     def __init__(self, name: str, typ: int):
-        s = Req0(resend_time=0)
+        # Add recv_timeout to prevent indefinite blocking during idle periods
+        s = Req0(recv_timeout=5000, resend_time=0)
         """TODO options"""
         if typ == 0:
             url = "ipc:///tmp/plugin_{}.ipc".format(name)
@@ -45,9 +47,15 @@ class PairChannel:
                 msg = self.sock.recv()
                 reply = reply_func(msg)
                 self.sock.send(reply)
-            except Timeout:
-                print('pair timeout')
-                pass
+            except (Timeout, BadState):
+                # After timeout, REQ socket needs to send before recv.
+                # Re-send handshake to reset protocol state (keepalive).
+                logging.debug('pair timeout, re-sending handshake')
+                try:
+                    self.sock.send(b'handshake')
+                except Exception as e:
+                    logging.error('failed to send keepalive: {}'.format(e))
+                    return
 
     def close(self):
         self.sock.close()
