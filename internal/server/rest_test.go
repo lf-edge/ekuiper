@@ -91,6 +91,8 @@ func (suite *RestTestSuite) SetupTest() {
 	r.HandleFunc("/rules/{name}/topo", getTopoRuleHandler).Methods(http.MethodGet)
 	r.HandleFunc("/rules/{name}/reset_state", ruleStateHandler).Methods(http.MethodPut)
 	r.HandleFunc("/rules/{name}/explain", explainRuleHandler).Methods(http.MethodGet)
+	r.HandleFunc("/rules/bulkstart", rulesBulkOperationsHandler).Methods(http.MethodPost)
+	r.HandleFunc("/rules/bulkstop", rulesBulkOperationsHandler).Methods(http.MethodPost)
 	r.HandleFunc("/rules/{name}/trace/start", enableRuleTraceHandler).Methods(http.MethodPost)
 	r.HandleFunc("/rules/{name}/trace/stop", disableRuleTraceHandler).Methods(http.MethodPost)
 	r.HandleFunc("/rules/validate", validateRuleHandler).Methods(http.MethodPost)
@@ -1023,4 +1025,65 @@ func (suite *RestTestSuite) TestWaitStopRule() {
 	end := time.Now()
 	require.True(suite.T(), end.Sub(now) >= 300*time.Millisecond)
 	waitAllRuleStop()
+}
+
+func (suite *RestTestSuite) TestRulesBulkStartAndStop() {
+
+	timestamp := time.Now().UnixNano()
+	mockRules := []string{
+		fmt.Sprintf(`{"id":"r1_%d","sql":"SELECT * FROM demo","actions":[{"log":{}}], "tags": ["mock-tag"], "triggered": true}`, timestamp),
+		fmt.Sprintf(`{"id":"r2_%d","sql":"SELECT color FROM demo","actions":[{"log":{}}], "tags": ["mock-tag"], "triggered": true}`, timestamp),
+		fmt.Sprintf(`{"id":"r3_%d","sql":"SELECT size FROM demo","actions":[{"log":{}}], "tags": ["mock-tag"], "triggered": true}`, timestamp),
+		fmt.Sprintf(`{"id":"r4_%d","sql":"SELECT ts FROM demo","actions":[{"log":{}}], "tags": ["mock-tag"], "triggered": true}`, timestamp),
+		fmt.Sprintf(`{"id":"r5_%d","sql":"SELECT color,size FROM demo","actions":[{"log":{}}], "tags": ["mock-tag"], "triggered": true}`, timestamp),
+		fmt.Sprintf(`{"id":"r6_%d","sql":"SELECT color,ts FROM demo","actions":[{"log":{}}], "tags": ["mock-tag"], "triggered": true}`, timestamp),
+		fmt.Sprintf(`{"id":"r7_%d","sql":"SELECT size,ts FROM demo","actions":[{"log":{}}], "tags": ["mock-tag"], "triggered": true}`, timestamp),
+		fmt.Sprintf(`{"id":"r8_%d","sql":"SELECT color,size,ts FROM demo","actions":[{"log":{}}], "tags": ["mock-tag"], "triggered": true}`, timestamp),
+		fmt.Sprintf(`{"id":"r9_%d","sql":"SELECT * FROM demo WHERE size>0","actions":[{"log":{}}], "tags": ["mock-tag"], "triggered": true}`, timestamp),
+		fmt.Sprintf(`{"id":"r10_%d","sql":"SELECT color FROM demo","actions":[{"log":{}}], "tags": ["mock-tag"], "triggered": true}`, timestamp),
+	}
+
+	// create stream
+	buf := bytes.NewBuffer([]byte(`{"sql":"CREATE STREAM demo (color STRING, size BIGINT, ts BIGINT) WITH (DATASOURCE=\"/data1\", TYPE=\"websocket\", FORMAT=\"json\", KEY=\"ts\")"}`))
+	req, _ := http.NewRequest(http.MethodPost, "http://localhost:8080/streams", buf)
+	w := httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	require.Equal(suite.T(), http.StatusCreated, w.Code)
+
+	// create rules
+	for i, rule := range mockRules {
+		buf := bytes.NewBuffer([]byte(rule))
+		req, _ := http.NewRequest(http.MethodPost, "http://localhost:8080/rules", buf)
+		w := httptest.NewRecorder()
+		suite.r.ServeHTTP(w, req)
+
+		if w.Code != http.StatusCreated {
+			body, _ := io.ReadAll(w.Result().Body)
+			fmt.Printf("Error: %d (index %d): %s\n", i+1, i, string(body))
+		}
+
+		require.Equal(suite.T(), http.StatusCreated, w.Code)
+	}
+
+	// bulk start
+	buf = bytes.NewBuffer([]byte(`{"tags": ["mock-tag"]}`))
+	req, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/rules/bulkstart", buf)
+	w = httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		body, _ := io.ReadAll(w.Result().Body)
+		fmt.Println(string(body))
+	}
+	require.Equal(suite.T(), http.StatusOK, w.Code)
+
+	// bulk stop
+	buf = bytes.NewBuffer([]byte(`{"tags": ["mock-tag"]}`))
+	req, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/rules/bulkstop", buf)
+	w = httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		body, _ := io.ReadAll(w.Result().Body)
+		fmt.Println(string(body))
+	}
+	require.Equal(suite.T(), http.StatusOK, w.Code)
 }
