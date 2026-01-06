@@ -70,7 +70,7 @@ func TestEncode(t *testing.T) {
 					"name": "test2",
 				},
 			},
-			r: []byte("12:test\n14:test2"),
+			r: []byte("12:test\n14:test2\n"),
 		},
 		{
 			name: "slice model",
@@ -155,7 +155,7 @@ func TestEncodeWithHeader(t *testing.T) {
 					"name": "test2",
 				},
 			},
-			r: []byte("id:name\n12:test\n1670170500:test2"),
+			r: []byte("id:name\n12:test\n1670170500:test2\n"),
 		},
 		{
 			name: "slice model",

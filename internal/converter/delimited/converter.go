@@ -31,9 +31,10 @@ import (
 )
 
 type Converter struct {
-	Delimiter string   `json:"delimiter"`
-	Cols      []string `json:"fields"`
-	HasHeader bool     `json:"hasHeader"`
+	Delimiter     string   `json:"delimiter"`
+	Cols          []string `json:"fields"`
+	HasHeader     bool     `json:"hasHeader"`
+	DynamicHeader bool     `json:"dynamicHeader"`
 }
 
 func NewConverter(props map[string]any) (message.Converter, error) {
@@ -120,10 +121,7 @@ func (c *Converter) Encode(ctx api.StreamContext, d any) (b []byte, err error) {
 	case []map[string]any:
 		sb := &bytes.Buffer{}
 		var cols []string
-		for i, mm := range m {
-			if i > 0 {
-				sb.WriteString("\n")
-			}
+		for _, mm := range m {
 			if len(cols) == 0 {
 				keys := make([]string, 0, len(mm))
 				for k := range mm {
@@ -147,6 +145,7 @@ func (c *Converter) Encode(ctx api.StreamContext, d any) (b []byte, err error) {
 				p, _ := cast.ToString(mm[v], cast.CONVERT_ALL)
 				sb.WriteString(p)
 			}
+			sb.WriteString("\n")
 		}
 		return sb.Bytes(), nil
 	default:
@@ -171,6 +170,49 @@ func (c *Converter) Decode(ctx api.StreamContext, b []byte) (ma any, err error) 
 	}
 
 	lines := strings.Split(input, "\n")
+
+	if c.DynamicHeader {
+		var results []map[string]any
+		i := 0
+		for i < len(lines) {
+			line := strings.TrimSpace(lines[i])
+			if line == "" {
+				i++
+				continue
+			}
+			// Expect Header
+			headerTokens := strings.Split(line, c.Delimiter)
+			cols := make([]string, len(headerTokens))
+			for k, token := range headerTokens {
+				cols[k] = strings.TrimSpace(token)
+			}
+			i++
+
+			// Expect Data
+			if i >= len(lines) {
+				break
+			}
+			dataLine := strings.TrimSpace(lines[i])
+
+			// Empty data line means empty map
+			if dataLine == "" {
+				results = append(results, make(map[string]interface{}, len(cols)))
+				i++
+				continue
+			}
+
+			tokens := strings.Split(dataLine, c.Delimiter)
+			m := make(map[string]interface{}, len(cols))
+			for k, v := range tokens {
+				if k < len(cols) {
+					m[cols[k]] = strings.TrimSpace(v)
+				}
+			}
+			results = append(results, m)
+			i++
+		}
+		return results, nil
+	}
 
 	// Determine columns to use
 	cols := c.Cols

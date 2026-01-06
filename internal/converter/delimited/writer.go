@@ -60,13 +60,21 @@ func (w *CsvWriter) Write(ctx api.StreamContext, d any) error {
 	if w.header == "" {
 		w.header = strings.Join(w.converter.Cols, w.converter.Delimiter)
 		w.buffer.WriteString(w.header)
+		w.buffer.WriteString("\n")
 	}
-	w.buffer.WriteString("\n")
+	b := w.buffer.Bytes()
+	if len(b) > 0 && b[len(b)-1] != '\n' {
+		w.buffer.WriteString("\n")
+	}
 	w.buffer.Write(result)
 	return nil
 }
 
 func (w *CsvWriter) Flush(ctx api.StreamContext) ([]byte, error) {
 	ctx.GetLogger().Debugf("csv writer flush")
-	return w.buffer.Bytes(), nil
+	b := w.buffer.Bytes()
+	if len(b) > 0 && b[len(b)-1] == '\n' {
+		return b[:len(b)-1], nil
+	}
+	return b, nil
 }

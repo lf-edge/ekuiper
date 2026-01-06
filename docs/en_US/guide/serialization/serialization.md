@@ -53,9 +53,10 @@ The delimiter format supports CSV-like data with customizable delimiters. It pro
 
 **Encoding Behavior:**
 
-- **With `hasHeader=true` and `fields` specified**: Adds header row for `[]map[string]any` input
-- **Map input**: Encodes single row using field order from `fields` or sorted keys
-- **Slice input**: Encodes values in order, no header
+- **With `hasHeader=true`**: Adds header row for `[]map[string]any` input. For single `map` input, header is suppressed to avoid redundancy in streams unless explicitly handled.
+- **Map input**: Encodes single row using field order from `fields` or sorted keys.
+- **Slice input**: Encodes values in order, no header.
+- **Batch input**: `[]map` is encoded as multiple lines separated by newlines.
 
 **Error Handling:**
 
