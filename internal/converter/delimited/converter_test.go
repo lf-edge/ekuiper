@@ -240,6 +240,97 @@ func TestDecode(t *testing.T) {
 	}
 }
 
+func TestDecodeWithHeader(t *testing.T) {
+	ctx := mockContext.NewMockContext("test", "decode_header")
+
+	t.Run("single line with header", func(t *testing.T) {
+		c, err := NewConverter(map[string]any{"delimiter": ",", "hasHeader": true})
+		require.NoError(t, err)
+
+		input := []byte("name,age,city\nJohn,25,NYC")
+		result, err := c.Decode(ctx, input)
+		require.NoError(t, err)
+
+		expected := map[string]interface{}{
+			"name": "John",
+			"age":  "25",
+			"city": "NYC",
+		}
+		require.Equal(t, expected, result)
+	})
+
+	t.Run("multiple lines with header", func(t *testing.T) {
+		c, err := NewConverter(map[string]any{"delimiter": ",", "hasHeader": true})
+		require.NoError(t, err)
+
+		input := []byte("name,age,city\nJohn,25,NYC\nJane,30,LA\nBob,35,SF")
+		result, err := c.Decode(ctx, input)
+		require.NoError(t, err)
+
+		expected := []map[string]interface{}{
+			{"name": "John", "age": "25", "city": "NYC"},
+			{"name": "Jane", "age": "30", "city": "LA"},
+			{"name": "Bob", "age": "35", "city": "SF"},
+		}
+		require.Equal(t, expected, result)
+	})
+
+	t.Run("header only, no data", func(t *testing.T) {
+		c, err := NewConverter(map[string]any{"delimiter": ",", "hasHeader": true})
+		require.NoError(t, err)
+
+		input := []byte("name,age,city")
+		result, err := c.Decode(ctx, input)
+		require.NoError(t, err)
+
+		expected := make(map[string]interface{})
+		require.Equal(t, expected, result)
+	})
+
+	t.Run("empty input", func(t *testing.T) {
+		c, err := NewConverter(map[string]any{"delimiter": ",", "hasHeader": true})
+		require.NoError(t, err)
+
+		input := []byte("")
+		result, err := c.Decode(ctx, input)
+		require.NoError(t, err)
+
+		expected := make(map[string]interface{})
+		require.Equal(t, expected, result)
+	})
+
+	t.Run("multi-line without header (backward compatibility)", func(t *testing.T) {
+		c, err := NewConverter(map[string]any{"delimiter": ",", "fields": []string{"name", "age", "city"}})
+		require.NoError(t, err)
+
+		input := []byte("John,25,NYC\nJane,30,LA")
+		result, err := c.Decode(ctx, input)
+		require.NoError(t, err)
+
+		expected := []map[string]interface{}{
+			{"name": "John", "age": "25", "city": "NYC"},
+			{"name": "Jane", "age": "30", "city": "LA"},
+		}
+		require.Equal(t, expected, result)
+	})
+
+	t.Run("single line without header uses default column names", func(t *testing.T) {
+		c, err := NewConverter(map[string]any{"delimiter": ","})
+		require.NoError(t, err)
+
+		input := []byte("John,25,NYC")
+		result, err := c.Decode(ctx, input)
+		require.NoError(t, err)
+
+		expected := map[string]interface{}{
+			"col0": "John",
+			"col1": "25",
+			"col2": "NYC",
+		}
+		require.Equal(t, expected, result)
+	})
+}
+
 func TestError(t *testing.T) {
 	converter, err := NewConverter(map[string]any{"delimiter": ","})
 	require.NoError(t, err)

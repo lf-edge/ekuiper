@@ -42,6 +42,7 @@ func NewConverter(props map[string]any) (message.Converter, error) {
 	if err != nil {
 		return nil, err
 	}
+	// Set default delimiter if not provided
 	if c.Delimiter == "" {
 		c.Delimiter = ","
 	}
@@ -155,20 +156,94 @@ func (c *Converter) Encode(ctx api.StreamContext, d any) (b []byte, err error) {
 }
 
 // Decode If the cols is not set, the default key name is col1, col2, col3...
-// The return value is always a map
+// If hasHeader is true, the first line is treated as column names.
+// Returns a map for single-line input, or []map[string]any for multi-line input.
+// Note: Does not handle quoted fields or escape characters (use encoding/csv if needed).
 func (c *Converter) Decode(ctx api.StreamContext, b []byte) (ma any, err error) {
-	tokens := strings.Split(string(b), c.Delimiter)
-	m := make(map[string]interface{})
-	if len(c.Cols) == 0 {
-		for i, v := range tokens {
-			m["col"+strconv.Itoa(i)] = v
+	defer func() {
+		if err != nil {
+			err = errorx.NewWithCode(errorx.CovnerterErr, err.Error())
 		}
-	} else {
-		for i, v := range tokens {
-			if i < len(c.Cols) {
-				m[c.Cols[i]] = v
-			}
+	}()
+
+	input := strings.TrimSpace(string(b))
+	if input == "" {
+		return make(map[string]interface{}), nil
+	}
+
+	lines := strings.Split(input, "\n")
+
+	// Determine columns to use
+	cols := c.Cols
+	startIdx := 0
+
+	if c.HasHeader && len(lines) > 0 {
+		// First line is the header
+		headerTokens := strings.Split(strings.TrimSpace(lines[0]), c.Delimiter)
+		cols = make([]string, len(headerTokens))
+		for i, token := range headerTokens {
+			cols[i] = strings.TrimSpace(token)
+		}
+		startIdx = 1
+	}
+
+	// If no columns determined, use default naming
+	if len(cols) == 0 && startIdx < len(lines) {
+		// Determine column count from the first data line
+		firstLineTokens := strings.Split(strings.TrimSpace(lines[startIdx]), c.Delimiter)
+		cols = make([]string, len(firstLineTokens))
+		for i := range firstLineTokens {
+			cols[i] = "col" + strconv.Itoa(i)
 		}
 	}
-	return m, nil
+
+	// Parse data lines
+	dataLines := lines[startIdx:]
+	if len(dataLines) == 0 {
+		return make(map[string]interface{}), nil
+	}
+
+	if len(dataLines) == 1 {
+		// Single line - return a single map
+		tokens := strings.Split(strings.TrimSpace(dataLines[0]), c.Delimiter)
+		m := make(map[string]interface{}, len(cols))
+		for i, v := range tokens {
+			if i < len(cols) {
+				m[cols[i]] = strings.TrimSpace(v)
+			} else if ctx != nil {
+				ctx.GetLogger().Debugf("field count mismatch: expected %d columns, got %d", len(cols), len(tokens))
+				break
+			}
+		}
+		return m, nil
+	}
+
+	// Multiple lines - return []map[string]any
+	// Pre-allocate with exact size
+	result := make([]map[string]interface{}, len(dataLines))
+	idx := 0
+	for _, line := range dataLines {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		tokens := strings.Split(line, c.Delimiter)
+		// Pre-allocate map with column count
+		m := make(map[string]interface{}, len(cols))
+		for i, v := range tokens {
+			if i < len(cols) {
+				m[cols[i]] = strings.TrimSpace(v)
+			} else if ctx != nil {
+				ctx.GetLogger().Debugf("field count mismatch: expected %d columns, got %d", len(cols), len(tokens))
+				break
+			}
+		}
+		result[idx] = m
+		idx++
+	}
+	// Trim slice if empty lines were skipped
+	if idx < len(result) {
+		result = result[:idx]
+	}
+	return result, nil
 }

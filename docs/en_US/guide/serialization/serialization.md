@@ -32,6 +32,58 @@ All currently supported formats, their supported codec methods and modes are sho
 | protobuf  | Built-in                            | Supported              | Supported and required |
 | custom    | Not Built-in                        | Supported and required | Supported and optional |
 
+#### Delimiter Format
+
+The delimiter format supports CSV-like data with customizable delimiters. It provides both encoding and decoding capabilities for delimited text data.
+
+**Configuration Options:**
+
+- `delimiter`: The character(s) used to separate fields. Default is `,`.
+- `fields`: An optional array of column names. If not specified, columns are auto-generated as `col0`, `col1`, etc.
+- `hasHeader`: Boolean flag (default: `false`). When `true` during decoding, the first line is treated as column names.
+
+**Decoding Behavior:**
+
+- **Single-line input**: Returns `map[string]any`
+- **Multi-line input**: Returns `[]map[string]any`
+- **With `hasHeader=true`**: First line becomes column names, remaining lines are data
+- **With `hasHeader=false`**: Uses `fields` configuration or auto-generates column names
+- **Empty input**: Returns empty `map[string]any`
+- **Whitespace handling**: Automatically trims leading/trailing whitespace from lines and field values
+
+**Encoding Behavior:**
+
+- **With `hasHeader=true` and `fields` specified**: Adds header row for `[]map[string]any` input
+- **Map input**: Encodes single row using field order from `fields` or sorted keys
+- **Slice input**: Encodes values in order, no header
+
+**Error Handling:**
+
+The delimiter format currently provides minimal error handling:
+- Returns empty map for empty or whitespace-only input
+- Silently skips empty lines in multi-line input
+- Truncates data if more fields than columns (no error raised)
+- Does not validate delimiter presence or field count consistency
+
+**Performance Notes:**
+
+- Optimized for single-line CSV with minimal allocations (~218KB memory, ~1,525 allocs for 1500 columns)
+- Decode performance: ~120µs for 1500 columns
+- Encode performance: ~85µs for 1500 columns
+- Whitespace trimming adds negligible overhead
+
+**Example Usage:**
+
+```json
+{
+  "format": "delimiter",
+  "delimiter": ",",
+  "fields": ["name", "age", "city"],
+  "hasHeader": true
+}
+```
+
+
 ### Format Extension
 
 When using `custom` format or `protobuf` format, the user can customize the codec and schema in the form of a go language plugin. Among them, `protobuf` only supports custom codecs, and the schema needs to be defined by `*.proto` file. The steps for customizing the format are as follows:
