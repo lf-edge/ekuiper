@@ -138,6 +138,87 @@ func BenchmarkDelimitedDecode(b *testing.B) {
 	}
 }
 
+// BenchmarkDelimitedEncodeWithHeader benchmarks delimited/CSV encoding with header
+func BenchmarkDelimitedEncodeWithHeader(b *testing.B) {
+	ctx := mockContext.NewMockContext("benchmark", "delimited_encode_header")
+	converter, err := delimited.NewConverter(map[string]any{
+		"delimiter": ",",
+		"hasHeader": true,
+	})
+	if err != nil {
+		b.Fatal(err)
+	}
+	data := generateTestData()
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, err := converter.Encode(ctx, data)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+// BenchmarkDelimitedDecodeWithHeader benchmarks delimited/CSV decoding with header
+func BenchmarkDelimitedDecodeWithHeader(b *testing.B) {
+	ctx := mockContext.NewMockContext("benchmark", "delimited_decode_header")
+
+	cols := generateColNames()
+	data := generateTestData()
+
+	// Create converter just to encode the data row
+	encConverter, err := delimited.NewConverter(map[string]any{
+		"delimiter": ",",
+		"fields":    cols,
+	})
+	if err != nil {
+		b.Fatal(err)
+	}
+
+	// Encode data row
+	dataRow, err := encConverter.Encode(ctx, data)
+	if err != nil {
+		b.Fatal(err)
+	}
+
+	// Manually construct CSV with header
+	// Header: col0,col1,...\n
+	// Data: val0,val1,...
+	header := ""
+	for i, col := range cols {
+		if i > 0 {
+			header += ","
+		}
+		header += col
+	}
+	encoded := []byte(header + "\n" + string(dataRow))
+
+	b.SetBytes(int64(len(encoded)))
+
+	// Create decode converter with HasHeader=true
+	decConverter, err := delimited.NewConverter(map[string]any{
+		"delimiter": ",",
+		"hasHeader": true,
+	})
+	if err != nil {
+		b.Fatal(err)
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		res, err := decConverter.Decode(ctx, encoded)
+		if err != nil {
+			b.Fatal(err)
+		}
+		// Verify result is not empty (sanity check for benchmark correctness)
+		if i == 0 {
+			if m, ok := res.(map[string]any); !ok || len(m) == 0 {
+				b.Fatal("decoded result is empty or invalid type")
+			}
+		}
+	}
+}
+
 // BenchmarkUrlencodedEncode benchmarks URL-encoded format encoding
 func BenchmarkUrlencodedEncode(b *testing.B) {
 	ctx := mockContext.NewMockContext("benchmark", "urlencoded_encode")
@@ -194,6 +275,7 @@ func BenchmarkUrlencodedDecode(b *testing.B) {
 func BenchmarkAllFormatsEncode(b *testing.B) {
 	b.Run("Json", BenchmarkJsonEncode)
 	b.Run("Delimited", BenchmarkDelimitedEncode)
+	b.Run("DelimitedHeader", BenchmarkDelimitedEncodeWithHeader)
 	b.Run("Urlencoded", BenchmarkUrlencodedEncode)
 }
 
@@ -201,6 +283,7 @@ func BenchmarkAllFormatsEncode(b *testing.B) {
 func BenchmarkAllFormatsDecode(b *testing.B) {
 	b.Run("Json", BenchmarkJsonDecode)
 	b.Run("Delimited", BenchmarkDelimitedDecode)
+	b.Run("DelimitedHeader", BenchmarkDelimitedDecodeWithHeader)
 	b.Run("Urlencoded", BenchmarkUrlencodedDecode)
 }
 

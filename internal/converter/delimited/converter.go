@@ -107,7 +107,6 @@ func (c *Converter) Encode(ctx api.StreamContext, d any) (b []byte, err error) {
 				sb.WriteString(c.Delimiter)
 				_ = binary.Write(sb, binary.BigEndian, uint32(len(hb)))
 				sb.Write(hb)
-				ctx.GetLogger().Infof("delimiter header %s", hb)
 			}
 		}
 		for i, v := range c.Cols {
