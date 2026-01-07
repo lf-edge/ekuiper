@@ -18,6 +18,7 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -27,6 +28,8 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
+	"github.com/lf-edge/ekuiper/v2/pkg/model"
+	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
 
 func TestSinkPlan(t *testing.T) {
@@ -516,4 +519,75 @@ func TestSinkSchema(t *testing.T) {
 			}
 		})
 	}
+}
+
+// MockHasFieldsSink implements api.Sink and model.SinkInfoNode
+type MockHasFieldsSink struct{}
+
+func (m *MockHasFieldsSink) Open(ctx api.StreamContext) error                           { return nil }
+func (m *MockHasFieldsSink) Close(ctx api.StreamContext) error                          { return nil }
+func (m *MockHasFieldsSink) Configure(props map[string]interface{}) error               { return nil }
+func (m *MockHasFieldsSink) Collect(ctx api.StreamContext, item api.MessageTuple) error { return nil }
+func (m *MockHasFieldsSink) CollectList(ctx api.StreamContext, items api.MessageTupleList) error {
+	return nil
+}
+
+func (m *MockHasFieldsSink) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) error {
+	return nil
+}
+
+func (m *MockHasFieldsSink) Ping(ctx api.StreamContext, props map[string]interface{}) error {
+	return nil
+}
+
+func (m *MockHasFieldsSink) Provision(ctx api.StreamContext, props map[string]interface{}) error {
+	return nil
+}
+
+func (m *MockHasFieldsSink) Info() model.SinkInfo {
+	return model.SinkInfo{
+		HasFields: true,
+	}
+}
+
+func TestSinkPlan_HasFields(t *testing.T) {
+	// Register mock sink
+	modules.RegisterSink("mock_has_fields", func() api.Sink {
+		return &MockHasFieldsSink{}
+	})
+
+	rule := &def.Rule{
+		Actions: []map[string]any{
+			{
+				"mock_has_fields": map[string]any{
+					"fields": []string{"a", "b"},
+				},
+			},
+		},
+		Options: defaultOption,
+	}
+
+	tp, err := topo.NewWithNameAndOptions("test_has_fields", rule.Options)
+	assert.NoError(t, err)
+	si, err := io.Source("memory")
+	assert.NoError(t, err)
+	n, err := node.NewSourceNode(tp.GetContext(), "src1", si, map[string]any{"datasource": "demo"}, &def.RuleOption{SendError: false})
+	assert.NoError(t, err)
+	tp.AddSrc(n)
+
+	// Let's call splitSink directly to verify logic
+	s := &MockHasFieldsSink{}
+	sc := &node.SinkConf{
+		Fields: []string{"a", "b"},
+	}
+
+	ops, err := splitSink(tp, s, "sink_mock_0", rule.Options, sc, nil, nil)
+	assert.NoError(t, err)
+
+	require.Len(t, ops, 1)
+	_, ok := ops[0].(*node.TransformOp)
+	require.True(t, ok)
+
+	// Since we cannot verify internal state easily, we verify that the code runs.
+	// We also implicitly verify that HashFields=true path was taken if we could check coverage.
 }

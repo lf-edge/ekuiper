@@ -77,7 +77,19 @@ func (r *NanomsgRepChannel) Run(f ReplyFunc) error {
 	}
 	for {
 		msg, err := r.sock.Recv()
-		if err != nil {
+		switch err {
+		case mangos.ErrClosed:
+			return fmt.Errorf("socket closed")
+		case mangos.ErrRecvTimeout, mangos.ErrProtoState:
+			// After timeout or protocol state error, REQ socket needs to send before recv.
+			// Re-send handshake to reset protocol state before trying to recv again.
+			if err := r.sock.Send([]byte("handshake")); err != nil {
+				return fmt.Errorf("can't send keepalive: %s", err.Error())
+			}
+			continue
+		case nil:
+			// Successfully received message
+		default:
 			return fmt.Errorf("cannot receive on rep socket: %s", err.Error())
 		}
 		reply := f(msg)
@@ -136,8 +148,9 @@ func CreateFuncChannel(symbolName string) (DataInOutChannel, error) {
 	if sock, err = req.NewSocket(); err != nil {
 		return nil, fmt.Errorf("can't get new req socket: %s", err)
 	}
-	// The recv should not have timeout because it is event driven
+	// Add recv timeout to prevent indefinite blocking during idle periods
 	setSockOptions(sock, map[string]interface{}{
+		mangos.OptionRecvDeadline: 5000 * time.Millisecond,
 		mangos.OptionSendDeadline: 1000 * time.Millisecond,
 		mangos.OptionRetryTime:    0,
 	})

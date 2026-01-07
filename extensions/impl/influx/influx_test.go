@@ -53,7 +53,7 @@ func TestConfig(t *testing.T) {
 				Username:     "name",
 				Password:     "pass",
 				Database:     "db1",
-				WriteOptions: tspoint.WriteOptions{Tags: map[string]string{"tag": "value"}, TsFieldName: "ts", PrecisionStr: "ms"},
+				WriteOptions: tspoint.WriteOptions{Tags: map[string]string{"tag": "value"}, TsFieldName: "ts", PrecisionStr: "ms", Fields: []string{"temperature"}},
 				Measurement:  "test",
 			},
 		},
@@ -76,7 +76,7 @@ func TestConfig(t *testing.T) {
 				Username:     "name",
 				Password:     "pass",
 				Database:     "db1",
-				WriteOptions: tspoint.WriteOptions{Tags: map[string]string{"tag": "value"}, TsFieldName: "ts", PrecisionStr: "ms"},
+				WriteOptions: tspoint.WriteOptions{Tags: map[string]string{"tag": "value"}, TsFieldName: "ts", PrecisionStr: "ms", Fields: []string{"temperature"}},
 				Measurement:  "test",
 			},
 		},
@@ -400,7 +400,37 @@ func TestCollectPoints(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "single with fields",
+			conf: c{
+				Measurement: "test_fields",
+				WriteOptions: tspoint.WriteOptions{
+					Tags: map[string]string{
+						"tag1": "value1",
+					},
+					Fields:       []string{"t"},
+					PrecisionStr: "ns",
+				},
+				Database: "db1",
+			},
+			data: map[string]any{
+				"t": 20,
+				"h": 50,
+			},
+			points: []tspoint.RawPoint{
+				{
+					Fields: map[string]any{
+						"t": 20,
+					},
+					Tags: map[string]string{
+						"tag1": "value1",
+					},
+					Tt: time.UnixMilli(10),
+				},
+			},
+		},
 	}
+	ctx := mockContext.NewMockContext("testconfig", "op")
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			ifsink := &influxSink{
@@ -408,7 +438,7 @@ func TestCollectPoints(t *testing.T) {
 			}
 			err := ifsink.conf.WriteOptions.Validate()
 			assert.NoError(t, err)
-			ctx := mockContext.NewMockContext(test.name, "op")
+
 			err = ifsink.conf.ValidateTagTemplates(ctx)
 			assert.NoError(t, err)
 			err = ifsink.transformPoints(ctx, test.data)
@@ -426,4 +456,10 @@ func TestCollectPoints(t *testing.T) {
 			assert.Equal(t, result, ifsink.bp)
 		})
 	}
+}
+
+func TestInfo(t *testing.T) {
+	s := &influxSink{}
+	info := s.Info()
+	assert.True(t, info.HasFields)
 }

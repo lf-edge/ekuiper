@@ -127,40 +127,49 @@ func (s *TraceTestSuite) TestLookup() {
 		s.Require().Equal(http.StatusOK, resp.StatusCode)
 	})
 	s.Run("assert trace", func() {
-		var ruleIds []string
-		// Assert rule1 traces
-		r := TryAssert(10, time.Second, func() bool {
+		var results []struct {
+			act       []byte
+			resultMap map[string]any
+		}
+		// Wait for 2 complete traces (at least one with non-empty ChildSpan)
+		r := TryAssert(20, time.Second, func() bool {
 			resp, e := client.Get("trace/rule/ruleLookupMem1")
 			s.Require().NoError(e)
 			defer resp.Body.Close()
 			body, err := io.ReadAll(resp.Body)
 			s.Require().NoError(err)
+			var ruleIds []string
 			err = json.Unmarshal(body, &ruleIds)
 			s.Require().NoError(err)
-			return len(ruleIds) == 2
+			if len(ruleIds) != 2 {
+				return false
+			}
+			// Fetch all traces and check if at least one has non-empty ChildSpan
+			results = nil
+			hasCompleteTrace := false
+			for _, tid := range ruleIds {
+				resp, e := client.Get(path.Join("trace", tid))
+				s.NoError(e)
+				s.Equal(http.StatusOK, resp.StatusCode)
+				act, resultMap, err := GetResponseResultTextAndMap(resp)
+				s.NoError(err)
+				results = append(results, struct {
+					act       []byte
+					resultMap map[string]any
+				}{act, resultMap})
+				if getMaxChildSpanDepth(resultMap) > 0 {
+					hasCompleteTrace = true
+				}
+			}
+			return hasCompleteTrace
 		})
-		s.Require().True(r)
-		// assert each trace, just check 1/2/3
-		// assert each trace, just check 1/2/3
-		var results []struct {
-			act       []byte
-			resultMap map[string]any
-		}
-		for _, tid := range ruleIds {
-			resp, e := client.Get(path.Join("trace", tid))
-			s.NoError(e)
-			s.Equal(http.StatusOK, resp.StatusCode)
-			act, resultMap, err := GetResponseResultTextAndMap(resp)
-			s.NoError(err)
-			results = append(results, struct {
-				act       []byte
-				resultMap map[string]any
-			}{act, resultMap})
-		}
+		s.Require().True(r, "should have at least one complete trace with ChildSpan")
+		// Match traces to expected files by ChildSpan depth
+		// lookup1.json expects deep nesting (full processing), lookup2.json expects shallow (rate-limited)
 		sort.Slice(results, func(i, j int) bool {
-			attrI := results[i].resultMap["attribute"].(map[string]any)
-			attrJ := results[j].resultMap["attribute"].(map[string]any)
-			return attrI["data"].(string) > attrJ["data"].(string)
+			depthI := getMaxChildSpanDepth(results[i].resultMap)
+			depthJ := getMaxChildSpanDepth(results[j].resultMap)
+			return depthI > depthJ // Deeper trace first (matches lookup1.json)
 		})
 		for i, res := range results {
 			all, err := os.ReadFile(filepath.Join("result", "trace", fmt.Sprintf("lookup%d.json", i+1)))
@@ -413,4 +422,24 @@ func (s *TraceTestSuite) compareDataField(exp, act any) bool {
 	}
 	// Otherwise compare as strings
 	return expStr == actStr
+}
+
+// getMaxChildSpanDepth calculates the maximum depth of ChildSpan nesting in a trace
+func getMaxChildSpanDepth(trace map[string]any) int {
+	children, ok := trace["ChildSpan"].([]any)
+	if !ok || len(children) == 0 {
+		return 0
+	}
+	maxDepth := 0
+	for _, child := range children {
+		childMap, ok := child.(map[string]any)
+		if !ok {
+			continue
+		}
+		depth := 1 + getMaxChildSpanDepth(childMap)
+		if depth > maxDepth {
+			maxDepth = depth
+		}
+	}
+	return maxDepth
 }

@@ -50,6 +50,7 @@ type SinkInfoNode interface {
 type SinkInfo struct {
 	HasCompress bool
 	HasBatch    bool
+	HasFields   bool
 }
 
 type UniqueSub interface {
