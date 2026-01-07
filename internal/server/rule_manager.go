@@ -77,12 +77,19 @@ func (rr *RuleRegistry) keys() (keys []string) {
 	return
 }
 
-// register and save to db
+// save registers rule to in-memory registry and persists to DB atomically.
+// It handles concurrent creation by checking registry under lock.
+// It fails if the rule already exists.
 func (rr *RuleRegistry) save(key string, ruleJson string, value *rule.State) error {
 	rr.Lock()
 	defer rr.Unlock()
+	// Use ExecCreate (Setnx) logic via Upsert but we verified it doesn't exist
+	if err := ruleProcessor.ExecCreate(key, ruleJson); err != nil {
+		return err
+	}
+	// Update registry only after successful DB write
 	rr.internal[key] = value
-	return ruleProcessor.ExecCreate(key, ruleJson)
+	return nil
 }
 
 // only register. It is called when recover from db
@@ -92,10 +99,40 @@ func (rr *RuleRegistry) register(key string, value *rule.State) {
 	rr.internal[key] = value
 }
 
-func (rr *RuleRegistry) upsert(id string, ruleJson string) error {
+// upsert attempts to update the rule atomically.
+// It checks version, persists to DB, and updates memory (either replacing the state or updating in-place) under lock.
+// It returns the live state (which might be the new state or the updated existing state) and a flag indicating if it was an update.
+func (rr *RuleRegistry) upsert(id string, ruleJson string, newRuleDef *def.Rule, newState *rule.State) (*rule.State, bool, error) {
 	rr.Lock()
 	defer rr.Unlock()
-	return ruleProcessor.ExecUpsert(id, ruleJson)
+
+	// 1. Version Check
+	if existing, ok := rr.internal[id]; ok {
+		if !ruleProcessor.CanReplace(existing.Rule.Version, newRuleDef.Version) {
+			return nil, false, fmt.Errorf("rule %s already exists with version (%s), new version (%s) is lower", id, existing.Rule.Version, newRuleDef.Version)
+		}
+	}
+
+	// 2. Persist to DB
+	if !newRuleDef.Temp {
+		if err := ruleProcessor.ExecUpsert(id, ruleJson); err != nil {
+			return nil, false, err
+		}
+	}
+
+	// 3. Update Memory
+	if existing, ok := rr.internal[id]; ok {
+		// Case B: In-place update
+		// We can safely update the rule definition pointer here because we hold the lock
+		existing.Rule = newRuleDef
+		return existing, true, nil
+	} else if newState != nil {
+		// Case A: Replace/New
+		rr.internal[id] = newState
+		return newState, false, nil
+	}
+
+	return nil, false, fmt.Errorf("unexpected state: rule not found and no new state provided")
 }
 
 func (rr *RuleRegistry) updateTrigger(id string, trigger bool) error {
@@ -182,41 +219,51 @@ func (rr *RuleRegistry) RecoverRule(r *def.Rule) string {
 // UpsertRule validates the new rule, then update the db, then restart the rule
 func (rr *RuleRegistry) UpsertRule(ruleId, ruleJson string) error {
 	ruleJson = replace.ReplaceRuleJson(ruleJson, conf.IsTesting)
-	// Validate the rule json
+	// 1. Validate the rule json
 	r, err := ruleProcessor.GetRuleByJson(ruleId, ruleJson)
 	if err != nil {
 		return fmt.Errorf("Invalid rule json: %v", err)
 	}
-	// do upsert.
-	rs, isUpdate := registry.load(ruleId)
-	if !isUpdate { // if not exist, create it
-		rs = rule.NewState(r, func(id string, b bool) {
-			err = rr.updateTrigger(id, b)
-			if err != nil {
-				conf.Log.Warnf("update trigger error: %v", err)
-			}
-		})
-	} else {
-		if !processor.CanReplace(rs.Rule.Version, r.Version) { // old version is newer
-			return fmt.Errorf("rule %s already exists with version (%s), new version (%s) is lower", ruleId, rs.Rule.Version, r.Version)
+	// 2. Create Candidate State (always new, clean state for validation)
+	candidateRS := rule.NewState(r, func(id string, b bool) {
+		err = rr.updateTrigger(id, b)
+		if err != nil {
+			conf.Log.Warnf("update trigger error: %v", err)
 		}
-	}
-	err = rs.ValidateAndRun(r)
+	})
+
+	// 3. Validation
+	// This only checks planning and static analysis, doesn't touch running resources
+	newTopo, err := candidateRS.Validate()
 	if err != nil {
 		return err
 	}
-	if !r.Temp {
-		if isUpdate {
-			err = rr.upsert(r.Id, ruleJson)
-		} else {
-			err = rr.save(r.Id, ruleJson, rs)
-		}
-	}
+
+	// 4. Atomic Upsert
+	// If exists: update in-place, return existing state
+	// If new: insert candidate, return candidate
+	liveRS, wasUpdate, err := rr.upsert(r.Id, ruleJson, r, candidateRS)
 	if err != nil {
-		// rollback clean up
-		rs.Delete()
+		return err
 	}
-	return err
+
+	// 5. Lifecycle Management on the LIVE state
+	if wasUpdate {
+		// Stop old instance
+		liveRS.Stop()
+	}
+
+	liveRS.WithTopo(newTopo)
+	if r.Triggered {
+		err2 := liveRS.Start()
+		if err2 != nil {
+			return err2
+		}
+	} else if newTopo != nil {
+		_ = newTopo.Cancel()
+		liveRS.WithTopo(nil)
+	}
+	return nil
 }
 
 func (rr *RuleRegistry) DeleteRule(name string) error {
