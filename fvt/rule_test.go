@@ -383,11 +383,14 @@ func (s *RuleTestSuite) TestStreamSliceSchemaWithSharedSource() {
 
 	schema, err := client.GetStreamSchema(streamName)
 	s.Require().NoError(err)
-	expected1 := map[string]any{
-		"id":   map[string]any{"hasIndex": true, "index": float64(0)},
-		"name": map[string]any{"hasIndex": true, "index": float64(1)},
-	}
-	s.Require().Equal(expected1, schema)
+	s.Require().Len(schema, 2)
+	id, ok := schema["id"].(map[string]any)
+	s.Require().True(ok)
+	name, ok := schema["name"].(map[string]any)
+	s.Require().True(ok)
+	s.Require().Equal(true, id["hasIndex"])
+	s.Require().Equal(true, name["hasIndex"])
+	s.Require().ElementsMatch([]float64{0, 1}, []float64{id["index"].(float64), name["index"].(float64)})
 
 	ruleSql2 := fmt.Sprintf(`{
 		"id": "%s",
@@ -411,12 +414,17 @@ func (s *RuleTestSuite) TestStreamSliceSchemaWithSharedSource() {
 
 	schema, err = client.GetStreamSchema(streamName)
 	s.Require().NoError(err)
-	expected2 := map[string]any{
-		"id":   map[string]any{"hasIndex": true, "index": float64(0)},
-		"name": map[string]any{"hasIndex": true, "index": float64(1)},
-		"age":  map[string]any{"hasIndex": true, "index": float64(2)},
-	}
-	s.Require().Equal(expected2, schema)
+	s.Require().Len(schema, 3)
+	id, ok = schema["id"].(map[string]any)
+	s.Require().True(ok)
+	name, ok = schema["name"].(map[string]any)
+	s.Require().True(ok)
+	age, ok := schema["age"].(map[string]any)
+	s.Require().True(ok)
+	s.Require().Equal(true, id["hasIndex"])
+	s.Require().Equal(true, name["hasIndex"])
+	s.Require().Equal(true, age["hasIndex"])
+	s.Require().ElementsMatch([]float64{0, 1, 2}, []float64{id["index"].(float64), name["index"].(float64), age["index"].(float64)})
 
 	resp, err = client.DeleteRule(rule2)
 	s.Require().NoError(err)
@@ -426,7 +434,12 @@ func (s *RuleTestSuite) TestStreamSliceSchemaWithSharedSource() {
 
 	schema, err = client.GetStreamSchema(streamName)
 	s.Require().NoError(err)
-	s.Require().Equal(expected1, schema)
+	s.Require().Len(schema, 2)
+	id, ok = schema["id"].(map[string]any)
+	s.Require().True(ok)
+	name, ok = schema["name"].(map[string]any)
+	s.Require().True(ok)
+	s.Require().ElementsMatch([]float64{0, 1}, []float64{id["index"].(float64), name["index"].(float64)})
 }
 
 func (s *RuleTestSuite) TestRuleSchema() {

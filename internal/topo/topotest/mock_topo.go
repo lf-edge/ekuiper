@@ -474,7 +474,8 @@ func DoCheckpointRuleTest(t *testing.T, tests []RuleCheckpointTest, opt *def.Rul
 			go sendData(tt.PauseSize, datas, tp, 100, wait)
 			conf.Log.Debugf("Send first phase data done at %d", timex.GetNowInMilli())
 			// compare checkpoint count
-			time.Sleep(1 * time.Second)
+			// Wait longer than checkpoint interval (2s) to ensure at least one checkpoint completes
+			time.Sleep(3 * time.Second)
 			for retry = 10; retry > 0; retry-- {
 				actual := tp.GetCoordinator().GetCompleteCount()
 				if tt.Cc == actual {

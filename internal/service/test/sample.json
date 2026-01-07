@@ -119,7 +119,7 @@
       ]
     },
     "tsschemaless": {
-      "address": "http://localhost:51234",
+      "address": "http://localhost:51235",
       "protocol": "rest",
       "schemaless": true
     }

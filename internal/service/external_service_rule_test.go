@@ -684,7 +684,7 @@ func TestGrpcService(t *testing.T) {
 	defer s.Stop()
 
 	// Reset
-	streamList := []string{"helloStr", "commands", "fakeBin"}
+	streamList := []string{"helloStr", "commands", "fakeBin", "optional_commands"}
 	topotest.HandleStream(false, streamList, t)
 	// Data setup
 	tests := []topotest.RuleTest{
@@ -828,7 +828,7 @@ func TestGrpcService(t *testing.T) {
 
 func TestSchemalessService(t *testing.T) {
 	// mock server, the port is set in the sample.json
-	l, err := net.Listen("tcp", "127.0.0.1:51234")
+	l, err := net.Listen("tcp", "127.0.0.1:51235")
 	if err != nil {
 		t.Error(err)
 		t.FailNow()

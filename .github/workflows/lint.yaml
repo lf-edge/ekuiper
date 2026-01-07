@@ -53,18 +53,18 @@ jobs:
         uses: golangci/golangci-lint-action@v6
         with:
           version: latest
-          args: "--out-${NO_FUTURE}format line-number"
+          args: "--out-format line-number"
 
       - name: golangci-lint (tools/kubernetes)
         uses: golangci/golangci-lint-action@v6
         with:
           version: latest
           working-directory: tools/kubernetes
-          args: "--out-${NO_FUTURE}format line-number"
+          args: "--out-format line-number"
 
       - name: golangci-lint (sdk/go)
         uses: golangci/golangci-lint-action@v6
         with:
           version: latest
           working-directory: sdk/go
-          args: "--out-${NO_FUTURE}format line-number --config=.gosdkci.yaml"
+          args: "--out-format line-number --config=.gosdkci.yaml"
