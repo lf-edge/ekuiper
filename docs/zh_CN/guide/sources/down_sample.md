@@ -42,50 +42,50 @@ Source 降采样输入都是采样周期内的 N 条消息，输出为单条消�
 1. 创建降采样配置：通过以下 REST API, 我们创建了 MQTT 配置 `onesec`。其中包含了配置项 `interval`, 配置采样周期为 1
    秒。注意：MQTT 服务器地址等配置，将会沿用默认配置。
 
-    ```http request
-    ###
-    PUT http://{{host}}/metadata/sources/mqtt/confKeys/onesec
-    
-    {
-      "interval": "1s"
-    }
-    
-    ```
+   ```http request
+   ###
+   PUT http://{{host}}/metadata/sources/mqtt/confKeys/onesec
+
+   {
+     "interval": "1s"
+   }
+
+   ```
 
 2. 创建数据流：以下 API 创建了名为 mqttOneSec 数据流，通过 `CONF_KEY="onesec"` 采用了第一步创建的降采样配置。
 
-    ```http request
-    ###
-    POST http://{{host}}/streams
-    Content-Type: application/json
-    
-    {
-      "sql": "CREATE STREAM mqttOneSec() WITH (TYPE=\"mqtt\",FORMAT=\"json\",DATASOURCE=\"demo\",CONF_KEY=\"onesec\");"
-    }
-    ```
+   ```http request
+   ###
+   POST http://{{host}}/streams
+   Content-Type: application/json
+
+   {
+     "sql": "CREATE STREAM mqttOneSec() WITH (TYPE=\"mqtt\",FORMAT=\"json\",DATASOURCE=\"demo\",CONF_KEY=\"onesec\");"
+   }
+   ```
 
 3. 基于降采样数据流创建规则：接下来用户可基于该数据流创建规则。以下为最简单的规则，取出所有数据发送到 MQTT 。该规则将收到 1s
    采样率的数据，即每一秒的最后一条数据。
 
-    ```http request
-    ###
-    POST http://{{host}}/rules
-    Content-Type: application/json
-    
-    {
-      "id": "ruleOneSecLatest",
-      "sql": "SELECT * FROM mqttOneSec",
-      "actions": [
-        {
-          "mqtt": {
-            "server": "tcp://127.0.0.1:1883",
-            "topic": "result/onesec",
-            "sendSingle": true
-          }
-        }
-      ]
-    }
-    ```
+   ```http request
+   ###
+   POST http://{{host}}/rules
+   Content-Type: application/json
+
+   {
+     "id": "ruleOneSecLatest",
+     "sql": "SELECT * FROM mqttOneSec",
+     "actions": [
+       {
+         "mqtt": {
+           "server": "tcp://127.0.0.1:1883",
+           "topic": "result/onesec",
+           "sendSingle": true
+         }
+       }
+     ]
+   }
+   ```
 
 ### 按列聚合
 
@@ -101,21 +101,21 @@ schema 数据的情况。例如，输入可能是
 聚合后结果为单条数据：
 
 ```json
-{"id":1, "temperature":30, "humidity":80}
+{ "id": 1, "temperature": 30, "humidity": 80 }
 ```
 
 1. 创建降采样配置：通过以下 REST API, 我们创建了 MQTT 配置 `onesec_merge`。其中包含了配置项 `interval`, 配置采样周期为 1
    秒。也配置了聚合列 `mergeField`。注意：MQTT 服务器地址等配置，将会沿用默认配置。
 
-    ```http request
-    ###
-    PUT http://{{host}}/metadata/sources/mqtt/confKeys/onesec_merge
-    
-    {
-      "interval": "1s",
-      "mergeField": "id"
-    }
-    ```
+   ```http request
+   ###
+   PUT http://{{host}}/metadata/sources/mqtt/confKeys/onesec_merge
+
+   {
+     "interval": "1s",
+     "mergeField": "id"
+   }
+   ```
 
 2. 创建数据流：以下 API 创建了名为 mqttOneSecM 数据流，通过 `CONF_KEY="onesec_merge"` 采用了第一步创建的降采样配置。
 
@@ -123,11 +123,11 @@ schema 数据的情况。例如，输入可能是
     ###
     POST http://{{host}}/streams
     Content-Type: application/json
-    
+
     {
       "sql": "CREATE STREAM mqttOneSecM() WITH (TYPE=\"mqtt\",FORMAT=\"json\",DATASOURCE=\"demo\",CONF_KEY=\"onesec_merge\");"
     }
-    ```
+   ```
 
 3. 基于降采样数据流创建规则：接下来用户可基于该数据流创建规则。以下为最简单的规则，取出所有数据发送到 MQTT 。该规则将收到 1s
    采样率的数据，按列聚合为单条数据后发送。
@@ -136,7 +136,7 @@ schema 数据的情况。例如，输入可能是
     ###
     POST http://{{host}}/rules
     Content-Type: application/json
-    
+
     {
       "id": "RuleOneSecM",
       "sql": "SELECT * FROM mqttOneSecM",
@@ -150,7 +150,7 @@ schema 数据的情况。例如，输入可能是
         }
       ]
     }
-    ```
+   ```
 
 ### 全聚合？
 

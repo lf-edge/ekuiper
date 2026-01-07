@@ -3,8 +3,8 @@
 Aggregate functions perform a calculation on a set of values and return a single value. Aggregate functions can be used
 as expressions only in the following:
 
-* The select list of a SELECT statement (either a sub-query or an outer query).
-* A HAVING clause.
+- The select list of a SELECT statement (either a sub-query or an outer query).
+- A HAVING clause.
 
 ## AVG
 
@@ -54,29 +54,29 @@ collect(*)
 collect(col)
 ```
 
-Returns an array with all columns or the whole record (when the parameter is *) values from the group. Supports incremental calculations.
+Returns an array with all columns or the whole record (when the parameter is \*) values from the group. Supports incremental calculations.
 
 ### Examples
 
-* Get an array of column `a` of the current window. Assume the column `a` is of an int type, the result will be
+- Get an array of column `a` of the current window. Assume the column `a` is of an int type, the result will be
   like: `[{"r1":[32, 45]}]`
 
-    ```sql
-    SELECT collect(a) as r1 FROM test GROUP BY TumblingWindow(ss, 10)
-    ```
+  ```sql
+  SELECT collect(a) as r1 FROM test GROUP BY TumblingWindow(ss, 10)
+  ```
 
-* Get the whole array of the current window. The result will be
+- Get the whole array of the current window. The result will be
   like: `[{"r1":[{"a":32, "b":"hello"}, {"a":45, "b":"world"}]}]`
 
-    ```sql
-    SELECT collect(*) as r1 FROM test GROUP BY TumblingWindow(ss, 10)
-    ```
+  ```sql
+  SELECT collect(*) as r1 FROM test GROUP BY TumblingWindow(ss, 10)
+  ```
 
-* Get the second element's column 'a' value within the current window. The result will be like: `[{"r1":32}]`
+- Get the second element's column 'a' value within the current window. The result will be like: `[{"r1":32}]`
 
-    ```sql
-    SELECT collect(*)[1]->a as r1 FROM test GROUP BY TumblingWindow(ss, 10)
-    ```
+  ```sql
+  SELECT collect(*)[1]->a as r1 FROM test GROUP BY TumblingWindow(ss, 10)
+  ```
 
 ## LAST_VALUE
 
@@ -131,23 +131,23 @@ Given the following values in the group:
 }
 ```
 
-* Concat wildcard, the result will be: `{"a": {"a": 3}, "b": 8, "c": 3, "d": 6}`
+- Concat wildcard, the result will be: `{"a": {"a": 3}, "b": 8, "c": 3, "d": 6}`
 
-    ```sql
-    SELECT merge_agg(*) as r1 FROM test GROUP BY TumblingWindow(ss, 10)
-    ```
+  ```sql
+  SELECT merge_agg(*) as r1 FROM test GROUP BY TumblingWindow(ss, 10)
+  ```
 
-* Concat a specified object column, the result will be: `{"a": 3, "b": 2}`
+- Concat a specified object column, the result will be: `{"a": 3, "b": 2}`
 
-    ```sql
-    SELECT merge_agg(a) as r1 FROM test GROUP BY TumblingWindow(ss, 10)
-    ```
+  ```sql
+  SELECT merge_agg(a) as r1 FROM test GROUP BY TumblingWindow(ss, 10)
+  ```
 
-* Concat a specified non-object column, the result will be: `{}`
+- Concat a specified non-object column, the result will be: `{}`
 
-    ```sql
-    SELECT merge_agg(b) as r1 FROM test GROUP BY TumblingWindow(ss, 10)
-    ```
+  ```sql
+  SELECT merge_agg(b) as r1 FROM test GROUP BY TumblingWindow(ss, 10)
+  ```
 
 ## DEDUPLICATE
 
@@ -162,20 +162,20 @@ property [omitIfEmpty](../../guide/sinks/overview.md#common-properties) to the s
 
 Examples:
 
-* Get the whole array of the current window which is deduplicated by column `a`. The result will be
+- Get the whole array of the current window which is deduplicated by column `a`. The result will be
   like: `[{"r1":{"a":32, "b":"hello"}, {"a":45, "b":"world"}}]`
 
-    ```sql
-    SELECT deduplicate(a, true) as r1 FROM test GROUP BY TumblingWindow(ss, 10)
-    ```
+  ```sql
+  SELECT deduplicate(a, true) as r1 FROM test GROUP BY TumblingWindow(ss, 10)
+  ```
 
-* Get the column `a` value which is not duplicate during the last hour. The result will be
+- Get the column `a` value which is not duplicate during the last hour. The result will be
   like: `[{"r1":32}]`, `[{"r1":45}]` and `[{}]` if a duplicate value arrives. Use the omitIfEmpty sink property to
   filter out those empty results.
 
-     ```sql
-     SELECT deduplicate(a, false)->a as r1 FROM demo GROUP BY SlidingWindow(hh, 1)
-     ```
+  ```sql
+  SELECT deduplicate(a, false)->a as r1 FROM demo GROUP BY SlidingWindow(hh, 1)
+  ```
 
 ## MEDIAN
 

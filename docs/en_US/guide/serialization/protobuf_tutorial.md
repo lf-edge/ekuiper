@@ -6,7 +6,7 @@ This tutorial takes Protobuf format as an example to explain how to set up the c
 
 Before starting the hands-on operation, the following environment needs to be prepared.
 
-- MQTT broker for data transfer. This tutorial uses the MQTT server located at `tcp://broker.emqx.io:1883`. It is a public MQTT server provided by [EMQ](https://www.emqx.cn). If you are running eKuiper locally, you need to change `etc/mqtt_source.yaml` and change the configuration server to "tcp://broker.emqx.io:1883"; if you are using docker to start, you should set the environment variable MQTT_SOURCE__DEFAULT__SERVER=" tcp://broker.emqx.io:1883".
+- MQTT broker for data transfer. This tutorial uses the MQTT server located at `tcp://broker.emqx.io:1883`. It is a public MQTT server provided by [EMQ](https://www.emqx.cn). If you are running eKuiper locally, you need to change `etc/mqtt_source.yaml` and change the configuration server to "tcp://broker.emqx.io:1883"; if you are using docker to start, you should set the environment variable MQTT_SOURCE**DEFAULT**SERVER=" tcp://broker.emqx.io:1883".
 - To easily observe the results, we need to install an MQTT client, e.g. [MQTT X](https://mqttx.app/).
 
 ## Schema Registry
@@ -42,19 +42,22 @@ Suppose we have an MQTT topic `demo` with Protobuf-encoded binary data for the p
 
    ```json
    {
-      "id": "ruleDecode",
-      "sql": "SELECT * FROM protoDemo",
-      "actions": [{
-        "mqtt": {
-          "server": "tcp://broker.emqx.io:1883",
-          "topic": "result/protobuf",
-          "sendSingle": true
-        }
-      }]
+     "id": "ruleDecode",
+     "sql": "SELECT * FROM protoDemo",
+     "actions": [
+       {
+         "mqtt": {
+           "server": "tcp://broker.emqx.io:1883",
+           "topic": "result/protobuf",
+           "sendSingle": true
+         }
+       }
+     ]
    }
    ```
 
    ![create rule to deal with protobuf stream](./resources/proto_src_rule.png)
+
 4. Send data and see the result: We will use MQTTX to send Protobuf encoded binary data to the `protoDemo` topic and observe if the result received is the correct data after decoding.
    1. Open MQTT X and connect to the cloud `tcp://broker.emqx.io:1883`.
    2. Subscribe to the topic `result/protobuf` which is the topic defined in the rule action.

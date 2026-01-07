@@ -14,19 +14,18 @@ OpenVINO 的示例代码和模型参考 [工业表面缺陷检测实施参考](h
 
 在开始教程之前，请准备以下产品或环境。
 
-1. 安装 Python 3.x 环境。默认情况下，eKuiper 的便携式插件将使用 *python* 命令运行，您跟根据实际环境更新[配置文件](../../configuration/global_configurations.md#portable-plugin-configurations) 中的 Python 命令，例如 `python3`。
+1. 安装 Python 3.x 环境。默认情况下，eKuiper 的便携式插件将使用 _python_ 命令运行，您跟根据实际环境更新[配置文件](../../configuration/global_configurations.md#portable-plugin-configurations) 中的 Python 命令，例如 `python3`。
 2. 通过 `pip install opencv-python==4.7.0.* openvino==2023.0.0 numpy==1.24.3` 安装 opencv-python、numpy 和 openvino 软件包。
 
 ## 插件开发
 
-为了将 eKuiper 与 OpenVINO 集成，我们将开发一个自定义 eKuiper 函数插件并配合 eKuiper 规则使用。我们将创建 *inference* 函数，其输入是base64编码的图像数据，输出是 json 字典数据，其中包含片段缺陷的数量、处理后的图像数据和推理成本。
+为了将 eKuiper 与 OpenVINO 集成，我们将开发一个自定义 eKuiper 函数插件并配合 eKuiper 规则使用。我们将创建 _inference_ 函数，其输入是base64编码的图像数据，输出是 json 字典数据，其中包含片段缺陷的数量、处理后的图像数据和推理成本。
 
 开发功能插件分为三步：
 
 1. 用Python实现业务逻辑并将其包装为 eKuiper 函数。
 2. 按照插件格式打包相关文件。
 3. 创建实现扩展接口（源、接收器或函数）的 Python 文件：
-
    - 编写 Python 缺陷检测函数
    - 将现有函数包装为 eKuiper 函数插件
 
@@ -146,27 +145,25 @@ inferenceIns = InferenceFunc()
 1. **管理依赖项**：如果插件有其他依赖项，则需要创建依赖项安装脚本 install.sh。安装插件时，eKuiper 会在插件包中查找安装脚本文件 install.sh，如果有则执行。在本例中，我们创建一个列出所有依赖包的 “requirements.txt” 文件。依赖项的安装是通过调用 `pip install -r $cur/requirements.txt` 在 `install.sh` 中实现。对于其他插件，如无特殊要求，可以重复使用此脚本来更新 `requirements.txt`。
 2. **创建 Python 入口文件**：由于可以在单个插件中实现多个扩展，因此您需要一个入口文件来定义每个扩展的实现类。内容是一个主函数，它是插件运行时的入口点。它调用 SDK 中的方法来定义插件，包括插件名称以及插件中实现的源、接收器和函数的键列表。这里只实现了一个名为 `inference` 的函数插件，其对应的实现方法为 `inferenceIns`。 Python 插件进程独立于 eKuiper 主进程。
 
-    ```python
-    if __name__ == '__main__':
-        # Define the plugin
-        c = PluginConfig("defect", {}, {},
-                         {"inference": lambda: inferenceIns})
-        # Start the plugin instance
-        plugin.start(c)
-    ```
+   ```python
+   if __name__ == '__main__':
+       # Define the plugin
+       c = PluginConfig("defect", {}, {},
+                        {"inference": lambda: inferenceIns})
+       # Start the plugin instance
+       plugin.start(c)
+   ```
 
 3. **创建 JSON 格式的插件描述文件**：用于定义插件的元数据。文件名必须与插件名称相同，即 `defect.json`。定义的函数名必须与入口文件完全对应，其中，`executable` 字段用于定义插件可执行入口文件的名称。
 
 ```json
 {
-    "version": "v1.0.0",
-    "language": "python",
-    "executable": "main.py",
-    "sources": [],
-    "sinks": [],
-    "functions": [
-      "inference"
-    ]
+  "version": "v1.0.0",
+  "language": "python",
+  "executable": "main.py",
+  "sources": [],
+  "sinks": [],
+  "functions": ["inference"]
 }
 ```
 
@@ -214,8 +211,8 @@ Content-Type: application/json
 
 ### 创建规则
 
-通过 eKuiper Rest API 定义规则。我们将创建一个名为 ruleOp 的规则。我们只是从 openvino_demo 流中读取 base64 编码的图像，并针对它运行自定义函数 *inference*。
-当段缺陷数不为零时，它将发送 Base64 编码的原始图像和处理后的图像到主题 *ekuiper/defect*。
+通过 eKuiper Rest API 定义规则。我们将创建一个名为 ruleOp 的规则。我们只是从 openvino_demo 流中读取 base64 编码的图像，并针对它运行自定义函数 _inference_。
+当段缺陷数不为零时，它将发送 Base64 编码的原始图像和处理后的图像到主题 _ekuiper/defect_。
 
 ```shell
 POST http://{{host}}/rules
@@ -269,7 +266,7 @@ def publish(client):
 
 ### 查看结果
 
-用户可订阅 *ekuiper/defect* 主题，并在图像出现片段缺陷时收到通知。
+用户可订阅 _ekuiper/defect_ 主题，并在图像出现片段缺陷时收到通知。
 
 ## 总结
 

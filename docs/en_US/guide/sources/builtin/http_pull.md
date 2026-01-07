@@ -30,7 +30,7 @@ default:
   # The possible setting could be: true/false
   incremental: false
   # The body of request, such as '{"data": "data", "method": 1}'
-  body: '{}'
+  body: "{}"
   # Body type, none|text|json|html|xml|javascript|form
   bodyType: json
   # HTTP headers required for the request
@@ -90,7 +90,7 @@ Use can specify the global HTTP pull settings here. The configuration items spec
 
 #### Certificate Paths
 
-- `certificationPath`:  Specifies the path to the certificate, example: `d3807d9fa5-certificate.pem`. This can be an absolute or relative path. The base path for a relative address depends on where the `kuiperd` command is executed.
+- `certificationPath`: Specifies the path to the certificate, example: `d3807d9fa5-certificate.pem`. This can be an absolute or relative path. The base path for a relative address depends on where the `kuiperd` command is executed.
   - If executed as `bin/kuiperd` from `/var/kuiper`, the base is `/var/kuiper`.
   - If executed as `./kuiperd` from `/var/kuiper/bin`, the base is `/var/kuiper/bin`.
 
@@ -110,7 +110,6 @@ The following configurations are designed under the assumption that the authenti
 `OAuth`: Defines the authentication flow that follows OAuth standards. For other authentication methods like API keys, the key can be set directly in the header, eliminating the need for this configuration.
 
 - `access`
-
   - `url`: The url to fetch access token, will always use POST method.
 
   - `body`: The request body to fetch access token. Usually, the authorization code is needed here.
@@ -118,7 +117,6 @@ The following configurations are designed under the assumption that the authenti
   - `expire`: Expire time of the token, time unit is second, allow to use template, so it must be a string.
 
 - `refresh`
-
   - `url`: The url to refresh the token, always use POST method.
 
   - `headers`: The request header to refresh the token. Usually put the tokens here for authorization.

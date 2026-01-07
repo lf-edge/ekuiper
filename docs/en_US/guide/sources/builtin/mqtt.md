@@ -5,7 +5,7 @@
 
 MQTT (Message Queuing Telemetry Transport) is a protocol optimized for low bandwidth scenarios. Using the MQTT source stream, eKuiper subscribes to messages from the MQTT broker and channels them into its processing pipeline. This integration allows for real-time data processing directly from specified MQTT topics.
 
- In eKuiper, the MQTT connector can function as both a source connector (ingesting data from MQTT brokers) and a [sink connector](../../sinks/builtin/mqtt.md) (publishing data to MQTT brokers). This section specifically focuses on its role as a source connector.
+In eKuiper, the MQTT connector can function as both a source connector (ingesting data from MQTT brokers) and a [sink connector](../../sinks/builtin/mqtt.md) (publishing data to MQTT brokers). This section specifically focuses on its role as a source connector.
 
 ## Configurations
 
@@ -27,9 +27,8 @@ default:
   #rootCaPath: /var/kuiper/xyz-rootca.pem
   #insecureSkipVerify: true
   #connectionSelector: mqtt.mqtt_conf1
-  # Decompress the payload with the specified compression method. Support `gzip`, `zstd` method now.                                                                                                                                                                                                                                        
+  # Decompress the payload with the specified compression method. Support `gzip`, `zstd` method now.
   # decompression: ""
-
 
 #Override the global configurations
 demo_conf: #Conf_key
@@ -52,10 +51,10 @@ Users can specify the global MQTT configurations here. The configuration items s
 
 ### Security and Authentication Settings
 
-- `certificationPath`:  Specifies the path to the certificate, for example: `d3807d9fa5-certificate.pem`. This can be an absolute or relative path. The base path for a relative address depends on where the `kuiperd` command is executed.
+- `certificationPath`: Specifies the path to the certificate, for example: `d3807d9fa5-certificate.pem`. This can be an absolute or relative path. The base path for a relative address depends on where the `kuiperd` command is executed.
   - If executed as `bin/kuiperd` from `/var/kuiper`, the base is `/var/kuiper`.
   - If executed as `./kuiperd` from `/var/kuiper/bin`, the base is `/var/kuiper/bin`.
-- `privateKeyPath`: The location of the private key path, for example `d3807d9fa5-private.pem.key`. It can be an absolute path or a relative path.  For more detailed information, see `certificationPath`.
+- `privateKeyPath`: The location of the private key path, for example `d3807d9fa5-private.pem.key`. It can be an absolute path or a relative path. For more detailed information, see `certificationPath`.
 - `rootCaPath`: The location of root ca path. It can be an absolute path, or a relative path.
 - `certficationRaw`: base64 encoded original text of Cert, use `certificationPath` first if both defined.
 - `privateKeyRaw`: base64 encoded original text of Key, use `privateKeyPath` first if both defined.
@@ -64,7 +63,7 @@ Users can specify the global MQTT configurations here. The configuration items s
 
 ### **Connection Reusability**
 
-- `connectionSelector`: Specify the stream to reuse the connection to the MQTT broker, for example, `mqtt.localConnection` in the below example.  Note: The connection profile is located in `connections/connection.yaml`. For a detailed explanation of the connection selection, see [Connection Selector](../../connector.md#connection-selector).
+- `connectionSelector`: Specify the stream to reuse the connection to the MQTT broker, for example, `mqtt.localConnection` in the below example. Note: The connection profile is located in `connections/connection.yaml`. For a detailed explanation of the connection selection, see [Connection Selector](../../connector.md#connection-selector).
 
   ```yaml
   #Global MQTT configurations
@@ -80,7 +79,7 @@ Users can specify the global MQTT configurations here. The configuration items s
 
   ::: tip
 
-  Once specify the connectionSelector in specific configuration group , all connection related parameters will be ignored , in this case ``servers: [tcp://127.0.0.1:1883]``
+  Once specify the connectionSelector in specific configuration group , all connection related parameters will be ignored , in this case `servers: [tcp://127.0.0.1:1883]`
 
   :::
 
@@ -90,7 +89,7 @@ You can check the connectivity of the corresponding sink endpoint in advance thr
 
 - `decompression`: Decompress the payload with the specified compression method. Support `gzip`, `zstd` method now.
 
-- `bufferLength`: Specify the maximum number of messages to be buffered in the memory. This is used to avoid the extra large memory usage that would cause out of memory error. Note that the memory usage will be varied to the actual buffer. Increase the length here won't increase the initial memory allocation so it is safe to set a large buffer length. The default value is 102400, that is if each payload size is about 100 bytes, the maximum buffer size will be about 102400 * 100B ~= 10MB.
+- `bufferLength`: Specify the maximum number of messages to be buffered in the memory. This is used to avoid the extra large memory usage that would cause out of memory error. Note that the memory usage will be varied to the actual buffer. Increase the length here won't increase the initial memory allocation so it is safe to set a large buffer length. The default value is 102400, that is if each payload size is about 100 bytes, the maximum buffer size will be about 102400 \* 100B ~= 10MB.
 
 ### **KubeEdge Integration**
 
@@ -100,16 +99,17 @@ You can check the connectivity of the corresponding sink endpoint in advance thr
 
   ```yaml
   {
-    "deviceModels": [{
-      "name": "device1",
-      "properties": [{
-        "name": "temperature",
-        "dataType": "int"
-      }, {
-        "name": "temperature-enable",
-        "dataType": "string"
-      }]
-    }]
+    "deviceModels":
+      [
+        {
+          "name": "device1",
+          "properties":
+            [
+              { "name": "temperature", "dataType": "int" },
+              { "name": "temperature-enable", "dataType": "string" },
+            ],
+        },
+      ],
   }
   ```
 

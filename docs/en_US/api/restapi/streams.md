@@ -13,7 +13,9 @@ POST http://localhost:9081/streams
 Request sample, the request is a json string with `sql` field.
 
 ```json
-{"sql":"create stream my_stream (id bigint, name string, score float) WITH ( datasource = \"topic/temperature\", FORMAT = \"json\", KEY = \"id\")"}
+{
+  "sql": "create stream my_stream (id bigint, name string, score float) WITH ( datasource = \"topic/temperature\", FORMAT = \"json\", KEY = \"id\")"
+}
 ```
 
 This API can run any stream sql statements, not only stream creation.
@@ -98,32 +100,32 @@ The format is like Json schema:
 
 ```json
 {
-    "id": {
-        "type": "bigint"
+  "id": {
+    "type": "bigint"
   },
-    "name": {
-        "type": "string"
+  "name": {
+    "type": "string"
   },
-    "age": {
-        "type": "bigint"
+  "age": {
+    "type": "bigint"
   },
-    "hobbies": {
-        "type": "struct",
-        "properties": {
-          "indoor": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "outdoor": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
+  "hobbies": {
+    "type": "struct",
+    "properties": {
+      "indoor": {
+        "type": "array",
+        "items": {
+          "type": "string"
         }
+      },
+      "outdoor": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
     }
+  }
 }
 ```
 
@@ -140,7 +142,9 @@ Path parameter `id` is the id or name of the old stream.
 Request sample, the request is a json string with `sql` field.
 
 ```json
-{"sql":"create stream my_stream (id bigint, name string, score float) WITH ( datasource = \"topic/temperature\", FORMAT = \"json\", KEY = \"id\")"}
+{
+  "sql": "create stream my_stream (id bigint, name string, score float) WITH ( datasource = \"topic/temperature\", FORMAT = \"json\", KEY = \"id\")"
+}
 ```
 
 ## drop a stream

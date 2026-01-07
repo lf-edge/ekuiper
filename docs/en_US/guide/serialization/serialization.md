@@ -25,14 +25,14 @@ All formats provide the ability to codec and, optionally, the definition of sche
 All currently supported formats, their supported codec methods and modes are shown in the following table.
 
 | Format    | Codec                               | Custom Codec           | Schema                 |
-|-----------|-------------------------------------|------------------------|------------------------|
+| --------- | ----------------------------------- | ---------------------- | ---------------------- |
 | json      | Built-in                            | Unsupported            | Unsupported            |
 | binary    | Built-in                            | Unsupported            | Unsupported            |
 | delimiter | Built-in, need to specify delimiter | Unsupported            | Unsupported            |
 | protobuf  | Built-in                            | Supported              | Supported and required |
 | custom    | Not Built-in                        | Supported and required | Supported and optional |
 
-#### Delimiter Format
+### Delimiter Format
 
 The delimiter format supports CSV-like data with customizable delimiters. It provides both encoding and decoding capabilities for delimited text data.
 
@@ -61,6 +61,7 @@ The delimiter format supports CSV-like data with customizable delimiters. It pro
 **Error Handling:**
 
 The delimiter format currently provides minimal error handling:
+
 - Returns empty map for empty or whitespace-only input
 - Silently skips empty lines in multi-line input
 - Truncates data if more fields than columns (no error raised)
@@ -84,47 +85,46 @@ The delimiter format currently provides minimal error handling:
 }
 ```
 
-
 ### Format Extension
 
 When using `custom` format or `protobuf` format, the user can customize the codec and schema in the form of a go language plugin. Among them, `protobuf` only supports custom codecs, and the schema needs to be defined by `*.proto` file. The steps for customizing the format are as follows:
 
 1. Implement codec-related interfaces. The Encode function encodes the incoming data (currently always `map[string]interface{}`) into a byte array. The Decode function, on the other hand, decodes the byte array into `map[string]interface{}`. The decode function is called in source, while the encode function will be called in sink.
 
-    ```go
-    // Converter converts bytes & map or []map according to the schema
-    type Converter interface {
-        Encode(d interface{}) ([]byte, error)
-        Decode(b []byte) (interface{}, error)
-    }
-    ```
+   ```go
+   // Converter converts bytes & map or []map according to the schema
+   type Converter interface {
+       Encode(d interface{}) ([]byte, error)
+       Decode(b []byte) (interface{}, error)
+   }
+   ```
 
 2. Implements the schema description interface. If the custom format is strongly typed, then this interface can be implemented. The interface returns a JSON schema-like string for use by source. The returned data structure will be used as a physical schema to help eKuiper implement capabilities such as SQL validation and optimization during the parse and load phase.
 
-    ```go
-    type SchemaProvider interface {
-      GetSchemaJson() string
-    }
-    ```
+   ```go
+   type SchemaProvider interface {
+     GetSchemaJson() string
+   }
+   ```
 
 3. Compile as a plugin so file. Usually, format extensions do not need to depend on the main eKuiper project. Due to the limitations of the Go language plugin system, the compilation of the plugin still needs to be done in the same compilation environment as the main eKuiper application, including the same operations, Go language version, etc. If you need to [deploy to the official docker](#build-format-plugin-with-docker), you can use the corresponding docker image for compilation.
 
-    ```shell
-    go build -trimpath --buildmode=plugin -o data/test/myFormat.so internal/converter/custom/test/*.go
-    ```
+   ```shell
+   go build -trimpath --buildmode=plugin -o data/test/myFormat.so internal/converter/custom/test/*.go
+   ```
 
 4. Register the schema by REST API.
 
-    ```shell
-    ###
-    POST http://{{host}}/schemas/custom
-    Content-Type: application/json
-  
-    {
-      "name": "custom1",
-       "soFile": "file:///tmp/custom1.so"
-    }
-    ```
+   ```shell
+   ###
+   POST http://{{host}}/schemas/custom
+   Content-Type: application/json
+
+   {
+     "name": "custom1",
+      "soFile": "file:///tmp/custom1.so"
+   }
+   ```
 
 5. Use custom format in source or sink with `format` and `schemaId` parameters.
 
@@ -152,7 +152,7 @@ To build for alpine environment, we can use the golang alpine image as the base 
    /usr/src/myapp # make
    ```
 
-4. You should find the built *.so file (test.so in this example) for you plugin in your project. Use that to register the format plugin.
+4. You should find the built \*.so file (test.so in this example) for you plugin in your project. Use that to register the format plugin.
 
 ### Static Protobuf
 
@@ -176,17 +176,17 @@ Static parsing requires the development of a parsing plug-in, which proceeds as 
 
 5. Register the schema by REST API. Notice that, the proto file and the so file are needed.
 
-    ```shell
-    ###
-    POST http://{{host}}/schemas/protobuf
-    Content-Type: application/json
-  
-    {
-      "name": "helloworld",
-      "file": "file:///tmp/helloworld.proto",
-       "soFile": "file:///tmp/helloworld.so"
-    }
-    ```
+   ```shell
+   ###
+   POST http://{{host}}/schemas/protobuf
+   Content-Type: application/json
+
+   {
+     "name": "helloworld",
+     "file": "file:///tmp/helloworld.proto",
+      "soFile": "file:///tmp/helloworld.so"
+   }
+   ```
 
 6. Use custom format in source or sink with `format` and `schemaId` parameters.
 

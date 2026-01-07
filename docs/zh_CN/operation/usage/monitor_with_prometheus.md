@@ -89,8 +89,8 @@ kuiper_rule_count: eKuiper 中有多少条规则运行，多少条规则暂停�
 eKuiper 中自带 Prometheus 服务，但是默认为关闭状态。用户可修改 `etc/kuiper.yaml` 中的配置打开该服务。其中，`prometheus` 为布尔值，修改为 `true` 可打开服务；`prometheusPort` 配置服务的访问端口。
 
 ```yaml
-  prometheus: true
-  prometheusPort: 20499
+prometheus: true
+prometheusPort: 20499
 ```
 
 若使用 Docker 启动 eKuiper，也可通过配置环境变量启用服务。
@@ -120,7 +120,7 @@ Serving prometheus metrics on port http://localhost:20499/metrics
 
 ```yaml
 global:
-  scrape_interval:     15s
+  scrape_interval: 15s
   evaluation_interval: 15s
 
 rule_files:
@@ -130,7 +130,7 @@ rule_files:
 scrape_configs:
   - job_name: ekuiper
     static_configs:
-      - targets: ['localhost:20499']
+      - targets: ["localhost:20499"]
 ```
 
 此处定义了监控任务名为 `eKuiper`，targets 指向上一节启动的服务的地址。配置完成后，启动 Prometheus。

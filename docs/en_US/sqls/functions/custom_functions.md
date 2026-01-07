@@ -6,7 +6,7 @@ For the development, compilation and use of functions, please [see here](../../e
 ## echo plugin
 
 | Function | Example   | Description                     |
-|----------|-----------|---------------------------------|
+| -------- | --------- | ------------------------------- |
 | echo     | echo(avg) | Output parameter value as it is |
 
 echo(avg) example
@@ -20,7 +20,7 @@ echo(avg) example
 ## countPlusOne plugin
 
 | Function     | Example           | Description                                       |
-|--------------|-------------------|---------------------------------------------------|
+| ------------ | ----------------- | ------------------------------------------------- |
 | countPlusOne | countPlusOne(avg) | Output the value of the parameter length plus one |
 
 countPlusOne(avg) example
@@ -34,7 +34,7 @@ countPlusOne(avg) example
 ## accumulateWordCount plugin
 
 | Function            | Example                      | Description                                  |
-|---------------------|------------------------------|----------------------------------------------|
+| ------------------- | ---------------------------- | -------------------------------------------- |
 | accumulateWordCount | accumulateWordCount(avg,sep) | The function counts how many words there are |
 
 accumulateWordCount(avg,sep) example
@@ -50,7 +50,7 @@ accumulateWordCount(avg,sep) example
 Image processing currently only supports the formats of `png` and `jpeg`
 
 | Function  | Example                             | Description                                                                                                                                                                                                                                                                     |
-|-----------|-------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| --------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | resize    | resize(avg, width, height, [isRaw]) | Create a scaled image with new dimensions (width, height). If width or height is set to 0, it is set to the reserved value of aspect ratio. isRaw is optional, specifies whether to output raw data instead of encoded format like jpeg which is commonly used in AI inference. |
 | thumbnail | thumbnail(avg,maxWidth, maxHeight)  | Reduce the image that retains the aspect ratio to the maximum size (maxWidth, maxHeight).                                                                                                                                                                                       |
 
@@ -73,7 +73,7 @@ thumbnail(avg,maxWidth, maxHeight) example
 ### Geohash plugin
 
 | Function              | Example                                                  | Description                                                                                                                                                |
-|-----------------------|----------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| --------------------- | -------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | geohashEncode         | geohashEncode(la,lo float64)(string)                     | Encode latitude and longitude as a string                                                                                                                  |
 | geohashEncodeInt      | geohashEncodeInt(la,lo float64)(uint64)                  | Encode latitude and longitude as an unsigned integer                                                                                                       |
 | geohashDecode         | geohashDecode(hash string)(la,lo float64)                | Decode a string into latitude and longitude                                                                                                                |
@@ -85,7 +85,7 @@ thumbnail(avg,maxWidth, maxHeight) example
 | geohashNeighbors      | geohashNeighbors(hash string)([]string)                  | Return all neighbors of a string                                                                                                                           |
 | geohashNeighborsInt   | geohashNeighborsInt(hash uint64)([]uint64)               | Return all neighbors of an unsigned integer                                                                                                                |
 
- geohashEncode example
+geohashEncode example
 
 - Input: `{"lo" :131.036192,"la":-25.345457}`
 - Output: `{"geohashEncode":"qgmpvf18h86e"}`
@@ -94,7 +94,7 @@ thumbnail(avg,maxWidth, maxHeight) example
 SELECT geohashEncode(la,lo) FROM test
 ```
 
- geohashEncodeInt example
+geohashEncodeInt example
 
 - Input: `{"lo" :131.036192,"la":-25.345457}`
 - Output: `{"geohashEncodeInt":12963433097944239317}`
@@ -103,7 +103,7 @@ SELECT geohashEncode(la,lo) FROM test
 SELECT geohashEncodeInt(la,lo) FROM test
 ```
 
- geohashDecode example
+geohashDecode example
 
 - Input: `{"hash" :"qgmpvf18h86e"}`
 - Output: `{"geohashDecode":{"Longitude":131.036192,"Latitude":-25.345457099999997}}`
@@ -168,7 +168,7 @@ SELECT geohashNeighbors(hash) FROM test
 
 geohashNeighborsInt example
 
-- Input:  `{"hash" :"qgmpvf18h86e","neber":"North"}`
+- Input: `{"hash" :"qgmpvf18h86e","neber":"North"}`
 - Output: `{"geohashNeighborsInt":[12963433097944240129,12963433097944240131,12963433097944240130,12963433097944237399,12963433097944237397,12963433097944150015,12963433097944152746,12963433097944152747]}`
 
 ```sql
@@ -177,7 +177,7 @@ SELECT geohashNeighborsInt(hash) FROM test
 
 ### LabelImage plugin
 
-This is a sample plugin(use in docker image tags with ``-slim`` suffix)
+This is a sample plugin(use in docker image tags with `-slim` suffix)
 to demonstrate the usage of TensorFlowLite(tflite) model interpreter.
 The function receives a bytea input representing an image
 and produces the AI label of the image by running the tflite model.
@@ -190,7 +190,7 @@ SELECT labelImage(self) FROM tfdemo
 
 ### tfLite plugin
 
-This is a plugin (use in docker image tags with ``-slim`` suffix) to do the TensorFlow Lite inference.
+This is a plugin (use in docker image tags with `-slim` suffix) to do the TensorFlow Lite inference.
 Users just need to upload the `.tflite` model, call the `tfLite(model_name, input_data)` function in sql,
 then will receive results from the model inference.
 When uploading a model, please use the [uploads](../../api/restapi/uploads.md) interface to upload the model file.

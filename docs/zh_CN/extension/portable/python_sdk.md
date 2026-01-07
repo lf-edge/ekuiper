@@ -70,15 +70,15 @@ sink 时可以配置是否等待 ack 再发送下一条数据。例如，假设 
 
 ```json
 {
-   "id": "rulePort1",
-   "sql": "SELECT * FROM mqttStream",
-   "actions": [
-      {
-         "print": {
-            "requireAck": true
-         }
+  "id": "rulePort1",
+  "sql": "SELECT * FROM mqttStream",
+  "actions": [
+    {
+      "print": {
+        "requireAck": true
       }
-   ]
+    }
+  ]
 }
 ```
 
@@ -145,23 +145,17 @@ Anaconda®、Miniconda 和 Anaconda Repository 中。eKuiper 支持使用 conda 
 1. 创建并配置虚拟环境。
 2. 在打包插件时，确保 `virtualEnvType` 设置为 `conda`，`env` 设置为创建的虚拟环境名，如下所示。
 
-    ```json
-    {
-      "version": "v1.0.0",
-      "language": "python",
-      "executable": "pysam.py",
-      "virtualEnvType": "conda",
-      "env": "myenv",
-      "sources": [
-        "pyjson"
-      ],
-      "sinks": [
-        "print"
-      ],
-      "functions": [
-        "revert"
-      ]
-    }
-    ```
+   ```json
+   {
+     "version": "v1.0.0",
+     "language": "python",
+     "executable": "pysam.py",
+     "virtualEnvType": "conda",
+     "env": "myenv",
+     "sources": ["pyjson"],
+     "sinks": ["print"],
+     "functions": ["revert"]
+   }
+   ```
 
 3. 如果该插件有安装脚本，确保该脚本将依赖安装到正确的虚拟环境中。

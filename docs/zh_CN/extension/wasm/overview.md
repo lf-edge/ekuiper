@@ -1,6 +1,6 @@
 # Wasm 插件 (beta)
 
-作为对原生插件的补充  Wasm 插件旨在提供相同的功能，同时允许在更通用的环境中运行并由更多语言创建。
+作为对原生插件的补充 Wasm 插件旨在提供相同的功能，同时允许在更通用的环境中运行并由更多语言创建。
 
 创建插件的步骤如下：
 
@@ -103,9 +103,7 @@ fibonacci.json
 ```json
 {
   "version": "v1.0.0",
-  "functions": [
-    "fib"
-  ],
+  "functions": ["fib"],
   "wasmEngine": "wasmedge"
 }
 ```
@@ -152,9 +150,9 @@ bin/kuiper describe plugin wasm fibonacci
 
    ```shell
    bin/kuiper create stream demo_fib '(num float) WITH (FORMAT="JSON", DATASOURCE="demo_fib")'
- 
+
    bin/kuiper query
- 
+
    select fib(num) from demo_fib
    ```
 
@@ -173,7 +171,7 @@ bin/kuiper describe plugin wasm fibonacci
 
    使用 TOOLS/Websocket 工具发送数据:
 
-   Tpoic    : demo_fib
+   Tpoic : demo_fib
 
    Messages : {"num" : 25}
 

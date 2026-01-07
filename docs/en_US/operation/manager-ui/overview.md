@@ -113,7 +113,6 @@ Create a stream named `demoStream`, as shown below:
 - The message topic is `devices/device_001/messages`
 
 - The stream structure definition contains the following two fields.
-
   - temperature: bigint
   - humidity: bigint
 

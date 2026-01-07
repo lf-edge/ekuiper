@@ -90,7 +90,7 @@ Return the column value if it has changed from the last execution.
 had_changed(true, expr1, expr2, ...)
 ```
 
-Return if any of the columns had changed since the last run. The expression could be * to easily detect the change
+Return if any of the columns had changed since the last run. The expression could be \* to easily detect the change
 status of all columns.
 
 ## Functions to detect changes
@@ -101,7 +101,7 @@ This function is a normal scalar function, so it can be used in any clause inclu
 
 **Syntax**
 
-```CHANGED_COL(<ignoreNull>, <expr>)```
+`CHANGED_COL(<ignoreNull>, <expr>)`
 
 **Arguments**
 
@@ -120,7 +120,7 @@ This function returns multiple columns, so it is only allowed in the SELECT clau
 
 **Syntax**
 
-```CHANGED_COLS (<prefix>, <ignoreNull>, <expr> [,...,<exprN>])```
+`CHANGED_COLS (<prefix>, <ignoreNull>, <expr> [,...,<exprN>])`
 
 **Arguments**
 
@@ -156,7 +156,7 @@ separately, try to call the changed function for each column respectively and us
 
 This function is a scalar function with one or more arguments.
 
-```HAD_CHANGED (<ignoreNull>, <expr> [,...,<exprN>])```
+`HAD_CHANGED (<ignoreNull>, <expr> [,...,<exprN>])`
 
 **Arguments**
 

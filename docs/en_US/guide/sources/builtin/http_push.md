@@ -46,7 +46,7 @@ See below for a demo configuration with the global configuration and a customize
 default:
   # the request method to listen on
   method: "POST"
-  
+
 #Override the global configurations
 application_conf: #Conf_key
   server: "PUT"

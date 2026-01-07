@@ -127,47 +127,53 @@ The eKuiper rules are divided into two parts. The SQL is used to write the busin
 
 1. **Collection of the specified signal**. This rule can collect engine signals in real time and send them to MQTT topic collect . The rule defines the data points to be collected by the SELECT clause in the SQL statement.
 
-    ```json
-    {
-        "id": "ruleCollect",
-        "sql": "SELECT rpm, inletTemperature, inletPressure FROM canDemo",
-        "actions": [{
-          "mqtt": {
-            "server": "tcp://yourserver:1883",
-            "topic": "collect"
-          }
-        }]
-    }
-    ```
+   ```json
+   {
+     "id": "ruleCollect",
+     "sql": "SELECT rpm, inletTemperature, inletPressure FROM canDemo",
+     "actions": [
+       {
+         "mqtt": {
+           "server": "tcp://yourserver:1883",
+           "topic": "collect"
+         }
+       }
+     ]
+   }
+   ```
 
 2. **Collection of signals with changes**. Some signals may have a long variation period. If all the signals are collected, most of them are repeated values, occupying storage and bandwidth. eKuiper provides a built-in variation capture function CHANGED_COLS, which can capture only the variation of signal values. In the following rule example, we capture the change information of the battery and save it in a local file.
 
-    ```json
-    {
-      "id": "ruleChangeCollect",
-      "sql": "SELECT CHANGED_COLS(\"\", true, voltage, currency) FROM canDemo",
-      "actions": [{
-        "file": {
-        "path": "/tmp/cell"
-        }
-      }]
-    }
-    ```
+   ```json
+   {
+     "id": "ruleChangeCollect",
+     "sql": "SELECT CHANGED_COLS(\"\", true, voltage, currency) FROM canDemo",
+     "actions": [
+       {
+         "file": {
+           "path": "/tmp/cell"
+         }
+       }
+     ]
+   }
+   ```
 
 3. **Collection based on events**.Some signals need to be collected only under certain circumstances, such as collecting relevant data after a collision. eKuiper has the flexibility to set the conditions for collection. In the following rule, all data is collected in the Topic exception of MQTT in case of abnormal battery voltage (not between 10 and 20).
 
-    ```json
-    {
-        "id": "ruleExpCollect",
-        "sql": "SELECT * FROM canDemo WHERE voltage NOT BETWEEN 10 AND 20 ",
-        "actions": [{
-          "mqtt": {
-              "server": "tcp://yourserver:1883",
-              "topic": "exception"
-          }
-        }]
-    }
-    ```
+   ```json
+   {
+     "id": "ruleExpCollect",
+     "sql": "SELECT * FROM canDemo WHERE voltage NOT BETWEEN 10 AND 20 ",
+     "actions": [
+       {
+         "mqtt": {
+           "server": "tcp://yourserver:1883",
+           "topic": "exception"
+         }
+       }
+     ]
+   }
+   ```
 
 ### Integrated vehicle-cloud rules management
 

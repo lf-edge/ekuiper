@@ -7,8 +7,8 @@
 `CREATE STREAM` 定义了一个连接到外部系统的数据流，以加载数据。
 
 ```sql
-CREATE STREAM 
-    stream_name 
+CREATE STREAM
+    stream_name
     ( column_name <data_type> [ ,...n ] )
     WITH ( property_name = expression [, ...] );
 ```

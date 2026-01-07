@@ -161,12 +161,12 @@ Edit `template/StatefulSet.yaml` line 38 to add nodeName and hostNetwork as belo
 the edge node, if your hostname is different, change to fit your edge hostname.
 
 ```yaml
+
 ...
 spec:
-   nodeName: edge-node
-   hostNetwork: true
-   volumes:
-        {{- if not .Values.persistence.enabled }}
+  nodeName: edge-node
+  hostNetwork: true
+  volumes: { { - if not .Values.persistence.enabled } }
 ...
 ```
 
@@ -208,10 +208,11 @@ configuration file, we define a deployment and a service for eKuiper manager whi
 revise the manager docker tag to the correct version that matches the eKuiper version in line 21:
 
 ```yaml
+
 ...
 containers:
-   - name: kmanager
-     image: emqx/ekuiper-manager:1.3.1
+  - name: kmanager
+    image: emqx/ekuiper-manager:1.3.1
 ...
 ```
 
@@ -270,6 +271,7 @@ Then edit line 175 to add the cloud-node external ip as the cert ip. This is onl
 have a public ip and [setup with NAT rules](#make-cloud-node-accessible).
 
 ```yaml
+
 ...
 args:
   - --bind-address=$(NODE_IP)

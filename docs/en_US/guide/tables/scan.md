@@ -15,9 +15,9 @@ CREATE TABLE table1 (
 SELECT * FROM demo INNER JOIN table1 on demo.id = table1.id
 ```
 
-In this example, a table `table1` is created to read json data from file *lookup.json*. Then in the rule, `table1` is joined with the stream `demo` so that the stream can lookup the name from the id.
+In this example, a table `table1` is created to read json data from file _lookup.json_. Then in the rule, `table1` is joined with the stream `demo` so that the stream can lookup the name from the id.
 
-The content of *lookup.json* file should be an array of objects. Below is an example:
+The content of _lookup.json_ file should be an array of objects. Below is an example:
 
 ```json
 [
@@ -49,4 +49,4 @@ CREATE TABLE stateTable (
 SELECT * FROM demo LEFT JOIN stateTable on demo.id = stateTable.id  WHERE triggered=true
 ```
 
-In this example, a table `stateTable` is created to record the trigger state from mqtt topic *myTopic*. In the rule, the data of `demo` stream is filtered with the current trigger state.
+In this example, a table `stateTable` is created to record the trigger state from mqtt topic _myTopic_. In the rule, the data of `demo` stream is filtered with the current trigger state.

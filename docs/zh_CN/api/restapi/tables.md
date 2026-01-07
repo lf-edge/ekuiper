@@ -13,7 +13,9 @@ POST http://localhost:9081/tables
 请求示例，请求是一个带有 `sql` 字段的 json 字符串。
 
 ```json
-{"sql":"create table my_table (id bigint, name string, score float) WITH ( datasource = \"lookup.json\", FORMAT = \"json\", KEY = \"id\")"}
+{
+  "sql": "create table my_table (id bigint, name string, score float) WITH ( datasource = \"lookup.json\", FORMAT = \"json\", KEY = \"id\")"
+}
 ```
 
 这个API可以运行任何表的sql语句，不仅仅是建表。
@@ -92,7 +94,9 @@ PUT http://localhost:9081/tables/{id}
 请求示例，请求是一个带有 `sql` 字段的 json 字符串。
 
 ```json
-{"sql":"create table my_table (id bigint, name string, score float) WITH ( datasource = \"topic/temperature\", FORMAT = \"json\", KEY = \"id\")"}
+{
+  "sql": "create table my_table (id bigint, name string, score float) WITH ( datasource = \"topic/temperature\", FORMAT = \"json\", KEY = \"id\")"
+}
 ```
 
 ## 删除表

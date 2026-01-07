@@ -38,7 +38,7 @@ create plugin $plugin_type $plugin_name $plugin_json | create plugin $plugin_typ
 
 ```json
 {
-  "file":"http://127.0.0.1/plugins/sources/random.zip"
+  "file": "http://127.0.0.1/plugins/sources/random.zip"
 }
 ```
 

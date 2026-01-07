@@ -7,7 +7,7 @@ The sink will publish the result into a InfluxDB.
 Connection properties:
 
 | Property name        | Optional | Description                                                                                                                                                                                                                                                                                                                                                |
-|----------------------|----------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| -------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | addr                 | false    | The addr of the InfluxDB                                                                                                                                                                                                                                                                                                                                   |
 | username             | true     | The InfluxDB login username                                                                                                                                                                                                                                                                                                                                |
 | password             | true     | The InfluxDB login password                                                                                                                                                                                                                                                                                                                                |
@@ -17,12 +17,12 @@ Connection properties:
 | rootCaPath           | true     | The location of root ca path. It can be an absolute path, or a relative path, which is similar to use of certificationPath.                                                                                                                                                                                                                                |
 | tlsMinVersion        | true     | Specifies the minimum version of the TLS protocol that will be negotiated with the client. Accept values are `tls1.0`, `tls1.1`, `tls1.2` and `tls1.3`. Default: `tls1.2`.                                                                                                                                                                                 |
 | renegotiationSupport | true     | Determines how and when the client handles server-initiated renegotiation requests. Support `never`, `once` or `freely` options. Default: `never`.                                                                                                                                                                                                         |
-| insecureSkipVerify   | true     | If InsecureSkipVerify is `true`, TLS accepts any certificate presented by the server and any host name in that certificate.  In this mode, TLS is susceptible to man-in-the-middle attacks. The default value is `false`. The configuration item can only be used with TLS connections.                                                                    |
+| insecureSkipVerify   | true     | If InsecureSkipVerify is `true`, TLS accepts any certificate presented by the server and any host name in that certificate. In this mode, TLS is susceptible to man-in-the-middle attacks. The default value is `false`. The configuration item can only be used with TLS connections.                                                                     |
 
 Write options:
 
 | Property name | Optional | Description                                                                                                                                                                                                                                                                                                                                                     |
-|---------------|----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| ------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | measurement   | false    | The measurement of the InfluxDb (like table name)                                                                                                                                                                                                                                                                                                               |
 | tags          | true     | The tags to write, the format is like {"tag1":"value1"}. The value can be dataTemplate format, like <span v-pre>{"tag1":"{{.temperature}}"}</span>                                                                                                                                                                                                              |
 | fields        | true     | The fields to write, the format is like ["field1", "field2"]. If fields is not set, all fields selected in the SQL will all written to InfluxDB.                                                                                                                                                                                                                |
@@ -43,14 +43,14 @@ Below is a sample for selecting temperature greater than 50 degree and write int
   "actions": [
     {
       "log": {},
-      "influx":{
-       "addr": "http://192.168.100.245:8086",
-       "username": "",
-       "password": "",
-       "measurement": "test",
+      "influx": {
+        "addr": "http://192.168.100.245:8086",
+        "username": "",
+        "password": "",
+        "measurement": "test",
         "database": "databasename",
         "tags": "{\"tag1\":\"value1\"}",
-       "fields": ["humidity", "temperature", "pressure"]
+        "fields": ["humidity", "temperature", "pressure"]
       }
     }
   ]

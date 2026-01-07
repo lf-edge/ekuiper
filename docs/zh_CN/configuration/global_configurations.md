@@ -5,7 +5,7 @@ eKuiper 的配置文件位于 `$eKuiper/etc/kuiper.yaml` 中。 配置文件为 
 ```yaml
 basic:
   # debug | info | warn | error | fatal | panic
-  loglevel: info 
+  loglevel: info
   # true|false, with debug level, it prints more debug info
   debug: false
   # true|false, if it's set to true, then the log will be print to console
@@ -53,7 +53,7 @@ basic:
 ```yaml
 basic:
   # debug | info | warn | error | fatal | panic
-  loglevel: info 
+  loglevel: info
   # true|false, with debug level, it prints more debug info
   debug: false
   # true|false, if it's set to true, then the log will be print to console
@@ -105,10 +105,10 @@ syslog 已经有自己的时间戳，可以通过将 `logDisableTimestamp` 设�
 以下设置用于控制按大小进行日志文件轮转：
 
 ```yaml
-  # 最大文件大小（以字节为单位），如果设置了此项，将忽略 maxAge
-  rotateSize: 10485760 # 10 MB
-  # 最大日志文件数量
-  rotateCount: 3
+# 最大文件大小（以字节为单位），如果设置了此项，将忽略 maxAge
+rotateSize: 10485760 # 10 MB
+# 最大日志文件数量
+rotateCount: 3
 ```
 
 如果 `rotateSize` 设置为正值，当日志文件的大小超过 `rotateSize` 时，将轮转日志文件。`rotateCount`
@@ -119,10 +119,10 @@ syslog 已经有自己的时间戳，可以通过将 `logDisableTimestamp` 设�
 这些设置用于控制按时间进行日志文件轮转：
 
 ```yaml
-  # 分割文件的小时数
-  rotateTime: 24
-  # 最大文件存储小时数
-  maxAge: 72
+# 分割文件的小时数
+rotateTime: 24
+# 最大文件存储小时数
+maxAge: 72
 ```
 
 如果 `rotateTime` 设置为正值，日志文件将每隔 `rotateTime` 小时进行轮转。`maxAge`
@@ -206,8 +206,8 @@ Prometheus 端口可设置为与 eKuiper 的 REST 服务端口相同。这样设
 
 所有插件列表如下：
 
-| 插件类型     | 预构建插件列表                                                        |
-|----------|----------------------------------------------------------------|
+| 插件类型 | 预构建插件列表                                                 |
+| -------- | -------------------------------------------------------------- |
 | source   | random zmq                                                     |
 | sink     | file image influx redis tdengine zmq                           |
 | function | accumulateWordCount countPlusOne echo geohash image labelImage |
@@ -233,23 +233,23 @@ GET http://localhost:9081/plugins/functions/prebuild
 配置 sink 的默认属性，目前主要用于配置[缓存策略](../guide/sinks/overview.md#缓存)。在规则层有同样的配置选项，可以覆盖这些默认配置。
 
 ```yaml
-  # 是否开启缓存
-  enableCache: false
+# 是否开启缓存
+enableCache: false
 
-  # 内存缓存的最大存储条数
-  memoryCacheThreshold: 1024
+# 内存缓存的最大存储条数
+memoryCacheThreshold: 1024
 
-  # 磁盘缓存的最大存储条数
-  maxDiskCache: 1024000
+# 磁盘缓存的最大存储条数
+maxDiskCache: 1024000
 
-  # 读写磁盘的缓存页条数，作为磁盘读写的基本单位
-  bufferPageSize: 256
+# 读写磁盘的缓存页条数，作为磁盘读写的基本单位
+bufferPageSize: 256
 
-  # 重发的间隔时间，单位为毫秒
-  resendInterval: 0
+# 重发的间隔时间，单位为毫秒
+resendInterval: 0
 
-  # 规则停止后是否清除缓存
-  cleanCacheAtStop: false
+# 规则停止后是否清除缓存
+cleanCacheAtStop: false
 ```
 
 ## 存储配置
@@ -269,43 +269,43 @@ basic:
 
 可配置如下属性：
 
-* name - 数据库文件名。若为空，则设置为默认名字 `sqliteKV.db`。
+- name - 数据库文件名。若为空，则设置为默认名字 `sqliteKV.db`。
 
 ### Redis
 
 可配置如下属性：
 
-* host     - redis 服务器地址。
-* port     - redis 服务器端口。
-* password - redis 服务器密码。若 redis 未配置认证系统，则可不设置密码。
-* timeout  - 连接超时时间。
-* connectionSelector - 重用 etc/connections/connection.yaml 中定义的连接信息, 主要用在 edgex redis 配置了认证系统时
-  * 只适用于 edgex redis 的连接信息
-  * 连接信息中的 server，port 和 password 会覆盖以上定义的 host，port 和 password
-  * [具体信息可参考](../guide/sources/builtin/edgex.md#连接重用)
+- host - redis 服务器地址。
+- port - redis 服务器端口。
+- password - redis 服务器密码。若 redis 未配置认证系统，则可不设置密码。
+- timeout - 连接超时时间。
+- connectionSelector - 重用 etc/connections/connection.yaml 中定义的连接信息, 主要用在 edgex redis 配置了认证系统时
+  - 只适用于 edgex redis 的连接信息
+  - 连接信息中的 server，port 和 password 会覆盖以上定义的 host，port 和 password
+  - [具体信息可参考](../guide/sources/builtin/edgex.md#连接重用)
 
 ### 外部状态
 
 还有一个名为 `extStateType` 的配置项。 这个配置的用途是用户可以预先在数据库中存储一些信息，当流处理规则需要这些信息时，他们可以通过
 SQL 中的 [get_keyed_state](../sqls/functions/other_functions.md#getkeyedstate) 函数轻松获取它们。
-*注意*：`type` 和 `extStateType` 可以使用不同的存储配置。
+_注意_：`type` 和 `extStateType` 可以使用不同的存储配置。
 
 ### 配置示例
 
 ```yaml
-    store:
-      #Type of store that will be used for keeping state of the application
-      type: sqlite
-      extStateType: redis
-      redis:
-        host: localhost
-        port: 6379
-        password: kuiper
-        #Timeout in ms
-        timeout: 1000
-      sqlite:
-        #Sqlite file name, if left empty name of db will be sqliteKV.db
-        name:
+store:
+  #Type of store that will be used for keeping state of the application
+  type: sqlite
+  extStateType: redis
+  redis:
+    host: localhost
+    port: 6379
+    password: kuiper
+    #Timeout in ms
+    timeout: 1000
+  sqlite:
+    #Sqlite file name, if left empty name of db will be sqliteKV.db
+    name:
 ```
 
 ## Portable 插件配置
@@ -313,16 +313,16 @@ SQL 中的 [get_keyed_state](../sqls/functions/other_functions.md#getkeyedstate)
 配置 portable 插件的运行时属性。
 
 ```yaml
-  portable:
-      # 配置 python 可执行文件的位置或命令。
-      # 若系统中有多个 python 版本，可通过此配置指定具体的 python 地址。
-      pythonBin: python
-      # 控制插件初始化超时时间，单位为毫秒。eKuiper portable 插件运行时会等待插件初始化以完成握手，若超时则终止插件进程
-      initTimeout: 5000
-      # 控制插件发送消息的超时时间，单位为毫秒
-      sendTimeout: 5000
-      # 控制插件接收消息的超时时间，单位为毫秒
-      recvTimeout: 5000
+portable:
+  # 配置 python 可执行文件的位置或命令。
+  # 若系统中有多个 python 版本，可通过此配置指定具体的 python 地址。
+  pythonBin: python
+  # 控制插件初始化超时时间，单位为毫秒。eKuiper portable 插件运行时会等待插件初始化以完成握手，若超时则终止插件进程
+  initTimeout: 5000
+  # 控制插件发送消息的超时时间，单位为毫秒
+  sendTimeout: 5000
+  # 控制插件接收消息的超时时间，单位为毫秒
+  recvTimeout: 5000
 ```
 
 ## 初始化规则集
@@ -333,21 +333,21 @@ SQL 中的 [get_keyed_state](../sqls/functions/other_functions.md#getkeyedstate)
 
 eKuiper 默认使用 sqlite 来存储一些元信息，同时 eKuiper 也支持使用 FoundationDB 来作为元存储数据，我们可以通过以下步骤实现:
 
-* 确认 eKuiper 所在环境已经安装并启动 FoundationDB，并确认 FoundationDB 所使用的存储 Path. 可参考[官方文档](https://apple.github.io/foundationdb/administration.html#default-cluster-file)
-* 确认 eKuiper 宿主机所使用的 fdb c 语言库的 APIVersion 版本，并将 eKuiper 依赖库替换为相应版本，以 APIVersion 6.2.0 为例，在 eKuiper 主目录执行以下命令:
+- 确认 eKuiper 所在环境已经安装并启动 FoundationDB，并确认 FoundationDB 所使用的存储 Path. 可参考[官方文档](https://apple.github.io/foundationdb/administration.html#default-cluster-file)
+- 确认 eKuiper 宿主机所使用的 fdb c 语言库的 APIVersion 版本，并将 eKuiper 依赖库替换为相应版本，以 APIVersion 6.2.0 为例，在 eKuiper 主目录执行以下命令:
 
 ```shell
 go get github.com/apple/foundationdb/bindings/go@6.2.0
 ```
 
-* 执行 `make build_with_fdb` 编译 kuiperd
-* 在配置中按照如下修改:
+- 执行 `make build_with_fdb` 编译 kuiperd
+- 在配置中按照如下修改:
 
 ```yaml
-    store:
-      #Type of store that will be used for keeping state of the application
-      type: fdb
-      extStateType: fdb
-      fdb:
-        path: <path-of-fdb-cluster-file>
+store:
+  #Type of store that will be used for keeping state of the application
+  type: fdb
+  extStateType: fdb
+  fdb:
+    path: <path-of-fdb-cluster-file>
 ```

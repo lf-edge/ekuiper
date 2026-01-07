@@ -6,7 +6,7 @@ LF Edge eKuiper 通过 source 和 sink 连接各种通信协议，例如 MQTT，
 
 开始动手操作之前，需要准备以下环境：
 
-- MQTT broker 用于数据传输。本教程使用位于 `tcp://broker.emqx.io:1883` 的 MQTT 服务器， `broker.emqx.io` 是一个由 [EMQ](https://www.emqx.cn) 提供的公有 MQTT 服务器。若本地运行 eKuiper，需要更改 `etc/mqtt_source.yaml`，配置项 server 改为"tcp://broker.emqx.io:1883"；若使用 docker 启动，应设置环境变量 MQTT_SOURCE__DEFAULT__SERVER="tcp://broker.emqx.io:1883"。
+- MQTT broker 用于数据传输。本教程使用位于 `tcp://broker.emqx.io:1883` 的 MQTT 服务器， `broker.emqx.io` 是一个由 [EMQ](https://www.emqx.cn) 提供的公有 MQTT 服务器。若本地运行 eKuiper，需要更改 `etc/mqtt_source.yaml`，配置项 server 改为"tcp://broker.emqx.io:1883"；若使用 docker 启动，应设置环境变量 MQTT_SOURCE**DEFAULT**SERVER="tcp://broker.emqx.io:1883"。
 - 为了方便观察运行结果，我们需要安装一个 MQTT 客户端，例如 [MQTT X](https://mqttx.app/) 。
 
 ## 模式注册（Schema Registry）
@@ -42,26 +42,29 @@ message Book {
 
    ```json
    {
-      "id": "ruleDecode",
-      "sql": "SELECT * FROM protoDemo",
-      "actions": [{
-        "mqtt": {
-          "server": "tcp://broker.emqx.io:1883",
-          "topic": "result/protobuf",
-          "sendSingle": true
-        }
-      }]
+     "id": "ruleDecode",
+     "sql": "SELECT * FROM protoDemo",
+     "actions": [
+       {
+         "mqtt": {
+           "server": "tcp://broker.emqx.io:1883",
+           "topic": "result/protobuf",
+           "sendSingle": true
+         }
+       }
+     ]
    }
    ```
 
    ![create rule to deal with protobuf stream](./resources/proto_src_rule.png)
+
 4. 发送数据并查看结果：我们将使用 MQTTX 发送 Protobuf 编码后的二进制数据到 `protoDemo` 主题中，观察收到的结果是否是解码后的正确数据。
    1. 打开 MQTT X，连接到云端 `tcp://broker.emqx.io:1883`。
    2. 订阅主题上文规则发送结果的主题 `result/protobuf`，便于观察结果。
-   3. 在消息发送窗格中，设置主题为  `protoDemo`，Payload 格式为 `Hex`, 发送根据 schema1 中 Book 格式编码的二进制数据，例如 `0a1073747265616d696e672073797374656d107b`。
+   3. 在消息发送窗格中，设置主题为 `protoDemo`，Payload 格式为 `Hex`, 发送根据 schema1 中 Book 格式编码的二进制数据，例如 `0a1073747265616d696e672073797374656d107b`。
       ![send protobuf data](./resources/source_send.png)
    4. 确保接收窗口收到正确的 JSON 数据，如下图所示。
-   ![receive json data](./resources/receive_json.png)
+      ![receive json data](./resources/receive_json.png)
 
 至此，我们完成了 Protobuf 数据的读取和解码并用简单的规则进行处理输出。用户像处理普通 JSON 格式数据一样创建各种各样的规则。若未得到预期结果，可在管理控制台的规则列表页面，查看规则状态，确保规则数据入出的指标符合预期。
 
@@ -74,8 +77,8 @@ message Book {
 2. 创建规则，使用 Protobuf 格式发送到云端。
    1. 点击新建规则，输入自定义的 Rule ID 和名称，输入 SQL `SELECT * FROM demo`。
    2. 点击动作右边的新建按钮，配置 MQTT 动作。其中，MQTT 服务器地址配置为云端 broker 地址，MQTT 主题为 `result/protobufOut`；数据按条发送配置为 true，确保收到的为单条数据以匹配格式配置；流格式配置为 `protobuf`，模式名称为第一节注册的 `schema1`，模式消息为 `Book`。该规则将读取 JSON 数据，然后按照 Book 的格式编码成二进制数据发往 `result/protobufOut` 主题。点击提交，完成动作配置。
-   ![add mqtt action](./resources/action_mqtt.png)
-   ![protobuf conf](./resources/action_protobuf.png)
+      ![add mqtt action](./resources/action_mqtt.png)
+      ![protobuf conf](./resources/action_protobuf.png)
    3. 每个规则可以有多个动作，每个动作使用的编码格式是独立的。用户可以继续配置其余动作。全部配置完成后，点击提交，完成规则的创建。
 3. 发送数据并查看结果，该流程与上一节类似。本次我们将向 demo 主题发送 JSON 数据，并期望在订阅的 `result/protobufOut` 主题中查看到 protobuf 编码的二进制数据。如下图所示，注意数据格式的配置以免显示乱码。
    ![receive protobuf data](./resources/receive_protobuf.png)

@@ -10,8 +10,8 @@ GET http://localhost:9081/metadata/sources/yaml/{name}
 
 ### Parameter
 
- name：Source name, supports built-in sources and extended sources. The built-in sources include mqtt, redis, neuron, memory, httppull, httppush, file, edgex,
- Extended sources include random, sql, video, zmq and user-defined sources
+name：Source name, supports built-in sources and extended sources. The built-in sources include mqtt, redis, neuron, memory, httppull, httppush, file, edgex,
+Extended sources include random, sql, video, zmq and user-defined sources
 
 ### Example
 
@@ -23,26 +23,26 @@ Example request to get all Config Keys from an MQTT source:
 
 ```json
 {
-    "amd_broker": {
-        "insecureSkipVerify": false,
-        "protocolVersion": "3.1.1",
-        "qos": 1,
-        "server": "tcp://122.9.166.75:1883",
-        "token": "******",
-        "password": "******"
-    },
-    "default": {
-        "qos": 2,
-        "server": "tcp://emqx:1883"
-    },
-    "demo_conf": {
-        "qos": 0,
-        "server": "tcp://10.211.55.6:1883"
-    }
+  "amd_broker": {
+    "insecureSkipVerify": false,
+    "protocolVersion": "3.1.1",
+    "qos": 1,
+    "server": "tcp://122.9.166.75:1883",
+    "token": "******",
+    "password": "******"
+  },
+  "default": {
+    "qos": 2,
+    "server": "tcp://emqx:1883"
+  },
+  "demo_conf": {
+    "qos": 0,
+    "server": "tcp://10.211.55.6:1883"
+  }
 }
 ```
 
-Note: When retrieving Config Keys, if the properties contain a password/token field (case-insensitive, such as Password), the API will not return the actual password/token value, but instead replace it with "******" to conceal the password/token information.
+Note: When retrieving Config Keys, if the properties contain a password/token field (case-insensitive, such as Password), the API will not return the actual password/token value, but instead replace it with "**\*\***" to conceal the password/token information.
 
 ## Delete a configKey
 

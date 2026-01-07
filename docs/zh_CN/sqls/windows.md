@@ -97,7 +97,7 @@ SELECT * from demo group by statewindow(a > 1, a > 5)
 SELECT * FROM demo WHERE temperature > 20 GROUP BY COUNTWINDOW(5)
 ```
 
-这个 SQL 按照 5 次对事件进行分组，并且只获取 `temperature`  大于 20 的数据。
+这个 SQL 按照 5 次对事件进行分组，并且只获取 `temperature` 大于 20 的数据。
 
 ### 其它计数窗口
 
@@ -126,8 +126,8 @@ SELECT * FROM demo WHERE temperature > 20 GROUP BY COUNTWINDOW(5,1) HAVING COUNT
 这个 SQL 含有如下条件，
 
 - 有一个计数窗口，长度为 5， 每接收一个事件就触发一次
-- 只获取 `temperature`  大于 20 的数据
-- 最后一个条件为消息的条数应该大于 2。如果 `HAVING`  条件为 `COUNT(*)  = 5`， 那么意味着窗口里所有的事件都应该满足 `WHERE` 条件
+- 只获取 `temperature` 大于 20 的数据
+- 最后一个条件为消息的条数应该大于 2。如果 `HAVING` 条件为 `COUNT(*)  = 5`， 那么意味着窗口里所有的事件都应该满足 `WHERE` 条件
 
 ## 过滤窗口输入
 

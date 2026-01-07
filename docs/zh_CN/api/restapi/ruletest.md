@@ -58,10 +58,7 @@ POST /ruletest
   },
   "sinkProps": {
     "dataTemplate": "xxx",
-    "fields": [
-      "abc",
-      "test"
-    ]
+    "fields": ["abc", "test"]
   }
 }
 ```

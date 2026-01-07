@@ -22,17 +22,17 @@ eKuiper 中对各种连接的生命周期的管理分为 3 种：
 1. 连接附属于规则：默认情况下，连接由 Source/Sink 的实现自行管理，其生命周期由使用的规则进行控制。规则启动时，使用到的连接资源才会开始连接；规则结束时，连接将被关闭。在下例中，我们创建了
    memory 类型的数据流 memStream。由于该类型未接入连接池，只有当使用该流的规则启动时，才会进行连接。
 
-    ```sql
-    create stream memStream () WITH (TYPE="mqtt", DATASOURCE="demo")
-    ```
+   ```sql
+   create stream memStream () WITH (TYPE="mqtt", DATASOURCE="demo")
+   ```
 
 2. 连接池管理的匿名连接资源：部分连接类型适配了连接池管理接口，其生命周期由连接池管理。当启动包含这些类型连接的规则时，规则会从连接池获取匿名（实际资源
    id 由规则生成，且不会被共享）资源。在下例中，我们创建了 mqtt 类型的数据流 mqttStream。连接为匿名连接，由于该类型适配了连接池，我们可以在连接
    API 中获取到该连接。规则删除时，对应连接也会删除。
 
-    ```sql
-    create stream mqttStream () WITH (TYPE="mqtt", DATASOURCE="demo")
-    ```
+   ```sql
+   create stream mqttStream () WITH (TYPE="mqtt", DATASOURCE="demo")
+   ```
 
 3. 用户创建的连接资源：用户可通过[连接管理API](../../api/restapi/connection.md) 进行资源的增删改查。通过 API 创建的资源必须指定唯一的
    id，规则中可引用此处创建的规则资源。**请注意**：只有适配连接池的连接资源可通过 API
@@ -49,16 +49,16 @@ eKuiper 中对各种连接的生命周期的管理分为 3 种：
 1. 创建资源，如下例通过 API 创建 id 为 mqttcon1 的连接。可在 props 中配置连接需要的参数。连接创建成功后，mqttcon1 可在连接列表
    API 中找到。
 
-    ```shell
-    POST http://localhost:9081/connections
-    {
-      "id": "mqttcon1"
-      "typ":"mqtt",
-      "props": {
-        server: "tcp://127.0.0.1:1883"
-      }
-    }
-    ```
+   ```shell
+   POST http://localhost:9081/connections
+   {
+     "id": "mqttcon1"
+     "typ":"mqtt",
+     "props": {
+       server: "tcp://127.0.0.1:1883"
+     }
+   }
+   ```
 
 2. 在数据源中使用。在配置 MQTT 源（`$ekuiper/etc/mqtt_source.yaml`）时，可通过 `connectionSelector`
    引用以上连接配置，例如`demo_conf` 和 `demo2_conf` 都将引用 `mqttcon1` 的连接配置。
@@ -66,15 +66,15 @@ eKuiper 中对各种连接的生命周期的管理分为 3 种：
 ```yaml
 #Override the global configurations
 demo_conf: #Conf_key
-   qos: 0
-   connectionSelector: mqttcon1
-   servers: [ tcp://10.211.55.6:1883, tcp://127.0.0.1 ]
+  qos: 0
+  connectionSelector: mqttcon1
+  servers: [tcp://10.211.55.6:1883, tcp://127.0.0.1]
 
 #Override the global configurations
 demo2_conf: #Conf_key
-   qos: 0
-   connentionSelector: mqttcon1
-   servers: [ tcp://10.211.55.6:1883, tcp://127.0.0.1 ]
+  qos: 0
+  connentionSelector: mqttcon1
+  servers: [tcp://10.211.55.6:1883, tcp://127.0.0.1]
 ```
 
 基于 `demo_conf` 和 `demo2_conf` 分别创建两个数据流 `demo` 和 `demo2`：

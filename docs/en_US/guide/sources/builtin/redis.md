@@ -15,7 +15,7 @@ while the [RedisSub source](./redisSub.md) can be used as both a streaming and s
 
 Before using the Redis Source Connector, it's essential to configure the connection settings and other relevant parameters. Here are the available configuration options:
 
-The configuration file for the Redis source is located at */etc/sources/redis.yaml*.
+The configuration file for the Redis source is located at _/etc/sources/redis.yaml_.
 
 ```yaml
 default:

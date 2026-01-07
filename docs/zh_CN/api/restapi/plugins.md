@@ -19,8 +19,8 @@ POST http://localhost:9081/plugins/portables
 
 ```json
 {
-  "name":"random",
-  "file":"http://127.0.0.1/plugins/sources/random.zip"
+  "name": "random",
+  "file": "http://127.0.0.1/plugins/sources/random.zip"
 }
 ```
 
@@ -28,8 +28,8 @@ POST http://localhost:9081/plugins/portables
 
 ```json
 {
-  "name":"random",
-  "file":"file:///var/plugins/sources/random.zip"
+  "name": "random",
+  "file": "file:///var/plugins/sources/random.zip"
 }
 ```
 
@@ -43,6 +43,7 @@ POST http://localhost:9081/plugins/portables
 `注意`：针对`便捷插件`类型的文件格式，请参考这篇[文章](../../extension/portable/overview.md#打包发布)
 
 名为 random.zip 的源的示例 zip 文件
+
 1. Random@v1.0.0.so
 2. random.yaml
 3. install.sh
@@ -101,7 +102,7 @@ GET http://localhost:9081/plugins/portables
 响应示例：
 
 ```json
-["plugin1","plugin2"]
+["plugin1", "plugin2"]
 ```
 
 ## 描述插件
@@ -168,12 +169,12 @@ GET http://localhost:9081/plugins/portables/{name}
 
 ```json
 {
-   "refCount": {
-      "rulePort1": 2
-   },
-   "status": "running",
-   "errMsg": "",
-   "pid": 90
+  "refCount": {
+    "rulePort1": 2
+  },
+  "status": "running",
+  "errMsg": "",
+  "pid": 90
 }
 ```
 
@@ -192,7 +193,7 @@ GET http://localhost:9081/plugins/udfs
 结果样例：
 
 ```json
-["func1","func2"]
+["func1", "func2"]
 ```
 
 ### 描述用户自定义函数

@@ -8,45 +8,40 @@ The file format for importing and exporting data is JSON, which can contain : `s
 
 ```json
 {
-    "streams": {
-        "demo": "CREATE STREAM demo () WITH (DATASOURCE=\"users\", FORMAT=\"JSON\")"
-    },
-    "tables": {
-      "T110":"\n CREATE TABLE T110\n (\n S1 string\n )\n WITH (DATASOURCE=\"test.json\", FORMAT=\"json\", TYPE=\"file\", KIND=\"scan\", );\n "
-    },
-    "rules": {
-        "rule1": "{\"id\": \"rule1\",\"sql\": \"SELECT * FROM demo\",\"actions\": [{\"log\": {}}]}",
-        "rule2": "{\"id\": \"rule2\",\"sql\": \"SELECT * FROM demo\",\"actions\": [{  \"log\": {}}]}"
-    },
-    "nativePlugins":{
-        "functions_image":"{\"name\":\"image\",\"file\":\"https://packages.emqx.net/kuiper-plugins/1.8.1/debian/functions/image_amd64.zip\",\"shellParas\":[]}",
-        "sources_video":"{\"name\":\"video\",\"file\":\"https://packages.emqx.net/kuiper-plugins/1.8.1/debian/sources/video_amd64.zip\",\"shellParas\":[]}"
-    },
-    "portablePlugins":{
-    },
-    "sourceConfig":{
-      "mqtt":"{\"td\":{\"insecureSkipVerify\":false,\"password\":\"public\",\"protocolVersion\":\"3.1.1\",\"qos\":1,\"server\":\"tcp://broker.emqx.io:1883\",\"username\":\"admin\"},\"test\":{\"insecureSkipVerify\":false,\"password\":\"public\",\"protocolVersion\":\"3.1.1\",\"qos\":1,\"server\":\"tcp://127.0.0.1:1883\",\"username\":\"admin\"}}"
-    },
-    "sinkConfig":{
-      "edgex":"{\"test\":{\"bufferLength\":1024,\"contentType\":\"application/json\",\"enableCache\":false,\"format\":\"json\",\"messageType\":\"event\",\"omitIfEmpty\":false,\"port\":6379,\"protocol\":\"redis\",\"sendSingle\":true,\"server\":\"localhost\",\"topic\":\"application\",\"type\":\"redis\"}}"
-    },
-    "connectionConfig":{
-    },
-    "Service":{
-    },
-    "Schema":{
-    },
-    "uploads":{
-    },
-    "scripts":{
-      "area":"{\"id\":\"area\",\"description\":\"calculate area\",\"script\":\"function area(x, y) { return x * y; }\",\"isAgg\":false}"
-    }
+  "streams": {
+    "demo": "CREATE STREAM demo () WITH (DATASOURCE=\"users\", FORMAT=\"JSON\")"
+  },
+  "tables": {
+    "T110": "\n CREATE TABLE T110\n (\n S1 string\n )\n WITH (DATASOURCE=\"test.json\", FORMAT=\"json\", TYPE=\"file\", KIND=\"scan\", );\n "
+  },
+  "rules": {
+    "rule1": "{\"id\": \"rule1\",\"sql\": \"SELECT * FROM demo\",\"actions\": [{\"log\": {}}]}",
+    "rule2": "{\"id\": \"rule2\",\"sql\": \"SELECT * FROM demo\",\"actions\": [{  \"log\": {}}]}"
+  },
+  "nativePlugins": {
+    "functions_image": "{\"name\":\"image\",\"file\":\"https://packages.emqx.net/kuiper-plugins/1.8.1/debian/functions/image_amd64.zip\",\"shellParas\":[]}",
+    "sources_video": "{\"name\":\"video\",\"file\":\"https://packages.emqx.net/kuiper-plugins/1.8.1/debian/sources/video_amd64.zip\",\"shellParas\":[]}"
+  },
+  "portablePlugins": {},
+  "sourceConfig": {
+    "mqtt": "{\"td\":{\"insecureSkipVerify\":false,\"password\":\"public\",\"protocolVersion\":\"3.1.1\",\"qos\":1,\"server\":\"tcp://broker.emqx.io:1883\",\"username\":\"admin\"},\"test\":{\"insecureSkipVerify\":false,\"password\":\"public\",\"protocolVersion\":\"3.1.1\",\"qos\":1,\"server\":\"tcp://127.0.0.1:1883\",\"username\":\"admin\"}}"
+  },
+  "sinkConfig": {
+    "edgex": "{\"test\":{\"bufferLength\":1024,\"contentType\":\"application/json\",\"enableCache\":false,\"format\":\"json\",\"messageType\":\"event\",\"omitIfEmpty\":false,\"port\":6379,\"protocol\":\"redis\",\"sendSingle\":true,\"server\":\"localhost\",\"topic\":\"application\",\"type\":\"redis\"}}"
+  },
+  "connectionConfig": {},
+  "Service": {},
+  "Schema": {},
+  "uploads": {},
+  "scripts": {
+    "area": "{\"id\":\"area\",\"description\":\"calculate area\",\"script\":\"function area(x, y) { return x * y; }\",\"isAgg\":false}"
+  }
 }
 ```
 
 ## Import Data
 
-The API resets all existing data and then imports the new data into the system by default. But user can specify ``partial=1`` parameter in HTTP URL to keep the existing data and apply the new data.
+The API resets all existing data and then imports the new data into the system by default. But user can specify `partial=1` parameter in HTTP URL to keep the existing data and apply the new data.
 The API supports specifying data by means of text content or file URIs.
 
 Example 1: Import by text content
@@ -95,7 +90,7 @@ Content-Type: application/json
 
 Example 5: Import data through an asynchronous API. After receiving the request, the server will generate a task ID, then execute the task in the background and return a response immediately.
 
-```` shell
+```shell
 POST http://{{host}}/async/data/import
 Content type: application/json
 
@@ -108,14 +103,14 @@ response
 {
   "id": "$taskID"
 }
-````
+```
 
 Check the running status of background tasks by task ID
 
-```` shell
+```shell
 Get http://{{host}}/async/task/{{id}}
 Content type: application/json
-````
+```
 
 ## Import data status
 
@@ -158,7 +153,7 @@ Content-Type: application/json
   "streams":{},
   "tables":{},
   "rules":{},
-  "nativePlugins":{  
+  "nativePlugins":{
     "sinks_tdengine":"fail to download file file:///root/ekuiper-jran/_plugins/ubuntu/sinks/tdengine_amd64.zip: stat /root/ekuiper-jran/_plugins/ubuntu/sinks/tdengine_amd64.zip: no such file or directory",
     "sources_random":"fail to download file file:///root/ekuiper-jran/_plugins/ubuntu/sources/random_amd64.zip: stat /root/ekuiper-jran/_plugins/ubuntu/sources/random_amd64.zip: no such file or directory"},
   "portablePlugins":{},
@@ -196,25 +191,25 @@ GET /v2/data/export
 
 ```yaml
 sourceConfig:
-    sources.mqtt.mqttconf1:
-        connectionSelector: mqttcon
-        qos: 1
-        sourceType: stream
+  sources.mqtt.mqttconf1:
+    connectionSelector: mqttcon
+    qos: 1
+    sourceType: stream
 connectionConfig:
-    connections.mqtt.mqttcon:
-        insecureSkipVerify: false
-        protocolVersion: 3.1.1
-        server: tcp://127.0.0.1:1883
+  connections.mqtt.mqttcon:
+    insecureSkipVerify: false
+    protocolVersion: 3.1.1
+    server: tcp://127.0.0.1:1883
 streams:
-    mqttstream1:
-        sql: ' CREATE STREAM mqttstream1 ()       WITH (DATASOURCE="topic1", FORMAT="json", CONF_KEY="mqttconf1", TYPE="mqtt", SHARED="false", );'
+  mqttstream1:
+    sql: ' CREATE STREAM mqttstream1 ()       WITH (DATASOURCE="topic1", FORMAT="json", CONF_KEY="mqttconf1", TYPE="mqtt", SHARED="false", );'
 rules:
-    rule1:
-        triggered: false
-        id: rule1
-        sql: select * from mqttstream1
-        actions:
-            - log: {}
+  rule1:
+    triggered: false
+    id: rule1
+    sql: select * from mqttstream1
+    actions:
+      - log: {}
 ```
 
 Import Configuration

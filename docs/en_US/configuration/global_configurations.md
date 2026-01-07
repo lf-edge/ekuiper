@@ -9,7 +9,7 @@ Example, in case of config:
 ```yaml
 basic:
   # debug | info | warn | error | fatal | panic
-  loglevel: info 
+  loglevel: info
   # true|false, with debug level, it prints more debug info
   debug: false
   # true|false, if it's set to true, then the log will be print to console
@@ -57,7 +57,7 @@ The configuration item **ignoreCase** is used to specify whether case is ignored
 ```yaml
 basic:
   # debug | info | warn | error | fatal | panic
-  loglevel: info 
+  loglevel: info
   # true|false, with debug level, it prints more debug info
   debug: false
   # true|false, if it's set to true, then the log will be print to console
@@ -110,10 +110,10 @@ size or time.
 These settings are used to control the log file rotation by size:
 
 ```yaml
-  # Maximum file size in bytes, if this is set, maxAge will be ignored
-  rotateSize: 10485760 # 10 MB
-  # Maximum log file count
-  rotateCount: 3
+# Maximum file size in bytes, if this is set, maxAge will be ignored
+rotateSize: 10485760 # 10 MB
+# Maximum log file count
+rotateCount: 3
 ```
 
 If the rotateSize is set to a positive value, the log file will be rotated when the size of the log file exceeds the
@@ -125,10 +125,10 @@ rotateSize. The rotateCount is used to control the maximum number of log files t
 These settings are used to control the log file rotation by time:
 
 ```yaml
-  # How many hours to split the file
-  rotateTime: 24
-  # Maximum file storage hours
-  maxAge: 72
+# How many hours to split the file
+rotateTime: 24
+# Maximum file storage hours
+maxAge: 72
 ```
 
 If the rotateTime is set to a positive value, the log file will be rotated every rotateTime hours. The maxAge is used to
@@ -214,7 +214,7 @@ The URL where hosts all of pre-build [native plugins](../extension/native/overvi
 All plugins list as follows:
 
 | plugin types | pre-build plugins                                              |
-|--------------|----------------------------------------------------------------|
+| ------------ | -------------------------------------------------------------- |
 | source       | random zmq                                                     |
 | sink         | file image influx redis tdengine zmq                           |
 | function     | accumulateWordCount countPlusOne echo geohash image labelImage |
@@ -241,24 +241,24 @@ Check [rule options](../guide/rules/overview.md#fine-tuning) for detail.
 Configure the default properties of sink, currently mainly used to configure [cache policy](../guide/sinks/overview.md#Caching). The same configuration options are available at the rules level to override these default configurations.
 
 ```yaml
-  sink:
-  # Control to disable cache or not. If it's set to true, then the cache will be disabled, otherwise, it will be enabled.
-  enableCache: false
+sink:
+# Control to disable cache or not. If it's set to true, then the cache will be disabled, otherwise, it will be enabled.
+enableCache: false
 
-  # The maximum number of messages to be cached in memory.
-  memoryCacheThreshold: 1024
+# The maximum number of messages to be cached in memory.
+memoryCacheThreshold: 1024
 
-  # The maximum number of messages to be cached in the disk.
-  maxDiskCache: 1024000
+# The maximum number of messages to be cached in the disk.
+maxDiskCache: 1024000
 
-  # The number of messages for a buffer page which is the unit to read/write to disk batchly to prevent frequent IO
-  bufferPageSize: 256
+# The number of messages for a buffer page which is the unit to read/write to disk batchly to prevent frequent IO
+bufferPageSize: 256
 
-  # The interval in millisecond to resend the cached messages
-  resendInterval: 0
+# The interval in millisecond to resend the cached messages
+resendInterval: 0
 
-  # Whether to clean the cache when the rule stops
-  cleanCacheAtStop: false
+# Whether to clean the cache when the rule stops
+cleanCacheAtStop: false
 ```
 
 ## Store configurations
@@ -279,20 +279,20 @@ In order to use redis as store type property must be changed into redis value.
 
 It has properties
 
-* name - name of database file - if left empty it will be `sqliteKV.db`
+- name - name of database file - if left empty it will be `sqliteKV.db`
 
 ### Redis
 
 It has properties
 
-* host     - host of redis
-* port     - port of redis
-* password - password used for auth in redis, if left empty auth won't be used
-* timeout  - timeout fo connection
-* connectionSelector - reuse the connection info defined in etc/connections/connection.yaml, mainly used for edgeX redis in secure mode
-  * only applicable to redis connection information
-  * the server, port and password in connection info will overwrite the host port and password above
-  * [more info](../guide/sources/builtin/edgex.md#connection-reusability)
+- host - host of redis
+- port - port of redis
+- password - password used for auth in redis, if left empty auth won't be used
+- timeout - timeout fo connection
+- connectionSelector - reuse the connection info defined in etc/connections/connection.yaml, mainly used for edgeX redis in secure mode
+  - only applicable to redis connection information
+  - the server, port and password in connection info will overwrite the host port and password above
+  - [more info](../guide/sources/builtin/edgex.md#connection-reusability)
 
 ### External State
 
@@ -301,24 +301,24 @@ The configuration's usage is user can store some information in database in adva
 these information,
 they can get them easily by [get_keyed_state](../sqls/functions/other_functions.md#getkeyedstate) function in SQL.
 
-*Note*: `type` and `extStateType` can be configured differently.
+_Note_: `type` and `extStateType` can be configured differently.
 
 ### Config
 
 ```yaml
-    store:
-      #Type of store that will be used for keeping state of the application
-      type: sqlite
-      extStateType: redis
-      redis:
-        host: localhost
-        port: 6379
-        password: kuiper
-        #Timeout in ms
-        timeout: 1000
-      sqlite:
-        #Sqlite file name, if left empty name of db will be sqliteKV.db
-        name:
+store:
+  #Type of store that will be used for keeping state of the application
+  type: sqlite
+  extStateType: redis
+  redis:
+    host: localhost
+    port: 6379
+    password: kuiper
+    #Timeout in ms
+    timeout: 1000
+  sqlite:
+    #Sqlite file name, if left empty name of db will be sqliteKV.db
+    name:
 ```
 
 ## Portable plugin configurations
@@ -326,16 +326,16 @@ they can get them easily by [get_keyed_state](../sqls/functions/other_functions.
 This section configures the portable plugin runtime.
 
 ```yaml
-  portable:
-      # The executable of python. Specify this if you have multiple python instances in your system
-      # or other circumstance where the python executable cannot be successfully invoked through the default command.
-      pythonBin: python
-      # control init timeout in ms. If the init time is longer than this value, the plugin will be terminated.
-      initTimeout: 5000
-      # set the timeout for plugin message sending in milliseconds.
-      sendTimeout: 5000
-      # set the timeout for plugin message receiving in milliseconds.
-      recvTimeout: 5000
+portable:
+  # The executable of python. Specify this if you have multiple python instances in your system
+  # or other circumstance where the python executable cannot be successfully invoked through the default command.
+  pythonBin: python
+  # control init timeout in ms. If the init time is longer than this value, the plugin will be terminated.
+  initTimeout: 5000
+  # set the timeout for plugin message sending in milliseconds.
+  sendTimeout: 5000
+  # set the timeout for plugin message receiving in milliseconds.
+  recvTimeout: 5000
 ```
 
 ## Ruleset Provision
@@ -346,21 +346,21 @@ Support file based stream and rule provisioning on startup. Users can put a [rul
 
 eKuiper uses sqlite by default to store some meta-information. At the same time, eKuiper also supports using FoundationDB as meta-storage data. We can achieve this through the following steps:
 
-* Confirm that the environment where eKuiper is located has installed and started FoundationDB, and confirm the storage path used by FoundationDB. Please refer to [Official Document](https://apple.github.io/foundationdb/administration.html#default-cluster-file)
-* Confirm the APIVersion of the fdb c language library used by the eKuiper host, and replace the eKuiper dependent library with the corresponding version. Taking APIVersion 6.2.0 as an example, execute the following command in the eKuiper home directory:
+- Confirm that the environment where eKuiper is located has installed and started FoundationDB, and confirm the storage path used by FoundationDB. Please refer to [Official Document](https://apple.github.io/foundationdb/administration.html#default-cluster-file)
+- Confirm the APIVersion of the fdb c language library used by the eKuiper host, and replace the eKuiper dependent library with the corresponding version. Taking APIVersion 6.2.0 as an example, execute the following command in the eKuiper home directory:
 
 ```shell
 go get github.com/apple/foundationdb/bindings/go@6.2.0
 ```
 
-* Execute `make build_with_fdb` to compile kuiperd
-* Modify the configuration as follows:
+- Execute `make build_with_fdb` to compile kuiperd
+- Modify the configuration as follows:
 
 ```yaml
-    store:
-      #Type of store that will be used for keeping state of the application
-      type: fdb
-      extStateType: fdb
-      fdb:
-        path: <path-of-fdb-cluster-file>
+store:
+  #Type of store that will be used for keeping state of the application
+  type: fdb
+  extStateType: fdb
+  fdb:
+    path: <path-of-fdb-cluster-file>
 ```

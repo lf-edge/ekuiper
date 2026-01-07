@@ -67,7 +67,7 @@ In [Merge Multiple Devices' Data in a Single Stream](./merge_single_stream.md) t
 
 - Create rules for each stream to convert the data, and output to the same stream.
   - Rule 1 to sink stream to memory topic `merged`
-  
+
   ```json
   {
     "id": "ruleMerge1",
@@ -83,9 +83,9 @@ In [Merge Multiple Devices' Data in a Single Stream](./merge_single_stream.md) t
     ]
   }
   ```
-  
+
   - Rule 2 to sink stream to memory topic `merged`
-  
+
   ```json
   {
     "id": "ruleMerge2",
@@ -102,7 +102,7 @@ In [Merge Multiple Devices' Data in a Single Stream](./merge_single_stream.md) t
   }
   ```
 
-As shown in the above SQL, both rules sink the output to the same memory topic merged. In this example, we use the simplest select * in the SQL to output all the data. In practice, users can perform calculations or filters according to actual needs to further filter the output.
+As shown in the above SQL, both rules sink the output to the same memory topic merged. In this example, we use the simplest select \* in the SQL to output all the data. In practice, users can perform calculations or filters according to actual needs to further filter the output.
 
 - Create the memory stream `merged` to receive the union of the two rules.
 
@@ -112,7 +112,7 @@ As shown in the above SQL, both rules sink the output to the same memory topic m
   }
   ```
 
-This stream is of `memory` type, and the data source is the memory topic `merged`, which is the output of the previous two streams. Thus, this new stream is the union of the two streams as one stream. The simplest rule select * from mergedStream can output the merged data similarly like below:
+This stream is of `memory` type, and the data source is the memory topic `merged`, which is the output of the previous two streams. Thus, this new stream is the union of the two streams as one stream. The simplest rule select \* from mergedStream can output the merged data similarly like below:
 
 ```text
 {"device_id":"B","humidity":79.66,"ts":1681786070367}
@@ -138,8 +138,7 @@ If the data from different streams are related, we can use the join algorithm to
   "sql": "SELECT temperature, humidity FROM stream1 INNER JOIN stream2 ON stream1.ts - stream2.ts BETWEEN 0 AND 10 GROUP BY TumblingWindow(ms, 500)",
   "actions": [
     {
-      "log": {
-      }
+      "log": {}
     }
   ]
 }

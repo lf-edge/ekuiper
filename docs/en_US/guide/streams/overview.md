@@ -9,8 +9,8 @@ Unlike relational database, eKuiper do not need a pre-built schema. This makes i
 ## Stream Definition
 
 ```sql
-CREATE STREAM 
-    stream_name 
+CREATE STREAM
+    stream_name
     ( column_name <data_type> [ ,...n ] )
     WITH ( property_name = expression [, ...] );
 ```
@@ -30,21 +30,21 @@ In eKuiper, each column or an expression has a related data type. A data type de
 
 Below is the list of data types supported.
 
-| #   | Data type | Description                                                                                                               |
-|-----|-----------|---------------------------------------------------------------------------------------------------------------------------|
-| 1   | bigint    | The int type.                                     |
-| 2   | float     | The float type.                                   |
-| 3   | string    | Text values, comprised of Unicode characters.     |
-| 4   | datetime  | datetime type.                                    |
-| 5   | boolean   |The boolean type, the value could be `true` or `false`.|
+| #   | Data type | Description                                                                                                                |
+| --- | --------- | -------------------------------------------------------------------------------------------------------------------------- |
+| 1   | bigint    | The int type.                                                                                                              |
+| 2   | float     | The float type.                                                                                                            |
+| 3   | string    | Text values, comprised of Unicode characters.                                                                              |
+| 4   | datetime  | datetime type.                                                                                                             |
+| 5   | boolean   | The boolean type, the value could be `true` or `false`.                                                                    |
 | 6   | bytea     | A sequence of bytes to store binary data. If the stream format is "JSON", the bytea field must be a base64 encoded string. |
-| 7   | array     | The array type, can be any simple types or array and type.                                                                |
-| 8   | struct    | The complex type.                                 |
+| 7   | array     | The array type, can be any simple types or array and type.                                                                 |
+| 8   | struct    | The complex type.                                                                                                          |
 
 ### Stream Properties
 
 | Property name    | Optional | Description                                                                                                                                                                                                                                 |
-|------------------|----------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| ---------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | DATASOURCE       | false    | The value is determined by source type. The topic names list if it's a MQTT data source. Please refer to related document for other sources.                                                                                                |
 | FORMAT           | true     | The data format, currently the value can be "JSON", "PROTOBUF" and "BINARY". The default is "JSON". Check [Binary Stream](#binary-stream) for more detail.                                                                                  |
 | SCHEMAID         | true     | The schema to be used when decoding the events. Currently, only use when format is PROTOBUF.                                                                                                                                                |
@@ -65,7 +65,7 @@ my_stream
 WITH ( datasource = "topic/temperature", FORMAT = "json", KEY = "id");
 ```
 
-The stream will subscribe to MQTT topic ``topic/temperature``, the server connection uses ``server`` key of ``default`` section in configuration file ``$ekuiper/etc/mqtt_source.yaml``.
+The stream will subscribe to MQTT topic `topic/temperature`, the server connection uses `server` key of `default` section in configuration file `$ekuiper/etc/mqtt_source.yaml`.
 
 - See [MQTT source](../sources/builtin/mqtt.md) for more info.
 

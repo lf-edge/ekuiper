@@ -16,9 +16,11 @@ Request Sample
 {
   "id": "rule1",
   "sql": "SELECT * FROM demo",
-  "actions": [{
-    "log":  {}
-  }]
+  "actions": [
+    {
+      "log": {}
+    }
+  ]
 }
 ```
 
@@ -39,8 +41,8 @@ Response Sample:
     "status": "Running"
   },
   {
-     "id": "rule2",
-     "status": "Stopped: canceled by error."
+    "id": "rule2",
+    "status": "Stopped: canceled by error."
   }
 ]
 ```
@@ -90,9 +92,11 @@ Request Sample
 {
   "id": "rule1",
   "sql": "SELECT * FROM demo",
-  "actions": [{
-    "log":  {}
-  }]
+  "actions": [
+    {
+      "log": {}
+    }
+  ]
 }
 ```
 
@@ -197,16 +201,10 @@ Response Sample:
 
 ```json
 {
-  "sources": [
-    "source_stream"
-  ],
+  "sources": ["source_stream"],
   "edges": {
-    "op_project": [
-      "sink_log"
-    ],
-    "source_stream": [
-      "op_project"
-    ]
+    "op_project": ["sink_log"],
+    "source_stream": ["op_project"]
   }
 }
 ```
@@ -225,13 +223,16 @@ Request Sample
 {
   "id": "rule1",
   "sql": "SELECT * FROM demo",
-  "actions": [{
-    "log":  {}
-  }]
+  "actions": [
+    {
+      "log": {}
+    }
+  ]
 }
 ```
 
 For the API, here is the explanation of the status codes:
+
 - If the request body is incorrect, a status code of 400 will be returned, indicating an invalid request.
 - If the rule validation fails, a status code of 422 will be returned, indicating an invalid rule.
 - If the rule validation passes, a status code of 200 will be returned, indicating a valid and successfully validated rule.

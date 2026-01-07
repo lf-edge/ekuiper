@@ -11,6 +11,7 @@ POST http://localhost:9081/udf/javascript
 ```
 
 请求体应为一个 JSON 对象，包含以下字段：
+
 - id：函数的唯一名称。此名称也必须在 script 字段中定义为函数。
 - description：函数的简短描述。
 - script：JavaScript 中的函数实现。
@@ -20,10 +21,10 @@ POST http://localhost:9081/udf/javascript
 
 ```json
 {
-   "id": "area",
-   "description": "计算面积",
-   "script": "function area(x, y) { return x * y; }",
-   "isAgg": false
+  "id": "area",
+  "description": "计算面积",
+  "script": "function area(x, y) { return x * y; }",
+  "isAgg": false
 }
 ```
 
@@ -53,10 +54,10 @@ GET http://localhost:9081/udf/javascript/{id}
 
 ```json
 {
-   "id": "area",
-   "description": "计算面积",
-   "script": "function area(x, y) { return x * y; }",
-   "isAgg": false
+  "id": "area",
+  "description": "计算面积",
+  "script": "function area(x, y) { return x * y; }",
+  "isAgg": false
 }
 ```
 

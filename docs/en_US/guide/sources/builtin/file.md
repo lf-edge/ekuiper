@@ -21,8 +21,8 @@ The File Source Connector allows eKuiper to read data from local files, supporti
 
 ```json
 [
-  {"id": 1, "name": "John Doe"},
-  {"id": 2, "name": "Jane Smith"}
+  { "id": 1, "name": "John Doe" },
+  { "id": 2, "name": "Jane Smith" }
 ]
 ```
 
@@ -79,7 +79,7 @@ When dealing with files that have metadata or non-standard content at the beginn
 
 The connector in eKuiper can be configured with [environment variables](../../../configuration/configuration.md#environment-variable-syntax), [rest API](../../../api/restapi/configKey.md), or configuration file. This section focuses on configuring eKuiper connectors with the configuration file.
 
-The configure file for the file source is located at  `/etc/sources/file.yaml`.
+The configure file for the file source is located at `/etc/sources/file.yaml`.
 
 **Example**
 

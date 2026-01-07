@@ -15,7 +15,7 @@ EdgeX 源连接器的配置文件位于： `$ekuiper/etc/sources/edgex.yaml`，�
 
 - default：对应全局连接配置。
 - 自定义部分：适用于需要自定义连接参数的场景，该部分的配置将覆盖全局连接配置。
-- 连接器重用：eKuiper 还支持通过  [`connectionSelector`](../../connector.md#connection-selector)  配置项在不同的配置中复用某个连接配置。
+- 连接器重用：eKuiper 还支持通过 [`connectionSelector`](../../connector.md#connection-selector) 配置项在不同的配置中复用某个连接配置。
 
 以下示例包括一个全局配置和自定义配置 `demo1`：
 
@@ -69,29 +69,26 @@ demo1: #Conf_key
   #    Password: password
   ```
 
-   ::: tip
+  ::: tip
 
   指定 `connectionSelector` 参数后，所有关于连接的参数都会被忽略，包括 `protocol`、`server` 和 `port` 配置。本例中，`protocol: tcp | server: localhost | port: 5573`的值都将被忽略。
 
-   :::
+  :::
 
 ### 主题和消息配置
 
 - `topic`：EdgeX 消息总线上监听的主题名称，缺省为 `rules-events`。用户可以直接连接到 EdgeX 消息总线上的主题也可以连接到 application service 暴露的主题。需要注意的是，两种主题的消息数据类型不同，需要设置正确的 messageType 类型。
 
 - `type`：EdgeX 消息总线类型，目前支持三种消息总线。如果指定的消息总线类型不支持，将使用缺省 `zero` 类型。
-
   - `zero`：使用 ZeroMQ 类型的消息总线。
   - `mqtt`：使用 MQTT 服务器作为消息总线，如选择 MQTT 总线类型，eKuiper 支持更多的 MQTT 配置项，具体请查看 [其他配置（MQTT 相关配置）](#其他配置-mqtt-相关配置)。
   - `redis`：使用 Redis 服务器作为消息总线。使用 EdgeX docker compose 启动时，type 参数会默认设置为该类型。
 
   EdgeX Levski 引入了两种信息消息总线类型，eKuiper 从 1.7.1 开始支持这两种新的类型，分别为
-
   - `nats-jetstream`
   - `nats-core`
 
 - `messageType`：EdgeX 消息模型类型。该参数支持两种类型：
-  
   - `event`：如果连接到 EdgeX application service 的主题、则消息为 "event" 类型；消息将会解码为 `dtos.Event` 类型。该选项为默认值。
   - `request`：如果直接连接到消息总线的主题，接收 device service 或者 core data 发出的数据，则消息类型为 "request"。消息将会解码为 `requests.AddEventRequest` 类型。
 
@@ -128,7 +125,7 @@ demo1: #Conf_key
   topic: rules-events
 ```
 
-定义  `demo1`  配置组后，如希望在创建流时使用此配置，可通过 `CONF_KEY` 选项并指定配置名称，此时，在自定义配置中定义的参数将覆盖 `default` 配置中的相应参数。详细步骤，可参考 [流语句](../../../sqls/streams.md)。
+定义 `demo1` 配置组后，如希望在创建流时使用此配置，可通过 `CONF_KEY` 选项并指定配置名称，此时，在自定义配置中定义的参数将覆盖 `default` 配置中的相应参数。详细步骤，可参考 [流语句](../../../sqls/streams.md)。
 
 **示例**
 
@@ -181,7 +178,7 @@ EdgeX 在 [reading objects](https://docs.edgexfoundry.org/2.0/microservices/core
 
 ### 自动数据类型转换
 
-eKuiper 在处理 EdgeX 事件时，会根据 EdgeX  `ValueType` 字段自动管理数据类型转换。
+eKuiper 在处理 EdgeX 事件时，会根据 EdgeX `ValueType` 字段自动管理数据类型转换。
 
 **数据转换原则：**
 

@@ -7,7 +7,7 @@ The action is used for publishing output message into EdgeX message bus.
 **Also, you need to expose the port number to host server before running the eKuiper server if you want to have the service available to other hosts.**
 
 | Property name      | Optional | Description                                                                                                                                                                                                                                                                                |
-|--------------------|----------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| ------------------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | type               | true     | The message bus type, three types of message buses are supported, `zero`, `mqtt` and `redis`, and `redis` is the default value.                                                                                                                                                            |
 | protocol           | true     | The protocol. If it's not specified, then use default value `redis`.                                                                                                                                                                                                                       |
 | host               | true     | The host of message bus. If not specified, then use default value `localhost`.                                                                                                                                                                                                             |
@@ -17,7 +17,7 @@ The action is used for publishing output message into EdgeX message bus.
 | topicPrefix        | true     | The prefix of a dynamic topic to be published. The topic will become a concatenation of `$topicPrefix/$profileName/$deviceName/$sourceName`.                                                                                                                                               |
 | contentType        | true     | The content type of message to be published. If not specified, then use the default value `application/json`.                                                                                                                                                                              |
 | messageType        | true     | The EdgeX message model type. To publish the message as an event like EdgeX application service, use `event`. Otherwise, to publish the message as an event request like EdgeX device service or core data service, use `request`. If not specified, then use the default value `event`.   |
-| metadata           | true     | The property is a field name that allows user to specify a field name of SQL  select clause,  the field name should use `meta(*) AS xxx`  to select all of EdgeX metadata from message.                                                                                                    |
+| metadata           | true     | The property is a field name that allows user to specify a field name of SQL select clause, the field name should use `meta(*) AS xxx` to select all of EdgeX metadata from message.                                                                                                       |
 | profileName        | true     | Allows user to specify the profile name in the event structure that are sent from eKuiper. The profileName in the meta take precedence if specified.                                                                                                                                       |
 | deviceName         | true     | Allows user to specify the device name in the event structure that are sent from eKuiper. The deviceName in the meta take precedence if specified.                                                                                                                                         |
 | sourceName         | true     | Allows user to specify the source name in the event structure that are sent from eKuiper. The sourceName in the meta take precedence if specified.                                                                                                                                         |
@@ -67,7 +67,7 @@ With the default setting, the EdgeX sink will publish to the default redis messa
         "port": 6379,
         "topic": "application",
         "profileName": "ekuiperProfile",
-        "deviceName": "ekuiper",      
+        "deviceName": "ekuiper",
         "contentType": "application/json"
       }
     }
@@ -142,7 +142,7 @@ Below is a rule that send analysis result to zeromq message bus.
         "port": 5571,
         "topic": "application",
         "profileName": "myprofile",
-        "deviceName": "mydevice",      
+        "deviceName": "mydevice",
         "contentType": "application/json"
       }
     }
@@ -165,7 +165,7 @@ use the `connectionSelector` to specify the connection to reuse. [more info](../
         "connectionSelector": "edgex.redisMsgBus",
         "topic": "application",
         "profileName": "myprofile",
-        "deviceName": "mydevice",      
+        "deviceName": "mydevice",
         "contentType": "application/json"
       }
     }
@@ -192,7 +192,7 @@ In this case, the original metadata value (such as `id, profileName, deviceName,
    }
    ```
 
-2. Use following rule,  and specify `deviceName` with `kuiper` and `profileName` with `kuiperProfile` in `edgex` action.
+2. Use following rule, and specify `deviceName` with `kuiper` and `profileName` with `kuiperProfile` in `edgex` action.
 
    ```json
    {
@@ -248,7 +248,7 @@ Below is an example,
    }
    ```
 
-2. Use following rule,  and specify `metadata` with `edgex_meta`  in `edgex` action.
+2. Use following rule, and specify `metadata` with `edgex_meta` in `edgex` action.
 
    ```json
    {
@@ -268,7 +268,7 @@ Below is an example,
 
    Please notice that,
    - User need to add `meta(*) AS edgex_meta` in the SQL clause, the `meta(*)` returns all of metadata.
-   - In `edgex` action, value `edgex_meta`  is specified for `metadata` property. This property specifies which field contains metadata of message.
+   - In `edgex` action, value `edgex_meta` is specified for `metadata` property. This property specifies which field contains metadata of message.
 
 3. The data sent to EdgeX message bus.
 
@@ -286,7 +286,7 @@ Below is an example,
    Please notice that
    - The metadata of `Events` structure is still kept, such as `DeviceName` & `Origin`.
    - For the reading that can be found in original message, the metadata will be kept. Such as `humidity` metadata will be the `old values` received from EdgeX message bus.
-   - For the reading that can NOT be found in original message,  the metadata will not be set.  Such as metadata of `t1` in the sample will fill with default value that generated by eKuiper.
+   - For the reading that can NOT be found in original message, the metadata will not be set. Such as metadata of `t1` in the sample will fill with default value that generated by eKuiper.
    - If your SQL has aggregated function, then it does not make sense to keep these metadata, but eKuiper will still fill with metadata from a particular message in the time window. For example, with following SQL,
-   ```SELECT avg(temperature) AS temperature, meta(*) AS edgex_meta FROM ... GROUP BY TUMBLINGWINDOW(ss, 10)```.
-   In this case, there are possibly several messages in the window, the metadata value for `temperature` will be filled with value from 1st message that received from bus.
+     `SELECT avg(temperature) AS temperature, meta(*) AS edgex_meta FROM ... GROUP BY TUMBLINGWINDOW(ss, 10)`.
+     In this case, there are possibly several messages in the window, the metadata value for `temperature` will be filled with value from 1st message that received from bus.

@@ -67,10 +67,7 @@ GET http://localhost:9081/config/uploads
 Response Sample:
 
 ```json
-[
-   "/ekuiper/data/uploads/zk.gif",
-   "/ekuiper/data/uploads/abc.gif"
-]
+["/ekuiper/data/uploads/zk.gif", "/ekuiper/data/uploads/abc.gif"]
 ```
 
 ## Delete an uploaded file

@@ -23,7 +23,7 @@ If the token is correct, eKuiper will respond the result; otherwise, it will ret
 The JWT Payload should use the following format
 
 | field | optional | meaning                                                               |
-|-------|----------|-----------------------------------------------------------------------|
+| ----- | -------- | --------------------------------------------------------------------- |
 | iss   | false    | Issuer , must use the same name with the public key put in `etc/mgmt` |
 | aud   | false    | Audience , must be `eKuiper`                                          |
 | exp   | true     | Expiration Time                                                       |

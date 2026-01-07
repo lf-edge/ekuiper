@@ -34,7 +34,6 @@ To develop the function plugin, we need to：
 2. Package the relevant files according to the plugin format.
 
 3. Create a Python file that implements the extended interface (source, sink, or function):
-
    - Writing Python segment defects functions
    - Wrapping an existing function as an eKuiper function plugin
 
@@ -154,14 +153,14 @@ At this point, we have completed the development of the main functionality, and 
 1. **Managing Plugin Dependencies**: If the plugin has additional dependencies, you need to create the dependency installation script `install.sh`. When the plugin is installed, eKuiper will search for this script within the plugin package and executes it if found. In this case, we create a `requirements.txt` file listing all the dependency packages. The installation of the dependencies is done in `install.sh` by calling `pip install -r $cur/requirements.txt`. For other plugins, you can reuse this script to update `requirements.txt` if you have no special requirements.
 2. **Create a Python Entry File**: Because multiple extensions can be implemented in a single plugin, you need an entry file that defines the implementation classes for each extension. The entry file is a main function, which is the entry point for the plugin runtime. It calls the methods in the SDK to define the plugin, including the plugin name, and a list of keys for the implemented source, sink, and function. Here only a function plugin named `inference` is implemented, with `inferenceIns` as its corresponding implementation method. The Python plug-in process operates independently from the eKuiper main process.
 
-    ```python
-        if __name__ == '__main__':
-        # Define the plugin
-        c = PluginConfig("defect", {}, {},
-            {"inference": lambda: inferenceIns})
-        # Start the plugin instance
-        plugin.start(c)
-    ```
+   ```python
+       if __name__ == '__main__':
+       # Define the plugin
+       c = PluginConfig("defect", {}, {},
+           {"inference": lambda: inferenceIns})
+       # Start the plugin instance
+       plugin.start(c)
+   ```
 
 3. **Establish a Plugin Description File**: Create a plugin description file in JSON format to define the metadata of the plugin. The file name must match the plugin name, i.e. `defect.json`. The function names defined within the file must align precisely with those in the entry file. The `executable` field is used to define the name of the plugin's executable entry file.
 
@@ -170,13 +169,9 @@ At this point, we have completed the development of the main functionality, and 
   "version": "v1.0.0",
   "language": "python",
   "executable": "main.py",
-  "sources": [
-  ],
-  "sinks": [
-  ],
-  "functions": [
-    "inference"
-  ]
+  "sources": [],
+  "sinks": [],
+  "functions": ["inference"]
 }
 ```
 

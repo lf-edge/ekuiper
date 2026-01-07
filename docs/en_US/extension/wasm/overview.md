@@ -103,9 +103,7 @@ fibonacci.json
 ```json
 {
   "version": "v1.0.0",
-  "functions": [
-    "fib"
-  ],
+  "functions": ["fib"],
   "wasmEngine": "wasmedge"
 }
 ```
@@ -134,26 +132,26 @@ bin/kuiper describe plugin wasm fibonacci
 
 1. Create a stream
 
-    ```shell
-    bin/kuiper create stream demo_fib '(num float) WITH (FORMAT="JSON", DATASOURCE="demo_fib")'
-    bin/kuiper query
-    select fib(num) from demo_fib
-    ```
+   ```shell
+   bin/kuiper create stream demo_fib '(num float) WITH (FORMAT="JSON", DATASOURCE="demo_fib")'
+   bin/kuiper query
+   select fib(num) from demo_fib
+   ```
 
 2. Install EMQX to send data.
 
-    ```shell
-    docker pull emqx/emqx:v4.0.0
-    docker run -d --name emqx -p 1883:1883 -p 8081:8081 -p 8083:8083 -p 8883:8883 -p 8084:8084 -p 18083:18083 emqx/emqx:v4.0.0
-    ```
+   ```shell
+   docker pull emqx/emqx:v4.0.0
+   docker run -d --name emqx -p 1883:1883 -p 8081:8081 -p 8083:8083 -p 8883:8883 -p 8084:8084 -p 18083:18083 emqx/emqx:v4.0.0
+   ```
 
 3. Send data by EMQX
 
 Login to: http://127.0.0.1:18083/ with admin/public.
 
-Use TOOLS/Websocket  to send data:
+Use TOOLS/Websocket to send data:
 
-Tpoic    : demo_fib
+Tpoic : demo_fib
 
 Messages : {"num" : 25}
 

@@ -103,8 +103,7 @@ To use it, just call it in the SQL inside a rule definition:
   "sql": "SELECT myFunction(name) from demo",
   "actions": [
     {
-      "log": {
-      }
+      "log": {}
     }
   ]
 }

@@ -10,17 +10,14 @@ SQL-based or graph-based (similar to Node-RED) rules to create IoT edge analytic
 ## Features
 
 - Lightweight
-
   - The core server package is only about 4.5M, the memory footprint is about 10MB.
 
 - Cross-platform
-
   - CPU Arch：X86 AMD 32/64; ARM 32/64; PPC
   - Popular Linux distributions, OpenWrt Linux, MacOS and Docker
   - Industrial PC, Raspberry Pi, industrial gateway, home gateway, MEC edge cloud server
 
 - Data analysis support
-
   - Supports data ETL
   - Data order, group, aggregation and join with different data sources (the data from databases and files)
   - 60+ functions, including mathematical, string, aggregate and hash, etc.
@@ -29,13 +26,11 @@ SQL-based or graph-based (similar to Node-RED) rules to create IoT edge analytic
 - Highly extensible
 
   It supports extending at `Source`, `Functions` and `Sink` with Golang or Python.
-
   - Source: allows users to add more data sources for analytics.
   - Sink: allows users to send the analysis result to different customized systems.
   - UDF functions: allow users to add customized functions for data analysis (for example, AI/ML function invocation).
 
 - Management
-
   - [A free web-based management dashboard](https://hub.docker.com/r/emqx/ekuiper-manager) for visualized management
   - Plugins, streams and rules management through CLI, REST API and config maps (Kubernetes)
   - Can be easily integrated with Kubernetes

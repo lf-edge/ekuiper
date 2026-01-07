@@ -23,13 +23,13 @@ eKuiper 计算过程中使用的是基于 Map 的数据结构，因此 source/si
 
 当前所有支持的格式，及其支持的编解码方法和模式如下表所示：
 
-| 格式        | 编解码                    | 自定义编解码 | 模式    |
-|-----------|------------------------|--------|-------|
-| json      | 内置                     | 不支持    | 不支持   |
-| binary    | 内置                     | 不支持    | 不支持   |
-| delimiter | 内置，必须配置 `delimiter` 属性 | 不支持    | 不支持   |
-| protobuf  | 内置                     | 支持     | 支持且必需 |
-| custom    | 无内置                    | 支持且必需  | 支持且可选 |
+| 格式      | 编解码                          | 自定义编解码 | 模式       |
+| --------- | ------------------------------- | ------------ | ---------- |
+| json      | 内置                            | 不支持       | 不支持     |
+| binary    | 内置                            | 不支持       | 不支持     |
+| delimiter | 内置，必须配置 `delimiter` 属性 | 不支持       | 不支持     |
+| protobuf  | 内置                            | 支持         | 支持且必需 |
+| custom    | 无内置                          | 支持且必需   | 支持且可选 |
 
 ### 格式扩展
 
@@ -37,40 +37,40 @@ eKuiper 计算过程中使用的是基于 Map 的数据结构，因此 source/si
 
 1. 实现编解码相关接口。其中，Encode 编码函数将传入的数据(当前总是为 map[string]interface{}) 编码为字节数组。而 Decode 解码函数则相反，将字节数组解码为 map[string]interface{}。解码函数在 source 中被调用，而编码函数将在 sink 中调用。
 
-    ```go
-    // Converter converts bytes & map or []map according to the schema
-    type Converter interface {
-        Encode(d interface{}) ([]byte, error)
-        Decode(b []byte) (interface{}, error)
-    }
-    ```
+   ```go
+   // Converter converts bytes & map or []map according to the schema
+   type Converter interface {
+       Encode(d interface{}) ([]byte, error)
+       Decode(b []byte) (interface{}, error)
+   }
+   ```
 
 2. 实现数据结构描述接口（格式为 custom 时可选）。若自定义的格式为强类型，则可实现该接口。接口返回一个类 JSON schema 的字符串，供 source 使用。返回的数据结构将作为一个物理 schema 使用，帮助 eKuiper 实现编译解析阶段的 SQL 验证和优化等能力。
 
-    ```go
-    type SchemaProvider interface {
-      GetSchemaJson() string
-    }
-    ```
+   ```go
+   type SchemaProvider interface {
+     GetSchemaJson() string
+   }
+   ```
 
 3. 编译为插件 so 文件。通常格式的扩展无需依赖 eKuiper 的主项目。由于 Go 语言插件系统的限制，插件的编译仍然需要在与 eKuiper 主程序相同的编译环境中进行，包括操作相同，Go 语言版本等。若需要部署到官方 docker 中，则可使用对应的 docker 镜像进行编译。详细步骤，请参考[格式插件编译](#使用-docker-编译格式插件)。
 
-    ```shell
-    go build -trimpath --buildmode=plugin -o data/test/myFormat.so internal/converter/custom/test/*.go
-    ```
+   ```shell
+   go build -trimpath --buildmode=plugin -o data/test/myFormat.so internal/converter/custom/test/*.go
+   ```
 
 4. 通过 REST API 进行模式注册。
 
-    ```shell
-    ###
-    POST http://{{host}}/schemas/custom
-    Content-Type: application/json
-  
-    {
-      "name": "custom1",
-       "soFile": "file:///tmp/custom1.so"
-    }
-    ```
+   ```shell
+   ###
+   POST http://{{host}}/schemas/custom
+   Content-Type: application/json
+
+   {
+     "name": "custom1",
+      "soFile": "file:///tmp/custom1.so"
+   }
+   ```
 
 5. 在 source 或者 sink 中，通过 `format` 和 `schemaId` 参数使用自定义格式。
 
@@ -98,14 +98,14 @@ eKuiper 计算过程中使用的是基于 Map 的数据结构，因此 source/si
    /usr/src/myapp # make
    ```
 
-4. 你应该在你的项目中找到为你的插件建立的 *.so 文件（在这个例子中是 test.so）。用它来注册格式插件。
+4. 你应该在你的项目中找到为你的插件建立的 \*.so 文件（在这个例子中是 test.so）。用它来注册格式插件。
 
 ### 静态 Protobuf
 
 使用 Protobuf 格式时，我们支持动态解析和静态解析两种方式。使用动态解析时，用户仅需要在注册模式时指定 proto 文件。在解析性能要求更高的条件下，用户可采用静态解析的方式。静态解析需要开发解析插件，其步骤如下：
 
 1. 已有 proto 文件 helloworld.proto，使用官方 protoc 工具生成 go 代码。详情参见
- [Protocol Buffer 文档](https://developers.google.com/protocol-buffers/docs/reference/go-generated)。
+   [Protocol Buffer 文档](https://developers.google.com/protocol-buffers/docs/reference/go-generated)。
 
    ```shell
    protoc --go_opt=Mhelloworld.proto=com.main --go_out=. helloworld.proto
@@ -121,17 +121,17 @@ eKuiper 计算过程中使用的是基于 Map 的数据结构，因此 source/si
 
 5. 通过 REST API 进行模式注册。需要注意的是，proto 文件和 so 文件都需要指定。
 
-    ```shell
-    ###
-    POST http://{{host}}/schemas/protobuf
-    Content-Type: application/json
-  
-    {
-      "name": "helloworld",
-      "file": "file:///tmp/helloworld.proto",
-       "soFile": "file:///tmp/helloworld.so"
-    }
-    ```
+   ```shell
+   ###
+   POST http://{{host}}/schemas/protobuf
+   Content-Type: application/json
+
+   {
+     "name": "helloworld",
+     "file": "file:///tmp/helloworld.proto",
+      "soFile": "file:///tmp/helloworld.so"
+   }
+   ```
 
 6. 在 source 或者 sink 中，通过 `format` 和 `schemaId` 参数使用自定义格式。
 

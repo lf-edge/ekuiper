@@ -55,7 +55,7 @@ Restart the eKuiper server to activate the plugin.
 ## Properties
 
 | Property name      | Optional | Description                                                                                                                                                                                       |
-|--------------------|----------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| ------------------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | brokers            | false    | The broker address list ,split with ","                                                                                                                                                           |
 | topic              | false    | The topic of the Kafka                                                                                                                                                                            |
 | saslAuthType       | false    | The Kafka sasl authType, support none,plain,scram                                                                                                                                                 |
@@ -73,7 +73,7 @@ Restart the eKuiper server to activate the plugin.
 | key                | true     | Key information carried by the Kafka client in messages sent to the server                                                                                                                        |
 | headers            | true     | The header information carried by the Kafka client in the message sent to the server                                                                                                              |
 | compression        | true     | Whether to enable compression when the Kafka client sends messages to the server, only supports `gzip`, `snappy`, `lz4`, `zstd`                                                                   |
-| batchBytes         | true     | Set the maximum number of bytes for Kafka client to send batch messages to the server, default is 1048576         |
+| batchBytes         | true     | Set the maximum number of bytes for Kafka client to send batch messages to the server, default is 1048576                                                                                         |
 
 You can check the connectivity of the corresponding sink endpoint in advance through the API: [Connectivity Check](../../../api/restapi/connection.md#connectivity-check)
 
@@ -83,11 +83,11 @@ Set the metadata when the Kafka client sends messages through keys and headers:
 
 ```json
 {
-    "key": "keyValue",
-    "headers": {
-        "headerKey1": "headerValue1",
-        "headerKey2": "headerValue2"
-    }
+  "key": "keyValue",
+  "headers": {
+    "headerKey1": "headerValue1",
+    "headerKey2": "headerValue2"
+  }
 }
 ```
 
@@ -95,11 +95,11 @@ Through the template template, dynamically set the metadata when the Kafka clien
 
 ```json
 {
-    "key": "{{.data.key}}",
-    "headers": {
-        "headerKey1": "{{.data.col1}}",
-        "headerKey2": "{{.data.col2}}"
-    }
+  "key": "{{.data.key}}",
+  "headers": {
+    "headerKey1": "{{.data.col1}}",
+    "headerKey2": "{{.data.col2}}"
+  }
 }
 ```
 
@@ -128,7 +128,7 @@ Below is a sample for selecting temperature great than 50 degree, and some profi
       "log": {}
     },
     {
-      "kafka":{
+      "kafka": {
         "brokers": "127.0.0.1:9092,127.0.0.2:9092",
         "topic": "test_topic",
         "saslAuthType": "none"
@@ -142,39 +142,39 @@ Below is a sample for selecting temperature great than 50 degree, and some profi
 
 ```json
 {
-   "file":"http://localhost:8080/kafka.zip"
- }
+  "file": "http://localhost:8080/kafka.zip"
+}
 ```
 
 ## Notice
 
 If ekuiper and kafka are deployed in the same container network through docker compose, you can configure the brokers address through the kafka hostname in ekuiper.
-But kafka needs special attention `` KAFKA_CFG_ADVERTISED_LISTENERS `` needs to be configured as the host IP address, as shown below
+But kafka needs special attention `KAFKA_CFG_ADVERTISED_LISTENERS` needs to be configured as the host IP address, as shown below
 
 ```yaml
-    zookeeper:
-     image: docker.io/bitnami/zookeeper:3.8
-     hostname: zookeeper
-     container_name: zookeeper
-     ports:
-      - "2181:2181"
-     volumes:
-      - "zookeeper_data:/bitnami"
-     environment:
-       - ALLOW_ANONYMOUS_LOGIN=yes
-    kafka:
-     image: docker.io/bitnami/kafka:3.4
-     hostname: kafka
-     container_name: kafka
-     ports:
-      - "9092:9092"
-     volumes:
-      - "kafka_data:/bitnami"
-     environment:
-      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
-      - ALLOW_PLAINTEXT_LISTENER=yes
-      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092
-      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://<YOUR_HOST_IP>:9092
-     depends_on:
-      - zookeeper
+zookeeper:
+  image: docker.io/bitnami/zookeeper:3.8
+  hostname: zookeeper
+  container_name: zookeeper
+  ports:
+    - "2181:2181"
+  volumes:
+    - "zookeeper_data:/bitnami"
+  environment:
+    - ALLOW_ANONYMOUS_LOGIN=yes
+kafka:
+  image: docker.io/bitnami/kafka:3.4
+  hostname: kafka
+  container_name: kafka
+  ports:
+    - "9092:9092"
+  volumes:
+    - "kafka_data:/bitnami"
+  environment:
+    - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+    - ALLOW_PLAINTEXT_LISTENER=yes
+    - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092
+    - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://<YOUR_HOST_IP>:9092
+  depends_on:
+    - zookeeper
 ```

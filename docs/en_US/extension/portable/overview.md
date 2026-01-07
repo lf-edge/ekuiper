@@ -45,7 +45,7 @@ The steps to create plugin is similar to the native plugin.
 We aim to provide SDK for all mainstream language. Currently, [go SDK](go_sdk.md) and [python SDK](python_sdk.md) are
 supported.
 
-Unlike the native plugin, a portable plugin can bundle multiple *symbols*. Each symbol represents an extension of source, sink or function. The implementation of a symbol is to implement the interface of source, sink or function similar to the native plugin. In portable plugin mode, it is to implement the interface with the selected language.
+Unlike the native plugin, a portable plugin can bundle multiple _symbols_. Each symbol represents an extension of source, sink or function. The implementation of a symbol is to implement the interface of source, sink or function similar to the native plugin. In portable plugin mode, it is to implement the interface with the selected language.
 
 Then, the user need to create a main program to define and serve all the symbols. The main program will be run when starting the plugin. The development varies for languages, please check [go SDK](go_sdk.md) and [python SDK](python_sdk.md) for the detail.
 
@@ -58,12 +58,12 @@ You can find the tool in `tools/plugin_test_server`. It only supports to test a 
 1. Edit the testingPlugin variable to match your plugin meta.
 2. Start this server, and wait for handshake.
 3. Start or debug your plugin. Make sure the handshake completed.
-4. Issue startSymbol/stopSymbol REST API  to debug your plugin symbol. The REST API is like:
+4. Issue startSymbol/stopSymbol REST API to debug your plugin symbol. The REST API is like:
 
    ```shell
    POST http://localhost:33333/symbol/start
    Content-Type: application/json
- 
+
    {
      "symbolName": "pyjson",
      "meta": {
@@ -93,21 +93,15 @@ In the json file, we need to depict the metadata of this plugin. The information
   "version": "v1.0.0",
   "language": "go",
   "executable": "mirror",
-  "sources": [
-    "random"
-  ],
-   "sinks": [
-      "file"
-   ],
-   "functions": [
-      "echo"
-   ]
+  "sources": ["random"],
+  "sinks": ["file"],
+  "functions": ["echo"]
 }
 ```
 
 A plugin can contain multiple sources, sinks and functions, define them in the corresponding arrays in the json file. A
-plugin must be implemented in a single language, and specify that in the *language* field. Additionally, the
-*executable* field is required to specify the plugin main program executable. Please refer
+plugin must be implemented in a single language, and specify that in the _language_ field. Additionally, the
+_executable_ field is required to specify the plugin main program executable. Please refer
 to [mirror.zip](https://github.com/lf-edge/ekuiper/blob/master/internal/plugin/testzips/portables/mirror.zip) as an
 example.
 

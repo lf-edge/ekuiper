@@ -15,7 +15,7 @@ Restart the eKuiper server to activate the plugin.
 ## Properties
 
 | Property name | Optional | Description                   |
-|---------------|----------|-------------------------------|
+| ------------- | -------- | ----------------------------- |
 | server        | false    | The url of the Zero Mq server |
 | topic         | true     | The topic to publish to       |
 

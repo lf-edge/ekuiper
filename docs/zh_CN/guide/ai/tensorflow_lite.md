@@ -51,7 +51,7 @@ TensorFlow Lite 以预编译插件的形式提供，用户需自行下载安装�
 
 ## MobileNet V1 模型运行
 
-请自行下载 [MobileNet V1 模型](https://tfhub.dev/tensorflow/lite-model/mobilenet_v1_1.0_224/1/default/1), 此模型输入 224 * 224 像素的图像信息，返回大小为 1001 的 float 数组。
+请自行下载 [MobileNet V1 模型](https://tfhub.dev/tensorflow/lite-model/mobilenet_v1_1.0_224/1/default/1), 此模型输入 224 \* 224 像素的图像信息，返回大小为 1001 的 float 数组。
 为了获取图片信息，我们利用另一个预编译 video 插件从直播源中定时提取图片作为规则的输入，并将推理结果发送到 MQTT Broker 中。
 
 ### video 源安装与配置
@@ -60,11 +60,11 @@ video 源定期从直播源中拉取数据并从中抽取图片数据。直播�
 ![video 源安装](../../resources/video_install.png)
 ![video 配置](../../resources/video_config.png)
 
-*注意*： 源数据格式部分应选为 binary 类型。
+_注意_： 源数据格式部分应选为 binary 类型。
 
 ### image 函数插件安装
 
-由于预编译模型需要 224 * 224 像素的图片数据，因此需要安装另一个预编译插件 image 来对图片进行 resize。
+由于预编译模型需要 224 \* 224 像素的图片数据，因此需要安装另一个预编译插件 image 来对图片进行 resize。
 ![image 安装](../../resources/image_install.png)
 ![resize 注册](../../resources/image_register.png)
 
@@ -123,7 +123,7 @@ func bestMatchLabel(keyValue map[string]interface{}) (string, bool) {
     resultArray := keyValue["tfLite"].([]interface{})
     outputArray := resultArray[0].([]byte)
     outputSize := len(outputArray)
-  
+
     var results []result
     for i := 0; i < outputSize; i++ {
         score := float64(outputArray[i]) / 255.0

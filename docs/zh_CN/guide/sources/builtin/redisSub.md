@@ -10,13 +10,13 @@ eKuiper 内置支持 Redis 数据源，支持在 Redis 中进行数据查询,订
 
 在使用连接器连接 RedisSub 数据源之前，应先完成连接和其他相关参数配置。
 
-RedisSub 源的配置文件位于 */etc/sources/redisSub.yaml*，您可以在其中指定 Redis 的连接信息等属性。
+RedisSub 源的配置文件位于 _/etc/sources/redisSub.yaml_，您可以在其中指定 Redis 的连接信息等属性。
 
 ```yaml
 default:
-   address: 127.0.0.1:6379
-   username: default
-   db: 0
+  address: 127.0.0.1:6379
+  username: default
+  db: 0
 ```
 
 按照以上配置，eKuiper 将引用的 Redis 实例地址是127.0.0.1:6379。值的类型是 "string"。

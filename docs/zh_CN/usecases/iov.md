@@ -36,7 +36,7 @@ eKuiper 在车联网中最成熟的用法是实现灵活的数据采集，我们
 
 现有的数据采集方案往往通过车载数据采集终端（T-BOX）固件中的采集功能或自行编写的采集程序进行车辆数据采集。通常采集程序所采集到的车身信息是固定且直接固化在车载终端上的。在智能车联网时代之前，采集的数据种类少、全量采集压力不大，这种做法是可行的。
 
-随着车联网技术的发展，车辆整车网络构成也越来越复杂，可采集的车身信息多样化，全量采集数据量过大而且浪费宝贵的带宽资源，因此需要根据 TSP 应用的需求按需进行采集。此外，不同车型的汽车通常会有不同的数据，例如 CAN 总线的数据在不同车型上会有不同的 DBC 文件*。固定采集程序无法移植，必须重新编写，并 OTA 升级采集程序。
+随着车联网技术的发展，车辆整车网络构成也越来越复杂，可采集的车身信息多样化，全量采集数据量过大而且浪费宝贵的带宽资源，因此需要根据 TSP 应用的需求按需进行采集。此外，不同车型的汽车通常会有不同的数据，例如 CAN 总线的数据在不同车型上会有不同的 DBC 文件\*。固定采集程序无法移植，必须重新编写，并 OTA 升级采集程序。
 
 总的来讲，固定采集程序存在以下问题：
 
@@ -120,47 +120,53 @@ eKuiper 的规则分为两个部分，其中 SQL 用于编写业务逻辑，例�
 
 1. 采集指定的信号。本规则可实时采集发动机的信号并发送到 MQTT topic collect 中。规则通过 SQL 语句中的 SELECT 子句定义了需要采集的数据点。
 
-    ```json
-    {
-        "id": "ruleCollect",
-        "sql": "SELECT rpm, inletTemperature, inletPressure FROM canDemo",
-        "actions": [{
-          "mqtt": {
-            "server": "tcp://yourserver:1883",
-            "topic": "collect"
-          }
-        }]
-    }
-    ```
+   ```json
+   {
+     "id": "ruleCollect",
+     "sql": "SELECT rpm, inletTemperature, inletPressure FROM canDemo",
+     "actions": [
+       {
+         "mqtt": {
+           "server": "tcp://yourserver:1883",
+           "topic": "collect"
+         }
+       }
+     ]
+   }
+   ```
 
 2. 采集有变化的信号。某些信号可能变化周期比较长，全部采集的话大部分为重复值，占据存储和带宽。eKuiper 提供了内置的变化采集函数 CHANGED_COLS，可以仅采集信号数值变化的情况。下面的示例规则中，我们采集了电池的变化信息，并保存在本地文件中。
 
-    ```json
-    {
-      "id": "ruleChangeCollect",
-      "sql": "SELECT CHANGED_COLS(\"\", true, voltage, currency) FROM canDemo",
-      "actions": [{
-        "file": {
-        "path": "/tmp/cell"
-        }
-      }]
-    }
-    ```
+   ```json
+   {
+     "id": "ruleChangeCollect",
+     "sql": "SELECT CHANGED_COLS(\"\", true, voltage, currency) FROM canDemo",
+     "actions": [
+       {
+         "file": {
+           "path": "/tmp/cell"
+         }
+       }
+     ]
+   }
+   ```
 
 3. 根据事件采集。某些信号只有在特定的情况下才需要采集，例如碰撞后采集相关的数据。eKuiper 中可以灵活设置采集的条件。以下的规则中，当电池电压异常（不在10到20之间）的情况下，采集所有数据到 MQTT 的 Topic exception 中。
 
-    ```json
-    {
-        "id": "ruleExpCollect",
-        "sql": "SELECT * FROM canDemo WHERE voltage NOT BETWEEN 10 AND 20 ",
-        "actions": [{
-          "mqtt": {
-              "server": "tcp://yourserver:1883",
-              "topic": "exception"
-          }
-        }]
-    }
-    ```
+   ```json
+   {
+     "id": "ruleExpCollect",
+     "sql": "SELECT * FROM canDemo WHERE voltage NOT BETWEEN 10 AND 20 ",
+     "actions": [
+       {
+         "mqtt": {
+           "server": "tcp://yourserver:1883",
+           "topic": "exception"
+         }
+       }
+     ]
+   }
+   ```
 
 ### 车云一体规则管理
 

@@ -9,7 +9,7 @@ eKuiper 内置支持 Redis 数据源，支持在 Redis 中进行数据查询。
 
 在使用连接器连接 Redis 数据源之前，应先完成连接和其他相关参数配置。
 
-Redis 源的配置文件位于 */etc/sources/redis.yaml*，您可以在其中指定 Redis 的连接信息等属性。
+Redis 源的配置文件位于 _/etc/sources/redis.yaml_，您可以在其中指定 Redis 的连接信息等属性。
 
 ```yaml
 default:

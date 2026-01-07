@@ -7,7 +7,7 @@ compilation, and deployment of the eKuiper plugin.
 
 ## Overview
 
-eKuiper plugin is based on the plugin mechanism of Golang, users can build loosely-coupled plugin applications,  dynamic loading and binding when it is running. However, because the limitation of the Golang plugin system, the compilation and usage of the eKuiper plugin also have corresponding limitations:
+eKuiper plugin is based on the plugin mechanism of Golang, users can build loosely-coupled plugin applications, dynamic loading and binding when it is running. However, because the limitation of the Golang plugin system, the compilation and usage of the eKuiper plugin also have corresponding limitations:
 
 - The plugin does not support Windows system
 - The compilation environment of the plugin is required to be as consistent as possible with eKuiper. Including but not limited to:
@@ -202,7 +202,7 @@ minor changes to the main project will cause the plugin to become invalid and re
 
 ### Compile and debug the plugin
 
-The environment of compiling the plugin should be consistent with that of  eKuiper. In the development environment, the typical usage is that locally download and compile eKuiper and plugin, and then debug plugin functions in the local eKuiper,  or compile the plugin in the docker container of eKuiper and use the eKuiper container to debug it.
+The environment of compiling the plugin should be consistent with that of eKuiper. In the development environment, the typical usage is that locally download and compile eKuiper and plugin, and then debug plugin functions in the local eKuiper, or compile the plugin in the docker container of eKuiper and use the eKuiper container to debug it.
 
 #### Compile locally
 
@@ -226,24 +226,24 @@ eKuiper.
 
 1. Run docker of the development version of eKuiper. Users need to mount the local plugin directory to the directory in docker, and then they can access and compile the plugin project in docker. The author's plugin project is located in the local `/var/git` directory. We map the local directory `/var/git` to the `/go/plugins` directory in docker by using the following commands.
 
-    ```shell
-    docker run -d --name kuiper-dev --mount type=bind,source=/var/git,target=/go/plugins lfedge/ekuiper:2.0.0
-    ```
+   ```shell
+   docker run -d --name kuiper-dev --mount type=bind,source=/var/git,target=/go/plugins lfedge/ekuiper:2.0.0
+   ```
 
 2. The principle of compiling plugins in docker environment is the same as the local compilation. The compiled plugin is locating in the target directory of the plugin project.
-    1. get into the compiling docker environment
+   1. get into the compiling docker environment
 
-       ```shell
-         # In host
-         docker exec -it kuiper-dev /bin/sh
-       ```
+      ```shell
+        # In host
+        docker exec -it kuiper-dev /bin/sh
+      ```
 
 3. Enter the plugin directory `/go/plugins` and execute the following command:
 
-    ```shell
-      # In docker instance
-      go build -trimpath --buildmode=plugin -o ./kuiper/_build/$build/plugins/sinks/Mysql@v1.0.0.so ./samplePlugin/sinks/mysql.go
-    ```
+   ```shell
+     # In docker instance
+     go build -trimpath --buildmode=plugin -o ./kuiper/_build/$build/plugins/sinks/Mysql@v1.0.0.so ./samplePlugin/sinks/mysql.go
+   ```
 
 eKuiper offers an Alpine version of its image, but it does not come with the Go environment pre-installed. To compile
 plugins using the Alpine image, users will need to install the necessary dependencies themselves. Alternatively, users
@@ -255,18 +255,18 @@ the alpine version of eKuiper). Here are the specific steps to follow when using
 environment:
 
 1. To use the Golang image as the base environment, you'll need to make sure that you have the correct version of the Golang image installed. Additionally, you'll need to mount the local plugin directory and eKuiper source code into a directory within Docker, so that you can access and compile the plugin project within the Docker environment.
-Assuming that your plugin project is located in the local directory `/var/git`, you can map this directory to the `/go/plugins` directory within Docker using the following command:
+    Assuming that your plugin project is located in the local directory `/var/git`, you can map this directory to the `/go/plugins` directory within Docker using the following command:
 
-    ```shell
-    docker run --rm -it -v /var/git:/go/plugins -w /go/plugins golang:1.24.1 /bin/sh
-    ```
+        ```shell
+        docker run --rm -it -v /var/git:/go/plugins -w /go/plugins golang:1.24.1 /bin/sh
+        ```
 
 2. To obtain the compiled plugin, execute the following command:
 
-    ``` shell
-   # In docker instance
-   go build -trimpath --buildmode=plugin -o Mysql@v1.0.0.so ./samplePlugin/sinks/mysql.go
-   ```
+    ```shell
+    # In docker instance
+    go build -trimpath --buildmode=plugin -o Mysql@v1.0.0.so ./samplePlugin/sinks/mysql.go
+    ```
 
 #### Debug and run the plugin
 
@@ -279,7 +279,7 @@ Run eKuiper in the local or **Develop** Docker, create streams and rules, set ac
   "actions": [
     {
       "log": {},
-      "mysql":{
+      "mysql": {
         "url": "user:password@tcp(localhost:3306)/database",
         "table": "test"
       }
@@ -305,30 +305,30 @@ Please refer [Docker compile](#Docker-compile) for the compilation process. The 
 Users can use [REST API](https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/restapi/plugins.md) or [CLI](https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/cli/plugins.md) to manage plugins. The following takes the REST API as an example to deploy the plugin compiled in the previous step to the production environment.
 
 1. Package the plugin and put it into the http server. Package the file `.so` of the plugin compiled in the previous step and the default configuration file (only required for source) `.yaml` into a `.zip` file (assuming that the file is `mysqlSink.zip`). Put this file into the http server that the production environment can also access.
-    - Some plugin may depend on libs that are not installed on eKuiper environment. The user can either install them manually in the eKuiper server or put the install script and dependencies in the plugin zip and let the plugin management system do the installation. Please refer to [Plugin File Format](../../../api/restapi/plugins.md#plugin-file-format) for detail.
+   - Some plugin may depend on libs that are not installed on eKuiper environment. The user can either install them manually in the eKuiper server or put the install script and dependencies in the plugin zip and let the plugin management system do the installation. Please refer to [Plugin File Format](../../../api/restapi/plugins.md#plugin-file-format) for detail.
 2. Use REST API to create plugins:
 
    ```shell
    POST http://{$production_eKuiper_ip}:9081/plugins/sinks
    Content-Type: application/json
- 
+
    {"name":"mysql","file":"http://{$http_server_ip}/plugins/sinks/mysqlSink.zip"}
    ```
 
 3. Verify whether the plugin was created successfully or not
 
-    ```shell
-    GET http://{$production_eKuiper_ip}:9081/plugins/sinks/mysql
-    ```
+   ```shell
+   GET http://{$production_eKuiper_ip}:9081/plugins/sinks/mysql
+   ```
 
-    Return
+   Return
 
-    ```json
-    {
-       "name": "mysql",
-       "version": "1.0.0"
-    }
-    ```
+   ```json
+   {
+     "name": "mysql",
+     "version": "1.0.0"
+   }
+   ```
 
 Note: if you intend to deploy the plugin in an Alpine environment, you may encounter an error stating `Error loading shared library libresolve.so.2` after completing the above steps(We are planning to develop a dedicated image for alpine system development, namely the alpine-dev version. Please stay tuned for our latest updates and developments.). In such a case, here is a solution you can try:
 

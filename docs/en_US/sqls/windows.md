@@ -8,7 +8,7 @@ All the windowing operations output results at the end of the window. The output
 
 ## Time-units
 
-There are 5 time-units can be used in the windows. For example, `TUMBLINGWINDOW(ss, 10)`, which means group the data with tumbling with 10  seconds interval. The time intervals will align to the nature time. For example, a 10 second time window will always end at each 10s second such as 10, 20 or 30 regardless of the rule start time. A day window will always end in 24:00 local time.
+There are 5 time-units can be used in the windows. For example, `TUMBLINGWINDOW(ss, 10)`, which means group the data with tumbling with 10 seconds interval. The time intervals will align to the nature time. For example, a 10 second time window will always end at each 10s second such as 10, 20 or 30 regardless of the rule start time. A day window will always end in 24:00 local time.
 
 **DD**: day unit
 
@@ -101,7 +101,7 @@ The SQL will group events with 5 count window, and only get the `temperature` th
 
 ### Other count windows
 
-`COUNTWINDOW(count, interval)`,  this kind of count window is triggered by the 2nd parameter of COUNTWINDOW, which defines the event number that triggers count window.
+`COUNTWINDOW(count, interval)`, this kind of count window is triggered by the 2nd parameter of COUNTWINDOW, which defines the event number that triggers count window.
 
 - If the 2nd parameter value is 1, then it will be triggered with every event happen.
 - Value of the 2nd parameter should not be larger than the value of the 1st parameter.
@@ -112,9 +112,9 @@ Below is picture for describing `COUNTWINDOW(5,1)`, the window size is 5, and wi
 
 Sample in below is a count window that with 5 length, and triggered with every 2 events. The output will be latest of 5 events that are received.
 
-1. When event `2` is received, currently totally has 2 events, which is less than window size `5`,  so will not trigger window.
-2. When event `4` is received, currently totally has 4 events, which is less than window size `5`,  so will not trigger window.
-3. When event `6` is received, currently totally has 6 events, which is great than window size `5`,  it produces a window that include latest 5 events. Because the window size is 5, so the 1st event is ignored in the window.
+1. When event `2` is received, currently totally has 2 events, which is less than window size `5`, so will not trigger window.
+2. When event `4` is received, currently totally has 4 events, which is less than window size `5`, so will not trigger window.
+3. When event `6` is received, currently totally has 6 events, which is great than window size `5`, it produces a window that include latest 5 events. Because the window size is 5, so the 1st event is ignored in the window.
 4. Rests of windows are generated with the same approach as previous.
 
 ![](./resources/slidingCountWindow_2.png)
@@ -143,13 +143,11 @@ SELECT * FROM demo GROUP BY COUNTWINDOW(3,1) FILTER(where revenue > 100)
 
 Every event has a timestamp associated with it. The timestamp will be used to calculate the window. By default, a timestamp will be added when an event feed into the source which is called `processing time`. We also support to specify a field as the timestamp, which is called `event time`. The timestamp field is specified in the stream definition. In the below definition, the field `ts` is specified as the timestamp field.
 
-`
-CREATE STREAM demo (
+`CREATE STREAM demo (
                     color STRING,
                     size BIGINT,
                     ts BIGINT
-                ) WITH (DATASOURCE="demo", FORMAT="json", KEY="ts", TIMESTAMP="ts"
-`
+                ) WITH (DATASOURCE="demo", FORMAT="json", KEY="ts", TIMESTAMP="ts"`
 
 In event time mode, the watermark algorithm is used to calculate a window.
 

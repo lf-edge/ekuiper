@@ -32,7 +32,7 @@
 注意模型输入数据格式必须为浮点数组, 因此需要在数据源中指定数据类型，由源将其预处理为字节数组。
 
 ```shell
-POST /streams 
+POST /streams
 Content-Type: application/json
 
 {
@@ -143,7 +143,7 @@ func TestPic(t *testing.T) {
 ![模型调用](../../resources/tflite_sin_rule.png)
 
 ```shell
-POST /rules 
+POST /rules
 
 {
     "id": "ruleSum",
@@ -165,7 +165,7 @@ POST /rules
 结果如下图所示，数据经过推理后，返回结果为：
 
 ```json
-[{"onnx":[[1.9999883,0.60734314]]}]
+[{ "onnx": [[1.9999883, 0.60734314]] }]
 ```
 
 ![结果查询](../../resources/mqttx_sum_and_difference.png)
@@ -174,12 +174,7 @@ POST /rules
 
 ```json
 {
-  "data": [
-    0.2,
-    0.3,
-    0.6,
-    0.9
-  ]
+  "data": [0.2, 0.3, 0.6, 0.9]
 }
 ```
 

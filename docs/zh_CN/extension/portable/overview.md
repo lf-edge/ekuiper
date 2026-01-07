@@ -33,7 +33,7 @@ source/sink 运行，并关闭数据通道。
 
 我们的目标是为所有主流语言提供插件. 当前, [go SDK](go_sdk.md) and [python SDK](python_sdk.md) 已经支持。
 
-与原生插件不同，portable 插件可以捆绑多个 *Symbol*。每个 Symbol 代表源、Sink 或功能的扩展。一个符号的实现就是实现类似于原生插件的 source、sink 或者 function 的接口。在 portable 插件模式下，就是用选择的语言来实现接口。
+与原生插件不同，portable 插件可以捆绑多个 _Symbol_。每个 Symbol 代表源、Sink 或功能的扩展。一个符号的实现就是实现类似于原生插件的 source、sink 或者 function 的接口。在 portable 插件模式下，就是用选择的语言来实现接口。
 然后，用户需要创建一个主程序来定义和服务所有的符号。启动插件时将运行主程序。开发因语言而异，详情请查看 [go SDK](go_sdk.md) 和 [python SDK](python_sdk.md)。
 
 ### 调试
@@ -49,7 +49,7 @@ source/sink 运行，并关闭数据通道。
    ```shell
    POST http://localhost:33333/symbol/start
    Content-Type: application/json
- 
+
    {
      "symbolName": "pyjson",
      "meta": {
@@ -79,20 +79,14 @@ source/sink 运行，并关闭数据通道。
   "version": "v1.0.0",
   "language": "go",
   "executable": "mirror",
-  "sources": [
-    "random"
-  ],
-   "sinks": [
-      "file"
-   ],
-   "functions": [
-      "echo"
-   ]
+  "sources": ["random"],
+  "sinks": ["file"],
+  "functions": ["echo"]
 }
 ```
 
-一个插件可以包含多个源、目标和函数，在 json 文件中的相应数组中定义它们。插件必须以单一语言实现，并在 *language* 字段中指定。此外，
-*executable*
+一个插件可以包含多个源、目标和函数，在 json 文件中的相应数组中定义它们。插件必须以单一语言实现，并在 _language_ 字段中指定。此外，
+_executable_
 字段需要指定插件主程序可执行文件。请参考 [mirror.zip](https://github.com/lf-edge/ekuiper/blob/master/internal/plugin/testzips/portables/mirror.zip) 。
 
 使用Python插件时，用户可以通过指定以下属性为 Python 脚本指定一个虚拟环境。

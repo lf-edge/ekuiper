@@ -84,7 +84,7 @@ CREATE STREAM websocketDemo() WITH (FORMAT="json", TYPE="websocket")
 
 您可以使用 `endpoint` 属性，该属性对应于流创建语句中的
 
-创建流时，您可通过 `datasource` 配置项对应  `endpoint` 属性，如下所示：
+创建流时，您可通过 `datasource` 配置项对应 `endpoint` 属性，如下所示：
 
 **示例**
 

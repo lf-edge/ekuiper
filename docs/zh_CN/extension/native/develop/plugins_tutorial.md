@@ -175,16 +175,16 @@ github.com/lf-edge/ekuiper/contract/v2 v2.0.0-alpha.5
 
 除此之外，mysql.go 还有对 mysql 包的依赖，所以 go.mod 完整代码如下
 
- ```go
+```go
 module samplePlugin
 
 go 1.24
 
 require (
 github.com/lf-edge/ekuiper/contract/v2 v2.0.0
-  github.com/go-sql-driver/mysql v1.5.0
+ github.com/go-sql-driver/mysql v1.5.0
 )
- ```
+```
 
 **请注意**：插件项目的 go 版本和依赖的 contract 项目版本必须与 eKuiper
 主项目完全一致。此外，尽量避免插件项目依赖主项目，否则主项目任何小改动都会导致插件失效，需要重新编译。
@@ -213,9 +213,9 @@ x.x.x，例如`lfedge/ekuiper:0.4.0`。)；与运行版本相比，开发版提�
 
 1. 运行 eKuiper 开发版本 docker。需要把本地插件目录 mount 到 docker 里的目录中，这样才能在 docker 中访问插件项目并编译。笔者的插件项目位于本地 `/var/git` 目录。下面的命令中，我们把本地的 `/var/git`目录映射到 docker 内的 `/go/plugins` 目录中。
 
-    ```shell
-    docker run -d --name kuiper-dev --mount type=bind,source=/var/git,target=/go/plugins lfedge/ekuiper:2.0.0
-    ```
+   ```shell
+   docker run -d --name kuiper-dev --mount type=bind,source=/var/git,target=/go/plugins lfedge/ekuiper:2.0.0
+   ```
 
 2. 在 docker 环境中编译插件，其原理与本地编译一致。编译出的插件置于插件项目的 target 目录中
    1. 进入开发版本docker容器中
@@ -239,13 +239,13 @@ alpine版本 的 eKuiper 时，不会出现`Error loading shared library libreso
 
 1. 运行 golang 相应版本 docker。需要把本地插件目录和 eKuiper 源码 mount 到 docker 里的目录中，这样才能在 docker 中访问插件项目并编译。笔者的插件项目位于本地 `/var/git` 目录。下面的命令中，我们把本地的 `/var/git` 目录映射到 docker 内的 `/go/plugins` 目录中。
 
-    ```shell
-    docker run --rm -it -v /var/git:/go/plugins -w /go/plugins golang:1.24.1 /bin/sh
-    ```
+   ```shell
+   docker run --rm -it -v /var/git:/go/plugins -w /go/plugins golang:1.24.1 /bin/sh
+   ```
 
 2. 执行下面命令，便可以得到编译好的插件
 
-   ``` shell
+   ```shell
    # In docker instance
    go build -trimpath --buildmode=plugin -o Mysql@v1.0.0.so ./samplePlugin/sinks/mysql.go
    ```
@@ -287,31 +287,31 @@ eKuiper 生产环境和开发环境如果不同，开发的插件需要重新编
 可以采用 [REST API](https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/restapi/plugins.md) 或者 [CLI](https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/cli/plugins.md) 进行插件管理。下文以 REST API 为例，将上一节编译的插件部署到生产环境中。
 
 1. 插件打包并放到 http 服务器。将上一节编译好的插件 `.so` 文件及默认配置文件（只有 source 需要） `.yaml` 文件一起打包到一个 `.zip` 文件中，假设为 `mysqlSink.zip`。把该文件放置到生产环境也可访问的 http 服务器中。
-
    - 某些插件可能依赖 eKuiper 环境未安装的库。用户可以选择自行到 eKuiper 服务器安装依赖或者在插件包中放入名为 install.sh 安装脚本和依赖。插件管理系统会运行插件包中的 install.sh 文件。详情请参考 [插件文件格式](../../../api/restapi/plugins.md#插件文件格式)。
+
 2. 使用 REST API 创建插件：
 
    ```shell
    POST http://{$production_eKuiper_ip}:9081/plugins/sinks
    Content-Type: application/json
- 
+
    {"name":"mysql","file":"http://{$http_server_ip}/plugins/sinks/mysqlSink.zip"}
    ```
 
 3. 验证插件是否创建成功
 
-    ```shell
-    GET http://{$production_eKuiper_ip}:9081/plugins/sinks/mysql
-    ```
+   ```shell
+   GET http://{$production_eKuiper_ip}:9081/plugins/sinks/mysql
+   ```
 
-    返回
+   返回
 
-    ```json
-    {
-       "name": "mysql",
-       "version": "1.0.0"
-    }
-    ```
+   ```json
+   {
+     "name": "mysql",
+     "version": "1.0.0"
+   }
+   ```
 
 注意：如果是在 alpine 环境中部署插件，执行上述步骤后，可能会出现 `Error loading shared library libresolve.so.2` 错误（我们计划开发一个针对 alpine 的专门用于开发的镜像，即 alpine-dev 版本的镜像，敬请期待），这里提供了一种解决方案：
 

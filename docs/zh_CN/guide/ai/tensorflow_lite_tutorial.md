@@ -14,21 +14,21 @@
 
 ## 开发插件
 
-为了集成 eKuiper 和 TensorFlow Lite，我们将开发一个定制的 eKuiper 函数插件，供 eKuiper 规则使用。例如，我们将创建 `LabelImage`  函数，其输入是表示图像的二进制类型数据，输出是表示图像标签的字符串。例如，如果输入图像中有孔雀，`LabelImage(col)` 将输出“孔雀”。
+为了集成 eKuiper 和 TensorFlow Lite，我们将开发一个定制的 eKuiper 函数插件，供 eKuiper 规则使用。例如，我们将创建 `LabelImage` 函数，其输入是表示图像的二进制类型数据，输出是表示图像标签的字符串。例如，如果输入图像中有孔雀，`LabelImage(col)` 将输出“孔雀”。
 
 要开发函数插件，我们需要：
 
-1. 创建插件 go 文件。 例如，在 eKuiper 源代码中，创建 *plugins/functions/labelImage/labelImage.go* 文件。
+1. 创建插件 go 文件。 例如，在 eKuiper 源代码中，创建 _plugins/functions/labelImage/labelImage.go_ 文件。
 2. 创建一个实现 [api 函数接口](https://github.com/lf-edge/ekuiper/blob/master/pkg/api/stream.go) 的 struct。
 3. 导出 struct。
 
-实现的关键是 *Exec* 函数。 伪代码如下：
+实现的关键是 _Exec_ 函数。 伪代码如下：
 
 ```go
 func (f *labelImage) Exec(args []interface{}, ctx api.FunctionContext) (interface{}, bool) {
-  
+
     //... 初始化和验证
-  
+
     // 解码输入图像
     img, _, err := image.Decode(bytes.NewReader(arg[0]))
     if err != nil {
@@ -40,7 +40,7 @@ func (f *labelImage) Exec(args []interface{}, ctx api.FunctionContext) (interfac
     })
 
     // 对输入图像运行解释器
-  
+
     // 返回可能性最大的标签
     return result, true
 }
@@ -63,7 +63,7 @@ var LabelImage = labelImage{
 
 ### 通过预构建的 zip 安装
 
-如果使用基于 debian 的带有 1.1.1 或 1.1.1-slim 标签的 eKuiper docker 镜像，我们可以安装预构建的 labelImage 插件。 例如，要在 docker image lfedge/ekuiper:1.1.2-slim 中安装 eKuiper 1.1.2 插件，则预构建的 zip 文件位于 *<https://packages.emqx.net/kuiper-plugins/1.1.2/debian/functions/labelImage_amd64.zip>*。 按如下所示运行 rest 命令以进行安装。
+如果使用基于 debian 的带有 1.1.1 或 1.1.1-slim 标签的 eKuiper docker 镜像，我们可以安装预构建的 labelImage 插件。 例如，要在 docker image lfedge/ekuiper:1.1.2-slim 中安装 eKuiper 1.1.2 插件，则预构建的 zip 文件位于 _<https://packages.emqx.net/kuiper-plugins/1.1.2/debian/functions/labelImage_amd64.zip>_。 按如下所示运行 rest 命令以进行安装。
 
 ```shell
 POST http://{{kuiperHost:kuiperRestPort}}/plugins/functions
@@ -105,13 +105,13 @@ Content-Type: application/json
 
 6. 安装 so 文件。
    1. 更新 ldconfig 文件 `sudo vi / etc / ld.so.conf.d / tflite.conf`。
-   2. 将路径  <code v-pre>{{tensorflowPath}}/lib</code> 添加到 tflite.conf，然后保存并退出。
+   2. 将路径 <code v-pre>{{tensorflowPath}}/lib</code> 添加到 tflite.conf，然后保存并退出。
    3. 运行 ldconfig: `sudo ldconfig`。
    4. 检查安装结果：`ldconfig -p | grep libtensorflow`。 确保列出了两个so文件。
 
 #### 构建 labelImage 插件
 
-确保已克隆 eKuiper github repo。 插件源文件位于 *extensions/functions/labelImage/labelImage.go* 中。 在构建插件之前，导出 tensorflow repo 和构建库的路径。
+确保已克隆 eKuiper github repo。 插件源文件位于 _extensions/functions/labelImage/labelImage.go_ 中。 在构建插件之前，导出 tensorflow repo 和构建库的路径。
 
 ```shell
 $ cd {{eKuiperRepoPath}}
@@ -126,7 +126,7 @@ $ cp -r extensions/functions/labelImage plugins/functions
 
 #### 打包插件
 
-将 *plugins/functions/labelImage* 目录中的所有文件和目录与构建的 LabelImage.so 一起打包到一个 zip 文件中。 zip文件的文件结构应类似于：
+将 _plugins/functions/labelImage_ 目录中的所有文件和目录与构建的 LabelImage.so 一起打包到一个 zip 文件中。 zip文件的文件结构应类似于：
 
 - etc
   - labels.txt
@@ -157,7 +157,7 @@ Content-Type: application/json
 
 ### 定义规则
 
-通过 eKuiper rest API 定义规则。我们将创建一个名为 ruleTf 的规则。我们只是从 tfdemo 流中读取图像，然后对其运行自定义函数 *labelImage*。返回结果将是 AI 识别的图像的标签。
+通过 eKuiper rest API 定义规则。我们将创建一个名为 ruleTf 的规则。我们只是从 tfdemo 流中读取图像，然后对其运行自定义函数 _labelImage_。返回结果将是 AI 识别的图像的标签。
 
 ```shell
 POST http://{{host}}/rules
@@ -225,7 +225,7 @@ func main() {
 
 ### 检查结果
 
-因为我们的规则定义只有一个目标：log，所以结果将被写入日志文件。 我们用 *peacock.png* 和 *frog.png* 两个图像填充流。 检查日志文件，我们会发现：
+因为我们的规则定义只有一个目标：log，所以结果将被写入日志文件。 我们用 _peacock.png_ 和 _frog.png_ 两个图像填充流。 检查日志文件，我们会发现：
 
 ```shell
 time="2021-02-05 16:23:29" level=info msg="sink result for rule ruleTf: [{\"labelImage\":\"peacock\"}]" file="sinks/log_sink.go:16" rule=ruleTf

@@ -21,29 +21,29 @@ To integrate eKuiper with TensorFlow lite, we will develop a customized eKuiper 
 
 To develop the function plugin, we need to:
 
-1. Create the plugin go file.  For example, in eKuiper source code, create *plugins/functions/labelImage/labelImage.go* file.
+1. Create the plugin go file. For example, in eKuiper source code, create _plugins/functions/labelImage/labelImage.go_ file.
 2. Create a struct that implements [api.Function interface](https://github.com/lf-edge/ekuiper/blob/master/pkg/api/stream.go).
 3. Export the struct.
 
-The key part of the implementation is the *Exec* function. The pseudo code is like:
+The key part of the implementation is the _Exec_ function. The pseudo code is like:
 
 ```go
 func (f *labelImage) Exec(args []interface{}, ctx api.FunctionContext) (interface{}, bool) {
-  
+
     //... do some initialization and validation
-  
+
     // decode the input image
     img, _, err := image.Decode(bytes.NewReader(arg[0]))
     if err != nil {
         return err, false
     }
     var outerErr error
-    f.once.Do(func() {      
+    f.once.Do(func() {
         // Load labels, tflite model and initialize the tflite interpreter
     })
 
     // Run the interpreter against the input image
-  
+
     // Return the label with the highest possibility
     return result, true
 }
@@ -58,7 +58,7 @@ var LabelImage = labelImage{
 }
 ```
 
-Check [this tutorial](../../extension/native/develop/plugins_tutorial.md) for detail steps of creating eKuiper plugins.  Please refer to [labelImage.go](https://github.com/lf-edge/ekuiper/blob/master/extensions/functions/labelImage/labelImage.go) for the full source code.
+Check [this tutorial](../../extension/native/develop/plugins_tutorial.md) for detail steps of creating eKuiper plugins. Please refer to [labelImage.go](https://github.com/lf-edge/ekuiper/blob/master/extensions/functions/labelImage/labelImage.go) for the full source code.
 
 ## Build and install the plugin
 
@@ -66,7 +66,7 @@ To use the plugin, we need to build it in the environment where eKuiper will run
 
 ### Install by pre-built zip
 
-If using eKuiper docker images with tags like 1.1.1 or 1.1.1-slim which are based on debian, we can install the pre-built labelImage plugin. For example, to install the plugin for eKuiper 1.1.2 in docker image lfedge/ekuiper:1.1.2-slim, the pre-built zip file locates in *https://packages.emqx.net/kuiper-plugins/1.1.2/debian/functions/labelImage_amd64.zip*. Run the rest command as below to install.
+If using eKuiper docker images with tags like 1.1.1 or 1.1.1-slim which are based on debian, we can install the pre-built labelImage plugin. For example, to install the plugin for eKuiper 1.1.2 in docker image lfedge/ekuiper:1.1.2-slim, the pre-built zip file locates in _https://packages.emqx.net/kuiper-plugins/1.1.2/debian/functions/labelImage_amd64.zip_. Run the rest command as below to install.
 
 ```shell
 POST http://{{eKuiperHost:eKuiperRestPort}}/plugins/functions
@@ -114,7 +114,7 @@ There is a very simple [instruction](https://github.com/tensorflow/tensorflow/tr
 
 #### Build the labelImage plugin
 
-Make sure the eKuiper github repo has cloned. The plugin source file is in *extensions/functions/labelImage/labelImage.go*. Export the paths of the tensorflow repo and built libraries before build the plugin.
+Make sure the eKuiper github repo has cloned. The plugin source file is in _extensions/functions/labelImage/labelImage.go_. Export the paths of the tensorflow repo and built libraries before build the plugin.
 
 ```shell
 $ cd {{eKuiperRepoPath}}
@@ -129,7 +129,7 @@ By these commands, the plugin is built into plugins/functions/LabelImage.so and 
 
 #### Package the plugin
 
-Package all files and directories inside *plugins/functions/labelImage* into a zip file along with the built LabelImage.so. The file structure inside the zip file should be like:
+Package all files and directories inside _plugins/functions/labelImage_ into a zip file along with the built LabelImage.so. The file structure inside the zip file should be like:
 
 - etc
   - labels.txt
@@ -160,7 +160,7 @@ Content-Type: application/json
 
 ### Define the rule
 
-Define the rule by eKuiper rest API.  We will create a rule named ruleTf. We just read the images from tfdemo stream and run the custom function *labelImage* against it. The result will be the label of the image recognized by the AI.
+Define the rule by eKuiper rest API. We will create a rule named ruleTf. We just read the images from tfdemo stream and run the custom function _labelImage_ against it. The result will be the label of the image recognized by the AI.
 
 ```shell
 POST http://{{host}}/rules
@@ -228,7 +228,7 @@ Run pub.go, it will start to feed images into tfdemo topic.
 
 ### Check the result
 
-Because our rule definition has only one sink: log so the result will be written into the log file. We feed the stream with two images *peacock.png* and *frog.png*. Check the log file, we would find:
+Because our rule definition has only one sink: log so the result will be written into the log file. We feed the stream with two images _peacock.png_ and _frog.png_. Check the log file, we would find:
 
 ```shell
 time="2021-02-05 16:23:29" level=info msg="sink result for rule ruleTf: [{\"labelImage\":\"peacock\"}]" file="sinks/log_sink.go:16" rule=ruleTf

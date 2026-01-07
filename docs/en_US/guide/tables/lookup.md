@@ -20,14 +20,18 @@ For both inputs, we create streams and lookup tables to model them separately.
 1. Create a data stream. Assuming that the data stream is written to the MQTT Topic `scene1/data`, we can create a data stream named `demoStream` using the following REST API.
 
    ```json
-    {"sql":"CREATE STREAM demoStream() WITH (DATASOURCE=\"scene1/data\", FORMAT=\"json\", TYPE=\"mqtt\")"}
-    ```
+   {
+     "sql": "CREATE STREAM demoStream() WITH (DATASOURCE=\"scene1/data\", FORMAT=\"json\", TYPE=\"mqtt\")"
+   }
+   ```
 
 2. Create a lookup table. Assuming that the threshold value data is stored in Redis database 0, create a lookup table named `alertTable`. Here, if you use other storage methods, you can replace `type` with the corresponding source type, such as `sql`.
 
    ```json
-    {"sql":"CREATE TABLE alertTable() WITH (DATASOURCE=\"0\", TYPE=\"redis\", KIND=\"lookup\")"}
-    ```
+   {
+     "sql": "CREATE TABLE alertTable() WITH (DATASOURCE=\"0\", TYPE=\"redis\", KIND=\"lookup\")"
+   }
+   ```
 
 ### Update alertTable Dynamically
 
@@ -38,7 +42,9 @@ The updating table rule is the same as the regular rule, the user can access any
 1. Create an MQTT stream to bind the alert update command data stream. Assume that the update command is published through the MQTT topic `scene1/alert`.
 
    ```json
-   {"sql": "CREATE STREAM alertStream() WITH (DATASOURCE=\"scene1/alert\", FORMAT=\"json\", TYPE=\"mqtt\")"}
+   {
+     "sql": "CREATE STREAM alertStream() WITH (DATASOURCE=\"scene1/alert\", FORMAT=\"json\", TYPE=\"mqtt\")"
+   }
    ```
 
 2. Create the threshold value update rule. The rule accesses the command stream created in the previous step, the rule SQL simply gets all the instructions and then uses the redis sink that supports dynamic updates in the action. Redis address is configured to store the data type; the field name used for the key is set to `id` and the field name used for the update command type is set to `action`. Configured as below, you only need to ensure that the command stream contains the `id` and `action` fields in order to update Redis.
@@ -47,16 +53,17 @@ The updating table rule is the same as the regular rule, the user can access any
    {
      "id": "ruleUpdateAlert",
      "sql": "SELECT * FROM alertStream",
-     "actions":[
-      {
-        "redis": {
-          "addr": "127.0.0.1:6379",
-          "dataType": "string",
-          "field": "id",
-          "rowkindField": "action",
-          "sendSingle": true
-        }
-     }]
+     "actions": [
+       {
+         "redis": {
+           "addr": "127.0.0.1:6379",
+           "dataType": "string",
+           "field": "id",
+           "rowkindField": "action",
+           "sendSingle": true
+         }
+       }
+     ]
    }
    ```
 
@@ -81,7 +88,7 @@ In the previous section, we have created the event data stream and created a dyn
 {
   "id": "ruleAlert",
   "sql": "SELECT device, value FROM demoStream INNER JOIN alertTable ON demoStream.deviceKind = alertTable.id WHERE demoStream.value > alertTable. alarm",
-  "actions":[
+  "actions": [
     {
       "mqtt": {
         "server": "tcp://myhost:1883",
@@ -119,10 +126,10 @@ This scenario will introduce how to connect to a relational database using MySQL
 In the management console, create a SQL source configuration that points to the created MySQL instance. Due to the large IO latency of SQL database, you can configure whether to enable query caching and cache expiration time, etc.
 
 ```yaml
-  lookup:
-    cache: true # Enable caching
-    cacheTtl: 600 # cache expiration time
-    cacheMissingKey: true # whether to cache misses
+lookup:
+  cache: true # Enable caching
+  cacheTtl: 600 # cache expiration time
+  cacheMissingKey: true # whether to cache misses
 ```
 
 ### Scenario Inputs
@@ -137,14 +144,18 @@ For these two inputs, we create streams and loookup tables for modeling respecti
 1. Create a data stream. Assuming that the data stream is written to the MQTT Topic `scene2/data`, we can create a data stream named `demoStream2` with the following REST API.
 
    ```json
-    {"sql": "CREATE STREAM demoStream2() WITH (DATASOURCE=\"scene2/data\", FORMAT=\"json\", TYPE=\"mqtt\")"}
-    ```
+   {
+     "sql": "CREATE STREAM demoStream2() WITH (DATASOURCE=\"scene2/data\", FORMAT=\"json\", TYPE=\"mqtt\")"
+   }
+   ```
 
 2. Create a lookup table. Assuming the device data is stored in the MySQL database devices, create a lookup table named `deviceTable`. CONF_KEY is set to the SQL source configuration created in the previous section.
 
    ```json
-    {"sql": "CREATE TABLE deviceTable() WITH (DATASOURCE=\"devices\", CONF_KEY=\"mysql\",TYPE=\"sql\", KIND=\"lookup\")"}
-    ```
+   {
+     "sql": "CREATE TABLE deviceTable() WITH (DATASOURCE=\"devices\", CONF_KEY=\"mysql\",TYPE=\"sql\", KIND=\"lookup\")"
+   }
+   ```
 
 ### Data Enrichment Rules
 
@@ -154,13 +165,15 @@ Once the streams and tables are created, we can create the data enrichment rules
 {
   "id": "ruleLookup",
   "sql": "SELECT * FROM demoStream2 INNER JOIN deviceTable ON demoStream2.deviceId = deviceTable.id",
-  "actions": [{
-    "mqtt": {
-      "server": "tcp://myhost:1883",
-      "topic": "rule/lookup",
-      "sendSingle": true
+  "actions": [
+    {
+      "mqtt": {
+        "server": "tcp://myhost:1883",
+        "topic": "rule/lookup",
+        "sendSingle": true
+      }
     }
-  }]
+  ]
 }
 ```
 

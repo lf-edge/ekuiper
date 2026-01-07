@@ -2,8 +2,8 @@
 
 聚合函数对一组值执行计算并返回单个值。聚合函数只能用在以下表达式中：
 
-* select 语句的 select 列表（子查询或外部查询）。
-* HAVING 子句。
+- select 语句的 select 列表（子查询或外部查询）。
+- HAVING 子句。
 
 ## AVG
 
@@ -53,27 +53,27 @@ collect(*)
 collect(col)
 ```
 
-返回组中指定的列或整个消息（参数为*时）的值组成的数组。支持增量计算。
+返回组中指定的列或整个消息（参数为\*时）的值组成的数组。支持增量计算。
 
 ### 示例
 
-* 获取当前窗口所有消息的列 a 的值组成的数组。假设列 a 的类型为 int, 则结果为: `[{"r1":[32, 45]}]`
+- 获取当前窗口所有消息的列 a 的值组成的数组。假设列 a 的类型为 int, 则结果为: `[{"r1":[32, 45]}]`
 
-    ```sql
-    SELECT collect(a) as r1 FROM test GROUP BY TumblingWindow(ss, 10)
-    ```
+  ```sql
+  SELECT collect(a) as r1 FROM test GROUP BY TumblingWindow(ss, 10)
+  ```
 
-* 获取当前窗口所有消息的值组成的数组。结果为: `[{"r1":[{"a":32, "b":"hello"}, {"a":45, "b":"world"}]}]`
+- 获取当前窗口所有消息的值组成的数组。结果为: `[{"r1":[{"a":32, "b":"hello"}, {"a":45, "b":"world"}]}]`
 
-    ```sql
-    SELECT collect(*) as r1 FROM test GROUP BY TumblingWindow(ss, 10)
-    ```
+  ```sql
+  SELECT collect(*) as r1 FROM test GROUP BY TumblingWindow(ss, 10)
+  ```
 
-* 获取当前窗口第二个消息的列 `a` 的值。结果为: `[{"r1":32}]`
+- 获取当前窗口第二个消息的列 `a` 的值。结果为: `[{"r1":32}]`
 
-    ```sql
-    SELECT collect(*)[1]->a as r1 FROM test GROUP BY TumblingWindow(ss, 10)
-    ```
+  ```sql
+  SELECT collect(*)[1]->a as r1 FROM test GROUP BY TumblingWindow(ss, 10)
+  ```
 
 ## LAST_VALUE
 
@@ -105,23 +105,23 @@ merge_agg(col)
 {"a": {"a": 3}, "b": 8}
 ```
 
-* 合并 * 结果为： `{"a": {"a": 3}, "b": 8, "c": 3, "d": 6}`
+- 合并 \* 结果为： `{"a": {"a": 3}, "b": 8, "c": 3, "d": 6}`
 
-    ```sql
-    SELECT merge_agg(*) as r1 FROM test GROUP BY TumblingWindow(ss, 10)
-    ```
+  ```sql
+  SELECT merge_agg(*) as r1 FROM test GROUP BY TumblingWindow(ss, 10)
+  ```
 
-* 合并对象列，结果为： `{"a": 3, "b": 2}`
+- 合并对象列，结果为： `{"a": 3, "b": 2}`
 
-    ```sql
-    SELECT merge_agg(a) as r1 FROM test GROUP BY TumblingWindow(ss, 10)
-    ```
+  ```sql
+  SELECT merge_agg(a) as r1 FROM test GROUP BY TumblingWindow(ss, 10)
+  ```
 
-* 合并非对象列： `{}`
+- 合并非对象列： `{}`
 
-    ```sql
-    SELECT merge_agg(b) as r1 FROM test GROUP BY TumblingWindow(ss, 10)
-    ```
+  ```sql
+  SELECT merge_agg(b) as r1 FROM test GROUP BY TumblingWindow(ss, 10)
+  ```
 
 ## DEDUPLICATE
 
@@ -135,18 +135,18 @@ deduplicate(col, false)
 
 ### 示例
 
-* 获取当前窗口中，列 `a` 值不重复的所有消息组成的数组。结果为: `[{"r1":{"a":32, "b":"hello"}, {"a":45, "b":"world"}}]`
+- 获取当前窗口中，列 `a` 值不重复的所有消息组成的数组。结果为: `[{"r1":{"a":32, "b":"hello"}, {"a":45, "b":"world"}}]`
 
-    ```sql
-    SELECT deduplicate(a, true) as r1 FROM test GROUP BY TumblingWindow(ss, 10)
-    ```
+  ```sql
+  SELECT deduplicate(a, true) as r1 FROM test GROUP BY TumblingWindow(ss, 10)
+  ```
 
-* 获取列 `a` 值在过去一小时中不重复的值。每收到一条新消息，都会检测列 `a` 是否重复，若不重复则输出：`[{"r1":32}]`
+- 获取列 `a` 值在过去一小时中不重复的值。每收到一条新消息，都会检测列 `a` 是否重复，若不重复则输出：`[{"r1":32}]`
   或者 `[{"r1":45}]`。若检测到重复值，则输出 `[{}]` 。此时，可以设置 omitIfEmpty 的 sink 参数使得检测到重复值时不触发规则。
 
-     ```sql
-     SELECT deduplicate(a, false)->a as r1 FROM demo GROUP BY SlidingWindow(hh, 1)
-     ```
+  ```sql
+  SELECT deduplicate(a, false)->a as r1 FROM demo GROUP BY SlidingWindow(hh, 1)
+  ```
 
 ## MEDIAN
 

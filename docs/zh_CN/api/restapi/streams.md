@@ -1,4 +1,3 @@
-
 # 流管理
 
 eKuiper REST api 可用于管理流，例如创建、描述、显示和删除流定义。
@@ -14,7 +13,9 @@ POST http://localhost:9081/streams
 请求示例，请求命令是带有 `sql` 字段的 json 字符串。
 
 ```json
-{"sql":"create stream my_stream (id bigint, name string, score float) WITH ( datasource = \"topic/temperature\", FORMAT = \"json\", KEY = \"id\")"}
+{
+  "sql": "create stream my_stream (id bigint, name string, score float) WITH ( datasource = \"topic/temperature\", FORMAT = \"json\", KEY = \"id\")"
+}
 ```
 
 该 API 可以运行任何流 sql 语句，而不仅可以创建流。
@@ -79,32 +80,32 @@ GET http://localhost:9081/streams/{id}/schema
 
 ```json
 {
-    "id": {
-        "type": "bigint"
+  "id": {
+    "type": "bigint"
   },
-    "name": {
-        "type": "string"
+  "name": {
+    "type": "string"
   },
-    "age": {
-        "type": "bigint"
+  "age": {
+    "type": "bigint"
   },
-    "hobbies": {
-        "type": "struct",
-        "properties": {
-          "indoor": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "outdoor": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
+  "hobbies": {
+    "type": "struct",
+    "properties": {
+      "indoor": {
+        "type": "array",
+        "items": {
+          "type": "string"
         }
+      },
+      "outdoor": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
     }
+  }
 }
 ```
 
@@ -116,12 +117,14 @@ GET http://localhost:9081/streams/{id}/schema
 PUT http://localhost:9081/streams/{id}
 ```
 
-路径参数  `id` 是原有流定义的 id 或名称。
+路径参数 `id` 是原有流定义的 id 或名称。
 
 请求示例，请求命令是带有 `sql` 字段的 json 字符串。
 
 ```json
-{"sql":"create stream my_stream (id bigint, name string, score float) WITH ( datasource = \"topic/temperature\", FORMAT = \"json\", KEY = \"id\")"}
+{
+  "sql": "create stream my_stream (id bigint, name string, score float) WITH ( datasource = \"topic/temperature\", FORMAT = \"json\", KEY = \"id\")"
+}
 ```
 
 ## 删除流

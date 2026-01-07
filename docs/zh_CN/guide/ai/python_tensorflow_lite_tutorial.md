@@ -25,7 +25,7 @@
 
 ## 开发插件
 
-为了集成 eKuiper 和 TensorFlow Lite，我们将开发一个定制的 eKuiper 函数插件，供 eKuiper 规则使用。例如，我们将创建 `labelImage`  函数，其输入是表示图像的二进制类型数据，输出是表示图像标签的字符串。所以，如果输入图像中有孔雀，`labelImage(col)` 将输出 `peacock`。
+为了集成 eKuiper 和 TensorFlow Lite，我们将开发一个定制的 eKuiper 函数插件，供 eKuiper 规则使用。例如，我们将创建 `labelImage` 函数，其输入是表示图像的二进制类型数据，输出是表示图像标签的字符串。所以，如果输入图像中有孔雀，`labelImage(col)` 将输出 `peacock`。
 
 要开发函数插件，我们需要：
 
@@ -51,14 +51,14 @@ def label(file_bytes):
     # 载入模型文件
     interpreter = tf.Interpreter(
         model_path= cwd + 'mobilenet_v1_1.0_224.tflite')
-  
+
     # 预处理输入图片，将其转换为输入的 tensor 格式，此处代码省略
-  
+
     # 设置模型输入，调用推理，拿到结果 tensor
     interpreter.set_tensor(input_details[0]['index'], input_data)
     interpreter.invoke()
     output_data = interpreter.get_tensor(output_details[0]['index'])
-  
+
     # 对结果进行后处理，转换为输出格式，代码省略
     return result
 ```
@@ -78,7 +78,13 @@ if __name__ == '__main__':
 该文件使用了 `peacock.jpg` 图像文件作为输入，调用了 label 函数进行测试，并将结果转换为 json 字符串并打印。从而可以观察函数运行结果是否符合预期。此处，我们应当得到一个 json 数组，按照置信度的高低对识别结果进行排序。
 
 ```json
-[{"confidence": 0.9999935626983643, "label": "85:peacock"}, {"confidence": 2.156877371817245e-06, "label": "8:cock"}, {"confidence": 1.5930896779536852e-06, "label": "81:black grouse"}, {"confidence": 9.999589565268252e-07, "label": "92:coucal"}, {"confidence": 7.304166160793102e-07, "label": "96:jacamar"}]
+[
+  { "confidence": 0.9999935626983643, "label": "85:peacock" },
+  { "confidence": 2.156877371817245e-6, "label": "8:cock" },
+  { "confidence": 1.5930896779536852e-6, "label": "81:black grouse" },
+  { "confidence": 9.999589565268252e-7, "label": "92:coucal" },
+  { "confidence": 7.304166160793102e-7, "label": "96:jacamar" }
+]
 ```
 
 详细信息请参见完整代码中的 `lable.py` 文件。
@@ -128,31 +134,27 @@ labelIns = LabelImageFunc()
 1. 如果插件有额外的依赖，例如本例中的 TensorFlow Lite, 需要创建依赖安装脚本 `install.sh`。插件安装时，eKuiper 会查找插件包中是否有安装脚本文件 `install.sh`，若有的话执行安装脚本。在本例中，我们创建一个 `requirements.txt` 文件列出所有的依赖包。在 `install.sh` 通过调用 `pip install -r $cur/requirements.txt` 完成依赖的安装。对于别的插件，若无特殊要求可重用该脚本，更新 `requirements.txt` 即可。
 2. 创建 Python 入口文件，用于暴露所有实现的接口。因为在单个插件中可以实现多个扩展，所以需要一个入口文件定义各个扩展的实现类。其内容为一个 main 函数，为插件运行时入口。它调用 SDK 里的方法定义插件，包括插件名，插件里实现的 source, sink, function 的键值列表。此处仅实现一个名为 `labelImage` 的函数插件，其对应的实现方法为 `labelIns`。之后调用 start 方法启动插件进程的运行。Python 插件进程独立于 eKuiper 主进程。
 
-    ```python
-    if __name__ == '__main__':
-        # 定义插件
-        c = PluginConfig("pyai", {}, {},
-                         {"labelImage": lambda: labelIns})
-        # 启动插件
-        plugin.start(c)
-    ```
+   ```python
+   if __name__ == '__main__':
+       # 定义插件
+       c = PluginConfig("pyai", {}, {},
+                        {"labelImage": lambda: labelIns})
+       # 启动插件
+       plugin.start(c)
+   ```
 
 3. 创建 JSON 格式的插件描述文件，用于定义插件的元数据。文件名必须与插件名相同，即 `pyai.json`。其中定义的函数名与入口文件必须完全对应，文件内容如下。其中，executable 用于定义插件的可执行入口文件名。
 
-    ```json
-    {
-      "version": "v1.0.0",
-      "language": "python",
-      "executable": "pyai.py",
-      "sources": [
-      ],
-      "sinks": [
-      ],
-      "functions": [
-        "labelImage"
-      ]
-    }
-    ```
+   ```json
+   {
+     "version": "v1.0.0",
+     "language": "python",
+     "executable": "pyai.py",
+     "sources": [],
+     "sinks": [],
+     "functions": ["labelImage"]
+   }
+   ```
 
 至此我们已经完成了插件的开发，接下来只需要把目录中的所有文件打包成 zip 文件即可。 zip 文件的文件结构应类似于：
 
@@ -197,7 +199,7 @@ Content-Type: application/json
 
 ### 定义规则
 
-通过 eKuiper rest API 定义规则。 我们将创建一个名为 ruleTf 的规则。 我们只是从 tfdemo 流中读取图像，然后对其运行自定义函数 *labelImage*。 返回结果将是 AI 识别的图像的标签数组，包含按照置信度排名的标签。我们的规则取出其中第一个置信度最高的标签，并发送到 MQTT 主题 `ekuiper/labels`。
+通过 eKuiper rest API 定义规则。 我们将创建一个名为 ruleTf 的规则。 我们只是从 tfdemo 流中读取图像，然后对其运行自定义函数 _labelImage_。 返回结果将是 AI 识别的图像的标签数组，包含按照置信度排名的标签。我们的规则取出其中第一个置信度最高的标签，并发送到 MQTT 主题 `ekuiper/labels`。
 
 ```shell
 POST http://{{host}}/rules
@@ -269,7 +271,7 @@ func main() {
 
 ### 检查结果
 
-因为我们的规则定义只有一个目标：MQTT，所以结果将写入MQTT 主题 `ekuiper/labels`。使用 MQTT 客户端订阅该主题，我们用 *peacock.png* 和 *frog.png* 两个图像输入 tfdemo 主题，我们将得到两个结果。
+因为我们的规则定义只有一个目标：MQTT，所以结果将写入MQTT 主题 `ekuiper/labels`。使用 MQTT 客户端订阅该主题，我们用 _peacock.png_ 和 _frog.png_ 两个图像输入 tfdemo 主题，我们将得到两个结果。
 
 ```shell
 {"label":"85:peacock"}

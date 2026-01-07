@@ -182,7 +182,7 @@ If the source metrics are good, then you can check the metrics of the processors
 have `WHERE` clause, the rule pipeline will have a `filter` processor. Filter processor will filter out data before
 sending it out to sink, thus you will find nothing received in the sink. You can check the `filter_xxx_records_in_total`
 and `filter_xxx_records_out_total` metric. If `records_out` and `records_in` is not the same, it means some data are
-filtered. It the  `records_out` is 0, it means that all data are filtered out. If that's not expected, you need to check
+filtered. It the `records_out` is 0, it means that all data are filtered out. If that's not expected, you need to check
 the real data. This needs to open the debug log and check OR create debug rules with the data printed out. We will cover
 this in the next section.
 
@@ -221,8 +221,7 @@ example, if your rule in production sends data to MQTT, you can add a `log` sink
         "server": "{{broker address}}",
         "topic": "topic1"
       },
-      "log": {
-      }
+      "log": {}
     }
   ]
 }
@@ -237,8 +236,7 @@ filter works as expected.
   "sql": "SELECT * FROM mockStream",
   "actions": [
     {
-      "log": {
-      }
+      "log": {}
     }
   ]
 }

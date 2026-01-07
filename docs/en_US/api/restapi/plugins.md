@@ -1,4 +1,3 @@
-
 The eKuiper REST api for plugins allows you to manage plugins, such as create, drop and list plugins. Notice that, drop a plugin will need to restart eKuiper to take effect. To update a plugin, do the following:
 
 1. Drop the plugin.
@@ -20,8 +19,8 @@ Request Sample when the file locates in a http server
 
 ```json
 {
-  "name":"random",
-  "file":"http://127.0.0.1/plugins/sources/random.zip"
+  "name": "random",
+  "file": "http://127.0.0.1/plugins/sources/random.zip"
 }
 ```
 
@@ -29,8 +28,8 @@ Request Sample for files locates in the same machine of the eKuiper server.
 
 ```json
 {
-  "name":"random",
-  "file":"file:///var/plugins/sources/random.zip"
+  "name": "random",
+  "file": "file:///var/plugins/sources/random.zip"
 }
 ```
 
@@ -103,7 +102,7 @@ GET http://localhost:9081/plugins/portables
 Response Sample:
 
 ```json
-["plugin1","plugin2"]
+["plugin1", "plugin2"]
 ```
 
 ## describe a plugin
@@ -171,12 +170,12 @@ The return message is like:
 
 ```json
 {
-   "refCount": {
-      "rulePort1": 2
-   },
-   "status": "running",
-   "errMsg": "",
-   "pid": 90
+  "refCount": {
+    "rulePort1": 2
+  },
+  "status": "running",
+  "errMsg": "",
+  "pid": 90
 }
 ```
 
@@ -195,7 +194,7 @@ GET http://localhost:9081/plugins/udfs
 Response Sample:
 
 ```json
-["func1","func2"]
+["func1", "func2"]
 ```
 
 ### describe an udf
@@ -228,7 +227,7 @@ POST http://{{host}}/plugins/functions/{plugin_name}/register
 
 ## Get the available plugins
 
-According to the configuration `pluginHosts` in file `etc/kuiper.yaml` ,  it returns the plugins list that can be installed at local run eKuiper instance. By default, it get the list from `https://packages.emqx.net` .
+According to the configuration `pluginHosts` in file `etc/kuiper.yaml` , it returns the plugins list that can be installed at local run eKuiper instance. By default, it get the list from `https://packages.emqx.net` .
 
 ```shell
 GET http://localhost:9081/plugins/sources/prebuild

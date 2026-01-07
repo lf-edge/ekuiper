@@ -9,13 +9,13 @@ eKuiper has built-in support for Redis data sources, allowing data querying and 
 
 Before using the RedisSub Source Connector, it's essential to configure the connection settings and other relevant parameters. Here are the available configuration options:
 
-The configuration file for the RedisSub source is located at */etc/sources/redisSub.yaml*.
+The configuration file for the RedisSub source is located at _/etc/sources/redisSub.yaml_.
 
 ```yaml
 default:
-   address: 127.0.0.1:6379
-   username: default
-   db: 0
+  address: 127.0.0.1:6379
+  username: default
+  db: 0
 ```
 
 **Configuration Items**

@@ -22,10 +22,10 @@ Users also need have basic knowledge of Docker.
 
 ## Develop the external function
 
-In the example code, the gRPC Server provide ``label`` method, and users just need write an interface description file and register them into eKuiper. Then eKuiper can call the RPC method
-just as built-in functions. The ``label`` method is powered by ``tflite_runtime`` image classification, for more detail, please check the `label.py` file in the example code.
+In the example code, the gRPC Server provide `label` method, and users just need write an interface description file and register them into eKuiper. Then eKuiper can call the RPC method
+just as built-in functions. The `label` method is powered by `tflite_runtime` image classification, for more detail, please check the `label.py` file in the example code.
 
-This is the proto file for the external functions plugins that provide services. The parameter of ``label`` method should be base64 encoded image.
+This is the proto file for the external functions plugins that provide services. The parameter of `label` method should be base64 encoded image.
 
 ```proto
 syntax = "proto3";
@@ -80,7 +80,7 @@ For more detail about the file format and content, please refer to [this](../../
   - sample.proto
 - sample.json
 
-You can get the example zip file in [example code](https://github.com/lf-edge/ekuiper/blob/master/docs/resources/pythonGRPC.zip) in ``ekuiper_package`` folder
+You can get the example zip file in [example code](https://github.com/lf-edge/ekuiper/blob/master/docs/resources/pythonGRPC.zip) in `ekuiper_package` folder
 
 ### Register the external function
 
@@ -96,7 +96,7 @@ Once the external function registered, we can use it in our rule. We will create
 
 ### Create the stream
 
-Define the stream by eKuiper Cli. We create a mqtt stream named demo, it subscribe to topic ``tfdemo``.
+Define the stream by eKuiper Cli. We create a mqtt stream named demo, it subscribe to topic `tfdemo`.
 
 ```shell
 #/bin/kuiper create stream demo '() with (DATASOURCE="tfdemo")'
@@ -104,7 +104,7 @@ Define the stream by eKuiper Cli. We create a mqtt stream named demo, it subscri
 
 ### Create the rule
 
-Define the rule by eKuiper cli.  We will create a select query. We just read the base64 encoded images from demo stream and run the custom function ``label`` against it. The result will be the label of the image recognized by the AI.
+Define the rule by eKuiper cli. We will create a select query. We just read the base64 encoded images from demo stream and run the custom function `label` against it. The result will be the label of the image recognized by the AI.
 
 ```shell
 #/bin/kuiper query
@@ -119,10 +119,10 @@ kuiper >  select label(image) from demo
 User need send the data in json format like this
 
 ```json
-{"image": "base64 encoded data"}
+{ "image": "base64 encoded data" }
 ```
 
-User can get the real data from the example code in ``images/example.json`` file, just send it to the MQTT broker by a MQTT client
+User can get the real data from the example code in `images/example.json` file, just send it to the MQTT broker by a MQTT client
 
 ### Check the result
 

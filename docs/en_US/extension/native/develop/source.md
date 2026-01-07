@@ -2,7 +2,7 @@
 
 Sources feed data into eKuiper from other systems. eKuiper has built-in source support for [MQTT broker](../../../guide/sources/builtin/mqtt.md). There are still needs to consume data from various external systems include messaging systems and data pipelines etc. Source extension is presented to meet this requirement.
 
-***Note***: v2.0.0 has modified the source extension API, which is not fully compatible with the v1.x plugin API.
+**_Note_**: v2.0.0 has modified the source extension API, which is not fully compatible with the v1.x plugin API.
 Existing plugin code needs to be re-adapted.
 
 There are two kinds of sources. One is the normal source also named scan source, the other is the lookup source. A normal source can be used as a stream or scan table; A lookup source can be used as a lookup table. Users can develop one kind or both in a source plugin.
@@ -39,10 +39,10 @@ corresponding type of methods.
    See [configuration](#deal-with-configuration) for more detail. Typically, there will be information such as host,
    port, user and password of the external system. You can use this map to initialize this source.
 
-    ```go
-    //Called during initialization. Configure the source with the data source(e.g. topic for mqtt) and the properties read from the yaml
-    Provision(ctx StreamContext, configs map[string]any) error
-    ```
+   ```go
+   //Called during initialization. Configure the source with the data source(e.g. topic for mqtt) and the properties read from the yaml
+   Provision(ctx StreamContext, configs map[string]any) error
+   ```
 
 2. Implement the **Connect** method. This method is used to initialize and establish a connection with the external
    system and is executed only once during rule initialization. The second parameter is used to pass the long-connection
@@ -50,9 +50,9 @@ corresponding type of methods.
    should run asynchronously to avoid blocking the rule's execution. When the connection logic becomes asynchronous,
    changes in the connection status can be notified to the rule by calling the state change callback function.
 
-    ```go
-    Connect(ctx StreamContext, sch StatusChangeHandler) error
-    ```
+   ```go
+   Connect(ctx StreamContext, sch StatusChangeHandler) error
+   ```
 
 3. Implement the subscription or pull method for the source type. This is the main execution logic of the source, used
    to fetch data from the external system and send it to the eKuiper system for consumption by downstream operators. The
@@ -62,9 +62,9 @@ corresponding type of methods.
 4. The last method to implement is **Close**, which is actually used to close the connection. It is called when the
    stream is about to terminate. You can also perform any cleanup work in this function.
 
-     ```go
-     Close(ctx StreamContext) error
-     ```
+   ```go
+   Close(ctx StreamContext) error
+   ```
 
 5. As the source itself is a plugin, it must be in the main package. Given the source struct name is mySource. At last
    of the file, the source must be exported as a symbol as below. There
@@ -88,33 +88,33 @@ The main task of a source is to continuously receive data from an external syste
   to the MQTT source implementation, subscribe to the configured topics, and read the subscribed bytes data through the
   ingest method.
 
-   ```go
-   Subscribe(ctx StreamContext, ingest BytesIngest, ingestError ErrorIngest) error
-   ```
+  ```go
+  Subscribe(ctx StreamContext, ingest BytesIngest, ingestError ErrorIngest) error
+  ```
 
 - `TupleSource`: Needs to implement the `Subscribe` method, used to subscribe to data changes (receive data pushed by
   the external system). Call `TupleIngest` to consume the subscribed and decoded map data; call `ErrorIngest` to send
   error information. Refer to the Memory source implementation.
 
-   ```go
-   Subscribe(ctx StreamContext, ingest TupleIngest, ingestError ErrorIngest) error
-   ```
+  ```go
+  Subscribe(ctx StreamContext, ingest TupleIngest, ingestError ErrorIngest) error
+  ```
 
 - `PullBytesSource`: Needs to implement the `Pull` method, used to pull data. The pull interval can be configured via
   the `interval` parameter. Call `BytesIngest` to consume the pulled data, call `ErrorIngest` to send error information,
   and `trigger` is the time of this pull. Refer to the Video data source implementation.
 
-   ```go
-   Pull(ctx StreamContext, trigger time.Time, ingest BytesIngest, ingestError ErrorIngest)
-   ```
+  ```go
+  Pull(ctx StreamContext, trigger time.Time, ingest BytesIngest, ingestError ErrorIngest)
+  ```
 
 - `PullTupleSource`: Needs to implement the `Pull` method, used to pull data. The pull interval can be configured via
   the `interval` parameter. Call `TupleIngest` to consume the pulled and decoded map data, call `ErrorIngest` to send
   error information, and `trigger` is the time of this pull. Refer to the HttpPull data source implementation.
 
-   ```go
-   Pull(ctx StreamContext, trigger time.Time, ingest TupleIngest, ingestError ErrorIngest)
-   ```
+  ```go
+  Pull(ctx StreamContext, trigger time.Time, ingest TupleIngest, ingestError ErrorIngest)
+  ```
 
 ### Develop a lookup source
 
@@ -144,9 +144,9 @@ Depending on the type of Payload, the `Lookup` methods of the two interfaces var
 - `LookupBytesSource`: The plugin returns the raw binary data, which is automatically decoded by the eKuiper framework
   based on the `format` parameter.
 
-   ```go
-   Lookup(ctx StreamContext, fields []string, keys []string, values []any) ([][]byte, error)
-   ```
+  ```go
+  Lookup(ctx StreamContext, fields []string, keys []string, values []any) ([][]byte, error)
+  ```
 
 The [SQL Lookup Source](https://github.com/lf-edge/ekuiper/blob/master/extensions/sources/sql/sqlLookup.go) is a good example.
 
@@ -182,11 +182,11 @@ and feed into the **Provision** method of the source. If
 the [CONF_KEY](../../../guide/streams/overview.md#stream-properties) property is specified in the stream, the
 configuration of that key will be fed. Otherwise, the default configuration is used.
 
- To use configuration in your source, the following conventions must be followed.
+To use configuration in your source, the following conventions must be followed.
 
- 1. The name of your configuration file must be the same as the plugin name. For example, mySource.yaml.
- 2. The yaml file must be located inside **etc/sources**
- 3. The format of the yaml file could be found [here](../../../guide/sources/builtin/mqtt.md)
+1. The name of your configuration file must be the same as the plugin name. For example, mySource.yaml.
+2. The yaml file must be located inside **etc/sources**
+3. The format of the yaml file could be found [here](../../../guide/sources/builtin/mqtt.md)
 
 ### common configuration field
 
@@ -199,7 +199,7 @@ There are 2 common configuration fields.
   large memory usage that would cause out of memory error. Notice that the memory usage will be varied to the actual
   buffer. Increase the length here won't increase the initial memory allocation so it is safe to set a large buffer
   length. The default value is 102400, that is if each payload size is about 100 bytes, the maximum buffer size will be
-  about 102400 * 100B ~= 10MB.
+  about 102400 \* 100B ~= 10MB.
 
 ### Usage
 

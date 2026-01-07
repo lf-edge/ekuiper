@@ -32,7 +32,7 @@ Schema with static plugin：
 {
   "name": "schema2",
   "file": "file:///tmp/ekuiper/internal/schema/test/test2.proto",
-   "soFile": "file:///tmp/ekuiper/internal/schema/test/so.proto"
+  "soFile": "file:///tmp/ekuiper/internal/schema/test/so.proto"
 }
 ```
 
@@ -55,7 +55,7 @@ GET http://localhost:9081/schemas/protobuf
 Response Sample:
 
 ```json
-["schema1","schema2"]
+["schema1", "schema2"]
 ```
 
 ## Describe a schema

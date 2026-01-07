@@ -43,19 +43,21 @@
 为了激活更新功能，Sink 必须设置 `rowkindField` 属性，以指定数据中的哪个字段代表要采取的动作。在下面的例子中，`rowkindField` 被设置为 `action`。
 
 ```json
-{"redis": {
-  "addr": "127.0.0.1:6379",
-  "dataType": "string",
-  "field": "id",
-  "rowkindField": "action",
-  "sendSingle": true
-}}
+{
+  "redis": {
+    "addr": "127.0.0.1:6379",
+    "dataType": "string",
+    "field": "id",
+    "rowkindField": "action",
+    "sendSingle": true
+  }
+}
 ```
 
 流入的数据必须有一个字段来表示更新的动作。在下面的例子中，`action` 字段是要执行的动作。动作可以是插入、更新、 upsert 和删除。不同的 sink 的动作实现是不同的。有些 sink 可能对插入、upsert 和更新执行相同的动作。
 
 ```json
-{"action":"update", "id":5, "name":"abc"}
+{ "action": "update", "id": 5, "name": "abc" }
 ```
 
 这条信息将把id 为 5的数据更新为新的名字。
@@ -66,31 +68,31 @@
 
 每个动作可以定义自己的属性。当前有以下的公共属性:
 
-| 属性名                  | 类型和默认值                             | 描述                                                                                                                                                                                                                                                                                                                                                                           |
-|----------------------|------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| bufferLength         | int: 1024                          | 设置可缓存消息数目。若缓存消息数超过此限制，sink将阻塞消息接收，直到缓存消息被消费使得缓存消息数目小于限制为止。                                                                                                                                                                                                                                                                                                                   |
-| omitIfEmpty          | bool: false                        | 如果配置项设置为 true，则当 SELECT 结果为空时，该结果将不提供给目标运算符。                                                                                                                                                                                                                                                                                                                                 |
-| sendSingle           | bool: false                        | 输出消息以数组形式接收，该属性意味着是否将结果一一发送。 如果为false，则输出消息将为`{"result":"${the string of received message}"}`。 例如，`{"result":"[{\"count\":30},"\"count\":20}]"}`。否则，结果消息将与实际字段名称一一对应发送。 对于与上述相同的示例，它将发送 `{"count":30}`，然后发送`{"count":20}`到 RESTful 端点。默认为 false。                                                                                                                             |
-| dataTemplate         | string: ""                         | [golang 模板](https://golang.org/pkg/html/template)格式字符串，用于指定输出数据格式。 模板的输入是目标消息，该消息始终是映射数组。 如果未指定数据模板，则将数据作为原始输入。                                                                                                                                                                                                                                                              |
-| format               | string: "json"                     | 编码格式，支持 "json" 和 "protobuf"。若使用 "protobuf", 需通过 "schemaId" 参数设置模式，并确保模式已注册。                                                                                                                                                                                                                                                                                                  |
-| schemaId             | string: ""                         | 编码使用的模式。                                                                                                                                                                                                                                                                                                                                                                     |
-| delimiter            | string: ","                        | 仅在使用 `delimited` 格式时生效，用于指定分隔符，默认为逗号。                                                                                                                                                                                                                                                                                                                                        |
-| fields               | []string: nil                      | 用于选择输出消息的字段。例如，sql查询的结果是`{"temperature": 31.2, humidity": 45}`， fields为`["humidity"]`，那么最终输出为`{"humidity": 45}`。建议不要同时配置`dataTemplate`和`fields`。如果同时配置，先根据`dataTemplate`得到输出数据，再通过`fields`得到最终结果。                                                                                                                                                                            |
-| dataField            | string: ""                         | 指定要提取哪些数据。举一个例子来说明`dataTemplate`、`fields`和`dataField`之间的关系：首先根据`dataTemplate`计算输出数据，假设`dataTemplate`计算的输出结果为`{"tele": {"humidity": 80.2, "temperature": 31.2, "id": 1}, "id": 1}`。如果`dataField`为`tele`，则结果为`{"humidity": 80.2, "temperature": 31.2, "id": 1}`。最后，根据`fields`过滤输出信息，如果`fields`为`["humidity", "temperature"]`，那么输出结果是`{"humidity": 80.2, "temperature": 31.2}`。 |
-| enableCache          | bool: 默认值为`etc/kuiper.yaml` 中的全局配置 | 是否启用sink cache。缓存存储配置遵循 `etc/kuiper.yaml` 中定义的元数据存储的配置。                                                                                                                                                                                                                                                                                                                      |
-| memoryCacheThreshold | int: 默认值为全局配置                      | 要缓存在内存中的消息数量。出于性能方面的考虑，最早的缓存信息被存储在内存中，以便在故障恢复时立即重新发送。这里的数据会因为断电等故障而丢失。                                                                                                                                                                                                                                                                                                       |
-| maxDiskCache         | int: 默认值为全局配置                      | 缓存在磁盘中的信息的最大数量。磁盘缓存是先进先出的。如果磁盘缓存满了，最早的一页信息将被加载到内存缓存中，取代旧的内存缓存。                                                                                                                                                                                                                                                                                                               |
-| bufferPageSize       | int: 默认值为全局配置                      | 缓冲页是批量读/写到磁盘的单位，以防止频繁的IO。如果页面未满，eKuiper 因硬件或软件错误而崩溃，最后未写入磁盘的页面将被丢失。                                                                                                                                                                                                                                                                                                          |
-| resendInterval       | int: 默认值为全局配置                      | 故障恢复后重新发送信息的时间间隔，防止信息风暴。                                                                                                                                                                                                                                                                                                                                                     |
-| cleanCacheAtStop     | bool: 默认值为全局配置                     | 是否在规则停止时清理所有缓存，以防止规则重新启动时对过期消息进行大量重发。如果不设置为true，一旦规则停止，内存缓存将被存储到磁盘中。否则，内存和磁盘规则会被清理掉。                                                                                                                                                                                                                                                                                         |
-| resendAlterQueue     | bool: 默认值为全局配置                     | 是否在重新发送缓存时使用备用队列。如果设置为true，缓存将被发送到备用队列，而不是原始队列。这将导致实时消息和重发消息使用不同的队列发送，消息的顺序发生变化，但是可以防止消息风暴。只有设置为 true 时，以下 resend 相关配置才能生效。                                                                                                                                                                                                                                                  |
-| resendPriority       | int: 默认值为全局配置                      | 重新发送缓存的优先级，int 类型，默认为 0。-1 表示优先发送实时数据；0 表示同等优先级；1 表示优先发送缓存数据。                                                                                                                                                                                                                                                                                                                |
-| resendIndicatorField | string: 默认值为全局配置                   | 重新发送缓存的字段名，该字段类型必须是 bool 值。如果设置了字段，重发时将设置为 true。例如，resendIndicatorField 为 `resend`，那么在重新发送缓存时，将会将 `resend` 字段设置为 true。                                                                                                                                                                                                                                                       |
-| resendDestination    | string: ""                         | 重发数据的目标。该属性在各种 sink 中的含义和支持程度各不相同。例如，在 MQTT sink 中，该属性表示重发的目标主题。 Sink 支持情况详见[支持重传目标设置的Sink](#支持重传目标属性的-sink).                                                                                                                                                                                                                                                                |
-| batchSize            | int: 0                             | 设置缓存发送的消息数目。sink将阻塞消息发送，直到缓存的消息数目等于该值后，再将该数目的消息一次性发送。batchSize 将对 []map 的数据视为多条数据。                                                                                                                                                                                                                                                                                           |
-| lingerInterval       | int  0                             | 设置缓存发送的间隔时间，单位为毫秒。sink将阻塞消息发送，直到缓存发送的间隔时间达到该值后。lingerInterval 可以与 batchSize 一起使用，任意条件满足时都会触发发送。                                                                                                                                                                                                                                                                              |
-| compression          | string:  ""                        | 设置数据压缩算法。仅当 sink 为发送字节码的类型时生效。支持的压缩方法有"zlib","gzip","flate",zstd"。                                                                                                                                                                                                                                                                                                           |
-| encryption           | string:  ""                        | 设置数据加密算法。仅当 sink 为发送字节码的类型时生效。当前仅支持 AES 算法。                                                                                                                                                                                                                                                                                                                                  |
+| 属性名               | 类型和默认值                                 | 描述                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| -------------------- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| bufferLength         | int: 1024                                    | 设置可缓存消息数目。若缓存消息数超过此限制，sink将阻塞消息接收，直到缓存消息被消费使得缓存消息数目小于限制为止。                                                                                                                                                                                                                                                                                                                                              |
+| omitIfEmpty          | bool: false                                  | 如果配置项设置为 true，则当 SELECT 结果为空时，该结果将不提供给目标运算符。                                                                                                                                                                                                                                                                                                                                                                                   |
+| sendSingle           | bool: false                                  | 输出消息以数组形式接收，该属性意味着是否将结果一一发送。 如果为false，则输出消息将为`{"result":"${the string of received message}"}`。 例如，`{"result":"[{\"count\":30},"\"count\":20}]"}`。否则，结果消息将与实际字段名称一一对应发送。 对于与上述相同的示例，它将发送 `{"count":30}`，然后发送`{"count":20}`到 RESTful 端点。默认为 false。                                                                                                                |
+| dataTemplate         | string: ""                                   | [golang 模板](https://golang.org/pkg/html/template)格式字符串，用于指定输出数据格式。 模板的输入是目标消息，该消息始终是映射数组。 如果未指定数据模板，则将数据作为原始输入。                                                                                                                                                                                                                                                                                 |
+| format               | string: "json"                               | 编码格式，支持 "json" 和 "protobuf"。若使用 "protobuf", 需通过 "schemaId" 参数设置模式，并确保模式已注册。                                                                                                                                                                                                                                                                                                                                                    |
+| schemaId             | string: ""                                   | 编码使用的模式。                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| delimiter            | string: ","                                  | 仅在使用 `delimited` 格式时生效，用于指定分隔符，默认为逗号。                                                                                                                                                                                                                                                                                                                                                                                                 |
+| fields               | []string: nil                                | 用于选择输出消息的字段。例如，sql查询的结果是`{"temperature": 31.2, humidity": 45}`， fields为`["humidity"]`，那么最终输出为`{"humidity": 45}`。建议不要同时配置`dataTemplate`和`fields`。如果同时配置，先根据`dataTemplate`得到输出数据，再通过`fields`得到最终结果。                                                                                                                                                                                        |
+| dataField            | string: ""                                   | 指定要提取哪些数据。举一个例子来说明`dataTemplate`、`fields`和`dataField`之间的关系：首先根据`dataTemplate`计算输出数据，假设`dataTemplate`计算的输出结果为`{"tele": {"humidity": 80.2, "temperature": 31.2, "id": 1}, "id": 1}`。如果`dataField`为`tele`，则结果为`{"humidity": 80.2, "temperature": 31.2, "id": 1}`。最后，根据`fields`过滤输出信息，如果`fields`为`["humidity", "temperature"]`，那么输出结果是`{"humidity": 80.2, "temperature": 31.2}`。 |
+| enableCache          | bool: 默认值为`etc/kuiper.yaml` 中的全局配置 | 是否启用sink cache。缓存存储配置遵循 `etc/kuiper.yaml` 中定义的元数据存储的配置。                                                                                                                                                                                                                                                                                                                                                                             |
+| memoryCacheThreshold | int: 默认值为全局配置                        | 要缓存在内存中的消息数量。出于性能方面的考虑，最早的缓存信息被存储在内存中，以便在故障恢复时立即重新发送。这里的数据会因为断电等故障而丢失。                                                                                                                                                                                                                                                                                                                  |
+| maxDiskCache         | int: 默认值为全局配置                        | 缓存在磁盘中的信息的最大数量。磁盘缓存是先进先出的。如果磁盘缓存满了，最早的一页信息将被加载到内存缓存中，取代旧的内存缓存。                                                                                                                                                                                                                                                                                                                                  |
+| bufferPageSize       | int: 默认值为全局配置                        | 缓冲页是批量读/写到磁盘的单位，以防止频繁的IO。如果页面未满，eKuiper 因硬件或软件错误而崩溃，最后未写入磁盘的页面将被丢失。                                                                                                                                                                                                                                                                                                                                   |
+| resendInterval       | int: 默认值为全局配置                        | 故障恢复后重新发送信息的时间间隔，防止信息风暴。                                                                                                                                                                                                                                                                                                                                                                                                              |
+| cleanCacheAtStop     | bool: 默认值为全局配置                       | 是否在规则停止时清理所有缓存，以防止规则重新启动时对过期消息进行大量重发。如果不设置为true，一旦规则停止，内存缓存将被存储到磁盘中。否则，内存和磁盘规则会被清理掉。                                                                                                                                                                                                                                                                                          |
+| resendAlterQueue     | bool: 默认值为全局配置                       | 是否在重新发送缓存时使用备用队列。如果设置为true，缓存将被发送到备用队列，而不是原始队列。这将导致实时消息和重发消息使用不同的队列发送，消息的顺序发生变化，但是可以防止消息风暴。只有设置为 true 时，以下 resend 相关配置才能生效。                                                                                                                                                                                                                          |
+| resendPriority       | int: 默认值为全局配置                        | 重新发送缓存的优先级，int 类型，默认为 0。-1 表示优先发送实时数据；0 表示同等优先级；1 表示优先发送缓存数据。                                                                                                                                                                                                                                                                                                                                                 |
+| resendIndicatorField | string: 默认值为全局配置                     | 重新发送缓存的字段名，该字段类型必须是 bool 值。如果设置了字段，重发时将设置为 true。例如，resendIndicatorField 为 `resend`，那么在重新发送缓存时，将会将 `resend` 字段设置为 true。                                                                                                                                                                                                                                                                          |
+| resendDestination    | string: ""                                   | 重发数据的目标。该属性在各种 sink 中的含义和支持程度各不相同。例如，在 MQTT sink 中，该属性表示重发的目标主题。 Sink 支持情况详见[支持重传目标设置的Sink](#支持重传目标属性的-sink).                                                                                                                                                                                                                                                                          |
+| batchSize            | int: 0                                       | 设置缓存发送的消息数目。sink将阻塞消息发送，直到缓存的消息数目等于该值后，再将该数目的消息一次性发送。batchSize 将对 []map 的数据视为多条数据。                                                                                                                                                                                                                                                                                                               |
+| lingerInterval       | int 0                                        | 设置缓存发送的间隔时间，单位为毫秒。sink将阻塞消息发送，直到缓存发送的间隔时间达到该值后。lingerInterval 可以与 batchSize 一起使用，任意条件满足时都会触发发送。                                                                                                                                                                                                                                                                                              |
+| compression          | string: ""                                   | 设置数据压缩算法。仅当 sink 为发送字节码的类型时生效。支持的压缩方法有"zlib","gzip","flate",zstd"。                                                                                                                                                                                                                                                                                                                                                           |
+| encryption           | string: ""                                   | 设置数据加密算法。仅当 sink 为发送字节码的类型时生效。当前仅支持 AES 算法。                                                                                                                                                                                                                                                                                                                                                                                   |
 
 ### 动态属性
 
@@ -100,12 +102,13 @@
 {
   "id": "rule1",
   "sql": "SELECT topic FROM demo",
-  "actions": [{
-    "mqtt": {
-      "sendSingle": true,
-      "topic": "prefix/{{.topic}}"
+  "actions": [
+    {
+      "mqtt": {
+        "sendSingle": true,
+        "topic": "prefix/{{.topic}}"
+      }
     }
-  }
   ]
 }
 ```
@@ -128,7 +131,7 @@ test:
 当用户需要 MQTT 动作时，除了采用传统的配置方式，如下所示
 
 ```json
-    {
+{
   "mqtt": {
     "server": "tcp://broker.emqx.io:1883",
     "topic": "devices/demo_001/messages/events/",
@@ -145,7 +148,7 @@ test:
 还可以通过 `resourceId` 引用形式，采用如下的配置
 
 ```json
- {
+{
   "mqtt": {
     "resourceId": "test",
     "topic": "devices/demo_001/messages/events/",
@@ -175,8 +178,7 @@ sink 的 指标中的 buffer length 部分。
   ack 来删除缓存。
 - 缓存机制：缓存将首先被保存在内存中。如果超过了内存的阈值，后面的缓存将被保存到磁盘中。一旦磁盘缓存超过磁盘存储阈值，缓存将开始
   rotate，即内存中最早的缓存将被丢弃，并加载磁盘中最早的缓存来代替。
--
-重发策略：如果有一条消息正在发送中，则会等待发送的结果以继续发送下个缓存数据。否则，当有新的数据到来时，发送缓存中的第一个数据以检测网络状况。如果发送成功，将按顺序链式发送所有内存和磁盘中的所有缓存。链式发送可定义一个发送间隔，防止形成消息风暴。
+- 重发策略：如果有一条消息正在发送中，则会等待发送的结果以继续发送下个缓存数据。否则，当有新的数据到来时，发送缓存中的第一个数据以检测网络状况。如果发送成功，将按顺序链式发送所有内存和磁盘中的所有缓存。链式发送可定义一个发送间隔，防止形成消息风暴。
 - 实时数据和重发数据区分：用户可配置重发数据与实时数据分开发送，分别发送到不同的目的地。也可配置发送的优先级，优先发送重发数据或实时数据。甚至可以更改发送的内容，例如，将重发数据的增加一个字段，以便在接收端进行区分。
 
 ### 配置
@@ -201,19 +203,20 @@ Sink 缓存的配置有两个层次。`etc/kuiper.yaml` 中的全局配置，定
 {
   "id": "rule1",
   "sql": "SELECT * FROM demo",
-  "actions": [{
-    "log": {},
-    "mqtt": {
-      "server": "tcp://127.0.0.1:1883",
-      "topic": "result/cache",
-      "qos": 0,
-      "enableCache": true,
-      "memoryCacheThreshold": 2048,
-      "maxDiskCache": 204800,
-      "bufferPageSize": 512,
-      "resendInterval": 10
+  "actions": [
+    {
+      "log": {},
+      "mqtt": {
+        "server": "tcp://127.0.0.1:1883",
+        "topic": "result/cache",
+        "qos": 0,
+        "enableCache": true,
+        "memoryCacheThreshold": 2048,
+        "maxDiskCache": 204800,
+        "bufferPageSize": 512,
+        "resendInterval": 10
+      }
     }
-  }
   ]
 }
 ```

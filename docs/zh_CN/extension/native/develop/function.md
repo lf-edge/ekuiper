@@ -86,8 +86,7 @@ eKuiper 启动时会自动载入插件目录里已编译好的插件。自动载
   "sql": "SELECT myFunction(name) from demo",
   "actions": [
     {
-      "log": {
-      }
+      "log": {}
     }
   ]
 }

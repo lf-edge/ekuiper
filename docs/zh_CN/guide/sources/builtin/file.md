@@ -5,7 +5,7 @@
 
 eKuiper 内置支持文件数据源，可将文件内容读入 eKuiper 处理管道，适用于需要对数据进行批量处理或需要对文件进行实时处理的场景。
 
-eKuiper 支持  JSON、CSV 或以行分隔的文件：
+eKuiper 支持 JSON、CSV 或以行分隔的文件：
 
 - JSON：标准 JSON 数组格式文件。
 - CSV：支持逗号或其他自定义分隔符的 CSV 文件。
@@ -23,8 +23,8 @@ eKuiper 支持  JSON、CSV 或以行分隔的文件：
 
 ```json
 [
-  {"id": 1, "name": "John Doe"},
-  {"id": 2, "name": "Jane Smith"}
+  { "id": 1, "name": "John Doe" },
+  { "id": 2, "name": "Jane Smith" }
 ]
 ```
 
@@ -168,7 +168,7 @@ create table table1 (
 CREATE RULE rule1 AS SELECT * FROM fileDemo WHERE temperature > 50 INTO mySink;
 ```
 
-根据设定规则，我们将选择 `fileDemo` 数据流中所有温度超过 50 的数据，并将其发送到  `mySink`。
+根据设定规则，我们将选择 `fileDemo` 数据流中所有温度超过 50 的数据，并将其发送到 `mySink`。
 
 ## 教程：解析文件源
 
@@ -213,7 +213,7 @@ stream cscFileDemo () WITH (FORMAT="DELIMITED", DATASOURCE="abc.csv", TYPE="file
 {"id": 3, "name": "John Smith"}
 ```
 
-读取这种格式的文件时，应在 `/etc/sources/file.yaml`  文件中进行如下配置：
+读取这种格式的文件时，应在 `/etc/sources/file.yaml` 文件中进行如下配置：
 
 ```yaml
 jsonlines:

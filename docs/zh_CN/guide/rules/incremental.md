@@ -16,12 +16,10 @@
   "sql": "SELECT count(*) from demo group by countwindow(4)",
   "actions": [
     {
-      "log": {
-      }
+      "log": {}
     }
   ],
-  "options" :{
-  }
+  "options": {}
 }
 ```
 
@@ -43,11 +41,10 @@
   "sql": "SELECT count(*) from demo group by countwindow(4)",
   "actions": [
     {
-      "log": {
-      }
+      "log": {}
     }
   ],
-  "options" :{
+  "options": {
     "planOptimizeStrategy": {
       "enableIncrementalWindow": true
     }
@@ -71,19 +68,18 @@
 
 ```json
 {
-    "id": "rule",
-    "sql": "SELECT count(*), stddev(a) from demo group by countwindow(4)",
-    "actions": [
-        {
-            "log": {
-            }
-        }
-    ],
-    "options" :{
-        "planOptimizeStrategy": {
-            "enableIncrementalWindow": true
-        }
+  "id": "rule",
+  "sql": "SELECT count(*), stddev(a) from demo group by countwindow(4)",
+  "actions": [
+    {
+      "log": {}
     }
+  ],
+  "options": {
+    "planOptimizeStrategy": {
+      "enableIncrementalWindow": true
+    }
+  }
 }
 ```
 
