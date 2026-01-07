@@ -8,46 +8,41 @@ eKuiper REST api 允许您导入导出数据。
 
 ```json
 {
-    "streams": {
-        "demo": "CREATE STREAM demo () WITH (DATASOURCE=\"users\", FORMAT=\"JSON\")"
-    },
-    "tables": {
-      "T110":"\n CREATE TABLE T110\n (\n S1 string\n )\n WITH (DATASOURCE=\"test.json\", FORMAT=\"json\", TYPE=\"file\", KIND=\"scan\", );\n "
-    },
-    "rules": {
-        "rule1": "{\"id\": \"rule1\",\"sql\": \"SELECT * FROM demo\",\"actions\": [{\"log\": {}}]}",
-        "rule2": "{\"id\": \"rule2\",\"sql\": \"SELECT * FROM demo\",\"actions\": [{  \"log\": {}}]}"
-    },
-    "nativePlugins":{
-        "functions_image":"{\"name\":\"image\",\"file\":\"https://packages.emqx.net/kuiper-plugins/1.8.1/debian/functions/image_amd64.zip\",\"shellParas\":[]}",
-        "sources_video":"{\"name\":\"video\",\"file\":\"https://packages.emqx.net/kuiper-plugins/1.8.1/debian/sources/video_amd64.zip\",\"shellParas\":[]}",
-    },
-    "portablePlugins":{
-    },
-    "sourceConfig":{
-      "mqtt":"{\"td\":{\"insecureSkipVerify\":false,\"password\":\"public\",\"protocolVersion\":\"3.1.1\",\"qos\":1,\"server\":\"tcp://broker.emqx.io:1883\",\"username\":\"admin\"},\"test\":{\"insecureSkipVerify\":false,\"password\":\"public\",\"protocolVersion\":\"3.1.1\",\"qos\":1,\"server\":\"tcp://127.0.0.1:1883\",\"username\":\"admin\"}}"
-    },
-    "sinkConfig":{
-      "edgex":"{\"test\":{\"bufferLength\":1024,\"contentType\":\"application/json\",\"enableCache\":false,\"format\":\"json\",\"messageType\":\"event\",\"omitIfEmpty\":false,\"port\":6379,\"protocol\":\"redis\",\"sendSingle\":true,\"server\":\"localhost\",\"topic\":\"application\",\"type\":\"redis\"}}"
-    },
-    "connectionConfig":{
-    },
-    "Service":{
-    },
-    "Schema":{
-    },
-    "uploads":{
-    },
-    "scripts":{
-      "area":"{\"id\":\"area\",\"description\":\"calculate area\",\"script\":\"function area(x, y) { return x * y; }\",\"isAgg\":false}"
-    }
+  "streams": {
+    "demo": "CREATE STREAM demo () WITH (DATASOURCE=\"users\", FORMAT=\"JSON\")"
+  },
+  "tables": {
+    "T110": "\n CREATE TABLE T110\n (\n S1 string\n )\n WITH (DATASOURCE=\"test.json\", FORMAT=\"json\", TYPE=\"file\", KIND=\"scan\", );\n "
+  },
+  "rules": {
+    "rule1": "{\"id\": \"rule1\",\"sql\": \"SELECT * FROM demo\",\"actions\": [{\"log\": {}}]}",
+    "rule2": "{\"id\": \"rule2\",\"sql\": \"SELECT * FROM demo\",\"actions\": [{  \"log\": {}}]}"
+  },
+  "nativePlugins": {
+    "functions_image": "{\"name\":\"image\",\"file\":\"https://packages.emqx.net/kuiper-plugins/1.8.1/debian/functions/image_amd64.zip\",\"shellParas\":[]}",
+    "sources_video": "{\"name\":\"video\",\"file\":\"https://packages.emqx.net/kuiper-plugins/1.8.1/debian/sources/video_amd64.zip\",\"shellParas\":[]}"
+  },
+  "portablePlugins": {},
+  "sourceConfig": {
+    "mqtt": "{\"td\":{\"insecureSkipVerify\":false,\"password\":\"public\",\"protocolVersion\":\"3.1.1\",\"qos\":1,\"server\":\"tcp://broker.emqx.io:1883\",\"username\":\"admin\"},\"test\":{\"insecureSkipVerify\":false,\"password\":\"public\",\"protocolVersion\":\"3.1.1\",\"qos\":1,\"server\":\"tcp://127.0.0.1:1883\",\"username\":\"admin\"}}"
+  },
+  "sinkConfig": {
+    "edgex": "{\"test\":{\"bufferLength\":1024,\"contentType\":\"application/json\",\"enableCache\":false,\"format\":\"json\",\"messageType\":\"event\",\"omitIfEmpty\":false,\"port\":6379,\"protocol\":\"redis\",\"sendSingle\":true,\"server\":\"localhost\",\"topic\":\"application\",\"type\":\"redis\"}}"
+  },
+  "connectionConfig": {},
+  "Service": {},
+  "Schema": {},
+  "uploads": {},
+  "scripts": {
+    "area": "{\"id\":\"area\",\"description\":\"calculate area\",\"script\":\"function area(x, y) { return x * y; }\",\"isAgg\":false}"
+  }
 }
 ```
 
 ## 导入数据
 
 该 API 接受数据并将其导入系统中，支持通过文本内容或者文件 URI 的方式指定数据。
-默认情况下若已有历史遗留数据，则首先清除旧有数据然后导入，用户可通过在 HTTP URL 中指定 ``partial=1`` 参数，使其直接导入，不再清除旧有数据。
+默认情况下若已有历史遗留数据，则首先清除旧有数据然后导入，用户可通过在 HTTP URL 中指定 `partial=1` 参数，使其直接导入，不再清除旧有数据。
 
 示例1：通过文本内容导入
 
@@ -188,25 +183,25 @@ GET http://{{host}}/v2/data/export
 
 ```yaml
 sourceConfig:
-    sources.mqtt.mqttconf1:
-        connectionSelector: mqttcon
-        qos: 1
-        sourceType: stream
+  sources.mqtt.mqttconf1:
+    connectionSelector: mqttcon
+    qos: 1
+    sourceType: stream
 connectionConfig:
-    connections.mqtt.mqttcon:
-        insecureSkipVerify: false
-        protocolVersion: 3.1.1
-        server: tcp://127.0.0.1:1883
+  connections.mqtt.mqttcon:
+    insecureSkipVerify: false
+    protocolVersion: 3.1.1
+    server: tcp://127.0.0.1:1883
 streams:
-    mqttstream1:
-        sql: ' CREATE STREAM mqttstream1 ()       WITH (DATASOURCE="topic1", FORMAT="json", CONF_KEY="mqttconf1", TYPE="mqtt", SHARED="false", );'
+  mqttstream1:
+    sql: ' CREATE STREAM mqttstream1 ()       WITH (DATASOURCE="topic1", FORMAT="json", CONF_KEY="mqttconf1", TYPE="mqtt", SHARED="false", );'
 rules:
-    rule1:
-        triggered: false
-        id: rule1
-        sql: select * from mqttstream1
-        actions:
-            - log: {}
+  rule1:
+    triggered: false
+    id: rule1
+    sql: select * from mqttstream1
+    actions:
+      - log: {}
 ```
 
 导入配置

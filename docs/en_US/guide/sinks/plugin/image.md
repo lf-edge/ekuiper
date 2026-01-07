@@ -15,7 +15,7 @@ Restart the eKuiper server to activate the plugin.
 ## Attribute
 
 | Attribute name | Optional | Description                                                                                                                                                                     |
-|----------------|----------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| -------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | path           | False    | The name of the folder where the pictures are saved, such as `./tmp`. Note: For multiple rules, their paths cannot be repeated, otherwise they will be deleted from each other. |
 | format         | False    | File format, support jpeg and png.                                                                                                                                              |
 | maxAge         | True     | Maximum file storage time (hours). The default value is 72, which means that the picture can be stored for up to 3 days.                                                        |
@@ -35,8 +35,8 @@ The following example demonstrates how to receive pictures and save them to the 
       "image": {
         "path": "/tmp",
         "format": "png",
-        "maxCount":1000,
-        "maxage":72
+        "maxCount": 1000,
+        "maxage": 72
       }
     }
   ]

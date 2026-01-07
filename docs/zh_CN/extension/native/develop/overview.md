@@ -30,19 +30,19 @@ go 1.24.0
 1. 导出一个构造函数：eKuiper 将使用构造函数为每次加载创建一个插件实现的新实例。因此，每条规则将有一个插件实例，并且每个实例都将与其他实例隔离。这是推荐的方式。以下示例导出名为
    Random 的 Source 构造函数。
 
-    ```go
-    func Random() api.Source {
-        return random.GetSource()
-    }
-    ```
+   ```go
+   func Random() api.Source {
+       return random.GetSource()
+   }
+   ```
 
 2. 导出一个实例：eKuiper
    将使用该实例作为所有插件加载的单例。因此，所有规则将共享相同的实例。对于这种实现，开发人员需要处理共享状态，以避免任何潜在的多线程问题。在没有共享状态且性能至关重要的情况下，建议使用此模式。函数扩展通常是没有内部状态的函数，适合这种模式。以下示例导出名为
    Random 的 Source 实例。
 
-    ```go
-      var Random = random.GetSource()
-    ```
+   ```go
+     var Random = random.GetSource()
+   ```
 
 扩展实现数据源（source），数据汇（sink）和函数（function）分别需要实现不同的接口。详情请参考：
 

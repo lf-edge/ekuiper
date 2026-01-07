@@ -57,14 +57,14 @@ Each node in the graph JSON has at least 3 fields:
 For source node, the nodeType is the type of the source like `mqtt` and `edgex`. Please refer to [source](../sources/overview.md) for all supported types. Notice that, all source node shared the same properties which is the same as the properties when [defining a stream](../../sqls/streams.md). The specific configuration are referred by `CONF_KEY`. In the below example, the nodeType specifies the source node is a mqtt source. The datasource and format property has the same meaning as defining a stream.
 
 ```json
-  {
-    "type": "source",
-    "nodeType": "mqtt",
-    "props": {
-      "datasource": "devices/+/messages",
-      "format":"json"
-    }
+{
+  "type": "source",
+  "nodeType": "mqtt",
+  "props": {
+    "datasource": "devices/+/messages",
+    "format": "json"
   }
+}
 ```
 
 For sink node, the nodeType is the type of the sink like `mqtt` and `edgex`. Please refer to [sink](../sinks/overview.md) for all supported types. For all sink nodes, they share some common properties but each type will have some owned properties.
@@ -76,27 +76,27 @@ For operator node, the nodeType are newly defined. Each nodeType will have diffe
 The source node is the data source of the rule. It can be a stream or table. **User needs to define the stream/table before using it in the rule**. The `sourceType` property defines the type of the source. It can be `stream` or `table`. The `sourceName` property defines the name of the stream/table. The below example defines a source node which reads from a stream named `demoStream`. Please make sure the nodeType is the same as the type of the stream/table.
 
 ```json
-  {
-      "type": "source",
-      "nodeType": "mqtt",
-      "props": {
-        "sourceType": "stream",
-        "sourceName": "demoStream"
-      }
+{
+  "type": "source",
+  "nodeType": "mqtt",
+  "props": {
+    "sourceType": "stream",
+    "sourceName": "demoStream"
   }
+}
 ```
 
 Currently, users can define the source node to refer to table as well. But only lookup table can be connected to Join node, scan table is not supported. The below example defines a source node which reads from a lookup table named `demoTable`. Please make sure the nodeType is the same as the type of the stream/table.
 
 ```json
-  {
-      "type": "source",
-      "nodeType": "redis",
-      "props": {
-        "sourceType": "table",
-        "sourceName": "demoTable"
-      }
+{
+  "type": "source",
+  "nodeType": "redis",
+  "props": {
+    "sourceType": "table",
+    "sourceName": "demoTable"
   }
+}
 ```
 
 ### Built-in Operator Node Types
@@ -112,13 +112,13 @@ This node defines a function call expression. The node return a new field with t
 Example:
 
 ```json
-  {
-    "type": "operator",
-    "nodeType": "function",
-    "props": {
-      "expr": "log(temperature) as log_temperature"
-    }
+{
+  "type": "operator",
+  "nodeType": "function",
+  "props": {
+    "expr": "log(temperature) as log_temperature"
   }
+}
 ```
 
 #### aggfunc
@@ -130,13 +130,13 @@ This node defines an aggregate function call expression. The input for the node 
 Example:
 
 ```json
-  {
-    "type": "operator",
-    "nodeType": "aggfunc",
-    "props": {
-      "expr": "count(*)"
-    }
+{
+  "type": "operator",
+  "nodeType": "aggfunc",
+  "props": {
+    "expr": "count(*)"
   }
+}
 ```
 
 #### filter
@@ -148,13 +148,13 @@ This node filter the data stream with a condition expression. It has only one pr
 Example:
 
 ```json
-  {
-    "type": "operator",
-    "nodeType": "filter",
-    "props": {
-      "expr": "temperature > 20"
-    }
+{
+  "type": "operator",
+  "nodeType": "filter",
+  "props": {
+    "expr": "temperature > 20"
   }
+}
 ```
 
 #### pick
@@ -166,13 +166,13 @@ This node selects the fields to be presented in the following workflow. It is us
 Example:
 
 ```json
-  {
-    "type": "operator",
-    "nodeType": "pick",
-    "props": {
-      "fields": ["log_temperature", "humidity", "window_end()"]
-    }
+{
+  "type": "operator",
+  "nodeType": "pick",
+  "props": {
+    "fields": ["log_temperature", "humidity", "window_end()"]
   }
+}
 ```
 
 #### window
@@ -187,16 +187,16 @@ This node defines a [window](../../sqls/windows.md) in the workflow. It can acce
 Example:
 
 ```json
-  {
-    "type": "operator",
-    "nodeType": "window",
-    "props": {
-      "type": "hoppingwindow",
-      "unit": "ss",
-      "size": 10,
-      "interval": 5
-    }
+{
+  "type": "operator",
+  "nodeType": "window",
+  "props": {
+    "type": "hoppingwindow",
+    "unit": "ss",
+    "size": 10,
+    "interval": 5
   }
+}
 ```
 
 #### join
@@ -212,39 +212,39 @@ This node can merge data from different sources like a SQL join operation. The i
 Example:
 
 ```json
-   {
-    "type": "operator",
-    "nodeType": "join",
-    "props": {
-      "from": "device1",
-      "joins": [
-        {
-          "name": "device2",
-          "type": "inner",
-          "on": "abs(device1.ts - device2.ts) < 200"
-        }
-      ]
-    }
+{
+  "type": "operator",
+  "nodeType": "join",
+  "props": {
+    "from": "device1",
+    "joins": [
+      {
+        "name": "device2",
+        "type": "inner",
+        "on": "abs(device1.ts - device2.ts) < 200"
+      }
+    ]
   }
+}
 ```
 
 Join operator supports to connect stream/stream join and stream/lookup table join. Stream/scan table join is not supported. If using stream/stream join, the prior node must be a window node. If using stream/lookup table join, only one join condition is supported. Below is an example of stream/lookup table join.
 
 ```json
-   {
-    "type": "operator",
-    "nodeType": "join",
-    "props": {
-      "from": "demoStream",
-      "joins": [
-        {
-          "name": "demoTable",
-          "type": "inner",
-          "on": "deviceStream.id = demoTable.id"
-        }
-      ]
-    }
+{
+  "type": "operator",
+  "nodeType": "join",
+  "props": {
+    "from": "demoStream",
+    "joins": [
+      {
+        "name": "demoTable",
+        "type": "inner",
+        "on": "deviceStream.id = demoTable.id"
+      }
+    ]
   }
+}
 ```
 
 #### groupby
@@ -256,13 +256,13 @@ This node defines the dimension to group by. The input must be a collection of r
 Example:
 
 ```json
-  {
-    "type": "operator",
-    "nodeType": "groupby",
-    "props": {
-      "dimensions": ["device1.humidity"]
-    }
+{
+  "type": "operator",
+  "nodeType": "groupby",
+  "props": {
+    "dimensions": ["device1.humidity"]
   }
+}
 ```
 
 #### orderby
@@ -276,16 +276,18 @@ This node will sort the input collection. So the input must be a collection of r
 Example:
 
 ```json
-  {
-    "type": "operator",
-    "nodeType": "orderby",
-    "props": {
-      "sorts": [{
+{
+  "type": "operator",
+  "nodeType": "orderby",
+  "props": {
+    "sorts": [
+      {
         "field": "count",
         "order": "desc"
-      }]
-    }
+      }
+    ]
   }
+}
 ```
 
 #### switch
@@ -320,10 +322,7 @@ are met.
         "type": "operator",
         "nodeType": "switch",
         "props": {
-          "cases": [
-            "temperature > 20",
-            "temperature <= 20"
-          ],
+          "cases": ["temperature > 20", "temperature <= 20"],
           "stopAtFirstMatch": true
         }
       },
@@ -347,21 +346,10 @@ are met.
       }
     },
     "topo": {
-      "sources": [
-        "abc"
-      ],
+      "sources": ["abc"],
       "edges": {
-        "abc": [
-          "switch"
-        ],
-        "switch": [
-          [
-            "mqttpv"
-          ],
-          [
-            "mqttpv2"
-          ]
-        ]
+        "abc": ["switch"],
+        "switch": [["mqttpv"], ["mqttpv2"]]
       }
     }
   }
@@ -382,10 +370,10 @@ There must be a function named `exec` defined in the script. If isAgg is false, 
    ```json
    {
      "type": "operator",
-      "nodeType": "script",
-      "props": {
-        "script": "function exec(msg, meta) {msg.temperature = 1.8 * msg.temperature + 32; return msg;}"
-      }
+     "nodeType": "script",
+     "props": {
+       "script": "function exec(msg, meta) {msg.temperature = 1.8 * msg.temperature + 32; return msg;}"
+     }
    }
    ```
 
@@ -393,11 +381,11 @@ There must be a function named `exec` defined in the script. If isAgg is false, 
 
    ```json
    {
-      "type": "operator",
-      "nodeType": "script",
-      "props": {
-        "script": "function exec(msgs) {agg = {value:0}\nfor (let i = 0; i < msgs.length; i++) {\nagg.value = agg.value + msgs[i].value;\n}\nreturn agg;\n}",
-        "isAgg": true
-      }
+     "type": "operator",
+     "nodeType": "script",
+     "props": {
+       "script": "function exec(msgs) {agg = {value:0}\nfor (let i = 0; i < msgs.length; i++) {\nagg.value = agg.value + msgs[i].value;\n}\nreturn agg;\n}",
+       "isAgg": true
+     }
    }
    ```

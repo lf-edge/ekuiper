@@ -45,7 +45,7 @@ HTTP Push 源配置文件位于 `etc/sources/httppush.yaml`，其中：
 default:
   # the request method to listen on
   method: "POST"
-  
+
 #Override the global configurations
 application_conf: #Conf_key
   server: "PUT"
@@ -79,7 +79,7 @@ CREATE STREAM httpDemo() WITH (FORMAT="json", TYPE="httppush")
 
 您可以使用 `endpoint` 属性，该属性对应于流创建语句中的
 
-创建流时，您可通过 `datasource` 配置项对应  `endpoint` 属性，如下所示：
+创建流时，您可通过 `datasource` 配置项对应 `endpoint` 属性，如下所示：
 
 **示例**
 

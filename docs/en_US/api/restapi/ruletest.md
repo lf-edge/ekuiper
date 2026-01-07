@@ -65,10 +65,7 @@ rule. The request body is required, the request body format is `application/json
   },
   "sinkProps": {
     "dataTemplate": "xxx",
-    "fields": [
-      "abc",
-      "test"
-    ]
+    "fields": ["abc", "test"]
   }
 }
 ```

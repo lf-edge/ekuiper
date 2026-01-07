@@ -31,35 +31,35 @@ eKuiper manager 是一个免费的 eKuiper 管理控制台，以 Docker 镜像�
 1. 创建 `docker-compose.yaml` 文件。
 
    ```yaml
-   version: '3.4'
+   version: "3.4"
 
    services:
-       manager:
-          image: emqx/ekuiper-manager:x.x.x
-          container_name: ekuiper-manager
-          ports:
-          - "9082:9082"
-          restart: unless-stopped
-          environment:
-            # setting default eKuiper service, works since 1.8.0
-            DEFAULT_EKUIPER_ENDPOINT: "http://ekuiper:9081"
-       ekuiper:
-          image: lfedge/ekuiper:x.x.x
-          ports:
-            - "9081:9081"
-            - "127.0.0.1:20498:20498"
-          container_name: ekuiper
-          hostname: ekuiper
-          restart: unless-stopped
-          user: root
-          volumes:
-            - /tmp/data:/kuiper/data
-            - /tmp/log:/kuiper/log
-          environment:
-            MQTT_SOURCE__DEFAULT__SERVER: "tcp://broker.emqx.io:1883"
-            KUIPER__BASIC__CONSOLELOG: "true"
-            KUIPER__BASIC__IGNORECASE: "false"
-     ```
+     manager:
+       image: emqx/ekuiper-manager:x.x.x
+       container_name: ekuiper-manager
+       ports:
+         - "9082:9082"
+       restart: unless-stopped
+       environment:
+         # setting default eKuiper service, works since 1.8.0
+         DEFAULT_EKUIPER_ENDPOINT: "http://ekuiper:9081"
+     ekuiper:
+       image: lfedge/ekuiper:x.x.x
+       ports:
+         - "9081:9081"
+         - "127.0.0.1:20498:20498"
+       container_name: ekuiper
+       hostname: ekuiper
+       restart: unless-stopped
+       user: root
+       volumes:
+         - /tmp/data:/kuiper/data
+         - /tmp/log:/kuiper/log
+       environment:
+         MQTT_SOURCE__DEFAULT__SERVER: "tcp://broker.emqx.io:1883"
+         KUIPER__BASIC__CONSOLELOG: "true"
+         KUIPER__BASIC__IGNORECASE: "false"
+   ```
 
 2. 启动 docker-compose 集群。
 
@@ -95,15 +95,15 @@ eKuiper 发布了以下操作系统的二进制包，支持 AMD64、ARM 和 ARM6
 1. 从 [ekuiper.org](https://ekuiper.org/downloads) 或 [Github](https://github.com/lf-edge/ekuiper/releases) 下载适合你 CPU 架构的 eKuiper zip 或 tar 包。
 2. 解压安装包：
 
-    ```shell
-    unzip kuiper-x.x.x-linux-amd64.zip
-    ```
+   ```shell
+   unzip kuiper-x.x.x-linux-amd64.zip
+   ```
 
 3. 启动 eKuiper.
 
-    ```shell
-    $ bin/kuiperd
-    ```
+   ```shell
+   $ bin/kuiperd
+   ```
 
 4. 卸载 eKuiper：删除 eKuiper 文件夹即可。
 
@@ -224,21 +224,21 @@ Go 语言支持交叉编译多种目标平台的二进制文件。eKuiper 项目
 sqlite，因此 `CGO_ENABLE` 必须设置为1。在交叉编译时，必须安装核指定目标系统的 gcc 工具链。
 
 - 安装目标系统 gcc 工具链。
-- 修改 Makefile 添加 `GOOS`, `GOARCH` 和 `CC`  编译参数，并编译。
+- 修改 Makefile 添加 `GOOS`, `GOARCH` 和 `CC` 编译参数，并编译。
 
 例如，在 AMD64 架构的 ubuntu/debian 系统中，可使用下列步骤编译针对 ARM64 架构的 linux 系统的二进制包。
 
 1. 安装 ARM64 的 gcc 工具链。
 
-      ```shell
-      apt-get install gcc-aarch64-linux-gnu
-      ```
+   ```shell
+   apt-get install gcc-aarch64-linux-gnu
+   ```
 
 2. 更新 Makefile 里的编译相关参数如下:
 
-      ```shell
-      GO111MODULE=on CGO_ENABLED=1 GOOS=linux GOARCH=arm64 CC=aarch64-linux-gnu-gcc go build -trimpath -ldflags="-s -w -X github.com/lf-edge/ekuiper/cmd.Version=$(VERSION) -X github.com/lf-edge/ekuiper/cmd.LoadFileType=relative" -o kuiperd cmd/kuiperd/main.go
-      ```
+   ```shell
+   GO111MODULE=on CGO_ENABLED=1 GOOS=linux GOARCH=arm64 CC=aarch64-linux-gnu-gcc go build -trimpath -ldflags="-s -w -X github.com/lf-edge/ekuiper/cmd.Version=$(VERSION) -X github.com/lf-edge/ekuiper/cmd.LoadFileType=relative" -o kuiperd cmd/kuiperd/main.go
+   ```
 
 3. 运行 `make` 。
 
@@ -248,18 +248,18 @@ eKuiper 允许在编译中对二进制文件进行定制，以获得定制的功
 ，其他功能都可通过 [go build constraints](https://pkg.go.dev/go/build#hdr-Build_Constraints)
 在编译时打开或者关闭。用户可编译自定义的，仅包含所需功能的二进制包从而减少包的大小，以便能够部署在资源敏感的环境中。
 
-| 功能                                                                      | Build Tag  | 描述                                                           |
-|-------------------------------------------------------------------------|------------|--------------------------------------------------------------|
-| 核心                                                                      | core       | eKuiper 的核心运行时。 包括流/表/规则的处理器和 REST API ，配置管理，SQL 解析器，规则运行时等。 |
-| [CLI](./api/cli/overview.md)                                            | rpc        | CLI 服务端                                                      |
-| [EdgeX Foundry 整合](./edgex/edgex_rule_engine_tutorial.md)               | edgex      | 内置的 edgeX source, sink 和共享连接支持                               |
-| [原生插件](./extension/native/overview.md)                                  | plugin     | 原生插件运行时，REST API和CLI API等                                    |
-| [Portable 插件](./extension/portable/overview.md)                         | plugin     | Portable 插件运行时，REST API和CLI API等                             |
-| [外部服务](./extension/external/external_func.md)                           | service    | 外部服务运行时，REST API和CLI API等                                    |
-| [UI 元数据API](./operation/manager-ui/overview.md)                         | ui         | 元数据的 REST API，通常由 UI 端消费                                     |
-| [Prometheus 指标](./configuration/global_configurations.md#prometheus-配置) | prometheus | 支持发送指标到 prometheus 中                                         |
-| [扩展模板函数](./guide/sinks/data_template.md#模版中支持的函数)                       | template   | 支持除 go 语言默认的模板函数之外的扩展函数，主要来自 sprig                           |
-| [有模式编解码](./guide/serialization/serialization.md)                        | schema     | 支持模式注册及有模式的编解码格式，例如 protobuf                                 |
+| 功能                                                                        | Build Tag  | 描述                                                                                            |
+| --------------------------------------------------------------------------- | ---------- | ----------------------------------------------------------------------------------------------- |
+| 核心                                                                        | core       | eKuiper 的核心运行时。 包括流/表/规则的处理器和 REST API ，配置管理，SQL 解析器，规则运行时等。 |
+| [CLI](./api/cli/overview.md)                                                | rpc        | CLI 服务端                                                                                      |
+| [EdgeX Foundry 整合](./edgex/edgex_rule_engine_tutorial.md)                 | edgex      | 内置的 edgeX source, sink 和共享连接支持                                                        |
+| [原生插件](./extension/native/overview.md)                                  | plugin     | 原生插件运行时，REST API和CLI API等                                                             |
+| [Portable 插件](./extension/portable/overview.md)                           | plugin     | Portable 插件运行时，REST API和CLI API等                                                        |
+| [外部服务](./extension/external/external_func.md)                           | service    | 外部服务运行时，REST API和CLI API等                                                             |
+| [UI 元数据API](./operation/manager-ui/overview.md)                          | ui         | 元数据的 REST API，通常由 UI 端消费                                                             |
+| [Prometheus 指标](./configuration/global_configurations.md#prometheus-配置) | prometheus | 支持发送指标到 prometheus 中                                                                    |
+| [扩展模板函数](./guide/sinks/data_template.md#模版中支持的函数)             | template   | 支持除 go 语言默认的模板函数之外的扩展函数，主要来自 sprig                                      |
+| [有模式编解码](./guide/serialization/serialization.md)                      | schema     | 支持模式注册及有模式的编解码格式，例如 protobuf                                                 |
 
 Makefile 里已经提供了三种功能集合：标准，edgeX和核心。标准功能集合包含除了 EdgeX 之外的所有功能。edgeX
 功能集合包含了所有的功能；而核心功能集合近包含最小的核心功能。可以通过以下命令，分别编译这三种功能集合：

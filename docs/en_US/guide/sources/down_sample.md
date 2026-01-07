@@ -60,48 +60,48 @@ This strategy will output the last data received within the sampling period when
    includes the configuration item `interval`, setting the sampling period to 1 second. Note: The MQTT server address
    and other configurations will follow the default settings.
 
-    ```http request
-    PUT http://{{host}}/metadata/sources/mqtt/confKeys/onesec
-    
-    {
-      "interval": "1s"
-    }
-    ```
+   ```http request
+   PUT http://{{host}}/metadata/sources/mqtt/confKeys/onesec
+
+   {
+     "interval": "1s"
+   }
+   ```
 
 2. Create data stream: The following API creates a data stream named `mqttOneSec`, which uses the down sampling
    configuration created in step 1 through `CONF_KEY="onesec"`.
 
-    ```http request
-    POST http://{{host}}/streams
-    Content-Type: application/json
-    
-    {
-      "sql": "CREATE STREAM mqttOneSec() WITH (TYPE=\"mqtt\",FORMAT=\"json\",DATASOURCE=\"demo\",CONF_KEY=\"onesec\");"
-    }
-    ```
+   ```http request
+   POST http://{{host}}/streams
+   Content-Type: application/json
+
+   {
+     "sql": "CREATE STREAM mqttOneSec() WITH (TYPE=\"mqtt\",FORMAT=\"json\",DATASOURCE=\"demo\",CONF_KEY=\"onesec\");"
+   }
+   ```
 
 3. Create rules based on the down sampling data stream: Next, users can create rules based on this data stream. The
    following is the simplest rule, which sends all data to MQTT. This rule will receive data at a 1-second sampling
    rate, that is, the last data of each second.
 
-    ```http request
-    POST http://{{host}}/rules
-    Content-Type: application/json
-    
-    {
-      "id": "ruleOneSecLatest",
-      "sql": "SELECT * FROM mqttOneSec",
-      "actions": [
-        {
-          "mqtt": {
-            "server": "tcp://127.0.0.1:1883",
-            "topic": "result/onesec",
-            "sendSingle": true
-          }
-        }
-      ]
-    }
-    ```
+   ```http request
+   POST http://{{host}}/rules
+   Content-Type: application/json
+
+   {
+     "id": "ruleOneSecLatest",
+     "sql": "SELECT * FROM mqttOneSec",
+     "actions": [
+       {
+         "mqtt": {
+           "server": "tcp://127.0.0.1:1883",
+           "topic": "result/onesec",
+           "sendSingle": true
+         }
+       }
+     ]
+   }
+   ```
 
 ### Column Aggregation
 
@@ -140,49 +140,49 @@ The aggregated result is a single data entry:
    the `mergeField` for aggregation. Note: The MQTT server address and other configurations will follow the default
    settings.
 
-    ```http request
-    PUT http://{{host}}/metadata/sources/mqtt/confKeys/onesec_merge
-    
-    {
-      "interval": "1s",
-      "mergeField": "id"
-    }
-    ```
+   ```http request
+   PUT http://{{host}}/metadata/sources/mqtt/confKeys/onesec_merge
+
+   {
+     "interval": "1s",
+     "mergeField": "id"
+   }
+   ```
 
 2. Create data stream: The following API creates a data stream named `mqttOneSecM`, which adopts the downsampling
    configuration created in the first step through `CONF_KEY="onesec_merge"`.
 
-    ```http request
-    POST http://{{host}}/streams
-    Content-Type: application/json
-    
-    {
-      "sql": "CREATE STREAM mqttOneSecM() WITH (TYPE=\"mqtt\",FORMAT=\"json\",DATASOURCE=\"demo\",CONF_KEY=\"onesec_merge\");"
-    }
-    ```
+   ```http request
+   POST http://{{host}}/streams
+   Content-Type: application/json
+
+   {
+     "sql": "CREATE STREAM mqttOneSecM() WITH (TYPE=\"mqtt\",FORMAT=\"json\",DATASOURCE=\"demo\",CONF_KEY=\"onesec_merge\");"
+   }
+   ```
 
 3. Create rules based on the downsampling data stream: Next, users can create rules based on this data stream. The
    following is the simplest rule, which takes all data and sends it to MQTT. This rule will receive data at a 1-second
    sampling rate, aggregate it into a single data entry by column, and then send it.
 
-    ```http request
-    POST http://{{host}}/rules
-    Content-Type: application/json
-    
-    {
-      "id": "RuleOneSecM",
-      "sql": "SELECT * FROM mqttOneSecM",
-      "actions": [
-        {
-          "mqtt": {
-            "server": "tcp://127.0.0.1:1883",
-            "topic": "result/onesecm",
-            "sendSingle": true
-          }
-        }
-      ]
-    }
-    ```
+   ```http request
+   POST http://{{host}}/rules
+   Content-Type: application/json
+
+   {
+     "id": "RuleOneSecM",
+     "sql": "SELECT * FROM mqttOneSecM",
+     "actions": [
+       {
+         "mqtt": {
+           "server": "tcp://127.0.0.1:1883",
+           "topic": "result/onesecm",
+           "sendSingle": true
+         }
+       }
+     ]
+   }
+   ```
 
 ### Full Aggregation?
 

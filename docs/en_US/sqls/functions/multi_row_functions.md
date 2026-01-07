@@ -21,10 +21,7 @@ Create a stream demo and have below inputs
 
 ```json lines
 {
-  "a": [
-    1,
-    2
-  ],
+  "a": [1, 2],
   "b": 3
 }
 ```

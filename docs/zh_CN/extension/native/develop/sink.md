@@ -1,9 +1,9 @@
 # 目标 （Sink） 扩展
 
-eKuiper 可以将数据接收到外部系统。 eKuiper具有对  [MQTT 消息服务器](../../../guide/sinks/builtin/mqtt.md)
+eKuiper 可以将数据接收到外部系统。 eKuiper具有对 [MQTT 消息服务器](../../../guide/sinks/builtin/mqtt.md)
 和 [日志目标](../../../guide/sinks/builtin/log.md)等内置接收器支持。然而，仍然需要将数据发布到各种外部系统，包括消息传递系统和数据库等。Sink（目标）扩展正是为了满足这一要求。
 
-***请注意***：v2.0.0 修改了 sink 扩展 API，与 v1.x 的插件 API 不完全兼容。原有的插件代码需要重新适配。
+**_请注意_**：v2.0.0 修改了 sink 扩展 API，与 v1.x 的插件 API 不完全兼容。原有的插件代码需要重新适配。
 
 ## 开发
 
@@ -27,36 +27,36 @@ eKuiper 可以将数据接收到外部系统。 eKuiper具有对  [MQTT 消息�
    在此方法中，将传入包含 [规则操作定义](../../../guide/sinks/overview.md)
    中的配置映射，通常，将包含诸如外部系统的主机、端口、用户和密码之类的信息。您可以使用此映射来初始化此 Sink（目标）。
 
-    ```go
-    //在初始化期间调用。 用于读取用户配置，初始化数据源
-    Provision(ctx StreamContext, configs map[string]any) error
-    ```
+   ```go
+   //在初始化期间调用。 用于读取用户配置，初始化数据源
+   Provision(ctx StreamContext, configs map[string]any) error
+   ```
 
 2. 实现 **Connect**
    方法。该方法用于初始化建立与外部系统的连接，仅在规则初始化时执行一次。其中，第二个参数用于传递长连接状态给规则。例如，当连接实现会自动重连，重连逻辑应当为异步运行，以免阻塞规则运行。连接逻辑变为异步运行，连接状态变更可通过调用状态变化回调函数通知规则。
 
-    ```go
-    //在初始化期间调用。 用于初始化外部连接。
-    Connect(ctx StreamContext, sch StatusChangeHandler) error
-    ```
+   ```go
+   //在初始化期间调用。 用于初始化外部连接。
+   Connect(ctx StreamContext, sch StatusChangeHandler) error
+   ```
 
 3. 实现 Sink 类型对应的 Collect 方法。这是 Sink 的主要执行逻辑，用于发送数据到外部系统。作为无限流，此函数将被连续调用。不同类型的
    Sink 实现的方法略有不同，详情请看[Sink 类型实现](#sink-类型实现)。
 
 4. 最后要实现的方法是 **Close**，它实际上用来关闭连接。 当流即将终止时调用它。 您也可以在此功能中执行任何清理工作。
 
-    ```go
-    Close(ctx StreamContext) error
-    ```
+   ```go
+   Close(ctx StreamContext) error
+   ```
 
 5. 导出符号，给定源结构名称为 mySink。 在文件的最后，必须将源作为符号导出，如下所示。
    有 [2种类型的导出符号](./overview.md#插件开发)。 对于源扩展，通常需要状态，因此建议导出构造函数。
 
-    ```go
-    func MySink() api.Sink {
-        return &mySink{}
-    }
-    ```
+   ```go
+   func MySink() api.Sink {
+       return &mySink{}
+   }
+   ```
 
 [Memory Sink](https://github.com/lf-edge/ekuiper/blob/master/internal/io/memory/sink.go) 是一个很好的示例。
 
@@ -67,9 +67,9 @@ eKuiper 可以将数据接收到外部系统。 eKuiper具有对  [MQTT 消息�
 - BytesCollector: 实现 Collect 方法，处理上游算子发送过来的 RawTuple。用户可通过 `RawTuple.Raw()` 获取编码后的二进制数据进行处理。可参考
   MQTT Sink 实现。
 
-    ```go
-    Collect(ctx StreamContext, item RawTuple) error
-    ```
+  ```go
+  Collect(ctx StreamContext, item RawTuple) error
+  ```
 
 - TupleCollector: 实现 Collect 和 CollectList 方法，处理上游算子发送过来的 Tuple 或者 Tuple List。可参考 SQL Sink 实现。
 

@@ -67,10 +67,7 @@ GET http://localhost:9081/config/uploads
 响应示例：
 
 ```json
-[
-   "/ekuiper/data/uploads/zk.gif",
-   "/ekuiper/data/uploads/abc.gif"
-]
+["/ekuiper/data/uploads/zk.gif", "/ekuiper/data/uploads/abc.gif"]
 ```
 
 ## 删除已上传文件

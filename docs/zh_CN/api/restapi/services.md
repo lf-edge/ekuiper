@@ -12,8 +12,8 @@ POST http://localhost:9081/services
 
 ```json
 {
-  "name":"random",
-  "file":"http://127.0.0.1/services/sample.zip"
+  "name": "random",
+  "file": "http://127.0.0.1/services/sample.zip"
 }
 ```
 
@@ -21,8 +21,8 @@ POST http://localhost:9081/services
 
 ```json
 {
-  "name":"random",
-  "file":"file:///var/services/sample.zip"
+  "name": "random",
+  "file": "file:///var/services/sample.zip"
 }
 ```
 
@@ -49,7 +49,7 @@ GET http://localhost:9081/services
 响应示例：
 
 ```json
-["sample","sample2"]
+["sample", "sample2"]
 ```
 
 ## 描述外部服务

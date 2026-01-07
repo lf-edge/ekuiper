@@ -5,7 +5,7 @@ for [MQTT broker](../../../guide/sinks/builtin/mqtt.md) and [log sink](../../../
 are still needs to publish data to various external systems include messaging systems and database etc. Sink extension
 is presented to meet this requirement.
 
-***Note***: v2.0.0 has modified the sink extension API, which is not fully compatible with the v1.x plugin API. Existing
+**_Note_**: v2.0.0 has modified the sink extension API, which is not fully compatible with the v1.x plugin API. Existing
 plugin code needs to be re-adapted.
 
 ## Developing
@@ -34,9 +34,9 @@ All Sink must implement below general methods:
    the [rule actions definition](../../../guide/sinks/overview.md) is passed in. Typically, there will be information
    such as host, port, user and password of the external system. You can use this map to initialize this sink.
 
-    ```go
-    Provision(ctx StreamContext, configs map[string]any) error
-    ```
+   ```go
+   Provision(ctx StreamContext, configs map[string]any) error
+   ```
 
 2. Implement the **Connect** method. This method is used to initialize and establish a connection with the external
    system and is executed only once during rule initialization. The second parameter is used to pass the long-connection
@@ -44,9 +44,9 @@ All Sink must implement below general methods:
    should run asynchronously to avoid blocking the rule's execution. When the connection logic becomes asynchronous,
    changes in the connection status can be notified to the rule by calling the state change callback function.
 
-    ```go
-    Connect(ctx StreamContext, sch StatusChangeHandler) error
-    ```
+   ```go
+   Connect(ctx StreamContext, sch StatusChangeHandler) error
+   ```
 
 3. Implement specific Collect method according to your sink type. This is the main task for a Sink. The function will be
    invoked when eKuiper feed any data into the sink. As an infinite stream, this function will be invoked continuously.
@@ -76,9 +76,9 @@ different `Collect` methods for each.
   obtain the encoded binary data for processing via `RawTuple.Raw()`. Refer to the MQTT Sink implementation for an
   example.
 
-    ```go
-    Collect(ctx StreamContext, item RawTuple) error
-    ```
+  ```go
+  Collect(ctx StreamContext, item RawTuple) error
+  ```
 
 - `TupleCollector`: Implement the `Collect` and `CollectList` methods to handle the `Tuple` or `Tuple List` sent by the
   upstream operator. Refer to the SQL Sink implementation for an example.

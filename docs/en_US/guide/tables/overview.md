@@ -1,6 +1,6 @@
 # Table
 
-eKuiper streams is unbounded and immutable, any new data are appended in the current stream for processing.  **Table** is provided to represent the current state of the stream. It can be considered as a snapshot of the stream. Users can use table to retain a batch of data for processing.
+eKuiper streams is unbounded and immutable, any new data are appended in the current stream for processing. **Table** is provided to represent the current state of the stream. It can be considered as a snapshot of the stream. Users can use table to retain a batch of data for processing.
 
 There are two kinds of table:
 
@@ -12,8 +12,8 @@ There are two kinds of table:
 Table supports almost the same syntax as streams. To create a table, run the below SQL:
 
 ```sql
-CREATE TABLE 
-    table_name 
+CREATE TABLE
+    table_name
     ( column_name <data_type> [ ,...n ] )
     WITH ( property_name = expression [, ...] );
 ```
@@ -35,7 +35,7 @@ Currently, only `memory`, `redis` and `sql` source can be lookup table.
 ### Table properties
 
 | Property name | Optional | Description                                                                                                                                                                      |
-|---------------|----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| ------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | DATASOURCE    | false    | The value is determined by source type. The topic names list if it's a MQTT data source. Please refer to related document for other sources.                                     |
 | FORMAT        | true     | The data format, currently the value can be "JSON", "PROTOBUF" and "BINARY". The default is "JSON". Check [Binary Stream](../streams/overview.md#binary-stream) for more detail. |
 | SCHEMAID      | true     | The schema to be used when decoding the events. Currently, only use when format is PROTOBUF.                                                                                     |

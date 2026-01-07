@@ -43,48 +43,48 @@ Both Neuron and eKuiper support binary installation packages and Docker containe
 1. Copy [docker-compose.yml](https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/integrations/neuron/docker-compose.yml) file to the deployment machine. The contents are as follows, containing Neuron, eKuiper, and the eKuiper manager (optional). In particular, eKuiper and neuron share a volume called nng-ipc, which is used for communication between the two. If using eKuiper alpine version, add `user: root:root` into the eKuiper section to grant the write access to the ipc file, otherwise, the connection cannot be established.
 
    ```yaml
-   version: '3.4'
+   version: "3.4"
 
    services:
-      manager:
-         image: emqx/ekuiper-manager:1.9
-         container_name: ekuiper-manager
-         ports:
-            - "9082:9082"
-      ekuiper:
-         image: lfedge/ekuiper:1.9
-         ports:
-            - "9081:9081"
-            - "127.0.0.1:20498:20498"
-         container_name: ekuiper
-         hostname: ekuiper
-         environment:
-            MQTT_SOURCE__DEFAULT__SERVER: "tcp://mybroker:1883"
-            KUIPER__BASIC__CONSOLELOG: "true"
-            KUIPER__BASIC__IGNORECASE: "false"
-            # The default neuron url. Change it if you want to use another port.
-            NEURON__DEFAULT__URL: "tcp://neuron:7081"
-         volumes:
-            - /tmp/data:/kuiper/data
-            - /tmp/log:/kuiper/log
-            # Enable the following line if you want to use the IPC mode to connect to earlier version of neuron
-            # - nng-ipc:/tmp
-      neuron:
-         image: neugates/neuron:2.4.0
-         ports:
-            - "7001:7001"
-            # The default port to communicate with eKuiper. Change it if you want to use another port.
-            - "7081:7081"
-         container_name: neuron
-         hostname: neuron
-         volumes:
-            - /tmp/neuron/data:/opt/neuron/persistence
-            # Enable the following line if you want to use the IPC mode to connect to earlier version of eKuiper
-            # - nng-ipc:/tmp
+     manager:
+       image: emqx/ekuiper-manager:1.9
+       container_name: ekuiper-manager
+       ports:
+         - "9082:9082"
+     ekuiper:
+       image: lfedge/ekuiper:1.9
+       ports:
+         - "9081:9081"
+         - "127.0.0.1:20498:20498"
+       container_name: ekuiper
+       hostname: ekuiper
+       environment:
+         MQTT_SOURCE__DEFAULT__SERVER: "tcp://mybroker:1883"
+         KUIPER__BASIC__CONSOLELOG: "true"
+         KUIPER__BASIC__IGNORECASE: "false"
+         # The default neuron url. Change it if you want to use another port.
+         NEURON__DEFAULT__URL: "tcp://neuron:7081"
+       volumes:
+         - /tmp/data:/kuiper/data
+         - /tmp/log:/kuiper/log
+         # Enable the following line if you want to use the IPC mode to connect to earlier version of neuron
+         # - nng-ipc:/tmp
+     neuron:
+       image: neugates/neuron:2.4.0
+       ports:
+         - "7001:7001"
+         # The default port to communicate with eKuiper. Change it if you want to use another port.
+         - "7081:7081"
+       container_name: neuron
+       hostname: neuron
+       volumes:
+         - /tmp/neuron/data:/opt/neuron/persistence
+         # Enable the following line if you want to use the IPC mode to connect to earlier version of eKuiper
+         # - nng-ipc:/tmp
 
-      # Enable the following lines if you want to use the IPC mode to connect to earlier version of eKuiper and neuron
-      # volumes:
-      #  nng-ipc:
+     # Enable the following lines if you want to use the IPC mode to connect to earlier version of eKuiper and neuron
+     # volumes:
+     #  nng-ipc:
    ```
 
    To modify the port, you need to modify Neuron's eKuiper northbound application port, as well as the parts of this document that use the port, i.e., Neuron's port exposure and eKuiper's environment variable default connection url section.
@@ -127,7 +127,7 @@ Step 1: Add a north application.
 3. The drop-down box shows the northbound applications available to us in this software version, in this case we choose the ekuiper plugin, as shown below.
    ![select app](https://neugates.io/docs/docs-assets/img/south-devices-add.6034f3a7.png)
 4. After the application is created successfully, a card of the application just created will appear in the North application management interface, at this time, the application is in the initialization state and the connection state is in the disconnection state.
-![neuron ekuiper app](./neuron_ekuiper_app.png)
+   ![neuron ekuiper app](./neuron_ekuiper_app.png)
 
 Step 2: Subscribe to Group.
 

@@ -69,13 +69,13 @@
 
 2. `meta(temperature -> origin)`: 123
 
-   从 reading[0] 中获取  'origin' 元数据，以 'temperature'  为 key
+   从 reading[0] 中获取 'origin' 元数据，以 'temperature' 为 key
 
 3. `meta(humidity -> origin)`: 456
 
-   从 reading[1] 中获取  'origin' 元数据，以 'humidity' 为 key
+   从 reading[1] 中获取 'origin' 元数据，以 'humidity' 为 key
 
-请注意，如果你想从 readings 中获取元数据，你需要使用 `reading-name -> key` 操作符来访问这些值。在前述例子中，`temperature` & `humidity`  是  `reading-names`，并且  `key` 是 readings 中的字段名字。
+请注意，如果你想从 readings 中获取元数据，你需要使用 `reading-name -> key` 操作符来访问这些值。在前述例子中，`temperature` & `humidity` 是 `reading-names`，并且 `key` 是 readings 中的字段名字。
 
 但是，如果你从 `Events` 中获取元数据，只需直接指定 key，如第一个例子所示。
 

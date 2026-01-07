@@ -7,8 +7,8 @@ SQL statements are defined to create and manage streams.
 `CREATE STREAM` defines a stream that connects to an external system to load data stream.
 
 ```sql
-CREATE STREAM 
-    stream_name 
+CREATE STREAM
+    stream_name
     ( column_name <data_type> [ ,...n ] )
     WITH ( property_name = expression [, ...] );
 ```

@@ -19,10 +19,10 @@
 
 ## 开发外部函数
 
-在示例代码中，gRPC 服务器提供了 ``label`` 方法，用户只需要编写一个接口描述文件，注册到 eKuiper 中即可。然后 eKuiper 就可以调用 gRPC 方法,
-就像内置函数一样。 ``label`` 方法由 ``tflite_runtime`` 图像分类提供支持，有关更多详细信息，请查看示例代码中的 `label.py` 文件。
+在示例代码中，gRPC 服务器提供了 `label` 方法，用户只需要编写一个接口描述文件，注册到 eKuiper 中即可。然后 eKuiper 就可以调用 gRPC 方法,
+就像内置函数一样。 `label` 方法由 `tflite_runtime` 图像分类提供支持，有关更多详细信息，请查看示例代码中的 `label.py` 文件。
 
-这是提供服务的外部功能的 proto 文件描述。``label`` 方法的参数应该是 base64 编码的图像。
+这是提供服务的外部功能的 proto 文件描述。`label` 方法的参数应该是 base64 编码的图像。
 
 ```proto
 syntax = "proto3";
@@ -78,7 +78,7 @@ message LabelReply {
 
 - 有关文件格式和内容的更多详细信息，请参阅[这里](../../extension/external/external_func.md)。
 
-您可以在[示例代码](https://github.com/lf-edge/ekuiper/blob/master/docs/resources/pythonGRPC.zip)的文件夹 ``kuiper_package`` 中获取示例 zip 文件。
+您可以在[示例代码](https://github.com/lf-edge/ekuiper/blob/master/docs/resources/pythonGRPC.zip)的文件夹 `kuiper_package` 中获取示例 zip 文件。
 
 ### 注册外部函数
 
@@ -117,10 +117,10 @@ kuiper >  select label(image) from demo
 用户需要像这样以 json 格式发送数据
 
 ```json
-{"image": "base64 encoded data"}
+{ "image": "base64 encoded data" }
 ```
 
-用户可以从 ``images/example.json`` 文件中的示例代码中获取真实数据，只需通过 MQTT 客户端将其发送到 MQTT Broker 即可。
+用户可以从 `images/example.json` 文件中的示例代码中获取真实数据，只需通过 MQTT 客户端将其发送到 MQTT Broker 即可。
 
 ### 查询结果
 

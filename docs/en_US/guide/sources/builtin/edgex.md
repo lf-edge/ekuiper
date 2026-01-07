@@ -42,8 +42,8 @@ Users can specify the global EdgeX configurations here. The configuration items 
 
 ### Connection Configurations
 
-- `protocol`:  The protocol connects to EdgeX message bus, default value is `tcp`.
-- `server`: The server address of  EdgeX message bus, default value is `localhost`.
+- `protocol`: The protocol connects to EdgeX message bus, default value is `tcp`.
+- `server`: The server address of EdgeX message bus, default value is `localhost`.
 - `port`: The port of EdgeX message bus, default value is `5573`.
 
 ### Connection Reusability
@@ -65,30 +65,27 @@ Users can specify the global EdgeX configurations here. The configuration items 
   #    Password: password
   ```
 
-   ::: tip
+  ::: tip
 
-   If a connectionSelector is specified in a configuration group, all connection-related parameters will be ignored. This includes `protocol`, `server`, and `port`. In this case, the values `protocol: tcp | server: localhost | port: 5573` will not be used.
+  If a connectionSelector is specified in a configuration group, all connection-related parameters will be ignored. This includes `protocol`, `server`, and `port`. In this case, the values `protocol: tcp | server: localhost | port: 5573` will not be used.
 
-   :::
+  :::
 
 ### Topic and Message
 
-- `topic`:  The topic name of EdgeX message bus, default value is `rules-events`. Users can subscribe to the topics of the message bus directly or subscribe to topics exported by EdgeX application service. Note that, the message types of the two types of topics are different, remember to set the appropriate messageType property.
+- `topic`: The topic name of EdgeX message bus, default value is `rules-events`. Users can subscribe to the topics of the message bus directly or subscribe to topics exported by EdgeX application service. Note that, the message types of the two types of topics are different, remember to set the appropriate messageType property.
 
 - `type`: The EdgeX message bus type. Currently, three types of message buses are supported. `Redis` is used by default if no other value is specified.
-
   - `zero`: Use ZeroMQ as EdgeX message bus.
   - `mqtt`: Use the MQTT broker as EdgeX message bus. See [Optional Configuration (Specifically for MQTT)](#optional-configuration-specifically-for-mqtt) for more MQTT-related configurations.
   - `redis`: Use Redis as the EdgeX message bus. Redis is the default message bus when using EdgeX docker compose.
 
   EdgeX Levski introduces two types of information message bus, eKuiper supports these two new types from 1.7.1, respectively:
-
   - `nats-jetstream`
   - `nats-core`
 
 - `messageType`: The EdgeX message model type.
-  
-  - `event`:  If connected to the topic of EdgeX application service, the message model is an "event". The message will be decoded as a `dtos.Event` type. This is the default.
+  - `event`: If connected to the topic of EdgeX application service, the message model is an "event". The message will be decoded as a `dtos.Event` type. This is the default.
   - `request`: If connected to the topic of EdgeX message bus directly to receive the message from device service or core data, the message is a "request". The message will be decoded as a `requests.AddEventRequest` type.
 
 ### Optional Configuration (Specifically for MQTT)

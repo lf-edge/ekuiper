@@ -8,16 +8,16 @@ Comment serve as documentation. Comments begin with the character sequence `/*` 
 
 eKuiper SQL is built up from tokens. There are four classes of tokens:
 
-- *identifiers*
-- *keywords*
-- *operators*
-- *literals*
+- _identifiers_
+- _keywords_
+- _operators_
+- _literals_
 
-*White space* formed from spaces, horizontal tabs, carriage returns, and newlines is ignored except as it separates tokens that would otherwise combine into a single token. While breaking the input into tokens, the next token is the longest sequence of characters that form a valid token.
+_White space_ formed from spaces, horizontal tabs, carriage returns, and newlines is ignored except as it separates tokens that would otherwise combine into a single token. While breaking the input into tokens, the next token is the longest sequence of characters that form a valid token.
 
 ## Identifiers
 
-Identifiers name entities within a program. An *identifier* is a sequence of one or more letters and digits. An identifier must start with a letter.
+Identifiers name entities within a program. An _identifier_ is a sequence of one or more letters and digits. An identifier must start with a letter.
 
 To use the reserved words as the column name and the stream name etc, they need to be quoted by backtick. You can also use all kinds of unicode string in the backtick as an SQL element. For example, operator `-`, spaces, and various language characters such as Chinese.
 

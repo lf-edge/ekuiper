@@ -67,7 +67,7 @@
 
 - 为每个流创建规则以转换数据，并将其输出到相同的流中。
   - Rule1 将 stream1 的数据汇入内存主题 `merged`
-  
+
   ```json
   {
     "id": "ruleMerge1",
@@ -83,9 +83,9 @@
     ]
   }
   ```
-  
+
   - Rule2 将 stream2 的数据汇入内存主题 `merged`
-  
+
   ```json
   {
     "id": "ruleMerge2",
@@ -138,8 +138,7 @@
   "sql": "SELECT temperature, humidity FROM stream1 INNER JOIN stream2 ON stream1.ts - stream2.ts BETWEEN 0 AND 10 GROUP BY TumblingWindow(ms, 500)",
   "actions": [
     {
-      "log": {
-      }
+      "log": {}
     }
   ]
 }

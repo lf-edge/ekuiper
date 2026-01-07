@@ -41,12 +41,12 @@ Here is the content of the configuration file:
 
 ```yaml
 default:
-  url: 'https://opendata.sz.gov.cn/api/29200_00403627/1/service.xhtml?page=1&rows=2&appKey=<token>'
+  url: "https://opendata.sz.gov.cn/api/29200_00403627/1/service.xhtml?page=1&rows=2&appKey=<token>"
   method: get
   interval: 3600000
   timeout: 5000
   incremental: false
-  body: ''
+  body: ""
   bodyType: json
   insecureSkipVerify: true
   headers:
@@ -115,13 +115,14 @@ In the first step, we just need to add a new memory target/source to the `action
 {
   "id": "demo_rule_1",
   "sql": "SELECT unnest(data) FROM pubdata",
-  "actions": [{
-    "log": {
-    },
-    "memory": {
-      "topic": "channel/data"
+  "actions": [
+    {
+      "log": {},
+      "memory": {
+        "topic": "channel/data"
+      }
     }
-  }]
+  ]
 }
 ```
 

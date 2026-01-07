@@ -24,9 +24,9 @@ contribution.
 2. **Clone** the repository locally from your personal fork. `git clone https://github.com/<Github_user>/ekuiper.git`.
 3. Add eKuiper repo as additional Git remote so that you can sync between local repo and eKuiper.
 
-  ```shell
-  git remote add upstream https://github.com/lf-edge/ekuiper.git
-  ```
+```shell
+git remote add upstream https://github.com/lf-edge/ekuiper.git
+```
 
 You can use your favorite IDE or editor to develop. You can find information in editor support for Go tools
 in [Editors and IDEs for GO](https://github.com/golang/go/wiki/IDEsAndTextEditorPlugins).
@@ -101,31 +101,30 @@ In the docker-compose file, find the redis service and in ports part change 127.
 to 0.0.0.0:6379, then restart all the services.
 
 ```yaml
- database:
-   container_name: edgex-redis
-   environment:
-     CLIENTS_CORE_COMMAND_HOST: edgex-core-command
-     CLIENTS_CORE_DATA_HOST: edgex-core-data
-     CLIENTS_CORE_METADATA_HOST: edgex-core-metadata
-     CLIENTS_SUPPORT_NOTIFICATIONS_HOST: edgex-support-notifications
-     CLIENTS_SUPPORT_SCHEDULER_HOST: edgex-support-scheduler
-     DATABASES_PRIMARY_HOST: edgex-redis
-     EDGEX_SECURITY_SECRET_STORE: "false"
-     REGISTRY_HOST: edgex-core-consul
-   hostname: edgex-redis
-   image: redis:6.2-alpine
-   networks:
-     edgex-network: { }
-   ports:
-     - 0.0.0.0:6379:6379/tcp
-   read_only: true
-   restart: always
-   security_opt:
-     - no-new-privileges:true
-   user: root:root
-   volumes:
-     - db-data:/data:z
-
+database:
+  container_name: edgex-redis
+  environment:
+    CLIENTS_CORE_COMMAND_HOST: edgex-core-command
+    CLIENTS_CORE_DATA_HOST: edgex-core-data
+    CLIENTS_CORE_METADATA_HOST: edgex-core-metadata
+    CLIENTS_SUPPORT_NOTIFICATIONS_HOST: edgex-support-notifications
+    CLIENTS_SUPPORT_SCHEDULER_HOST: edgex-support-scheduler
+    DATABASES_PRIMARY_HOST: edgex-redis
+    EDGEX_SECURITY_SECRET_STORE: "false"
+    REGISTRY_HOST: edgex-core-consul
+  hostname: edgex-redis
+  image: redis:6.2-alpine
+  networks:
+    edgex-network: {}
+  ports:
+    - 0.0.0.0:6379:6379/tcp
+  read_only: true
+  restart: always
+  security_opt:
+    - no-new-privileges:true
+  user: root:root
+  volumes:
+    - db-data:/data:z
 ```
 
 #### change edgex local config
@@ -133,11 +132,11 @@ to 0.0.0.0:6379, then restart all the services.
 Change edgex source config according to message bus type, the following table is message bus configuration
 the file locates in `etc/sources/edgex.yaml`.
 
-| message bus   | type  | protocol | server       | port |
-|---------------|-------|----------|--------------|------|
-| redis  server | redis | redis    | 10.65.38.224 | 6379 |
-| mqtt  broker  | mqtt  | tcp      | 10.65.38.224 | 1883 |
-| zemo mq       | zero  | tcp      | 10.65.38.224 | 5566 |
+| message bus  | type  | protocol | server       | port |
+| ------------ | ----- | -------- | ------------ | ---- |
+| redis server | redis | redis    | 10.65.38.224 | 6379 |
+| mqtt broker  | mqtt  | tcp      | 10.65.38.224 | 1883 |
+| zemo mq      | zero  | tcp      | 10.65.38.224 | 5566 |
 
 Take the redis as example, the following config will let eKuiper connect to 10.65.38.224's 6379 port.
 
@@ -426,6 +425,6 @@ PR will be approved and the new maintainer becomes active.
 The following table describes how the nomination is approved.
 
 | Nomination     | Description                                                                  | Approval                                                              | Binding Roles      | Minimum Length (days) |
-|:---------------|:-----------------------------------------------------------------------------|:----------------------------------------------------------------------|:-------------------|:----------------------|
+| :------------- | :--------------------------------------------------------------------------- | :-------------------------------------------------------------------- | :----------------- | :-------------------- |
 | New Committer  | When a new committer is proposed, should be only nominated by a maintainer.  | [Lazy Consensus](https://communitymgt.fandom.com/wiki/Lazy_consensus) | Active maintainers | 7                     |
 | New Maintainer | When a new maintainer is proposed, should be only nominated by a maintainer. | Supermajority (2/3) Approval                                          | Active maintainers | 7                     |

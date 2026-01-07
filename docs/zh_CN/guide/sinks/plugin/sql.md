@@ -27,13 +27,13 @@
 
 ## 属性
 
-| 属性名称  | 是否可选 | 说明                                                  |
-| -------------- | -------- | ------------------------------------------------------------ |
-| url            | 否    | 目标数据库的 url                                             |
-| table          | 否    | 结果的表名                                                   |
-| fields         | 是     | 要插入的字段。结果映射和数据库都应该有这些字段。如果未指定，将插入结果映射中的所有字段 |
-| tableDataField | 是     | 将 tableDataField 的嵌套值写入数据库。                       |
-| rowkindField   | 是     | 指定哪个字段表示操作，例如插入或更新。如果不指定，默认所有的数据都是插入操作 |
+| 属性名称       | 是否可选 | 说明                                                                                   |
+| -------------- | -------- | -------------------------------------------------------------------------------------- |
+| url            | 否       | 目标数据库的 url                                                                       |
+| table          | 否       | 结果的表名                                                                             |
+| fields         | 是       | 要插入的字段。结果映射和数据库都应该有这些字段。如果未指定，将插入结果映射中的所有字段 |
+| tableDataField | 是       | 将 tableDataField 的嵌套值写入数据库。                                                 |
+| rowkindField   | 是       | 指定哪个字段表示操作，例如插入或更新。如果不指定，默认所有的数据都是插入操作           |
 
 其他通用的 sink 属性也支持，请参阅[公共属性](../overview.md#公共属性)。
 
@@ -49,12 +49,11 @@
   "sql": "SELECT stuno as id, stuName as name, format_time(entry_data,\"YYYY-MM-dd HH:mm:ss\") as registerTime FROM SqlServerStream",
   "actions": [
     {
-      "log": {
-      },
+      "log": {},
       "sql": {
         "url": "mysql://user:test@140.210.204.147/user?parseTime=true",
         "table": "test",
-        "fields": ["id","name","registerTime"]
+        "fields": ["id", "name", "registerTime"]
       }
     }
   ]
@@ -67,15 +66,18 @@
 
 ```json
 {
-  "telemetry": [{
-    "temperature": 32.32,
-    "humidity": 80.8,
-    "ts": 1388082430
-  },{
-    "temperature": 34.32,
-    "humidity": 81.8,
-    "ts": 1388082440
-  }]
+  "telemetry": [
+    {
+      "temperature": 32.32,
+      "humidity": 80.8,
+      "ts": 1388082430
+    },
+    {
+      "temperature": 34.32,
+      "humidity": 81.8,
+      "ts": 1388082440
+    }
+  ]
 }
 ```
 
@@ -85,13 +87,12 @@
   "sql": "SELECT telemetry FROM dataStream",
   "actions": [
     {
-      "log": {
-      },
+      "log": {},
       "sql": {
         "url": "mysql://user:test@140.210.204.147/user?parseTime=true",
         "table": "test",
-        "fields": ["temperature","humidity"],
-        "tableDataField":  "telemetry",
+        "fields": ["temperature", "humidity"],
+        "tableDataField": "telemetry"
       }
     }
   ]
@@ -105,8 +106,8 @@
 ```json
 {
   "id": "ruleUpdateAlert",
-  "sql":"SELECT * FROM alertStream",
-  "actions":[
+  "sql": "SELECT * FROM alertStream",
+  "actions": [
     {
       "sql": {
         "url": "sqlite://test.db",

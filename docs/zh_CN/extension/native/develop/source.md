@@ -3,7 +3,7 @@
 源将数据从其他系统反馈到 eKuiper。eKuiper 支持 [MQTT 消息服务器](../../../guide/sources/builtin/mqtt.md)
 等内置源。然而，用户仍然需要从各种外部系统（包括消息传递系统和数据管道等）中获取数据。源扩展正是为了满足此要求。
 
-***请注意***：v2.0.0 修改了 source 扩展 API，与 v1.x 的插件 API 不完全兼容。原有的插件代码需要重新适配。
+**_请注意_**：v2.0.0 修改了 source 扩展 API，与 v1.x 的插件 API 不完全兼容。原有的插件代码需要重新适配。
 
 有两种类型的源。一种是普通源，即扫描源（Scan Source），另一种是查询源（Lookup Source）。一个正常的源可以作为一个流或扫描表使用；一个查询源可以作为一个查询表使用。用户可以在一个源插件中开发一种或两种源。
 
@@ -31,38 +31,38 @@ Go 插件。
    在第二个参数中，传递包含 **yaml** 文件中的配置的映射。 有关更多详细信息，请参见 [配置](#处理配置)。
    通常，将有外部系统的信息，例如主机、端口、用户和密码。 您可以使用此映射来初始化此源。
 
-    ```go
-    //在初始化期间调用。 用于读取用户配置，初始化数据源
-    Provision(ctx StreamContext, configs map[string]any) error
-    ```
+   ```go
+   //在初始化期间调用。 用于读取用户配置，初始化数据源
+   Provision(ctx StreamContext, configs map[string]any) error
+   ```
 
 2. 实现 **Connect**
    方法。该方法用于初始化建立与外部系统的连接，仅在规则初始化时执行一次。其中，第二个参数用于传递长连接状态给规则。例如，当连接实现会自动重连，重连逻辑应当为异步运行，以免阻塞规则运行。连接逻辑变为异步运行，连接状态变更可通过调用状态变化回调函数通知规则。
 
-    ```go
-    //在初始化期间调用。 用于初始化外部连接。
-    Connect(ctx StreamContext, sch StatusChangeHandler) error
-    ```
+   ```go
+   //在初始化期间调用。 用于初始化外部连接。
+   Connect(ctx StreamContext, sch StatusChangeHandler) error
+   ```
 
 3. 实现源类型的订阅或拉取方法。这是源的主要执行逻辑，用于从外部系统获取数据并发送到 eKuiper
    系统中供下游算子消费。不同类型的源实现的方法略有不同，详情请看[源类型实现](#源类型实现)。
 
 4. 最后要实现的方法是 **Close**，它实际上用来关闭连接。 当流即将终止时调用它。 您也可以在此功能中执行任何清理工作。
 
-    ```go
-    Close(ctx StreamContext) error
-    ```
+   ```go
+   Close(ctx StreamContext) error
+   ```
 
 5. 导出符号，给定源结构名称为 mySource。 在文件的最后，必须将源作为符号导出，如下所示。
    有 [2种类型的导出符号](../overview.md#插件开发)。 对于源扩展，通常需要状态，因此建议导出构造函数。
 
-    ```go
-    function MySource() api.Source{
-        return &mySource{}
-    }
-    ```
+   ```go
+   function MySource() api.Source{
+       return &mySource{}
+   }
+   ```
 
-[Random Source](https://github.com/lf-edge/ekuiper/blob/master/extensions/impl/random/random.go)  是一个很好的示例。
+[Random Source](https://github.com/lf-edge/ekuiper/blob/master/extensions/impl/random/random.go) 是一个很好的示例。
 
 ### 源类型实现
 
@@ -71,23 +71,23 @@ Go 插件。
 - ByteSource：需要实现 Subscribe 方法，用于订阅数据变化（接收外部系统推送数据）。调用 BytesIngest 消费订阅到的数据，调用
   ErrorIngest 发送错误信息。参考 MQTT source实现，订阅配置的主题，并通过 ingest 方法读取订阅到的 bytes 数据。
 
-   ```go
-   Subscribe(ctx StreamContext, ingest BytesIngest, ingestError ErrorIngest) error
-   ```
+  ```go
+  Subscribe(ctx StreamContext, ingest BytesIngest, ingestError ErrorIngest) error
+  ```
 
 - TupleSource：需要实现 Subscribe 方法，用于订阅数据变化（接收外部系统推送数据）。调用 TupleIngest 消费订阅到并解码为 map
   的数据；调用 ErrorIngest 发送错误信息。参考 Memory source实现。
 
-   ```go
-   Subscribe(ctx StreamContext, ingest TupleIngest, ingestError ErrorIngest) error
-   ```
+  ```go
+  Subscribe(ctx StreamContext, ingest TupleIngest, ingestError ErrorIngest) error
+  ```
 
 - PullBytesSource：需要实现 Pull 方法，用于拉取数据。拉取间隔可通过 interval 参数配置。调用 BytesIngest 消费拉取到的数据，调用
   ErrorIngest 发送错误信息，trigger 为此次拉取的时间。参考 Video 数据源实现。
 
-   ```go
-   Pull(ctx StreamContext, trigger time.Time, ingest BytesIngest, ingestError ErrorIngest)
-   ```
+  ```go
+  Pull(ctx StreamContext, trigger time.Time, ingest BytesIngest, ingestError ErrorIngest)
+  ```
 
 - PullTupleSource：需要实现 Pull 方法，用于拉取数据。拉取间隔可通过 interval 参数配置。调用 TupleIngest 消费拉取变解码为 map
   的数据，调用 ErrorIngest 发送错误信息，trigger 为此次拉取的时间。参考 HttpPull 数据源实现。
@@ -146,11 +146,11 @@ Lookup(ctx StreamContext, fields []string, keys []string, values []any) ([][]byt
 
 ## 配置与使用
 
-eKuiper 配置的格式为 yaml，它提供了一个集中位置  **/etc**  来保存所有配置。 在其中，为源配置提供了一个子文件夹  **sources**
+eKuiper 配置的格式为 yaml，它提供了一个集中位置 **/etc** 来保存所有配置。 在其中，为源配置提供了一个子文件夹 **sources**
 ，同时也适用于扩展源。
 
 eKuiper 扩展支持配置系统自动读取 yaml 文件中的配置，并将其输入到源的 **Provision** 方法中。
-如果在流中指定了 [CONF_KEY](../../../guide/streams/overview.md#流属性)  属性，则将输入该键的配置。 否则，将使用默认配置。
+如果在流中指定了 [CONF_KEY](../../../guide/streams/overview.md#流属性) 属性，则将输入该键的配置。 否则，将使用默认配置。
 
 要在源中使用配置，必须遵循以下约定：
 
@@ -165,7 +165,7 @@ eKuiper 扩展支持配置系统自动读取 yaml 文件中的配置，并将其
 - `interval` 若数据源为拉取源类型，该参数指定拉取的间隔。若为推送源，该参数默认不配置，数据源为数据触发；若有配置，该参数会定义推送的频率。
 - `bufferLength` 指定要在内存中缓冲的最大消息数。 这是为了避免过多的内存使用情况而导致内存不足错误。 请注意，内存使用情况将因实际缓冲区而异。
   在此处增加长度不会增加初始内存分配，因此可以安全设置较大的缓冲区长度。
-  默认值为102400，即如果每个消息体大小约为100个字节，则最大缓冲区大小将约为102400 * 100B〜= 10MB。
+  默认值为102400，即如果每个消息体大小约为100个字节，则最大缓冲区大小将约为102400 \* 100B〜= 10MB。
 
 ### 使用
 

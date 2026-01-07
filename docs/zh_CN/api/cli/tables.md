@@ -26,7 +26,7 @@ table my_table created
 table my_table created
 ```
 
-  以下是 `my_table.txt` 的内容.
+以下是 `my_table.txt` 的内容.
 
 ```shell
 my_table(id bigint, name string, score float)
@@ -71,7 +71,7 @@ KEY: id
 DATASOURCE: lookup.json
 ```
 
-*注意*： 目前 eKuiper 不支持查看表的内容，用户可直接将表与流 join 查看结果。
+_注意_： 目前 eKuiper 不支持查看表的内容，用户可直接将表与流 join 查看结果。
 
 ## 删除表
 

@@ -34,14 +34,14 @@ CONNECTION__EDGEX__REDISMSGBUS__PORT => edgex.redismsgbus.port int etc/connectio
 ```
 
 环境变量用`__`分隔，分隔后的第一部分内容与配置文件的文件名匹配，其余内容与不同级别的配置项匹配。文件名可以是 `etc` 文件夹中的 `KUIPER` 和 `MQTT_SOURCE`；或
- `etc/connection` 文件夹中的 `CONNECTION`。其余情况，映射文件应在 `etc/sources` 文件夹下。
+`etc/connection` 文件夹中的 `CONNECTION`。其余情况，映射文件应在 `etc/sources` 文件夹下。
 
 ### 命令行参数
 
 eKuiper 支持从命令行参数的方式传入配置，如下:
 
-| 配置名          | 类型     | 配置作用                                                 |
-|--------------|--------|------------------------------------------------------|
+| 配置名       | 类型   | 配置作用                                                              |
+| ------------ | ------ | --------------------------------------------------------------------- |
 | loadFileType | string | 设置加载文件的方式，支持 "relative" 与 "absolute" 两种方式            |
 | etc          | string | 设置 etc 目录的绝对路径，只有当 loadFileType 是 "absolute" 时有效     |
 | data         | string | 设置 data 目录的绝对路径，只有当 loadFileType 是 "absolute" 时有效    |

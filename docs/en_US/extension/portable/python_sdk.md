@@ -71,15 +71,15 @@ When `requireAck` is enabled, the user's custom sink plugin **must** return an a
 
 ```json
 {
-   "id": "rulePort1",
-   "sql": "SELECT * FROM mqttStream",
-   "actions": [
-      {
-         "print": {
-            "requireAck": true
-         }
+  "id": "rulePort1",
+  "sql": "SELECT * FROM mqttStream",
+  "actions": [
+    {
+      "print": {
+        "requireAck": true
       }
-   ]
+    }
+  ]
 }
 ```
 
@@ -152,23 +152,17 @@ To use conda environment, the common steps are:
 2. When packaging the plugin, make sure `virtualEnvType` is set to `conda` and `env` is set to the created virtual
    environment. Below is an example.
 
-    ```json
-    {
-      "version": "v1.0.0",
-      "language": "python",
-      "executable": "pysam.py",
-      "virtualEnvType": "conda",
-      "env": "myenv",
-      "sources": [
-        "pyjson"
-      ],
-      "sinks": [
-        "print"
-      ],
-      "functions": [
-        "revert"
-      ]
-    }
-    ```
+   ```json
+   {
+     "version": "v1.0.0",
+     "language": "python",
+     "executable": "pysam.py",
+     "virtualEnvType": "conda",
+     "env": "myenv",
+     "sources": ["pyjson"],
+     "sinks": ["print"],
+     "functions": ["revert"]
+   }
+   ```
 
 3. If the plugin has installation script, make sure the script install the dependencies to the correct environment.

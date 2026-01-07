@@ -117,5 +117,5 @@ For those who prefer a hands-on approach, the Command Line Interface (CLI) provi
    ```bash
    bin/kuiper CREATE STREAM demo'() with(format="json", datasource="/api/data", type="websocket")'
    ```
-  
+
 More details can be found at [Streams Management with CLI](../../../api/cli/streams.md).

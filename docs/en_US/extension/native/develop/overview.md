@@ -37,20 +37,20 @@ implementation with a specific name. There are two types of exported symbol supp
    implementation for each load. So each rule will have one instance of the plugin, and each instance will be isolated
    from others. This is the recommended way.
 
-    ```go
-    func Random() api.Source {
-        return random.GetSource()
-    }
-    ```
+   ```go
+   func Random() api.Source {
+       return random.GetSource()
+   }
+   ```
 
 2. Export an instance: eKuiper will use the instance as singleton for all plugin loads. So all rules will share the same
    instance. For such implementation, the developer will need to handle the shared states to avoid any potential
    multi-thread problems. This mode is recommended where there are no shared states and the performance is critical.
    Especially, a function extension is usually functional without internal state which is suitable for this mode.
 
-    ```go
-      var Random = random.GetSource()
-    ```
+   ```go
+     var Random = random.GetSource()
+   ```
 
 Implementing extensions for data sources (source), data sinks (sink), and functions (function) requires different
 interfaces. For more details, please refer to:
@@ -142,7 +142,7 @@ to the name after _@_. The version can be any string. If the version string star
 the return result. Below are some typical examples.
 
 - _MySource@v1.0.0.so_ : version is 1.0.0
-- _MySource@20200331.so_:  version is 20200331
+- _MySource@20200331.so_: version is 20200331
 
 If multiple versions of plugins with the same name in place, only the latest version(ordered by the version string) will
 be taken effect.

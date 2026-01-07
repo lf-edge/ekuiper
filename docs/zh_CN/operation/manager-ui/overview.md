@@ -89,7 +89,7 @@
 
 创建 eKuiper 服务时需要填写「服务类型」，「服务名称」和「端点 URL 」。
 
-- 服务类型 : 选择 `直接连接服务`  (`华为 IEF 服务` 专用于华为用户)。
+- 服务类型 : 选择 `直接连接服务` (`华为 IEF 服务` 专用于华为用户)。
 
 - 服务名称 : 自拟，本例为 `example`。
 
@@ -112,7 +112,6 @@
 - 消息主题为 `devices/device_001/messages`
 
 - 流结构体定义包含了以下两个字段。
-
   - temperature: bigint
   - humidity: bigint
 
@@ -154,7 +153,7 @@
 # tail -f demoFile
 ```
 
-使用 MQTT 客户端工具 `mosquitto_pub` 将传感器数据发送到 MQTT 服务器 `tcp://broker.emqx.io:1883`的主题 `devices/device_001/messages`  中，命令如下。如一切正常，此时名为`demoFile`的文件将收到数据：`{"temperature": 40, "humidity" : 20}`。
+使用 MQTT 客户端工具 `mosquitto_pub` 将传感器数据发送到 MQTT 服务器 `tcp://broker.emqx.io:1883`的主题 `devices/device_001/messages` 中，命令如下。如一切正常，此时名为`demoFile`的文件将收到数据：`{"temperature": 40, "humidity" : 20}`。
 
 ```shell
 # mosquitto_pub -h broker.emqx.io -m '{"temperature": 40, "humidity" : 20}' -t devices/device_001/messages

@@ -79,31 +79,30 @@ eKuiper 按主题订阅消息，默认情况下，edgex 使用 redis 作为消�
 到 0.0.0.0:6379，然后重启所有服务。
 
 ```yaml
- database:
-    container_name: edgex-redis
-    environment:
-      CLIENTS_CORE_COMMAND_HOST: edgex-core-command
-      CLIENTS_CORE_DATA_HOST: edgex-core-data
-      CLIENTS_CORE_METADATA_HOST: edgex-core-metadata
-      CLIENTS_SUPPORT_NOTIFICATIONS_HOST: edgex-support-notifications
-      CLIENTS_SUPPORT_SCHEDULER_HOST: edgex-support-scheduler
-      DATABASES_PRIMARY_HOST: edgex-redis
-      EDGEX_SECURITY_SECRET_STORE: "false"
-      REGISTRY_HOST: edgex-core-consul
-    hostname: edgex-redis
-    image: redis:6.2-alpine
-    networks:
-      edgex-network: {}
-    ports:
+database:
+  container_name: edgex-redis
+  environment:
+    CLIENTS_CORE_COMMAND_HOST: edgex-core-command
+    CLIENTS_CORE_DATA_HOST: edgex-core-data
+    CLIENTS_CORE_METADATA_HOST: edgex-core-metadata
+    CLIENTS_SUPPORT_NOTIFICATIONS_HOST: edgex-support-notifications
+    CLIENTS_SUPPORT_SCHEDULER_HOST: edgex-support-scheduler
+    DATABASES_PRIMARY_HOST: edgex-redis
+    EDGEX_SECURITY_SECRET_STORE: "false"
+    REGISTRY_HOST: edgex-core-consul
+  hostname: edgex-redis
+  image: redis:6.2-alpine
+  networks:
+    edgex-network: {}
+  ports:
     - 0.0.0.0:6379:6379/tcp
-    read_only: true
-    restart: always
-    security_opt:
+  read_only: true
+  restart: always
+  security_opt:
     - no-new-privileges:true
-    user: root:root
-    volumes:
+  user: root:root
+  volumes:
     - db-data:/data:z
-
 ```
 
 #### 修改本地 edgex 的配置
@@ -111,11 +110,11 @@ eKuiper 按主题订阅消息，默认情况下，edgex 使用 redis 作为消�
 根据消息总线类型更改 edgex 源配置，下表为消息总线配置
 该文件位于 `etc/sources/edgex.yaml` 中。
 
-| message bus   | type  | protocol | server       | port |
-|---------------|-------|----------|--------------|------|
-| redis  server | redis | redis    | 10.65.38.224 | 6379 |
-| mqtt  broker  | mqtt  | tcp      | 10.65.38.224 | 1883 |
-| zemo mq       | zero  | tcp      | 10.65.38.224 | 5566 |
+| message bus  | type  | protocol | server       | port |
+| ------------ | ----- | -------- | ------------ | ---- |
+| redis server | redis | redis    | 10.65.38.224 | 6379 |
+| mqtt broker  | mqtt  | tcp      | 10.65.38.224 | 1883 |
+| zemo mq      | zero  | tcp      | 10.65.38.224 | 5566 |
 
 以 redis 为例，下面的配置会让 eKuiper 连接到 10.65.38.224 的 6379 端口。
 
@@ -367,7 +366,7 @@ PR，以更新[维护者列表](https://github.com/lf-edge/ekuiper/blob/master/M
 
 下表描述了如何批准提名。
 
-| 提名          | 说明       | 批准流程                                                                  | 约束角色  | 最短期限（天） |
-|:------------|:---------|:----------------------------------------------------------------------|:------|:--------|
-| 新 Committer | 只能由维护者提名 | [Lazy Consensus](https://communitymgt.fandom.com/wiki/Lazy_consensus) | 活跃维护者 | 7       |
-| 新维护者        | 只能由维护者提名 | 2/3 投票通过                                                              | 活跃维护者 | 7       |
+| 提名         | 说明             | 批准流程                                                              | 约束角色   | 最短期限（天） |
+| :----------- | :--------------- | :-------------------------------------------------------------------- | :--------- | :------------- |
+| 新 Committer | 只能由维护者提名 | [Lazy Consensus](https://communitymgt.fandom.com/wiki/Lazy_consensus) | 活跃维护者 | 7              |
+| 新维护者     | 只能由维护者提名 | 2/3 投票通过                                                          | 活跃维护者 | 7              |

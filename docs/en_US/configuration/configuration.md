@@ -33,14 +33,14 @@ EDGEX__DEFAULT__PORT => default.port in etc/sources/edgex.yaml
 CONNECTION__EDGEX__REDISMSGBUS__PORT => edgex.redismsgbus.port int etc/connections/connection.yaml
 ```
 
-The environment variables are separated by "__", the content of the first part after the separation matches the file name of the configuration file, and the remaining content matches the different levels of the configuration items. The file name could be `KUIPER` and `MQTT_SOURCE` in the `etc` folder; or  `CONNECTION` in `etc/connection` folder. Otherwise, the file should in `etc/sources` folder.
+The environment variables are separated by "\_\_", the content of the first part after the separation matches the file name of the configuration file, and the remaining content matches the different levels of the configuration items. The file name could be `KUIPER` and `MQTT_SOURCE` in the `etc` folder; or `CONNECTION` in `etc/connection` folder. Otherwise, the file should in `etc/sources` folder.
 
 ### command line parameters
 
 eKuiper supports importing configuration from command line parameters, as follows:
 
 | configuration name | type   | configuration role                                                                         |
-|--------------------|--------|--------------------------------------------------------------------------------------------|
+| ------------------ | ------ | ------------------------------------------------------------------------------------------ |
 | loadFileType       | string | Set the way to load files, support "relative" and "absolute"                               |
 | etc                | string | Set absolute path of etc directory, only valid when loadFileType is "absolute"             |
 | data               | string | Set the absolute path of the data directory, only valid when loadFileType is "absolute"    |

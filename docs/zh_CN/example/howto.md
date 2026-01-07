@@ -15,8 +15,8 @@ eKuiper 提供了多种数据源接入以及 File sink 输出，因此可通过�
 1. 创建数据源：在 eKuiper 管理控制台 UI 中，点击顶部导航栏的**源管理**，进入流管理页面。点击**创建流**，在弹出的对话框中，填写流名称 `mqttDemoStream`，选择流类型为 `mqtt`，填写数据源即 MQTT 主题为 `demo/#`。若需要更改默认 MQTT 连接信息，点击添加配置组进行配置。点击 **确定**，创建流。我们创建了一个名为 `mqttDemoStream` 数据流，监听 MQTT 主题 `demo/#`。![record_stream.png](./resources/record_stream.png)
 
 2. 创建并运行规则：在 eKuiper 管理控制台 UI 中，点击导航栏的**规则**，进入规则管理页面。点击**新建规则**，在弹出的对话框中，填写RuleId，规则名称和规则 SQL。![record_sql.png](./resources/record_sql.png)在规则动作处，点击**添加**，进入动作编辑界面。选择 Sink 为 `file`，文件路径填写为 `data/mock.lines`，文件类型选择 `lines`，检查间隔设置为 10000。这样收到的数据就会存入 `data/mock.lines` 文件中。
-![record_action.png](./resources/record_action.png)
- 点击**确定**，创建规则。回到规则列表界面，请确保规则状态为**运行中**。点击规则状态，确定规则有收到和处理数据。
+   ![record_action.png](./resources/record_action.png)
+   点击**确定**，创建规则。回到规则列表界面，请确保规则状态为**运行中**。点击规则状态，确定规则有收到和处理数据。
 
 3. 查看数据：根据规则动作的配置，数据将被保存到 `data/mock.lines` 文件中。其存储格式为按行分割的 JSON 字符串。可使用文本编辑器打开文件进行编辑。
 

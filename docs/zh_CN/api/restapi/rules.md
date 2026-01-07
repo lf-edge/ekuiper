@@ -16,9 +16,11 @@ POST http://localhost:9081/rules
 {
   "id": "rule1",
   "sql": "SELECT * FROM demo",
-  "actions": [{
-    "log":  {}
-  }]
+  "actions": [
+    {
+      "log": {}
+    }
+  ]
 }
 ```
 
@@ -39,8 +41,8 @@ GET http://localhost:9081/rules
     "status": "Running"
   },
   {
-     "id": "rule2",
-     "status": "Stopped: canceled by error."
+    "id": "rule2",
+    "status": "Stopped: canceled by error."
   }
 ]
 ```
@@ -53,7 +55,7 @@ GET http://localhost:9081/rules
 GET http://localhost:9081/rules/{id}
 ```
 
-路径参数  `id` 是规则的 id 或名称。
+路径参数 `id` 是规则的 id 或名称。
 
 响应示例：
 
@@ -82,7 +84,7 @@ GET http://localhost:9081/rules/{id}
 PUT http://localhost:9081/rules/{id}
 ```
 
-路径参数  `id` 是原有规则的 id 或名称。
+路径参数 `id` 是原有规则的 id 或名称。
 
 请求示例：
 
@@ -90,9 +92,11 @@ PUT http://localhost:9081/rules/{id}
 {
   "id": "rule1",
   "sql": "SELECT * FROM demo",
-  "actions": [{
-    "log":  {}
-  }]
+  "actions": [
+    {
+      "log": {}
+    }
+  ]
 }
 ```
 
@@ -196,13 +200,16 @@ POST http://localhost:9081/rules/validate
 {
   "id": "rule1",
   "sql": "SELECT * FROM demo",
-  "actions": [{
-    "log":  {}
-  }]
+  "actions": [
+    {
+      "log": {}
+    }
+  ]
 }
 ```
 
 对于 API，以下是状态码的含义说明：
+
 - 如果请求体不正确，将返回状态码 400，表示发送了一个无效的请求。
 - 如果规则验证未通过，将返回状态码 422，表示规则无效。
 - 如果规则通过验证，将返回状态码 200，表示规则有效且验证通过。

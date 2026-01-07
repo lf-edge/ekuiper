@@ -10,7 +10,8 @@ Use this endpoint to create a new function.
 POST http://localhost:9081/udf/javascript
 ```
 
-The request body should be a JSON object with the following fields:  
+The request body should be a JSON object with the following fields:
+
 - id: A unique name for the function. This name must also be defined as a function in the script field.
 - description: A brief description of the function.
 - script: The function implementation in JavaScript.
@@ -20,10 +21,10 @@ Here's an example:
 
 ```json
 {
-   "id": "area",
-   "description": "calculate area",
-   "script": "function area(x, y) { return x * y; }",
-   "isAgg": false
+  "id": "area",
+  "description": "calculate area",
+  "script": "function area(x, y) { return x * y; }",
+  "isAgg": false
 }
 ```
 
@@ -53,10 +54,10 @@ Replace {id} with the name of the function you want to describe. The response wi
 
 ```json
 {
-   "id": "area",
-   "description": "calculate area",
-   "script": "function area(x, y) { return x * y; }",
-   "isAgg": false
+  "id": "area",
+  "description": "calculate area",
+  "script": "function area(x, y) { return x * y; }",
+  "isAgg": false
 }
 ```
 

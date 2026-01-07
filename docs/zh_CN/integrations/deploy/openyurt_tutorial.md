@@ -136,12 +136,12 @@ $ cd ekuiper/deploy/chart/Kuiper
 编辑 `template/StatefulSet.yaml` 第 38 行以添加 nodeName 和 hostNetwork，如下所示。 其中， `edge-node` 是边缘节点的主机名字，如果您的主机名不同，请更改以匹配您的边缘主机名。
 
 ```yaml
+
 ...
 spec:
-   nodeName: edge-node
-   hostNetwork: true
-   volumes:
-        {{- if not .Values.persistence.enabled }}
+  nodeName: edge-node
+  hostNetwork: true
+  volumes: { { - if not .Values.persistence.enabled } }
 ...
 ```
 
@@ -182,10 +182,11 @@ $ curl http://192.168.2.143:9081
 首先，我们需要确保文件中使用的仪表盘版本跟 eKuiper 版本相匹配。打开并修改 kmanager.yaml 第21行，确保版本正确。
 
 ```yaml
+
 ...
 containers:
-   - name: kmanager
-     image: emqx/ekuiper-manager:1.3.1
+  - name: kmanager
+    image: emqx/ekuiper-manager:1.3.1
 ...
 ```
 
@@ -214,7 +215,7 @@ kubernetes         ClusterIP   10.96.0.1       <none>        443/TCP            
 
    ![add service](./add_service.png)
 
-2. 服务创建完成后，点击服务名称 `ekuiper` 并切换到 `system`  页面。 连接应该被断开，这样我们就会得到关于连接的错误信息。 那是因为 `http://192.168.2.143:9081/` 是边缘端 eKuiper 服务的内网地址， 不能直接从云端访问。
+2. 服务创建完成后，点击服务名称 `ekuiper` 并切换到 `system` 页面。 连接应该被断开，这样我们就会得到关于连接的错误信息。 那是因为 `http://192.168.2.143:9081/` 是边缘端 eKuiper 服务的内网地址， 不能直接从云端访问。
 
 在下一节中，我们将设置 yurt 隧道，让仪表板管理 edge 端的 eKuiper 实例。
 
@@ -222,7 +223,7 @@ kubernetes         ClusterIP   10.96.0.1       <none>        443/TCP            
 
 我们将使用 OpenYurt 将隧道设置为云和边缘节点之间的通信管道。 因为我们需要连接到边缘的 `9081` 端口，我们必须在 yurt 隧道中设置端口映射。
 
-在云节点中，打开 `openyurt/config/setup/yurt-tunnel-server.yaml` 文件，编辑 configmap 第31行  `yurt-tunnel-server-cfg`，添加 nat-ports-pair，如下所示。
+在云节点中，打开 `openyurt/config/setup/yurt-tunnel-server.yaml` 文件，编辑 configmap 第31行 `yurt-tunnel-server-cfg`，添加 nat-ports-pair，如下所示。
 
 ```yaml
 apiVersion: v1
@@ -237,6 +238,7 @@ data:
 然后编辑第 175 行以添加 cloud-node 外部 ip 作为证书 ip。 仅当云节点没有公共 ip 和 [使用 NAT 规则设置](#使云节点可访问) 时才需要这样做。
 
 ```yaml
+
 ...
 args:
   - --bind-address=$(NODE_IP)

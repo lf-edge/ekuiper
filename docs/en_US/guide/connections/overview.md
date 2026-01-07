@@ -29,9 +29,9 @@ In eKuiper, the lifecycle management of various connections is divided into thre
    of type `memory`. Since this type is not integrated into the connection pool, the connection will only be established
    when a rule using this stream is started.
 
-    ```sql
-    create stream memStream () WITH (TYPE="mqtt", DATASOURCE="demo")
-    ```
+   ```sql
+   create stream memStream () WITH (TYPE="mqtt", DATASOURCE="demo")
+   ```
 
 2. **Anonymous Connection Resource Managed by Connection Pool**: Some connection types are adapted to the connection
    pool management interface, with their lifecycle managed by the connection pool. When a rule containing these types of
@@ -40,9 +40,9 @@ In eKuiper, the lifecycle management of various connections is divided into thre
    connection is anonymous, and since this type is adapted to the connection pool, we can retrieve this connection via
    the connection API. When the rule is deleted, the corresponding connection will also be deleted.
 
-    ```sql
-    create stream mqttStream () WITH (TYPE="mqtt", DATASOURCE="demo")
-    ```
+   ```sql
+   create stream mqttStream () WITH (TYPE="mqtt", DATASOURCE="demo")
+   ```
 
 3. **User-Created Connection Resource**: Users can add, delete, modify, and query resources via
    the [Connection Management API](../../api/restapi/connection.md). Resources created via the API must specify a unique
@@ -64,16 +64,16 @@ process.
    connection parameters required can be configured in `props`. After the connection is successfully created, `mqttcon1`
    can be found in the connection list API.
 
-    ```shell
-    POST http://localhost:9081/connections
-    {
-      "id": "mqttcon1"
-      "typ":"mqtt",
-      "props": {
-        server: "tcp://127.0.0.1:1883"
-      }
-    }
-    ```
+   ```shell
+   POST http://localhost:9081/connections
+   {
+     "id": "mqttcon1"
+     "typ":"mqtt",
+     "props": {
+       server: "tcp://127.0.0.1:1883"
+     }
+   }
+   ```
 
 2. **Use in Data Source**: When configuring the MQTT source (`$ekuiper/etc/mqtt_source.yaml`), you can reference the
    above connection configuration via `connectionSelector`, for example, both `demo_conf` and `demo2_conf` will
@@ -84,13 +84,13 @@ process.
 demo_conf: #Conf_key
   qos: 0
   connectionSelector: mqttcon1
-  servers: [ tcp://10.211.55.6:1883, tcp://127.0.0.1 ]
+  servers: [tcp://10.211.55.6:1883, tcp://127.0.0.1]
 
 #Override the global configurations
 demo2_conf: #Conf_key
   qos: 0
   connentionSelector: mqttcon1
-  servers: [ tcp://10.211.55.6:1883, tcp://127.0.0.1 ]
+  servers: [tcp://10.211.55.6:1883, tcp://127.0.0.1]
 ```
 
 Based on `demo_conf` and `demo2_conf`, create two data streams `demo` and `demo2`:

@@ -141,15 +141,15 @@ select concurrency from demo group by SLIDINGWINDOW(ss,0,10) over (when concurre
 该规则会当接收到 200A 以上的电流数据时开启一个窗口，如果该窗口中最小的数据也大于 200A ，则满足需求然后输出事件
 
 ```json
-{"concurrency":100,"ts":1} 
-{"concurrency":300,"ts":2} 
-{"concurrency":300,"ts":3} 
-{"concurrency":300,"ts":4} 
-{"concurrency":300,"ts":5} 
-{"concurrency":300,"ts":6} 
-{"concurrency":300,"ts":7} 
-{"concurrency":300,"ts":8} 
-{"concurrency":300,"ts":9} 
-{"concurrency":300,"ts":10}  
-{"concurrency":300,"ts":11} 输出事件 
+{"concurrency":100,"ts":1}
+{"concurrency":300,"ts":2}
+{"concurrency":300,"ts":3}
+{"concurrency":300,"ts":4}
+{"concurrency":300,"ts":5}
+{"concurrency":300,"ts":6}
+{"concurrency":300,"ts":7}
+{"concurrency":300,"ts":8}
+{"concurrency":300,"ts":9}
+{"concurrency":300,"ts":10}
+{"concurrency":300,"ts":11} 输出事件
 ```

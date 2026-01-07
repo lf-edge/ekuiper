@@ -45,7 +45,7 @@ step is not required if you already finished
 the [EdgeX eKuiper Rule Engine Tutorial](https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/edgex/edgex_rule_engine_tutorial.md)
 .
 
-``` bash
+```bash
 curl -X POST \
   http://$ekuiper_docker:59720/streams \
   -H 'Content-Type: application/json' \
@@ -57,13 +57,13 @@ curl -X POST \
 Since both use case scenario rules will send commands to the `Random-Boolean-Device` virtual device, use the curl
 request below to get a list of available commands for this device.
 
-``` bash
+```bash
 curl http://127.0.0.1:59882/api/v2/device/name/Random-Boolean-Device | jq
 ```
 
 It should print results like those below.
 
-``` json
+```json
 {
   "apiVersion": "v2",
   "statusCode": 200,
@@ -144,7 +144,7 @@ will use to call on the device. There are two parameters for this command:
 
 You can test calling this command with its parameters using curl as shown below.
 
-``` bash
+```bash
 curl -X PUT \
   http://edgex-core-command:59882/api/v2/device/name/Random-Boolean-Device/WriteBoolValue \
   -H 'Content-Type: application/json' \
@@ -167,7 +167,7 @@ to true).
 
 Given the URL and parameters to the command, below is the curl command to declare the first rule in eKuiper.
 
-``` bash
+```bash
 curl -X POST \
   http://$ekuiper_server:59720/rules \
   -H 'Content-Type: application/json' \
@@ -222,7 +222,7 @@ See [core-command](https://docs.edgexfoundry.org/3.0/microservices/core/command/
    {"Bool":"true", "EnableRandomization_Bool": "true"}
    ```
 
-3. Receive command response message from external MQTT broker on topic ```edgex/command/response/#```
+3. Receive command response message from external MQTT broker on topic `edgex/command/response/#`
 
    ```shell
    {
@@ -249,7 +249,7 @@ to false).
 Here is the curl request to setup the second rule in eKuiper. The same command URL is used as the same device
 action (`Random-Boolean-Device's PUT bool command`) is being actuated, but with different parameters.
 
-``` bash
+```bash
 curl -X POST \
   http://$ekuiper_server:59720/rules \
   -H 'Content-Type: application/json' \
@@ -300,7 +300,7 @@ Both rules are now created in eKuiper. eKuiper is busy analyzing the event data 
 for readings that match the rules you created. You can watch the edgex-kuiper container logs for the rule triggering and
 command execution.
 
-``` bash
+```bash
 docker logs edgex-kuiper
 ```
 
@@ -309,14 +309,14 @@ docker logs edgex-kuiper
 You can also explore the eKuiper analysis that caused the commands to be sent to the service. To see the data from
 the analysis, use the SQL below to query eKuiper filtering data.
 
-``` sql
+```sql
 SELECT int8, "true" AS randomization FROM demo WHERE uint8 > 20
 ```
 
 The output of the SQL should look similar to the results below.
 
-``` json
-[{"int8":-75, "randomization":"true"}]
+```json
+[{ "int8": -75, "randomization": "true" }]
 ```
 
 Let's suppose a service need following data format, while `value` field is read from field `int8`, and `EnableRandomization_Bool` is read from field `randomization`.
@@ -338,7 +338,7 @@ In some cases, you probably need to iterate over returned array values, or set d
 
 ## Extended readings
 
- If you want to explore more features of eKuiper, please refer to below resources.
+If you want to explore more features of eKuiper, please refer to below resources.
 
 - [eKuiper Github code repository](https://github.com/lf-edge/ekuiper/)
 - [eKuiper reference guide](https://github.com/lf-edge/ekuiper/blob/edgex/docs/en_US/reference.md)

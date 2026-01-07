@@ -54,14 +54,14 @@ def label(file_bytes):
     # Load the model file
     interpreter = tf.Interpreter(
         model_path= cwd + 'mobilenet_v1_1.0_224.tflite')
-  
+
     # Preprocess the input image, turn it into tensors. Here the code is omitted.
-  
+
     # Set model input, call inference, get result tensor
     interpreter.set_tensor(input_details[0]['index'], input_data)
     interpreter.invoke()
     output_data = interpreter.get_tensor(output_details[0]['index'])
-  
+
     # Post process the result and turn it into the output format. Here the code is omitted.
     return result
 ```
@@ -81,7 +81,13 @@ if __name__ == '__main__':
 This file uses the `peacock.jpg` image file as input, calls the label function to test it, and converts the result to a json string and prints it. This allows us to see if the function works as expected. Here, we should get a json array and sort the recognition results by confidence level.
 
 ```json
-[{"confidence": 0.9999935626983643, "label": "85:peacock"}, {"confidence": 2.156877371817245e-06, "label": "8:cock"}, {"confidence": 1.5930896779536852e-06, "label": "81:black grouse"}, {"confidence": 9.999589565268252e-07, "label": "92:coucal"}, {"confidence": 7.304166160793102e-07, "label": "96:jacamar"}]
+[
+  { "confidence": 0.9999935626983643, "label": "85:peacock" },
+  { "confidence": 2.156877371817245e-6, "label": "8:cock" },
+  { "confidence": 1.5930896779536852e-6, "label": "81:black grouse" },
+  { "confidence": 9.999589565268252e-7, "label": "92:coucal" },
+  { "confidence": 7.304166160793102e-7, "label": "96:jacamar" }
+]
 ```
 
 See the `lable.py` file in the full code for details.
@@ -131,31 +137,27 @@ At this point, we have completed the development of the main functionality, and 
 1. If the plugin has additional dependencies, such as TensorFlow Lite in this case, you need to create the dependency installation script `install.sh`. When the plugin is installed, eKuiper will look for an installation script file `install.sh` in the plugin package and execute the it if there is one. In this case, we create a `requirements.txt` file listing all the dependency packages. The installation of the dependencies is done in `install.sh` by calling `pip install -r $cur/requirements.txt`. For other plugins, you can reuse this script to update `requirements.txt` if you have no special requirements.
 2. Create a Python entry file that exposes all the implemented interfaces. Because multiple extensions can be implemented in a single plugin, you need an entry file that defines the implementation classes for each extension. The content is a main function, which is the entry point for the plugin runtime. It calls the methods in the SDK to define the plugin, including the plugin name, and a list of keys for the source, sink, and function implemented in the plugin. Here only a function plugin named `labelImage` is implemented, and its corresponding implementation method is `labelIns`. The Python plug-in process is independent of the eKuiper main process.
 
-    ```python
-    if __name__ == '__main__':
-        # Define the plugin
-        c = PluginConfig("pyai", {}, {},
-                         {"labelImage": lambda: labelIns})
-        # Start the plugin instance
-        plugin.start(c)
-    ```
+   ```python
+   if __name__ == '__main__':
+       # Define the plugin
+       c = PluginConfig("pyai", {}, {},
+                        {"labelImage": lambda: labelIns})
+       # Start the plugin instance
+       plugin.start(c)
+   ```
 
 3. Create a plugin description file in JSON format to define the metadata of the plugin. The file name must be the same as the plugin name, i.e. `pyai.json`. The function names defined therein must correspond exactly to the entry file, and the contents of the file are as follows. Where, executable is used to define the name of the plugin's executable entry file.
 
-    ```json
-    {
-      "version": "v1.0.0",
-      "language": "python",
-      "executable": "pyai.py",
-      "sources": [
-      ],
-      "sinks": [
-      ],
-      "functions": [
-        "labelImage"
-      ]
-    }
-    ```
+   ```json
+   {
+     "version": "v1.0.0",
+     "language": "python",
+     "executable": "pyai.py",
+     "sources": [],
+     "sinks": [],
+     "functions": ["labelImage"]
+   }
+   ```
 
 At this point we have completed the development of the plugin, next we just need to package all the files in the directory into a zip file. The zip file should have a file structure similar to:
 
@@ -200,7 +202,7 @@ Content-Type: application/json
 
 ### Define the rule
 
-Define the rule by eKuiper rest API.  We will create a rule named ruleTf. We just read the images from tfdemo stream and run the custom function *labelImage* against it. The returned result will be an array of labels of the images recognized by the AI, containing labels ranked by confidence. Our rule takes the first of these labels with the highest confidence and sends it to the MQTT topic `ekuiper/labels`.
+Define the rule by eKuiper rest API. We will create a rule named ruleTf. We just read the images from tfdemo stream and run the custom function _labelImage_ against it. The returned result will be an array of labels of the images recognized by the AI, containing labels ranked by confidence. Our rule takes the first of these labels with the highest confidence and sends it to the MQTT topic `ekuiper/labels`.
 
 ```shell
 POST http://{{host}}/rules
@@ -272,7 +274,7 @@ Run pub.go and it will start feeding images into the tfdemo theme. Please note t
 
 ### Check the result
 
-Since our rule definition has only one target: MQTT, the results will be written to the MQTT theme `ekuiper/labels`. Using an MQTT client subscribed to the theme, we input the tfdemo topic with two images *peacock.png* and *frog.png* and we will get two results.
+Since our rule definition has only one target: MQTT, the results will be written to the MQTT theme `ekuiper/labels`. Using an MQTT client subscribed to the theme, we input the tfdemo topic with two images _peacock.png_ and _frog.png_ and we will get two results.
 
 ```shell
 {"label":"85:peacock"}

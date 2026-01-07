@@ -10,7 +10,7 @@ GET http://localhost:9081/metadata/sources/yaml/{name}
 
 ### 参数
 
- name：源名称，支持内置源和扩展源。其中内置源包括 mqtt、redis、neuron、memory、httppull、httppush、file、edgex，扩展源包括 random、sql、video、zmq 以及用户自定义源
+name：源名称，支持内置源和扩展源。其中内置源包括 mqtt、redis、neuron、memory、httppull、httppush、file、edgex，扩展源包括 random、sql、video、zmq 以及用户自定义源
 
 ### 示例
 
@@ -22,26 +22,26 @@ GET http://localhost:9081/metadata/sources/yaml/{name}
 
 ```json
 {
-    "amd_broker": {
-        "insecureSkipVerify": false,
-        "protocolVersion": "3.1.1",
-        "qos": 1,
-        "server": "tcp://122.9.166.75:1883",
-        "token": "******",
-        "password": "******"
-    },
-    "default": {
-        "qos": 2,
-        "server": "tcp://emqx:1883"
-    },
-    "demo_conf": {
-        "qos": 0,
-        "server": "tcp://10.211.55.6:1883"
-    }
+  "amd_broker": {
+    "insecureSkipVerify": false,
+    "protocolVersion": "3.1.1",
+    "qos": 1,
+    "server": "tcp://122.9.166.75:1883",
+    "token": "******",
+    "password": "******"
+  },
+  "default": {
+    "qos": 2,
+    "server": "tcp://emqx:1883"
+  },
+  "demo_conf": {
+    "qos": 0,
+    "server": "tcp://10.211.55.6:1883"
+  }
 }
 ```
 
-注意：当获取 Config Key 时，如果属性中包含 password/Token 字段（不区分大小写，例如 Password 等），API 不会返回实际密码值，而会用"******"代替以隐藏密码信息。
+注意：当获取 Config Key 时，如果属性中包含 password/Token 字段（不区分大小写，例如 Password 等），API 不会返回实际密码值，而会用"**\*\***"代替以隐藏密码信息。
 
 ## 删除某个 configKey
 
@@ -54,7 +54,7 @@ DELETE http://localhost:9081/metadata/sources/{name}/confKeys/{confKey}
 ### 参数
 
 1. name：源名称，支持内置源和扩展源。其中内置源包括 mqtt、redis、neuron、memory、httppull、httppush、file、edgex,
-扩展源包括 random、sql、video、zmq 以及用户自定义源
+   扩展源包括 random、sql、video、zmq 以及用户自定义源
 2. confKey: Config Key 名称。以上面为例，Config Key 依次为 amd_broker、default、demo_conf。
 
 ### 示例

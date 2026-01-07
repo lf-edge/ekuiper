@@ -12,8 +12,8 @@ An example of a request for a file on an HTTP server:
 
 ```json
 {
-  "name":"random",
-  "file":"http://127.0.0.1/services/sample.zip"
+  "name": "random",
+  "file": "http://127.0.0.1/services/sample.zip"
 }
 ```
 
@@ -21,8 +21,8 @@ An example of a request for a file on the eKuiper server:
 
 ```json
 {
-  "name":"random",
-  "file":"file:///var/services/sample.zip"
+  "name": "random",
+  "file": "file:///var/services/sample.zip"
 }
 ```
 
@@ -49,7 +49,7 @@ GET http://localhost:9081/services
 Response example:
 
 ```json
-["sample","sample2"]
+["sample", "sample2"]
 ```
 
 ## Describe external services

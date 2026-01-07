@@ -116,7 +116,7 @@ In `etc/kuiper.yaml`, there is a `pluginHosts` configuration item, and users can
 https://$host/$folder/$version/$os/$type/$plugin.zip
 ```
 
-Example:  https://127.0.0.1:9090/kuiper-plugins/1.7.1/debian/sinks/sql.zip
+Example: https://127.0.0.1:9090/kuiper-plugins/1.7.1/debian/sinks/sql.zip
 
 Among them:
 
@@ -133,4 +133,4 @@ Due to the limitation of `Go` language plugin mechanism, the compilation environ
 
 ### Summary
 
-eKuiper management console provides a display mechanism for custom plugins. User only needs to add the plugin metadata file in the custom plugin package. At the same time, users can customize the plugin  repository, so that plugins can be installed and used conveniently from the console.
+eKuiper management console provides a display mechanism for custom plugins. User only needs to add the plugin metadata file in the custom plugin package. At the same time, users can customize the plugin repository, so that plugins can be installed and used conveniently from the console.

@@ -6,14 +6,15 @@ The system currently supports JavaScript as the scripting language.
 
 > Notice:
 > The script functions are not included in the default (aka. alpine) docker image and precompiled binary. If you want to
-use the script functions, please use the slim or slim-python docker image, or full version binary. To compile with the
-script functions, you need to add the `script` build tag.
+> use the script functions, please use the slim or slim-python docker image, or full version binary. To compile with the
+> script functions, you need to add the `script` build tag.
 
 ## JavaScript Functions
 
 The software has a built-in JavaScript interpreter [goja](https://github.com/dop251/goja), which allows you to write script functions directly in JavaScript. Due to the large built-in interpreter, the default compiled version does not include the script function extension. Users need to use the precompiled full version or slim version docker image. When compiling yourself, you need to add the `script` build tag.
 
 The general steps for users to write script functions in JavaScript are as follows:
+
 1. Write and debug JavaScript functions
 2. Register the script function in eKuiper
 3. Use the script function in SQL
@@ -25,7 +26,7 @@ Users can use their favorite editor to write JavaScript script functions and deb
 
 ```javascript
 function echo(msg) {
-    return msg;
+  return msg;
 }
 ```
 
@@ -37,13 +38,14 @@ If the function needs to be used as an aggregate function, the user should expec
 
 ```javascript
 function count_by_js(msgs) {
-    return msg.length;
+  return msg.length;
 }
 ```
 
 ### Management of JavaScript Functions
 
 After the function is written and debugged, the user needs to register the function in eKuiper. There are two ways to register:
+
 1. Register using [REST API](../../api/restapi/udf.md)
 2. Register using [CLI](../../api/cli/scripts.md)
 
@@ -59,43 +61,43 @@ Assuming that the user has completed the development of a JavaScript function fo
 
 1. Register the function
 
-    ```http request
-    POST udf/javascript
+   ```http request
+   POST udf/javascript
 
-    {
-      "id": "area",
-      "description": "calculate area",
-      "script": "function area(x, y) { log(\"Hello, World!\"); return x * y;}",
-      "isAgg": false
-    }
-    ```
+   {
+     "id": "area",
+     "description": "calculate area",
+     "script": "function area(x, y) { log(\"Hello, World!\"); return x * y;}",
+     "isAgg": false
+   }
+   ```
 
 2. Use in SQL, assuming there is an MQTT data stream `mqttDemo`, you can create the following rules:
 
-    ```json
-    {
-      "id": "ruleArea",
-      "sql": "SELECT area(length, width) FROM mqttDemo",
-      "actions": [
-        {
-          "mqtt": {
-            "server": "tcp://127.0.0.1:1883",
-            "topic": "result/area",
-            "sendSingle": true
-          }
-        }
-      ]
-    }
-    ```
+   ```json
+   {
+     "id": "ruleArea",
+     "sql": "SELECT area(length, width) FROM mqttDemo",
+     "actions": [
+       {
+         "mqtt": {
+           "server": "tcp://127.0.0.1:1883",
+           "topic": "result/area",
+           "sendSingle": true
+         }
+       }
+     ]
+   }
+   ```
 
 3. Input similar data through MQTT
 
-    ```json
-    {"length":3, "width" :4}
-    ```
+   ```json
+   { "length": 3, "width": 4 }
+   ```
 
 4. Subscribe to the MQTT topic `result/area`, check the continuous output results, for example
 
-    ```json
-    {"area":21}
-    ```
+   ```json
+   { "area": 21 }
+   ```

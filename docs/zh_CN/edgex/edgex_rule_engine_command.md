@@ -166,7 +166,7 @@ curl -X POST \
 具体信息请详见 [core-command](https://docs.edgexfoundry.org/3.0/microservices/core/command/Ch-Command/#commands-via-messaging) 。这里以第一条规则为例，简单介绍一下如何配置：
 
 1. 将 `MESSAGEQUEUE_EXTERNAL_ENABLED` 环境变量设为 `true` ，开启 `core-command` 的 `external messagebus` ；
-将 `MESSAGEQUEUE_EXTERNAL_URL` 环境变量设为 `external messagebus` 的地址和端口号。
+   将 `MESSAGEQUEUE_EXTERNAL_URL` 环境变量设为 `external messagebus` 的地址和端口号。
 2. 使用如下配置创建规则：
 
 ```shell
@@ -187,8 +187,7 @@ curl -X POST \
 }
 ```
 
-其中 `payload` 是 `{"Bool":"true", "EnableRandomization_Bool": "true"}` 的 base64 编码。
-3. 发送成功后，可以在 `edgex/command/response/#` 主题里收到如下响应 ：
+其中 `payload` 是 `{"Bool":"true", "EnableRandomization_Bool": "true"}` 的 base64 编码。3. 发送成功后，可以在 `edgex/command/response/#` 主题里收到如下响应 ：
 
 ```shell
 {
@@ -274,7 +273,7 @@ SELECT int8, "true" AS randomization FROM demo WHERE uint8 > 20
 SQL 的输出内容如下：
 
 ```json
-[{"int8":-75, "randomization":"true"}]
+[{ "int8": -75, "randomization": "true" }]
 ```
 
 当从字段 `int8` 读取 `value` 字段，从字段 `randomization` 读取 `EnableRandomization_Bool` 时，假设服务需要以下数据格式：

@@ -16,12 +16,10 @@ For the following scenario, we use count for aggregate computation within a wind
   "sql": "SELECT count(*) from demo group by countwindow(4)",
   "actions": [
     {
-      "log": {
-      }
+      "log": {}
     }
   ],
-  "options" :{
-  }
+  "options": {}
 }
 ```
 
@@ -41,11 +39,10 @@ We can enable incremental computation in the options, as shown in the following 
   "sql": "SELECT count(*) from demo group by countwindow(4)",
   "actions": [
     {
-      "log": {
-      }
+      "log": {}
     }
   ],
-  "options" :{
+  "options": {
     "planOptimizeStrategy": {
       "enableIncrementalWindow": true
     }
@@ -69,19 +66,18 @@ When there is an aggregate function that inherently cannot be computed increment
 
 ```json
 {
-    "id": "rule",
-    "sql": "SELECT count(*), stddev(a) from demo group by countwindow(4)",
-    "actions": [
-        {
-            "log": {
-            }
-        }
-    ],
-    "options" :{
-        "planOptimizeStrategy": {
-            "enableIncrementalWindow": true
-        }
+  "id": "rule",
+  "sql": "SELECT count(*), stddev(a) from demo group by countwindow(4)",
+  "actions": [
+    {
+      "log": {}
     }
+  ],
+  "options": {
+    "planOptimizeStrategy": {
+      "enableIncrementalWindow": true
+    }
+  }
 }
 ```
 

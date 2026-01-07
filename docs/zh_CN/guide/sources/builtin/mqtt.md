@@ -15,7 +15,7 @@ MQTT 源连接器的配置文件位于：`$ekuiper/etc/mqtt_source.yaml`，其�
 
 - default：对应全局连接配置。
 - 自定义部分：适用于需要自定义连接参数的场景，该部分的配置将覆盖全局连接配置。
-- 连接器重用：eKuiper 还支持通过  [`connectionSelector`](../../connector.md#connection-selector)  配置项在不同的配置中复用某个连接配置。
+- 连接器重用：eKuiper 还支持通过 [`connectionSelector`](../../connector.md#connection-selector) 配置项在不同的配置中复用某个连接配置。
 
 以下示例包括一个全局配置和自定义配置 `demo_conf`：
 
@@ -33,7 +33,6 @@ default:
   #connectionSelector: mqtt.mqtt_conf1
   # 使用指定的压缩方法解压缩。现在支持`gzip`、`zstd`
   # decompression: ""
-
 
 #覆盖全局配置
 demo_conf: #Conf_key
@@ -58,7 +57,7 @@ demo_conf: #Conf_key
 
 ### 安全和认证配置
 
-- `certificationPath`:  证书路径，示例值：`d3807d9fa5-certificate.pem`。可以是绝对路径，也可以是相对路径。如指定相对路径，那么父目录为执行 `kuiperd` 命令的路径，例如：
+- `certificationPath`: 证书路径，示例值：`d3807d9fa5-certificate.pem`。可以是绝对路径，也可以是相对路径。如指定相对路径，那么父目录为执行 `kuiperd` 命令的路径，例如：
   - 如果在 `/var/kuiper` 中运行 `bin/kuiperd` ，那么父目录为 `/var/kuiper`。
   - 如果运行从`/var/kuiper/bin`中运行`./kuiperd`，那么父目录为 `/var/kuiper/bin`。
 - `privateKeyPath`：私钥路径，示例值：`d3807d9fa5-private.pem.key`。可以是绝对路径，也可以是相对路径，具体可参考 `certificationPath`。
@@ -93,7 +92,7 @@ demo_conf: #Conf_key
 ### **负载相关配置**
 
 - `decompression`：使用指定的压缩方法解压缩，支持 `gzip`、`zstd`。
-- `bufferLength`：指定最大缓存消息数目。该参数主要用于防止内存溢出。实际内存用量会根据当前缓存消息数目动态变化。增大该参数不会增加初始内存分配量，因此建议设为较大的数值。默认值为102400；如果每条消息为100字节，则默认情况下，缓存最大占用内存量为102400 * 100B ~= 10MB.
+- `bufferLength`：指定最大缓存消息数目。该参数主要用于防止内存溢出。实际内存用量会根据当前缓存消息数目动态变化。增大该参数不会增加初始内存分配量，因此建议设为较大的数值。默认值为102400；如果每条消息为100字节，则默认情况下，缓存最大占用内存量为102400 \* 100B ~= 10MB.
 
 ### **KubeEdge 集成**
 
@@ -103,21 +102,21 @@ demo_conf: #Conf_key
 
   ```yaml
   {
-    "deviceModels": [{
-      "name": "device1",
-      "properties": [{
-        "name": "temperature",
-        "dataType": "int"
-      }, {
-        "name": "temperature-enable",
-        "dataType": "string"
-      }]
-    }]
+    "deviceModels":
+      [
+        {
+          "name": "device1",
+          "properties":
+            [
+              { "name": "temperature", "dataType": "int" },
+              { "name": "temperature-enable", "dataType": "string" },
+            ],
+        },
+      ],
   }
   ```
 
   其中，
-
   - `deviceModels.name`：设备名称，与订阅主题中的字段匹配，为第三和第四个“/”之间的内容。例如：$ke/events/device/device1/data/update，设备名称为 `device1`。
   - `properties.name`：字段名称。
   - `properties.dataType`：预期字段类型。
@@ -135,7 +134,7 @@ demo_conf: #Conf_key
   server: "tcp://10.211.55.6:1883"
 ```
 
-定义  `demo_conf`  配置组后，如希望在创建流时使用此配置，可通过 `CONF_KEY` 选项并指定配置名称，此时，在自定义配置中定义的参数将覆盖 `default` 配置中的相应参数。详细步骤，可参考 [流语句](../../../sqls/streams.md)。
+定义 `demo_conf` 配置组后，如希望在创建流时使用此配置，可通过 `CONF_KEY` 选项并指定配置名称，此时，在自定义配置中定义的参数将覆盖 `default` 配置中的相应参数。详细步骤，可参考 [流语句](../../../sqls/streams.md)。
 
 **示例**
 

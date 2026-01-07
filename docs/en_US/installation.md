@@ -31,35 +31,35 @@ Please make sure docker compose has installed before running.
 1. Create `docker-compose.yaml` file.
 
    ```yaml
-   version: '3.4'
+   version: "3.4"
 
    services:
-       manager:
-          image: emqx/ekuiper-manager:x.x.x
-          container_name: ekuiper-manager
-          ports:
-          - "9082:9082"
-          restart: unless-stopped
-          environment:
-            # setting default eKuiper service, works since 1.8.0
-            DEFAULT_EKUIPER_ENDPOINT: "http://ekuiper:9081"
-       ekuiper:
-          image: lfedge/ekuiper:x.x.x
-          ports:
-            - "9081:9081"
-            - "127.0.0.1:20498:20498"
-          container_name: ekuiper
-          hostname: ekuiper
-          restart: unless-stopped
-          user: root
-          volumes:
-            - /tmp/data:/kuiper/data
-            - /tmp/log:/kuiper/log
-          environment:
-            MQTT_SOURCE__DEFAULT__SERVER: "tcp://broker.emqx.io:1883"
-            KUIPER__BASIC__CONSOLELOG: "true"
-            KUIPER__BASIC__IGNORECASE: "false"
-     ```
+     manager:
+       image: emqx/ekuiper-manager:x.x.x
+       container_name: ekuiper-manager
+       ports:
+         - "9082:9082"
+       restart: unless-stopped
+       environment:
+         # setting default eKuiper service, works since 1.8.0
+         DEFAULT_EKUIPER_ENDPOINT: "http://ekuiper:9081"
+     ekuiper:
+       image: lfedge/ekuiper:x.x.x
+       ports:
+         - "9081:9081"
+         - "127.0.0.1:20498:20498"
+       container_name: ekuiper
+       hostname: ekuiper
+       restart: unless-stopped
+       user: root
+       volumes:
+         - /tmp/data:/kuiper/data
+         - /tmp/log:/kuiper/log
+       environment:
+         MQTT_SOURCE__DEFAULT__SERVER: "tcp://broker.emqx.io:1883"
+         KUIPER__BASIC__CONSOLELOG: "true"
+         KUIPER__BASIC__IGNORECASE: "false"
+   ```
 
 2. Start docker-compose cluster.
 
@@ -95,15 +95,15 @@ For other operating systems such as Windows, users can [compile from source code
 1. Download eKuiper zip or tar for your CPU architecture from [ekuiper.org](https://ekuiper.org/downloads) or [Github](https://github.com/lf-edge/ekuiper/releases).
 2. Unzip the installation file:
 
-    ```shell
-    unzip kuiper-x.x.x-linux-amd64.zip
-    ```
+   ```shell
+   unzip kuiper-x.x.x-linux-amd64.zip
+   ```
 
 3. Start eKuiper.
 
-    ```shell
-    $ bin/kuiperd
-    ```
+   ```shell
+   $ bin/kuiperd
+   ```
 
 4. Remove eKuiper. Simply delete the eKuiper directory.
 
@@ -224,21 +224,21 @@ Go supports cross-compiling binaries for multiple platforms which applies to eKu
 sqlite, CGO_ENABLED must be set to 1 which requires to install and specify the gcc of the target system.
 
 - Install the GNU toolchain/gcc of the target system.
-- Modify the Makefile to specify `GOOS`, `GOARCH` and `CC`  and then build.
+- Modify the Makefile to specify `GOOS`, `GOARCH` and `CC` and then build.
 
 For example, to cross build ARM64 binaries in AMD64 ubuntu/debian machine, do these steps:
 
 1. Install the GNU toolchain/gcc of the target system ARM64
 
-      ```shell
-      apt-get install gcc-aarch64-linux-gnu
-      ```
+   ```shell
+   apt-get install gcc-aarch64-linux-gnu
+   ```
 
 2. Update the Makefile in the build command. Examples:
 
-      ```shell
-      GO111MODULE=on CGO_ENABLED=1 GOOS=linux GOARCH=arm64 CC=aarch64-linux-gnu-gcc go build -trimpath -ldflags="-s -w -X github.com/lf-edge/ekuiper/cmd.Version=$(VERSION) -X github.com/lf-edge/ekuiper/cmd.LoadFileType=relative" -o kuiperd cmd/kuiperd/main.go
-      ```
+   ```shell
+   GO111MODULE=on CGO_ENABLED=1 GOOS=linux GOARCH=arm64 CC=aarch64-linux-gnu-gcc go build -trimpath -ldflags="-s -w -X github.com/lf-edge/ekuiper/cmd.Version=$(VERSION) -X github.com/lf-edge/ekuiper/cmd.LoadFileType=relative" -o kuiperd cmd/kuiperd/main.go
+   ```
 
 3. Run `make`
 
@@ -255,7 +255,7 @@ Uses can customize the built binary
 to include only the desired features to reduce the binary size according to the limit of the target environment.
 
 | Feature                                                                                       | Build Tag  | Description                                                                                                                                            |
-|-----------------------------------------------------------------------------------------------|------------|--------------------------------------------------------------------------------------------------------------------------------------------------------|
+| --------------------------------------------------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Core                                                                                          | core       | The core of eKuiper. It contains the processor and REST API for stream/table/rule, the configuration processing, the SQL parser, the rule runtime etc. |
 | [CLI](./api/cli/overview.md)                                                                  | rpc        | The cli server                                                                                                                                         |
 | [EdgeX Foundry integration](./edgex/edgex_rule_engine_tutorial.md)                            | edgex      | The built-in edgeX source, sink and connection                                                                                                         |
@@ -330,7 +330,7 @@ This folder saves the persisted definitions of streams and rules. It also contai
 
 ### plugins
 
-eKuiper allows users to develop your own plugins, and put these plugins into this folder.  See [extension](./extension/overview.md) for more info for how to extend the eKuiper.
+eKuiper allows users to develop your own plugins, and put these plugins into this folder. See [extension](./extension/overview.md) for more info for how to extend the eKuiper.
 
 ### log
 

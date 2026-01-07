@@ -13,7 +13,7 @@ External functions can be categorized into two types: schema-based and schemales
 The configuration file of the external function is in json format, which usually consists of two parts:
 
 - JSON file, used to describes the information of the service. The file will be saved as the name of the service in eKuiper.
-- Schema file, used to  describes the service API interface, including the name of the API included in the service,, input and output parameter type. Currently only [protobuf type](https://developers.google.com/protocol-buffers) is supported.
+- Schema file, used to describes the service API interface, including the name of the API included in the service,, input and output parameter type. Currently only [protobuf type](https://developers.google.com/protocol-buffers) is supported.
 
 The json configuration file includes the following two parts:
 
@@ -131,9 +131,9 @@ Protobuf uses proto3 format. Please refer to [proto3-spec](https://developers.go
 
 #### HTTP Options
 
-In order to support detail configuration of the REST service, such as the http method, the url template, the params and the body, an additional mapping annotations based on grpc transcoding specification provided by *google.api.http* annotation. Users can specify a http rule for each rpc method to define the mapping of the rpc method to the http method, URL path, URL query parameters, and HTTP request body.
+In order to support detail configuration of the REST service, such as the http method, the url template, the params and the body, an additional mapping annotations based on grpc transcoding specification provided by _google.api.http_ annotation. Users can specify a http rule for each rpc method to define the mapping of the rpc method to the http method, URL path, URL query parameters, and HTTP request body.
 
-Below is a portion of the revised tsrest.proto file in which a http rule is added. The rule specifies the http method to be *post*, and the mapping url to */v1/computation/object_detection* to override the default url */object_detection*. It also specifies the body to be a wildcard which means the whole input parameter of *ObjectDetectionRequest* will be the body.
+Below is a portion of the revised tsrest.proto file in which a http rule is added. The rule specifies the http method to be _post_, and the mapping url to _/v1/computation/object_detection_ to override the default url _/object_detection_. It also specifies the body to be a wildcard which means the whole input parameter of _ObjectDetectionRequest_ will be the body.
 
 ```protobuf
 service TSRest {
@@ -146,7 +146,7 @@ service TSRest {
 }
 ```
 
-If the object_detection rest service provides different url for different command, users can specify the url mapping with parameters as below. By this way, the input *ObjectDetectionRequest* parameter's *cmd* field is assigned to the url, and the *base64_img* field is processed as the body.
+If the object_detection rest service provides different url for different command, users can specify the url mapping with parameters as below. By this way, the input _ObjectDetectionRequest_ parameter's _cmd_ field is assigned to the url, and the _base64_img_ field is processed as the body.
 
 ```protobuf
 service TSRest {
@@ -176,7 +176,7 @@ message MessageRequest {
 }
 ```
 
-In this example, there is no *body* specified thus all parameter fields are mapped to the query parameter. When calling `SearchMessage({"author":"Author","title":"Message1"})` in eKuiper SQL, it will be mapped to `GET /v1/messages?author=Author&title=Message1`.
+In this example, there is no _body_ specified thus all parameter fields are mapped to the query parameter. When calling `SearchMessage({"author":"Author","title":"Message1"})` in eKuiper SQL, it will be mapped to `GET /v1/messages?author=Author&title=Message1`.
 
 For more detail about the mapping syntax for protobuf, please check [adding transcoding mapping](https://cloud.google.com/endpoints/docs/grpc/transcoding#adding_transcoding_mappings) and [httprule](https://cloud.google.com/endpoints/docs/grpc-service-config/reference/rpc/google.api#httprule).
 
@@ -204,10 +204,10 @@ In the external service configuration, there are 1 json file and at least 1 sche
 
 In this sample, if a user call `objectDetection` function in eKuiper SQL, the mapping steps are:
 
-1. Found a function mapping in json file, interfaces *tsrest* functions section: `{"name": "objectDetect","serviceName": "object_detection"}`. This maps SQL function `objectDetect` to rpc named `object_detection`.
+1. Found a function mapping in json file, interfaces _tsrest_ functions section: `{"name": "objectDetect","serviceName": "object_detection"}`. This maps SQL function `objectDetect` to rpc named `object_detection`.
 2. In the schema file `tsrest.proto`, rpc `object_detection` is defined and the parameter and return type will be parsed. The `tsrest` interface properties such as address, protocol will be used to issue the request in runtime.
 
-Notice that, in REST call the parameters will be parsed to json.  Proto message field names are **converted** to lowerCamelCase and become JSON object keys. If the object keys of the REST API is not lowerCamelCase, the user must specify the json_name field option to avoid the conversion.
+Notice that, in REST call the parameters will be parsed to json. Proto message field names are **converted** to lowerCamelCase and become JSON object keys. If the object keys of the REST API is not lowerCamelCase, the user must specify the json_name field option to avoid the conversion.
 
 #### Notification
 
@@ -215,7 +215,7 @@ Since REST and msgpack-rpc are not natively defined by protobuf, there are some 
 
 The REST service is **POST** by default currently, and the transmission format is json. The user can change the default method through [http options](#http-options) in the defined protobuf. There are some restricitons in rest service:
 
-- If http options are not specified, the input type must be **Message** or *google.protobuf.StringValue*. If the type is *google.protobuf.StringValue*, the parameter must be an encoded json string like `"{\"name\":\"name1\",\"size\":1}"`.
+- If http options are not specified, the input type must be **Message** or _google.protobuf.StringValue_. If the type is _google.protobuf.StringValue_, the parameter must be an encoded json string like `"{\"name\":\"name1\",\"size\":1}"`.
 - The marshalled json for int64 type will be string
 
 The msgpack-rpc service has the following limitation:
@@ -226,7 +226,7 @@ The msgpack-rpc service has the following limitation:
 
 Schemaless external functions do not require a schema file for configuration. Instead, they only need a json file. The definition and content of this json file are the same as the json file used in Schema external functions, so we won't repeat them here.
 
-Let's assume we have a service named 'sample'.  We can define a service definition file called 'sample.json' with the following content:
+Let's assume we have a service named 'sample'. We can define a service definition file called 'sample.json' with the following content:
 
 ```json
 {
@@ -287,9 +287,9 @@ External functions need to be registered before being used. There are two ways t
 - Placed in the configuration folder
 - Dynamic registration via REST API.
 
-When eKuiper is started, it will read and register the external service configuration file in the configuration folder *etc/services*. Before starting, users can put the configuration file into the configuration folder according to the following rules:
+When eKuiper is started, it will read and register the external service configuration file in the configuration folder _etc/services_. Before starting, users can put the configuration file into the configuration folder according to the following rules:
 
-1. The file name must be *$service name$.json*. For example, *sample.json* will be registered as a sample service.
+1. The file name must be _$service name$.json_. For example, _sample.json_ will be registered as a sample service.
 
 2. The Schema file used must be placed in the schemas folder. The directory structure is similar to:
 
@@ -319,7 +319,7 @@ After the service is registered, all functions defined in it can be used in rule
 SELECT objectDetection(cmd, img) from comandStream
 ```
 
-Before calling the function, you need to make sure that the REST service is running on *http://localhost:8090* and there is an API *http://localhost:8090/object_detection* in it.
+Before calling the function, you need to make sure that the REST service is running on _http://localhost:8090_ and there is an API _http://localhost:8090/object_detection_ in it.
 
 #### Parameter Expansion
 
@@ -347,7 +347,7 @@ Once the service registration is complete, all the functions defined within it c
 SELECT tsschemaless("post", "/object_detection", *) from schemalessStream
 ```
 
-Before calling the function, you need to make sure that the REST service is running on *http://localhost:8090* and there is an API *http://localhost:8090/object_detection* in it.
+Before calling the function, you need to make sure that the REST service is running on _http://localhost:8090_ and there is an API _http://localhost:8090/object_detection_ in it.
 
 #### Parameter Expansion
 

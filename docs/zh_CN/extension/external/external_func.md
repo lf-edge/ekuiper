@@ -131,9 +131,9 @@ Protobuf 采用 proto3 格式，详细格式请参考 [proto3-spec](https://deve
 
 #### Http选项
 
-为了支持更细粒度的 REST 服务配置，例如配置 http 方法，URL，参数以及请求体，我们支持了基于 *google.api.http* 注解的 grpc 转码配置。在 proto 文件中，用户可通过给每个 rpc 方法添加注解的方式，配置该方法映射的 http 方法，URL 路径，URL 参数以及请求体。
+为了支持更细粒度的 REST 服务配置，例如配置 http 方法，URL，参数以及请求体，我们支持了基于 _google.api.http_ 注解的 grpc 转码配置。在 proto 文件中，用户可通过给每个 rpc 方法添加注解的方式，配置该方法映射的 http 方法，URL 路径，URL 参数以及请求体。
 
-以下例子是修改过的 tsrest.proto 文件的一部分，添加了 http 规则的注解。例子中，注解指定了 http 方法为 *post*，映射的 url 为 */v1/computation/object_detection* 以覆盖默认的 url */object_detection*。注解中的 body 设置为 *表示方法的类型为*ObjectDetectionRequest* 的输入参数将完全转换为请求消息体。
+以下例子是修改过的 tsrest.proto 文件的一部分，添加了 http 规则的注解。例子中，注解指定了 http 方法为 _post_，映射的 url 为 _/v1/computation/object_detection_ 以覆盖默认的 url _/object_detection_。注解中的 body 设置为 *表示方法的类型为*ObjectDetectionRequest\* 的输入参数将完全转换为请求消息体。
 
 ```protobuf
 service TSRest {
@@ -146,7 +146,7 @@ service TSRest {
 }
 ```
 
-假设映射的 object_detection 服务针对不同的命令提供不同的 URL，则用户可以通过指定 URL 参数的方式完成映射。在下面的示例中，输入参数 *ObjectDetectionRequest* 被分为了两个部分：*cmd* 作为了映射 URL 的一部分，而 *base64_img* 则用作请求消息体。
+假设映射的 object_detection 服务针对不同的命令提供不同的 URL，则用户可以通过指定 URL 参数的方式完成映射。在下面的示例中，输入参数 _ObjectDetectionRequest_ 被分为了两个部分：_cmd_ 作为了映射 URL 的一部分，而 _base64_img_ 则用作请求消息体。
 
 ```protobuf
 service TSRest {
@@ -176,7 +176,7 @@ message MessageRequest {
 }
 ```
 
-在这个例子中，*body* 没有指定，因此所有输入参数都映射成 URL 参数。在 SQL 中调用函数
+在这个例子中，_body_ 没有指定，因此所有输入参数都映射成 URL 参数。在 SQL 中调用函数
 `SearchMessage({"author":"Author","title":"Message1"})` 将会映射成 `GET /v1/messages?author=Author&title=Message1`。
 
 更详细 protobuf http 映射的语法介绍，请参看 [转码映射](https://cloud.google.com/endpoints/docs/grpc/transcoding#adding_transcoding_mappings) 和 [httprule](https://cloud.google.com/endpoints/docs/grpc-service-config/reference/rpc/google.api#httprule).
@@ -193,7 +193,7 @@ package yourpackage;
 import "google/api/annotations.proto";
 ```
 
-因此，google api proto 文件必须在导入路径上。eKuiper 默认  `etc/services/schemas/google` 搭载了依赖的 proto 文件。用户无需在自定义服务里打包此依赖。
+因此，google api proto 文件必须在导入路径上。eKuiper 默认 `etc/services/schemas/google` 搭载了依赖的 proto 文件。用户无需在自定义服务里打包此依赖。
 
 #### 映射
 
@@ -205,7 +205,7 @@ import "google/api/annotations.proto";
 
 在这个样例中，如果用户在 eKuiper SQL 中调用 `objectDetection` 函数，则其映射过程如下:
 
-1. 在 json 文件的 *tsrest* interface 中，找到函数映射：`{"name": "objectDetect","serviceName": "object_detection"}`。 该配置将 SQL 函数 `objectDetect` 映射为名为`object_detection` 的 rpc。
+1. 在 json 文件的 _tsrest_ interface 中，找到函数映射：`{"name": "objectDetect","serviceName": "object_detection"}`。 该配置将 SQL 函数 `objectDetect` 映射为名为`object_detection` 的 rpc。
 2. 在 `tsrest.proto` 文件中，找到 rpc `object_detection` 定义。再根据 json 文件中的 `tsrest` interface 配置属性，例如地址，协议等在运行时进行参数解析和服务调用。
 
 需要注意的是，REST 服务调用时参数将会解析为 json。其中，json 的键名来自于 proto 中的 message 定义的键名。Proto message 的键名在解析时会自动转化为小写驼峰格式。如果调用的 REST 服务参数不是这种格式，用户必须在 message 中指定 json_name 选项显式指定键名以防止自动转换。
@@ -216,7 +216,7 @@ import "google/api/annotations.proto";
 
 REST 服务目前默认为 **POST**，且传输格式为 json。用户可通过配置 proto 文件中的 [http 选项](#http选项) 来改变默认的 http 方法和 URL 等。REST 服务配置有如下限制：
 
-- 如果未指定 http 选项，输入参数仅可以为 message 类型或者 *google.protobuf.StringValue* 类型。若输入参数为 *google.protobuf.StringValue*，则传入的参数必须为已编码的 json 字符串，例如 `"{\"name\":\"name1\",\"size\":1}"`。
+- 如果未指定 http 选项，输入参数仅可以为 message 类型或者 _google.protobuf.StringValue_ 类型。若输入参数为 _google.protobuf.StringValue_，则传入的参数必须为已编码的 json 字符串，例如 `"{\"name\":\"name1\",\"size\":1}"`。
 
 msgpack-rpc 服务有以下限制：
 
@@ -287,9 +287,9 @@ Schemaless 外部函数不需要配置 schema 文件，只需要一个 json 文�
 - 放置在配置文件夹
 - 通过 REST API 动态注册。
 
-eKuiper 启动时，会读取配置文件夹 *etc/services* 里的外部服务配置文件并注册。用户可在启动之前，将配置文件遵循如下规则放入配置文件夹：
+eKuiper 启动时，会读取配置文件夹 _etc/services_ 里的外部服务配置文件并注册。用户可在启动之前，将配置文件遵循如下规则放入配置文件夹：
 
-1. 文件名必须为 *$服务名$.json*。例如，*sample.json* 会注册为 sample 服务。
+1. 文件名必须为 _$服务名$.json_。例如，_sample.json_ 会注册为 sample 服务。
 2. 使用的 Schema 文件必须放入 schemas 文件夹。其目录结构类似为:
 
    ```text
@@ -318,7 +318,7 @@ eKuiper 启动时，会读取配置文件夹 *etc/services* 里的外部服务�
 SELECT objectDetection(cmd, img) from comandStream
 ```
 
-调用前，需要确保 REST 服务运行于 *<http://localhost:8090>* 且其中有 API *<http://localhost:8090/object_detection>* 。
+调用前，需要确保 REST 服务运行于 _<http://localhost:8090>_ 且其中有 API _<http://localhost:8090/object_detection>_ 。
 
 #### 参数展开
 
@@ -346,7 +346,7 @@ message ObjectDetectionRequest {
 SELECT tsschemaless("post", "/object_detection", *) from schemalessStream
 ```
 
-调用前，需要确保 REST 服务运行于 *<http://localhost:8090>* 且其中有 API *<http://localhost:8090/object_detection>* 。
+调用前，需要确保 REST 服务运行于 _<http://localhost:8090>_ 且其中有 API _<http://localhost:8090/object_detection>_ 。
 
 #### 参数展开
 

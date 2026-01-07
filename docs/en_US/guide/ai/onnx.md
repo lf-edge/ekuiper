@@ -14,7 +14,7 @@ By integrating eKuiper and ONNX, users can simply upload pre-built ONNX models a
 
 To run the ONNX interpreter, a trained model is needed. This tutorial will not cover training or model specifics; you can learn how to do this by checking the [ONNX tutorials](https://github.com/onnx/tutorials#converting-to-onnx-format).
 We can either train a new model or choose an existing one.
-In this tutorial, we will use the [yalue/go onnxruntime](https://github.com/yalue/onnxruntime_go_examples)  [sum_and_difference](https://github.com/yalue/onnxruntime_go_examples/tree/master/sum_and_difference) model and [MNIST-12](https://github.com/onnx/models/tree/ddbbd1274c8387e3745778705810c340dea3d8c7/validated/vision/classification/mnist) for demonstration.
+In this tutorial, we will use the [yalue/go onnxruntime](https://github.com/yalue/onnxruntime_go_examples) [sum_and_difference](https://github.com/yalue/onnxruntime_go_examples/tree/master/sum_and_difference) model and [MNIST-12](https://github.com/onnx/models/tree/ddbbd1274c8387e3745778705810c340dea3d8c7/validated/vision/classification/mnist) for demonstration.
 
 ### Running eKuiper
 
@@ -35,7 +35,7 @@ Users need to prepare an MQTT Broker and create an MQTT source to send data to t
 Note that the model input data format must be a float array, so the data type must be specified in the data source, which will preprocess it into a byte array.
 
 ```shell
-POST /streams 
+POST /streams
 Content-Type: application/json
 
 {
@@ -147,7 +147,7 @@ The following image shows using the Rest API to call the model.
 ![model call](../../resources/tflite_sin_rule.png)
 
 ```shell
-POST /rules 
+POST /rules
 Content-Type: application/json
 
 {
@@ -172,12 +172,7 @@ The results are shown in the image below, with the inference returning:
 ```json
 [
   {
-    "onnx": [
-      [
-        1.9999883,
-        0.60734314
-      ]
-    ]
+    "onnx": [[1.9999883, 0.60734314]]
   }
 ]
 ```
@@ -188,12 +183,7 @@ Send test data like below through MQTT client.
 
 ```json
 {
-  "data": [
-    0.2,
-    0.3,
-    0.6,
-    0.9
-  ]
+  "data": [0.2, 0.3, 0.6, 0.9]
 }
 ```
 

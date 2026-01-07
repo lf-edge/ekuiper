@@ -30,19 +30,19 @@ default:
 
 ### 属性
 
-| 属性名称               | 是否可选 | 说明                                                                             |
-|--------------------|------|--------------------------------------------------------------------------------|
-| brokers            | 否    | broker地址列表 ,用 "," 分割                                                           |
-| saslAuthType       | 是    | sasl 认证类型 , 支持none，plain，scram, 默认为 none                                       |
-| saslUserName       | 是    | sasl 用户名                                                                       |
-| password           | 是    | sasl 密码                                                                        |
-| insecureSkipVerify | 是    | 是否忽略 SSL 验证                                                                    |
-| certificationPath  | 是    | Kafka 客户端 ssl 验证的 crt 文件路径                                                     |
-| privateKeyPath     | 是    | Kafka 客户端 ssl 验证的 key 文件路径                                                     |
-| rootCaPath         | 是    | Kafka 客户端 ssl 验证的 ca 证书文件路径                                                    |
-| certficationRaw    | 是    | Kafka 客户端 ssl 验证，经过 base64 编码过的的 crt 原文,  如果同时定义了 `certificationPath` 将会先用该参数。 |
-| privateKeyRaw      | 是    | Kafka 客户端 ssl 验证，经过 base64 编码过的的 key 原文,  如果同时定义了 `privateKeyPath` 将会先用该参数。    |
-| rootCARaw          | 是    | Kafka 客户端 ssl 验证，经过 base64 编码过的的 ca 原文,  如果同时定义了 `rootCAPath` 将会先用该参数。         |
-| maxBytes           | 是    | 单个 kafka 消息批次最大所能携带的 bytes 数，默认为 1MB                                           |
-| groupID | 是    | eKuiper 消费 kafka 消息时所使用的 group ID。 |
-| partition | 是    | eKuiper 消费 kafka 消息时所指定的 partition |
+| 属性名称           | 是否可选 | 说明                                                                                                        |
+| ------------------ | -------- | ----------------------------------------------------------------------------------------------------------- |
+| brokers            | 否       | broker地址列表 ,用 "," 分割                                                                                 |
+| saslAuthType       | 是       | sasl 认证类型 , 支持none，plain，scram, 默认为 none                                                         |
+| saslUserName       | 是       | sasl 用户名                                                                                                 |
+| password           | 是       | sasl 密码                                                                                                   |
+| insecureSkipVerify | 是       | 是否忽略 SSL 验证                                                                                           |
+| certificationPath  | 是       | Kafka 客户端 ssl 验证的 crt 文件路径                                                                        |
+| privateKeyPath     | 是       | Kafka 客户端 ssl 验证的 key 文件路径                                                                        |
+| rootCaPath         | 是       | Kafka 客户端 ssl 验证的 ca 证书文件路径                                                                     |
+| certficationRaw    | 是       | Kafka 客户端 ssl 验证，经过 base64 编码过的的 crt 原文, 如果同时定义了 `certificationPath` 将会先用该参数。 |
+| privateKeyRaw      | 是       | Kafka 客户端 ssl 验证，经过 base64 编码过的的 key 原文, 如果同时定义了 `privateKeyPath` 将会先用该参数。    |
+| rootCARaw          | 是       | Kafka 客户端 ssl 验证，经过 base64 编码过的的 ca 原文, 如果同时定义了 `rootCAPath` 将会先用该参数。         |
+| maxBytes           | 是       | 单个 kafka 消息批次最大所能携带的 bytes 数，默认为 1MB                                                      |
+| groupID            | 是       | eKuiper 消费 kafka 消息时所使用的 group ID。                                                                |
+| partition          | 是       | eKuiper 消费 kafka 消息时所指定的 partition                                                                 |

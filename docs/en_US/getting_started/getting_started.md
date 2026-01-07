@@ -63,16 +63,16 @@ Please make sure eKuiper manager has installed and configured.
 
 1. In Source/Stream page, click `Create stream` button.
 2. Create a stream named `demo` which consumes MQTT `demo` topic as specified in the DATASOURCE property. The MQTT source will connect to MQTT broker at `tcp://localhost:1883`. If your MQTT broker is in another location, click `Add configuration key` to set up a new configuration and use.
-    ![create stream](../resources/create_stream.png)
+   ![create stream](../resources/create_stream.png)
 3. Click `Submit`. You should find the `demo` stream in the stream list.
 
 ### Compose the rule
 
 1. Go to Rules page, click `Create rule`.
 2. Write the rule id, name and SQL as below. Then click `Add` to add actions. The SQL is `SELECT count(*), avg(temperature) AS avg_temp, max(humidity) AS max_hum FROM demo GROUP BY TUMBLINGWINDOW(ss, 5) HAVING avg_temp > 30`.
-![create rule](../resources/create_rule.png)
+   ![create rule](../resources/create_rule.png)
 3. Add MQTT action and fill in the configurations as below. Select `mqtt` in the Sink type dropdown. Set the broker address to your broker and set the topic to `result/rule1`. ClientID is optional, if not set an uuid will assign to it. If set, please make sure the id is unique and only use in one rule. Set the other properties like username, password according to your MQTT broker setting.
-![add mqtt action](../resources/mqtt_action.png)
+   ![add mqtt action](../resources/mqtt_action.png)
 4. Click `Submit`. You should find the `myRule` rule in the rule list and started.
 
 By now, we have created a rule by specifying SQL as the logic, and add one MQTT action. As you could see, the actions could be multiple, you can add more actions like log, REST and file to issue the alarm.
@@ -101,7 +101,7 @@ We create a stream named `demo` which consumes MQTT `demo` topic as specified in
 $ bin/kuiper create stream demo '(temperature float, humidity bigint) WITH (FORMAT="JSON", DATASOURCE="demo")'
 ```
 
-The MQTT source will connect to MQTT broker at `tcp://localhost:1883`. If your MQTT broker is in another location, specify it in the `etc/mqtt_source.yaml`.  You can change the server configuration as in below.
+The MQTT source will connect to MQTT broker at `tcp://localhost:1883`. If your MQTT broker is in another location, specify it in the `etc/mqtt_source.yaml`. You can change the server configuration as in below.
 
 ```yaml
 default:
@@ -156,10 +156,10 @@ time="2019-09-09T21:46:54+08:00" level=info msg="stop the query."
 
 As part of the rule, we need to specify the following:
 
-* rule id: the id of the rule. It must be unique
-* rule name: the description of the rule
-* sql: the query to run for the rule
-* actions: the output actions for the rule
+- rule id: the id of the rule. It must be unique
+- rule name: the description of the rule
+- sql: the query to run for the rule
+- actions: the output actions for the rule
 
 We can run the `kuiper rule` command to create rule and specify the rule definition in a file
 
@@ -171,14 +171,16 @@ The content of `myRule` file as below. It publishes the result to the mqtt topic
 
 ```json
 {
-    "sql": "SELECT count(*), avg(temperature) as avg_temp, max(humidity) as max_hum from demo group by TUMBLINGWINDOW(ss, 5) HAVING avg_temp > 30;",
-    "actions": [{
-        "mqtt":  {
-          "server": "tcp://127.0.0.1:1883",
-          "topic": "result/myRule",
-          "sendSingle": true
-        }
-    }]
+  "sql": "SELECT count(*), avg(temperature) as avg_temp, max(humidity) as max_hum from demo group by TUMBLINGWINDOW(ss, 5) HAVING avg_temp > 30;",
+  "actions": [
+    {
+      "mqtt": {
+        "server": "tcp://127.0.0.1:1883",
+        "topic": "result/myRule",
+        "sendSingle": true
+      }
+    }
+  ]
 }
 ```
 
@@ -194,10 +196,10 @@ $ bin/kuiper stop rule myRule
 
 ## Testing the rule
 
-Now the rule engine is ready to receive events from MQTT `demo`  topic. To test it, just use a MQTT client such as [MQTT X](https://mqttx.app/) to publish message to the `demo` topic. The message should be in json format like this:
+Now the rule engine is ready to receive events from MQTT `demo` topic. To test it, just use a MQTT client such as [MQTT X](https://mqttx.app/) to publish message to the `demo` topic. The message should be in json format like this:
 
 ```json
-{"temperature":31.2, "humidity": 77}
+{ "temperature": 31.2, "humidity": 77 }
 ```
 
 Since we publish the alarm to MQTT topic `result/myRule`, we can use a MQTT client to subscribe to the topic. We should receive message if the 5-second average temperature is bigger than 30.
@@ -210,10 +212,10 @@ Below is an example data and the output in MQTT X.
 
 Refer to the following topics for guidance on using the eKuiper.
 
-* [Installation](../installation.md)
-* [Rules](../guide/rules/overview.md)
-* [SQL reference](../sqls/overview.md)
-* [Stream](../guide/streams/overview.md)
-* [Sink](../guide/sinks/overview.md)
-* [Command line interface tools - CLI](../api/cli/overview.md)
-* [Management Console](../guide/rules/overview.md)
+- [Installation](../installation.md)
+- [Rules](../guide/rules/overview.md)
+- [SQL reference](../sqls/overview.md)
+- [Stream](../guide/streams/overview.md)
+- [Sink](../guide/sinks/overview.md)
+- [Command line interface tools - CLI](../api/cli/overview.md)
+- [Management Console](../guide/rules/overview.md)

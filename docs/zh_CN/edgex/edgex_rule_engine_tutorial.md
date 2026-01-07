@@ -93,12 +93,12 @@ d4b236a7b561   redis:6.2.4-alpine                                              "
 
   ```yaml
   environment:
-      CONNECTION__EDGEX__MQTTMSGBUS__OPTIONAL__CLIENTID: kuiper-rules-engine
-      CONNECTION__EDGEX__MQTTMSGBUS__OPTIONAL__KEEPALIVE: "500"
-      CONNECTION__EDGEX__MQTTMSGBUS__PORT: "1883"
-      CONNECTION__EDGEX__MQTTMSGBUS__PROTOCOL: tcp
-      CONNECTION__EDGEX__MQTTMSGBUS__SERVER: edgex-mqtt-broker
-      CONNECTION__EDGEX__MQTTMSGBUS__TYPE: mqtt
+    CONNECTION__EDGEX__MQTTMSGBUS__OPTIONAL__CLIENTID: kuiper-rules-engine
+    CONNECTION__EDGEX__MQTTMSGBUS__OPTIONAL__KEEPALIVE: "500"
+    CONNECTION__EDGEX__MQTTMSGBUS__PORT: "1883"
+    CONNECTION__EDGEX__MQTTMSGBUS__PROTOCOL: tcp
+    CONNECTION__EDGEX__MQTTMSGBUS__SERVER: edgex-mqtt-broker
+    CONNECTION__EDGEX__MQTTMSGBUS__TYPE: mqtt
   ```
 
 做完这些修改后，请参考这篇[文档](../guide/sinks/builtin/edgex.md#使用连接重用功能发布)了解如何使用连接重用功能
@@ -145,9 +145,9 @@ bin/kuiper create stream demo'() WITH (FORMAT="JSON", TYPE="edgex")'
 
 其它命令行，请参考[该文档](../api/cli/overview.md)。
 
-------
+---
 
-现在流已经创建好了，但是你可能好奇 eKuiper 是如何知道消息总线的地址和端口，因为此类信息在 `CREATE STREAM` 并未指定。实际上这些信息是在配置文件  `etc/sources/edgex.yaml` 中指定的，你可以在命令行窗口中输入 `cat etc/sources/edgex.yaml` 来查看文件的内容。如果你有不同的服务器、端口和服务的地址，请更新相应的配置。正如之前提到的，这些配置选项可以在容器启动的时候进行重写。
+现在流已经创建好了，但是你可能好奇 eKuiper 是如何知道消息总线的地址和端口，因为此类信息在 `CREATE STREAM` 并未指定。实际上这些信息是在配置文件 `etc/sources/edgex.yaml` 中指定的，你可以在命令行窗口中输入 `cat etc/sources/edgex.yaml` 来查看文件的内容。如果你有不同的服务器、端口和服务的地址，请更新相应的配置。正如之前提到的，这些配置选项可以在容器启动的时候进行重写。
 
 ```yaml
 #Global Edgex configurations
@@ -210,7 +210,7 @@ curl -X POST \
       }
     },
     {
-      "log":{}
+      "log": {}
     }
   ]
 }
@@ -225,7 +225,7 @@ Creating a new rule from file rule.txt.
 Rule rule1 was created successfully, please use 'cli getstatus rule rule1' command to get rule status.
 ```
 
-------
+---
 
 如想将结果发送到别的目标，请参考 eKuiper 中支持的[其它目标](../guide/sinks/overview.md)。你现在可以看一下在 `log/stream.log` 中的日志文件，查看规则的详细信息。
 
@@ -245,7 +245,7 @@ time="2021-07-08 01:08:20" level=info msg="sink result for rule rule1: [{\"Uint3
 
 ## 监控分析结果
 
-因为所有的分析结果都被发布到 `tcp://broker.emqx.io:1883`，你可以直接使用以下的  `mosquitto_sub` 命令来监听结果，你也可以参考别的 [MQTT 客户端工具](https://www.emqx.cn/blog/mqtt-client-tools).
+因为所有的分析结果都被发布到 `tcp://broker.emqx.io:1883`，你可以直接使用以下的 `mosquitto_sub` 命令来监听结果，你也可以参考别的 [MQTT 客户端工具](https://www.emqx.cn/blog/mqtt-client-tools).
 
 ```shell
 # mosquitto_sub -h broker.emqx.io -t result

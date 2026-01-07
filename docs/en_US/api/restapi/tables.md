@@ -13,7 +13,9 @@ POST http://localhost:9081/tables
 Request sample, the request is a json string with `sql` field.
 
 ```json
-{"sql":"create table my_table (id bigint, name string, score float) WITH ( datasource = \"lookup.json\", FORMAT = \"json\", KEY = \"id\")"}
+{
+  "sql": "create table my_table (id bigint, name string, score float) WITH ( datasource = \"lookup.json\", FORMAT = \"json\", KEY = \"id\")"
+}
 ```
 
 This API can run any table sql statements, not only table creation.
@@ -119,7 +121,9 @@ Path parameter `id` is the id or name of the old table.
 Request sample, the request is a json string with `sql` field.
 
 ```json
-{"sql":"create table my_table (id bigint, name string, score float) WITH ( datasource = \"topic/temperature\", FORMAT = \"json\", KEY = \"id\")"}
+{
+  "sql": "create table my_table (id bigint, name string, score float) WITH ( datasource = \"topic/temperature\", FORMAT = \"json\", KEY = \"id\")"
+}
 ```
 
 ## drop a table

@@ -89,8 +89,8 @@ View CPU running metrics for a rule
 The Prometheus service comes with eKuiper, but is disabled by default. You can turn on the service by modifying the configuration in `etc/kuiper.yaml`. Where `prometheus` is a boolean value, change it to `true` to turn on the service; `prometheusPort` configures the port of the service.
 
 ```yaml
-  prometheus: true
-  prometheusPort: 20499
+prometheus: true
+prometheusPort: 20499
 ```
 
 If you start eKuiper with Docker, you can also enable the service by configuring environment variables.
@@ -128,9 +128,9 @@ rule_files:
 # - "second.rules"
 
 scrape_configs:
-- job_name: ekuiper
-  static_configs:
-    - targets: ['localhost:20499']
+  - job_name: ekuiper
+    static_configs:
+      - targets: ["localhost:20499"]
 ```
 
 This defines a monitoring job named `eKuiper`, targets pointing to the address of the service started in the previous section. After the configuration is done, start Prometheus.

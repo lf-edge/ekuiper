@@ -64,14 +64,14 @@ eKuiper 规则由 SQL 和多个动作组成。eKuiper SQL 是一种易于使用�
 
 1. 在Source/Stream页面，点击 "创建流 "按钮。
 2. 创建一个名为 `demo` 的流，消费 DATASOURCE 属性中指定的 MQTT `demo` 主题。MQTT 源将连接到 MQTT 服务器，默认地址是 `tcp://localhost:1883`。如果你的 MQTT 服务器地址不同，点击 `添加配置键` 来设置一个新的配置并使用。
-  ![创建流](../resources/create_stream.png)
+   ![创建流](../resources/create_stream.png)
 3. 点击`提交`。你应该在流列表中找到 `demo` 流。
 
 ### 编写规则
 
 1. 进入规则页面，点击 "创建规则"。
 2. 写下规则的ID、名称和SQL，如下所示。然后点击 "添加" 来添加动作。SQL是`SELECT count(*), avg(temperature) AS avg_temp, max(humidity) AS max_hum FROM demo GROUP BY TUMBLINGWINDOW(ss, 5) HAVING avg_temp > 30`。
-  ![创建规则](../resources/create_rule.png)
+   ![创建规则](../resources/create_rule.png)
 3. 添加 MQTT 动作并填写配置，如下所示。在 Sink 类型下拉菜单中选择 `mqtt`。将服务器地址设为你的服务器，并将主题设为 `result/rule1`。ClientID 是可选的，如果没有设置，将自动分配一个 uuid。如果设置了，请确保该 ID 是唯一的，并且只在一条规则中使用。根据你的 MQTT 服务器的配置，设置其他属性，如用户名、密码。
    ![add mqtt action](../resources/mqtt_action.png)
 4. 点击 "提交"。你应该在规则列表中找到 `myRule` 规则并开始使用。
@@ -157,9 +157,9 @@ time="2019-09-09T21:46:54+08:00" level=info msg="stop the query."
 
 作为规则的一部分，我们需要指定以下内容：
 
-* 规则名称：规则的 ID。 它必须是唯一的
-* sql：针对规则运行的查询
-* 动作：规则的输出动作
+- 规则名称：规则的 ID。 它必须是唯一的
+- sql：针对规则运行的查询
+- 动作：规则的输出动作
 
 我们可以运行 `kuiper rule` 命令来创建规则并在文件中指定规则定义
 
@@ -171,14 +171,16 @@ $ bin/kuiper create rule myRule -f myRule
 
 ```json
 {
-    "sql": "SELECT count(*), avg(temperature) as avg_temp, max(humidity) as max_hum from demo group by TUMBLINGWINDOW(ss, 5) HAVING avg_temp > 30;",
-    "actions": [{
-        "mqtt":  {
-          "server": "tcp://127.0.0.1:1883",
-          "topic": "result/myRule",
-          "sendSingle": true
-        }
-    }]
+  "sql": "SELECT count(*), avg(temperature) as avg_temp, max(humidity) as max_hum from demo group by TUMBLINGWINDOW(ss, 5) HAVING avg_temp > 30;",
+  "actions": [
+    {
+      "mqtt": {
+        "server": "tcp://127.0.0.1:1883",
+        "topic": "result/myRule",
+        "sendSingle": true
+      }
+    }
+  ]
 }
 ```
 
@@ -197,7 +199,7 @@ $ bin/kuiper stop rule myRule
 现在，规则引擎已准备就绪，可以接收来自 MQTT `demo` 主题的事件。 要对其进行测试，只需使用 MQTT 客户端将消息发布到 `demo` 主题即可。 该消息应为 json 格式，如下所示：
 
 ```json
-{"temperature":31.2, "humidity": 77}
+{ "temperature": 31.2, "humidity": 77 }
 ```
 
 由于我们将警报发布到 MQTT 主题 `result/myRule`，我们可以使用 MQTT 客户端来订阅该主题。如果5秒钟的平均温度大于30，我们应该收到消息。
@@ -210,10 +212,10 @@ $ bin/kuiper stop rule myRule
 
 请参考以下主题，以获取有关使用 eKuiper 的指导。
 
-* [安装](../installation.md)
-* [规则](../guide/rules/overview.md)
-* [SQL 参考手册](../sqls/overview.md)
-* [流](../guide/streams/overview.md)
-* [Sink](../guide/sinks/overview.md)
-* [命令行界面 CLI](../api/cli/overview.md)
-* [管理控制台](../guide/rules/overview.md)
+- [安装](../installation.md)
+- [规则](../guide/rules/overview.md)
+- [SQL 参考手册](../sqls/overview.md)
+- [流](../guide/streams/overview.md)
+- [Sink](../guide/sinks/overview.md)
+- [命令行界面 CLI](../api/cli/overview.md)
+- [管理控制台](../guide/rules/overview.md)

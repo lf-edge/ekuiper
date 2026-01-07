@@ -9,7 +9,7 @@ As a light-weight stream processing engine, eKuiper can be deployed on the edge 
 EMQ Cloud Edge Collaboration Industrial Internet Solution, through cloud-native technology and cloud edge collaboration architecture, realizes the connection, movement, processing, storage and analysis of massive industrial equipment data. The solution mainly includes the following software.
 
 | Software                         | Name                                                                        |
-|----------------------------------|-----------------------------------------------------------------------------|
+| -------------------------------- | --------------------------------------------------------------------------- |
 | Edge Data Collection Software    | [Neuron](https://neugates.io/) - Industrial Protocol Gateway Software       |
 | Edge MQTT Broker                 | [NanoMQ](https://nanomq.io/) - Ultra-lightweight Edge MQTT Messaging Server |
 | Edge Computing Software          | eKuiper - Lightweight IoT edge data streaming analytics engine              |

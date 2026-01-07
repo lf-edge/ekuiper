@@ -1,10 +1,9 @@
-
 # Query language elements
 
 eKuiper provides a variety of elements for building queries. They are summarized below.
 
 | Element               | Summary                                                                                                                                                                                                                                       |
-|-----------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [SELECT](#select)     | SELECT is used to retrieve rows from input streams and enables the selection of one or many columns from one or many input streams in eKuiper.                                                                                                |
 | [FROM](#from)         | FROM specifies the input stream. The FROM clause is always required for any SELECT statement.                                                                                                                                                 |
 | [JOIN](#join)         | JOIN is used to combine records from two or more input streams. JOIN includes LEFT, RIGHT, FULL & CROSS. Join can apply to multiple streams join or stream/table join. To join multiple streams, it must run within a [window](./windows.md). |
@@ -12,7 +11,7 @@ eKuiper provides a variety of elements for building queries. They are summarized
 | [GROUP BY](#group-by) | GROUP BY groups a selected set of rows into a set of summary rows grouped by the values of one or more columns or expressions. It must run within a [window](./windows.md).                                                                   |
 | [ORDER BY](#order-by) | Order the rows by values of one or more columns.                                                                                                                                                                                              |
 | [HAVING](#having)     | HAVING specifies a search condition for a group or an aggregate. HAVING can be used only with the SELECT expression.                                                                                                                          |
-| [LIMIT](#limit) | LIMIT will limit the number of output data. |
+| [LIMIT](#limit)       | LIMIT will limit the number of output data.                                                                                                                                                                                                   |
 
 ## SELECT
 
@@ -85,11 +84,11 @@ The source stream name or alias name.
 
 **column_name**
 
-Is the name of a column to return.  If the column to specified is a embedded nest record type, then use the [JSON expressions](json_expr.md) to refer the embedded columns.
+Is the name of a column to return. If the column to specified is a embedded nest record type, then use the [JSON expressions](json_expr.md) to refer the embedded columns.
 
 **column_alias**
 
-Is an alternative name to replace the column name in the query result set.  Aliases are used also to specify names for the results of expressions. column_alias cannot be used in a WHERE, GROUP BY, or HAVING clause.
+Is an alternative name to replace the column name in the query result set. Aliases are used also to specify names for the results of expressions. column_alias cannot be used in a WHERE, GROUP BY, or HAVING clause.
 
 column_alias can participate in the calculation of select field, the following is an example:
 
@@ -206,7 +205,7 @@ select * from stream1 full join stream2 on stream1.column = stream2.column group
 
 **CROSS**
 
-The CROSS JOIN is used to combine each row of the first stream (stream1) with each row of the second stream (stream2). It is also known as the Cartesian join since it returns the Cartesian product of the sets of rows from the joined tables. Let's say if there are **m** rows in stream1, and **n** rows in stream2, then the result of CROSS  JOIN returns **m*n** rows.
+The CROSS JOIN is used to combine each row of the first stream (stream1) with each row of the second stream (stream2). It is also known as the Cartesian join since it returns the Cartesian product of the sets of rows from the joined tables. Let's say if there are **m** rows in stream1, and **n** rows in stream2, then the result of CROSS JOIN returns **m\*n** rows.
 
 **Note:** CROSS JOIN can potentially return very large result-sets!
 
@@ -230,7 +229,7 @@ The input stream name or alias name to be joined.
 
 **column_name**
 
-Is the name of a column to return.  If the column to specified is a embedded nest record type, then use the [JSON expressions](json_expr.md) to refer the embedded columns.
+Is the name of a column to return. If the column to specified is a embedded nest record type, then use the [JSON expressions](json_expr.md) to refer the embedded columns.
 
 ## WHERE
 
@@ -240,12 +239,12 @@ WHERE specifies the search condition for the rows returned by the query. The WHE
 
 ```text
 WHERE <search_condition>
-<search_condition> ::= 
-    { <predicate> | ( <search_condition> ) } 
-    [ { AND | OR } { <predicate> | ( <search_condition> ) } ] 
-[ ,...n ] 
-<predicate> ::= 
-    { expression { = | < > | ! = | > | > = | < | < = } expression 
+<search_condition> ::=
+    { <predicate> | ( <search_condition> ) }
+    [ { AND | OR } { <predicate> | ( <search_condition> ) } ]
+[ ,...n ]
+<predicate> ::=
+    { expression { = | < > | ! = | > | > = | < | < = } expression
 ```
 
 exmaple:
@@ -337,7 +336,7 @@ select * from demo where a between 10 and 15;
 Is the operator used to check if the STRING in the first operand matches a pattern specified by the second operand. Patterns can contain these characters:
 
 - "%" matches any number of characters.
-- "_" matches a single character.
+- "\_" matches a single character.
 
 ```sql
 expression [NOT] LIKE expression1
@@ -363,13 +362,13 @@ Is the operator used to test the condition of one expression (not) being part of
   expression [NOT] IN (expression2,...n)
 ```
 
-*Note*： support multiple expressions at the same time, but each expression must return single value
+_Note_： support multiple expressions at the same time, but each expression must return single value
 
 ```sql
   expression [NOT] IN expression2
 ```
 
-*Note*：user must make sure the result of expression2 is in array format
+_Note_：user must make sure the result of expression2 is in array format
 
 ```sql
 SELECT column1, column2, ...
@@ -506,10 +505,10 @@ The simple case expression compares an expression to a set of simple expressions
 #### Syntax
 
 ```sql
-CASE value 
-     WHEN conditionValue THEN result_expression [ ...n ] 
-     [ ELSE else_result_expression ] 
-END 
+CASE value
+     WHEN conditionValue THEN result_expression [ ...n ]
+     [ ELSE else_result_expression ]
+END
 ```
 
 **Example**:
@@ -529,9 +528,9 @@ The searched case expression evaluates a set of bool expressions to determine th
 #### Syntax
 
 ```sql
-CASE  
-     WHEN condition THEN result_expression [ ...n ] 
-     [ ELSE else_result_expression ] 
+CASE
+     WHEN condition THEN result_expression [ ...n ]
+     [ ELSE else_result_expression ]
 END
 ```
 

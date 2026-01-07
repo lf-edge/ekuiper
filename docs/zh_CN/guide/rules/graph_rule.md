@@ -57,14 +57,14 @@
 对于源节点，nodeType是源的类型，如 `mqtt` 和 `edgex` 。请参考 [source](../sources/overview.md) 了解所有支持的类型。注意，所有源节点共享相同的属性，这与[定义流](../../sqls/streams.md)时的属性相同。具体的配置是由 `CONF_KEY` 定义的。在下面的例子中，nodeType 指定了源节点是一个 mqtt 源。dataSource 和 format 属性与定义流时的含义相同。
 
 ```json
-  {
-    "type": "source",
-    "nodeType": "mqtt",
-    "props": {
-      "datasource": "devices/+/messages",
-      "format":"json"
-    }
+{
+  "type": "source",
+  "nodeType": "mqtt",
+  "props": {
+    "datasource": "devices/+/messages",
+    "format": "json"
   }
+}
 ```
 
 对于 sink 节点，nodeType 是 sink 的类型，如 `mqtt` 和 `edgex` 。请参考 [sink](../sinks/overview.md) 了解所有支持的类型。对于所有的 sink 节点，它们共享一些共同的属性，但每种类型都会有一些自有的属性。
@@ -76,27 +76,27 @@
 源节点是规则的数据源。它可以是一个流或表。**用户需要在规则中使用流/表之前定义它**。`sourceType`属性定义了源的类型。它可以是 "流 "或 "表"。`sourceName`属性定义了流/表的名称。下面的例子定义了一个源节点，它从一个名为 `demoStream` 的流中读取。请确保 nodeType 与流/表的类型相同。
 
 ```json
-  {
-      "type": "source",
-      "nodeType": "mqtt",
-      "props": {
-        "sourceType": "stream",
-        "sourceName": "demoStream"
-      }
+{
+  "type": "source",
+  "nodeType": "mqtt",
+  "props": {
+    "sourceType": "stream",
+    "sourceName": "demoStream"
   }
+}
 ```
 
 目前，用户也可以定义源节点来引用表。但只有查询表可以连接到 Join 节点，扫描表暂不支持。下面的例子定义了一个源节点，它从一个名为 `demoTable` 的查询表中读取数据。
 
 ```json
-  {
-      "type": "source",
-      "nodeType": "redis",
-      "props": {
-        "sourceType": "table",
-        "sourceName": "demoTable"
-      }
+{
+  "type": "source",
+  "nodeType": "redis",
+  "props": {
+    "sourceType": "table",
+    "sourceName": "demoTable"
   }
+}
 ```
 
 ### 内置 operator 节点类型
@@ -112,13 +112,13 @@
 示例：
 
 ```json
-  {
-    "type": "operator",
-    "nodeType": "function",
-    "props": {
-      "expr": "log(temperature) as log_temperature"
-    }
+{
+  "type": "operator",
+  "nodeType": "function",
+  "props": {
+    "expr": "log(temperature) as log_temperature"
   }
+}
 ```
 
 #### aggfunc
@@ -130,13 +130,13 @@
 示例：
 
 ```json
-  {
-    "type": "operator",
-    "nodeType": "aggfunc",
-    "props": {
-      "expr": "count(*)"
-    }
+{
+  "type": "operator",
+  "nodeType": "aggfunc",
+  "props": {
+    "expr": "count(*)"
   }
+}
 ```
 
 #### 过滤
@@ -148,13 +148,13 @@
 示例：
 
 ```json
-  {
-    "type": "operator",
-    "nodeType": "filter",
-    "props": {
-      "expr": "temperature > 20"
-    }
+{
+  "type": "operator",
+  "nodeType": "filter",
+  "props": {
+    "expr": "temperature > 20"
   }
+}
 ```
 
 #### pick
@@ -166,13 +166,13 @@
 示例：
 
 ```json
-  {
-    "type": "operator",
-    "nodeType": "pick",
-    "props": {
-      "fields": ["log_temperature", "humidity", "window_end()"]
-    }
+{
+  "type": "operator",
+  "nodeType": "pick",
+  "props": {
+    "fields": ["log_temperature", "humidity", "window_end()"]
   }
+}
 ```
 
 #### 窗口
@@ -187,16 +187,16 @@
 示例：
 
 ```json
-  {
-    "type": "operator",
-    "nodeType": "window",
-    "props": {
-      "type": "hoppingwindow",
-      "unit": "ss",
-      "size": 10,
-      "interval": 5
-    }
+{
+  "type": "operator",
+  "nodeType": "window",
+  "props": {
+    "type": "hoppingwindow",
+    "unit": "ss",
+    "size": 10,
+    "interval": 5
   }
+}
 ```
 
 #### join
@@ -212,39 +212,39 @@
 示例：
 
 ```json
-  {
-    "type": "operator",
-    "nodeType": "join",
-    "props": {
-      "from": "device1",
-      "joins": [
-        {
-          "name": "device2",
-          "type": "inner",
-          "on": "abs(device1.ts - device2.ts) < 200"
-        }
-      ]
-    }
+{
+  "type": "operator",
+  "nodeType": "join",
+  "props": {
+    "from": "device1",
+    "joins": [
+      {
+        "name": "device2",
+        "type": "inner",
+        "on": "abs(device1.ts - device2.ts) < 200"
+      }
+    ]
   }
+}
 ```
 
 连接运算符支持连接流/流连接和流/查询表连接。不支持流/扫描表连接。如果使用流/流连接，前面的节点必须是一个窗口节点。如果使用流/查询表连接，只支持一个连接条件。下面是一个流/查找表连接的例子。
 
 ```json
-   {
-    "type": "operator",
-    "nodeType": "join",
-    "props": {
-      "from": "demoStream",
-      "joins": [
-        {
-          "name": "demoTable",
-          "type": "inner",
-          "on": "deviceStream.id = demoTable.id"
-        }
-      ]
-    }
+{
+  "type": "operator",
+  "nodeType": "join",
+  "props": {
+    "from": "demoStream",
+    "joins": [
+      {
+        "name": "demoTable",
+        "type": "inner",
+        "on": "deviceStream.id = demoTable.id"
+      }
+    ]
   }
+}
 ```
 
 #### groupby
@@ -276,16 +276,18 @@
 示例：
 
 ```json
-  {
-    "type": "operator",
-    "nodeType": "orderby",
-    "props": {
-      "sorts": [{
+{
+  "type": "operator",
+  "nodeType": "orderby",
+  "props": {
+    "sorts": [
+      {
         "field": "count",
         "order": "desc"
-      }]
-    }
+      }
+    ]
   }
+}
 ```
 
 #### switch
@@ -316,10 +318,7 @@ edges -> switch 中，需要定义一个长度为2的二维数组分别指定满
         "type": "operator",
         "nodeType": "switch",
         "props": {
-          "cases": [
-            "temperature > 20",
-            "temperature <= 20"
-          ],
+          "cases": ["temperature > 20", "temperature <= 20"],
           "stopAtFirstMatch": true
         }
       },
@@ -343,21 +342,10 @@ edges -> switch 中，需要定义一个长度为2的二维数组分别指定满
       }
     },
     "topo": {
-      "sources": [
-        "abc"
-      ],
+      "sources": ["abc"],
       "edges": {
-        "abc": [
-          "switch"
-        ],
-        "switch": [
-          [
-            "mqttpv"
-          ],
-          [
-            "mqttpv2"
-          ]
-        ]
+        "abc": ["switch"],
+        "switch": [["mqttpv"], ["mqttpv2"]]
       }
     }
   }
@@ -378,10 +366,10 @@ edges -> switch 中，需要定义一个长度为2的二维数组分别指定满
    ```json
    {
      "type": "operator",
-      "nodeType": "script",
-      "props": {
-        "script": "function exec(msg, meta) {msg.temperature = 1.8 * msg.temperature + 32; return msg;}"
-      }
+     "nodeType": "script",
+     "props": {
+       "script": "function exec(msg, meta) {msg.temperature = 1.8 * msg.temperature + 32; return msg;}"
+     }
    }
    ```
 
@@ -389,11 +377,11 @@ edges -> switch 中，需要定义一个长度为2的二维数组分别指定满
 
    ```json
    {
-      "type": "operator",
-      "nodeType": "script",
-      "props": {
-        "script": "function exec(msgs) {agg = {value:0}\nfor (let i = 0; i < msgs.length; i++) {\nagg.value = agg.value + msgs[i].value;\n}\nreturn agg;\n}",
-        "isAgg": true
-      }
+     "type": "operator",
+     "nodeType": "script",
+     "props": {
+       "script": "function exec(msgs) {agg = {value:0}\nfor (let i = 0; i < msgs.length; i++) {\nagg.value = agg.value + msgs[i].value;\n}\nreturn agg;\n}",
+       "isAgg": true
+     }
    }
    ```

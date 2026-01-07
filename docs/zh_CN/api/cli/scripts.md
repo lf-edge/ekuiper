@@ -17,6 +17,7 @@ create script $script_json
 ```
 
 此命令创建了一个名为 area 的 JavaScript 函数。JSON 对象包含以下字段：
+
 - id：函数的唯一名称。此名称也必须在脚本字段中定义为函数。
 - description：函数的简短描述。
 - script：JavaScript 中的函数实现。
@@ -26,10 +27,10 @@ create script $script_json
 
 ```json
 {
-   "id": "area",
-   "description": "计算面积",
-   "script": "function area(x, y) { return x * y; }",
-   "isAgg": false
+  "id": "area",
+  "description": "计算面积",
+  "script": "function area(x, y) { return x * y; }",
+  "isAgg": false
 }
 ```
 

@@ -3,7 +3,7 @@
 The action is used for publish output message into a RESTful API.
 
 | Property name        | Optional | Description                                                                                                                                                                                                                                                                                                                                                                                       |
-|----------------------|----------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| -------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | method               | true     | The HTTP method for the RESTful API. It is a case insensitive string whose value is among "get", "post", "put", "patch", "delete" and "head". The default value is "get".                                                                                                                                                                                                                         |
 | url                  | false    | The RESTful API endpoint, such as `https://www.example.com/api/dummy`                                                                                                                                                                                                                                                                                                                             |
 | bodyType             | true     | The type of the body. Currently, these types are supported: "none", "json", "text", "html", "xml", "javascript", "form", "binary" and "formdata". For "get" and "head", no body is required so the default value is "none". For other http methods, the default value is "json" For "html", "xml" and "javascript", the dataTemplate must be carefully set up to make sure the format is correct. |
@@ -48,26 +48,28 @@ Example to use oAuth style authentication:
 {
   "id": "ruleFollowBack",
   "sql": "SELECT follower FROM followStream",
-  "actions": [{
-    "rest": {
-      "url": "https://com.awebsite/follows",
-      "method": "POST",
-      "sendSingle": true,
-      "bodyType": "json",
-      "dataTemplate": "{\"data\":{\"relationships\":{\"follower\":{\"data\":{\"type\":\"users\",\"id\":\"1398589\"}},\"followed\":{\"data\":{\"type\":\"users\",\"id\":\"{{.follower}}\"}}},\"type\":\"follows\"}}",
-      "headers": {
-        "Content-Type": "application/vnd.api+json",
-        "Authorization": "Bearer {{.access_token}}"
-      },
-      "oAuth": {
-        "access": {
-          "url": "https://com.awebsite/oauth/token",
-          "body": "{\"grant_type\": \"password\",\"username\": \"user@gmail.com\",\"password\": \"mypass\"}",
-          "expire": "3600"
+  "actions": [
+    {
+      "rest": {
+        "url": "https://com.awebsite/follows",
+        "method": "POST",
+        "sendSingle": true,
+        "bodyType": "json",
+        "dataTemplate": "{\"data\":{\"relationships\":{\"follower\":{\"data\":{\"type\":\"users\",\"id\":\"1398589\"}},\"followed\":{\"data\":{\"type\":\"users\",\"id\":\"{{.follower}}\"}}},\"type\":\"follows\"}}",
+        "headers": {
+          "Content-Type": "application/vnd.api+json",
+          "Authorization": "Bearer {{.access_token}}"
+        },
+        "oAuth": {
+          "access": {
+            "url": "https://com.awebsite/oauth/token",
+            "body": "{\"grant_type\": \"password\",\"username\": \"user@gmail.com\",\"password\": \"mypass\"}",
+            "expire": "3600"
+          }
         }
       }
     }
-  }]
+  ]
 }
 ```
 
@@ -82,7 +84,8 @@ Use text json create rules SQL and Actions
 Example for taosdb rest：
 
 ```json
-{"id": "rest1",
+{
+  "id": "rest1",
   "sql": "SELECT tele[0].Tag00001 AS temperature, tele[0].Tag00002 AS humidity FROM neuron",
   "actions": [
     {
@@ -90,7 +93,7 @@ Example for taosdb rest：
         "bodyType": "text",
         "dataTemplate": "insert into mqtt.kuiper values (now, {{.temperature}}, {{.humidity}})",
         "debugResp": true,
-        "headers": {"Authorization": "Basic cm9vdDp0YW9zZGF0YQ=="},
+        "headers": { "Authorization": "Basic cm9vdDp0YW9zZGF0YQ==" },
         "method": "POST",
         "sendSingle": true,
         "url": "http://xxx.xxx.xxx.xxx:6041/rest/sql"
@@ -106,8 +109,8 @@ There are many scenarios that we need to sink to dynamic url and configurations 
 
 ```json
 {
-  "method":"post",
-  "url":"http://xxx.xxx.xxx.xxx:6041/rest/sql",
+  "method": "post",
+  "url": "http://xxx.xxx.xxx.xxx:6041/rest/sql",
   "temperature": 20,
   "humidity": 80
 }
@@ -116,7 +119,8 @@ There are many scenarios that we need to sink to dynamic url and configurations 
 Then in the action, we set the `method` and `url` to be the value of the result by using data template syntax as below:
 
 ```json
-{"id": "rest2",
+{
+  "id": "rest2",
   "sql": "SELECT tele[0]->Tag00001 AS temperature, tele[0]->Tag00002 AS humidity, method, concat(\"http://xxx.xxx.xxx.xxx:6041/rest/sql\", urlPostfix) as url FROM neuron",
   "actions": [
     {
@@ -124,7 +128,7 @@ Then in the action, we set the `method` and `url` to be the value of the result 
         "bodyType": "text",
         "dataTemplate": "insert into mqtt.kuiper values (now, {{.temperature}}, {{.humidity}})",
         "debugResp": true,
-        "headers": {"Authorization": "Basic cm9vdDp0YW9zZGF0YQ=="},
+        "headers": { "Authorization": "Basic cm9vdDp0YW9zZGF0YQ==" },
         "method": "{{.method}}",
         "sendSingle": true,
         "url": "{{.url}}"

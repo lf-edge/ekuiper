@@ -5,7 +5,7 @@
 The action is used to flush the result into an in-memory topic so that it can be consumed by the [memory source](../../sources/builtin/memory.md). The topic is like pubsub topic such as mqtt, so that there could be multiple memory sinks which publish to the same topic and multiple memory sources which subscribe to the same topic. The typical usage for memory action is to form [rule pipelines](../../rules/rule_pipeline.md).
 
 | Property name | Optional | Description                                                                                                        |
-|---------------|----------|--------------------------------------------------------------------------------------------------------------------|
+| ------------- | -------- | ------------------------------------------------------------------------------------------------------------------ |
 | topic         | false    | The in-memory topic, such as `analysis/result`                                                                     |
 | rowkindField  | true     | Specify which field represents the action like insert or update. If not specified, all rows are default to insert. |
 
@@ -46,8 +46,8 @@ The memory sink support [updatable](../overview.md#updatable-sink). It is used t
 ```json
 {
   "id": "ruleUpdateAlert",
-  "sql":"SELECT * FROM alertStream",
-  "actions":[
+  "sql": "SELECT * FROM alertStream",
+  "actions": [
     {
       "memory": {
         "keyField": "id",

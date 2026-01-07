@@ -19,10 +19,7 @@ unnest(array)
 
 ```json lines
 {
-  "a": [
-    1,
-    2
-  ],
+  "a": [1, 2],
   "b": 3
 }
 ```

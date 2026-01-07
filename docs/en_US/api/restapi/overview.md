@@ -14,9 +14,9 @@ GET http://localhost:9081
 
 ```json
 {
-"version": "1.0.1-22-g119ee91",
-"os": "darwin",
-"upTimeSeconds": 14
+  "version": "1.0.1-22-g119ee91",
+  "os": "darwin",
+  "upTimeSeconds": 14
 }
 ```
 

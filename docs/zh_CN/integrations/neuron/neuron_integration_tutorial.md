@@ -43,48 +43,48 @@ Neuron 和 eKuiper 都支持二进制安装包以及 Docker 容器化部署方�
 1. 复制 [docker-compose.yml](https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/integrations/neuron/docker-compose.yml) 文件到部署的机器上。其内容如下，包含了 Neuron，eKuiper 以及 eKuiper 的管理界面 eKuiper manager（可选）。其中，eKuiper 和 Neuron 共享了名为 nng-ipc 的 volume ，用于二者通信。如果要使用 eKuiper alpine 版本，需要在 compose 文件的 eKuiper 部分添加 `user: root:root` 赋予写入 ipc 文件的权限，否则连接将无法建立。
 
    ```yaml
-   version: '3.4'
+   version: "3.4"
 
    services:
-      manager:
-         image: emqx/ekuiper-manager:1.9
-         container_name: ekuiper-manager
-         ports:
-            - "9082:9082"
-      ekuiper:
-         image: lfedge/ekuiper:1.9
-         ports:
-            - "9081:9081"
-            - "127.0.0.1:20498:20498"
-         container_name: ekuiper
-         hostname: ekuiper
-         environment:
-            MQTT_SOURCE__DEFAULT__SERVER: "tcp://mybroker:1883"
-            KUIPER__BASIC__CONSOLELOG: "true"
-            KUIPER__BASIC__IGNORECASE: "false"
-            # The default neuron url. Change it if you want to use another port.
-            NEURON__DEFAULT__URL: "tcp://neuron:7081"
-         volumes:
-            - /tmp/data:/kuiper/data
-            - /tmp/log:/kuiper/log
-            # Enable the following line if you want to use the IPC mode to connect to earlier version of neuron
-            # - nng-ipc:/tmp
-      neuron:
-         image: neugates/neuron:2.4.0
-         ports:
-            - "7001:7001"
-            # The default port to communicate with eKuiper. Change it if you want to use another port.
-            - "7081:7081"
-         container_name: neuron
-         hostname: neuron
-         volumes:
-            - /tmp/neuron/data:/opt/neuron/persistence
-            # Enable the following line if you want to use the IPC mode to connect to earlier version of eKuiper
-            # - nng-ipc:/tmp
+     manager:
+       image: emqx/ekuiper-manager:1.9
+       container_name: ekuiper-manager
+       ports:
+         - "9082:9082"
+     ekuiper:
+       image: lfedge/ekuiper:1.9
+       ports:
+         - "9081:9081"
+         - "127.0.0.1:20498:20498"
+       container_name: ekuiper
+       hostname: ekuiper
+       environment:
+         MQTT_SOURCE__DEFAULT__SERVER: "tcp://mybroker:1883"
+         KUIPER__BASIC__CONSOLELOG: "true"
+         KUIPER__BASIC__IGNORECASE: "false"
+         # The default neuron url. Change it if you want to use another port.
+         NEURON__DEFAULT__URL: "tcp://neuron:7081"
+       volumes:
+         - /tmp/data:/kuiper/data
+         - /tmp/log:/kuiper/log
+         # Enable the following line if you want to use the IPC mode to connect to earlier version of neuron
+         # - nng-ipc:/tmp
+     neuron:
+       image: neugates/neuron:2.4.0
+       ports:
+         - "7001:7001"
+         # The default port to communicate with eKuiper. Change it if you want to use another port.
+         - "7081:7081"
+       container_name: neuron
+       hostname: neuron
+       volumes:
+         - /tmp/neuron/data:/opt/neuron/persistence
+         # Enable the following line if you want to use the IPC mode to connect to earlier version of eKuiper
+         # - nng-ipc:/tmp
 
-      # Enable the following lines if you want to use the IPC mode to connect to earlier version of eKuiper and neuron
-      # volumes:
-      #  nng-ipc:
+     # Enable the following lines if you want to use the IPC mode to connect to earlier version of eKuiper and neuron
+     # volumes:
+     #  nng-ipc:
    ```
 
    用户可自定义配置连接端口，本例中为 7081。修改端口时，需要修改 Neuron 的 eKuiper 北向应用端口，同时修改本文件中用到该端口的部分，即 Neuron 的端口暴露和 eKuiper 的环境变量默认连接 url 部分。
@@ -94,7 +94,7 @@ Neuron 和 eKuiper 都支持二进制安装包以及 Docker 容器化部署方�
    > 1. eKuiper 1.9 之后版本与 Neuron 2.4 之前版本对接只能通过 ipc，需要配置 `NEURON__DEFAULT__URL: "ipc:///tmp/neuron-ekuiper.ipc"`，并且启用 volumes nng-ipc 的配置。Neuron 无需暴露 7081 端口。
    > 2. eKuiper 1.9 之前版本与 Neuron 2.4 之前版本对接只能通过 ipc，需要去除 `NEURON__DEFAULT__URL` 环境变量配置并且启用 volumes nng-ipc 的配置。Neuron 无需暴露 7081 端口。
    > 3. eKuiper 1.9 之前版本与 Neuron 2.4 之后版本无法直接对接，可通过 MQTT 中转。
-   >
+
 2. 在该文件所在目录，运行:
 
    ```shell
@@ -125,9 +125,9 @@ Neuron 启动之后，我们需要配置 Neuron 的南向设备和北向 eKuiper
 1. 点击右上角的`添加配置`按键；
 2. 填写应用名称，例如，ekuiper-1；
 3. 下拉框中显示在该软件版本中，我们可用的北向应用，此次我们选择 ekuiper 的插件，如下图所示。
-![select app](https://neugates.io/docs/docs-assets/img/north-add.81cdfc27.png)
+   ![select app](https://neugates.io/docs/docs-assets/img/north-add.81cdfc27.png)
 4. 创建应用成功之后，会在北向应用管理界面出现一个刚刚创建的应用的卡片，此时应用的工作状态在初始化，连接状态在断开连接状态中，如下图所示。
-![neuron ekuiper app](./neuron_ekuiper_app.png)
+   ![neuron ekuiper app](./neuron_ekuiper_app.png)
 
 第二步，订阅 Group：
 

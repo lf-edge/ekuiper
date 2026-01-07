@@ -4,7 +4,7 @@ The eKuiper rule command line tools allows you to manage rules, such as create, 
 
 ## create a rule
 
-The command is used for creating a rule.  The rule's definition is specified with JSON format, read [rule](../../guide/rules/overview.md) for more detailed information.
+The command is used for creating a rule. The rule's definition is specified with JSON format, read [rule](../../guide/rules/overview.md) for more detailed information.
 
 ```shell
 create rule $rule_name '$rule_json' | create rule $rule_name -f $rule_def_file
@@ -224,23 +224,17 @@ Sample result:
 
 ```json
 {
-  "sources": [
-    "source_stream"
-  ],
+  "sources": ["source_stream"],
   "edges": {
-    "op_project": [
-      "sink_log"
-    ],
-    "source_stream": [
-      "op_project"
-    ]
+    "op_project": ["sink_log"],
+    "source_stream": ["op_project"]
   }
 }
 ```
 
 ## validate a rule
 
-The command is used for validating a rule.  The rule's definition is specified with JSON format, read [rule](../../guide/rules/overview.md) for more detailed information.
+The command is used for validating a rule. The rule's definition is specified with JSON format, read [rule](../../guide/rules/overview.md) for more detailed information.
 
 ```shell
 validate rule $rule_name '$rule_json' | validate rule $rule_name -f $rule_def_file

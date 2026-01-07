@@ -42,19 +42,21 @@ By default, sinks append data to the external system. Some external system such 
 To activate the update feature, the sink must set the `rowkindField` property to specify which field in the data represents to action to take. In the below example, `rowkindField` is set to `action`.
 
 ```json
-{"redis": {
-  "addr": "127.0.0.1:6379",
-  "dataType": "string",
-  "field": "id",
-  "rowkindField": "action",
-  "sendSingle": true
-}}
+{
+  "redis": {
+    "addr": "127.0.0.1:6379",
+    "dataType": "string",
+    "field": "id",
+    "rowkindField": "action",
+    "sendSingle": true
+  }
+}
 ```
 
 The data ingested must have a field to indicate the update action. In the below example, the `action` field is the action to perform. The actions could be `insert`, `update`, `upsert` and `delete`. The action implementation varies between sinks. Some sinks may perform the same action for insert, upsert and update.
 
 ```json
-{"action":"update", "id":5, "name":"abc"}
+{ "action": "update", "id": 5, "name": "abc" }
 ```
 
 This message will update the data of id 5 to the new name.
@@ -66,7 +68,7 @@ Each sink has its own property set based on the common properties.
 Each action can define its own properties. There are several common properties:
 
 | property name        | Type & Default Value                 | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-|----------------------|--------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| -------------------- | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | bufferLength         | int: 1024                            | Specify how many messages can be buffered in memory. If the buffered messages exceed the limit, the sink will block message receiving until the buffered messages have been sent out so that the buffered size is less than the limit.                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | omitIfEmpty          | bool: false                          | If the configuration item is set to true, when SELECT result is empty, then the result will not feed to sink operator.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | sendSingle           | bool: false                          | The output messages are received as an array. This is indicate whether to send the results one by one. If false, the output message will be `{"result":"${the string of received message}"}`. For example, `{"result":"[{\"count\":30},"\"count\":20}]"}`. Otherwise, the result message will be sent one by one with the actual field name. For the same example as above, it will send `{"count":30}`, then send `{"count":20}` to the RESTful endpoint.Default to false.                                                                                                                                                                                |
@@ -87,9 +89,9 @@ Each action can define its own properties. There are several common properties:
 | resendIndicatorField | string: default to global definition | field name of the resend cache, the field type must be a bool value. If the field is set, it will be set to true when resending. e.g., if resendIndicatorField is `resend`, then the `resend` field will be set to true when resending the cache.                                                                                                                                                                                                                                                                                                                                                                                                          |
 | resendDestination    | string: default ""                   | the destination to resend the cache to, which may have different meanings or support depending on the sink. For example, the mqtt sink can send the resend data to a different topic. The supported sinks are listed in [sinks with resend destination support](#sinks-with-resend-destination-support).                                                                                                                                                                                                                                                                                                                                                   |
 | batchSize            | int: 0                               | Specify the number of buffered messages before sending. The sink will block sending messages until the number of buffered messages is equal to this value, then the messages will be sent at one time. batchSize treats the data for []map as multiple messages.                                                                                                                                                                                                                                                                                                                                                                                           |
-| lingerInterval       | int  0                               | Specify the interval time for buffer messages before seding, the unit is millisecond. The sink will block sending messages until the buffer sending interval reaches this value. lingerInterval can be used together with batchSize to trigger sending when any condition is met.                                                                                                                                                                                                                                                                                                                                                                          |
-| compression          | string:  ""                          | Sets the data compression algorithm. Only effective when the sink is of a type that sends bytecode. Supported compression methods are "zlib", "gzip", "flate", "zstd".                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| encryption           | string:  ""                          | Sets the data encryption algorithm. Only effective when the sink is of a type that sends bytecode. Currently, only the AES algorithm is supported.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| lingerInterval       | int 0                                | Specify the interval time for buffer messages before seding, the unit is millisecond. The sink will block sending messages until the buffer sending interval reaches this value. lingerInterval can be used together with batchSize to trigger sending when any condition is met.                                                                                                                                                                                                                                                                                                                                                                          |
+| compression          | string: ""                           | Sets the data compression algorithm. Only effective when the sink is of a type that sends bytecode. Supported compression methods are "zlib", "gzip", "flate", "zstd".                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| encryption           | string: ""                           | Sets the data encryption algorithm. Only effective when the sink is of a type that sends bytecode. Currently, only the AES algorithm is supported.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 
 ### Dynamic properties
 
@@ -99,12 +101,14 @@ In the sink, it is common to fetch a property value from the result data to achi
 {
   "id": "rule1",
   "sql": "SELECT topic FROM demo",
-  "actions": [{
-    "mqtt": {
-      "sendSingle": true,
-      "topic": "prefix/{{.topic}}"
+  "actions": [
+    {
+      "mqtt": {
+        "sendSingle": true,
+        "topic": "prefix/{{.topic}}"
+      }
     }
-  }]
+  ]
 }
 ```
 
@@ -171,19 +175,20 @@ In the following example configuration of the rule, log sink has no cache-relate
 {
   "id": "rule1",
   "sql": "SELECT * FROM demo",
-  "actions": [{
-    "log": {},
-    "mqtt": {
-      "server": "tcp://127.0.0.1:1883",
-      "topic": "result/cache",
-      "qos": 0,
-      "enableCache": true,
-      "memoryCacheThreshold": 2048,
-      "maxDiskCache": 204800,
-      "bufferPageSize": 512,
-      "resendInterval": 10
+  "actions": [
+    {
+      "log": {},
+      "mqtt": {
+        "server": "tcp://127.0.0.1:1883",
+        "topic": "result/cache",
+        "qos": 0,
+        "enableCache": true,
+        "memoryCacheThreshold": 2048,
+        "maxDiskCache": 204800,
+        "bufferPageSize": 512,
+        "resendInterval": 10
+      }
     }
-  }
   ]
 }
 ```
@@ -219,33 +224,33 @@ test:
 When users need MQTT actions, in addition to the traditional configuration method, as shown below
 
 ```json
-    {
-      "mqtt": {
-        "server": "tcp://broker.emqx.io:1883",
-        "topic": "devices/demo_001/messages/events/",
-        "protocolVersion": "3.1.1",
-        "qos": 1,
-        "clientId": "demo_001",
-        "username": "xyz.azure-devices.net/demo_001/?api-version=2018-06-30",
-        "password": "SharedAccessSignature sr=*******************",
-        "retained": false
-      }
-    }
+{
+  "mqtt": {
+    "server": "tcp://broker.emqx.io:1883",
+    "topic": "devices/demo_001/messages/events/",
+    "protocolVersion": "3.1.1",
+    "qos": 1,
+    "clientId": "demo_001",
+    "username": "xyz.azure-devices.net/demo_001/?api-version=2018-06-30",
+    "password": "SharedAccessSignature sr=*******************",
+    "retained": false
+  }
+}
 ```
 
 Can also use the `resourceId` reference form with the following configuration
 
 ```json
 {
-      "mqtt": {
-        "resourceId": "test",
-        "topic": "devices/demo_001/messages/events/",
-        "protocolVersion": "3.1.1",
-        "clientId": "demo_001",
-        "username": "xyz.azure-devices.net/demo_001/?api-version=2018-06-30",
-        "password": "SharedAccessSignature sr=*******************",
-        "retained": false
-      }
+  "mqtt": {
+    "resourceId": "test",
+    "topic": "devices/demo_001/messages/events/",
+    "protocolVersion": "3.1.1",
+    "clientId": "demo_001",
+    "username": "xyz.azure-devices.net/demo_001/?api-version=2018-06-30",
+    "password": "SharedAccessSignature sr=*******************",
+    "retained": false
+  }
 }
 ```
 

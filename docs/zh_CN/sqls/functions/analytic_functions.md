@@ -83,7 +83,7 @@ changed_col(true, col)
 had_changed(true, expr1, expr2, ...)
 ```
 
-返回是否上次运行后列的值有变化。 其参数可以为 * 以方便地监测所有列。
+返回是否上次运行后列的值有变化。 其参数可以为 \* 以方便地监测所有列。
 
 ## 监控变化的函数
 
@@ -93,11 +93,11 @@ had_changed(true, expr1, expr2, ...)
 
 **语法**
 
-```CHANGED_COL(<ignoreNull>, <expr>)```
+`CHANGED_COL(<ignoreNull>, <expr>)`
 
 **参数**
 
-**ignoreNull**:  判断变化时是否忽略 null 值。若为 true，则收到 null 值或未收到值不会触发变化。
+**ignoreNull**: 判断变化时是否忽略 null 值。若为 true，则收到 null 值或未收到值不会触发变化。
 
 **expr**: 用来监控变化状态和输出变化值的表达式。
 
@@ -111,7 +111,7 @@ had_changed(true, expr1, expr2, ...)
 
 **语法**
 
-```CHANGED_COLS (<prefix>, <ignoreNull>, <expr> [,...,<exprN>])```
+`CHANGED_COLS (<prefix>, <ignoreNull>, <expr> [,...,<exprN>])`
 
 **参数**
 
@@ -142,7 +142,7 @@ had_changed(true, expr1, expr2, ...)
 
 该函数为向量函数，支持不定长度参数。
 
-```HAD_CHANGED (<ignoreNull>, <expr> [,...,<exprN>])```
+`HAD_CHANGED (<ignoreNull>, <expr> [,...,<exprN>])`
 
 **参数**
 

@@ -54,7 +54,7 @@ The result is shown in the figure below, when the input is 1.57, the derivation 
 
 ## MobileNet V1 Model Set up
 
-Please download the [MobileNet V1 model](https://tfhub.dev/tensorflow/lite-model/mobilenet_v1_1.0_224/1/default/1), this model inputs image information of 224 * 224 pixels, and returns a size of 1001 float array.
+Please download the [MobileNet V1 model](https://tfhub.dev/tensorflow/lite-model/mobilenet_v1_1.0_224/1/default/1), this model inputs image information of 224 \* 224 pixels, and returns a size of 1001 float array.
 In order to obtain image information, we use another precompiled video plug-in to regularly extract images from the live stream as the input of the rules, and send the inference results to the MQTT Broker.
 
 ### video source install and configure
@@ -64,11 +64,11 @@ The video source periodically pulls data from the live source and extracts image
 ![video install](../../resources/video_install.png)
 ![video config](../../resources/video_config.png)
 
-*Note*: The source data format part should be selected as binary type.
+_Note_: The source data format part should be selected as binary type.
 
 ### image function plugin install
 
-Since the precompiled model requires 224 * 224 pixel image data, another precompiled plugin image needs to be installed to resize the image.
+Since the precompiled model requires 224 \* 224 pixel image data, another precompiled plugin image needs to be installed to resize the image.
 
 ![image install](../../resources/image_install.png)
 ![resize register](../../resources/image_register.png)
@@ -128,7 +128,7 @@ func bestMatchLabel(keyValue map[string]interface{}) (string, bool) {
     resultArray := keyValue["tfLite"].([]interface{})
     outputArray := resultArray[0].([]byte)
     outputSize := len(outputArray)
-  
+
     var results []result
     for i := 0; i < outputSize; i++ {
         score := float64(outputArray[i]) / 255.0

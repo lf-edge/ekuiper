@@ -4,29 +4,29 @@
 
 ```json
 {
-  "name": {"first": "Tom", "last": "Anderson"},
-  "age":37,
-  "children": ["Sara","Alex","Jack"],
+  "name": { "first": "Tom", "last": "Anderson" },
+  "age": 37,
+  "children": ["Sara", "Alex", "Jack"],
   "fav.movie": "Deer Hunter",
   "friends": [
-    {"first": "Dale", "last": "Murphy", "age": 44},
-    {"first": "Roger", "last": "Craig", "age": 68},
-    {"first": "Jane", "last": "Murphy", "age": 47}
+    { "first": "Dale", "last": "Murphy", "age": 44 },
+    { "first": "Roger", "last": "Craig", "age": 68 },
+    { "first": "Jane", "last": "Murphy", "age": 47 }
   ],
-    "followers": {
-        "Group1": [
-            {"first": "John", "last": "Shavor", "age": 22},
-            {"first": "Ken", "last": "Miller", "age": 33}
-        ],
-        "Group2": [
-            {"first": "Alice", "last": "Murphy", "age": 33},
-            {"first": "Brian", "last": "Craig", "age": 44}
-        ]
-    },
-   "ops": {
-    "functionA": {"numArgs": 2},
-    "functionB": {"numArgs": 3},
-    "functionC": {"variadic": true}
+  "followers": {
+    "Group1": [
+      { "first": "John", "last": "Shavor", "age": 22 },
+      { "first": "Ken", "last": "Miller", "age": 33 }
+    ],
+    "Group2": [
+      { "first": "Alice", "last": "Murphy", "age": 33 },
+      { "first": "Brian", "last": "Craig", "age": 44 }
+    ]
+  },
+  "ops": {
+    "functionA": { "numArgs": 2 },
+    "functionB": { "numArgs": 3 },
+    "functionC": { "variadic": true }
   },
   "x": 0,
   "y": 2
@@ -244,7 +244,7 @@ SELECT json_path_exists(followers, "$[\"my.follower\"]") FROM demo
 ["Miller"]
 ```
 
-### *Projections* - *NOT SUPPORT YET*
+### _Projections_ - _NOT SUPPORT YET_
 
 #### List & Slice projections
 

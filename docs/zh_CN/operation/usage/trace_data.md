@@ -36,7 +36,7 @@ eKuiper 支持将 Trace 数据暴露到 Open Telemetry Collector，Open Telemetr
 
 ### 本地启动 Open Telemetry Collector 与 Jaeger
 
-通过 docker-compose 启动 open telemetry collector 和  Jaeger
+通过 docker-compose 启动 open telemetry collector 和 Jaeger
 
 ```shell
 docker-compose up -d
@@ -67,15 +67,15 @@ service:
 ```
 
 ```yaml
-version: '3.8'
+version: "3.8"
 
 services:
   jaeger:
     image: jaegertracing/all-in-one:latest
     ports:
-      - "16686:16686"  # Jaeger UI
-      - "14250:14250"  # gRPC for Jaeger
-      - "14268:14268"  # HTTP for Jaeger
+      - "16686:16686" # Jaeger UI
+      - "14250:14250" # gRPC for Jaeger
+      - "14268:14268" # HTTP for Jaeger
     networks:
       - otel-net
 
@@ -85,7 +85,7 @@ services:
     volumes:
       - ./collector.yaml:/etc/otel-collector-config.yaml
     ports:
-      - "4318:4318"  # OTLP HTTP receiver
+      - "4318:4318" # OTLP HTTP receiver
     depends_on:
       - jaeger
     networks:
@@ -126,14 +126,13 @@ openTelemetry:
 
 ```json
 {
-    "id": "rule1",
-    "sql": "select * from demo where a > 5",
-    "actions": [
-        {
-            "log": {
-            }
-        }
-    ]
+  "id": "rule1",
+  "sql": "select * from demo where a > 5",
+  "actions": [
+    {
+      "log": {}
+    }
+  ]
 }
 ```
 

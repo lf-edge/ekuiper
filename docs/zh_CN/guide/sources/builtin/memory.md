@@ -51,7 +51,7 @@ CREATE TABLE memoryTableDemo () WITH (DATASOURCE="topicB", FORMAT="JSON", TYPE="
 CREATE TABLE memoryLookupTableDemo () WITH (DATASOURCE="topicC", FORMAT="JSON", TYPE="memory");
 ```
 
-注意，作为查询表使用时，还应配置 `KEY` 属性，它将作为虚拟表的主键来加速查询。创建完成后，内存查找表将开始从指定的内存主题累积数据，并通过  `KEY`  字段进行索引，允许快速检索。
+注意，作为查询表使用时，还应配置 `KEY` 属性，它将作为虚拟表的主键来加速查询。创建完成后，内存查找表将开始从指定的内存主题累积数据，并通过 `KEY` 字段进行索引，允许快速检索。
 
 ## 内存数据源中的主题
 

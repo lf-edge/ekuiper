@@ -13,17 +13,17 @@
    ```shell
    -- In host
    # docker exec -it kuiper /bin/sh
- 
+
    -- In docker instance
    # bin/kuiper create stream demo '(temperature float, humidity bigint) WITH (FORMAT="JSON", DATASOURCE="devices/+/messages")'
    Connecting to 127.0.0.1:20498...
    Stream demo is created.
- 
+
    # bin/kuiper query
    Connecting to 127.0.0.1:20498...
    kuiper > select * from demo where temperature > 30;
    Query was submit successfully.
- 
+
    ```
 
 4. 您可以使用任何 MQTT 客户端工具，例如 [MQTT X](https://mqttx.app/) 来发布传感器数据到服务器 `tcp://broker.emqx.io:1883`的主题 `devices/device_001/messages` 。

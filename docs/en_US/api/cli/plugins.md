@@ -8,7 +8,7 @@ The eKuiper plugin command line tools allows you to manage plugins, such as crea
 
 ## create a plugin
 
-The command is used for creating a plugin.  The plugin's definition is specified with JSON format.
+The command is used for creating a plugin. The plugin's definition is specified with JSON format.
 
 ```shell
 create plugin $plugin_type $plugin_name $plugin_json | create plugin $plugin_type $plugin_name -f $plugin_def_file
@@ -38,7 +38,7 @@ Below is the contents of `plugin1.txt`.
 
 ```json
 {
-  "file":"http://127.0.0.1/plugins/sources/random.zip"
+  "file": "http://127.0.0.1/plugins/sources/random.zip"
 }
 ```
 

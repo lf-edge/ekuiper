@@ -11,7 +11,7 @@ Typically, there are two kinds of data flow from EdgeX to eKuiper:
 
 ![data flow](./flow.png)
 
-Notice that, the EdgeX message bus receives messages from various service such as device service and core data. Even for the first kind of data flow, the app service result is also  publish to the message bus and then consumed by eKuiper. The differences between the two kinds is whether app service processed the message before consuming by eKuiper.
+Notice that, the EdgeX message bus receives messages from various service such as device service and core data. Even for the first kind of data flow, the app service result is also publish to the message bus and then consumed by eKuiper. The differences between the two kinds is whether app service processed the message before consuming by eKuiper.
 
 By default, the first kind of data flow is used which allow users to prepare (transformed, enriched, filtered, etc.) and groom (formatted, compressed, encrypted, etc.) before sending to the eKuiper rule engine. If users don't need to transform the data and would like to process the raw data in eKuiper to reduce the overhead, they can connect to the message bus directly.
 

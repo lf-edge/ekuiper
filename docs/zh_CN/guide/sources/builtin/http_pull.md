@@ -31,7 +31,7 @@ default:
   # 可能的设置可能是：true/false
   incremental: false
   # 请求正文，例如'{"data": "data", "method": 1}'
-  body: '{}'
+  body: "{}"
   # 正文类型, none、text、json、html、xml、javascript、form
   bodyType: json
   # 请求所需的HTTP标头
@@ -90,7 +90,7 @@ application_conf: #Conf_key
 
 #### 证书路径
 
-- `certificationPath`:  证书路径，示例值：`d3807d9fa5-certificate.pem`。可以是绝对路径，也可以是相对路径。如指定相对路径，那么父目录为执行 `kuiperd` 命令的路径，例如：
+- `certificationPath`: 证书路径，示例值：`d3807d9fa5-certificate.pem`。可以是绝对路径，也可以是相对路径。如指定相对路径，那么父目录为执行 `kuiperd` 命令的路径，例如：
   - 如果在 `/var/kuiper` 中运行 `bin/kuiperd` ，那么父目录为 `/var/kuiper`。
   - 如果运行从`/var/kuiper/bin`中运行`./kuiperd`，那么父目录为 `/var/kuiper/bin`。
 - `privateKeyPath`：私钥路径，示例值：`d3807d9fa5-private.pem.key`。可以是绝对路径，也可以是相对路径，具体可参考 `certificationPath`。
@@ -109,7 +109,6 @@ OAuth 2.0 是一个授权协议，让 API 客户端有限度地访问网络服�
 `OAuth`：定义类 OAuth 的认证流程。其他的认证方式如 apikey 可以直接在 headers 设置密钥，不需要使用这个配置。
 
 - `access`
-
   - `url`：获取访问码的网址，将始终使用 POST 方法访问。
 
   - `body`：获取访问令牌的请求主体。通常需要授权码。
@@ -117,7 +116,6 @@ OAuth 2.0 是一个授权协议，让 API 客户端有限度地访问网络服�
   - `expire`：令牌的过期时间，单位：秒，允许使用模板，因此必须是字符串。
 
 - `refresh`
-
   - `url`：刷新令牌的网址，将始终使用 POST 方法访问。
 
   - `headers`：用于刷新令牌的请求头。通常把令牌放在这里，用于授权。
@@ -164,7 +162,7 @@ application_conf: #Conf_key
   url: http://localhost:9090/pull
 ```
 
-定义  `application_conf`  配置组后，如希望在创建流时使用此配置，可通过 `CONF_KEY` 选项并指定配置名称，此时，在自定义配置中定义的参数将覆盖 `default` 配置中的相应参数。详细步骤，可参考 [流语句](../../../sqls/streams.md)。
+定义 `application_conf` 配置组后，如希望在创建流时使用此配置，可通过 `CONF_KEY` 选项并指定配置名称，此时，在自定义配置中定义的参数将覆盖 `default` 配置中的相应参数。详细步骤，可参考 [流语句](../../../sqls/streams.md)。
 
 **示例**
 
