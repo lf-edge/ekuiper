@@ -504,13 +504,16 @@ func (s *RuleStateTestSuite) TestMulShared() {
 		wg := sync.WaitGroup{}
 		wg.Add(6)
 		final := 0
+		var mu sync.Mutex
 		go func() {
 			defer wg.Done()
 			fmt.Println("start 1")
 			resp, err := client.StartRule("mul1")
 			s.Require().NoError(err)
 			s.Require().Equal(http.StatusOK, resp.StatusCode)
+			mu.Lock()
 			final = 0
+			mu.Unlock()
 		}()
 		go func() {
 			defer wg.Done()
@@ -518,7 +521,9 @@ func (s *RuleStateTestSuite) TestMulShared() {
 			resp, err := client.StopRule("mul1")
 			s.Require().NoError(err)
 			s.Require().Equal(http.StatusOK, resp.StatusCode)
+			mu.Lock()
 			final = 1
+			mu.Unlock()
 		}()
 		go func() {
 			defer wg.Done()
@@ -527,7 +532,9 @@ func (s *RuleStateTestSuite) TestMulShared() {
 			s.Require().NoError(err)
 			s.T().Log(GetResponseText(resp))
 			s.Require().Equal(http.StatusOK, resp.StatusCode)
+			mu.Lock()
 			final = 2
+			mu.Unlock()
 		}()
 		go func() {
 			defer wg.Done()
@@ -536,7 +543,9 @@ func (s *RuleStateTestSuite) TestMulShared() {
 			s.Require().NoError(err)
 			s.T().Log(GetResponseText(resp))
 			s.Require().Equal(http.StatusOK, resp.StatusCode)
+			mu.Lock()
 			final = 3
+			mu.Unlock()
 		}()
 		go func() {
 			defer wg.Done()
@@ -544,7 +553,9 @@ func (s *RuleStateTestSuite) TestMulShared() {
 			resp, err := client.StopRule("mul1")
 			s.Require().NoError(err)
 			s.Require().Equal(http.StatusOK, resp.StatusCode)
+			mu.Lock()
 			final = 4
+			mu.Unlock()
 		}()
 		go func() {
 			defer wg.Done()
@@ -552,7 +563,9 @@ func (s *RuleStateTestSuite) TestMulShared() {
 			resp, err := client.StartRule("mul1")
 			s.Require().NoError(err)
 			s.Require().Equal(http.StatusOK, resp.StatusCode)
+			mu.Lock()
 			final = 5
+			mu.Unlock()
 		}()
 		wg.Wait()
 		metrics, err := client.GetRuleStatus("mul2")
