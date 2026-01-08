@@ -6,12 +6,8 @@ concurrency:
 
 on:
   push:
-    branches:
-      - master
-      - 'v*'
   pull_request:
     types: [opened, edited, synchronize, reopened]
-  workflow_dispatch:
 
 permissions:
   contents: read
@@ -35,6 +31,7 @@ jobs:
           $(go env GOPATH)/bin/go-licenses check ./... --disallowed_types forbidden,restricted --ignore modernc.org/mathutil
 
   golangci_lint:
+    if: github.repository_owner == 'lf-edge'
     runs-on: ubuntu-latest
     needs:
       - check_licenses
@@ -54,21 +51,19 @@ jobs:
           sudo apt-get update && sudo apt-get install -y --no-install-recommends pkg-config libzmq3-dev
 
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@v8
         with:
           version: latest
-          args: "--out-format line-number"
 
       - name: golangci-lint (tools/kubernetes)
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@v8
         with:
           version: latest
           working-directory: tools/kubernetes
-          args: "--out-format line-number"
 
       - name: golangci-lint (sdk/go)
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@v8
         with:
           version: latest
           working-directory: sdk/go
-          args: "--out-format line-number --config=.gosdkci.yaml"
+          args: --config=.gosdkci.yaml
