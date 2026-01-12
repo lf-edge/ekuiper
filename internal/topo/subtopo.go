@@ -66,7 +66,10 @@ func (s *SrcSubTopo) AddOutput(output chan interface{}, name string) error {
 }
 
 func (s *SrcSubTopo) RemoveOutput(name string) error {
-	return s.tail.RemoveOutput(name)
+	if s.tail != nil {
+		return s.tail.RemoveOutput(name)
+	}
+	return nil
 }
 
 func (s *SrcSubTopo) AddRef(ctx api.StreamContext, parentErrCh chan<- error) {
@@ -114,18 +117,21 @@ func (s *SrcSubTopo) Open(ctx api.StreamContext, parentErrCh chan<- error) {
 			for _, op := range s.ops {
 				op.Exec(pctx, errCh)
 			}
-			s.source.Open(pctx, errCh)
+			if s.source != nil {
+				s.source.Open(pctx, errCh)
+			}
 			s.cancel = cancel
 			ctx.GetLogger().Infof("Sub topo %s opened by rule %s with 1 ref", s.name, ctx.GetRuleId())
 			go func() {
 				defer func() {
-					conf.Log.Infof("Sub topo %s closed", s.name)
 					s.opened.Store(false)
+					conf.Log.Infof("Sub topo %s closed", s.name)
 				}()
 				for {
 					select {
 					case e := <-errCh:
 						pctx.GetLogger().Infof("Sub topo %s exit for error %v", s.name, e)
+						s.opened.Store(false)
 						s.notifyError(e)
 						return
 					case <-pctx.Done():
@@ -136,6 +142,7 @@ func (s *SrcSubTopo) Open(ctx api.StreamContext, parentErrCh chan<- error) {
 			return nil
 		})
 		if poe != nil {
+			s.opened.Store(false)
 			s.notifyError(poe)
 		}
 	}
