@@ -1,0 +1,15 @@
+# Sensitive configuration - encrypt with: go run tools/locker/main.go
+# This file should be added to .gitignore
+
+basic:
+  # AES Key, base64 encoded (32 bytes for AES-256)
+  aesKey: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3
+
+store:
+  redis:
+    # Redis password (if using Redis store)
+    password: ""
+
+# TLS private key contents (if using TLS)
+# tls:
+#   privateKeyRaw: ""

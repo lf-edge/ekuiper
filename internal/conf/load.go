@@ -29,6 +29,8 @@
 package conf
 
 import (
+	"crypto/aes"
+	"crypto/cipher"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -40,6 +42,7 @@ import (
 
 	"gopkg.in/yaml.v3"
 
+	"github.com/lf-edge/ekuiper/v2/internal/security"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
 
@@ -87,6 +90,12 @@ func LoadConfigFromPath(p string, c interface{}) error {
 	err = process(configs, GetEnv(), prefix)
 	if err != nil {
 		return err
+	}
+	// Load and merge encrypted config (kuiper.dat) if loading kuiper.yaml
+	if strings.HasSuffix(p, ConfFileName) {
+		if err := LoadEncryptedConfig(configs); err != nil {
+			Log.Warnf("Failed to load encrypted config: %v", err)
+		}
 	}
 	// checking json keys
 	switch c.(type) {
@@ -333,4 +342,67 @@ func Printable(m map[string]interface{}) map[string]interface{} {
 		}
 	}
 	return printableMap
+}
+
+// LoadEncryptedConfig loads and decrypts an encrypted configuration file (kuiper.dat)
+// and merges it into the provided config map.
+func LoadEncryptedConfig(configMap map[string]any) error {
+	dir, err := GetConfLoc()
+	if err != nil {
+		return err
+	}
+
+	encPath := path.Join(dir, "kuiper.dat")
+	if _, err := os.Stat(encPath); os.IsNotExist(err) {
+		return nil
+	}
+
+	ciphertext, err := os.ReadFile(encPath)
+	if err != nil {
+		return fmt.Errorf("failed to read encrypted config: %w", err)
+	}
+
+	key := security.GetMasterKey()
+	defer security.ClearKey(key)
+
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return fmt.Errorf("failed to create cipher: %w", err)
+	}
+
+	gcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return fmt.Errorf("failed to create GCM: %w", err)
+	}
+
+	nonceSize := gcm.NonceSize()
+	if len(ciphertext) < nonceSize {
+		return fmt.Errorf("encrypted config file is corrupted")
+	}
+
+	nonce, ciphertext := ciphertext[:nonceSize], ciphertext[nonceSize:]
+	plaintext, err := gcm.Open(nil, nonce, ciphertext, nil)
+	if err != nil {
+		return fmt.Errorf("decryption failed (config may be tampered): %w", err)
+	}
+
+	secConfigMap := make(map[string]any)
+	if err := yaml.Unmarshal(plaintext, &secConfigMap); err != nil {
+		return fmt.Errorf("failed to parse decrypted config: %w", err)
+	}
+
+	mergeConfig(configMap, normalize(secConfigMap))
+	return nil
+}
+
+func mergeConfig(dst, src map[string]any) {
+	for k, v := range src {
+		if srcMap, ok := v.(map[string]any); ok {
+			if dstMap, ok := dst[k].(map[string]any); ok {
+				mergeConfig(dstMap, srcMap)
+				continue
+			}
+		}
+		dst[k] = v
+	}
 }

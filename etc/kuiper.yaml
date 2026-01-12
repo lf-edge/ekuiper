@@ -64,7 +64,7 @@ basic:
   # enableOpenZiti indicates whether to enable OpenZiti for eKuiper REST service. Currently, it is only supported to work with EdgeX secure mode.
   enableOpenZiti: false
   # AES Key, base64 encoded
-  aesKey: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3
+  aesKey: YTA5NThiYTAyMTRkNmZhNg==
   gracefulShutdownTimeout: 10s
   connection:
     backoffMaxElapsedDuration: 3m

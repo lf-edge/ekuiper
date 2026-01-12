@@ -12,20 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// INTECH Process Automation Ltd.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 package conf
 
 import (
@@ -179,4 +165,72 @@ func TestPrintable(t *testing.T) {
 	after := Printable(bef)
 
 	_, _ = fmt.Printf("after %v", after)
+}
+
+func TestLoadEncryptedConfig(t *testing.T) {
+	// Create test config map
+	configMap := map[string]any{
+		"basic": map[string]any{
+			"loglevel": "info",
+		},
+		"store": map[string]any{
+			"type": "sqlite",
+		},
+	}
+
+	// Test loading when no encrypted file exists (should not error)
+	err := LoadEncryptedConfig(configMap)
+	if err != nil {
+		t.Errorf("LoadEncryptedConfig should not error when file doesn't exist: %v", err)
+	}
+
+	// Verify config is unchanged
+	if basic, ok := configMap["basic"].(map[string]any); ok {
+		if basic["loglevel"] != "info" {
+			t.Errorf("Config should be unchanged when no encrypted file")
+		}
+	}
+}
+
+func TestMergeConfig(t *testing.T) {
+	dst := map[string]any{
+		"basic": map[string]any{
+			"loglevel": "info",
+			"port":     8080,
+		},
+		"store": map[string]any{
+			"type": "sqlite",
+		},
+	}
+
+	src := map[string]any{
+		"basic": map[string]any{
+			"aeskey": "secret",
+		},
+		"store": map[string]any{
+			"redis": map[string]any{
+				"password": "redis_pass",
+			},
+		},
+	}
+
+	mergeConfig(dst, src)
+
+	// Verify merge
+	basic := dst["basic"].(map[string]any)
+	if basic["loglevel"] != "info" {
+		t.Error("Existing value should be preserved")
+	}
+	if basic["aeskey"] != "secret" {
+		t.Error("New value should be added")
+	}
+
+	store := dst["store"].(map[string]any)
+	if store["type"] != "sqlite" {
+		t.Error("Existing store type should be preserved")
+	}
+	redis := store["redis"].(map[string]any)
+	if redis["password"] != "redis_pass" {
+		t.Error("Nested value should be added")
+	}
 }
