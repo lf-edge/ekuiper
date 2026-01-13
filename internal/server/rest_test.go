@@ -1028,7 +1028,6 @@ func (suite *RestTestSuite) TestWaitStopRule() {
 }
 
 func (suite *RestTestSuite) TestRulesBulkStartAndStop() {
-
 	timestamp := time.Now().UnixNano()
 	mockRules := []string{
 		fmt.Sprintf(`{"id":"r1_%d","sql":"SELECT * FROM demo","actions":[{"log":{}}], "tags": ["mock-tag"], "triggered": true}`, timestamp),

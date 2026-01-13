@@ -22,6 +22,7 @@ import (
 	"path"
 
 	"github.com/gorilla/mux"
+
 	"github.com/lf-edge/ekuiper/v2/internal/topo/rule"
 )
 
