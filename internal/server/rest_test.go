@@ -1027,7 +1027,7 @@ func (suite *RestTestSuite) TestWaitStopRule() {
 	waitAllRuleStop()
 }
 
-func (suite *RestTestSuite) TestRulesBulkStartAndStop() {
+func (suite *RestTestSuite) TestRulesBulkOperationsHandler() {
 	timestamp := time.Now().UnixNano()
 	mockRules := []string{
 		fmt.Sprintf(`{"id":"r1_%d","sql":"SELECT * FROM demo","actions":[{"log":{}}], "tags": ["mock-tag"], "triggered": true}`, timestamp),
