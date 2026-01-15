@@ -56,7 +56,7 @@ eKuiper processing at the edge can greatly reduce system response latency, save 
 - Management
 
   - [A free web based management dashboard](https://hub.docker.com/r/emqx/ekuiper-manager) for visualized management
-  - [A free and open source web-based Swagger page which works with self-hosted eKupier](https://ankur-paan.github.io/ekuiper-manager/)) for testing/building APIs.
+  - [A free and open source web-based Swagger page which works with self-hosted eKuiper](https://ankur-paan.github.io/ekuiper-manager/)) for testing/building APIs.
   - Plugins, streams and rules management through CLI, REST API and config maps(Kubernetes)
   - Easily be integrated with Kubernetes
     frameworks [KubeEdge](https://github.com/kubeedge/kubeedge), [OpenYurt](https://openyurt.io/), [K3s](https://github.com/rancher/k3s) [Baetyl](https://github.com/baetyl/baetyl)
