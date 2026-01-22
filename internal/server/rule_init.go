@@ -349,6 +349,9 @@ func StartCPUProfiling(ctx context.Context, cpuProfile Profiler, interval time.D
 	if err := cpuProfile.StartCPUProfiler(ctx, interval); err != nil {
 		return err
 	}
+	// Enable window aggregator to allow GetWindowData() to work without panic.
+	// Window size of 5 means aggregating data over 5 profiling intervals.
+	cpuProfile.EnableWindowAggregator(5)
 	go func(ctx context.Context) {
 		for {
 			select {
