@@ -619,15 +619,23 @@ func (p *StreamProcessor) DropStream(name string, st ast.StreamType) (r string, 
 			return "", err
 		}
 	}
-	_, err = p.GetStream(name, st)
-	if err != nil {
-		return "", err
-	}
-
-	err = p.db.Delete(name)
-	if err != nil {
-		// try delete from temp db
+	// Check if the key exists without unmarshalling content
+	// This allows deleting corrupted streams (e.g., from v1.x migration)
+	var v string
+	found, _ := p.db.Get(name, &v)
+	if !found {
+		found, _ = p.tempDb.Get(name, &v)
+		if !found {
+			return "", errorx.NewWithCode(errorx.NOT_FOUND, fmt.Sprintf("%s %s is not found", ast.StreamTypeMap[st], name))
+		}
+		// Delete from temp db
 		err = p.tempDb.Delete(name)
+		if err != nil {
+			return "", err
+		}
+	} else {
+		// Delete from main db
+		err = p.db.Delete(name)
 		if err != nil {
 			return "", err
 		}
