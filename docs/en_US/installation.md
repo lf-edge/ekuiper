@@ -193,7 +193,6 @@ The eKuiper Helm chart is published to the GitHub Container Registry (OCI).
        --set service.type=LoadBalancer
    ```
 
-
 ## Compile from source code
 
 1. Get the source code.
