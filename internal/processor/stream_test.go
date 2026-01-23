@@ -101,7 +101,7 @@ func TestStreamCreateProcessor(t *testing.T) {
 		},
 		{
 			s:   `DROP STREAM topic1;`,
-			err: "Drop stream fails: topic1 is not found.",
+			err: "Drop stream fails: stream topic1 is not found.",
 		},
 		{
 			s: "DROP STREAM `stream`;",
@@ -196,7 +196,7 @@ func TestTableProcessor(t *testing.T) {
 		},
 		{
 			s:   `DROP TABLE topic1;`,
-			err: "Drop table fails: topic1 is not found.",
+			err: "Drop table fails: table topic1 is not found.",
 		},
 		{
 			s: "DROP TABLE `stream`;",
