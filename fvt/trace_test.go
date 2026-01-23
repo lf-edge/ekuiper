@@ -24,7 +24,6 @@ import (
 	"path"
 	"path/filepath"
 	"reflect"
-	"sort"
 	"testing"
 	"time"
 
@@ -164,25 +163,49 @@ func (s *TraceTestSuite) TestLookup() {
 			return hasCompleteTrace
 		})
 		s.Require().True(r, "should have at least one complete trace with ChildSpan")
-		// Match traces to expected files by ChildSpan depth
-		// lookup1.json expects deep nesting (full processing), lookup2.json expects shallow (rate-limited)
-		sort.Slice(results, func(i, j int) bool {
-			depthI := getMaxChildSpanDepth(results[i].resultMap)
-			depthJ := getMaxChildSpanDepth(results[j].resultMap)
-			return depthI > depthJ // Deeper trace first (matches lookup1.json)
-		})
-		for i, res := range results {
-			all, err := os.ReadFile(filepath.Join("result", "trace", fmt.Sprintf("lookup%d.json", i+1)))
+
+		// assert each trace, order independent
+		expMap := make(map[string]map[string]any)
+		for i := 1; i <= 2; i++ {
+			content, err := os.ReadFile(filepath.Join("result", "trace", fmt.Sprintf("lookup%d.json", i)))
 			s.NoError(err)
-			exp := make(map[string]any)
-			err = json.Unmarshal(all, &exp)
+			var exp map[string]any
+			err = json.Unmarshal(content, &exp)
 			s.NoError(err)
-			if s.compareTrace(exp, res.resultMap) == false {
-				fmt.Printf("lookup%d.json\n", i+1)
-				fmt.Println(string(res.act))
-				s.Fail(fmt.Sprintf("trace lookup %d compares fail", i+1))
-			}
+			// Get data attribute to use as key
+			attr, ok := exp["attribute"].(map[string]any)
+			s.True(ok)
+			data, ok := attr["data"].(string)
+			s.True(ok)
+			expMap[data] = exp
 		}
+
+		// results contains the traces fetched in TryAssert
+		for _, res := range results {
+			attr, ok := res.resultMap["attribute"].(map[string]any)
+			if !ok {
+				s.Fail("actual trace missing attribute")
+				continue
+			}
+			data, ok := attr["data"].(string)
+			if !ok {
+				s.Fail("actual trace missing data attribute")
+				continue
+			}
+
+			exp, ok := expMap[data]
+			if !ok {
+				s.Fail(fmt.Sprintf("unexpected data in trace: %s", data))
+				continue
+			}
+
+			if !s.compareTrace(exp, res.resultMap) {
+				fmt.Println(string(res.act))
+				s.Fail("trace comparison failed")
+			}
+			delete(expMap, data)
+		}
+		s.Equal(0, len(expMap), "not all expected traces were found")
 	})
 	s.Run("clean", func() {
 		res, e := client.Delete("rules/ruleLookupMem1")

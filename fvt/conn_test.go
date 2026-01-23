@@ -321,14 +321,7 @@ func (s *ConnectionTestSuite) TestSourcePing() {
 			},
 			err: "{\"error\":1000,\"message\":\"failed to dial: failed to open connection to [tcp://127.0.0.1:1883]:9092: dial tcp: lookup tcp://127.0.0.1:1883: no such host\"}\n",
 		},
-		//{
-		//	name: "sql",
-		//	props: map[string]any{
-		//		"url": "mysql://root:Q1w2e3r4t%25@test.com/test?parseTime=true",
-		//	},
-		//	timeout: true,
-		//	err:     "{\"error\":1000,\"message\":\"dial tcp 127.0.0.1:3306: connectex: No connection could be made because the target machine actively refused it.\"}\n",
-		//},
+		// SQL ping test removed - environment-dependent and unreliable in CI
 	}
 	prefix := "metadata/sources/connection"
 	for _, tt := range tests {
@@ -372,14 +365,7 @@ func (s *ConnectionTestSuite) TestLookupSourcePing() {
 			props: map[string]any{},
 			err:   "{\"error\":1000,\"message\":\"lookup source memory doesn't support ping connection\"}\n",
 		},
-		//{
-		//	name: "sql",
-		//	props: map[string]any{
-		//		"url": "mysql://root:Q1w2e3r4t%25@test.com/test?parseTime=true",
-		//	},
-		//	timeout: true,
-		//	err:     "{\"error\":1000,\"message\":\"dial tcp 127.0.0.1:3306: connectex: No connection could be made because the target machine actively refused it.\"}\n",
-		//},
+		// SQL ping test removed - environment-dependent and unreliable in CI
 	}
 	prefix := "metadata/lookups/connection"
 	for _, tt := range tests {
@@ -455,14 +441,7 @@ func (s *ConnectionTestSuite) TestSinkPing() {
 			},
 			err: "{\"error\":1000,\"message\":\"failed to dial: failed to open connection to [tcp://127.0.0.1:1883]:9092: dial tcp: lookup tcp://127.0.0.1:1883: no such host\"}\n",
 		},
-		//{
-		//	name: "sql",
-		//	props: map[string]any{
-		//		"url": "mysql://root:Q1w2e3r4t%25@test.com/test?parseTime=true",
-		//	},
-		//	timeout: true,
-		//	// err: "{\"error\":1000,\"message\":\"dial tcp 127.0.0.1:3306: connectex: No connection could be made because the target machine actively refused it.\"}\n",
-		//},
+		// SQL ping test removed - environment-dependent and unreliable in CI
 		{
 			name: "influx",
 			props: map[string]any{
