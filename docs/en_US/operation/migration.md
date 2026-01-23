@@ -86,6 +86,7 @@ docker restart ekuiper
 - Fresh installations of eKuiper 2.x are not affected
 - Always backup your database before upgrading
 - Consider exporting your rule definitions using the REST API before upgrading:
+
   ```bash
   curl http://localhost:9081/data/export > backup.json
   ```

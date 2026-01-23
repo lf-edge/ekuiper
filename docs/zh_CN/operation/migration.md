@@ -86,6 +86,7 @@ docker restart ekuiper
 - 全新安装的 eKuiper 2.x 不受影响
 - 升级前请务必备份数据库
 - 建议在升级前使用 REST API 导出规则定义：
+
   ```bash
   curl http://localhost:9081/data/export > backup.json
   ```
