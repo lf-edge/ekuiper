@@ -21,7 +21,6 @@ import (
 	"io"
 	"log"
 	"os"
-	"path"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -72,7 +71,7 @@ func InitConf() {
 		},
 	}
 
-	err = LoadConfigFromPath(path.Join(cpath, ConfFileName), &kc)
+	err = LoadConfigFromPath(filepath.Join(cpath, ConfFileName), &kc)
 	if err != nil {
 		Log.Fatal(err)
 		panic(err)
@@ -220,7 +219,7 @@ func SetConsoleAndFileLog(consoleLog, fileLog bool) error {
 		return err
 	}
 
-	file := path.Join(logDir, logFileName)
+	file := filepath.Join(logDir, logFileName)
 	ro := []rotatelogs.Option{
 		rotatelogs.WithRotationTime(time.Hour * time.Duration(Config.Basic.RotateTime)),
 		rotatelogs.WithRotationSize(Config.Basic.RotateSize),
@@ -239,13 +238,18 @@ func SetConsoleAndFileLog(consoleLog, fileLog bool) error {
 	)
 
 	if err != nil {
-		fmt.Printf("Failed to init log file settings: %v", err)
+		Log.Errorf("Failed to init log file settings: %v", err)
 		Log.Infof("Failed to log to file, using default stderr.")
 	} else if consoleLog {
 		mw := io.MultiWriter(os.Stdout, logWriter)
 		Log.SetOutput(mw)
 	} else {
 		Log.SetOutput(logWriter)
+	}
+	if !strings.EqualFold(runtime.GOOS, "windows") {
+		if err := validateLogSymlink(logDir, logFileName); err != nil {
+			Log.Warnf("Failed to validate log symlink %s: %v", filepath.Join(logDir, logFileName), err)
+		}
 	}
 	if Config.Basic.RotateCount > 0 {
 		// gc outdated log files by logrus itself
@@ -305,7 +309,7 @@ func gcOutdatedLog(filePath string, maxDuration time.Duration) {
 			continue
 		}
 		if isLogOutdated(entry.Name(), now, maxDuration) {
-			err := os.Remove(path.Join(filePath, entry.Name()))
+			err := os.Remove(filepath.Join(filePath, entry.Name()))
 			if err != nil {
 				Log.Errorf("remove outdated log %v failed, err:%v", entry.Name(), err)
 			}
@@ -318,7 +322,7 @@ func isLogOutdated(name string, now time.Time, maxDuration time.Duration) bool {
 		return false
 	}
 	layout := ".2006-01-02_15-04-05"
-	logDateExt := path.Ext(name)
+	logDateExt := filepath.Ext(name)
 	if t, err := time.Parse(layout, logDateExt); err != nil {
 		Log.Errorf("parse log %v datetime failed, err:%v", name, err)
 		return false
