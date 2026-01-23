@@ -158,35 +158,39 @@ When installing by package, the eKuiper folders are not in the same directory. T
 
 ## Install via Helm (K8S、K3S)
 
-1. Add helm repository.
+The eKuiper Helm chart is published to the GitHub Container Registry (OCI).
+
+1. Install eKuiper directly from OCI registry.
 
    ```shell
-    $ helm repo add emqx https://repos.emqx.io/charts
-    $ helm repo update
+   $ helm install my-ekuiper oci://ghcr.io/lf-edge/ekuiper-charts/ekuiper --version 1.4.0
    ```
 
-2. Query eKuiper.
+   Or pull the chart first:
 
    ```shell
-    $ helm search repo emqx
-    NAME         CHART VERSION APP VERSION DESCRIPTION
-    emqx/emqx    v4.0.0        v4.0.0      A Helm chart for EMQX
-    emqx/emqx-ee v4.0.0        v4.0.0      A Helm chart for EMQX
-    emqx/ekuiper  0.1.1         0.1.1       A lightweight IoT edge analytic software
+   $ helm pull oci://ghcr.io/lf-edge/ekuiper-charts/ekuiper --version 1.4.0
+   $ helm install my-ekuiper ./ekuiper-1.4.0.tgz
    ```
 
-3. Start eKuiper.
-
-   ```shell
-    $ helm install my-ekuiper emqx/ekuiper
-   ```
-
-4. View eKuiper status.
+2. View eKuiper status.
 
    ```shell
    $ kubectl get pods
    NAME         READY  STATUS    RESTARTS  AGE
    my-ekuiper-0 1/1    Running   0         56s
+   ```
+
+3. Customize values (optional).
+
+   ```shell
+   # Show default values
+   $ helm show values oci://ghcr.io/lf-edge/ekuiper-charts/ekuiper --version 1.4.0
+
+   # Install with custom values
+   $ helm install my-ekuiper oci://ghcr.io/lf-edge/ekuiper-charts/ekuiper --version 1.4.0 \
+       --set persistence.enabled=true \
+       --set service.type=LoadBalancer
    ```
 
 ## Compile from source code

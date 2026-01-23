@@ -158,35 +158,39 @@ eKuiper 发布了以下操作系统的二进制包，支持 AMD64、ARM 和 ARM6
 
 ## 通过 Helm 安装（K8S、K3S）
 
-1. 添加 helm 库。
+eKuiper Helm chart 发布在 GitHub Container Registry (OCI) 上。
+
+1. 直接从 OCI registry 安装 eKuiper。
 
    ```shell
-    $ helm repo add emqx https://repos.emqx.io/charts
-    $ helm repo update
+   $ helm install my-ekuiper oci://ghcr.io/lf-edge/ekuiper-charts/ekuiper --version 1.4.0
    ```
 
-2. 查询 eKuiper
+   或者先拉取 chart：
 
    ```shell
-    $ helm search repo emqx
-    NAME         CHART VERSION APP VERSION DESCRIPTION
-    emqx/emqx    v4.0.0        v4.0.0      A Helm chart for EMQX
-    emqx/emqx-ee v4.0.0        v4.0.0      A Helm chart for EMQX
-    emqx/ekuiper  0.1.1         0.1.1       A lightweight IoT edge analytic software
+   $ helm pull oci://ghcr.io/lf-edge/ekuiper-charts/ekuiper --version 1.4.0
+   $ helm install my-ekuiper ./ekuiper-1.4.0.tgz
    ```
 
-3. 启动 eKuiper
-
-   ```shell
-    $ helm install my-ekuiper emqx/ekuiper
-   ```
-
-4. 查看 eKuiper 状态
+2. 查看 eKuiper 状态。
 
    ```shell
    $ kubectl get pods
    NAME         READY  STATUS    RESTARTS  AGE
    my-ekuiper-0 1/1    Running   0         56s
+   ```
+
+3. 自定义配置（可选）。
+
+   ```shell
+   # 查看默认配置
+   $ helm show values oci://ghcr.io/lf-edge/ekuiper-charts/ekuiper --version 1.4.0
+
+   # 使用自定义配置安装
+   $ helm install my-ekuiper oci://ghcr.io/lf-edge/ekuiper-charts/ekuiper --version 1.4.0 \
+       --set persistence.enabled=true \
+       --set service.type=LoadBalancer
    ```
 
 ## 从源码编译
