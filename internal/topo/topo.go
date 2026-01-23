@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path"
+	"path/filepath"
 	"runtime/debug"
 	"sync"
 	"sync/atomic"
@@ -337,7 +337,7 @@ func (s *Topo) prepareContext() {
 		if s.options.LogFilename != "" {
 			logDir, _ := conf.GetLogLoc()
 
-			file := path.Join(logDir, path.Base(s.options.LogFilename))
+			file := filepath.Join(logDir, filepath.Base(s.options.LogFilename))
 			output, err := rotatelogs.New(
 				file+".%Y-%m-%d_%H-%M-%S",
 				rotatelogs.WithLinkName(file),

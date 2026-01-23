@@ -17,7 +17,7 @@ package meta
 import (
 	"bytes"
 	"os"
-	"path"
+	"path/filepath"
 
 	"gopkg.in/ini.v1"
 
@@ -44,7 +44,7 @@ func ReadUiMsgDir() error {
 		return err
 	}
 
-	dir := path.Join(confDir, "multilingual")
+	dir := filepath.Join(confDir, "multilingual")
 	dirEntries, err := os.ReadDir(dir)
 	if nil != err {
 		return err
@@ -52,7 +52,7 @@ func ReadUiMsgDir() error {
 
 	for _, entry := range dirEntries {
 		fName := entry.Name()
-		fPath := path.Join(dir, fName)
+		fPath := filepath.Join(dir, fName)
 		if conf, err := ini.Load(fPath); nil != err {
 			return err
 		} else {

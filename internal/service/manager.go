@@ -20,7 +20,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -403,7 +402,7 @@ func (m *Manager) Delete(name string) error {
 		return err
 	}
 	_ = m.serviceInstallKV.Delete(name)
-	path := path.Join(m.etcDir, name+".json")
+	path := filepath.Join(m.etcDir, name+".json")
 	err = os.Remove(path)
 	if err != nil {
 		kconf.Log.Errorf("remove service json fails: %v", err)

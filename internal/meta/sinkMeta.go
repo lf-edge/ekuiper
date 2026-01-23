@@ -17,7 +17,7 @@ package meta
 import (
 	"fmt"
 	"os"
-	"path"
+	"path/filepath"
 	"strings"
 
 	"github.com/lf-edge/ekuiper/v2/internal/binder/io"
@@ -196,7 +196,7 @@ func ReadSinkMetaDir(checker InstallChecker) error {
 }
 
 func readSinkMetaDir(folder string, checker InstallChecker) error {
-	dir := path.Join(folder, "sinks")
+	dir := filepath.Join(folder, "sinks")
 	files, err := os.ReadDir(dir)
 	if nil != err {
 		return err
@@ -207,7 +207,7 @@ func readSinkMetaDir(folder string, checker InstallChecker) error {
 			continue
 		}
 
-		filePath := path.Join(dir, fname)
+		filePath := filepath.Join(dir, fname)
 		if err := ReadSinkMetaFile(filePath, checker(strings.TrimSuffix(fname, ".json"))); nil != err {
 			return err
 		}
@@ -226,7 +226,7 @@ func UninstallSink(name string) {
 }
 
 func ReadSinkMetaFile(filePath string, installed bool) error {
-	finame := path.Base(filePath)
+	finame := filepath.Base(filePath)
 	metadata := new(fileSink)
 	err := filex.ReadJsonUnmarshal(filePath, metadata)
 	if nil != err {
