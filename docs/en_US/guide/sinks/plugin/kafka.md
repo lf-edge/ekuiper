@@ -163,7 +163,7 @@ But kafka needs special attention `` KAFKA_CFG_ADVERTISED_LISTENERS `` needs to 
      environment:
        - ALLOW_ANONYMOUS_LOGIN=yes
     kafka:
-     image: docker.io/bitnami/kafka:3.4
+     image: docker.io/soldevelo/kafka:3.4
      hostname: kafka
      container_name: kafka
      ports:
