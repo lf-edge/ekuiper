@@ -239,6 +239,11 @@ def provision(
     rule_req = {
         "id": pipeline_id,
         "sql": sql,
+        "options": {
+            "experiment": {
+                "useSliceTuple": True,
+            },
+        },
         "actions": [
             {
                 "nop": {
