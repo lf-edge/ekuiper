@@ -38,6 +38,9 @@ dedup:
 
 Use can specify the global video source settings here. The configuration items specified in `default` section will be taken as default settings for the source when running this source.
 
+> [!NOTE]
+> Breaking change: since 2.1.1, the `vformat` configuration is removed. The source will now automatically use `image2pipe` format to support streaming. Any existing `vformat` configuration will be ignored.
+
 ### url
 
 The url address for the video streaming.
@@ -45,7 +48,6 @@ The url address for the video streaming.
 ### interval
 
 The interval (ms) to issue a message.
-
 
 ### codec
 
