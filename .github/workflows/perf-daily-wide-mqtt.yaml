@@ -51,6 +51,10 @@ jobs:
           rm -rf "${PERF_BASE}"
           mkdir -p "${PERF_BASE}"
           mkdir -p "${PERF_BASE}/etc" "${PERF_BASE}/data" "${PERF_BASE}/log"
+          mkdir -p "${PERF_BASE}/plugins/sources" \
+            "${PERF_BASE}/plugins/sinks" \
+            "${PERF_BASE}/plugins/functions" \
+            "${PERF_BASE}/plugins/portable"
           cp -R etc/* "${PERF_BASE}/etc/"
 
           # Enable Prometheus exporter for the perf harness.
