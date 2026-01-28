@@ -45,9 +45,6 @@ dedup:
 
 发出消息的间隔（毫秒）。
 
-### vformat
-
-视频格式。运行 `ffmpeg -formats` 可获取所有支持的格式，默认为 'image2'。
 
 ### codec
 

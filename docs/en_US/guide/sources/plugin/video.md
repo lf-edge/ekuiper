@@ -46,9 +46,6 @@ The url address for the video streaming.
 
 The interval (ms) to issue a message.
 
-### vformat
-
-The video format. Run `ffmpeg -formats` to get all supported format, default to 'image2'.
 
 ### codec
 
