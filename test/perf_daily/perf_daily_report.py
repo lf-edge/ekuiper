@@ -217,9 +217,20 @@ def build_summary_markdown(result: Dict, series: Dict[str, List[Sample]], openme
     cpu_items = series.get("cpu_usage", [])
     if cpu_items:
         xs, cpu_vals = _bin_by_second(cpu_items, start_ms=start_ms_eff)
+        cpu_vals = [v * 100.0 for v in cpu_vals]
         y0, y1 = _pad_range(min(cpu_vals), max(cpu_vals))
         lines.append("### CPU (Grafana-like)")
-        lines.append(mermaid_xychart("cpu_usage", "t (s)", "%", xs, [("cpu_usage", cpu_vals)], y_min=y0, y_max=y1))
+        lines.append(
+            mermaid_xychart(
+                "cpu_usage",
+                "t (s)",
+                "% (per core)",
+                xs,
+                [("cpu_usage", cpu_vals)],
+                y_min=y0,
+                y_max=y1,
+            )
+        )
 
     # Ingress throughput: datasource records_in rate.
     ds_in = series.get("processor_records_in_total", [])
@@ -289,6 +300,8 @@ def svg_line_chart(
 
     xs_raw = [(ts - start_ms) / 1000.0 for ts, _ in items]
     ys_raw = [v for _, v in items]
+    if unit == "pct":
+        ys_raw = [v * 100.0 for v in ys_raw]
     if unit == "MiB":
         ys_raw = [_to_mib(v) for v in ys_raw]
 
@@ -331,7 +344,7 @@ def svg_line_chart(
 def build_html_report(result: Dict, series: Dict[str, List[Sample]], openmetrics_path: str, title: str) -> str:
     start_ms = int(result.get("publish_start_ts_ms") or 0)
     charts = [
-        svg_line_chart("cpu_usage", "pct", series.get("cpu_usage", []), start_ms=start_ms),
+        svg_line_chart("cpu_usage", "pct (per core)", series.get("cpu_usage", []), start_ms=start_ms),
         svg_line_chart("memory_usage_bytes", "MiB", series.get("memory_usage_bytes", []), start_ms=start_ms),
         svg_line_chart("heap_in_use_bytes", "MiB", series.get("heap_in_use_bytes", []), start_ms=start_ms),
         svg_line_chart("heap_in_allocator_bytes", "MiB", series.get("heap_in_allocator_bytes", []), start_ms=start_ms),
