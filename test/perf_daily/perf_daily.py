@@ -127,6 +127,8 @@ def _ignore_not_found(fn) -> None:
     except ApiError as e:
         if e.status_code == 404:
             return
+        if e.status_code == 400 and "not found" in e.message.lower():
+            return
         raise
 
 
