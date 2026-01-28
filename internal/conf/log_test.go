@@ -15,6 +15,9 @@
 package conf
 
 import (
+	"os"
+	"path/filepath"
+	"runtime"
 	"testing"
 	"time"
 
@@ -61,4 +64,79 @@ func TestLogOutdated(t *testing.T) {
 	for _, tc := range testcases {
 		require.Equal(t, tc.remove, isLogOutdated(tc.name, now, maxDuration))
 	}
+}
+
+func TestValidateLogSymlink(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Symlink validation not applicable on Windows")
+	}
+
+	// Create temp directory
+	tempDir, err := os.MkdirTemp("", "log_symlink_test")
+	require.NoError(t, err)
+	defer os.RemoveAll(tempDir)
+
+	linkName := "stream.log"
+	linkPath := filepath.Join(tempDir, linkName)
+
+	// Create some rotated log files
+	rotated1 := filepath.Join(tempDir, "stream.2023-01-01.log")
+	rotated2 := filepath.Join(tempDir, "stream.2023-01-02.log")
+	require.NoError(t, os.WriteFile(rotated1, []byte("log1"), 0o644))
+	require.NoError(t, os.WriteFile(rotated2, []byte("log2"), 0o644))
+
+	// Ensure rotated2 is newer than rotated1 for deterministic sorting
+	now := time.Now()
+	require.NoError(t, os.Chtimes(rotated1, now.Add(-1*time.Hour), now.Add(-1*time.Hour)))
+	require.NoError(t, os.Chtimes(rotated2, now, now))
+
+	// Test case: no symlink exists, should create one to latest
+	err = validateLogSymlink(tempDir, linkName)
+	require.NoError(t, err)
+	target, err := os.Readlink(linkPath)
+	require.NoError(t, err)
+	require.Equal(t, rotated2, target) // latest by mod time
+
+	// Test case: symlink exists and points to valid target, should do nothing
+	err = validateLogSymlink(tempDir, linkName)
+	require.NoError(t, err)
+
+	// Test case: point symlink to non-existent file, should repair
+	brokenTarget := filepath.Join(tempDir, "nonexistent.log")
+	os.Remove(linkPath)
+	require.NoError(t, os.Symlink(brokenTarget, linkPath))
+	err = validateLogSymlink(tempDir, linkName)
+	require.NoError(t, err)
+	target, err = os.Readlink(linkPath)
+	require.NoError(t, err)
+	require.Equal(t, rotated2, target)
+
+	// Test case: symlink with relative target pointing to existing file
+	os.Remove(linkPath)
+	relativeTarget := "stream.2023-01-02.log" // relative to link dir
+	require.NoError(t, os.Symlink(relativeTarget, linkPath))
+	err = validateLogSymlink(tempDir, linkName)
+	require.NoError(t, err) // should not repair since target exists
+
+	// Test case: symlink with relative target pointing to non-existent file
+	os.Remove(linkPath)
+	require.NoError(t, os.Symlink("nonexistent.log", linkPath))
+	err = validateLogSymlink(tempDir, linkName)
+	require.NoError(t, err)
+	target, err = os.Readlink(linkPath)
+	require.NoError(t, err)
+	require.Equal(t, rotated2, target) // should repair
+
+	// Test case: no accumulated log files, should return nil even if symlink is broken
+	// This covers the case where rotatelogs hasn't created any files yet
+	os.Remove(rotated1)
+	os.Remove(rotated2)
+	os.Remove(linkPath)
+	require.NoError(t, os.Symlink("nonexistent.log", linkPath))
+	err = validateLogSymlink(tempDir, linkName)
+	require.NoError(t, err)
+	// verify symlink is NOT repaired because no files exist to point to
+	target, err = os.Readlink(linkPath)
+	require.NoError(t, err)
+	require.Equal(t, "nonexistent.log", target)
 }
