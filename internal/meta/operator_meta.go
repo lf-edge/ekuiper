@@ -17,7 +17,7 @@ package meta
 import (
 	"bytes"
 	"os"
-	"path"
+	"path/filepath"
 	"strings"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
@@ -33,7 +33,7 @@ func readOpsMetaDir() ([]fileContent, error) {
 		return nil, err
 	}
 
-	dir := path.Join(confDir, "ops")
+	dir := filepath.Join(confDir, "ops")
 	files, err := os.ReadDir(dir)
 	if nil != err {
 		return nil, err
@@ -44,7 +44,7 @@ func readOpsMetaDir() ([]fileContent, error) {
 			continue
 		}
 
-		filesByte = append(filesByte, readOpsMetaFile(path.Join(dir, fname)))
+		filesByte = append(filesByte, readOpsMetaFile(filepath.Join(dir, fname)))
 
 	}
 
@@ -52,7 +52,7 @@ func readOpsMetaDir() ([]fileContent, error) {
 }
 
 func readOpsMetaFile(filePath string) fileContent {
-	fiName := path.Base(filePath)
+	fiName := filepath.Base(filePath)
 	sliByte, _ := os.ReadFile(filePath)
 	conf.Log.Infof("operatorMeta file : %s", fiName)
 	return sliByte

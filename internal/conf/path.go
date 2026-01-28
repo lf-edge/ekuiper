@@ -18,7 +18,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 
@@ -90,7 +89,7 @@ func GetDataLoc() (s string, err error) {
 		if TestId != "" {
 			dir = TestId
 		}
-		d := path.Join(dataDir, dir)
+		d := filepath.Join(dataDir, dir)
 		if _, err := os.Stat(d); os.IsNotExist(err) {
 			err = os.MkdirAll(d, 0o755)
 			if err != nil {
@@ -149,7 +148,7 @@ func relativePath(subdir string) (dir string, err error) {
 		Log.Infof("Specified Kuiper base folder at location %s.\n", base)
 		dir = base
 	}
-	confDir := path.Join(dir, subdir)
+	confDir := filepath.Join(dir, subdir)
 	if _, err := os.Stat(confDir); os.IsNotExist(err) {
 		lastdir := dir
 		for len(dir) > 0 {
@@ -157,7 +156,7 @@ func relativePath(subdir string) (dir string, err error) {
 			if lastdir == dir {
 				break
 			}
-			confDir = path.Join(dir, subdir)
+			confDir = filepath.Join(dir, subdir)
 			if _, err := os.Stat(confDir); os.IsNotExist(err) {
 				lastdir = dir
 				continue

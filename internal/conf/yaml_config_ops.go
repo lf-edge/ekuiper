@@ -17,7 +17,7 @@ package conf
 import (
 	"encoding/json"
 	"fmt"
-	"path"
+	"path/filepath"
 	"reflect"
 	"sync"
 
@@ -397,13 +397,13 @@ func NewConfigOperatorFromSourceStorage(pluginName string) (ConfigOperator, erro
 	if nil != err {
 		return nil, err
 	}
-	dir := path.Join(confDir, "sources")
+	dir := filepath.Join(confDir, "sources")
 	fileName := pluginName
 	if pluginName == "mqtt" {
 		fileName = "mqtt_source"
 		dir = confDir
 	}
-	filePath := path.Join(dir, fileName+`.yaml`)
+	filePath := filepath.Join(dir, fileName+`.yaml`)
 	// Just ignore error if yaml not found
 	_ = LoadConfigFromPath(filePath, &c.etcCfg)
 
@@ -488,7 +488,7 @@ func NewConfigOperatorFromConnectionStorage(pluginName string) (ConfigOperator, 
 	if nil != err {
 		return nil, err
 	}
-	yamlPath := path.Join(confDir, "connections/connection.yaml")
+	yamlPath := filepath.Join(confDir, "connections/connection.yaml")
 	yamlData := make(map[string]interface{})
 	err = LoadConfigFromPath(yamlPath, &yamlData)
 	if nil != err {
