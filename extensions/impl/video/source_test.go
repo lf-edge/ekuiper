@@ -180,13 +180,10 @@ func TestSubscribeContextDone(t *testing.T) {
 	s := GetSource().(*Source)
 	s.Url = "testsrc"
 	s.Codec = "mjpeg"
-	// s.Format removed
 
 	s.InputArgs = map[string]any{"f": "lavfi"}
-
 	// Very long interval to ensure we hit the loop
 	s.Interval = 0
-
 	baseCtx := mockContext.NewMockContext("test", "test")
 	ctx, cancel := baseCtx.WithCancel()
 
@@ -214,8 +211,6 @@ func TestRunCurrentWaitError(t *testing.T) {
 	s := GetSource().(*Source)
 	s.Url = "non_existent_file.mp4"
 	s.Codec = "mjpeg"
-	// s.Format removed
-
 
 	ctx := mockContext.NewMockContext("test", "test")
 	err := s.runCurrent(ctx, "", func(ctx api.StreamContext, data []byte, meta map[string]any, ts time.Time) {
