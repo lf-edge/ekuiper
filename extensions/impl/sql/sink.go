@@ -75,7 +75,8 @@ func (c *sqlSinkConfig) getValuesByKeys(ctx api.StreamContext, mapData map[strin
 		v, ok := mapData[k]
 		if ok && v != nil {
 			if reflect.String == reflect.TypeOf(v).Kind() {
-				vals = append(vals, fmt.Sprintf("'%v'", v))
+				// Escape single quotes by doubling them (SQL standard) to avoid breaking the literal.
+				vals = append(vals, quoteSQLString(fmt.Sprint(v)))
 			} else {
 				vals = append(vals, fmt.Sprintf(`%v`, v))
 			}
@@ -85,6 +86,11 @@ func (c *sqlSinkConfig) getValuesByKeys(ctx api.StreamContext, mapData map[strin
 		}
 	}
 	return vals, nil
+}
+
+func quoteSQLString(s string) string {
+	// SQL string literal escaping: ' -> ''.
+	return "'" + strings.ReplaceAll(s, "'", "''") + "'"
 }
 
 func (s *SQLSinkConnector) Ping(ctx api.StreamContext, props map[string]any) error {
@@ -263,8 +269,8 @@ func (s *SQLSinkConnector) save(ctx api.StreamContext, table string, data map[st
 			}
 			sqlStr += fmt.Sprintf("%s=%s", key, vals[i])
 		}
-		if _, ok := keyval.(string); ok {
-			sqlStr += fmt.Sprintf(" WHERE %s = '%s';", s.config.KeyField, keyval)
+		if ksv, ok := keyval.(string); ok {
+			sqlStr += fmt.Sprintf(" WHERE %s = %s;", s.config.KeyField, quoteSQLString(ksv))
 		} else {
 			sqlStr += fmt.Sprintf(" WHERE %s = %v;", s.config.KeyField, keyval)
 		}
@@ -273,8 +279,8 @@ func (s *SQLSinkConnector) save(ctx api.StreamContext, table string, data map[st
 		if !ok {
 			return fmt.Errorf("field %s does not exist in data %v", s.config.KeyField, data)
 		}
-		if _, ok := keyval.(string); ok {
-			sqlStr = fmt.Sprintf("DELETE FROM %s WHERE %s = '%s';", table, s.config.KeyField, keyval)
+		if ksv, ok := keyval.(string); ok {
+			sqlStr = fmt.Sprintf("DELETE FROM %s WHERE %s = %s;", table, s.config.KeyField, quoteSQLString(ksv))
 		} else {
 			sqlStr = fmt.Sprintf("DELETE FROM %s WHERE %s = %v;", table, s.config.KeyField, keyval)
 		}

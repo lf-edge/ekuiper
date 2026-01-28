@@ -206,6 +206,12 @@ func TestSQLSinkConfigKV(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, []string{"'value'"}, values)
 
+	values, err = config.getValuesByKeys(ctx, map[string]interface{}{
+		"a": "O'Reilly",
+	}, config.Fields)
+	require.NoError(t, err)
+	require.Equal(t, []string{"'O''Reilly'"}, values)
+
 	config = &sqlSinkConfig{
 		Fields: []string{"a"},
 	}
