@@ -1,485 +1,637 @@
 #!/usr/bin/env python3
-"""
-Perf scenario runner for "wide MQTT" in CI:
-- Uses eKuiper REST API to create stream/rule.
-- Publishes wide JSON payload to an MQTT broker.
-- Scrapes Prometheus `/metrics` periodically and writes `result.json` + raw metrics.
 
-Keep dependencies minimal; optional deps are imported lazily to make `--help` work
-even if the workflow hasn't installed them yet.
+"""
+eKuiper variant of veloFlux "Perf Daily Wide MQTT".
+
+What it does:
+- Create a wide MQTT stream (schema required) and a rule (nop sink).
+- Publish wide JSON payloads to MQTT (QoS1).
+- Scrape eKuiper Prometheus `/metrics` during the publish window.
+- Emit a veloFlux-compatible `metrics.openmetrics` (with timestamps) + `result.json`.
+
+We intentionally keep deps stdlib-only (MQTT publisher is in mqtt_qos0_pub.py).
 """
 
 from __future__ import annotations
 
 import argparse
-import dataclasses
 import json
 import os
+import random
+import re
+import socket
+import string
 import sys
+import threading
 import time
-import urllib.error
 import urllib.parse
 import urllib.request
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+import urllib.error
+from typing import Any, Dict, List, Optional, Tuple
+
+from mqtt_qos0_pub import MqttError, parse_tcp_broker_url, publish_qos1_with_timing
 
 
-def _http_json(
-    method: str,
-    url: str,
-    body: Optional[dict] = None,
-    timeout_secs: float = 10.0,
-    ok_statuses: Iterable[int] = (200, 201, 204),
-) -> Tuple[int, Any, str]:
-    data = None
-    headers = {"Accept": "application/json"}
-    if body is not None:
-        data = json.dumps(body).encode("utf-8")
-        headers["Content-Type"] = "application/json"
+class PerfDailyError(RuntimeError):
+    pass
 
-    req = urllib.request.Request(url, method=method, data=data, headers=headers)
-    try:
-        with urllib.request.urlopen(req, timeout=timeout_secs) as resp:
-            status = resp.getcode()
-            raw = resp.read().decode("utf-8", errors="replace")
-    except urllib.error.HTTPError as e:
-        status = e.code
-        raw = e.read().decode("utf-8", errors="replace")
-    except Exception as e:
-        raise RuntimeError(f"HTTP {method} {url} failed: {e}") from e
 
-    parsed: Any = None
-    if raw.strip().startswith("{") or raw.strip().startswith("["):
+DEFAULT_STREAM_NAME = "perf_daily_stream"
+DEFAULT_PIPELINE_ID = "perf_daily_pipeline"  # mapped to eKuiper rule id for report compatibility
+
+DEFAULT_METRICS_URL = "http://127.0.0.1:20499/metrics"
+DEFAULT_OUT_DIR = "tmp/perf_daily"
+
+TRACKED_METRICS = (
+    "cpu_usage",
+    "memory_usage_bytes",
+    "heap_in_use_bytes",
+    "heap_in_allocator_bytes",
+    "processor_records_in_total",
+)
+
+_SAMPLE_RE = re.compile(
+    r"^([a-zA-Z_:][a-zA-Z0-9_:]*)(\{[^}]*\})?\s+([-+]?(?:\d+\.?\d*|\d*\.?\d+)(?:[eE][-+]?\d+)?)(?:\s+(\d+))?$"
+)
+
+
+def _encode_json(obj: Any) -> bytes:
+    return json.dumps(obj, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+
+
+def _join_url(base_url: str, path: str) -> str:
+    base = base_url.rstrip("/") + "/"
+    return urllib.parse.urljoin(base, path.lstrip("/"))
+
+
+class ApiError(RuntimeError):
+    def __init__(self, method: str, path: str, status_code: int, message: str) -> None:
+        super().__init__(f"{method} {path} failed: HTTP {status_code}: {message}")
+        self.method = method
+        self.path = path
+        self.status_code = status_code
+        self.message = message
+
+
+class Client:
+    def __init__(self, base_url: str, timeout_secs: float) -> None:
+        self.base_url = base_url
+        self.timeout_secs = timeout_secs
+
+    def request_json(self, method: str, path: str, body: Optional[Any]) -> Any:
+        url = _join_url(self.base_url, path)
+        data = None
+        headers = {"Accept": "application/json"}
+        if body is not None:
+            data = _encode_json(body)
+            headers["Content-Type"] = "application/json"
+
+        req = urllib.request.Request(url=url, method=method, data=data, headers=headers)
         try:
-            parsed = json.loads(raw)
-        except Exception:
-            parsed = None
+            with urllib.request.urlopen(req, timeout=self.timeout_secs) as resp:
+                raw = resp.read()
+                if not raw:
+                    return None
+                return json.loads(raw.decode("utf-8"))
+        except urllib.error.HTTPError as e:  # type: ignore[attr-defined]
+            raw = e.read()
+            message = raw.decode("utf-8", errors="replace") if raw else str(e)
+            raise ApiError(method, path, e.code, message) from None
+        except urllib.error.URLError as e:  # type: ignore[attr-defined]
+            raise ApiError(method, path, 0, str(e)) from None
 
-    if status not in set(ok_statuses):
-        # include raw response to help debugging in CI artifacts
-        raise RuntimeError(f"HTTP {method} {url} => {status}: {raw[:2000]}")
-    return status, parsed, raw
+    def request_text(self, method: str, path: str, body: Optional[Any] = None) -> str:
+        url = _join_url(self.base_url, path)
+        data = None
+        headers = {"Accept": "text/plain"}
+        if body is not None:
+            data = _encode_json(body)
+            headers["Content-Type"] = "application/json"
+
+        req = urllib.request.Request(url=url, method=method, data=data, headers=headers)
+        try:
+            with urllib.request.urlopen(req, timeout=self.timeout_secs) as resp:
+                raw = resp.read()
+                return raw.decode("utf-8", errors="replace") if raw else ""
+        except urllib.error.HTTPError as e:  # type: ignore[attr-defined]
+            raw = e.read()
+            message = raw.decode("utf-8", errors="replace") if raw else str(e)
+            raise ApiError(method, path, e.code, message) from None
+        except urllib.error.URLError as e:  # type: ignore[attr-defined]
+            raise ApiError(method, path, 0, str(e)) from None
 
 
-def _http_text(
-    method: str,
-    url: str,
-    timeout_secs: float = 10.0,
-    ok_statuses: Iterable[int] = (200,),
-) -> Tuple[int, str]:
-    req = urllib.request.Request(url, method=method, headers={"Accept": "text/plain"})
+def _ignore_not_found(fn) -> None:
     try:
-        with urllib.request.urlopen(req, timeout=timeout_secs) as resp:
-            status = resp.getcode()
-            raw = resp.read().decode("utf-8", errors="replace")
-    except urllib.error.HTTPError as e:
-        status = e.code
-        raw = e.read().decode("utf-8", errors="replace")
-    except Exception as e:
-        raise RuntimeError(f"HTTP {method} {url} failed: {e}") from e
-
-    if status not in set(ok_statuses):
-        raise RuntimeError(f"HTTP {method} {url} => {status}: {raw[:2000]}")
-    return status, raw
+        fn()
+    except ApiError as e:
+        if e.status_code == 404:
+            return
+        raise
 
 
-def wait_for_ping(base_url: str, timeout_secs: float = 30.0) -> None:
-    deadline = time.time() + timeout_secs
-    ping_url = urllib.parse.urljoin(base_url.rstrip("/") + "/", "ping")
+def wait_for_ekuiper(base_url: str, timeout_secs: float, wait_secs: float = 60.0) -> None:
+    client = Client(base_url, timeout_secs)
+    deadline = time.time() + wait_secs
     last_err: Optional[str] = None
     while time.time() < deadline:
         try:
-            _http_text("GET", ping_url, timeout_secs=2.0, ok_statuses=(200,))
+            client.request_text("GET", "/ping")
             return
         except Exception as e:
             last_err = str(e)
-            time.sleep(0.2)
-    raise RuntimeError(f"eKuiper not ready at {ping_url} after {timeout_secs}s; last error: {last_err}")
+            time.sleep(0.5)
+    raise PerfDailyError(f"ekuiper not ready after {wait_secs}s: {last_err}")
 
 
-def list_rules(base_url: str) -> List[dict]:
-    url = urllib.parse.urljoin(base_url.rstrip("/") + "/", "rules")
-    _, parsed, raw = _http_json("GET", url, ok_statuses=(200,))
-    if isinstance(parsed, list):
-        return [x for x in parsed if isinstance(x, dict)]
-    raise RuntimeError(f"Unexpected /rules response: {raw[:500]}")
+def wait_for_tcp(host: str, port: int, wait_secs: float = 60.0) -> None:
+    deadline = time.time() + wait_secs
+    last_err: Optional[str] = None
+    while time.time() < deadline:
+        s = socket.socket()
+        try:
+            s.settimeout(2.0)
+            s.connect((host, port))
+            return
+        except Exception as e:
+            last_err = str(e)
+            time.sleep(1.0)
+        finally:
+            try:
+                s.close()
+            except Exception:
+                pass
+    raise PerfDailyError(f"broker {host}:{port} not ready after {wait_secs}s: {last_err}")
 
 
-def delete_rule(base_url: str, rule_id: str) -> None:
-    url = urllib.parse.urljoin(base_url.rstrip("/") + "/", f"rules/{urllib.parse.quote(rule_id)}")
-    _http_text("DELETE", url, ok_statuses=(200,))
+def delete_all_rules(client: Client) -> None:
+    items = client.request_json("GET", "/rules", None) or []
+    ids: List[str] = []
+    for it in items:
+        if isinstance(it, dict) and isinstance(it.get("id"), str):
+            ids.append(it["id"])
+    for rid in ids:
+        _ignore_not_found(lambda rid=rid: client.request_text("DELETE", f"/rules/{urllib.parse.quote(rid)}"))
 
 
-def delete_all_rules(base_url: str, keep_ids: Iterable[str]) -> List[str]:
-    keep = set(keep_ids)
-    deleted: List[str] = []
-    for r in list_rules(base_url):
-        rid = r.get("id")
-        if not isinstance(rid, str):
-            continue
-        if rid in keep:
-            continue
-        delete_rule(base_url, rid)
-        deleted.append(rid)
-    return deleted
+def build_columns(count: int) -> List[str]:
+    # Match veloFlux naming (a1..aN) for easier cross-project comparison.
+    return [f"a{i}" for i in range(1, count + 1)]
 
 
-def create_stream(base_url: str, stream_name: str, topic: str) -> None:
-    # Use schema-less stream; wide payloads are inferred from runtime JSON.
-    sql = f'CREATE STREAM {stream_name}() WITH (DATASOURCE="{topic}", FORMAT="json", TYPE="mqtt");'
-    url = urllib.parse.urljoin(base_url.rstrip("/") + "/", "streams")
-    _http_json("POST", url, body={"sql": sql}, ok_statuses=(200, 201))
+def build_stream_sql(stream_name: str, columns: int, topic: str) -> str:
+    fields = ", ".join([f"{c} string" for c in build_columns(columns)])
+    # Keep it explicit (schema required by user). Source connection uses global mqtt config (etc/mqtt_source.yaml).
+    return f'CREATE STREAM {stream_name} ({fields}) WITH (TYPE="mqtt", FORMAT="json", DATASOURCE="{topic}");'
 
 
-def create_rule(base_url: str, rule_id: str, sql: str, actions: List[dict]) -> None:
-    url = urllib.parse.urljoin(base_url.rstrip("/") + "/", "rules")
-    body = {"id": rule_id, "sql": sql, "actions": actions}
-    _http_json("POST", url, body=body, ok_statuses=(201,))
+def build_select_sql(stream_name: str, column_count: int) -> str:
+    cols = build_columns(column_count)
+    return f"SELECT {','.join(cols)} FROM {stream_name}"
 
 
-def get_metrics(metrics_url: str) -> str:
-    _, raw = _http_text("GET", metrics_url, ok_statuses=(200,))
-    return raw
+def build_select_sql_by_mode(stream_name: str, column_count: int, sql_mode: str) -> str:
+    if sql_mode == "star":
+        return f"SELECT * FROM {stream_name}"
+    if sql_mode == "explicit":
+        return build_select_sql(stream_name, column_count)
+    raise PerfDailyError(f"unknown --sql-mode: {sql_mode}")
 
 
-def _parse_openmetrics_samples(text: str, metric_name: str) -> List[Tuple[Dict[str, str], float]]:
-    # Minimal parser for lines like:
-    #   name{a="b",c="d"} 123.4
-    #   name 123
-    out: List[Tuple[Dict[str, str], float]] = []
+def provision(
+    base_url: str,
+    timeout_secs: float,
+    stream_name: str,
+    pipeline_id: str,
+    columns: int,
+    topic: str,
+    sql_mode: str,
+    batch_size: int,
+    linger_interval_ms: int,
+    force: bool,
+    create_stream: bool,
+    dry_run: bool,
+) -> None:
+    client = Client(base_url, timeout_secs)
+    sql = build_select_sql_by_mode(stream_name, columns, sql_mode=sql_mode)
+    stream_sql = build_stream_sql(stream_name, columns, topic)
+
+    if dry_run:
+        print(f"rule sql bytes: {len(sql.encode('utf-8'))}", file=sys.stderr)
+        print(f"stream sql bytes: {len(stream_sql.encode('utf-8'))}", file=sys.stderr)
+        return
+
+    if force:
+        delete_all_rules(client)
+
+    if create_stream:
+        _ignore_not_found(lambda: client.request_text("DELETE", f"/streams/{urllib.parse.quote(stream_name)}"))
+        # POST /streams expects {"sql": "..."} and returns text.
+        client.request_text("POST", "/streams", {"sql": stream_sql})
+
+    # Recreate rule (use pipeline_id as rule id).
+    _ignore_not_found(lambda: client.request_text("DELETE", f"/rules/{urllib.parse.quote(pipeline_id)}"))
+    # Mirror veloFlux perf harness sink batching knobs:
+    # - batchCount -> batchSize
+    # - batchDuration(ms) -> lingerInterval(ms)
+    rule_req = {
+        "id": pipeline_id,
+        "sql": sql,
+        "actions": [
+            {
+                "nop": {
+                    "log": False,
+                    "batchSize": batch_size,
+                    "lingerInterval": linger_interval_ms,
+                }
+            }
+        ],
+    }
+    client.request_text("POST", "/rules", rule_req)
+
+
+def _alnum_rand_str(rng: random.Random, length: int) -> str:
+    alphabet = string.ascii_letters + string.digits
+    return "".join(rng.choices(alphabet, k=length))
+
+
+def generate_payload_cases(column_count: int, cases: int, str_len: int) -> List[bytes]:
+    if cases <= 0:
+        return []
+    keys = build_columns(column_count)
+    rng = random.Random()
+
+    payloads: List[bytes] = []
+    for _ in range(cases):
+        obj: Dict[str, Any] = {}
+        for k in keys:
+            obj[k] = _alnum_rand_str(rng, str_len)
+        payloads.append(_encode_json(obj))
+    return payloads
+
+
+def scrape_prometheus_text(url: str, timeout_secs: float) -> str:
+    req = urllib.request.Request(url=url, method="GET", headers={"Accept": "text/plain"})
+    with urllib.request.urlopen(req, timeout=timeout_secs) as resp:
+        raw = resp.read()
+        return raw.decode("utf-8", errors="replace") if raw else ""
+
+
+def _labels_have_kv(labels: str, key: str, value: str) -> bool:
+    return f'{key}="{value}"' in labels
+
+
+def _metric_sum(text: str, name: str, require_any: Optional[List[Tuple[str, str]]] = None, require_all: Optional[List[Tuple[str, str]]] = None) -> float:
+    """
+    Sum all samples matching metric name and label predicates.
+    Predicates are simple substring checks; good enough for Prometheus exposition format.
+    """
+    total = 0.0
     for line in text.splitlines():
         if not line or line.startswith("#"):
             continue
-        if not line.startswith(metric_name):
+        m = _SAMPLE_RE.match(line)
+        if not m:
             continue
-
-        labels: Dict[str, str] = {}
-        rest = line[len(metric_name) :]
-        if rest.startswith("{"):
-            idx = rest.find("}")
-            if idx < 0:
+        if m.group(1) != name:
+            continue
+        labels = m.group(2) or ""
+        if require_all:
+            ok = True
+            for k, v in require_all:
+                if not _labels_have_kv(labels, k, v):
+                    ok = False
+                    break
+            if not ok:
                 continue
-            label_str = rest[1:idx]
-            rest = rest[idx + 1 :]
-            if label_str.strip():
-                # split by commas, but assume no escaped commas (OK for our use).
-                for kv in label_str.split(","):
-                    k, v = kv.split("=", 1)
-                    k = k.strip()
-                    v = v.strip()
-                    if v.startswith("\"") and v.endswith("\""):
-                        v = v[1:-1]
-                    labels[k] = v
-
-        parts = rest.strip().split()
-        if not parts:
-            continue
+        if require_any:
+            ok2 = False
+            for k, v in require_any:
+                if _labels_have_kv(labels, k, v):
+                    ok2 = True
+                    break
+            if not ok2:
+                continue
         try:
-            val = float(parts[0])
-        except Exception:
+            total += float(m.group(3))
+        except ValueError:
             continue
-        out.append((labels, val))
-    return out
-
-
-def _sum_counter(
-    metrics_text: str,
-    metric_name: str,
-    match: Dict[str, str],
-) -> float:
-    total = 0.0
-    for labels, val in _parse_openmetrics_samples(metrics_text, metric_name):
-        ok = True
-        for k, v in match.items():
-            if labels.get(k) != v:
-                ok = False
-                break
-        if ok:
-            total += val
     return total
 
 
-def build_wide_payload(columns: int, str_len: int) -> str:
-    # Deterministic payload to keep publisher overhead small and stable.
-    value = "a" * str_len
-    obj = {f"c{i}": value for i in range(columns)}
-    return json.dumps(obj, separators=(",", ":"))
+def _write_meta(f) -> None:
+    # Minimal HELP/TYPE lines for nicer downstream parsing/debugging.
+    f.write("# HELP cpu_usage Derived from irate(process_cpu_seconds_total)\n")
+    f.write("# TYPE cpu_usage gauge\n")
+    f.write("# HELP memory_usage_bytes go_memstats_heap_sys_bytes (rss-like)\n")
+    f.write("# TYPE memory_usage_bytes gauge\n")
+    f.write("# HELP heap_in_use_bytes go_memstats_heap_inuse_bytes\n")
+    f.write("# TYPE heap_in_use_bytes gauge\n")
+    f.write("# HELP heap_in_allocator_bytes go_memstats_alloc_bytes\n")
+    f.write("# TYPE heap_in_allocator_bytes gauge\n")
+    f.write("# HELP processor_records_in_total Derived from kuiper_source_records_in_total\n")
+    f.write("# TYPE processor_records_in_total counter\n")
 
 
-def build_rule_sql(stream_name: str, columns: int, sql_mode: str) -> str:
-    if sql_mode == "star":
-        return f"SELECT * FROM {stream_name};"
-    if sql_mode != "explicit":
-        raise ValueError(f"unknown sql_mode: {sql_mode}")
-    cols = ", ".join([f"c{i}" for i in range(columns)])
-    return f"SELECT {cols} FROM {stream_name};"
+class OpenMetricsDumper:
+    def __init__(
+        self,
+        metrics_url: str,
+        timeout_secs: float,
+        interval_ms: int,
+        out_path: str,
+        instance: str,
+        rule_id: str,
+    ) -> None:
+        self.metrics_url = metrics_url
+        self.timeout_secs = timeout_secs
+        self.interval_ms = interval_ms
+        self.out_path = out_path
+        self.instance = instance
+        self.rule_id = rule_id
+        self.stop = threading.Event()
+        self.thread: Optional[threading.Thread] = None
+        self.samples = 0
+        self.errors = 0
+        self._prev_cpu: Optional[float] = None
+        self._prev_ts_ms: Optional[int] = None
 
+    def start(self) -> None:
+        os.makedirs(os.path.dirname(self.out_path), exist_ok=True)
+        t = threading.Thread(target=self._run, name="metrics-dumper", daemon=True)
+        self.thread = t
+        t.start()
 
-@dataclasses.dataclass
-class ScrapePoint:
-    t_rel_secs: float
-    src_ok: float
-    sink_ok: float
-    rule_cpu_secs: float
-    proc_cpu_secs: float
-    rss_bytes: float
-    go_goroutines: float
-
-
-def run_publisher(
-    broker_url: str,
-    topic: str,
-    qos: int,
-    payload: str,
-    rate: float,
-    duration_secs: float,
-) -> Dict[str, Any]:
-    # Lazy import to keep script usable without deps.
-    try:
-        import paho.mqtt.client as mqtt  # type: ignore
-    except Exception as e:
-        raise RuntimeError(
-            "Missing dependency paho-mqtt. In GitHub Actions, install it via pip before running."
-        ) from e
-
-    # paho expects host/port, but accepts a full tcp:// URL in Connect? no.
-    # Parse tcp://host:port
-    u = urllib.parse.urlparse(broker_url)
-    host = u.hostname or "127.0.0.1"
-    port = u.port or 1883
-
-    client = mqtt.Client(client_id=f"ekuiper_perf_daily_{int(time.time())}", clean_session=True)
-    published = 0
-    errors = 0
-
-    client.connect(host, port, keepalive=30)
-    client.loop_start()
-    try:
-        start = time.time()
-        period = 1.0 / rate if rate > 0 else 0.0
-        next_t = start
-        while True:
-            now = time.time()
-            if now - start >= duration_secs:
-                break
-            if period > 0 and now < next_t:
-                time.sleep(min(0.01, next_t - now))
-                continue
-
-            info = client.publish(topic, payload=payload, qos=qos, retain=False)
-            # For QoS>0 we wait to keep error visibility; rate is low enough for CI.
-            if qos > 0:
-                info.wait_for_publish(timeout=5)
-            if info.rc != mqtt.MQTT_ERR_SUCCESS:
-                errors += 1
-            else:
-                published += 1
-            if period > 0:
-                next_t += period
-    finally:
-        client.loop_stop()
-        client.disconnect()
-
-    return {"published": published, "errors": errors}
-
-
-def run_case(args: argparse.Namespace) -> None:
-    os.makedirs(args.out_dir, exist_ok=True)
-
-    wait_for_ping(args.base_url, timeout_secs=60.0)
-
-    # Create stream if requested (case1).
-    if args.create_stream:
-        create_stream(args.base_url, args.stream_name, args.topic)
-
-    if args.force:
-        # Remove any existing rule with the same id to make reruns idempotent.
+    def finish(self) -> None:
+        self.stop.set()
+        if self.thread is not None:
+            self.thread.join(timeout=10.0)
         try:
-            delete_rule(args.base_url, args.rule_id)
+            with open(self.out_path, "a", encoding="utf-8") as f:
+                f.write("# EOF\n")
         except Exception:
             pass
 
-    rule_sql = build_rule_sql(args.stream_name, args.columns, args.sql_mode)
-    # Nop sink: ignore outputs to isolate source + SQL cost.
-    create_rule(args.base_url, args.rule_id, rule_sql, actions=[{"nop": {}}])
-
-    # Initial metrics snapshot for deltas.
-    m0 = get_metrics(args.metrics_url)
-    t0 = time.time()
-
-    # Scrape loop runs while publisher is active.
-    points: List[ScrapePoint] = []
-
-    # Run publisher synchronously; interleave scrapes on our side.
-    # To keep it simple, we do publisher loop here and scrape periodically.
-    payload = build_wide_payload(args.columns, args.str_len)
-
-    # Publisher uses paho and sleeps for rate control; we piggyback scrapes.
-    try:
-        import paho.mqtt.client as mqtt  # type: ignore
-    except Exception as e:
-        raise RuntimeError(
-            "Missing dependency paho-mqtt. In GitHub Actions, install it via pip before running."
-        ) from e
-
-    u = urllib.parse.urlparse(args.broker_url)
-    host = u.hostname or "127.0.0.1"
-    port = u.port or 1883
-    client = mqtt.Client(client_id=f"ekuiper_perf_daily_{int(time.time())}", clean_session=True)
-    client.connect(host, port, keepalive=30)
-    client.loop_start()
-    published = 0
-    pub_errors = 0
-
-    scrape_period = max(0.2, args.scrape_interval_ms / 1000.0)
-    next_scrape = time.time()
-    pub_period = 1.0 / args.rate if args.rate > 0 else 0.0
-    next_pub = time.time()
-
-    try:
-        while True:
-            now = time.time()
-            if now - t0 >= args.duration_secs:
-                break
-
-            if now >= next_scrape:
-                mt = get_metrics(args.metrics_url)
-                t_rel = now - t0
-
-                src_ok = _sum_counter(
-                    mt, "kuiper_io_counter", {"io": "source", "status": "success", "rule": args.rule_id}
-                )
-                sink_ok = _sum_counter(
-                    mt, "kuiper_io_counter", {"io": "sink", "status": "success", "rule": args.rule_id}
-                )
-                rule_cpu = _sum_counter(mt, "kuiper_rule_cpu_time_seconds_total", {"rule": args.rule_id})
-                proc_cpu = _sum_counter(mt, "process_cpu_seconds_total", {})
-                rss = _sum_counter(mt, "process_resident_memory_bytes", {})
-                gor = _sum_counter(mt, "go_goroutines", {})
-
-                points.append(
-                    ScrapePoint(
-                        t_rel_secs=t_rel,
-                        src_ok=src_ok,
-                        sink_ok=sink_ok,
-                        rule_cpu_secs=rule_cpu,
-                        proc_cpu_secs=proc_cpu,
-                        rss_bytes=rss,
-                        go_goroutines=gor,
+    def _run(self) -> None:
+        interval = max(0.05, self.interval_ms / 1000.0)
+        with open(self.out_path, "w", encoding="utf-8") as f:
+            _write_meta(f)
+            while not self.stop.is_set():
+                ts_ms = int(time.time() * 1000)
+                try:
+                    raw = scrape_prometheus_text(self.metrics_url, timeout_secs=self.timeout_secs)
+                    cpu_total = _metric_sum(raw, "process_cpu_seconds_total")
+                    mem_sys = _metric_sum(raw, "go_memstats_heap_sys_bytes")
+                    mem_alloc = _metric_sum(raw, "go_memstats_alloc_bytes")
+                    mem_inuse = _metric_sum(raw, "go_memstats_heap_inuse_bytes")
+                    # Aggregate all source counters for the target rule id.
+                    src_total = _metric_sum(
+                        raw,
+                        "kuiper_source_records_in_total",
+                        require_any=[("rule", self.rule_id), ("ruleId", self.rule_id)],
                     )
-                )
-                next_scrape = now + scrape_period
-                # Persist last scrape for artifacts (useful when job fails mid-run).
-                with open(os.path.join(args.out_dir, "metrics.openmetrics"), "w", encoding="utf-8") as f:
-                    f.write(mt)
 
-            if pub_period > 0 and now < next_pub:
-                time.sleep(min(0.01, next_pub - now))
-                continue
+                    cpu_usage = 0.0
+                    if self._prev_cpu is not None and self._prev_ts_ms is not None:
+                        dt_s = max(0.001, (ts_ms - self._prev_ts_ms) / 1000.0)
+                        dv = cpu_total - self._prev_cpu
+                        if dv >= 0:
+                            cpu_usage = dv / dt_s
+                    self._prev_cpu = cpu_total
+                    self._prev_ts_ms = ts_ms
 
-            info = client.publish(args.topic, payload=payload, qos=args.qos, retain=False)
-            if args.qos > 0:
-                info.wait_for_publish(timeout=5)
-            if info.rc != mqtt.MQTT_ERR_SUCCESS:
-                pub_errors += 1
-            else:
-                published += 1
-            if pub_period > 0:
-                next_pub += pub_period
-    finally:
-        client.loop_stop()
-        client.disconnect()
+                    # Emit synthetic metrics with timestamps (veloFlux report requires ts_ms).
+                    f.write(f'cpu_usage{{instance="{self.instance}"}} {cpu_usage} {ts_ms}\n')
+                    f.write(f'memory_usage_bytes{{instance="{self.instance}"}} {mem_sys} {ts_ms}\n')
+                    f.write(f'heap_in_use_bytes{{instance="{self.instance}"}} {mem_inuse} {ts_ms}\n')
+                    f.write(f'heap_in_allocator_bytes{{instance="{self.instance}"}} {mem_alloc} {ts_ms}\n')
+                    f.write(
+                        f'processor_records_in_total{{instance="{self.instance}",kind="datasource",rule="{self.rule_id}"}} {src_total} {ts_ms}\n'
+                    )
+                    f.flush()
+                    self.samples += 1
+                except Exception:
+                    self.errors += 1
+                time.sleep(interval)
 
-    m1 = get_metrics(args.metrics_url)
-    with open(os.path.join(args.out_dir, "metrics.openmetrics"), "w", encoding="utf-8") as f:
-        f.write(m1)
-
-    # Compute deltas for a few headline metrics.
-    src0 = _sum_counter(m0, "kuiper_io_counter", {"io": "source", "status": "success", "rule": args.rule_id})
-    src1 = _sum_counter(m1, "kuiper_io_counter", {"io": "source", "status": "success", "rule": args.rule_id})
-    sink0 = _sum_counter(m0, "kuiper_io_counter", {"io": "sink", "status": "success", "rule": args.rule_id})
-    sink1 = _sum_counter(m1, "kuiper_io_counter", {"io": "sink", "status": "success", "rule": args.rule_id})
-    cpu0 = _sum_counter(m0, "kuiper_rule_cpu_time_seconds_total", {"rule": args.rule_id})
-    cpu1 = _sum_counter(m1, "kuiper_rule_cpu_time_seconds_total", {"rule": args.rule_id})
-
-    duration = float(args.duration_secs)
-    res: Dict[str, Any] = {
-        "title": args.title,
-        "case": {
-            "sql_mode": args.sql_mode,
-            "columns": args.columns,
-            "str_len": args.str_len,
-            "rate": args.rate,
-            "duration_secs": args.duration_secs,
-            "topic": args.topic,
-            "qos": args.qos,
-            "stream_name": args.stream_name,
-            "rule_id": args.rule_id,
-        },
-        "publisher": {"published": published, "errors": pub_errors},
-        "metrics": {
-            "src_ok_delta": src1 - src0,
-            "sink_ok_delta": sink1 - sink0,
-            "rule_cpu_secs_delta": cpu1 - cpu0,
-            "src_ok_per_sec": (src1 - src0) / duration if duration > 0 else None,
-        },
-        "scrapes": [dataclasses.asdict(p) for p in points],
-    }
-
-    with open(os.path.join(args.out_dir, "result.json"), "w", encoding="utf-8") as f:
-        json.dump(res, f, indent=2, sort_keys=True)
-
-    if args.delete_rule_after:
-        delete_rule(args.base_url, args.rule_id)
+    def result(self) -> Dict[str, Any]:
+        return {
+            "metrics_url": self.metrics_url,
+            "scrape_interval_ms": self.interval_ms,
+            "samples": self.samples,
+            "errors": self.errors,
+            "openmetrics_path": self.out_path,
+            "instance": self.instance,
+        }
 
 
-def cmd_cleanup(args: argparse.Namespace) -> None:
-    wait_for_ping(args.base_url, timeout_secs=60.0)
-    deleted = delete_all_rules(args.base_url, keep_ids=args.keep_rule_id)
-    out = {"deleted": deleted, "kept": list(args.keep_rule_id)}
-    if args.out_json:
-        os.makedirs(os.path.dirname(args.out_json), exist_ok=True)
-        with open(args.out_json, "w", encoding="utf-8") as f:
-            json.dump(out, f, indent=2, sort_keys=True)
-    else:
-        print(json.dumps(out, indent=2, sort_keys=True))
+def trim_openmetrics_to_window(in_path: str, start_ms: int, end_ms: int) -> None:
+    if start_ms <= 0 or end_ms <= 0 or end_ms < start_ms:
+        return
+    try:
+        with open(in_path, "r", encoding="utf-8", errors="replace") as f:
+            lines = f.read().splitlines()
+    except FileNotFoundError:
+        return
+
+    meta_seen: set[str] = set()
+    out: List[str] = []
+    for line in lines:
+        if not line or line == "# EOF":
+            continue
+        if line.startswith("# HELP ") or line.startswith("# TYPE "):
+            parts = line.split(" ", 3)
+            if len(parts) >= 3 and parts[2] in TRACKED_METRICS and line not in meta_seen:
+                out.append(line)
+                meta_seen.add(line)
+            continue
+        m = _SAMPLE_RE.match(line)
+        if not m:
+            continue
+        name = m.group(1)
+        if name not in TRACKED_METRICS:
+            continue
+        ts = m.group(4)
+        if ts is None:
+            continue
+        try:
+            ts_ms = int(ts)
+        except ValueError:
+            continue
+        if start_ms <= ts_ms <= end_ms:
+            out.append(line)
+
+    with open(in_path, "w", encoding="utf-8") as f:
+        if out:
+            f.write("\n".join(out))
+            f.write("\n")
+        f.write("# EOF\n")
+
+
+def build_parser() -> argparse.ArgumentParser:
+    p = argparse.ArgumentParser(description="Daily perf scenario: 15k-column MQTT stream + nop rule (eKuiper).")
+    p.add_argument("--base-url", default="http://127.0.0.1:9081")
+    p.add_argument("--timeout-secs", type=float, default=60.0)
+
+    p.add_argument("--stream-name", default=DEFAULT_STREAM_NAME)
+    p.add_argument("--pipeline-id", default=DEFAULT_PIPELINE_ID, help="mapped to eKuiper rule id")
+    p.add_argument("--columns", type=int, default=15000)
+    p.add_argument("--sql-mode", choices=("explicit", "star"), default="explicit")
+
+    p.add_argument("--broker-url", default="tcp://127.0.0.1:1883")
+    p.add_argument("--topic", default="/perf/daily")
+    p.add_argument("--qos", type=int, default=1)
+
+    p.add_argument("--cases", type=int, default=20)
+    p.add_argument("--str-len", type=int, default=10)
+    p.add_argument("--duration-secs", type=int, default=120)
+    p.add_argument("--rate", type=int, default=50, help="Messages per second (default: 50)")
+    p.add_argument("--batch-size", type=int, default=50, help="sink batchSize (default: 50)")
+    p.add_argument("--linger-interval-ms", type=int, default=100, help="sink lingerInterval in ms (default: 100)")
+
+    p.add_argument("--metrics-url", default=DEFAULT_METRICS_URL)
+    p.add_argument("--scrape-interval-ms", type=int, default=15000)
+    p.add_argument("--out-dir", default=DEFAULT_OUT_DIR)
+    p.add_argument("--no-metrics", action="store_true")
+
+    p.add_argument("--force", action="store_true", help="delete all rules before creating the case rule")
+    p.add_argument("--create-stream", action="store_true", help="(re)create the stream before creating the rule")
+    p.add_argument("--dry-run", action="store_true")
+
+    sub = p.add_subparsers(dest="command", required=True)
+    sub.add_parser("run")
+    sub.add_parser("cleanup-rules")
+    return p
 
 
 def main(argv: List[str]) -> int:
-    p = argparse.ArgumentParser()
-    sub = p.add_subparsers(dest="cmd", required=True)
+    args = build_parser().parse_args(argv)
 
-    run = sub.add_parser("run", help="run one perf case")
-    run.add_argument("--title", required=True)
-    run.add_argument("--base-url", required=True)
-    run.add_argument("--metrics-url", required=True)
-    run.add_argument("--broker-url", required=True)
-    run.add_argument("--topic", required=True)
-    run.add_argument("--qos", type=int, default=1)
-    run.add_argument("--columns", type=int, default=2000)
-    run.add_argument("--str-len", type=int, default=10)
-    run.add_argument("--sql-mode", choices=["explicit", "star"], required=True)
-    run.add_argument("--stream-name", default="perfDailyStream")
-    run.add_argument("--rule-id", required=True)
-    run.add_argument("--duration-secs", dest="duration_secs", type=int, default=120)
-    run.add_argument("--rate", type=float, default=50.0)
-    run.add_argument("--scrape-interval-ms", type=int, default=15000)
-    run.add_argument("--out-dir", required=True)
-    run.add_argument("--create-stream", action="store_true")
-    run.add_argument("--force", action="store_true")
-    run.add_argument("--delete-rule-after", action="store_true")
-    run.set_defaults(func=run_case)
+    if args.columns <= 0:
+        raise PerfDailyError("--columns must be > 0")
+    if args.cases < 0:
+        raise PerfDailyError("--cases must be >= 0")
+    if args.str_len <= 0:
+        raise PerfDailyError("--str-len must be > 0")
+    if args.duration_secs < 0:
+        raise PerfDailyError("--duration-secs must be >= 0")
+    if args.rate < 0:
+        raise PerfDailyError("--rate must be >= 0")
+    if args.qos != 1:
+        raise PerfDailyError("--qos must be 1 (QoS1 only) for publish")
 
-    cleanup = sub.add_parser("cleanup", help="delete rules (used between restart and case2)")
-    cleanup.add_argument("--base-url", required=True)
-    cleanup.add_argument("--keep-rule-id", action="append", default=[])
-    cleanup.add_argument("--out-json")
-    cleanup.set_defaults(func=cmd_cleanup)
+    wait_for_ekuiper(args.base_url, timeout_secs=args.timeout_secs, wait_secs=60.0)
+    broker = parse_tcp_broker_url(args.broker_url)
+    wait_for_tcp(broker.host, broker.port, wait_secs=60.0)
 
-    args = p.parse_args(argv)
-    args.func(args)
+    if args.command == "cleanup-rules":
+        if args.dry_run:
+            return 0
+        delete_all_rules(Client(args.base_url, args.timeout_secs))
+        return 0
+
+    # run
+    provision(
+        base_url=args.base_url,
+        timeout_secs=args.timeout_secs,
+        stream_name=args.stream_name,
+        pipeline_id=args.pipeline_id,
+        columns=args.columns,
+        topic=args.topic,
+        sql_mode=args.sql_mode,
+        batch_size=args.batch_size,
+        linger_interval_ms=args.linger_interval_ms,
+        force=args.force,
+        create_stream=args.create_stream,
+        dry_run=args.dry_run,
+    )
+
+    if args.dry_run:
+        payloads = generate_payload_cases(5, min(args.cases, 1), args.str_len)
+        print(f"sample payload bytes: {len(payloads[0]) if payloads else 0}", file=sys.stderr)
+        return 0
+
+    payloads = generate_payload_cases(args.columns, args.cases, args.str_len)
+    payload_bytes = len(payloads[0]) if payloads else 0
+
+    dumper = None
+    os.makedirs(args.out_dir, exist_ok=True)
+    openmetrics_path = os.path.join(args.out_dir, "metrics.openmetrics")
+
+    publish_start_ts_ms = 0
+    publish_end_ts_ms = 0
+    if not args.no_metrics:
+        dumper = OpenMetricsDumper(
+            metrics_url=args.metrics_url,
+            timeout_secs=args.timeout_secs,
+            interval_ms=args.scrape_interval_ms,
+            out_path=openmetrics_path,
+            instance="local",
+            rule_id=args.pipeline_id,
+        )
+        dumper.start()
+
+    pub = None
+    try:
+        pub = publish_qos1_with_timing(
+            broker_url=args.broker_url,
+            topic=args.topic,
+            payloads=payloads,
+            duration_secs=args.duration_secs,
+            rate_per_sec=args.rate,
+            client_id=f"perf-daily-{os.getpid()}",
+            keepalive_secs=60,
+        )
+    except MqttError as e:
+        raise PerfDailyError(str(e)) from None
+    finally:
+        if pub is None:
+            publish_start_ts_ms = int(time.time() * 1000)
+            publish_end_ts_ms = publish_start_ts_ms
+        else:
+            publish_start_ts_ms = pub.start_ts_ms
+            publish_end_ts_ms = pub.end_ts_ms
+        if dumper is not None:
+            dumper.finish()
+
+    if dumper is not None:
+        trim_openmetrics_to_window(openmetrics_path, start_ms=publish_start_ts_ms, end_ms=publish_end_ts_ms)
+        duration_s = max(0.001, (publish_end_ts_ms - publish_start_ts_ms) / 1000.0)
+        result_path = os.path.join(args.out_dir, "result.json")
+        result = {
+            "publish_start_ts_ms": publish_start_ts_ms,
+            "publish_end_ts_ms": publish_end_ts_ms,
+            "publish_duration_secs": duration_s,
+            "sent_messages": pub.sent if pub is not None else 0,
+            "effective_rate_mps": (pub.sent / duration_s) if pub is not None else 0.0,
+            "payload_bytes": payload_bytes,
+            "config": {
+                "base_url": args.base_url,
+                "stream_name": args.stream_name,
+                "pipeline_id": args.pipeline_id,
+                "columns": args.columns,
+                "sql_mode": args.sql_mode,
+                "broker_url": args.broker_url,
+                "topic": args.topic,
+                "qos": args.qos,
+                "cases": args.cases,
+                "str_len": args.str_len,
+                "duration_secs": args.duration_secs,
+                "rate": args.rate,
+            },
+            "metrics": dumper.result(),
+        }
+        with open(result_path, "w", encoding="utf-8") as f:
+            json.dump(result, f, indent=2, ensure_ascii=False)
+        print(f"result_json: {result_path}")
+        print(f"openmetrics: {openmetrics_path}")
+
     return 0
 
 
 if __name__ == "__main__":
-    raise SystemExit(main(sys.argv[1:]))
-
+    try:
+        raise SystemExit(main(sys.argv[1:]))
+    except (PerfDailyError, ApiError) as e:
+        print(f"error: {e}", file=sys.stderr)
+        raise SystemExit(2)
