@@ -65,6 +65,21 @@ jobs:
           "${PKG_DIR}/bin/kuiperd" > tmp/perf_daily_ci/kuiperd.log 2>&1 &
           echo $! > tmp/perf_daily_ci/kuiperd.pid
 
+      - name: Wait for eKuiper ready
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 120); do
+            if curl -fsS http://127.0.0.1:9081/ping >/dev/null; then
+              exit 0
+            fi
+            sleep 0.5
+          done
+          echo "eKuiper not ready; dumping debug info" >&2
+          (ss -ltnp || true) >&2
+          (ps -p "$(cat tmp/perf_daily_ci/kuiperd.pid)" -o pid,ppid,etime,command || true) >&2
+          (tail -n 200 tmp/perf_daily_ci/kuiperd.log || true) >&2
+          exit 1
+
       - name: Cleanup rules (pre case1)
         run: |
           set -euo pipefail
@@ -126,6 +141,21 @@ jobs:
           export KuiperBaseKey="$PWD/tmp/perf_daily_ci/kuiper_base"
           "${PKG_DIR}/bin/kuiperd" > tmp/perf_daily_ci/kuiperd_2.log 2>&1 &
           echo $! > tmp/perf_daily_ci/kuiperd.pid
+
+      - name: Wait for eKuiper ready (after restart)
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 120); do
+            if curl -fsS http://127.0.0.1:9081/ping >/dev/null; then
+              exit 0
+            fi
+            sleep 0.5
+          done
+          echo "eKuiper not ready after restart; dumping debug info" >&2
+          (ss -ltnp || true) >&2
+          (ps -p "$(cat tmp/perf_daily_ci/kuiperd.pid)" -o pid,ppid,etime,command || true) >&2
+          (tail -n 200 tmp/perf_daily_ci/kuiperd_2.log || true) >&2
+          exit 1
 
       - name: Cleanup rules (pre case2)
         run: |

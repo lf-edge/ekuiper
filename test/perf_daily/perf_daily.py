@@ -520,7 +520,7 @@ def main(argv: List[str]) -> int:
     if args.qos != 1:
         raise PerfDailyError("--qos must be 1 (QoS1 only) for publish")
 
-    wait_for_ekuiper(args.base_url, timeout_secs=args.timeout_secs, wait_secs=60.0)
+    wait_for_ekuiper(args.base_url, timeout_secs=args.timeout_secs, wait_secs=120.0)
     broker = parse_tcp_broker_url(args.broker_url)
     wait_for_tcp(broker.host, broker.port, wait_secs=60.0)
 
