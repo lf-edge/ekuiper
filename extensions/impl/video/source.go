@@ -32,8 +32,6 @@ import (
 
 type Source struct {
 	Url string `json:"url"`
-	// Run ffmpeg -formats to get all supported format, default to 'image2'
-	Format string `json:"vformat"`
 	// Check https://www.ffmpeg.org/general.html#Video-Codecs, default to 'mjpeg'
 	Codec     string            `json:"codec"`
 	DebugResp bool              `json:"debugResp"`
@@ -55,7 +53,6 @@ func (s *Source) Provision(ctx api.StreamContext, props map[string]any) error {
 		return errors.New("ffmpeg dependency check failed")
 	}
 
-	s.Format = "image2pipe"
 	s.Codec = "mjpeg"
 	err = cast.MapToStruct(props, s)
 	if err != nil {
@@ -128,7 +125,7 @@ func (s *Source) runCurrent(ctx api.StreamContext, fps string, ingest api.BytesI
 		input = input.Filter("fps", ffmpeg.Args{fps})
 	}
 	cmd := input.Output("pipe:", ffmpeg.KwArgs{
-		"f":      s.Format,
+		"f":      "image2pipe",
 		"vcodec": s.Codec,
 		"q:v":    "2",
 	}).Compile()

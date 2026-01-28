@@ -152,7 +152,8 @@ func TestSubscribeFatalError(t *testing.T) {
 	// Use an invalid option to trigger a fatal exit from ffmpeg
 	s.Url = "testsrc"
 	s.Codec = "mjpeg"
-	s.Format = "image2pipe"
+	// s.Format removed
+
 	s.InputArgs = map[string]any{"f": "lavfi", "invalid_option": "trigger_fatal"}
 
 	ctx := mockContext.NewMockContext("test", "test")
@@ -179,12 +180,10 @@ func TestSubscribeContextDone(t *testing.T) {
 	s := GetSource().(*Source)
 	s.Url = "testsrc"
 	s.Codec = "mjpeg"
-	s.Format = "image2pipe"
-	s.InputArgs = map[string]any{"f": "lavfi"}
 
+	s.InputArgs = map[string]any{"f": "lavfi"}
 	// Very long interval to ensure we hit the loop
 	s.Interval = 0
-
 	baseCtx := mockContext.NewMockContext("test", "test")
 	ctx, cancel := baseCtx.WithCancel()
 
@@ -212,11 +211,36 @@ func TestRunCurrentWaitError(t *testing.T) {
 	s := GetSource().(*Source)
 	s.Url = "non_existent_file.mp4"
 	s.Codec = "mjpeg"
-	s.Format = "image2pipe"
 
 	ctx := mockContext.NewMockContext("test", "test")
 	err := s.runCurrent(ctx, "", func(ctx api.StreamContext, data []byte, meta map[string]any, ts time.Time) {
 	})
 	assert.Error(t, err)
 	t.Logf("runCurrent error: %v", err)
+}
+
+func TestSubscribeImage2(t *testing.T) {
+	conf.Log.SetOutput(os.Stdout)
+	pwd, _ := os.Getwd()
+	testFile := "file://" + filepath.Join(pwd, "test.mp4")
+	exp := []api.MessageTuple{
+		model.NewDefaultRawTuple(nil, nil, timex.GetNow()),
+	}
+	r := GetSource()
+	// This test is expected to fail or succeed depending on whether ffmpeg handles image2 format correctly for streaming.
+	// In the bug report, this config causes "Conversion failed".
+	// We want to verify that with the fix, this config is SAFE (ignored).
+	mock.TestSourceConnectorCompare(t, r, map[string]any{
+		"url":       testFile,
+		"interval":  "1s",
+		"debugResp": true,
+		"vformat":   "image2",
+	}, exp, func(e any, r any) bool {
+		// Just check we got some data
+		rt, ok := r.([]api.MessageTuple)
+		assert.True(t, ok, "result is not []api.MessageTuple")
+		return len(rt) > 0
+	}, func() {
+		// do nothing
+	})
 }
