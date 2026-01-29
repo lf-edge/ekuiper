@@ -335,3 +335,31 @@ GET /rules/tags/match
   "keys":["key1","key2"]
 }
 ```
+
+## Bulk start / stop rules by tag
+
+These APIs are used to start or stop multiple rules based on the assigned tags.
+
++ bulk start rules
+```shell
+POST /rules/bulkstart
+
+{
+  "tags": ["t1"]
+}
+```
+
++ bulk stop rules
+```shell
+POST /rules/bulkstop
+
+{
+  "tags": ["t1"]
+}
+```
+
+Both APIs return a list of rules with the operation result for each rule, indicating whether the operation was successful or failed.
+In case of failure, an error message is returned for the affected rule.
+
+
+
