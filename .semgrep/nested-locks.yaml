@@ -1,0 +1,90 @@
+rules:
+  - id: potential-nested-lock
+    patterns:
+      - pattern-either:
+        # Case 1: Explicit Unlock Pair within same function
+        - patterns:
+          - pattern-inside: |
+              func $F(...) {
+                  ...
+                  $MX1.Lock()
+                  ...
+                  $MX1.Unlock()
+                  ...
+              }
+          - pattern-inside: |
+              $MX1.Lock()
+              ...
+              $MX2.Lock()
+              ...
+              $MX1.Unlock()
+          
+        # Case 1b: Lock -> RLock (同样危险)
+        - patterns:
+          - pattern-inside: |
+              func $F(...) {
+                  ...
+                  $MX1.Lock()
+                  ...
+                  $MX1.Unlock()
+                  ...
+              }
+          - pattern-inside: |
+              $MX1.Lock()
+              ...
+              $MX2.RLock()
+              ...
+              $MX1.Unlock()
+          
+        # Case 2: Defer Unlock (Scope is remainder of function)
+        - patterns:
+          - pattern-inside: |
+              func $F(...) {
+                  ...
+                  $MX1.Lock()
+                  ...
+                  defer $MX1.Unlock()
+                  ...
+              }
+          - patterns: 
+            - pattern-either:
+              - pattern: $MX2.Lock()
+              - pattern: $MX2.RLock()
+
+      # NOTE: For RLock, we only flag Lock() inside.
+      - pattern-either:
+         # Case 3: RLock ... RUnlock (Explicit)
+        - patterns:
+          - pattern-inside: |
+              func $F(...) {
+                  ...
+                  $MX1.RLock()
+                  ...
+                  $MX2.Lock()
+                  ...
+                  $MX1.RUnlock()
+                  ...
+              }
+        
+         # Case 4: RLock ... defer RUnlock
+        - patterns:
+          - pattern-inside: |
+              func $F(...) {
+                  ...
+                  $MX1.RLock()
+                  ...
+                  defer $MX1.RUnlock()
+                  ...
+              }
+          - pattern: $MX2.Lock()
+
+      # Common exclusions
+      - metavariable-regex:
+          metavariable: $MX1
+          regex: (?!(^log$|^logger$)) 
+      - metavariable-regex:
+          metavariable: $MX2
+          regex: (?!(^log$|^logger$))
+    message: "Potential Nested Lock: acquiring lock $MX2 while holding $MX1. Review for potential ABBA deadlocks or upgrade deadlocks."
+    languages: [go]
+    severity: WARNING
