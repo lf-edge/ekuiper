@@ -91,8 +91,8 @@ func (suite *RestTestSuite) SetupTest() {
 	r.HandleFunc("/rules/{name}/topo", getTopoRuleHandler).Methods(http.MethodGet)
 	r.HandleFunc("/rules/{name}/reset_state", ruleStateHandler).Methods(http.MethodPut)
 	r.HandleFunc("/rules/{name}/explain", explainRuleHandler).Methods(http.MethodGet)
-	r.HandleFunc("/rules/bulkstart", rulesBulkOperationsHandler).Methods(http.MethodPost)
-	r.HandleFunc("/rules/bulkstop", rulesBulkOperationsHandler).Methods(http.MethodPost)
+	r.HandleFunc("/rules/bulkstart", rulesBulkStartHandler).Methods(http.MethodPost)
+	r.HandleFunc("/rules/bulkstop", rulesBulkStopHandler).Methods(http.MethodPost)
 	r.HandleFunc("/rules/{name}/trace/start", enableRuleTraceHandler).Methods(http.MethodPost)
 	r.HandleFunc("/rules/{name}/trace/stop", disableRuleTraceHandler).Methods(http.MethodPost)
 	r.HandleFunc("/rules/validate", validateRuleHandler).Methods(http.MethodPost)
@@ -1027,7 +1027,7 @@ func (suite *RestTestSuite) TestWaitStopRule() {
 	waitAllRuleStop()
 }
 
-func (suite *RestTestSuite) TestRulesBulkOperationsHandler() {
+func (suite *RestTestSuite) TestRulesBulkStartAndStopHandlers() {
 	timestamp := time.Now().UnixNano()
 	mockRules := []string{
 		fmt.Sprintf(`{"id":"r1_%d","sql":"SELECT * FROM demo","actions":[{"log":{}}], "tags": ["mock-tag"], "triggered": true}`, timestamp),
@@ -1065,24 +1065,32 @@ func (suite *RestTestSuite) TestRulesBulkOperationsHandler() {
 	}
 
 	// bulk start
+	resStart := []BulkOperationResponse{}
+
 	buf = bytes.NewBuffer([]byte(`{"tags": ["mock-tag"]}`))
 	req, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/rules/bulkstart", buf)
 	w = httptest.NewRecorder()
 	suite.r.ServeHTTP(w, req)
-	if w.Code != http.StatusOK {
-		body, _ := io.ReadAll(w.Result().Body)
-		fmt.Println(string(body))
+	body, _ := io.ReadAll(w.Result().Body)
+	fmt.Println("------- bulk start ------")
+	json.Unmarshal(body, &resStart)
+	for _, v := range resStart {
+		fmt.Println(v)
 	}
 	require.Equal(suite.T(), http.StatusOK, w.Code)
 
 	// bulk stop
+	resStop := []BulkOperationResponse{}
+
 	buf = bytes.NewBuffer([]byte(`{"tags": ["mock-tag"]}`))
 	req, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/rules/bulkstop", buf)
 	w = httptest.NewRecorder()
 	suite.r.ServeHTTP(w, req)
-	if w.Code != http.StatusOK {
-		body, _ := io.ReadAll(w.Result().Body)
-		fmt.Println(string(body))
+	body, _ = io.ReadAll(w.Result().Body)
+	fmt.Println("------- bulk stop ------")
+	json.Unmarshal(body, &resStop)
+	for _, v := range resStop {
+		fmt.Println(v)
 	}
 	require.Equal(suite.T(), http.StatusOK, w.Code)
 }

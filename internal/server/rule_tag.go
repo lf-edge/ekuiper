@@ -17,12 +17,11 @@ package server
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
-	"path"
 
 	"github.com/gorilla/mux"
 
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/rule"
 )
 
@@ -227,43 +226,110 @@ func rulesTagsHandler(w http.ResponseWriter, r *http.Request) {
 	jsonResponse(resp, w, logger)
 }
 
-func rulesBulkOperationsHandler(w http.ResponseWriter, r *http.Request) {
+type BulkOperationResponse struct {
+	RuleID  string `json:"ruleId"`
+	Success bool   `json:"success"`
+	Error   string `json:"error,omitempty"`
+}
+
+func rulesBulkStartHandler(w http.ResponseWriter, r *http.Request) {
 	tags := &RuleTagRequest{Tags: []string{}}
 	if err := json.NewDecoder(r.Body).Decode(tags); err != nil {
 		handleError(w, err, "decode body error", logger)
 		return
 	}
 
-	rules, err := ruleProcessor.GetAllRulesJson()
+	resultSet, err := findRules(tags)
 	if err != nil {
-		handleError(w, err, "", logger)
+		handleError(w, err, "bulk start failed", logger)
 		return
 	}
 
+	payload := make([]BulkOperationResponse, 0)
+	for _, ruleID := range resultSet {
+		err := registry.StartRule(ruleID)
+		if err != nil {
+			payload = append(payload, BulkOperationResponse{
+				RuleID:  ruleID,
+				Success: false,
+				Error:   err.Error(),
+			})
+			continue
+		}
+
+		payload = append(payload, BulkOperationResponse{
+			RuleID:  ruleID,
+			Success: true,
+		})
+	}
+
+	w.WriteHeader(http.StatusOK)
+	jsonResponse(payload, w, logger)
+}
+
+func rulesBulkStopHandler(w http.ResponseWriter, r *http.Request) {
+	tags := &RuleTagRequest{Tags: []string{}}
+	if err := json.NewDecoder(r.Body).Decode(tags); err != nil {
+		handleError(w, err, "decode body error", logger)
+		return
+	}
+
+	resultSet, err := findRules(tags)
+	if err != nil {
+		handleError(w, err, "bulk stop failed", logger)
+		return
+	}
+
+	payload := make([]BulkOperationResponse, 0)
+	for _, ruleID := range resultSet {
+		err := registry.StopRule(ruleID)
+		if err != nil {
+			payload = append(payload, BulkOperationResponse{
+				RuleID:  ruleID,
+				Success: false,
+				Error:   err.Error(),
+			})
+			continue
+		}
+
+		payload = append(payload, BulkOperationResponse{
+			RuleID:  ruleID,
+			Success: true,
+		})
+	}
+
+	w.WriteHeader(http.StatusOK)
+	jsonResponse(payload, w, logger)
+}
+
+func findRules(tags *RuleTagRequest) ([]string, error) {
+	rules, err := ruleProcessor.GetAllRulesJson()
+	if err != nil {
+		return nil, err
+	}
+
 	resultSet := make([]string, 0)
+	fetchedRules := make(map[string]*def.Rule)
 	for ruleID, ruleJson := range rules {
 		rule, err := ruleProcessor.GetRuleByJsonValidated(ruleID, ruleJson)
 		if err != nil {
 			continue
 		}
 
+		fetchedRules[ruleID] = rule
 		if rule.IsTagsMatch(tags.Tags) {
 			resultSet = append(resultSet, ruleID)
 		}
 	}
 
 	if len(resultSet) == 0 {
-		handleError(w, errors.New(""), "no matching rules", logger)
-		return
+		return nil, errors.New("no matching rules")
 	}
 
 	for _, ruleID := range resultSet {
 		if _, ok := registry.load(ruleID); !ok {
-			ruleJson := rules[ruleID]
-			rr, err := ruleProcessor.GetRuleByJsonValidated(ruleID, ruleJson)
-			if err != nil {
-				continue
-			}
+			rr := fetchedRules[ruleID]
+
 			rs := rule.NewState(rr, func(id string, b bool) {
 				registry.updateTrigger(id, b)
 			})
@@ -271,25 +337,5 @@ func rulesBulkOperationsHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	for index, ruleID := range resultSet {
-		var err error
-		if path.Base(r.URL.Path) == "bulkstart" {
-			err = registry.StartRule(ruleID)
-		} else {
-			err = registry.StopRule(ruleID)
-		}
-
-		if err != nil {
-			handleError(
-				w,
-				err,
-				fmt.Sprintf("operation failed, completed %d operations out of %d", index, len(resultSet)),
-				logger,
-			)
-			return
-		}
-	}
-
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("operation completed"))
+	return resultSet, nil
 }
