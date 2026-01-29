@@ -330,7 +330,7 @@ def _write_meta(f) -> None:
     # Minimal HELP/TYPE lines for nicer downstream parsing/debugging.
     f.write("# HELP cpu_usage Derived from irate(process_cpu_seconds_total)\n")
     f.write("# TYPE cpu_usage gauge\n")
-    f.write("# HELP memory_usage_bytes go_memstats_heap_sys_bytes (rss-like)\n")
+    f.write("# HELP memory_usage_bytes process_resident_memory_bytes (rss)\n")
     f.write("# TYPE memory_usage_bytes gauge\n")
     f.write("# HELP heap_in_use_bytes go_memstats_heap_inuse_bytes\n")
     f.write("# TYPE heap_in_use_bytes gauge\n")
@@ -388,7 +388,7 @@ class OpenMetricsDumper:
                 try:
                     raw = scrape_prometheus_text(self.metrics_url, timeout_secs=self.timeout_secs)
                     cpu_total = _metric_sum(raw, "process_cpu_seconds_total")
-                    mem_sys = _metric_sum(raw, "go_memstats_heap_sys_bytes")
+                    rss = _metric_sum(raw, "process_resident_memory_bytes")
                     mem_alloc = _metric_sum(raw, "go_memstats_alloc_bytes")
                     mem_inuse = _metric_sum(raw, "go_memstats_heap_inuse_bytes")
                     # Aggregate all source counters for the target rule id.
@@ -409,7 +409,7 @@ class OpenMetricsDumper:
 
                     # Emit synthetic metrics with timestamps (veloFlux report requires ts_ms).
                     f.write(f'cpu_usage{{instance="{self.instance}"}} {cpu_usage} {ts_ms}\n')
-                    f.write(f'memory_usage_bytes{{instance="{self.instance}"}} {mem_sys} {ts_ms}\n')
+                    f.write(f'memory_usage_bytes{{instance="{self.instance}"}} {rss} {ts_ms}\n')
                     f.write(f'heap_in_use_bytes{{instance="{self.instance}"}} {mem_inuse} {ts_ms}\n')
                     f.write(f'heap_in_allocator_bytes{{instance="{self.instance}"}} {mem_alloc} {ts_ms}\n')
                     f.write(

@@ -1,6 +1,7 @@
 name: Perf Daily Wide MQTT
 
 on:
+  pull_request: {}
   workflow_dispatch: {}
 
 concurrency:

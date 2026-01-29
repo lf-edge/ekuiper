@@ -13,3 +13,6 @@ The scenario mirrors the `veloFlux` workflow "Perf Daily Wide MQTT":
 Files:
 - `test/perf_daily/perf_daily.py`: scenario runner (REST + MQTT publish + metrics scrape).
 - `test/perf_daily/perf_daily_report.py`: render `result.json` into Markdown (step summary).
+
+Metrics mapping (for veloFlux-compatible charts):
+- `memory_usage_bytes` is mapped from Prometheus `process_resident_memory_bytes` (true RSS).
