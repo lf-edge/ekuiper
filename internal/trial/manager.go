@@ -17,12 +17,12 @@ package trial
 import (
 	"encoding/json"
 	"fmt"
-	"sync"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/topo"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
+	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
 )
 
 // TrialManager Manager Initialized in the binder
@@ -32,7 +32,7 @@ var TrialManager = &Manager{
 
 // Manager In memory manager for all trial rules
 type Manager struct {
-	sync.RWMutex
+	syncx.RWMutex
 	// ruleId -> *Topo
 	runs map[string]Run
 }

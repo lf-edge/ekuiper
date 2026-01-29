@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"sync"
 	"testing"
 	"time"
 
@@ -30,6 +29,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/v2/internal/io/memory/pubsub"
 	"github.com/lf-edge/ekuiper/v2/internal/server"
+	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
 )
 
 type RuleTestSuite struct {
@@ -115,7 +115,7 @@ func (s *RuleTestSuite) TestUpsert() {
 	server := mqtt.New(&mqtt.Options{InlineClient: true})
 	defer server.Close()
 	result := make(map[string]string)
-	lock := sync.Mutex{}
+	lock := syncx.Mutex{}
 	s.Run("start broker and subscribe for result", func() {
 		// Allow all connections.
 		_ = server.AddHook(new(auth.AllowHook), nil)

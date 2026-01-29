@@ -19,9 +19,9 @@ import (
 	"fmt"
 	"path"
 	"reflect"
-	"sync"
 
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
 )
 
 // ConfKeysOperator define interface to query/add/update/delete the configs in memory
@@ -59,7 +59,7 @@ type ConfigOperator interface {
 // Provide method to query/add/update/delete the configs
 type ConfigKeys struct {
 	storageType string
-	lock        sync.RWMutex
+	lock        syncx.RWMutex
 	pluginName  string                            // source type, can be mqtt/edgex/httppull
 	etcCfg      map[string]map[string]interface{} // configs defined in etc/sources/yaml
 	dataCfg     map[string]map[string]interface{}
@@ -362,7 +362,7 @@ func NewConfigOperatorForSource(pluginName string) ConfigOperator {
 	c := &SourceConfigKeysOps{
 		&ConfigKeys{
 			storageType: getStorageType(),
-			lock:        sync.RWMutex{},
+			lock:        syncx.RWMutex{},
 			pluginName:  pluginName,
 			etcCfg:      map[string]map[string]interface{}{},
 			dataCfg:     map[string]map[string]interface{}{},
@@ -378,7 +378,7 @@ func NewConfigOperatorFromSourceStorage(pluginName string) (ConfigOperator, erro
 	c := &SourceConfigKeysOps{
 		&ConfigKeys{
 			storageType: getStorageType(),
-			lock:        sync.RWMutex{},
+			lock:        syncx.RWMutex{},
 			pluginName:  pluginName,
 			etcCfg:      map[string]map[string]interface{}{},
 			dataCfg:     map[string]map[string]interface{}{},
@@ -415,7 +415,7 @@ func NewConfigOperatorForSink(pluginName string) ConfigOperator {
 	c := &SinkConfigKeysOps{
 		&ConfigKeys{
 			storageType: getStorageType(),
-			lock:        sync.RWMutex{},
+			lock:        syncx.RWMutex{},
 			pluginName:  pluginName,
 			etcCfg:      map[string]map[string]interface{}{},
 			dataCfg:     map[string]map[string]interface{}{},
@@ -431,7 +431,7 @@ func NewConfigOperatorFromSinkStorage(pluginName string) (ConfigOperator, error)
 	c := &SinkConfigKeysOps{
 		&ConfigKeys{
 			storageType: getStorageType(),
-			lock:        sync.RWMutex{},
+			lock:        syncx.RWMutex{},
 			pluginName:  pluginName,
 			etcCfg:      map[string]map[string]interface{}{},
 			dataCfg:     map[string]map[string]interface{}{},
@@ -453,7 +453,7 @@ func NewConfigOperatorForConnection(pluginName string) ConfigOperator {
 	c := &ConnectionConfigKeysOps{
 		&ConfigKeys{
 			storageType: getStorageType(),
-			lock:        sync.RWMutex{},
+			lock:        syncx.RWMutex{},
 			pluginName:  pluginName,
 			etcCfg:      map[string]map[string]interface{}{},
 			dataCfg:     map[string]map[string]interface{}{},
@@ -469,7 +469,7 @@ func NewConfigOperatorFromConnectionStorage(pluginName string) (ConfigOperator, 
 	c := &ConnectionConfigKeysOps{
 		&ConfigKeys{
 			storageType: getStorageType(),
-			lock:        sync.RWMutex{},
+			lock:        syncx.RWMutex{},
 			pluginName:  pluginName,
 			etcCfg:      map[string]map[string]interface{}{},
 			dataCfg:     map[string]map[string]interface{}{},

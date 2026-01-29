@@ -20,13 +20,14 @@ import (
 	"os"
 	"reflect"
 	"sort"
-	"sync"
 	"testing"
 
 	"github.com/pingcap/failpoint"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
+
+	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
 )
 
 func TestConfigKeys_LoadSourceFile(t *testing.T) {
@@ -415,7 +416,7 @@ func isAddData(js string, cf map[string]interface{}) error {
 func TestCopyUpdatableContent(t *testing.T) {
 	ck := &ConfigKeys{
 		storageType: getStorageType(),
-		lock:        sync.RWMutex{},
+		lock:        syncx.RWMutex{},
 		pluginName:  "neuron",
 		etcCfg:      map[string]map[string]interface{}{},
 		dataCfg:     map[string]map[string]interface{}{"mock": {"mock": "mock"}},

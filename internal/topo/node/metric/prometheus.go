@@ -15,14 +15,14 @@
 package metric
 
 import (
-	"sync"
-
 	"github.com/prometheus/client_golang/prometheus"
+
+	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
 )
 
 var (
 	prometheuseMetrics *PrometheusMetrics
-	mutex              sync.RWMutex
+	mutex              syncx.RWMutex
 )
 
 func GetPrometheusMetrics() *PrometheusMetrics {

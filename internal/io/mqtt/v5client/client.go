@@ -19,7 +19,6 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
-	"sync"
 	"time"
 
 	"github.com/eclipse/paho.golang/autopaho"
@@ -33,11 +32,12 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cert"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
+	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
 )
 
 type Client struct {
 	cm *autopaho.ConnectionManager
-	sync.Mutex
+	syncx.Mutex
 	// subscription route info
 	router paho.Router
 	// record if already have subscription for a topic

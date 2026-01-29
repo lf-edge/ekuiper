@@ -28,6 +28,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
+	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
 )
 
 var (
@@ -45,7 +46,7 @@ var PortbleConf = &PortableConfig{
 // 2. At system start/restart
 // Once created, never deleted until system shutdown
 type PluginIns struct {
-	sync.RWMutex
+	syncx.RWMutex
 	name     string
 	ctrlChan ControlChannel // the same lifecycle as pluginIns, once created keep listening
 	// audit the commands, so that when restarting the plugin, we can replay the commands
@@ -186,7 +187,7 @@ func (i *PluginIns) GetStatus() *PluginStatus {
 // Manager plugin process and control socket
 type pluginInsManager struct {
 	instances map[string]*PluginIns
-	sync.RWMutex
+	syncx.RWMutex
 }
 
 func GetPluginInsManager() *pluginInsManager {

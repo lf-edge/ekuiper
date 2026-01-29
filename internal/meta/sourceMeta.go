@@ -19,7 +19,6 @@ import (
 	"os"
 	"path"
 	"strings"
-	"sync"
 
 	"github.com/lf-edge/ekuiper/v2/internal/binder/io"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
@@ -27,6 +26,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/plugin"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
+	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
 )
 
 type (
@@ -73,7 +73,7 @@ func newUiSource(fi *fileSource, isScan bool, isLookup bool) (*uiSource, error) 
 }
 
 var (
-	gSourcemetaLock = sync.RWMutex{}
+	gSourcemetaLock = syncx.RWMutex{}
 	gSourcemetadata = make(map[string]*uiSource)
 )
 

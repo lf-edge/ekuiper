@@ -29,6 +29,7 @@ import (
 	ort "github.com/yalue/onnxruntime_go"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
 )
 
 var ipManager *interpreterManager
@@ -50,7 +51,7 @@ func init() {
 type interpreterManager struct {
 	once       sync.Once
 	envInitErr error
-	sync.Mutex
+	syncx.Mutex
 	registry map[string]*InterPreter
 	path     string
 }

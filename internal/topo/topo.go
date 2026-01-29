@@ -39,6 +39,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
+	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
@@ -61,7 +62,7 @@ type Topo struct {
 	store        api.Store
 	coordinator  *checkpoint.Coordinator
 	topo         *def.PrintableTopo
-	mu           sync.Mutex
+	mu           syncx.Mutex
 	hasOpened    atomic.Bool
 	sinkSchema   map[string]*ast.JsonStreamField
 

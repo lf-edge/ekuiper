@@ -17,15 +17,15 @@ package client
 import (
 	"database/sql"
 	"fmt"
-	"sync"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
+	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
 )
 
 type SQLConnection struct {
-	sync.RWMutex
+	syncx.RWMutex
 	url    string
 	db     *sql.DB
 	id     string

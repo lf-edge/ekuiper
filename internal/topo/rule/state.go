@@ -24,7 +24,6 @@ import (
 	"math/rand/v2"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
@@ -39,6 +38,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
+	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
@@ -75,7 +75,7 @@ var StateName = map[RunState]string{
 // Created when loading from DB or creating. Deleted when Rule deleting
 // May be accessed by multiple go routines, receiving concurrent request to change the RunState
 type State struct {
-	sync.RWMutex
+	syncx.RWMutex
 	// Nearly constant, only change when update the Rule
 	// It is used to construct topo
 	Rule          *def.Rule

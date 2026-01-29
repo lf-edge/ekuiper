@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"path/filepath"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
@@ -31,6 +30,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/message"
 	"github.com/lf-edge/ekuiper/v2/pkg/model"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
+	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
@@ -54,7 +54,7 @@ type sinkConf struct {
 type fileSink struct {
 	c *sinkConf
 
-	mux      sync.Mutex
+	mux      syncx.Mutex
 	fws      map[string]*fileWriter
 	rollHook modules.RollHook
 	headers  string

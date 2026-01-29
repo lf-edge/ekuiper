@@ -19,10 +19,10 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"sync"
 
 	"github.com/bwmarrin/snowflake"
 
+	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
@@ -32,7 +32,7 @@ var (
 )
 
 type StaticConf struct {
-	sync.RWMutex
+	syncx.RWMutex
 	props map[string]string
 }
 

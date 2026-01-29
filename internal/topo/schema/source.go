@@ -16,15 +16,15 @@ package schema
 
 import (
 	"fmt"
-	"sync"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
+	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
 )
 
 type SharedLayer struct {
-	sync.RWMutex
+	syncx.RWMutex
 	schema map[string]*ast.JsonStreamField
 	// ruleID -> schema
 	// Save the schemainfo for each rule only to use when need to attach schema when the rule is starting.

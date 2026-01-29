@@ -17,8 +17,6 @@
 package tracer
 
 import (
-	"sync"
-
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
@@ -27,6 +25,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
 )
 
 const (
@@ -40,7 +39,7 @@ func init() {
 }
 
 type GlobalTracerManager struct {
-	sync.RWMutex
+	syncx.RWMutex
 	Init                 bool
 	ServiceName          string
 	EnableRemoteEndpoint bool

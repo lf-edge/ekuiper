@@ -358,7 +358,9 @@ func doPrintFieldTypeForJson(ft FieldType) (result string, isLiteral bool) {
 
 func CheckSchemaIndex(schema map[string]*JsonStreamField) bool {
 	for _, field := range schema {
-		return field != nil && field.HasIndex
+		if field != nil {
+			return field.HasIndex
+		}
 	}
 	return false
 }

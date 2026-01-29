@@ -17,7 +17,6 @@ package topo
 import (
 	"context"
 	"fmt"
-	"sync"
 	"sync/atomic"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
@@ -32,6 +31,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/topo/state"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
+	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
 )
 
 // SrcSubTopo Implements node.SourceNode
@@ -48,7 +48,7 @@ type SrcSubTopo struct {
 	schemaLayer *schema.SharedLayer
 	// runtime state
 	// Ref state, affect the pool. Update when rule created or stopped
-	sync.RWMutex
+	syncx.RWMutex
 	refRules map[string]chan<- error // map[ruleId]errCh, notify the rule for errors
 	// Runtime state, affect the running loop. Update when any rule opened or all rules stopped
 	opened           atomic.Bool
@@ -198,20 +198,14 @@ func (s *SrcSubTopo) StoreSchema(ruleID, dataSource string, schema map[string]*a
 
 func (s *SrcSubTopo) Close(ctx api.StreamContext, ruleId string, runId int) {
 	s.Lock()
-	defer s.Unlock()
+	requiresCleanup := false
 	if ch, ok := s.refRules[ruleId]; ok {
 		isStopped := ch != nil
 		// Only do clean up when rule is deleted instead of updated
 		if isStopped {
 			delete(s.refRules, ruleId)
 			if len(s.refRules) == 0 {
-				if s.cancel != nil {
-					s.cancel()
-				}
-				if ss, ok := s.source.(*SrcSubTopo); ok {
-					ss.Close(ctx, "$$subtopo_"+s.name, runId)
-				}
-				RemoveSubTopo(s.name)
+				requiresCleanup = true
 			}
 			ctx.GetLogger().Infof("Sub topo %s dereference %s with %d ref", s.name, ctx.GetRuleId(), len(s.refRules))
 		}
@@ -228,7 +222,12 @@ func (s *SrcSubTopo) Close(ctx api.StreamContext, ruleId string, runId int) {
 			}
 		}
 	}
-	_ = s.RemoveOutput(fmt.Sprintf("%s.%d", ruleId, runId))
+	// Unlock before calling CloseSubTopo to avoid deadlock as CloseSubTopo will lock s again
+	s.Unlock()
+
+	if requiresCleanup {
+		CloseSubTopo(ctx, s, runId)
+	}
 }
 
 // RemoveMetrics is called when the rule is deleted
