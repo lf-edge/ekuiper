@@ -221,6 +221,8 @@ func (m *GlobalServerManager) AddEndpointConnection(endpoint string, c *websocke
 }
 
 func (m *GlobalServerManager) FetchInstanceID() int {
+	m.Lock()
+	defer m.Unlock()
 	m.instanceID++
 	return m.instanceID
 }

@@ -15,8 +15,10 @@
 package httpserver
 
 import (
+	"context"
 	"fmt"
 	"net/http"
+	"sync"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
@@ -27,6 +29,11 @@ import (
 const (
 	SseTopicPrefix = "$$sse/"
 )
+
+type sseEndpointContext struct {
+	wg    *sync.WaitGroup
+	conns map[int64]context.CancelFunc
+}
 
 func recvSseTopic(endpoint string) string {
 	return fmt.Sprintf("%s/server/recv/%s", SseTopicPrefix, endpoint)
@@ -41,7 +48,11 @@ func RegisterSSEEndpoint(ctx api.StreamContext, endpoint string) (string, string
 }
 
 func UnRegisterSSEEndpoint(endpoint string) {
-	manager.UnRegisterSSEEndpoint(endpoint)
+	sctx := manager.UnRegisterSSEEndpoint(endpoint)
+	if sctx != nil {
+		// wait all connections to close
+		sctx.wg.Wait()
+	}
 }
 
 func (m *GlobalServerManager) RegisterSSEEndpoint(ctx api.StreamContext, endpoint string) (string, string, error) {
@@ -65,17 +76,29 @@ func (m *GlobalServerManager) RegisterSSEEndpoint(ctx api.StreamContext, endpoin
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		flusher.Flush()
 
+		// Create a cancel context for this specific connection
+		connCtx, cancel := context.WithCancel(r.Context())
+		connID := int64(m.FetchInstanceID())
+		wg, ok := m.AddSSEConnection(endpoint, connID, cancel)
+		if !ok {
+			return
+		}
+		defer func() {
+			m.CloseSSEConnection(endpoint, connID)
+			wg.Done()
+		}()
+
 		// Create a subscription to the send topic
 		// The sourceID must be unique for each connection to ensure all clients receive the message
-		sourceID := fmt.Sprintf("sse/send/%v", m.FetchInstanceID())
+		sourceID := fmt.Sprintf("sse/send/%v", connID)
 		ch := pubsub.CreateSub(sTopic, nil, sourceID, 1024)
 		defer pubsub.CloseSourceConsumerChannel(sTopic, sourceID)
 
 		conf.Log.Infof("sse client connected to %s", endpoint)
-		notify := r.Context().Done()
+
 		for {
 			select {
-			case <-notify:
+			case <-connCtx.Done():
 				conf.Log.Infof("sse client disconnected from %s", endpoint)
 				return
 			case d, ok := <-ch:
@@ -93,8 +116,15 @@ func (m *GlobalServerManager) RegisterSSEEndpoint(ctx api.StreamContext, endpoin
 		}
 	}
 
+	m.sseEndpoint[endpoint] = &sseEndpointContext{
+		wg:    &sync.WaitGroup{},
+		conns: make(map[int64]context.CancelFunc),
+	}
 	m.router.HandleFunc(endpoint, func(w http.ResponseWriter, r *http.Request) {
-		if h, ok := m.routes[endpoint]; ok {
+		m.RLock()
+		h, ok := m.routes[endpoint]
+		m.RUnlock()
+		if ok {
 			h(w, r)
 		} else {
 			w.WriteHeader(http.StatusNotFound)
@@ -105,12 +135,44 @@ func (m *GlobalServerManager) RegisterSSEEndpoint(ctx api.StreamContext, endpoin
 	return rTopic, sTopic, nil
 }
 
-func (m *GlobalServerManager) UnRegisterSSEEndpoint(endpoint string) {
+func (m *GlobalServerManager) AddSSEConnection(endpoint string, connID int64, cancel context.CancelFunc) (*sync.WaitGroup, bool) {
+	m.Lock()
+	defer m.Unlock()
+	sctx, ok := m.sseEndpoint[endpoint]
+	if !ok {
+		return nil, false
+	}
+	sctx.conns[connID] = cancel
+	sctx.wg.Add(1)
+	return sctx.wg, true
+}
+
+func (m *GlobalServerManager) CloseSSEConnection(endpoint string, connID int64) {
+	m.Lock()
+	defer m.Unlock()
+	sctx, ok := m.sseEndpoint[endpoint]
+	if !ok {
+		return
+	}
+	delete(sctx.conns, connID)
+}
+
+func (m *GlobalServerManager) UnRegisterSSEEndpoint(endpoint string) *sseEndpointContext {
 	conf.Log.Infof("sse endpoint %v unregister", endpoint)
 	pubsub.RemovePub(recvSseTopic(endpoint))
-	pubsub.RemovePub(sendSseTopic(endpoint))
 	m.Lock()
 	defer m.Unlock()
 
+	sctx, ok := m.sseEndpoint[endpoint]
+	if !ok {
+		delete(m.routes, endpoint)
+		return nil
+	}
+	// Cancel all active connections
+	for _, cancel := range sctx.conns {
+		cancel()
+	}
+	delete(m.sseEndpoint, endpoint)
 	delete(m.routes, endpoint)
+	return sctx
 }
