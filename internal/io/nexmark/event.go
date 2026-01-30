@@ -18,7 +18,8 @@ import (
 	"fmt"
 	"math/rand"
 	"strings"
-	"sync"
+
+	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
 )
 
 var (
@@ -30,7 +31,7 @@ var (
 	PersonIDs       []uint64
 	AuctionIDs      []uint64
 	categoriesCount int
-	mu              sync.RWMutex
+	mu              syncx.RWMutex
 )
 
 func init() {
