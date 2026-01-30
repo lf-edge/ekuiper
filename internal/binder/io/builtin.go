@@ -27,6 +27,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/io/nexmark"
 	"github.com/lf-edge/ekuiper/v2/internal/io/simulator"
 	"github.com/lf-edge/ekuiper/v2/internal/io/sink"
+	"github.com/lf-edge/ekuiper/v2/internal/io/sse"
 	"github.com/lf-edge/ekuiper/v2/internal/io/websocket"
 	plugin2 "github.com/lf-edge/ekuiper/v2/internal/plugin"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
@@ -53,6 +54,7 @@ func init() {
 	modules.RegisterSink("neuron", neuron.GetSink)
 	modules.RegisterSink("file", file.GetSink)
 	modules.RegisterSink("websocket", func() api.Sink { return websocket.GetSink() })
+	modules.RegisterSink("sse", func() api.Sink { return sse.GetSink() })
 
 	modules.RegisterLookupSource("memory", memory.GetLookupSource)
 	modules.RegisterLookupSource("httppull", http.GetLookUpSource)
@@ -62,6 +64,7 @@ func init() {
 	modules.RegisterConnection("nng", nng.CreateConnection)
 	modules.RegisterConnection("httppush", httpserver.CreateConnection)
 	modules.RegisterConnection("websocket", httpserver.CreateWebsocketConnection)
+	modules.RegisterConnection("sse", httpserver.CreateSSEConnection)
 }
 
 type Manager struct{}

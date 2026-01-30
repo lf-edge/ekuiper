@@ -48,7 +48,7 @@ func genTrialRule(rd *RunDef, sinkProps map[string]interface{}) *def.Rule {
 	rt := def.GetDefaultRule(id, rd.Sql)
 	rt.Actions = []map[string]interface{}{
 		{
-			"websocket": sinkProps,
+			"sse": sinkProps,
 		},
 	}
 	// Let trial rule always send out error to show
@@ -58,13 +58,13 @@ func genTrialRule(rd *RunDef, sinkProps map[string]interface{}) *def.Rule {
 
 func create(def *RunDef) (*topo.Topo, error) {
 	endpoint := "/test/" + def.Id
-	def.endpoint = fmt.Sprintf("$$ws/%s", endpoint)
+	def.endpoint = fmt.Sprintf("$$sse/%s", endpoint)
 	sinkProps := map[string]any{
-		"path":       endpoint,
+		"endpoint":   endpoint,
 		"sendError":  true,
 		"datasource": endpoint,
 	}
-	cw, err := connection.FetchConnection(context.Background(), def.endpoint, "websocket", sinkProps, nil)
+	cw, err := connection.FetchConnection(context.Background(), def.endpoint, "sse", sinkProps, nil)
 	if err != nil {
 		return nil, err
 	}
