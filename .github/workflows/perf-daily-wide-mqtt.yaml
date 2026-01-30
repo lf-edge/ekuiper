@@ -1,8 +1,11 @@
 name: Perf Daily Wide MQTT
 
 on:
-  pull_request: {}
   workflow_dispatch: {}
+
+# Explicitly scope GITHUB_TOKEN permissions (principle of least privilege).
+permissions:
+  contents: read
 
 concurrency:
   group: ${{ github.workflow }}
