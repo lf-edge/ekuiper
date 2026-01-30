@@ -149,9 +149,11 @@ func TestSourceConnectorCompare(t *testing.T, r api.Source, props map[string]any
 				}
 			}()
 		case api.BytesSource:
-			err = ss.Subscribe(ctx, ingestBytes, ingestErr)
+			err := ss.Subscribe(ctx, ingestBytes, ingestErr)
+			assert.NoError(t, err)
 		case api.TupleSource:
-			err = ss.Subscribe(ctx, ingestTuples, ingestErr)
+			err := ss.Subscribe(ctx, ingestTuples, ingestErr)
+			assert.NoError(t, err)
 		default:
 			panic("wrong source type")
 		}

@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"math/rand"
 	"strings"
+	"sync"
 )
 
 var (
@@ -29,6 +30,7 @@ var (
 	PersonIDs       []uint64
 	AuctionIDs      []uint64
 	categoriesCount int
+	mu              sync.RWMutex
 )
 
 func init() {
@@ -68,11 +70,15 @@ func (p Person) ToMap() map[string]interface{} {
 
 func genPersonID(r *rand.Rand) uint64 {
 	id := uint64(r.Int())
+	mu.Lock()
+	defer mu.Unlock()
 	PersonIDs = append(PersonIDs, id)
 	return id
 }
 
 func pickPersonID(r *rand.Rand) uint64 {
+	mu.RLock()
+	defer mu.RUnlock()
 	return PersonIDs[r.Int()%len(PersonIDs)]
 }
 
@@ -152,11 +158,15 @@ func NewAuction(eventID int64, time uint64) Auction {
 
 func genAuctionID(r *rand.Rand) uint64 {
 	id := uint64(r.Int())
+	mu.Lock()
+	defer mu.Unlock()
 	AuctionIDs = append(AuctionIDs, id)
 	return id
 }
 
 func pickAuctionID(r *rand.Rand) uint64 {
+	mu.RLock()
+	defer mu.RUnlock()
 	return AuctionIDs[r.Int()%len(AuctionIDs)]
 }
 
