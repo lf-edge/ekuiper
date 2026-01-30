@@ -14,7 +14,9 @@
 
 package store
 
-import "sync"
+import (
+	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
+)
 
 type IndexField struct {
 	IndexFieldName           string      `json:"indexField"`
@@ -25,7 +27,7 @@ type IndexField struct {
 
 type IndexFieldStoreWrap struct {
 	// use mutex to modify value in future
-	sync.RWMutex
+	syncx.RWMutex
 	store *IndexFieldStore
 }
 

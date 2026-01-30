@@ -2,11 +2,11 @@ package machine
 
 import (
 	"fmt"
-	"sync"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
+	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
@@ -40,7 +40,7 @@ var StateName = map[RunState]string{
 }
 
 type StateMachine struct {
-	sync.RWMutex
+	syncx.RWMutex
 	currentState RunState
 	actionQ      []ActionSignal
 	// Metric RunState

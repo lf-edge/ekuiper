@@ -31,10 +31,11 @@ import (
 	topoContext "github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/model"
+	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
 )
 
 type GlobalServerManager struct {
-	sync.RWMutex
+	syncx.RWMutex
 	instanceID        int
 	endpoint          map[string]string
 	server            *http.Server

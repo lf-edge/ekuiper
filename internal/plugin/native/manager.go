@@ -29,7 +29,6 @@ import (
 	"plugin"
 	"regexp"
 	"strings"
-	"sync"
 	"time"
 	"unicode"
 
@@ -45,6 +44,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	"github.com/lf-edge/ekuiper/v2/pkg/kv"
+	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
 )
 
 // isSafeArchiveEntry checks if the entry name is safe for extraction
@@ -85,7 +85,7 @@ const DELETED = "$deleted"
 
 // Manager is appended only because plugin cannot delete or reload. To delete a plugin, restart the server to reindex
 type Manager struct {
-	sync.RWMutex
+	syncx.RWMutex
 	// 3 maps for source/sink/function. In each map, key is the plugin name, value is the version
 	plugins []map[string]string
 	// A map from function name to its plugin file name. It is constructed during initialization by reading kv info. All functions must have at least an entry, even the function resizes in a one function plugin.

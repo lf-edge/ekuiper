@@ -16,7 +16,6 @@ package topo
 
 import (
 	"fmt"
-	"sync"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
@@ -24,11 +23,12 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/schema"
+	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
 )
 
 var (
 	subTopoPool = make(map[string]*SrcSubTopo)
-	lock        sync.Mutex
+	lock        syncx.Mutex
 )
 
 func GetOrCreateSubTopo(ctx api.StreamContext, name string, isSliceMode bool) (*SrcSubTopo, bool) {

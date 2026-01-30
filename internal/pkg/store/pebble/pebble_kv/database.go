@@ -18,18 +18,18 @@ import (
 	"fmt"
 	"os"
 	"path"
-	"sync"
 
 	"github.com/cockroachdb/pebble"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf/logger"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store/definition"
+	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
 )
 
 type KVDatabase struct {
 	db   *pebble.DB
 	Path string
-	mu   sync.Mutex
+	mu   syncx.Mutex
 }
 
 func NewPebbleDatabase(c definition.Config, name string) (definition.Database, error) {
@@ -51,7 +51,7 @@ func NewPebbleDatabase(c definition.Config, name string) (definition.Database, e
 	return &KVDatabase{
 		db:   nil,
 		Path: dbPath,
-		mu:   sync.Mutex{},
+		mu:   syncx.Mutex{},
 	}, nil
 }
 

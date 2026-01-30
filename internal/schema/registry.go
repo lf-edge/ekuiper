@@ -22,7 +22,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"sync"
 
 	"github.com/google/uuid"
 
@@ -33,6 +32,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/kv"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
+	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
 )
 
 // Initialize in the server startup
@@ -46,7 +46,7 @@ var (
 // It stores the schema ids and the ref to its file content in memory
 // The schema definition is stored in the file system and will only be loaded once used
 type Registry struct {
-	sync.RWMutex
+	syncx.RWMutex
 	// The map of schema files for all types
 	schemas map[string]map[string]*modules.Files
 }

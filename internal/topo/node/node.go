@@ -33,6 +33,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
+	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
 )
 
 type defaultNode struct {
@@ -43,7 +44,7 @@ type defaultNode struct {
 	ctx         api.StreamContext
 	ctrlCh      chan<- error
 	qos         def.Qos
-	outputMu    sync.RWMutex
+	outputMu    syncx.RWMutex
 	outputs     map[string]chan any
 	opsWg       *sync.WaitGroup
 	// tracing state

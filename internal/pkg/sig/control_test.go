@@ -25,6 +25,8 @@ import (
 	"github.com/mochi-mqtt/server/v2/hooks/auth"
 	"github.com/mochi-mqtt/server/v2/listeners"
 	"github.com/stretchr/testify/require"
+
+	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
 )
 
 // When initialize the instance, broker is not started. Start later
@@ -35,7 +37,7 @@ func TestInstances(ta *testing.T) {
 		server *mqtt.Server
 		tcp    *listeners.TCP
 		cli    paho.Client
-		lock   sync.Mutex
+		lock   syncx.Mutex
 	)
 
 	setupBroker := func() {

@@ -22,6 +22,8 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/suite"
+
+	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
 )
 
 type RuleStateTestSuite struct {
@@ -504,7 +506,7 @@ func (s *RuleStateTestSuite) TestMulShared() {
 		wg := sync.WaitGroup{}
 		wg.Add(6)
 		final := 0
-		var mu sync.Mutex
+		var mu syncx.Mutex
 		go func() {
 			defer wg.Done()
 			fmt.Println("start 1")

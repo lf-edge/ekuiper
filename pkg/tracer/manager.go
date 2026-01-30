@@ -21,7 +21,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"sync"
 	"time"
 
 	"github.com/pingcap/failpoint"
@@ -31,6 +30,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
+	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
 )
 
 type SpanExporter struct {
@@ -104,7 +104,7 @@ type LocalSpanStorage interface {
 }
 
 type LocalSpanMemoryStorage struct {
-	sync.RWMutex
+	syncx.RWMutex
 	queue *Queue
 	// traceid -> spanid -> span
 	m map[string]map[string]*LocalSpan

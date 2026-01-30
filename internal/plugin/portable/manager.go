@@ -27,7 +27,6 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
-	"sync"
 
 	"github.com/pingcap/failpoint"
 
@@ -42,6 +41,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 	"github.com/lf-edge/ekuiper/v2/pkg/kv"
+	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
 )
 
 var (
@@ -77,7 +77,7 @@ func InitManager() (*Manager, error) {
 		return nil, fmt.Errorf("cannot find data folder: %s", err)
 	}
 	reg := &registry{
-		RWMutex:   sync.RWMutex{},
+		RWMutex:   syncx.RWMutex{},
 		plugins:   make(map[string]*PluginInfo),
 		sources:   make(map[string]string),
 		sinks:     make(map[string]string),
@@ -117,7 +117,7 @@ func InitManager() (*Manager, error) {
 
 func MockManager(plugins map[string]*PluginInfo) (*Manager, error) {
 	reg := &registry{
-		RWMutex:   sync.RWMutex{},
+		RWMutex:   syncx.RWMutex{},
 		plugins:   make(map[string]*PluginInfo),
 		sources:   make(map[string]string),
 		sinks:     make(map[string]string),

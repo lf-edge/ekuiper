@@ -32,6 +32,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/transform"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
 )
 
 const (
@@ -49,7 +50,7 @@ const (
 type TraceStrategy int
 
 type TraceStrategyWrapper struct {
-	sync.RWMutex
+	syncx.RWMutex
 	Strategy TraceStrategy
 }
 

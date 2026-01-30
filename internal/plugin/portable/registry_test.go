@@ -21,11 +21,12 @@ import (
 
 	"github.com/lf-edge/ekuiper/v2/internal/plugin"
 	"github.com/lf-edge/ekuiper/v2/internal/plugin/portable/runtime"
+	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
 )
 
 func TestConcurrent(t *testing.T) {
 	r := &registry{
-		RWMutex:   sync.RWMutex{},
+		RWMutex:   syncx.RWMutex{},
 		plugins:   make(map[string]*PluginInfo),
 		sources:   make(map[string]string),
 		sinks:     make(map[string]string),

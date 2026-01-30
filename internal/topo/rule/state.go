@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
@@ -33,6 +32,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
+	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
 )
 
 // State control the Rule RunState
@@ -40,7 +40,7 @@ import (
 // May be accessed by multiple go routines, receiving concurrent request to change the RunState
 type State struct {
 	// A singleton for state, create at new and never change
-	ruleLock sync.RWMutex
+	ruleLock syncx.RWMutex
 	// Nearly constant, only change when update the Rule
 	// It is used to construct topo
 	Rule          *def.Rule

@@ -18,11 +18,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"sync"
 	"time"
 
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/v2/pkg/kv"
+	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
 )
 
 const (
@@ -67,7 +67,7 @@ func InitManager() error {
 }
 
 type AsyncManager struct {
-	sync.RWMutex
+	syncx.RWMutex
 	asyncDB    kvInterface
 	taskCancel map[string]context.CancelFunc
 }

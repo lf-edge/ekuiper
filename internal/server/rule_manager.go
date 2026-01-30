@@ -21,7 +21,6 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
@@ -36,6 +35,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 	"github.com/lf-edge/ekuiper/v2/pkg/replace"
+	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
 )
 
 // Rule storage includes kv and in memory registry
@@ -45,7 +45,7 @@ import (
 var registry *RuleRegistry
 
 type RuleRegistry struct {
-	sync.RWMutex
+	syncx.RWMutex
 	internal map[string]*rule.State
 }
 

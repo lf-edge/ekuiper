@@ -18,7 +18,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
-	"sync"
 
 	"github.com/lf-edge/ekuiper/v2/internal/binder/io"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
@@ -29,10 +28,11 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	"github.com/lf-edge/ekuiper/v2/pkg/kv"
 	"github.com/lf-edge/ekuiper/v2/pkg/replace"
+	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
 )
 
 type configManager struct {
-	lock                     sync.RWMutex
+	lock                     syncx.RWMutex
 	cfgOperators             map[string]conf.ConfigOperator
 	sourceConfigStatusDb     kv.KeyValue
 	sinkConfigStatusDb       kv.KeyValue
@@ -46,7 +46,7 @@ var ConfigManager *configManager
 
 func InitYamlConfigManager() {
 	ConfigManager = &configManager{
-		lock:         sync.RWMutex{},
+		lock:         syncx.RWMutex{},
 		cfgOperators: make(map[string]conf.ConfigOperator),
 	}
 	ConfigManager.sourceConfigStatusDb, _ = store.GetKV("sourceConfigStatus")

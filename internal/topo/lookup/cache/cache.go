@@ -16,10 +16,10 @@ package cache
 
 import (
 	"context"
-	"sync"
 	"time"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
@@ -33,7 +33,7 @@ type Cache struct {
 	cacheMissingKey bool
 	cancel          context.CancelFunc
 	items           map[string]*item
-	sync.RWMutex
+	syncx.RWMutex
 }
 
 func NewCache(expireTime time.Duration, cacheMissingKey bool) *Cache {

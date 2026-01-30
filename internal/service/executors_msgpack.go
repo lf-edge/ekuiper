@@ -21,10 +21,11 @@ import (
 	"net"
 	"net/rpc"
 	"reflect"
-	"sync"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/ugorji/go/codec"
+
+	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
 )
 
 func init() {
@@ -45,7 +46,7 @@ type msgpackExecutor struct {
 	descriptor interfaceDescriptor
 	*interfaceOpt
 
-	sync.Mutex
+	syncx.Mutex
 	connected bool
 	conn      *rpc.Client
 }
