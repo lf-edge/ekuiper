@@ -220,6 +220,10 @@ tools/lint/bin/golangci-lint:
 tools/failpoint/bin/failpoint-ctl:
 	GOBIN=$(shell pwd)/tools/failpoint/bin $(GO) install github.com/pingcap/failpoint/failpoint-ctl@2eaa328
 
+.PHONY: semgrep
+semgrep:
+	docker run --rm -v "$$(pwd):/src" returntocorp/semgrep semgrep scan --config=.semgrep --error
+
 failpoint-enable: tools/failpoint/bin/failpoint-ctl
 # Converting gofail failpoints...
 	@$(FAILPOINT_ENABLE)
