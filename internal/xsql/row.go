@@ -121,6 +121,10 @@ func (d *AffiliateRow) AppendAlias(key string, value interface{}) bool {
 func (d *AffiliateRow) AliasValue(key string) (interface{}, bool) {
 	d.lock.RLock()
 	defer d.lock.RUnlock()
+	return d.aliasValue(key)
+}
+
+func (d *AffiliateRow) aliasValue(key string) (interface{}, bool) {
 	if d.AliasMap == nil {
 		return nil, false
 	}
@@ -132,7 +136,7 @@ func (d *AffiliateRow) Value(key, table string) (interface{}, bool) {
 	d.lock.RLock()
 	defer d.lock.RUnlock()
 	if table == "" {
-		r, ok := d.AliasValue(key)
+		r, ok := d.aliasValue(key)
 		if ok {
 			return r, ok
 		}
