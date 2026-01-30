@@ -1,0 +1,233 @@
+name: Perf Daily Wide MQTT
+
+on:
+  pull_request: {}
+  workflow_dispatch: {}
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  perf-daily:
+    name: Wide MQTT Perf
+    runs-on: ubuntu-latest
+    services:
+      emqx:
+        image: emqx/emqx:5.6.1
+        ports:
+          - 1883:1883
+        env:
+          EMQX_ALLOW_ANONYMOUS: "true"
+          EMQX_LISTENER__TCP__DEFAULT__BIND: "0.0.0.0:1883"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Build eKuiper (kuiperd)
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y pkg-config libczmq-dev
+          make build_without_edgex
+
+          VERSION="$(git describe --tags --always --match 'v[0-9]*.[0-9]*.[0-9]*' | sed 's/^v//g')"
+          OS="$(go env GOOS)"
+          ARCH="$(go env GOARCH)"
+          PKG_DIR="_build/kuiper-${VERSION}-${OS}-${ARCH}"
+          echo "PKG_DIR=${PKG_DIR}" >> "$GITHUB_ENV"
+
+          test -x "${PKG_DIR}/bin/kuiperd"
+
+      - name: Prepare perf base dir (config/data/log)
+        run: |
+          set -euo pipefail
+          PERF_BASE="tmp/perf_daily_ci/kuiper_base"
+          rm -rf "${PERF_BASE}"
+          mkdir -p "${PERF_BASE}"
+          mkdir -p "${PERF_BASE}/etc" "${PERF_BASE}/data" "${PERF_BASE}/log"
+          mkdir -p "${PERF_BASE}/plugins/sources" \
+            "${PERF_BASE}/plugins/sinks" \
+            "${PERF_BASE}/plugins/functions" \
+            "${PERF_BASE}/plugins/portable"
+          cp -R etc/* "${PERF_BASE}/etc/"
+
+          # Enable Prometheus exporter for the perf harness.
+          sed -i 's/^  prometheus: false$/  prometheus: true/' "${PERF_BASE}/etc/kuiper.yaml"
+          sed -i 's/^  prometheusPort: .*$/  prometheusPort: 20499/' "${PERF_BASE}/etc/kuiper.yaml"
+
+      - name: Start eKuiper
+        run: |
+          set -euo pipefail
+          mkdir -p tmp/perf_daily_ci
+          export KuiperBaseKey="$PWD/tmp/perf_daily_ci/kuiper_base"
+          "${PKG_DIR}/bin/kuiperd" > tmp/perf_daily_ci/kuiperd.log 2>&1 &
+          echo $! > tmp/perf_daily_ci/kuiperd.pid
+
+      - name: Wait for eKuiper ready
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 120); do
+            if curl -fsS http://127.0.0.1:9081/ping >/dev/null; then
+              exit 0
+            fi
+            sleep 0.5
+          done
+          echo "eKuiper not ready; dumping debug info" >&2
+          (ss -ltnp || true) >&2
+          (ps -p "$(cat tmp/perf_daily_ci/kuiperd.pid)" -o pid,ppid,etime,command || true) >&2
+          (tail -n 200 tmp/perf_daily_ci/kuiperd.log || true) >&2
+          exit 1
+
+      - name: Cleanup rules (pre case1)
+        run: |
+          set -euo pipefail
+          PYTHONPYCACHEPREFIX=tmp/pycache \
+          python3 test/perf_daily/perf_daily.py \
+            --base-url http://127.0.0.1:9081 \
+            --broker-url tcp://127.0.0.1:1883 \
+            cleanup-rules
+
+      - name: Run perf scenario (explicit columns)
+        env:
+          PERF_OUT_DIR: tmp/perf_daily_ci/out_explicit
+          PERF_DURATION_SECS: "120"
+        run: |
+          set -euo pipefail
+          PYTHONPYCACHEPREFIX=tmp/pycache \
+          python3 test/perf_daily/perf_daily.py \
+            --force \
+            --create-stream \
+            --base-url http://127.0.0.1:9081 \
+            --metrics-url http://127.0.0.1:20499/metrics \
+            --broker-url tcp://127.0.0.1:1883 \
+            --topic /perf/daily \
+            --qos 1 \
+            --columns 15000 \
+            --sql-mode explicit \
+            --pipeline-id perf_daily_pipeline_explicit \
+            --cases 20 \
+            --str-len 10 \
+            --duration-secs "${PERF_DURATION_SECS}" \
+            --rate 50 \
+            --scrape-interval-ms 15000 \
+            --out-dir "${PERF_OUT_DIR}" \
+            run
+
+      - name: Render report (explicit columns)
+        env:
+          PERF_OUT_DIR: tmp/perf_daily_ci/out_explicit
+        run: |
+          set -euo pipefail
+          PYTHONPYCACHEPREFIX=tmp/pycache \
+          python3 test/perf_daily/perf_daily_report.py \
+            --result-json "${PERF_OUT_DIR}/result.json" \
+            --out-html "${PERF_OUT_DIR}/report.html" \
+            --summary-path "${GITHUB_STEP_SUMMARY}" \
+            --title "Perf Daily Wide MQTT - explicit (2m) (${{ github.sha }})"
+
+      - name: Stop eKuiper (after explicit)
+        if: always()
+        run: |
+          set +e
+          if [ -f tmp/perf_daily_ci/kuiperd.pid ]; then
+            kill "$(cat tmp/perf_daily_ci/kuiperd.pid)" 2>/dev/null || true
+          fi
+
+      - name: Start eKuiper (for select *)
+        run: |
+          set -euo pipefail
+          export KuiperBaseKey="$PWD/tmp/perf_daily_ci/kuiper_base"
+          "${PKG_DIR}/bin/kuiperd" > tmp/perf_daily_ci/kuiperd_2.log 2>&1 &
+          echo $! > tmp/perf_daily_ci/kuiperd.pid
+
+      - name: Wait for eKuiper ready (after restart)
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 120); do
+            if curl -fsS http://127.0.0.1:9081/ping >/dev/null; then
+              exit 0
+            fi
+            sleep 0.5
+          done
+          echo "eKuiper not ready after restart; dumping debug info" >&2
+          (ss -ltnp || true) >&2
+          (ps -p "$(cat tmp/perf_daily_ci/kuiperd.pid)" -o pid,ppid,etime,command || true) >&2
+          (tail -n 200 tmp/perf_daily_ci/kuiperd_2.log || true) >&2
+          exit 1
+
+      - name: Cleanup rules (pre case2)
+        run: |
+          set -euo pipefail
+          PYTHONPYCACHEPREFIX=tmp/pycache \
+          python3 test/perf_daily/perf_daily.py \
+            --base-url http://127.0.0.1:9081 \
+            --broker-url tcp://127.0.0.1:1883 \
+            cleanup-rules
+
+      - name: Run perf scenario (select *)
+        env:
+          PERF_OUT_DIR: tmp/perf_daily_ci/out_star
+          PERF_DURATION_SECS: "120"
+        run: |
+          set -euo pipefail
+          PYTHONPYCACHEPREFIX=tmp/pycache \
+          python3 test/perf_daily/perf_daily.py \
+            --force \
+            --base-url http://127.0.0.1:9081 \
+            --metrics-url http://127.0.0.1:20499/metrics \
+            --broker-url tcp://127.0.0.1:1883 \
+            --topic /perf/daily \
+            --qos 1 \
+            --columns 15000 \
+            --sql-mode star \
+            --pipeline-id perf_daily_pipeline_star \
+            --cases 20 \
+            --str-len 10 \
+            --duration-secs "${PERF_DURATION_SECS}" \
+            --rate 50 \
+            --scrape-interval-ms 15000 \
+            --out-dir "${PERF_OUT_DIR}" \
+            run
+
+      - name: Render report (select *)
+        env:
+          PERF_OUT_DIR: tmp/perf_daily_ci/out_star
+        run: |
+          set -euo pipefail
+          PYTHONPYCACHEPREFIX=tmp/pycache \
+          python3 test/perf_daily/perf_daily_report.py \
+            --result-json "${PERF_OUT_DIR}/result.json" \
+            --out-html "${PERF_OUT_DIR}/report.html" \
+            --summary-path "${GITHUB_STEP_SUMMARY}" \
+            --title "Perf Daily Wide MQTT - select * (2m) (${{ github.sha }})"
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: perf-daily-wide-mqtt-${{ github.run_id }}
+          if-no-files-found: ignore
+          path: |
+            tmp/perf_daily_ci/out_explicit/result.json
+            tmp/perf_daily_ci/out_explicit/metrics.openmetrics
+            tmp/perf_daily_ci/out_explicit/report.html
+            tmp/perf_daily_ci/out_star/result.json
+            tmp/perf_daily_ci/out_star/metrics.openmetrics
+            tmp/perf_daily_ci/out_star/report.html
+            tmp/perf_daily_ci/kuiperd.log
+            tmp/perf_daily_ci/kuiperd_2.log
+            tmp/perf_daily_ci/kuiper_base/log
+
+      - name: Stop eKuiper
+        if: always()
+        run: |
+          set +e
+          if [ -f tmp/perf_daily_ci/kuiperd.pid ]; then
+            kill "$(cat tmp/perf_daily_ci/kuiperd.pid)" 2>/dev/null || true
+          fi
