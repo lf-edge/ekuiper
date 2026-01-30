@@ -44,11 +44,23 @@ func sendSseTopic(endpoint string) string {
 }
 
 func RegisterSSEEndpoint(ctx api.StreamContext, endpoint string) (string, string, error) {
-	return manager.RegisterSSEEndpoint(ctx, endpoint)
+	managerLock.RLock()
+	m := manager
+	managerLock.RUnlock()
+	if m == nil {
+		return "", "", fmt.Errorf("http server is not running")
+	}
+	return m.RegisterSSEEndpoint(ctx, endpoint)
 }
 
 func UnRegisterSSEEndpoint(endpoint string) {
-	sctx := manager.UnRegisterSSEEndpoint(endpoint)
+	managerLock.RLock()
+	m := manager
+	managerLock.RUnlock()
+	if m == nil {
+		return
+	}
+	sctx := m.UnRegisterSSEEndpoint(endpoint)
 	if sctx != nil {
 		// wait all connections to close
 		sctx.wg.Wait()
