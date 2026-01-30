@@ -144,17 +144,10 @@ func (s *SrcSubTopo) Open(ctx api.StreamContext, parentErrCh chan<- error) {
 // Close ref rule will run close subtopo
 func (s *SrcSubTopo) Close(ctx api.StreamContext) {
 	s.Lock()
-	defer s.Unlock()
 	isStop, isDestroy := s.removeRef(ctx)
 	if isDestroy { // destroy this subtopo
-		if s.cancel != nil {
-			s.cancel()
-		}
-		subCtx := ctx.(*kctx.DefaultContext).WithRuleId(fmt.Sprintf("$$subtopo_%s", s.name)).WithRun(0)
-		if ss, ok := s.source.(*SrcSubTopo); ok {
-			ss.Close(subCtx)
-		}
-		ctx.GetLogger().Infof("subtopo %s removed", s.name)
+		// The cleanup logic is moved to CloseSubTopo
+		// It will unlock inside CloseSubTopo
 	} else {
 		ctx.GetLogger().Infof("subtopo %s update schema for rule %s change", s.name, ctx.GetRuleId())
 		err := s.schemaLayer.Detach(ctx, isStop)
@@ -169,6 +162,12 @@ func (s *SrcSubTopo) Close(ctx api.StreamContext) {
 		}
 	}
 	_ = s.RemoveOutput(fmt.Sprintf("%s.%d", ctx.GetRuleId(), ctx.GetRunId()))
+	// Unlock before calling CloseSubTopo to avoid deadlock as CloseSubTopo will lock s again
+	s.Unlock()
+
+	if isDestroy {
+		CloseSubTopo(ctx, s, ctx.GetRunId())
+	}
 }
 
 // IsSliceMode this is a constant set when creating new subtopo
@@ -222,7 +221,6 @@ func (s *SrcSubTopo) removeRef(ctx api.StreamContext) (ruleClose bool, destroy b
 			ctx.GetLogger().Infof("subtopo %s for rule %s closed, count: %d", s.name, ctx.GetRuleId(), len(s.refRules))
 		}
 		if len(s.refRules) == 0 {
-			RemoveSubTopo(s.name)
 			destroy = true
 			s.opened.Store(CloseState)
 			ctx.GetLogger().Infof("subtopo %s closed", s.name)

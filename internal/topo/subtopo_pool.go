@@ -21,6 +21,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
+	kctx "github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/schema"
 	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
@@ -57,6 +58,37 @@ func RemoveSubTopo(name string) {
 	defer lock.Unlock()
 	delete(subTopoPool, name)
 	conf.Log.Infof("Delete SubTopo %s", name)
+}
+
+// CloseSubTopo closes the subtopo safely. It locks the pool first to avoid deadlock.
+func CloseSubTopo(ctx api.StreamContext, s *SrcSubTopo, runId int) {
+	lock.Lock()
+
+	s.Lock()
+	// Check again if it is empty because it may be added again during unlock
+	if len(s.refRules) == 0 {
+		if s.cancel != nil {
+			s.cancel()
+		}
+		var ss *SrcSubTopo
+		if sourceSub, ok := s.source.(*SrcSubTopo); ok {
+			ss = sourceSub
+		}
+		delete(subTopoPool, s.name)
+		conf.Log.Infof("Delete SubTopo %s", s.name)
+		// Unlock before recursive call to avoid deadlock
+		s.Unlock()
+		lock.Unlock()
+
+		if ss != nil {
+			subCtx := ctx.(*kctx.DefaultContext).WithRuleId(fmt.Sprintf("$$subtopo_%s", s.name)).WithRun(0)
+			ss.Close(subCtx)
+		}
+	} else {
+		// Unlock if no deletion
+		s.Unlock()
+		lock.Unlock()
+	}
 }
 
 func (s *SrcSubTopo) AddSrc(src node.DataSourceNode) *SrcSubTopo {
