@@ -6,6 +6,10 @@ on:
   pull_request: 
     branches: [ "master", "main" ]
 
+# Explicitly scope GITHUB_TOKEN permissions (principle of least privilege).
+permissions:
+  contents: read
+
 jobs:
   semgrep:
     name: Scan
