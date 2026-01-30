@@ -16,13 +16,13 @@ package sig
 
 import (
 	"context"
-	"sync"
 	"time"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
+	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
 )
 
 type MqttControl struct {
@@ -31,7 +31,7 @@ type MqttControl struct {
 	interval time.Duration
 	topic    string
 	// signals
-	lock sync.RWMutex
+	lock syncx.RWMutex
 	sigs map[string]struct{}
 	// func to stop
 	cancel context.CancelFunc
@@ -55,7 +55,7 @@ func NewMQTTControl(server string, cid string) *MqttControl {
 	mc := &MqttControl{
 		sigs:     make(map[string]struct{}),
 		interval: time.Second,
-		lock:     sync.RWMutex{},
+		lock:     syncx.RWMutex{},
 	}
 	// Connect to MQTT
 	opts := mqtt.NewClientOptions().AddBroker(server).SetProtocolVersion(4).SetClientID(cid).SetAutoReconnect(true).SetConnectRetry(true).SetConnectRetryInterval(100 * time.Millisecond).SetMaxReconnectInterval(1 * time.Second)

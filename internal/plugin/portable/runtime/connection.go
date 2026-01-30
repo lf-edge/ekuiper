@@ -17,7 +17,6 @@ package runtime
 import (
 	"errors"
 	"fmt"
-	"sync"
 	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
@@ -30,6 +29,7 @@ import (
 	_ "go.nanomsg.org/mangos/v3/transport/ipc"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
 )
 
 // TODO to design timeout strategy
@@ -55,7 +55,7 @@ type ControlChannel interface {
 
 // NanomsgReqChannel shared by symbols
 type NanomsgReqChannel struct {
-	sync.Mutex
+	syncx.Mutex
 	sock mangos.Socket
 }
 
@@ -137,7 +137,7 @@ type DataReqChannel interface {
 }
 
 type NanomsgReqRepChannel struct {
-	sync.Mutex
+	syncx.Mutex
 	sock mangos.Socket
 }
 

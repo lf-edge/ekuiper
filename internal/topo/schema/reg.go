@@ -15,13 +15,12 @@
 package schema
 
 import (
-	"sync"
-
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
+	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
 )
 
 type SchemaStore struct {
-	sync.RWMutex
+	syncx.RWMutex
 	// rule -> datasource -> schema
 	schemaMap map[string]map[string]map[string]*ast.JsonStreamField
 	// rule -> datasource -> schema

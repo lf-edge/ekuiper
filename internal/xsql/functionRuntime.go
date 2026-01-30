@@ -15,19 +15,18 @@
 package xsql
 
 import (
-	"sync"
-
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
 	"github.com/lf-edge/ekuiper/v2/internal/binder/function"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
+	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
 )
 
 // Manage the function plugin instances
 // Each operator has a single instance of this to hold the context
 type funcRuntime struct {
-	sync.Mutex
+	syncx.Mutex
 	regs      []*funcReg
 	parentCtx api.StreamContext
 }

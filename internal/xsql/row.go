@@ -16,13 +16,13 @@ package xsql
 
 import (
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
+	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
 )
 
 // The original message map may be big. Make sure it is immutable so that never make a copy of it.
@@ -103,7 +103,7 @@ type ControlTuple interface {
 
 // AffiliateRow part of other row types do help calculation of newly added cols
 type AffiliateRow struct {
-	lock     sync.RWMutex
+	lock     syncx.RWMutex
 	CalCols  map[string]interface{} // mutable and must be cloned when broadcast
 	AliasMap map[string]interface{}
 }
@@ -325,7 +325,7 @@ type Tuple struct {
 	Props     map[string]string
 
 	AffiliateRow
-	lock      sync.Mutex             // lock for the cachedMap, because it is possible to access by multiple sinks
+	lock      syncx.Mutex            // lock for the cachedMap, because it is possible to access by multiple sinks
 	cachedMap map[string]interface{} // clone of the row and cached for performance
 }
 
@@ -356,7 +356,7 @@ type JoinTuple struct {
 	Ctx    api.StreamContext
 	Tuples []Row // The content is immutable, but the slice may be added or removed
 	AffiliateRow
-	lock      sync.Mutex
+	lock      syncx.Mutex
 	cachedMap map[string]interface{} // clone of the row and cached for performance of toMap
 }
 
@@ -376,7 +376,7 @@ type GroupedTuples struct {
 	Content []Row
 	*WindowRange
 	AffiliateRow
-	lock      sync.Mutex
+	lock      syncx.Mutex
 	cachedMap map[string]interface{} // clone of the row and cached for performance of toMap
 }
 

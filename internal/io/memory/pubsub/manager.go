@@ -16,11 +16,11 @@ package pubsub
 
 import (
 	"regexp"
-	"sync"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
 )
 
 const IdProperty = "topic"
@@ -39,7 +39,7 @@ type subChan struct {
 var (
 	pubTopics = make(map[string]*pubConsumers)
 	subExps   = make(map[string]*subChan)
-	mu        = sync.RWMutex{}
+	mu        = syncx.RWMutex{}
 )
 
 func CreatePub(topic string) {

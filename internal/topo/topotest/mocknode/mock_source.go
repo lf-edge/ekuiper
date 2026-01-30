@@ -16,13 +16,13 @@ package mocknode
 
 import (
 	"fmt"
-	"sync"
 	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
@@ -30,7 +30,7 @@ type MockSource struct {
 	data   []*xsql.Tuple
 	offset int
 	eof    api.EOFIngest
-	sync.RWMutex
+	syncx.RWMutex
 }
 
 const TIMELEAP = 200

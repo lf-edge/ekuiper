@@ -18,11 +18,11 @@ import (
 	"fmt"
 	"path"
 	"strings"
-	"sync"
 
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store/definition"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store/sql"
 	"github.com/lf-edge/ekuiper/v2/pkg/kv"
+	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
 )
 
 type StoreCreator func(conf definition.Config, name string) (definition.StoreBuilder, definition.TsBuilder, error)
@@ -42,7 +42,7 @@ var (
 type stores struct {
 	kv        map[string]kv.KeyValue
 	ts        map[string]kv.Tskv
-	mu        sync.Mutex
+	mu        syncx.Mutex
 	kvBuilder definition.StoreBuilder
 	tsBuilder definition.TsBuilder
 }
@@ -57,7 +57,7 @@ func newStores(c definition.Config, name string) (*stores, error) {
 			return &stores{
 				kv:        make(map[string]kv.KeyValue),
 				ts:        make(map[string]kv.Tskv),
-				mu:        sync.Mutex{},
+				mu:        syncx.Mutex{},
 				kvBuilder: kvBuilder,
 				tsBuilder: tsBuilder,
 			}, nil
@@ -77,7 +77,7 @@ func newExtStateStores(c definition.Config, name string) (*stores, error) {
 			return &stores{
 				kv:        make(map[string]kv.KeyValue),
 				ts:        make(map[string]kv.Tskv),
-				mu:        sync.Mutex{},
+				mu:        syncx.Mutex{},
 				kvBuilder: kvBuilder,
 				tsBuilder: tsBuilder,
 			}, nil

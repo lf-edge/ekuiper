@@ -19,11 +19,11 @@ package tflite
 import (
 	"fmt"
 	"path/filepath"
-	"sync"
 
 	"github.com/mattn/go-tflite"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
 )
 
 var ipManager *interpreterManager
@@ -40,7 +40,7 @@ func init() {
 }
 
 type interpreterManager struct {
-	sync.Mutex
+	syncx.Mutex
 	registry map[string]*tflite.Interpreter
 	path     string
 }

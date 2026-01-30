@@ -16,13 +16,13 @@ package sink
 
 import (
 	"fmt"
-	"sync"
 	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
 	"github.com/lf-edge/ekuiper/v2/internal/topo/collector"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
 )
 
 // NewLogSink log action, no properties now
@@ -37,7 +37,7 @@ func NewLogSink() api.Sink {
 type QueryResult struct {
 	Results   []string
 	LastFetch time.Time
-	Mux       sync.Mutex
+	Mux       syncx.Mutex
 }
 
 var QR = &QueryResult{LastFetch: time.Now()}

@@ -16,7 +16,6 @@ package lookup
 
 import (
 	"fmt"
-	"sync"
 	"sync/atomic"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
@@ -26,6 +25,7 @@ import (
 	kctx "github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	nodeConf "github.com/lf-edge/ekuiper/v2/internal/topo/node/conf"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
+	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
 )
 
 // Table is a lookup table runtime instance. It will run once the table is created.
@@ -38,7 +38,7 @@ type info struct {
 
 var (
 	instances = make(map[string]*info)
-	lock      = &sync.Mutex{}
+	lock      = &syncx.Mutex{}
 )
 
 // Attach called by lookup nodes. Add a count to the info

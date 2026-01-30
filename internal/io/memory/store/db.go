@@ -17,14 +17,14 @@ package store
 import (
 	"context"
 	"fmt"
-	"sync"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/io/memory/pubsub"
+	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
 )
 
 type tableCount struct {
-	sync.RWMutex
+	syncx.RWMutex
 	count int
 	t     *Table
 }
@@ -47,7 +47,7 @@ func (tc *tableCount) Decrease() int {
 }
 
 type database struct {
-	sync.RWMutex
+	syncx.RWMutex
 	tables map[string]*tableCount // topic_key: table
 }
 
@@ -107,7 +107,7 @@ func (db *database) dropTable(topic string, key string) error {
 
 // Table has one writer and multiple reader
 type Table struct {
-	sync.RWMutex
+	syncx.RWMutex
 	topic string
 	key   string
 	// datamap is the overall data indexed by primary key

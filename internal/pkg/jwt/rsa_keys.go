@@ -20,16 +20,16 @@ import (
 	"os"
 	"path"
 	"strings"
-	"sync"
 
 	"github.com/golang-jwt/jwt/v5"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
 )
 
 var (
 	privateKeyRepository = make(map[string]*rsa.PrivateKey)
-	repositoryLock       sync.Mutex
+	repositoryLock       syncx.Mutex
 )
 
 const RSAKeyDir = "mgmt"

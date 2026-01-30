@@ -15,13 +15,12 @@
 package portable
 
 import (
-	"sync"
-
 	"github.com/lf-edge/ekuiper/v2/internal/plugin"
+	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
 )
 
 type registry struct {
-	sync.RWMutex
+	syncx.RWMutex
 	plugins map[string]*PluginInfo
 	// mapping from symbol to plugin. Deduced from plugin set.
 	sources   map[string]string

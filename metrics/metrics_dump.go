@@ -33,6 +33,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
 )
 
 const OpenMetricsEOF = "# EOF\n"
@@ -63,7 +64,7 @@ func StopMetricsManager() {
 var metricsManager = &MetricsDumpManager{}
 
 type MetricsDumpManager struct {
-	sync.Mutex
+	syncx.Mutex
 	enabeld          bool
 	writer           *cronowriter.CronoWriter
 	metricsPath      string

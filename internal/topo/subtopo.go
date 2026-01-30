@@ -17,7 +17,6 @@ package topo
 import (
 	"context"
 	"fmt"
-	"sync"
 	"sync/atomic"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
@@ -32,6 +31,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/topo/state"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
+	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
 )
 
 // SrcSubTopo Implements node.SourceNode
@@ -48,7 +48,7 @@ type SrcSubTopo struct {
 	schemaLayer *schema.SharedLayer
 	// runtime state
 	// Ref state, affect the pool. Update when rule created or stopped
-	sync.RWMutex
+	syncx.RWMutex
 	refRules map[string]map[int]chan<- error // map[ruleId][runId]errCh, notify the rule for errors
 	// Runtime state, affect the running loop. Update when any rule opened or all rules stopped
 	opened           atomic.Int32 // 0 is init, 1 is open, -1 is close

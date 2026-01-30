@@ -3,14 +3,14 @@ package memory
 import (
 	"fmt"
 	"strings"
-	"sync"
 
 	"github.com/lf-edge/ekuiper/v2/pkg/kv"
+	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
 )
 
 type memoryKvStore struct {
 	data map[string]string
-	mu   sync.RWMutex
+	mu   syncx.RWMutex
 }
 
 func NewMemoryKV() kv.KeyValue {

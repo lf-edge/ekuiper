@@ -23,6 +23,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
+	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
 )
 
 type ConnWrapper struct {
@@ -30,7 +31,7 @@ type ConnWrapper struct {
 	initialized bool
 	conn        modules.Connection
 	err         error
-	l           sync.RWMutex
+	l           syncx.RWMutex
 	readCh      chan struct{}
 	detachCh    chan struct{}
 }
