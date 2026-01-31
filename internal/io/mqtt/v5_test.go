@@ -42,8 +42,7 @@ func TestV5SourceSink(t *testing.T) {
 	err := server.AddListener(tcp)
 	require.NoError(t, err)
 	go func() {
-		err = server.Serve()
-		require.NoError(t, err)
+		_ = server.Serve()
 	}()
 	url := "mqtt://127.0.0.1:12883"
 	dataDir, err := conf.GetDataLoc()

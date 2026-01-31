@@ -113,13 +113,14 @@ func TestTime(t *testing.T) {
 		fmt.Println("Error loading location:", err)
 		return
 	}
-	time.Local = location
-
-	fmt.Println(time.UnixMilli(1658218371337).String())
+	// time.Local = location
+	// Use In(location) instead of setting global time.Local to avoid race
+	baseTime := time.UnixMilli(1658218371337).In(location)
+	fmt.Println(baseTime.String())
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 
 	for i, tt := range tests {
-		ae := getAlignedWindowEndTime(time.UnixMilli(1658218371337), tt.interval, tt.unit)
+		ae := getAlignedWindowEndTime(baseTime, tt.interval, tt.unit)
 		if tt.end.UnixMilli() != ae.UnixMilli() {
 			t.Errorf("%d for interval %d. error mismatch:\n  exp=%s(%d)\n  got=%s(%d)\n\n", i, tt.interval, tt.end, tt.end.UnixMilli(), ae, ae.UnixMilli())
 		}

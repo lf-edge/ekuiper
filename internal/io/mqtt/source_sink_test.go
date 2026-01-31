@@ -15,7 +15,6 @@
 package mqtt
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
@@ -43,8 +42,7 @@ func TestSourceSink(t *testing.T) {
 	err := server.AddListener(tcp)
 	require.NoError(t, err)
 	go func() {
-		err = server.Serve()
-		fmt.Println(err)
+		_ = server.Serve()
 	}()
 	url := tcp.Address()
 	dataDir, err := conf.GetDataLoc()

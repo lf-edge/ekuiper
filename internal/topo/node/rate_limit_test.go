@@ -239,6 +239,7 @@ func TestRateLimitMerge(t *testing.T) {
 
 func TestRateLimitCustomMerge(t *testing.T) {
 	schema.InitRegistry()
+	timex.Set(0) // Reset time to avoid flakiness from shared mock clock state
 	testcases := []struct {
 		name        string
 		sendCount   int

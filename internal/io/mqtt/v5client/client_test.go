@@ -39,8 +39,7 @@ func TestV5MultiTopicSubscribe(t *testing.T) {
 	err := server.AddListener(tcp)
 	require.NoError(t, err)
 	go func() {
-		err = server.Serve()
-		require.NoError(t, err)
+		_ = server.Serve()
 	}()
 	defer func() {
 		server.Close()

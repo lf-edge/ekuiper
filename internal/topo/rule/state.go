@@ -69,6 +69,18 @@ func NewState(rule *def.Rule, updateTriggerFunc func(string, bool)) *State {
 	}
 }
 
+func (s *State) GetRule() *def.Rule {
+	s.ruleLock.RLock()
+	defer s.ruleLock.RUnlock()
+	return s.Rule
+}
+
+func (s *State) SetRule(r *def.Rule) {
+	s.ruleLock.Lock()
+	defer s.ruleLock.Unlock()
+	s.Rule = r
+}
+
 // ValidateAndRun tries to set up the rule in an atomic way
 // It is the only way to update the state rule.
 // 1. validate the new rule

@@ -67,6 +67,7 @@ type DefaultContext struct {
 	store    api.Store
 	state    *sync.Map
 	snapshot map[string]interface{}
+	mu       syncx.Mutex
 	// cache
 	tpReg sync.Map
 	jpReg sync.Map
@@ -373,17 +374,24 @@ func (c *DefaultContext) DeleteState(key string) error {
 }
 
 func (c *DefaultContext) Snapshot() error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	c.snapshot = cast.SyncMapToMap(c.state)
 	return nil
 }
 
 func (c *DefaultContext) SaveState(checkpointId int64) error {
 	if c.store != nil {
-		err := c.store.SaveState(checkpointId, c.opId, c.snapshot)
-		if err != nil {
-			return err
-		}
+		c.mu.Lock()
+		snap := c.snapshot
 		c.snapshot = nil
+		c.mu.Unlock()
+		if snap != nil {
+			err := c.store.SaveState(checkpointId, c.opId, snap)
+			if err != nil {
+				return err
+			}
+		}
 	}
 	return nil
 }

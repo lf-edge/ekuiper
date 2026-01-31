@@ -26,6 +26,7 @@ import (
 
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
+	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
 )
 
 func TestValidate(t *testing.T) {
@@ -73,8 +74,11 @@ func TestValidate(t *testing.T) {
 
 func TestConStatus(t *testing.T) {
 	var statusHistory []modules.ConnectionStatus
+	var mu syncx.Mutex
 	scRecorder := func(status string, message string) {
+		mu.Lock()
 		statusHistory = append(statusHistory, modules.ConnectionStatus{Status: status, ErrMsg: message})
+		mu.Unlock()
 	}
 	ctx := mockContext.NewMockContext("testConStatus", "test")
 	c := CreateConnection(ctx).(*Sock)

@@ -45,7 +45,10 @@ type GlobalServerManager struct {
 	websocketEndpoint map[string]*websocketEndpointContext
 }
 
-var manager *GlobalServerManager
+var (
+	manager     *GlobalServerManager
+	managerLock syncx.RWMutex
+)
 
 func InitGlobalServerManager(ip string, port int, tlsConf *model.TlsConf) {
 	r := mux.NewRouter()
@@ -66,6 +69,7 @@ func InitGlobalServerManager(ip string, port int, tlsConf *model.TlsConf) {
 			return true
 		},
 	}
+	managerLock.Lock()
 	manager = &GlobalServerManager{
 		websocketEndpoint: map[string]*websocketEndpointContext{},
 		endpoint:          map[string]string{},
@@ -81,20 +85,39 @@ func InitGlobalServerManager(ip string, port int, tlsConf *model.TlsConf) {
 			s.ListenAndServeTLS(conf.Config.Source.HttpServerTls.Certfile, conf.Config.Source.HttpServerTls.Keyfile)
 		}
 	}(manager)
+	managerLock.Unlock()
 	time.Sleep(500 * time.Millisecond)
 }
 
 func ShutDown() {
-	manager.Shutdown()
+	managerLock.RLock()
+	if manager != nil {
+		manager.Shutdown()
+	}
+	managerLock.RUnlock()
+	managerLock.Lock()
 	manager = nil
+	managerLock.Unlock()
 }
 
 func RegisterEndpoint(endpoint string, method string) (string, error) {
-	return manager.RegisterEndpoint(endpoint, method)
+	managerLock.RLock()
+	m := manager
+	managerLock.RUnlock()
+	if m == nil {
+		return "", fmt.Errorf("http server is not running")
+	}
+	return m.RegisterEndpoint(endpoint, method)
 }
 
 func UnregisterEndpoint(endpoint, method string) {
-	manager.UnregisterEndpoint(endpoint, method)
+	managerLock.RLock()
+	m := manager
+	managerLock.RUnlock()
+	if m == nil {
+		return
+	}
+	m.UnregisterEndpoint(endpoint, method)
 }
 
 const (
