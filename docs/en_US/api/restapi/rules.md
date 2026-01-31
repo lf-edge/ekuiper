@@ -340,7 +340,8 @@ GET /rules/tags/match
 
 These APIs are used to start or stop multiple rules based on the assigned tags.
 
-+ bulk start rules
+- bulk start rules
+
 ```shell
 POST /rules/bulkstart
 
@@ -349,7 +350,8 @@ POST /rules/bulkstart
 }
 ```
 
-+ bulk stop rules
+- bulk stop rules
+
 ```shell
 POST /rules/bulkstop
 
@@ -361,5 +363,5 @@ POST /rules/bulkstop
 Both APIs return a list of rules with the operation result for each rule, indicating whether the operation was successful or failed.
 In case of failure, an error message is returned for the affected rule.
 
-
+These APIs are not atomic. If an error occurs during execution, some rules may be started or stopped successfully while others may not.
 
