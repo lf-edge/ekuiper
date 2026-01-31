@@ -14,7 +14,11 @@
 
 package modules
 
-import "github.com/lf-edge/ekuiper/contract/v2/api"
+import (
+	"github.com/lf-edge/ekuiper/contract/v2/api"
+
+	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
+)
 
 type ConnectionStatus struct {
 	Status string `json:"status"`
@@ -36,12 +40,25 @@ type StatefulDialer interface {
 
 type ConnectionProvider func(ctx api.StreamContext) Connection
 
-var ConnectionRegister map[string]ConnectionProvider
+var (
+	connectionRegisterMu syncx.RWMutex
+	ConnectionRegister   map[string]ConnectionProvider
+)
 
 func init() {
 	ConnectionRegister = map[string]ConnectionProvider{}
 }
 
 func RegisterConnection(name string, cp ConnectionProvider) {
+	connectionRegisterMu.Lock()
+	defer connectionRegisterMu.Unlock()
 	ConnectionRegister[name] = cp
+}
+
+// GetConnectionProvider returns a connection provider by name in a thread-safe manner
+func GetConnectionProvider(name string) (ConnectionProvider, bool) {
+	connectionRegisterMu.RLock()
+	defer connectionRegisterMu.RUnlock()
+	cp, ok := ConnectionRegister[name]
+	return cp, ok
 }

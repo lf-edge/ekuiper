@@ -28,9 +28,11 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
+	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
 )
 
 type Connection struct {
+	mu syncx.Mutex
 	client.Client
 	id        string
 	server    string
@@ -110,15 +112,20 @@ func (conn *Connection) Status(_ api.StreamContext) modules.ConnectionStatus {
 func (conn *Connection) SetStatusChangeHandler(ctx api.StreamContext, sch api.StatusChangeHandler) {
 	st := conn.status.Load().(modules.ConnectionStatus)
 	sch(st.Status, st.ErrMsg)
+	conn.mu.Lock()
 	conn.scHandler = sch
+	conn.mu.Unlock()
 	ctx.GetLogger().Infof("trigger status change handler")
 }
 
 func (conn *Connection) onConnect(ctx api.StreamContext) {
 	conn.connected.Store(true)
 	conn.status.Store(modules.ConnectionStatus{Status: api.ConnectionConnected})
-	if conn.scHandler != nil {
-		conn.scHandler(api.ConnectionConnected, "")
+	conn.mu.Lock()
+	handler := conn.scHandler
+	conn.mu.Unlock()
+	if handler != nil {
+		handler(api.ConnectionConnected, "")
 	} else {
 		ctx.GetLogger().Warnf("sc handler has not set yet")
 	}
@@ -137,16 +144,22 @@ func (conn *Connection) onConnect(ctx api.StreamContext) {
 func (conn *Connection) onConnectLost(ctx api.StreamContext, err error) {
 	conn.connected.Store(false)
 	conn.status.Store(modules.ConnectionStatus{Status: api.ConnectionDisconnected, ErrMsg: err.Error()})
-	if conn.scHandler != nil {
-		conn.scHandler(api.ConnectionDisconnected, err.Error())
+	conn.mu.Lock()
+	handler := conn.scHandler
+	conn.mu.Unlock()
+	if handler != nil {
+		handler(api.ConnectionDisconnected, err.Error())
 	}
 	ctx.GetLogger().Infof("%v", err)
 }
 
 func (conn *Connection) onReconnecting(ctx api.StreamContext) {
 	conn.status.Store(modules.ConnectionStatus{Status: api.ConnectionConnecting})
-	if conn.scHandler != nil {
-		conn.scHandler(api.ConnectionConnecting, "")
+	conn.mu.Lock()
+	handler := conn.scHandler
+	conn.mu.Unlock()
+	if handler != nil {
+		handler(api.ConnectionConnecting, "")
 	}
 	ctx.GetLogger().Debugf("Reconnecting to mqtt broker")
 }

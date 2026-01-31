@@ -129,10 +129,12 @@ func ruleTagHandler(w http.ResponseWriter, r *http.Request) {
 			handleError(w, err, "update rule labels error", logger)
 			return
 		}
-		if rs.Rule.Tags == nil {
-			rs.Rule.Tags = make([]string, 0)
-		}
-		rs.Rule.Tags = tagsReq.Tags
+
+		rule := rs.GetRule()
+		newRule := *rule
+		newRule.Tags = tagsReq.Tags
+		rs.SetRule(&newRule)
+
 		if err := registry.update(ruleID, newRuleJson, rs); err != nil {
 			handleError(w, err, "", logger)
 			return
@@ -154,10 +156,12 @@ func ruleTagHandler(w http.ResponseWriter, r *http.Request) {
 			handleError(w, err, "update rule labels error", logger)
 			return
 		}
-		if rs.Rule.Tags == nil {
-			rs.Rule.Tags = make([]string, 0)
-		}
-		rs.Rule.Tags = newTags
+
+		rule := rs.GetRule()
+		newRule := *rule
+		newRule.Tags = newTags
+		rs.SetRule(&newRule)
+
 		if err := registry.update(ruleID, newRuleJson, rs); err != nil {
 			handleError(w, err, "", logger)
 			return
@@ -179,10 +183,12 @@ func ruleTagHandler(w http.ResponseWriter, r *http.Request) {
 			handleError(w, err, "update rule labels error", logger)
 			return
 		}
-		if rs.Rule.Tags == nil {
-			rs.Rule.Tags = make([]string, 0)
-		}
-		rs.Rule.Tags = newTags
+
+		rule := rs.GetRule()
+		newRule := *rule
+		newRule.Tags = newTags
+		rs.SetRule(&newRule)
+
 		if err := registry.update(ruleID, newRuleJson, rs); err != nil {
 			handleError(w, err, "", logger)
 			return

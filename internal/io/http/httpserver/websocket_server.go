@@ -53,11 +53,23 @@ type websocketEndpointContext struct {
 }
 
 func RegisterWebSocketEndpoint(ctx api.StreamContext, endpoint string) (string, string, error) {
-	return manager.RegisterWebSocketEndpoint(ctx, endpoint)
+	managerLock.RLock()
+	m := manager
+	managerLock.RUnlock()
+	if m == nil {
+		return "", "", fmt.Errorf("http server is not running")
+	}
+	return m.RegisterWebSocketEndpoint(ctx, endpoint)
 }
 
 func UnRegisterWebSocketEndpoint(endpoint string) {
-	wctx := manager.UnRegisterWebSocketEndpoint(endpoint)
+	managerLock.RLock()
+	m := manager
+	managerLock.RUnlock()
+	if m == nil {
+		return
+	}
+	wctx := m.UnRegisterWebSocketEndpoint(endpoint)
 	if wctx != nil {
 		// wait all process exit
 		wctx.wg.Wait()

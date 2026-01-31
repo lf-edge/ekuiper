@@ -105,6 +105,7 @@ func TestRateLimit(t *testing.T) {
 
 			timex.Set(100)
 			errCh := make(chan error)
+			op.input = make(chan any)
 			op.Exec(ctx, errCh)
 			for i := 0; i < tc.sendCount; i++ {
 				op.input <- &xsql.RawTuple{
@@ -211,6 +212,7 @@ func TestRateLimitMerge(t *testing.T) {
 			assert.NoError(t, err)
 
 			errCh := make(chan error)
+			op.input = make(chan any)
 			op.Exec(ctx, errCh)
 			for i := 0; i < tc.sendCount; i++ {
 				op.input <- &xsql.RawTuple{
@@ -312,6 +314,7 @@ func TestRateLimitCustomMerge(t *testing.T) {
 			assert.NoError(t, err)
 
 			errCh := make(chan error)
+			op.input = make(chan any)
 			op.Exec(ctx, errCh)
 			op.input <- &xsql.Tuple{
 				Message: map[string]any{"test": 1},

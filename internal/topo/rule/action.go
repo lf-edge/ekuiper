@@ -142,22 +142,26 @@ func (s *State) runTopo(tp *topo.Topo, ruleId string) {
 	// Only do clean up when it is exit automatically
 	if !tp.IsClosed() {
 		_ = tp.GracefulStop(0)
-		s.cleanRule(hasError, lastWill)
+		s.cleanRule(tp, hasError, lastWill)
 	}
 }
 
-func (s *State) cleanRule(hasError bool, lastWill string) {
+func (s *State) cleanRule(tp *topo.Topo, hasError bool, lastWill string) {
 	s.ruleLock.Lock()
 	defer s.ruleLock.Unlock()
+	if s.topology != tp {
+		s.logger.Warnf("topology mismatch, skip clean up: %d vs %d", s.topology.GetRunId(), tp.GetRunId())
+		return
+	}
 	if s.topology != nil {
 		s.topoGraph = s.topology.GetTopo()
 		keys, values := s.topology.GetMetrics()
 		s.stoppedMetrics = []any{keys, values}
 	}
+	s.topology = nil
 	if hasError {
 		s.transitState(machine.StoppedByErr, lastWill)
 	} else {
 		s.transitState(machine.Stopped, lastWill)
 	}
-	s.topology = nil
 }
