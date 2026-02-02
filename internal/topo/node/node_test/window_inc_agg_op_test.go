@@ -39,9 +39,6 @@ func init() {
 }
 
 func TestWindowState(t *testing.T) {
-	if testx.Race {
-		t.Skip("skip race test")
-	}
 	conf.IsTesting = true
 	node.EnableAlignWindow = false
 	o := &def.RuleOption{
@@ -91,7 +88,7 @@ func TestWindowState(t *testing.T) {
 		time.Sleep(10 * time.Millisecond)
 		input <- &xsql.Tuple{Message: map[string]any{"a": int64(1)}}
 		time.Sleep(10 * time.Millisecond)
-		op.WindowExec.PutState(ctx)
+		require.NoError(t, op.PutState4Test(ctx))
 
 		op2, err := node.NewWindowIncAggOp("1", &node.WindowConfig{
 			Type:     incPlan.WType,
@@ -101,7 +98,7 @@ func TestWindowState(t *testing.T) {
 		require.NotNil(t, op2)
 		op2.Exec(ctx, errCh)
 		time.Sleep(10 * time.Millisecond)
-		require.NoError(t, op2.WindowExec.RestoreFromState(ctx))
+		require.NoError(t, op2.RestoreFromState4Test(ctx))
 		cancel()
 		op.Close()
 		op2.Close()
