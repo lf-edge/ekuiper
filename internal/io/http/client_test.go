@@ -17,6 +17,9 @@ package http
 import (
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -203,4 +206,96 @@ func TestClientAuth(t *testing.T) {
 	}))
 	require.NoError(t, c.auth(ctx))
 	require.NoError(t, c.refresh(ctx))
+}
+
+func TestOAuthClientCredentials(t *testing.T) {
+	// 1. Create a mock OAuth server
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/token" {
+			// Verify Header
+			contentType := r.Header.Get("Content-Type")
+			if contentType != "application/x-www-form-urlencoded" {
+				w.WriteHeader(http.StatusBadRequest)
+				w.Write([]byte(fmt.Sprintf("Invalid Content-Type: %s", contentType)))
+				return
+			}
+
+			// Verify Body
+			body, err := io.ReadAll(r.Body)
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			bodyStr := string(body)
+			expectedBody := "grant_type=client_credentials&client_id=client_id&client_secret=client_secret&scope=test"
+			if bodyStr != expectedBody {
+				w.WriteHeader(http.StatusBadRequest)
+				w.Write([]byte(fmt.Sprintf("Invalid Body: %s", bodyStr)))
+				return
+			}
+
+			// Return Token
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"access_token": "mock_access_token",
+				"expires_in":   3600,
+			})
+			return
+		}
+
+		// Verify Protected Resource Access
+		if r.URL.Path == "/data" {
+			authHeader := r.Header.Get("Authorization")
+			if authHeader != "Bearer mock_access_token" {
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+			}
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"status":"ok"}`))
+			return
+		}
+
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	defer ts.Close()
+
+	// 2. Configure Client with OAuth
+	ctx := mockContext.NewMockContext("rule1", "op1")
+	c := &ClientConf{}
+
+	// Simulation of user configuration
+	props := map[string]interface{}{
+		"url":    ts.URL + "/data",
+		"method": "POST",
+		"headers": map[string]interface{}{
+			"Authorization": "Bearer {{.access_token}}",
+		},
+		"oauth": map[string]interface{}{
+			"access": map[string]interface{}{
+				"url": ts.URL + "/token",
+				// Manually constructed body for client credentials
+				"body": "grant_type=client_credentials&client_id=client_id&client_secret=client_secret&scope=test",
+				// WORKAROUND: Explicitly set Content-Type header
+				"headers": map[string]interface{}{
+					"Content-Type": "application/x-www-form-urlencoded",
+				},
+				"expire": "3600",
+			},
+		},
+	}
+
+	err := c.InitConf(ctx, "", props)
+	require.NoError(t, err)
+
+	// 3. Connect (Triggers Auth)
+	// This is where the auth flow happens. If it fails (e.g. wrong content type), this should error.
+	err = c.Conn(ctx)
+	require.NoError(t, err, "Connection failed, likely due to auth failure")
+
+	// 4. Send Data (Verifies Token Usage)
+	data, _ := json.Marshal(map[string]interface{}{"data": 123})
+	resp, err := c.Send(ctx, "json", "POST", c.config.Url, c.parsedHeaders, nil, "", data)
+	require.NoError(t, err)
+	defer resp.Body.Close()
+	require.Equal(t, http.StatusOK, resp.StatusCode)
 }
