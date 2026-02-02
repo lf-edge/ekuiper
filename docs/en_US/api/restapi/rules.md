@@ -364,4 +364,3 @@ Both APIs return a list of rules with the operation result for each rule, indica
 In case of failure, an error message is returned for the affected rule.
 
 These APIs are not atomic. If an error occurs during execution, some rules may be started or stopped successfully while others may not.
-
