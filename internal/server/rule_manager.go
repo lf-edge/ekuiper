@@ -111,8 +111,9 @@ func (rr *RuleRegistry) upsert(id string, ruleJson string, newRuleDef *def.Rule,
 	// 1. Check for existing rule and validate version
 	existing, exists := rr.internal[id]
 	if exists {
-		if !ruleProcessor.CanReplace(existing.Rule.Version, newRuleDef.Version) {
-			return nil, false, fmt.Errorf("rule %s already exists with version (%s), new version (%s) is lower", id, existing.Rule.Version, newRuleDef.Version)
+		rule := existing.GetRule()
+		if !ruleProcessor.CanReplace(rule.Version, newRuleDef.Version) {
+			return nil, false, fmt.Errorf("rule %s already exists with version (%s), new version (%s) is lower", id, rule.Version, newRuleDef.Version)
 		}
 	}
 
@@ -126,7 +127,7 @@ func (rr *RuleRegistry) upsert(id string, ruleJson string, newRuleDef *def.Rule,
 	// 3. Update Memory
 	if exists {
 		// In-place update: update the rule definition pointer while holding the lock
-		existing.Rule = newRuleDef
+		existing.SetRule(newRuleDef)
 		return existing, true, nil
 	} else if newState != nil {
 		// New rule: insert the candidate state
@@ -330,10 +331,11 @@ func (rr *RuleRegistry) RestartRule(name string) error {
 			conf.Log.Warnf("restart rule update db status error: %s", err.Error())
 		}
 		rs.Stop()
-		rs.Rule, err = ruleProcessor.GetRuleById(name)
+		r, err := ruleProcessor.GetRuleById(name)
 		if err != nil {
 			return err
 		}
+		rs.SetRule(r)
 		return rs.Start()
 	} else {
 		return errorx.NewWithCode(errorx.NOT_FOUND, fmt.Sprintf("Rule %s is not found in registry, please check if it is created", name))
@@ -606,7 +608,7 @@ func getAllRulesWithState() ([]ruleWrapper, error) {
 		rs, ok := registry.load(id)
 		if ok {
 			s := rs.GetState()
-			rules = append(rules, ruleWrapper{rule: rs.Rule, state: s, startTime: rs.GetStartTimestamp()})
+			rules = append(rules, ruleWrapper{rule: rs.GetRule(), state: s, startTime: rs.GetStartTimestamp()})
 		}
 	}
 	return rules, nil

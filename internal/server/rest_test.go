@@ -60,6 +60,15 @@ type RestTestSuite struct {
 	r *mux.Router
 }
 
+func (suite *RestTestSuite) SetupSuite() {
+	conf.IsTesting = true
+	conf.InitConf()
+	ip := "127.0.0.1"
+	port := 10087
+	httpserver.InitGlobalServerManager(ip, port, nil)
+	connection.InitConnectionManager4Test()
+}
+
 func (suite *RestTestSuite) SetupTest() {
 	dataDir, err := conf.GetDataLoc()
 	if err != nil {
@@ -277,7 +286,6 @@ func (suite *RestTestSuite) TestRulesGetStateWrapper() {
 }
 
 func (suite *RestTestSuite) Test_rulesManageHandler() {
-	connection.InitConnectionManager4Test()
 	// Start rules
 	if rules, err := ruleProcessor.GetAllRules(); err != nil {
 		logger.Infof("Start rules error: %s", err)
@@ -896,12 +904,24 @@ func (suite *RestTestSuite) TestCreateDuplicateRule() {
 	w1 := httptest.NewRecorder()
 	suite.r.ServeHTTP(w1, req1)
 
+	defer func() {
+		req, _ := http.NewRequest(http.MethodDelete, "http://localhost:8080/streams/demo123", bytes.NewBufferString("any"))
+		w := httptest.NewRecorder()
+		suite.r.ServeHTTP(w, req)
+	}()
+
 	ruleJson2 := `{"id":"test12345","triggered":false,"sql":"select * from demo123","actions":[{"log":{}}]}`
 	buf2 := bytes.NewBuffer([]byte(ruleJson2))
 	req2, _ := http.NewRequest(http.MethodPost, "http://localhost:8080/rules", buf2)
 	w2 := httptest.NewRecorder()
 	suite.r.ServeHTTP(w2, req2)
 	require.Equal(suite.T(), http.StatusCreated, w2.Code)
+
+	defer func() {
+		req, _ := http.NewRequest(http.MethodDelete, "http://localhost:8080/rules/test12345", bytes.NewBufferString("any"))
+		w := httptest.NewRecorder()
+		suite.r.ServeHTTP(w, req)
+	}()
 
 	buf2 = bytes.NewBuffer([]byte(ruleJson2))
 	req2, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/rules", buf2)
@@ -919,6 +939,12 @@ func (suite *RestTestSuite) TestGetAllRuleStatus() {
 	w1 := httptest.NewRecorder()
 	suite.r.ServeHTTP(w1, req1)
 
+	defer func() {
+		req, _ := http.NewRequest(http.MethodDelete, "http://localhost:8080/streams/demo456", bytes.NewBufferString("any"))
+		w := httptest.NewRecorder()
+		suite.r.ServeHTTP(w, req)
+	}()
+
 	ruleJson2 := `{"id":"allRule1","sql":"select * from demo456","actions":[{"log":{}}]}`
 	buf2 := bytes.NewBuffer([]byte(ruleJson2))
 	req2, _ := http.NewRequest(http.MethodPost, "http://localhost:8080/rules", buf2)
@@ -926,12 +952,24 @@ func (suite *RestTestSuite) TestGetAllRuleStatus() {
 	suite.r.ServeHTTP(w2, req2)
 	require.Equal(suite.T(), http.StatusCreated, w2.Code)
 
+	defer func() {
+		req, _ := http.NewRequest(http.MethodDelete, "http://localhost:8080/rules/allRule1", bytes.NewBufferString("any"))
+		w := httptest.NewRecorder()
+		suite.r.ServeHTTP(w, req)
+	}()
+
 	ruleJson2 = `{"id":"allRule2","sql":"select * from demo456","actions":[{"log":{}}]}`
 	buf2 = bytes.NewBuffer([]byte(ruleJson2))
 	req2, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/rules", buf2)
 	w2 = httptest.NewRecorder()
 	suite.r.ServeHTTP(w2, req2)
 	require.Equal(suite.T(), http.StatusCreated, w2.Code)
+
+	defer func() {
+		req, _ := http.NewRequest(http.MethodDelete, "http://localhost:8080/rules/allRule2", bytes.NewBufferString("any"))
+		w := httptest.NewRecorder()
+		suite.r.ServeHTTP(w, req)
+	}()
 
 	req, _ := http.NewRequest(http.MethodGet, "http://localhost:8080/rules/status/all", bytes.NewBufferString("any"))
 	w := httptest.NewRecorder()

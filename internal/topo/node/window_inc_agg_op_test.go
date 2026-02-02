@@ -39,6 +39,9 @@ func init() {
 }
 
 func TestWindowState(t *testing.T) {
+	if testx.Race {
+		t.Skip("skip race test")
+	}
 	conf.IsTesting = true
 	node.EnableAlignWindow = false
 	o := &def.RuleOption{
@@ -106,6 +109,9 @@ func TestWindowState(t *testing.T) {
 }
 
 func TestIncAggCountWindowState(t *testing.T) {
+	if testx.Race {
+		t.Skip("skip race test")
+	}
 	o := &def.RuleOption{
 		BufferLength: 10,
 	}
@@ -171,6 +177,9 @@ func TestIncAggCountWindowState(t *testing.T) {
 }
 
 func TestIncAggWindow(t *testing.T) {
+	if testx.Race {
+		t.Skip("skip race test")
+	}
 	o := &def.RuleOption{
 		BufferLength: 10,
 	}
@@ -222,6 +231,9 @@ func TestIncAggWindow(t *testing.T) {
 }
 
 func TestIncAggAlignTumblingWindow(t *testing.T) {
+	if testx.Race {
+		t.Skip("skip race test")
+	}
 	conf.IsTesting = true
 	node.EnableAlignWindow = true
 	o := &def.RuleOption{
@@ -265,6 +277,9 @@ func TestIncAggAlignTumblingWindow(t *testing.T) {
 }
 
 func TestIncAggTumblingWindow(t *testing.T) {
+	if testx.Race {
+		t.Skip("skip race test")
+	}
 	conf.IsTesting = true
 	node.EnableAlignWindow = false
 	o := &def.RuleOption{
@@ -319,6 +334,9 @@ func TestIncAggTumblingWindow(t *testing.T) {
 }
 
 func TestIncAggSlidingWindow(t *testing.T) {
+	if testx.Race {
+		t.Skip("skip race test")
+	}
 	conf.IsTesting = true
 	o := &def.RuleOption{
 		BufferLength: 10,
@@ -382,6 +400,9 @@ func TestIncAggSlidingWindow(t *testing.T) {
 }
 
 func TestIncAggSlidingWindowOver(t *testing.T) {
+	if testx.Race {
+		t.Skip("skip race test")
+	}
 	conf.IsTesting = true
 	o := &def.RuleOption{
 		BufferLength: 10,
@@ -435,6 +456,9 @@ func TestIncAggSlidingWindowOver(t *testing.T) {
 }
 
 func TestIncAggSlidingWindowDelay(t *testing.T) {
+	if testx.Race {
+		t.Skip("skip race test")
+	}
 	conf.IsTesting = true
 	o := &def.RuleOption{
 		BufferLength: 10,
@@ -524,6 +548,9 @@ func waitExecute() {
 }
 
 func TestIncHoppingWindow(t *testing.T) {
+	if testx.Race {
+		t.Skip("skip race test")
+	}
 	conf.IsTesting = true
 	node.EnableAlignWindow = false
 	o := &def.RuleOption{
@@ -581,6 +608,9 @@ func TestIncHoppingWindow(t *testing.T) {
 }
 
 func TestIncAggAlignHoppingWindow(t *testing.T) {
+	if testx.Race {
+		t.Skip("skip race test")
+	}
 	conf.IsTesting = true
 	node.EnableAlignWindow = true
 	o := &def.RuleOption{

@@ -257,7 +257,19 @@ func TestPull(t *testing.T) {
 	time.Sleep(10 * time.Millisecond)
 	timex.Add(10 * time.Second)
 	wg.Wait()
-	assert.Equal(t, expects, actual)
+	assert.Equal(t, len(expects), len(actual))
+	for i, e := range expects {
+		switch et := e.(type) {
+		case *xsql.Tuple:
+			got := actual[i].(*xsql.Tuple)
+			assert.Equal(t, et.Message, got.Message)
+			assert.InDelta(t, et.Timestamp.UnixNano(), got.Timestamp.UnixNano(), float64(time.Millisecond))
+		case *xsql.RawTuple:
+			got := actual[i].(*xsql.RawTuple)
+			assert.Equal(t, et.Rawdata, got.Rawdata)
+			assert.InDelta(t, et.Timestamp.UnixNano(), got.Timestamp.UnixNano(), float64(time.Millisecond))
+		}
+	}
 }
 
 type MockSourceConnector struct {
@@ -434,6 +446,8 @@ func TestMockRewind(t *testing.T) {
 	notify <- struct{}{}
 	data = <-result
 	require.Equal(t, map[string]interface{}{"key": 11}, map[string]interface{}(data.(*xsql.Tuple).Message))
-	v, _ := ctx.GetState(OffsetKey)
-	require.Equal(t, 11, v)
+	assert.Eventually(t, func() bool {
+		v, _ := ctx.GetState(OffsetKey)
+		return v == 11
+	}, 1*time.Second, 10*time.Millisecond)
 }

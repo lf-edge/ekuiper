@@ -27,8 +27,8 @@ import (
 
 func InitMockTest() {
 	conf.IsTesting = true
-	modules.ConnectionRegister["mock"] = CreateMockConnection
-	modules.ConnectionRegister[strings.ToLower("mockErr")] = CreateMockErrConnection
+	modules.RegisterConnection("mock", CreateMockConnection)
+	modules.RegisterConnection(strings.ToLower("mockErr"), CreateMockErrConnection)
 }
 
 type mockConnection struct {

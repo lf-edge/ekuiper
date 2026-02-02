@@ -104,5 +104,7 @@ func (c *Cache) Close() {
 	if c.cancel != nil {
 		c.cancel()
 	}
+	c.Lock()
 	c.items = nil
+	c.Unlock()
 }

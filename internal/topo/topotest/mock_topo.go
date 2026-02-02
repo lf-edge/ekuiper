@@ -85,6 +85,7 @@ func DoRuleTestWithResultFunc(t *testing.T, tests []RuleTest, opt *def.RuleOptio
 				t.Errorf("topo is not created successfully")
 				return
 			}
+			defer tp.Cancel()
 			// Send data with leaps
 			wait := tt.W
 			if wait == 0 {
@@ -438,6 +439,7 @@ func DoCheckpointRuleTest(t *testing.T, tests []RuleCheckpointTest, opt *def.Rul
 				t.Errorf("topo is not created successfully")
 				return
 			}
+			defer tp.Cancel()
 			// Send data with leaps
 			wait := tt.W
 			if wait == 0 {

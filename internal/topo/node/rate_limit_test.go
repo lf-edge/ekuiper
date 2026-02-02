@@ -26,6 +26,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
+	"github.com/lf-edge/ekuiper/v2/internal/schema"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/topotest/mockclock"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
@@ -209,6 +210,7 @@ func TestRateLimitMerge(t *testing.T) {
 			err = op.AddOutput(out, "test")
 			assert.NoError(t, err)
 
+			op.input = make(chan any)
 			errCh := make(chan error)
 			op.Exec(ctx, errCh)
 			for i := 0; i < tc.sendCount; i++ {
@@ -237,6 +239,8 @@ func TestRateLimitMerge(t *testing.T) {
 }
 
 func TestRateLimitCustomMerge(t *testing.T) {
+	schema.InitRegistry()
+	timex.Set(0) // Reset time to avoid flakiness from shared mock clock state
 	testcases := []struct {
 		name        string
 		sendCount   int

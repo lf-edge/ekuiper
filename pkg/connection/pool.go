@@ -369,7 +369,7 @@ func detachConnection(ctx api.StreamContext, conId string) error {
 func createConnection(connCtx api.StreamContext, meta *Meta) (modules.Connection, error) {
 	var conn modules.Connection
 	var err error
-	connRegister, ok := modules.ConnectionRegister[strings.ToLower(meta.Typ)]
+	connRegister, ok := modules.GetConnectionProvider(strings.ToLower(meta.Typ))
 	if !ok {
 		return nil, fmt.Errorf("unknown connection type")
 	}

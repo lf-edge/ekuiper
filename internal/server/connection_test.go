@@ -23,12 +23,9 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-
-	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 )
 
 func (suite *RestTestSuite) TestGetConnectionStatus() {
-	connection.InitConnectionManager4Test()
 	connJson := `
 {
   "id": "conn1",
@@ -89,7 +86,6 @@ func (suite *RestTestSuite) TestGetConnectionStatus() {
 }
 
 func (suite *RestTestSuite) TestEditInternalConn() {
-	connection.InitConnectionManager4Test()
 	// create stream
 	buf := bytes.NewBuffer([]byte(`{"sql":"CREATE stream connTest() WITH (DATASOURCE=\"0\", TYPE=\"mqtt\")"}`))
 	req, _ := http.NewRequest(http.MethodPost, "http://localhost:8080/streams", buf)
@@ -104,6 +100,17 @@ func (suite *RestTestSuite) TestEditInternalConn() {
 	w = httptest.NewRecorder()
 	suite.r.ServeHTTP(w, req)
 	require.Equal(suite.T(), http.StatusCreated, w.Code)
+
+	defer func() {
+		req, _ := http.NewRequest(http.MethodDelete, "http://localhost:8080/rules/connTest", bytes.NewBufferString("any"))
+		w := httptest.NewRecorder()
+		suite.r.ServeHTTP(w, req)
+
+		req, _ = http.NewRequest(http.MethodDelete, "http://localhost:8080/streams/connTest", bytes.NewBufferString("any"))
+		w = httptest.NewRecorder()
+		suite.r.ServeHTTP(w, req)
+	}()
+
 	time.Sleep(100 * time.Millisecond)
 
 	req, _ = http.NewRequest(http.MethodDelete, "http://localhost:8080/connections/connTest-connTest-0-mqtt-source", bytes.NewBufferString("any"))

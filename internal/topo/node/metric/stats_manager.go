@@ -18,6 +18,8 @@ import (
 	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+
+	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
 )
 
 const (
@@ -77,13 +79,14 @@ type DefaultStatManager struct {
 	processTimeStart time.Time
 	opId             string
 	instanceId       int
+	syncx.RWMutex
 }
 
 func NewStatManager(ctx api.StreamContext, opType string) StatManager {
-	var ds DefaultStatManager
+	var ds *DefaultStatManager
 	switch opType {
 	case "source":
-		ds = DefaultStatManager{
+		ds = &DefaultStatManager{
 			opType:          opType,
 			prefix:          "source_",
 			opId:            ctx.GetOpId(),
@@ -91,14 +94,14 @@ func NewStatManager(ctx api.StreamContext, opType string) StatManager {
 			connectionState: &ConnectionStatManager{},
 		}
 	case "op":
-		ds = DefaultStatManager{
+		ds = &DefaultStatManager{
 			opType:     opType,
 			prefix:     "op_",
 			opId:       ctx.GetOpId(),
 			instanceId: ctx.GetInstanceId(),
 		}
 	case "sink":
-		ds = DefaultStatManager{
+		ds = &DefaultStatManager{
 			opType:          opType,
 			prefix:          "sink_",
 			opId:            ctx.GetOpId(),
@@ -114,24 +117,38 @@ func NewStatManager(ctx api.StreamContext, opType string) StatManager {
 }
 
 func (sm *DefaultStatManager) SetConnectionState(status string, message string) {
+	sm.Lock()
+	defer sm.Unlock()
 	if sm.connectionState != nil {
 		sm.connectionState.SetConnectionState(status, message)
 	}
 }
 
 func (sm *DefaultStatManager) IncTotalRecordsIn() {
+	sm.Lock()
+	defer sm.Unlock()
 	sm.totalRecordsIn++
 }
 
 func (sm *DefaultStatManager) IncTotalMessagesProcessed(n int64) {
+	sm.Lock()
+	defer sm.Unlock()
 	sm.totalMessagesProcessed += n
 }
 
 func (sm *DefaultStatManager) IncTotalRecordsOut() {
+	sm.Lock()
+	defer sm.Unlock()
 	sm.totalRecordsOut++
 }
 
 func (sm *DefaultStatManager) IncTotalExceptions(err string) {
+	sm.Lock()
+	defer sm.Unlock()
+	sm.incTotalExceptions(err)
+}
+
+func (sm *DefaultStatManager) incTotalExceptions(err string) {
 	sm.totalExceptions++
 	var t time.Time
 	sm.processTimeStart = t
@@ -140,26 +157,36 @@ func (sm *DefaultStatManager) IncTotalExceptions(err string) {
 }
 
 func (sm *DefaultStatManager) ProcessTimeStart() {
+	sm.Lock()
+	defer sm.Unlock()
 	sm.lastInvocation = time.Now()
 	sm.processTimeStart = sm.lastInvocation
 }
 
 func (sm *DefaultStatManager) ProcessTimeEnd() {
+	sm.Lock()
+	defer sm.Unlock()
 	if !sm.processTimeStart.IsZero() {
 		sm.processLatency = int64(time.Since(sm.processTimeStart) / time.Microsecond)
 	}
 }
 
 func (sm *DefaultStatManager) SetBufferLength(l int64) {
+	sm.Lock()
+	defer sm.Unlock()
 	sm.bufferLength = l
 }
 
 func (sm *DefaultStatManager) SetProcessTimeStart(t time.Time) {
+	sm.Lock()
+	defer sm.Unlock()
 	sm.processTimeStart = t
 	sm.lastInvocation = t
 }
 
 func (sm *DefaultStatManager) GetMetrics() []any {
+	sm.RLock()
+	defer sm.RUnlock()
 	var result []any
 	if sm.connectionState != nil {
 		result = make([]any, 14)

@@ -76,8 +76,8 @@ func (m *MockSource) Subscribe(ctx api.StreamContext, ingest api.TupleIngest, in
 			m.Lock()
 			m.offset = i + 1
 			m.Unlock()
-			ingest(ctx, map[string]any(d.Message), map[string]any{"topic": "mock"}, timex.GetNow())
 			log.Debugf("%d: mock source %s is sending data %d:%v", timex.GetNowInMilli(), ctx.GetOpId(), i, d)
+			ingest(ctx, map[string]any(d.Message), map[string]any{"topic": "mock"}, timex.GetNow())
 		case <-ctx.Done():
 			log.Debugf("mock source open DONE")
 			return nil

@@ -70,9 +70,8 @@ func TestSharedInmemoryNode(t *testing.T) {
 	}
 	mockclock.GetMockClock().Add(100)
 	go func() {
-		err = snk.CollectList(ctx, &xsql.TransformedTupleList{Content: []api.MessageTuple{rawTuple}})
-		if err != nil {
-			t.Error(err)
+		if gerr := snk.CollectList(ctx, &xsql.TransformedTupleList{Content: []api.MessageTuple{rawTuple}}); gerr != nil {
+			t.Error(gerr)
 		}
 	}()
 	err = src.Subscribe(ctx, func(ctx api.StreamContext, res any, meta map[string]any, ts time.Time) {
@@ -130,9 +129,8 @@ func TestUpdateListInmemoryNode(t *testing.T) {
 	}
 	mockclock.GetMockClock().Add(100)
 	go func() {
-		err = snk.CollectList(ctx, &xsql.TransformedTupleList{Content: []api.MessageTuple{rawTuple}})
-		if err != nil {
-			t.Error(err)
+		if gerr := snk.CollectList(ctx, &xsql.TransformedTupleList{Content: []api.MessageTuple{rawTuple}}); gerr != nil {
+			t.Error(gerr)
 		}
 	}()
 	err = src.Subscribe(ctx, func(ctx api.StreamContext, res any, meta map[string]any, ts time.Time) {
@@ -194,9 +192,8 @@ func TestUpdateInmemoryNode(t *testing.T) {
 	}
 	mockclock.GetMockClock().Add(100)
 	go func() {
-		err = snk.Collect(ctx, rawTuple)
-		if err != nil {
-			t.Error(err)
+		if gerr := snk.Collect(ctx, rawTuple); gerr != nil {
+			t.Error(gerr)
 		}
 	}()
 	err = src.Subscribe(ctx, func(ctx api.StreamContext, res any, meta map[string]any, ts time.Time) {

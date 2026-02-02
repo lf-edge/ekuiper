@@ -12,11 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package topotest
+package exttest
 
 import (
+	"fmt"
 	"testing"
 	"time"
+
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 
 	"github.com/lf-edge/ekuiper/v2/internal/binder"
 	"github.com/lf-edge/ekuiper/v2/internal/binder/function"
@@ -24,36 +27,46 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/io/memory/pubsub"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
+	"github.com/lf-edge/ekuiper/v2/internal/plugin"
 	"github.com/lf-edge/ekuiper/v2/internal/plugin/native"
+	"github.com/lf-edge/ekuiper/v2/internal/testx"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/topotest"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/topotest/mocknode"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
 
 // This cannot be run in Windows. And the plugins must be built to so before running this
-// For Windows, run it in wsl with go test -trimpath -tags test internal/topo/topotest/plugin_rule_test.go internal/topo/topotest/mock_topo.go
+// For Windows, run it in wsl with go test -trimpath -tags test internal/topo/exttest/plugin_rule_test.go
 
 func init() {
+	testx.InitEnv("exttest")
 	nativeManager, err := native.InitManager()
 	if err != nil {
 		panic(err)
 	}
 	nativeEntry := binder.FactoryEntry{Name: "native plugin", Factory: nativeManager}
+	mockEntry := binder.FactoryEntry{Name: "mock", Factory: &mockFactory{}}
 	err = function.Initialize([]binder.FactoryEntry{nativeEntry})
 	if err != nil {
 		panic(err)
 	}
-	err = io.Initialize([]binder.FactoryEntry{nativeEntry})
+	err = io.Initialize([]binder.FactoryEntry{nativeEntry, mockEntry})
 	if err != nil {
 		panic(err)
 	}
 }
 
 // Test for source, func and agg func extensions. Sink plugin is tested in fvt
+// Test for source, func and agg func extensions. Sink plugin is tested in fvt
 // The .so files must be in the plugins folder
 func TestExtensions(t *testing.T) {
+	if testx.Race {
+		t.Skip("skip extensions test in race mode")
+	}
 	// Reset
 	streamList := []string{"ext", "ext2"}
-	HandleStream(false, streamList, t)
-	tests := []RuleTest{
+	topotest.HandleStream(false, streamList, t)
+	tests := []topotest.RuleTest{
 		{
 			Name: "TestExtensionsRule1",
 			Sql:  `SELECT count(echo(count)) as c, echo(count) as e, countPlusOne(count) as p FROM ext where count > 49`,
@@ -77,7 +90,7 @@ func TestExtensions(t *testing.T) {
 			},
 		},
 	}
-	HandleStream(true, streamList, t)
+	topotest.HandleStream(true, streamList, t)
 	options := []*def.RuleOption{
 		{
 			BufferLength: 100,
@@ -86,7 +99,8 @@ func TestExtensions(t *testing.T) {
 	}
 	for _, opt := range options {
 		// customized result func to compare only first result
-		DoRuleTestWithResultFunc(t, tests, opt, 0, func(result []any) [][]map[string]any {
+		// result func compare result with expected result
+		topotest.DoRuleTestWithResultFunc(t, tests, opt, 0, func(result []any) [][]map[string]any {
 			maps := make([][]map[string]any, 0, len(result))
 			for _, v := range result {
 				switch rt := v.(type) {
@@ -115,11 +129,14 @@ func TestExtensions(t *testing.T) {
 }
 
 func TestFuncState(t *testing.T) {
+	if testx.Race {
+		t.Skip("skip func state test in race mode")
+	}
 	// Reset
 	streamList := []string{"text"}
-	HandleStream(false, streamList, t)
+	topotest.HandleStream(false, streamList, t)
 	// Data setup
-	tests := []RuleTest{
+	tests := []topotest.RuleTest{
 		{
 			Name: `TestFuncStateRule1`,
 			Sql:  `SELECT accumulateWordCount(slogan, " ") as wc FROM text`,
@@ -161,19 +178,22 @@ func TestFuncState(t *testing.T) {
 			},
 		},
 	}
-	HandleStream(true, streamList, t)
-	DoRuleTest(t, tests, &def.RuleOption{
+	topotest.HandleStream(true, streamList, t)
+	topotest.DoRuleTest(t, tests, &def.RuleOption{
 		BufferLength: 100,
 		SendError:    true,
 	}, 0)
 }
 
 func TestFuncStateCheckpoint(t *testing.T) {
+	if testx.Race {
+		t.Skip("skip func state checkpoint test in race mode")
+	}
 	streamList := []string{"text"}
-	HandleStream(false, streamList, t)
-	tests := []RuleCheckpointTest{
+	topotest.HandleStream(false, streamList, t)
+	tests := []topotest.RuleCheckpointTest{
 		{
-			RuleTest: RuleTest{
+			RuleTest: topotest.RuleTest{
 				Name: `TestFuncStateCheckpointRule1`,
 				Sql:  `SELECT accumulateWordCount(slogan, " ") as wc FROM text`,
 				R: [][]map[string]interface{}{
@@ -210,11 +230,28 @@ func TestFuncStateCheckpoint(t *testing.T) {
 			Cc:        1,
 		},
 	}
-	HandleStream(true, streamList, t)
-	DoCheckpointRuleTest(t, tests, &def.RuleOption{
+	topotest.HandleStream(true, streamList, t)
+	topotest.DoCheckpointRuleTest(t, tests, &def.RuleOption{
 		BufferLength:       100,
 		Qos:                def.AtLeastOnce,
 		CheckpointInterval: cast.DurationConf(2 * time.Second),
 		SendError:          true,
 	}, 0)
+}
+
+type mockFactory struct{}
+
+func (m *mockFactory) Source(name string) (api.Source, error) {
+	if name == "mock" {
+		return &mocknode.MockSource{}, nil
+	}
+	return nil, fmt.Errorf("source %s not found", name)
+}
+
+func (m *mockFactory) LookupSource(name string) (api.Source, error) {
+	return nil, nil
+}
+
+func (m *mockFactory) SourcePluginInfo(name string) (plugin.EXTENSION_TYPE, string, string) {
+	return 0, "", ""
 }

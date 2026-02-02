@@ -20,6 +20,7 @@ import (
 	"io"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/pingcap/failpoint"
 	"github.com/stretchr/testify/require"
@@ -75,6 +76,17 @@ func prepare(t *testing.T) {
 }
 
 func TestYamlImport(t *testing.T) {
+	// Wait for all rules to stop to avoid data race with InitConf
+	for i := 0; i < 50; i++ {
+		rules, err := ruleProcessor.GetAllRules()
+		if err == nil && len(rules) == 0 {
+			break
+		}
+		if len(rules) > 0 {
+			t.Logf("Waiting for rules to stop: %v", rules)
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
 	conf.InitConf()
 	conf.IsTesting = true
 	connection.InitConnectionManager4Test()

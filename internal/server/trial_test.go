@@ -27,21 +27,13 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
-	"github.com/lf-edge/ekuiper/v2/internal/io/http/httpserver"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/v2/internal/processor"
 	"github.com/lf-edge/ekuiper/v2/internal/trial"
-	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 func (suite *RestTestSuite) TestRuleTest() {
-	ip := "127.0.0.1"
-	port := 10087
-	httpserver.InitGlobalServerManager(ip, port, nil)
-	connection.InitConnectionManager4Test()
-	conf.IsTesting = true
-	conf.InitConf()
 	dataDir, err := conf.GetDataLoc()
 	require.NoError(suite.T(), err)
 	require.NoError(suite.T(), store.SetupDefault(dataDir))

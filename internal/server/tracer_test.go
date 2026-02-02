@@ -26,6 +26,17 @@ import (
 )
 
 func (suite *RestTestSuite) TestTraceRule() {
+	// clean up potential garbage from previous runs
+	ruleProcessor.ExecDrop("test54321")
+	streamProcessor.ExecStreamSql("DROP STREAM demo4321")
+	req, _ := http.NewRequest(http.MethodDelete, "http://localhost:8080/rules/test54321", bytes.NewBufferString("any"))
+	w := httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+
+	req, _ = http.NewRequest(http.MethodDelete, "http://localhost:8080/streams/demo4321", bytes.NewBufferString("any"))
+	w = httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+
 	buf1 := bytes.NewBuffer([]byte(`{"sql":"CREATE stream demo4321() WITH (DATASOURCE=\"0\", TYPE=\"mqtt\")"}`))
 	req1, _ := http.NewRequest(http.MethodPost, "http://localhost:8080/streams", buf1)
 	w1 := httptest.NewRecorder()
@@ -37,6 +48,16 @@ func (suite *RestTestSuite) TestTraceRule() {
 	w2 := httptest.NewRecorder()
 	suite.r.ServeHTTP(w2, req2)
 	require.Equal(suite.T(), http.StatusCreated, w2.Code)
+
+	defer func() {
+		req, _ := http.NewRequest(http.MethodDelete, "http://localhost:8080/rules/test54321", bytes.NewBufferString("any"))
+		w := httptest.NewRecorder()
+		suite.r.ServeHTTP(w, req)
+
+		req, _ = http.NewRequest(http.MethodDelete, "http://localhost:8080/streams/demo4321", bytes.NewBufferString("any"))
+		w = httptest.NewRecorder()
+		suite.r.ServeHTTP(w, req)
+	}()
 
 	r := &EnableRuleTraceRequest{
 		Strategy: "always",
@@ -63,8 +84,8 @@ func (suite *RestTestSuite) TestTraceRule() {
 	require.NoError(suite.T(), json.Unmarshal(returnVal, &v))
 	for _, vv := range v {
 		if vv["id"] == "test54321" {
-			require.Equal(suite.T(), "running", v[0]["status"])
-			require.Equal(suite.T(), false, v[0]["trace"])
+			require.Equal(suite.T(), "running", vv["status"])
+			require.Equal(suite.T(), false, vv["trace"])
 		}
 	}
 }

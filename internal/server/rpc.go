@@ -32,6 +32,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/io/sink"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/model"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/planner"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/rule"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
@@ -90,7 +91,7 @@ func (t *Server) CreateQuery(sql string, reply *string) error {
 	if _, ok := registry.load(QueryRuleId); ok {
 		stopQuery()
 	}
-	tp, err := ruleProcessor.ExecQuery(QueryRuleId, sql)
+	tp, _, err := planner.PlanSQLWithSourcesAndSinks(def.GetDefaultRule(QueryRuleId, sql), nil)
 	if err != nil {
 		return err
 	} else {

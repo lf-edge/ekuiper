@@ -131,8 +131,14 @@ func (s *Topo) CancelWithSig(sig int) error {
 		return nil
 	}
 	s.hasOpened.Store(false)
-	if s.coordinator.IsActivated() && s.options.EnableSaveStateBeforeStop {
-		notify, err := s.coordinator.ForceSaveState(xsql.StopTuple{
+	// Check coordinator status under lock
+	s.mu.Lock()
+	coordinator := s.coordinator
+	enableSave := s.options.EnableSaveStateBeforeStop
+	s.mu.Unlock()
+
+	if coordinator != nil && coordinator.IsActivated() && enableSave {
+		notify, err := coordinator.ForceSaveState(xsql.StopTuple{
 			RuleId: s.ctx.GetRuleId(),
 			Sig:    sig,
 		})
@@ -176,6 +182,8 @@ func (s *Topo) CancelWithSig(sig int) error {
 }
 
 func (s *Topo) AddSrc(src node.DataSourceNode) *Topo {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	s.sources = append(s.sources, src)
 	switch rt := src.(type) {
 	case node.MergeableTopo:
@@ -187,6 +195,8 @@ func (s *Topo) AddSrc(src node.DataSourceNode) *Topo {
 }
 
 func (s *Topo) AddSink(inputs []node.Emitter, snk node.DataSinkNode) *Topo {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	for _, input := range inputs {
 		err := input.AddOutput(snk.GetInput())
 		if err != nil {
@@ -306,7 +316,15 @@ func (s *Topo) Open() <-chan error {
 		s.ctx.GetLogger().Info("rule is already running, do nothing")
 		return s.drain
 	}
+	// protected by lock to avoid data race with WaitClose
+	s.mu.Lock()
+	if s.opsWg == nil {
+		s.opsWg = &sync.WaitGroup{}
+	}
+	s.opsWg.Add(1)
+	s.mu.Unlock()
 	s.hasOpened.Store(true)
+	defer s.opsWg.Done()
 	s.prepareContext() // ensure context is set
 	s.drain = make(chan error, 2)
 	log := s.ctx.GetLogger()
@@ -495,7 +513,7 @@ func (s *Topo) WaitClose() {
 	if s == nil {
 		return
 	}
-	// wait all operators close
+	// wait all operators close and spawning finish include the Open routine
 	if s.opsWg != nil {
 		s.opsWg.Wait()
 		s.opsWg = nil

@@ -128,13 +128,13 @@ func ProduceError(ctx api.StreamContext, topic string, err error) {
 }
 
 func doProduce(ctx api.StreamContext, topic string, data any) {
+	mu.RLock()
+	defer mu.RUnlock()
 	c, exists := pubTopics[topic]
 	if !exists {
 		return
 	}
 	logger := ctx.GetLogger()
-	mu.RLock()
-	defer mu.RUnlock()
 	// broadcast to all consumers
 	for name, out := range c.consumers {
 		select {

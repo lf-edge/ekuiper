@@ -111,6 +111,8 @@ func NewState(rule *def.Rule, updateTriggerFunc func(string, bool)) *State {
 }
 
 func (s *State) WithTopo(topo *topo.Topo) *State {
+	s.Lock()
+	defer s.Unlock()
 	s.topology = topo
 	if topo != nil {
 		s.topoGraph = s.topology.GetTopo()
@@ -118,7 +120,21 @@ func (s *State) WithTopo(topo *topo.Topo) *State {
 	return s
 }
 
+func (s *State) GetRule() *def.Rule {
+	s.RLock()
+	defer s.RUnlock()
+	return s.Rule
+}
+
+func (s *State) SetRule(r *def.Rule) {
+	s.Lock()
+	defer s.Unlock()
+	s.Rule = r
+}
+
 func (s *State) HasTopo() bool {
+	s.RLock()
+	defer s.RUnlock()
 	return s.topology != nil
 }
 
@@ -298,8 +314,9 @@ func (s *State) Start() error {
 	}
 	// Start normally or start in schedule period Rule
 	// doStart trigger the Rule run. If no trigger error, the Rule will run async and control the state by itself
-	s.logger.Infof("start to run rule %s", s.Rule.Id)
-	err := s.doStart()
+	r := s.GetRule()
+	s.logger.Infof("start to run rule %s", r.Id)
+	err := s.doStart(r)
 	if err != nil {
 		s.transit(StoppedByErr, err)
 		return err
@@ -316,8 +333,9 @@ func (s *State) ScheduleStart() error {
 		return nil
 	}
 	// doStart trigger the Rule run. If no trigger error, the Rule will run async and control the state by itself
-	s.logger.Infof("schedule to run rule %s", s.Rule.Id)
-	err := s.doStart()
+	r := s.GetRule()
+	s.logger.Infof("schedule to run rule %s", r.Id)
+	err := s.doStart(r)
 	if err != nil {
 		s.transit(StoppedByErr, err)
 		return err
@@ -411,8 +429,9 @@ func (s *State) StopWithLastWillAndSig(msg string, sig int) {
 		return
 	}
 	// do stop, stopping action and starting action are mutual exclusive. No concurrent problem here
-	s.logger.Infof("stopping rule %s", s.Rule.Id)
-	err := s.doStopWithSig(sig)
+	r := s.GetRule()
+	s.logger.Infof("stopping rule %s", r.Id)
+	err := s.doStopWithSig(r, sig)
 	if err == nil {
 		err = errors.New(msg)
 	}
@@ -428,10 +447,11 @@ func (s *State) ScheduleStop() {
 		return
 	}
 	// do stop, stopping action and starting action are mutual exclusive. No concurrent problem here
-	s.logger.Infof("schedule to stop rule %s", s.Rule.Id)
-	err := s.doStop()
+	r := s.GetRule()
+	s.logger.Infof("schedule to stop rule %s", r.Id)
+	err := s.doStop(r)
 	// currentState may be accessed concurrently
-	if schedule.IsAfterTimeRanges(timex.GetNow(), s.Rule.Options.CronDatetimeRange) {
+	if schedule.IsAfterTimeRanges(timex.GetNow(), r.Options.CronDatetimeRange) {
 		s.transit(ScheduledStop, errors.New("schedule terminated"))
 	} else {
 		s.transit(ScheduledStop, err)
@@ -466,44 +486,63 @@ func (s *State) nextAction() {
 // doStart/doStop actions are run in sync!!
 // 1. create topo if not exists
 // 2. run topo async
-func (s *State) doStart() error {
+func (s *State) doStart(r *def.Rule) error {
 	err := infra.SafeRun(func() error {
-		if s.topology == nil {
-			if tp, err := planner.Plan(s.Rule); err != nil {
+		s.Lock()
+		tp := s.topology
+		s.Unlock()
+		if tp == nil {
+			if tp, err := planner.Plan(r); err != nil {
 				return err
 			} else {
-				s.topology = tp
-				s.topoGraph = s.topology.GetTopo()
+				s.Lock()
+				// Double check
+				if s.topology == nil {
+					s.topology = tp
+					s.topoGraph = s.topology.GetTopo()
+				}
+				s.Unlock()
 			}
 		}
 		ctx, cancel := context.WithCancel(context.Background())
+		s.Lock()
 		s.cancelRetry = cancel
 		s.lastStartTimestamp = timex.GetNowInMilli()
 		s.lastWill = ""
-		go s.runTopo(ctx, s.topology, s.Rule.Options.RestartStrategy)
+		s.Unlock()
+		go s.runTopo(ctx, s.topology, r)
 		return nil
 	})
 	return err
 }
 
-func (s *State) doStop() error {
-	return s.doStopWithSig(0)
+func (s *State) doStop(r *def.Rule) error {
+	return s.doStopWithSig(r, 0)
 }
 
-func (s *State) doStopWithSig(sig int) error {
+func (s *State) doStopWithSig(r *def.Rule, sig int) error {
 	if s.cancelRetry != nil {
 		s.cancelRetry()
 	}
-	if s.topology != nil {
-		e := s.topology.GetContext().Err()
-		s.topoGraph = s.topology.GetTopo()
-		keys, values := s.topology.GetMetrics()
+	s.Lock()
+	tp := s.topology
+	s.Unlock()
+	if tp != nil {
+		e := tp.GetContext().Err()
+		s.Lock()
+		s.topoGraph = tp.GetTopo()
+		keys, values := tp.GetMetrics()
 		s.stoppedMetrics = []any{keys, values}
-		err := s.topology.CancelWithSig(sig)
+		s.Unlock()
+		err := tp.CancelWithSig(sig)
 		if err == nil {
-			s.topology.WaitClose()
+			tp.WaitClose()
 		}
-		s.topology = nil
+		s.Lock()
+		if s.topology == tp {
+			s.topology = nil
+		}
+		s.Unlock()
 		return e
 	}
 	return nil
@@ -512,7 +551,8 @@ func (s *State) doStopWithSig(sig int) error {
 const EOFMessage = "done"
 
 // This is called async
-func (s *State) runTopo(ctx context.Context, tp *topo.Topo, rs *def.RestartStrategy) {
+func (s *State) runTopo(ctx context.Context, tp *topo.Topo, r *def.Rule) {
+	rs := r.Options.RestartStrategy
 	err := infra.SafeRun(func() error {
 		count := 0
 		d := time.Duration(rs.Delay)
@@ -529,18 +569,22 @@ func (s *State) runTopo(ctx context.Context, tp *topo.Topo, rs *def.RestartStrat
 					tp.Cancel()
 				} else { // exit normally
 					if errorx.IsEOF(er) {
+						s.Lock()
 						s.lastWill = EOFMessage
 						msg := er.Error()
 						if len(msg) > 0 {
 							s.lastWill = fmt.Sprintf("%s: %s", s.lastWill, msg)
 						}
-						s.updateTrigger(s.Rule.Id, false)
+						s.Unlock()
+						s.updateTrigger(r.Id, false)
 					}
 					tp.Cancel()
 					return nil
 				}
 				// Although it is stopped, it is still retrying, so the status is still RUNNING
+				s.Lock()
 				s.lastWill = "retrying after error: " + er.Error()
+				s.Unlock()
 			}
 			if count < rs.Attempts {
 				if d > time.Duration(rs.MaxDelay) {
@@ -573,22 +617,37 @@ func (s *State) runTopo(ctx context.Context, tp *topo.Topo, rs *def.RestartStrat
 			}
 		}
 	})
-	if s.topology != nil {
+	s.Lock()
+	if s.topology != nil && s.topology == tp {
 		s.topoGraph = s.topology.GetTopo()
 		keys, values := s.topology.GetMetrics()
 		s.stoppedMetrics = []any{keys, values}
 	}
+	s.Unlock()
 	if err != nil { // Exit after retries
 		s.logger.Error(err)
 		s.transit(StoppedByErr, err)
-		s.topology = nil
-		s.logger.Infof("%s exit by error set tp to nil", s.Rule.Id)
-	} else if strings.HasPrefix(s.lastWill, EOFMessage) {
-		// Two case when err is nil; 1. Manually stop 2.EOF
-		// Only transit status when EOF. Don't do this for manual stop because the state already changed!
-		s.transit(Stopped, nil)
-		s.topology = nil
-		s.logger.Infof("%s exit eof set tp to nil", s.Rule.Id)
+		s.Lock()
+		if s.topology == tp {
+			s.topology = nil
+		}
+		s.Unlock()
+		s.logger.Infof("%s exit by error set tp to nil", r.Id)
+	} else {
+		s.RLock()
+		lw := s.lastWill
+		s.RUnlock()
+		if strings.HasPrefix(lw, EOFMessage) {
+			// Two case when err is nil; 1. Manually stop 2.EOF
+			// Only transit status when EOF. Don't do this for manual stop because the state already changed!
+			s.transit(Stopped, nil)
+			s.Lock()
+			if s.topology == tp {
+				s.topology = nil
+			}
+			s.Unlock()
+			s.logger.Infof("%s exit eof set tp to nil", r.Id)
+		}
 	}
 }
 

@@ -493,8 +493,15 @@ func convertStreamInfo(streamStmt *ast.StreamStmt) (*streamInfo, error) {
 			return nil, err
 		}
 	}
+	// Clone the statement to avoid data race when multiple rules sharing the same stream definition
+	// The planner may modify the options, e.g. set the type to default value
+	newStmt := *streamStmt
+	if streamStmt.Options != nil {
+		newOpt := *streamStmt.Options
+		newStmt.Options = &newOpt
+	}
 	return &streamInfo{
-		stmt:   streamStmt,
+		stmt:   &newStmt,
 		schema: ss,
 	}, nil
 }

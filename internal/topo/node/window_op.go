@@ -637,7 +637,7 @@ func (o *WindowOperator) handleInputs(ctx api.StreamContext, inputs []xsql.Event
 		// For hopping and sliding window, firstly check if the beginning tuples are expired and discard them
 		if o.isOverlapWindow && !allDiscarded {
 			if left.After(tuple.GetTimestamp()) {
-				log.Debugf("tuple %x emitted at %d expired", tuple, tuple.GetTimestamp().UnixMilli())
+				log.Debugf("tuple at %d expired", tuple.GetTimestamp().UnixMilli())
 				// Expired tuple, remove it by not adding back to inputs
 				continue
 			}
@@ -724,7 +724,7 @@ func (o *WindowOperator) scan(inputs []xsql.EventRow, triggerTime time.Time, ctx
 		results.WindowRange = xsql.NewWindowRange(windowStart, windowEnd.UnixMilli(), triggerTime.Add(-o.window.Delay).UnixMilli())
 	}
 	log.Debugf("window %s triggered for %d tuples", o.name, len(inputs))
-	log.Debugf("Sent: %v", results)
+
 	o.Broadcast(results)
 	o.onSend(ctx, results)
 

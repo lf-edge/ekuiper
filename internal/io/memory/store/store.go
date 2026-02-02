@@ -41,7 +41,7 @@ func runTable(topic string, topicRegex *regexp.Regexp, t *Table) {
 	conf.Log.Infof("runTable %s", topic)
 	ch := pubsub.CreateSub(topic, topicRegex, fmt.Sprintf("store_%s", topic), 1024)
 	ctx, cancel := context.WithCancel(context.Background())
-	t.cancel = cancel
+	t.setCancel(cancel)
 	for {
 		select {
 		case v := <-ch:

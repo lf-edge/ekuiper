@@ -33,6 +33,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 	"github.com/lf-edge/ekuiper/v2/pkg/model"
+	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
@@ -49,6 +50,7 @@ type SinkNode struct {
 	doCollect      func(ctx api.StreamContext, sink api.Sink, data any) error
 	// channel for resend
 	resendOut chan<- any
+	mu        syncx.Mutex
 }
 
 // Caching:
@@ -128,7 +130,9 @@ func (s *SinkNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 				_ = s.sink.Close(ctx)
 				s.Close()
 			}()
+			s.mu.Lock()
 			s.currentEof = 0
+			s.mu.Unlock()
 			for _, data := range loadedData {
 				sendingData = data
 				s.handle(ctx, data)
@@ -286,10 +290,12 @@ func (s *SinkNode) ingest(ctx api.StreamContext, item any) (any, bool) {
 	case *xsql.WatermarkTuple, xsql.BatchEOFTuple, xsql.StopTuple:
 		return nil, true
 	case xsql.EOFTuple:
+		s.mu.Lock()
 		s.currentEof++
 		if s.eoflimit == s.currentEof {
 			infra.DrainError(ctx, errorx.NewEOF(string(d)), s.ctrlCh)
 		}
+		s.mu.Unlock()
 		return nil, true
 	}
 	ctx.GetLogger().Debugf("%s_%d receive data %v", ctx.GetOpId(), ctx.GetInstanceId(), item)

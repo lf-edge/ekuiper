@@ -24,6 +24,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
+	"github.com/lf-edge/ekuiper/v2/internal/testx"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/planner"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
@@ -32,6 +33,9 @@ import (
 )
 
 func TestIncEventHoppingWindowState(t *testing.T) {
+	if testx.Race {
+		t.Skip("skip race test")
+	}
 	conf.IsTesting = true
 	o := &def.RuleOption{
 		PlanOptimizeStrategy: &def.PlanOptimizeStrategy{

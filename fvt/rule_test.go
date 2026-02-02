@@ -124,7 +124,7 @@ func (s *RuleTestSuite) TestUpsert() {
 		err := server.AddListener(tcp)
 		s.Require().NoError(err)
 		go func() {
-			err = server.Serve()
+			err := server.Serve()
 			fmt.Println(err)
 		}()
 		fmt.Println(tcp.Address())
@@ -222,6 +222,8 @@ func (s *RuleTestSuite) TestUpsert() {
 	})
 	s.Run("compare result", func() {
 		expected := map[string]string{"sim/new1": "{\"b\":2}", "sim/new2": "{\"a\":1}", "sim/old1": "{\"a\":1}", "sim/old2": "{\"b\":2}"}
+		lock.Lock()
+		defer lock.Unlock()
 		s.Require().Equal(expected, result)
 	})
 }

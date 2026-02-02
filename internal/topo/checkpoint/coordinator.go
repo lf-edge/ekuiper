@@ -26,6 +26,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
+	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
@@ -72,11 +73,14 @@ type completedCheckpoint struct {
 }
 
 type checkpointStore struct {
+	syncx.RWMutex
 	maxNum      int
 	checkpoints []*completedCheckpoint
 }
 
 func (s *checkpointStore) add(c *completedCheckpoint) {
+	s.Lock()
+	defer s.Unlock()
 	s.checkpoints = append(s.checkpoints, c)
 	if len(s.checkpoints) > s.maxNum {
 		s.checkpoints = s.checkpoints[1:]
@@ -84,10 +88,18 @@ func (s *checkpointStore) add(c *completedCheckpoint) {
 }
 
 func (s *checkpointStore) getLatest() *completedCheckpoint {
+	s.RLock()
+	defer s.RUnlock()
 	if len(s.checkpoints) > 0 {
 		return s.checkpoints[len(s.checkpoints)-1]
 	}
 	return nil
+}
+
+func (s *checkpointStore) getCount() int {
+	s.RLock()
+	defer s.RUnlock()
+	return len(s.checkpoints)
 }
 
 type Coordinator struct {
@@ -105,7 +117,7 @@ type Coordinator struct {
 	signal                  chan *Signal
 	store                   api.Store
 	ctx                     api.StreamContext
-	activated               bool
+	activated               atomic.Bool
 
 	inForceSaveState     atomic.Bool
 	forceSaveStateNotify chan any
@@ -178,7 +190,7 @@ func (c *Coordinator) Activate() error {
 	tc := c.ticker.C
 	go func() {
 		err := infra.SafeRun(func() error {
-			c.activated = true
+			c.activated.Store(true)
 			for {
 				select {
 				case n := <-tc:
@@ -326,7 +338,7 @@ func (c *Coordinator) complete(checkpointId int64) {
 
 // For testing
 func (c *Coordinator) GetCompleteCount() int {
-	return len(c.completedCheckpoints.checkpoints)
+	return c.completedCheckpoints.getCount()
 }
 
 func (c *Coordinator) GetLatest() int64 {
@@ -337,7 +349,7 @@ func (c *Coordinator) IsActivated() bool {
 	if c == nil {
 		return false
 	}
-	return c.activated
+	return c.activated.Load()
 }
 
 func (c *Coordinator) ActiveForceSaveState() {

@@ -258,7 +258,9 @@ func SetConsoleAndFileLog(consoleLog, fileLog bool) error {
 }
 
 func SetLogFormat(disableTimestamp bool) {
-	Log.Formatter.(*logrus.TextFormatter).DisableTimestamp = disableTimestamp
+	Log.SetFormatter(&logrus.TextFormatter{
+		DisableTimestamp: disableTimestamp,
+	})
 }
 
 func ValidateRuleOption(option *def.RuleOption) error {
