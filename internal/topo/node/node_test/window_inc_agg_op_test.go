@@ -265,9 +265,6 @@ func TestIncAggAlignTumblingWindow(t *testing.T) {
 }
 
 func TestIncAggTumblingWindow(t *testing.T) {
-	if testx.Race {
-		t.Skip("skip race test")
-	}
 	conf.IsTesting = true
 	node.EnableAlignWindow = false
 	o := &def.RuleOption{
