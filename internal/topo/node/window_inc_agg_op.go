@@ -15,8 +15,10 @@
 package node
 
 import (
+	"context"
 	"encoding/gob"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/benbjohnson/clock"
@@ -54,6 +56,12 @@ type WindowIncAggOperator struct {
 	Dimensions   ast.Dimensions
 	aggFields    []*ast.Field
 	WindowExec   windowIncAggExec
+
+	putStateReqCh chan chan error
+	restoreReqCh  chan chan error
+
+	firstTimerMu      sync.Mutex
+	firstTimerCreated bool
 }
 
 func NewWindowIncAggOp(name string, w *WindowConfig, dimensions ast.Dimensions, aggFields []*ast.Field, options *def.RuleOption) (*WindowIncAggOperator, error) {
@@ -62,6 +70,8 @@ func NewWindowIncAggOp(name string, w *WindowConfig, dimensions ast.Dimensions, 
 	o.windowConfig = w
 	o.Dimensions = dimensions
 	o.aggFields = aggFields
+	o.putStateReqCh = make(chan chan error, 2)
+	o.restoreReqCh = make(chan chan error, 2)
 	switch w.Type {
 	case ast.COUNT_WINDOW:
 		if options.IsEventTime {
@@ -119,6 +129,49 @@ func (o *WindowIncAggOperator) Exec(ctx api.StreamContext, errCh chan<- error) {
 			infra.DrainError(ctx, err, errCh)
 		}
 	}()
+}
+
+func (o *WindowIncAggOperator) PutState4Test(ctx context.Context) error {
+	return o.execStateCall4Test(ctx, o.putStateReqCh)
+}
+
+func (o *WindowIncAggOperator) RestoreFromState4Test(ctx context.Context) error {
+	return o.execStateCall4Test(ctx, o.restoreReqCh)
+}
+
+func (o *WindowIncAggOperator) FirstTimerCreated4Test() bool {
+	o.firstTimerMu.Lock()
+	defer o.firstTimerMu.Unlock()
+	return o.firstTimerCreated
+}
+
+func (o *WindowIncAggOperator) markFirstTimerCreated() {
+	o.firstTimerMu.Lock()
+	o.firstTimerCreated = true
+	o.firstTimerMu.Unlock()
+}
+
+func (o *WindowIncAggOperator) execStateCall4Test(ctx context.Context, reqCh chan chan error) error {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	done := make(chan error, 1)
+	const timeout = 5 * time.Second
+	select {
+	case reqCh <- done:
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-time.After(timeout):
+		return context.DeadlineExceeded
+	}
+	select {
+	case err := <-done:
+		return err
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-time.After(timeout):
+		return context.DeadlineExceeded
+	}
 }
 
 type windowIncAggExec interface {
@@ -246,6 +299,11 @@ func (co *CountWindowIncAggOp) exec(ctx api.StreamContext, errCh chan<- error) {
 		select {
 		case <-ctx.Done():
 			return
+		case done := <-co.putStateReqCh:
+			co.PutState(ctx)
+			done <- nil
+		case done := <-co.restoreReqCh:
+			done <- co.RestoreFromState(ctx)
 		case input := <-co.input:
 			now := timex.GetNow()
 			data, processed := co.commonIngest(ctx, input)
@@ -370,6 +428,9 @@ func (to *TumblingWindowIncAggOp) exec(ctx api.StreamContext, errCh chan<- error
 		to.ticker = timex.GetTicker(to.Interval)
 	} else {
 		_, to.FirstTimer = getFirstTimer(ctx, to.windowConfig.RawInterval, to.windowConfig.TimeUnit)
+		if to.FirstTimer != nil {
+			to.markFirstTimerCreated()
+		}
 		if to.CurrWindow == nil {
 			to.CurrWindow = newIncAggWindow(ctx, now)
 		}
@@ -380,6 +441,11 @@ func (to *TumblingWindowIncAggOp) exec(ctx api.StreamContext, errCh chan<- error
 			select {
 			case <-ctx.Done():
 				return
+			case done := <-to.putStateReqCh:
+				to.PutState(ctx)
+				done <- nil
+			case done := <-to.restoreReqCh:
+				done <- to.RestoreFromState(ctx)
 			case now := <-to.FirstTimer.C:
 				to.FirstTimer.Stop()
 				to.FirstTimer = nil
@@ -414,6 +480,11 @@ outer:
 		select {
 		case <-ctx.Done():
 			return
+		case done := <-to.putStateReqCh:
+			to.PutState(ctx)
+			done <- nil
+		case done := <-to.restoreReqCh:
+			done <- to.RestoreFromState(ctx)
 		case input := <-to.input:
 			now := timex.GetNow()
 			data, processed := to.commonIngest(ctx, input)
@@ -525,6 +596,11 @@ func (so *SlidingWindowIncAggOp) exec(ctx api.StreamContext, errCh chan<- error)
 		select {
 		case <-ctx.Done():
 			return
+		case done := <-so.putStateReqCh:
+			so.PutState(ctx)
+			done <- nil
+		case done := <-so.restoreReqCh:
+			done <- so.RestoreFromState(ctx)
 		case input := <-so.input:
 			now := timex.GetNow()
 			data, processed := so.commonIngest(ctx, input)
@@ -695,6 +771,9 @@ func (ho *HoppingWindowIncAggOp) exec(ctx api.StreamContext, errCh chan<- error)
 		ho.newIncWindow(ctx, now)
 	} else {
 		_, ho.FirstTimer = getFirstTimer(ctx, ho.windowConfig.RawInterval, ho.windowConfig.TimeUnit)
+		if ho.FirstTimer != nil {
+			ho.markFirstTimerCreated()
+		}
 		ho.CurrWindowList = append(ho.CurrWindowList, newIncAggWindow(ctx, now))
 	}
 	fv, _ := xsql.NewFunctionValuersForOp(ctx)
@@ -702,6 +781,11 @@ func (ho *HoppingWindowIncAggOp) exec(ctx api.StreamContext, errCh chan<- error)
 		select {
 		case <-ctx.Done():
 			return
+		case done := <-ho.putStateReqCh:
+			ho.PutState(ctx)
+			done <- nil
+		case done := <-ho.restoreReqCh:
+			done <- ho.RestoreFromState(ctx)
 		case task := <-ho.taskCh:
 			now := timex.GetNow()
 			ho.emit(ctx, errCh, task.window, now)
