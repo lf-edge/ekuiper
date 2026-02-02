@@ -259,9 +259,9 @@ func TestIncAggAlignTumblingWindow(t *testing.T) {
 	}()
 	op.Exec(ctx, errCh)
 	time.Sleep(10 * time.Millisecond)
-	to, ok := op.WindowExec.(*node.TumblingWindowIncAggOp)
-	require.True(t, ok)
-	require.NotNil(t, to.FirstTimer)
+	require.Eventually(t, func() bool {
+		return op.FirstTimerCreated4Test()
+	}, time.Second, 10*time.Millisecond)
 }
 
 func TestIncAggTumblingWindow(t *testing.T) {
@@ -622,9 +622,9 @@ func TestIncAggAlignHoppingWindow(t *testing.T) {
 	}()
 	op.Exec(ctx, errCh)
 	time.Sleep(10 * time.Millisecond)
-	ho, ok := op.WindowExec.(*node.HoppingWindowIncAggOp)
-	require.True(t, ok)
-	require.NotNil(t, ho.FirstTimer)
+	require.Eventually(t, func() bool {
+		return op.FirstTimerCreated4Test()
+	}, time.Second, 10*time.Millisecond)
 }
 
 func extractIncWindowPlan(cur planner.LogicalPlan) *planner.IncWindowPlan {

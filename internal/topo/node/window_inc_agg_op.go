@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/gob"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/benbjohnson/clock"
@@ -58,6 +59,9 @@ type WindowIncAggOperator struct {
 
 	putStateReqCh chan chan error
 	restoreReqCh  chan chan error
+
+	firstTimerMu      sync.Mutex
+	firstTimerCreated bool
 }
 
 func NewWindowIncAggOp(name string, w *WindowConfig, dimensions ast.Dimensions, aggFields []*ast.Field, options *def.RuleOption) (*WindowIncAggOperator, error) {
@@ -133,6 +137,18 @@ func (o *WindowIncAggOperator) PutState4Test(ctx context.Context) error {
 
 func (o *WindowIncAggOperator) RestoreFromState4Test(ctx context.Context) error {
 	return o.execStateCall4Test(ctx, o.restoreReqCh)
+}
+
+func (o *WindowIncAggOperator) FirstTimerCreated4Test() bool {
+	o.firstTimerMu.Lock()
+	defer o.firstTimerMu.Unlock()
+	return o.firstTimerCreated
+}
+
+func (o *WindowIncAggOperator) markFirstTimerCreated() {
+	o.firstTimerMu.Lock()
+	o.firstTimerCreated = true
+	o.firstTimerMu.Unlock()
 }
 
 func (o *WindowIncAggOperator) execStateCall4Test(ctx context.Context, reqCh chan chan error) error {
@@ -412,6 +428,9 @@ func (to *TumblingWindowIncAggOp) exec(ctx api.StreamContext, errCh chan<- error
 		to.ticker = timex.GetTicker(to.Interval)
 	} else {
 		_, to.FirstTimer = getFirstTimer(ctx, to.windowConfig.RawInterval, to.windowConfig.TimeUnit)
+		if to.FirstTimer != nil {
+			to.markFirstTimerCreated()
+		}
 		if to.CurrWindow == nil {
 			to.CurrWindow = newIncAggWindow(ctx, now)
 		}
@@ -752,6 +771,9 @@ func (ho *HoppingWindowIncAggOp) exec(ctx api.StreamContext, errCh chan<- error)
 		ho.newIncWindow(ctx, now)
 	} else {
 		_, ho.FirstTimer = getFirstTimer(ctx, ho.windowConfig.RawInterval, ho.windowConfig.TimeUnit)
+		if ho.FirstTimer != nil {
+			ho.markFirstTimerCreated()
+		}
 		ho.CurrWindowList = append(ho.CurrWindowList, newIncAggWindow(ctx, now))
 	}
 	fv, _ := xsql.NewFunctionValuersForOp(ctx)
