@@ -15,11 +15,12 @@
 package trial
 
 import (
-	"net/url"
+	"bufio"
+	"net/http"
+	"strings"
 	"testing"
 	"time"
 
-	"github.com/gorilla/websocket"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -114,15 +115,26 @@ func testValidTrial(t *testing.T, mockDef1 string) {
 	require.NoError(t, err)
 	require.Equal(t, "rule876", id)
 	// Read from ws
-	u := url.URL{Scheme: "ws", Host: "localhost:10091", Path: "/test/rule876"}
-	c1, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
-	assert.NoError(t, err)
+	// Read from sse
+	req, _ := http.NewRequest(http.MethodGet, "http://localhost:10091/test/rule876", nil)
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	require.NoError(t, err)
 	recvCh := make(chan []byte, 10)
 	closeCh := make(chan struct{}, 10)
 	go func() {
-		_, data, err := c1.ReadMessage()
-		require.NoError(t, err)
-		recvCh <- data
+		reader := bufio.NewReader(resp.Body)
+		for {
+			line, err := reader.ReadString('\n')
+			if err != nil {
+				return
+			}
+			line = strings.TrimSpace(line)
+			if strings.HasPrefix(line, "data:") {
+				data := strings.TrimPrefix(line, "data:")
+				recvCh <- []byte(strings.TrimSpace(data))
+			}
+		}
 	}()
 	go func() {
 		for {
@@ -144,7 +156,7 @@ func testValidTrial(t *testing.T, mockDef1 string) {
 	case <-timeout:
 		require.Fail(t, "receive timeout")
 	}
-	c1.Close()
+	resp.Body.Close()
 	TrialManager.StopRule("rule876")
 	closeCh <- struct{}{}
 }
@@ -156,15 +168,26 @@ func testRuntimeErrorTrial(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "ruleErr", id)
 	// Read from ws
-	u := url.URL{Scheme: "ws", Host: "localhost:10091", Path: "/test/ruleErr"}
-	c2, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
+	// Read from sse
+	req, _ := http.NewRequest(http.MethodGet, "http://localhost:10091/test/ruleErr", nil)
+	client := &http.Client{}
+	resp, err := client.Do(req)
 	require.NoError(t, err)
 	recvCh := make(chan []byte, 10)
 	closeCh := make(chan struct{}, 10)
 	go func() {
-		_, data, err := c2.ReadMessage()
-		require.NoError(t, err)
-		recvCh <- data
+		reader := bufio.NewReader(resp.Body)
+		for {
+			line, err := reader.ReadString('\n')
+			if err != nil {
+				return
+			}
+			line = strings.TrimSpace(line)
+			if strings.HasPrefix(line, "data:") {
+				data := strings.TrimPrefix(line, "data:")
+				recvCh <- []byte(strings.TrimSpace(data))
+			}
+		}
 	}()
 	go func() {
 		for {
@@ -188,7 +211,7 @@ func testRuntimeErrorTrial(t *testing.T) {
 	}
 	TrialManager.StopRule(id)
 	closeCh <- struct{}{}
-	c2.Close()
+	resp.Body.Close()
 }
 
 func testRealSourceTrial(t *testing.T) {
@@ -197,15 +220,25 @@ func testRealSourceTrial(t *testing.T) {
 	assert.Equal(t, "rule878", id)
 	assert.NoError(t, err)
 
-	u := url.URL{Scheme: "ws", Host: "localhost:10091", Path: "/test/rule878"}
-	c3, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
+	req, _ := http.NewRequest(http.MethodGet, "http://localhost:10091/test/rule878", nil)
+	client := &http.Client{}
+	resp, err := client.Do(req)
 	require.NoError(t, err)
 	recvCh := make(chan []byte, 10)
 	closeCh := make(chan struct{}, 10)
 	go func() {
-		_, data, err := c3.ReadMessage()
-		require.NoError(t, err)
-		recvCh <- data
+		reader := bufio.NewReader(resp.Body)
+		for {
+			line, err := reader.ReadString('\n')
+			if err != nil {
+				return
+			}
+			line = strings.TrimSpace(line)
+			if strings.HasPrefix(line, "data:") {
+				data := strings.TrimPrefix(line, "data:")
+				recvCh <- []byte(strings.TrimSpace(data))
+			}
+		}
 	}()
 	go func() {
 		for {
@@ -229,5 +262,5 @@ func testRealSourceTrial(t *testing.T) {
 	}
 	TrialManager.StopRule(id)
 	closeCh <- struct{}{}
-	c3.Close()
+	resp.Body.Close()
 }

@@ -7,14 +7,14 @@
 10 分钟），超过时间后会自动停止并清除。使用规则试运行的一般步骤如下：
 
 1. [创建测试规则](#创建测试规则)，获得测试规则的 id 和端口。
-2. 使用测试规则的 id 和端口，连接并监听 WebSocket 服务。其服务地址为 `http://locahost:10081/test/myid` 其中 `10081` 为步骤1
-   返回的端口值，myid 为测试规则的 id。
-3. [启动测试规则](#启动测试规则)，等待测试规则运行。规则运行结果将通过 WebSocket 服务返回。
-4. 规则试运行结束后，[删除测试规则](#删除测试规则)，关闭 WebSocket 服务。
+2. 使用测试规则的 id 和端口，连接并监听 SSE 服务。其服务地址为 `http://locahost:10081/test/myid` 其中 `10081` 为步骤1
+   返回的端口值，myid 为测试规则的 id。Server-Sent Events (SSE) 允许服务器向客户端推送更新。请使用带有请求头 `Accept: text/event-stream` 的 HTTP GET 请求进行连接。
+3. [启动测试规则](#启动测试规则)，等待测试规则运行。规则运行结果将通过 SSE 服务返回。
+4. 规则试运行结束后，[删除测试规则](#删除测试规则)，关闭 SSE 服务。
 
 ::: tip
 
-WebSocket 服务默认采用 10081 端口，可通过配置文件 `kuiper.yaml` 中的 `httpServerPort` 字段修改。使用测试规则前，请确保该端口可访问。
+SSE 服务默认采用 10081 端口，可通过配置文件 `kuiper.yaml` 中的 `httpServerPort` 字段修改。使用测试规则前，请确保该端口可访问。
 
 :::
 
@@ -84,7 +84,7 @@ POST /ruletest
 }
 ```
 
-规则创建成功后，websocket endpoint 启动。用户可通过监听 websocket 地址 `http://locahost:10081/test/uuid` 获取结果输出。其中，端口和
+规则创建成功后，SSE endpoint 启动。用户可通过监听 SSE 地址 `http://locahost:10081/test/uuid` 获取结果输出。其中，端口和
 id 为上述返回值。
 
 若创建失败，状态码为 400，返回错误信息，示例如下：
@@ -101,7 +101,7 @@ id 为上述返回值。
 POST /ruletest/{id}/start
 ```
 
-启动试运行规则，WebSocket 将可接收到规则运行后输出的数据。
+启动试运行规则，SSE 将可接收到规则运行后输出的数据。
 
 ## 删除测试规则
 
@@ -109,4 +109,4 @@ POST /ruletest/{id}/start
 DELETE /ruletest/{id}
 ```
 
-删除试运行规则，WebSocket 将停止服务。
+删除试运行规则，SSE 将停止服务。

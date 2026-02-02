@@ -15,14 +15,14 @@
 package server
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
+	"strings"
 	"time"
 
-	"github.com/gorilla/websocket"
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
@@ -44,6 +44,9 @@ func (suite *RestTestSuite) TestRuleTest() {
 	dataDir, err := conf.GetDataLoc()
 	require.NoError(suite.T(), err)
 	require.NoError(suite.T(), store.SetupDefault(dataDir))
+
+	p := processor.NewStreamProcessor()
+	p.ExecStmt("DROP STREAM trialDemo")
 
 	rd := &trial.RunDef{
 		Id:  "mock1",
@@ -70,7 +73,6 @@ func (suite *RestTestSuite) TestRuleTest() {
 	suite.r.ServeHTTP(w2, req2)
 	require.NotEqual(suite.T(), http.StatusOK, w2.Code)
 
-	p := processor.NewStreamProcessor()
 	p.ExecStmt("DROP STREAM trialDemo")
 	_, err = p.ExecStmt("CREATE STREAM trialDemo () WITH (DATASOURCE=\"trialDemo\", TYPE=\"simulator\", FORMAT=\"json\", KEY=\"ts\")")
 	require.NoError(suite.T(), err)
@@ -80,17 +82,27 @@ func (suite *RestTestSuite) TestRuleTest() {
 	w2 = httptest.NewRecorder()
 	suite.r.ServeHTTP(w2, req2)
 	require.Equal(suite.T(), http.StatusOK, w2.Code)
-	u := url.URL{Scheme: "ws", Host: "localhost:10087", Path: "/test/mock1"}
-	c1, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
+	req, _ := http.NewRequest(http.MethodGet, "http://localhost:10087/test/mock1", nil)
+	client := &http.Client{}
+	resp, err := client.Do(req)
 	require.NoError(suite.T(), err)
-	defer c1.Close()
+	defer resp.Body.Close()
 
-	recvCh := make(chan []byte, 10)
+	recvCh := make(chan string, 10)
 	closeCh := make(chan struct{}, 10)
 	go func() {
-		_, data, err := c1.ReadMessage()
-		require.NoError(suite.T(), err)
-		recvCh <- data
+		reader := bufio.NewReader(resp.Body)
+		for {
+			line, err := reader.ReadString('\n')
+			if err != nil {
+				return
+			}
+			line = strings.TrimSpace(line)
+			if strings.HasPrefix(line, "data:") {
+				data := strings.TrimPrefix(line, "data:")
+				recvCh <- strings.TrimSpace(data)
+			}
+		}
 	}()
 	go func() {
 		for {
@@ -109,7 +121,7 @@ func (suite *RestTestSuite) TestRuleTest() {
 	w2 = httptest.NewRecorder()
 	suite.r.ServeHTTP(w2, req2)
 	require.Equal(suite.T(), http.StatusOK, w2.Code)
-	require.Equal(suite.T(), `{"a":1}`, string(<-recvCh))
+	require.Equal(suite.T(), `{"a":1}`, <-recvCh)
 	req2, _ = http.NewRequest(http.MethodDelete, "http://localhost:8080/ruletest/mock1", bytes.NewBuffer([]byte{}))
 	w2 = httptest.NewRecorder()
 	suite.r.ServeHTTP(w2, req2)

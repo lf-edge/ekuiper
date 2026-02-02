@@ -43,6 +43,7 @@ type GlobalServerManager struct {
 	routes            map[string]http.HandlerFunc
 	upgrader          websocket.Upgrader
 	websocketEndpoint map[string]*websocketEndpointContext
+	sseEndpoint       map[string]*sseEndpointContext
 }
 
 var (
@@ -77,6 +78,7 @@ func InitGlobalServerManager(ip string, port int, tlsConf *model.TlsConf) {
 		router:            r,
 		routes:            map[string]http.HandlerFunc{},
 		upgrader:          upgrader,
+		sseEndpoint:       map[string]*sseEndpointContext{},
 	}
 	go func(m *GlobalServerManager) {
 		if tlsConf == nil {

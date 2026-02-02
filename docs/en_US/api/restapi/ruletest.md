@@ -10,16 +10,16 @@ and it will automatically stop and clear after the time is exceeded. The general
 follows:
 
 1. [Create a test rule](#create-a-test-rule), get the id and port of the test rule.
-2. Use the id and port of the test rule to connect and listen to the WebSocket service. Its service address
+2. Use the id and port of the test rule to connect and listen to the SSE service. Its service address
    is `http://locahost:10081/test/myid` where `10081` is the port value returned in step 1, and myid is the id of the
-   test rule.
+   test rule. Server-Sent Events (SSE) allows the server to push updates to the client. Connect via HTTP GET with header `Accept: text/event-stream`.
 3. [Start the test rule](#start-the-test-rule), wait for the test rule to run. The rule running result will be returned
-   through the WebSocket service.
-4. After the rule trial run ends, [delete the test rule](#delete-the-test-rule), and close the WebSocket service.
+   through the SSE service.
+4. After the rule trial run ends, [delete the test rule](#delete-the-test-rule), and close the SSE service.
 
 ::: tip
 
-The WebSocket service defaults to port 10081, which can be modified by the `httpServerPort` field in the `kuiper.yaml`
+The SSE service defaults to port 10081, which can be modified by the `httpServerPort` field in the `kuiper.yaml`
 configuration file. Before using the test rule, please make sure that this port is accessible.
 
 :::
@@ -93,7 +93,7 @@ If created successfully, the return example is as follows:
 }
 ```
 
-After the rule is created successfully, the websocket endpoint starts. Users can listen to the websocket
+After the rule is created successfully, the SSE endpoint starts. Users can listen to the SSE
 address `http://locahost:10081/test/uuid` to get the result output. Among them, the port and id are the above return
 values.
 
@@ -111,7 +111,7 @@ If creation fails, the status code is 400, return error information, an example 
 POST /ruletest/{id}/start
 ```
 
-Start the trial run rule, WebSocket will be able to receive the data output after the rule runs.
+Start the trial run rule, SSE will be able to receive the data output after the rule runs.
 
 ## Delete the Test Rule
 
@@ -119,4 +119,4 @@ Start the trial run rule, WebSocket will be able to receive the data output afte
 DELETE /ruletest/{id}
 ```
 
-Delete the trial run rule, WebSocket will stop the service.
+Delete the trial run rule, SSE will stop the service.
