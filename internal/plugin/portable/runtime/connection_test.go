@@ -150,18 +150,18 @@ func TestDataIn(t *testing.T) {
 		if err != nil {
 			t.Errorf("phase %d create client error %v", i, err)
 		}
-		go func() {
+		go func(phase int) {
 			c := 0
 			for c < 3 {
 				err := client.Send(okMsg)
 				if err != nil {
-					t.Errorf("phase %d client send error %v", i, err)
+					t.Errorf("phase %d client send error %v", phase, err)
 					return
 				}
-				conf.Log.Debugf("phase %d sent %d messages", i, c)
+				conf.Log.Debugf("phase %d sent %d messages", phase, c)
 				c++
 			}
-		}()
+		}(i)
 		c := 0
 		for c < 3 {
 			msg, err := ch.Recv()
@@ -199,18 +199,18 @@ func TestDataOut(t *testing.T) {
 		if err != nil {
 			t.Errorf("phase %d create channel error %v", i, err)
 		}
-		go func() {
+		go func(phase int) {
 			c := 0
 			for c < 3 {
 				err := ch.Send(okMsg)
 				if err != nil {
-					t.Errorf("phase %d client send error %v", i, err)
+					t.Errorf("phase %d client send error %v", phase, err)
 					return
 				}
-				conf.Log.Debugf("phase %d sent %d messages", i, c)
+				conf.Log.Debugf("phase %d sent %d messages", phase, c)
 				c++
 			}
-		}()
+		}(i)
 		c := 0
 		for c < 3 {
 			msg, err := client.Recv()

@@ -167,7 +167,9 @@ func (s *Source) runCurrent(ctx api.StreamContext, fps string, ingest api.BytesI
 	// We must read stderr even if DebugResp is false to prevent the ffmpeg pipe from
 	// blocking and to capture the last error message for diagnostics.
 	var lastStderr string
+	stderrDone := make(chan struct{})
 	go func() {
+		defer close(stderrDone)
 		scanner := bufio.NewScanner(stderr)
 		for scanner.Scan() {
 			line := scanner.Text()
@@ -203,6 +205,7 @@ func (s *Source) runCurrent(ctx api.StreamContext, fps string, ingest api.BytesI
 	case <-ctx.Done():
 		return nil
 	case err := <-done:
+		<-stderrDone
 		if err != nil && lastStderr != "" {
 			return fmt.Errorf("%v: %s", err, lastStderr)
 		}

@@ -95,8 +95,8 @@ func (db *database) dropTable(topic string, key string) error {
 	defer db.Unlock()
 	if tc, ok := db.tables[tableId]; ok {
 		if tc.Decrease() == 0 {
-			if tc.t != nil && tc.t.cancel != nil {
-				tc.t.cancel()
+			if tc.t != nil {
+				tc.t.callCancel()
 			}
 			delete(db.tables, tableId)
 		}
@@ -134,6 +134,20 @@ func (t *Table) delete(key interface{}) {
 	t.Lock()
 	defer t.Unlock()
 	delete(t.datamap, key)
+}
+
+func (t *Table) setCancel(cancel context.CancelFunc) {
+	t.Lock()
+	defer t.Unlock()
+	t.cancel = cancel
+}
+
+func (t *Table) callCancel() {
+	t.Lock()
+	defer t.Unlock()
+	if t.cancel != nil {
+		t.cancel()
+	}
 }
 
 func (t *Table) Read(keys []string, values []interface{}) ([]pubsub.MemTuple, error) {

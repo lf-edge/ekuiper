@@ -20,12 +20,14 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
 )
 
 type SimulatorSource struct {
 	index int
 	cfg   *sConfig
 	eof   api.EOFIngest
+	syncx.Mutex
 }
 
 type sConfig struct {
@@ -44,6 +46,8 @@ func (s *SimulatorSource) Provision(ctx api.StreamContext, configs map[string]an
 
 func (s *SimulatorSource) Close(ctx api.StreamContext) error {
 	// Allow to reset in close rule trial run
+	s.Lock()
+	defer s.Unlock()
 	s.index = 0
 	return nil
 }
@@ -58,6 +62,8 @@ func (s *SimulatorSource) SetEofIngest(eof api.EOFIngest) {
 }
 
 func (s *SimulatorSource) Pull(ctx api.StreamContext, trigger time.Time, ingest api.TupleIngest, _ api.ErrorIngest) {
+	s.Lock()
+	defer s.Unlock()
 	if s.index >= len(s.cfg.Data) {
 		if s.cfg.Loop {
 			s.index = 0

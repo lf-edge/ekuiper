@@ -25,6 +25,7 @@ import (
 	"reflect"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/golang/protobuf/ptypes/wrappers"
@@ -682,6 +683,20 @@ func TestGrpcService(t *testing.T) {
 		}
 	}()
 	defer s.Stop()
+	// Wait for server to start
+	var ready bool
+	for i := 0; i < 50; i++ {
+		conn, err := net.Dial("tcp", "127.0.0.1:50051")
+		if err == nil {
+			conn.Close()
+			ready = true
+			break
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+	if !ready {
+		t.Fatal("grpc server not ready")
+	}
 
 	// Reset
 	streamList := []string{"helloStr", "commands", "fakeBin", "optional_commands"}

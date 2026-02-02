@@ -24,10 +24,14 @@ import (
 	"github.com/msgpack-rpc/msgpack-rpc-go/rpc"
 
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
+	"github.com/lf-edge/ekuiper/v2/internal/testx"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/topotest"
 )
 
 func TestMsgpackService(t *testing.T) {
+	if testx.Race {
+		t.Skip("skip msgpack service test in race mode")
+	}
 	// mock server
 	res := Resolver{"SayHello": reflect.ValueOf(SayHello), "object_detection": reflect.ValueOf(object_detection), "get_feature": reflect.ValueOf(get_feature), "getStatus": reflect.ValueOf(getStatus)}
 	serv := rpc.NewServer(res, true, nil)

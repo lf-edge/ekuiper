@@ -26,17 +26,25 @@ import (
 )
 
 func (suite *RestTestSuite) TestTraceRule() {
-	buf1 := bytes.NewBuffer([]byte(`{"sql":"CREATE stream demo4321() WITH (DATASOURCE=\"0\", TYPE=\"mqtt\")"}`))
+	// Clean up if last run failed
+	ruleProcessor.ExecDrop("test54321") // Changed from "rule1" to "test54321" to match the rule ID in the test
+	streamProcessor.ExecStreamSql("DROP STREAM demo4321")
+
+	s := `CREATE STREAM demo4321 () WITH (DATASOURCE="0", TYPE="mqtt");`
+	m := map[string]string{"sql": s}
+	streamBody, _ := json.Marshal(m)
+	buf1 := bytes.NewBuffer(streamBody)
 	req1, _ := http.NewRequest(http.MethodPost, "http://localhost:8080/streams", buf1)
 	w1 := httptest.NewRecorder()
 	suite.r.ServeHTTP(w1, req1)
+	require.Equal(suite.T(), http.StatusCreated, w1.Code, w1.Body.String())
 
 	ruleJson2 := `{"id":"test54321","triggered":true,"sql":"select * from demo4321","actions":[{"log":{}}]}`
 	buf2 := bytes.NewBuffer([]byte(ruleJson2))
 	req2, _ := http.NewRequest(http.MethodPost, "http://localhost:8080/rules", buf2)
 	w2 := httptest.NewRecorder()
 	suite.r.ServeHTTP(w2, req2)
-	require.Equal(suite.T(), http.StatusCreated, w2.Code)
+	require.Equal(suite.T(), http.StatusCreated, w2.Code, w2.Body.String())
 
 	r := &EnableRuleTraceRequest{
 		Strategy: "always",

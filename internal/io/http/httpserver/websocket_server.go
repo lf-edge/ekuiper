@@ -53,11 +53,23 @@ type websocketEndpointContext struct {
 }
 
 func RegisterWebSocketEndpoint(ctx api.StreamContext, endpoint string) (string, string, error) {
-	return manager.RegisterWebSocketEndpoint(ctx, endpoint)
+	managerLock.RLock()
+	m := manager
+	managerLock.RUnlock()
+	if m == nil {
+		return "", "", fmt.Errorf("http server is not running")
+	}
+	return m.RegisterWebSocketEndpoint(ctx, endpoint)
 }
 
 func UnRegisterWebSocketEndpoint(endpoint string) {
-	wctx := manager.UnRegisterWebSocketEndpoint(endpoint)
+	managerLock.RLock()
+	m := manager
+	managerLock.RUnlock()
+	if m == nil {
+		return
+	}
+	wctx := m.UnRegisterWebSocketEndpoint(endpoint)
 	if wctx != nil {
 		// wait all process exit
 		wctx.wg.Wait()
@@ -144,7 +156,10 @@ func (m *GlobalServerManager) RegisterWebSocketEndpoint(ctx api.StreamContext, e
 		conf.Log.Infof("websocket endpint %v create connection", endpoint)
 	}
 	m.router.HandleFunc(endpoint, func(w http.ResponseWriter, r *http.Request) {
-		if h, ok := m.routes[endpoint]; ok {
+		m.RLock()
+		h, ok := m.routes[endpoint]
+		m.RUnlock()
+		if ok {
 			h(w, r)
 		} else {
 			w.WriteHeader(http.StatusNotFound)

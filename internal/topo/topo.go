@@ -71,6 +71,7 @@ type Topo struct {
 	topo         *def.PrintableTopo
 	sinkSchema   map[string]*ast.JsonStreamField
 	opsWg        *sync.WaitGroup
+	spawnDone    chan struct{}
 	// all other things are read only during lifecycle except state
 	state atomic.Value
 }
@@ -86,6 +87,7 @@ func NewWithNameAndOptions(name string, options *def.RuleOption) (*Topo, error) 
 			Edges:   make(map[string][]interface{}),
 		},
 		opsWg:        &sync.WaitGroup{},
+		spawnDone:    make(chan struct{}),
 		subSrcOpsMap: make(map[string]struct{}),
 		state:        atomic.Value{},
 	}
@@ -102,6 +104,7 @@ func (s *Topo) Open() <-chan error {
 	log := s.ctx.GetLogger()
 	log.Info("Opening stream")
 	err := infra.SafeRun(func() error {
+		defer close(s.spawnDone)
 		var err error
 		if s.store, err = state.CreateStore(s.name, s.options.Qos); err != nil {
 			return fmt.Errorf("topo %s create store error %v", s.name, err)
@@ -516,7 +519,8 @@ func (s *Topo) ResetStreamOffset(name string, input map[string]interface{}) erro
 }
 
 func (s *Topo) waitClose() {
-	// wait all operators close
+	// wait all operators close and spawning finish
+	<-s.spawnDone
 	if s.opsWg != nil {
 		s.opsWg.Wait()
 		s.opsWg = nil

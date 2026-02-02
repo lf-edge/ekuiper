@@ -88,7 +88,7 @@ func (s *State) doStart() error {
 				s.topoGraph = s.topology.GetTopo()
 			}
 		}
-		go s.runTopo(s.topology)
+		go s.runTopo(s.topology, s.Rule.Id)
 		return nil
 	})
 	if err != nil {
@@ -116,7 +116,7 @@ func (s *State) doStop(stateType machine.RunState, msg string) {
 }
 
 // This is called async
-func (s *State) runTopo(tp *topo.Topo) {
+func (s *State) runTopo(tp *topo.Topo, ruleId string) {
 	s.logger.Infof("topo %d opens", tp.GetRunId())
 	e := <-tp.Open()
 	s.logger.Infof("topo %d stops", tp.GetRunId())
@@ -135,29 +135,33 @@ func (s *State) runTopo(tp *topo.Topo) {
 			if len(msg) > 0 {
 				lastWill = fmt.Sprintf("%s: %s", lastWill, msg)
 			}
-			s.updateTrigger(s.Rule.Id, false)
+			s.updateTrigger(ruleId, false)
 		}
 	}
 	// The run exit may be caused by user action or rule itself
 	// Only do clean up when it is exit automatically
 	if !tp.IsClosed() {
 		_ = tp.GracefulStop(0)
-		s.cleanRule(hasError, lastWill)
+		s.cleanRule(tp, hasError, lastWill)
 	}
 }
 
-func (s *State) cleanRule(hasError bool, lastWill string) {
+func (s *State) cleanRule(tp *topo.Topo, hasError bool, lastWill string) {
 	s.ruleLock.Lock()
 	defer s.ruleLock.Unlock()
+	if s.topology != tp {
+		s.logger.Warnf("topology mismatch, skip clean up: %d vs %d", s.topology.GetRunId(), tp.GetRunId())
+		return
+	}
 	if s.topology != nil {
 		s.topoGraph = s.topology.GetTopo()
 		keys, values := s.topology.GetMetrics()
 		s.stoppedMetrics = []any{keys, values}
 	}
+	s.topology = nil
 	if hasError {
 		s.transitState(machine.StoppedByErr, lastWill)
 	} else {
 		s.transitState(machine.Stopped, lastWill)
 	}
-	s.topology = nil
 }

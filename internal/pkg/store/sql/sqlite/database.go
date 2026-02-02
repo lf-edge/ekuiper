@@ -65,7 +65,7 @@ func (d *Database) Connect() error {
 }
 
 func connectionString(dpath string) string {
-	return fmt.Sprintf("file:%s?cache=shared&_journal=WAL&sync=2", dpath)
+	return fmt.Sprintf("file:%s?cache=shared&_journal=WAL&sync=2&_busy_timeout=5000", dpath)
 }
 
 func (d *Database) Disconnect() error {

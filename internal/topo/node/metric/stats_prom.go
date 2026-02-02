@@ -24,7 +24,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 )
 
-func getStatManager(ctx api.StreamContext, dsm DefaultStatManager) (StatManager, error) {
+func getStatManager(ctx api.StreamContext, dsm *DefaultStatManager) (StatManager, error) {
 	ctx.GetLogger().Debugf("Create prometheus stat manager")
 	var sm StatManager
 	if conf.Config != nil && conf.Config.Basic.Prometheus {
@@ -57,13 +57,13 @@ func getStatManager(ctx api.StreamContext, dsm DefaultStatManager) (StatManager,
 		}
 		sm = psm
 	} else {
-		sm = &dsm
+		sm = dsm
 	}
 	return sm, nil
 }
 
 type PrometheusStatManager struct {
-	DefaultStatManager
+	*DefaultStatManager
 	// prometheus metrics
 	pTotalMessagesProcessed prometheus.Counter
 	pTotalRecordsIn         prometheus.Counter
@@ -76,26 +76,36 @@ type PrometheusStatManager struct {
 }
 
 func (sm *PrometheusStatManager) IncTotalRecordsIn() {
+	sm.Lock()
+	defer sm.Unlock()
 	sm.totalRecordsIn++
 	sm.pTotalRecordsIn.Inc()
 }
 
 func (sm *PrometheusStatManager) IncTotalMessagesProcessed(n int64) {
+	sm.Lock()
+	defer sm.Unlock()
 	sm.totalMessagesProcessed++
 	sm.pTotalMessagesProcessed.Add(float64(n))
 }
 
 func (sm *PrometheusStatManager) IncTotalRecordsOut() {
+	sm.Lock()
+	defer sm.Unlock()
 	sm.totalRecordsOut++
 	sm.pTotalRecordsOut.Inc()
 }
 
 func (sm *PrometheusStatManager) IncTotalExceptions(err string) {
+	sm.Lock()
+	defer sm.Unlock()
 	sm.pTotalExceptions.Inc()
-	sm.DefaultStatManager.IncTotalExceptions(err)
+	sm.DefaultStatManager.incTotalExceptions(err)
 }
 
 func (sm *PrometheusStatManager) ProcessTimeEnd() {
+	sm.Lock()
+	defer sm.Unlock()
 	if !sm.processTimeStart.IsZero() {
 		sm.processLatency = int64(time.Since(sm.processTimeStart) / time.Microsecond)
 		sm.pProcessLatency.Set(float64(sm.processLatency))
@@ -104,6 +114,8 @@ func (sm *PrometheusStatManager) ProcessTimeEnd() {
 }
 
 func (sm *PrometheusStatManager) SetBufferLength(l int64) {
+	sm.Lock()
+	defer sm.Unlock()
 	sm.bufferLength = l
 	sm.pBufferLength.Set(float64(l))
 }
@@ -126,6 +138,8 @@ func (sm *PrometheusStatManager) Clean(ruleId string) {
 }
 
 func (sm *PrometheusStatManager) SetConnectionState(state string, message string) {
+	sm.Lock()
+	defer sm.Unlock()
 	switch state {
 	case api.ConnectionDisconnected:
 		sm.pConnectionStatus.Set(-1)

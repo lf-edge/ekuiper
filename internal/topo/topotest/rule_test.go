@@ -1038,7 +1038,7 @@ func TestSingleSQL(t *testing.T) {
 		},
 		{
 			Name: `TestSingleSQLRule12`,
-			Sql:  "SELECT demo.ts as demoTs, table1.id as table1Id FROM demo INNER JOIN table1 on demoTs = table1Id",
+			Sql:  "SELECT demo.ts as demoTs, table1.id as table1Id FROM table1 INNER JOIN demo on demoTs = table1Id",
 			R: [][]map[string]interface{}{
 				{{
 					"table1Id": int64(1541152486013),
