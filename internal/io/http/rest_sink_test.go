@@ -450,7 +450,7 @@ func TestRestSinkOAuthClientCredentials(t *testing.T) {
 				return
 			}
 			bodyStr := string(body)
-			expectedBody := "grant_type=client_credentials&client_id=test&client_secret=test&scope=https://eventhubs.azure.net/.default"
+			expectedBody := "grant_type=client_credentials&client_id=client_id&client_secret=client_secret&scope=test"
 			if bodyStr != expectedBody {
 				w.WriteHeader(http.StatusBadRequest)
 				w.Write([]byte(fmt.Sprintf("Invalid Body: %s", bodyStr)))
@@ -495,7 +495,7 @@ func TestRestSinkOAuthClientCredentials(t *testing.T) {
 			"access": map[string]interface{}{
 				"url": ts.URL + "/token",
 				// Manually constructed body for client credentials
-				"body": "grant_type=client_credentials&client_id=test&client_secret=test&scope=https://eventhubs.azure.net/.default",
+				"body": "grant_type=client_credentials&client_id=client_id&client_secret=client_secret&scope=test",
 				// WORKAROUND: Explicitly set Content-Type header
 				"headers": map[string]interface{}{
 					"Content-Type": "application/x-www-form-urlencoded",
