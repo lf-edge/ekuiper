@@ -430,3 +430,95 @@ func TestRestSinkAuth(t *testing.T) {
 		})
 	}
 }
+
+func TestRestSinkOAuthClientCredentials(t *testing.T) {
+	// 1. Create a mock OAuth server
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/token" {
+			// Verify Header
+			contentType := r.Header.Get("Content-Type")
+			if contentType != "application/x-www-form-urlencoded" {
+				w.WriteHeader(http.StatusBadRequest)
+				w.Write([]byte(fmt.Sprintf("Invalid Content-Type: %s", contentType)))
+				return
+			}
+
+			// Verify Body
+			body, err := io.ReadAll(r.Body)
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			bodyStr := string(body)
+			expectedBody := "grant_type=client_credentials&client_id=test&client_secret=test&scope=https://eventhubs.azure.net/.default"
+			if bodyStr != expectedBody {
+				w.WriteHeader(http.StatusBadRequest)
+				w.Write([]byte(fmt.Sprintf("Invalid Body: %s", bodyStr)))
+				return
+			}
+
+			// Return Token
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"access_token": "mock_access_token",
+				"expires_in":   3600,
+			})
+			return
+		}
+
+		// Verify Protected Resource Access
+		if r.URL.Path == "/data" {
+			authHeader := r.Header.Get("Authorization")
+			if authHeader != "Bearer mock_access_token" {
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+			}
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"status":"ok"}`))
+			return
+		}
+
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	defer ts.Close()
+
+	// 2. Configure Rest Sink with OAuth Workaround
+	ctx := mockContext.NewMockContext("ruleRestOAuth", "op")
+	s := &RestSink{}
+	err := s.Provision(ctx, map[string]interface{}{
+		"url":    ts.URL + "/data",
+		"method": "POST",
+		"headers": map[string]interface{}{
+			"Authorization": "Bearer {{.access_token}}",
+		},
+		"oauth": map[string]interface{}{
+			"access": map[string]interface{}{
+				"url": ts.URL + "/token",
+				// Manually constructed body for client credentials
+				"body": "grant_type=client_credentials&client_id=test&client_secret=test&scope=https://eventhubs.azure.net/.default",
+				// WORKAROUND: Explicitly set Content-Type header
+				"headers": map[string]interface{}{
+					"Content-Type": "application/x-www-form-urlencoded",
+				},
+				"expire": "3600",
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	// 3. Connect (Triggers Auth via Conn())
+	err = s.Connect(ctx, func(status string, message string) {
+		// do nothing
+	})
+	require.NoError(t, err, "RestSink Connect failed, likely OAuth auth failed")
+
+	// 4. Collect (Send Data verifying token)
+	data := &xsql.RawTuple{
+		Rawdata: []byte(`{"data":123}`),
+	}
+	err = s.Collect(ctx, data)
+	require.NoError(t, err)
+
+	err = s.Close(ctx)
+	require.NoError(t, err)
+}
