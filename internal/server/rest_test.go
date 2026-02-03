@@ -1016,6 +1016,21 @@ func (suite *RestTestSuite) TestWaitStopRule() {
 	suite.r.ServeHTTP(w, req)
 	require.Equal(suite.T(), http.StatusCreated, w.Code)
 
+	// wait for rule running
+	for i := 0; i < 20; i++ {
+		req, _ := http.NewRequest(http.MethodGet, "http://localhost:8080/rules/rule221/status", bytes.NewBufferString("any"))
+		w := httptest.NewRecorder()
+		suite.r.ServeHTTP(w, req)
+		if w.Code == http.StatusOK {
+			var m map[string]interface{}
+			json.Unmarshal(w.Body.Bytes(), &m)
+			if m["status"] == "running" {
+				break
+			}
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+	time.Sleep(100 * time.Millisecond)
 	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/topo/node/mockTimeConsumingClose", "return(true)")
 	defer failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/topo/node/mockTimeConsumingClose")
 	now := time.Now()
@@ -1032,6 +1047,22 @@ func (suite *RestTestSuite) TestWaitStopRule() {
 	w = httptest.NewRecorder()
 	suite.r.ServeHTTP(w, req)
 	require.Equal(suite.T(), http.StatusCreated, w.Code)
+
+	// wait for rule running
+	for i := 0; i < 20; i++ {
+		req, _ := http.NewRequest(http.MethodGet, "http://localhost:8080/rules/rule221/status", bytes.NewBufferString("any"))
+		w := httptest.NewRecorder()
+		suite.r.ServeHTTP(w, req)
+		if w.Code == http.StatusOK {
+			var m map[string]interface{}
+			json.Unmarshal(w.Body.Bytes(), &m)
+			if m["status"] == "running" {
+				break
+			}
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+	time.Sleep(100 * time.Millisecond)
 
 	now = time.Now()
 	// stop rule

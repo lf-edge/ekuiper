@@ -78,6 +78,11 @@ func (ho *HoppingWindowIncAggEventOp) exec(ctx api.StreamContext, errCh chan<- e
 		select {
 		case <-ctx.Done():
 			return
+		case done := <-ho.op.putStateReqCh:
+			ho.PutState(ctx)
+			done <- nil
+		case done := <-ho.op.restoreReqCh:
+			done <- ho.RestoreFromState(ctx)
 		case input := <-ho.op.input:
 			data, processed := ho.op.ingest(ctx, input)
 			if processed {
@@ -199,6 +204,11 @@ func (so *SlidingWindowIncAggEventOp) exec(ctx api.StreamContext, errCh chan<- e
 		select {
 		case <-ctx.Done():
 			return
+		case done := <-so.op.putStateReqCh:
+			so.PutState(ctx)
+			done <- nil
+		case done := <-so.op.restoreReqCh:
+			done <- so.RestoreFromState(ctx)
 		case input := <-so.op.input:
 			data, processed := so.op.ingest(ctx, input)
 			if processed {
@@ -358,6 +368,11 @@ func (co *CountWindowIncAggEventOp) exec(ctx api.StreamContext, errCh chan<- err
 		select {
 		case <-ctx.Done():
 			return
+		case done := <-co.op.putStateReqCh:
+			co.PutState(ctx)
+			done <- nil
+		case done := <-co.op.restoreReqCh:
+			done <- co.RestoreFromState(ctx)
 		case input := <-co.op.input:
 			data, processed := co.op.ingest(ctx, input)
 			if processed {

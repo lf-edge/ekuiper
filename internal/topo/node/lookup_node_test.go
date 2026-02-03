@@ -317,7 +317,7 @@ func TestLookup(t *testing.T) {
 	out := make(chan any, 100)
 	err = op.AddOutput(out, "test")
 	assert.NoError(t, err)
-	errCh := make(chan error)
+	errCh := make(chan error, 1)
 	op.Exec(ctx, errCh)
 	err = <-errCh
 	assert.Error(t, err)
@@ -582,7 +582,7 @@ func TestLookupInner(t *testing.T) {
 	out := make(chan any, 100)
 	err = op.AddOutput(out, "test")
 	assert.NoError(t, err)
-	errCh := make(chan error)
+	errCh := make(chan error, 1)
 	op.Exec(ctx, errCh)
 	err = <-errCh
 	assert.Error(t, err)
@@ -771,7 +771,7 @@ func TestLookupPayload(t *testing.T) {
 	out := make(chan any, 100)
 	err = op.AddOutput(out, "test")
 	assert.NoError(t, err)
-	errCh := make(chan error)
+	errCh := make(chan error, 1)
 	op.Exec(ctx, errCh)
 	err = <-errCh
 	assert.Error(t, err)
