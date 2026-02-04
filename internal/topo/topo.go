@@ -342,18 +342,17 @@ func (s *Topo) Open() <-chan error {
 		if err := s.enableCheckpoint(s.ctx); err != nil {
 			return err
 		}
-		topoStore := store
 		// open stream sink, after log sink is ready.
 		for _, snk := range s.sinks {
-			snk.Exec(s.ctx.WithMeta(s.name, snk.GetName(), topoStore), s.drain)
+			snk.Exec(s.ctx.WithMeta(s.name, snk.GetName(), store), s.drain)
 		}
 
 		for _, op := range s.ops {
-			op.Exec(s.ctx.WithMeta(s.name, op.GetName(), topoStore), s.drain)
+			op.Exec(s.ctx.WithMeta(s.name, op.GetName(), store), s.drain)
 		}
 
 		for _, source := range s.sources {
-			source.Open(s.ctx.WithMeta(s.name, source.GetName(), topoStore), s.drain)
+			source.Open(s.ctx.WithMeta(s.name, source.GetName(), store), s.drain)
 		}
 		// activate checkpoint
 		s.mu.Lock()
