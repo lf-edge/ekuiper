@@ -20,8 +20,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"math"
-	"math/rand/v2"
 	"strconv"
 	"strings"
 	"time"
@@ -320,9 +318,8 @@ func (s *State) Start() error {
 	if err != nil {
 		s.transit(StoppedByErr, err)
 		return err
-	} else {
-		s.transit(Running, nil)
 	}
+	// State will transition to Running in runTopo after Open() completes
 	return nil
 }
 
@@ -339,9 +336,8 @@ func (s *State) ScheduleStart() error {
 	if err != nil {
 		s.transit(StoppedByErr, err)
 		return err
-	} else {
-		s.transit(Running, nil)
 	}
+	// State will transition to Running in runTopo after Open() completes
 	return nil
 }
 
@@ -552,71 +548,37 @@ const EOFMessage = "done"
 
 // This is called async
 func (s *State) runTopo(ctx context.Context, tp *topo.Topo, r *def.Rule) {
-	rs := r.Options.RestartStrategy
-	err := infra.SafeRun(func() error {
-		count := 0
-		d := time.Duration(rs.Delay)
-		var er error
-		ticker := time.NewTicker(d)
-		defer ticker.Stop()
-		for {
-			select {
-			case e := <-tp.Open():
-				er = e
-				if errorx.IsUnexpectedErr(er) { // Only restart Rule for errors
-					tp.GetContext().SetError(er)
-					s.logger.Errorf("closing Rule for error: %v", er)
-					tp.Cancel()
-				} else { // exit normally
-					if errorx.IsEOF(er) {
-						s.Lock()
-						s.lastWill = EOFMessage
-						msg := er.Error()
-						if len(msg) > 0 {
-							s.lastWill = fmt.Sprintf("%s: %s", s.lastWill, msg)
-						}
-						s.Unlock()
-						s.updateTrigger(r.Id, false)
+	var err error
+	err = infra.SafeRun(func() error {
+		drain := tp.Open()
+		s.transit(Running, nil)
+		select {
+		case e := <-drain:
+			if errorx.IsUnexpectedErr(e) {
+				tp.GetContext().SetError(e)
+				s.logger.Errorf("closing Rule for error: %v", e)
+				tp.Cancel()
+				return e
+			} else { // exit normally
+				if errorx.IsEOF(e) {
+					s.Lock()
+					s.lastWill = EOFMessage
+					msg := e.Error()
+					if len(msg) > 0 {
+						s.lastWill = fmt.Sprintf("%s: %s", s.lastWill, msg)
 					}
-					tp.Cancel()
-					return nil
+					s.Unlock()
+					s.updateTrigger(r.Id, false)
 				}
-				// Although it is stopped, it is still retrying, so the status is still RUNNING
-				s.Lock()
-				s.lastWill = "retrying after error: " + er.Error()
-				s.Unlock()
+				tp.Cancel()
+				return nil
 			}
-			if count < rs.Attempts {
-				if d > time.Duration(rs.MaxDelay) {
-					d = time.Duration(rs.MaxDelay)
-				}
-				if rs.JitterFactor > 0 {
-					d = time.Duration(math.Round(float64(d.Milliseconds())*((rand.Float64()*2-1)*rs.JitterFactor+1))) * time.Millisecond
-					// make sure d is always in range
-					for d <= 0 || d > time.Duration(rs.MaxDelay) {
-						d = time.Duration(math.Round(float64(d.Milliseconds())*((rand.Float64()*2-1)*rs.JitterFactor+1))) * time.Millisecond
-					}
-					s.logger.Infof("Rule will restart with jitterred delay %d", d)
-				} else {
-					s.logger.Infof("Rule will restart with delay %d", d)
-				}
-				// retry after delay
-				select {
-				case <-ticker.C:
-					break
-				case <-ctx.Done():
-					s.logger.Errorf("stop Rule retry as cancelled")
-					return nil
-				}
-				count++
-				if rs.Multiplier > 0 {
-					d = time.Duration(rs.Delay) * time.Duration(math.Pow(rs.Multiplier, float64(count)))
-				}
-			} else {
-				return er
-			}
+		case <-ctx.Done():
+			s.logger.Infof("rule %s context done: %v", r.Id, ctx.Err())
+			return nil // Manual stop, not an error
 		}
 	})
+
 	s.Lock()
 	if s.topology != nil && s.topology == tp {
 		s.topoGraph = s.topology.GetTopo()
@@ -624,6 +586,7 @@ func (s *State) runTopo(ctx context.Context, tp *topo.Topo, r *def.Rule) {
 		s.stoppedMetrics = []any{keys, values}
 	}
 	s.Unlock()
+
 	if err != nil { // Exit after retries
 		s.logger.Error(err)
 		s.transit(StoppedByErr, err)

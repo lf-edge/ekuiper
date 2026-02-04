@@ -62,7 +62,7 @@ type Topo struct {
 	store        api.Store
 	coordinator  *checkpoint.Coordinator
 	topo         *def.PrintableTopo
-	mu           syncx.Mutex
+	mu           syncx.RWMutex
 	hasOpened    atomic.Bool
 	sinkSchema   map[string]*ast.JsonStreamField
 
@@ -132,10 +132,10 @@ func (s *Topo) CancelWithSig(sig int) error {
 	}
 	s.hasOpened.Store(false)
 	// Check coordinator status under lock
-	s.mu.Lock()
+	s.mu.RLock()
 	coordinator := s.coordinator
 	enableSave := s.options.EnableSaveStateBeforeStop
-	s.mu.Unlock()
+	s.mu.RUnlock()
 
 	if coordinator != nil && coordinator.IsActivated() && enableSave {
 		notify, err := coordinator.ForceSaveState(xsql.StopTuple{
@@ -330,15 +330,14 @@ func (s *Topo) Open() <-chan error {
 	log := s.ctx.GetLogger()
 	log.Info("Opening stream")
 	err := infra.SafeRun(func() error {
-		var store api.Store
-		var err error
-		s.mu.Lock()
-		store, err = state.CreateStore(s.name, s.options.Qos)
-		s.store = store
-		s.mu.Unlock()
+		store, err := state.CreateStore(s.name, s.options.Qos)
 		if err != nil {
 			return fmt.Errorf("topo %s create store error %v", s.name, err)
 		}
+		s.mu.Lock()
+		s.store = store
+		s.mu.Unlock()
+
 		if err := s.enableCheckpoint(s.ctx); err != nil {
 			return err
 		}
@@ -355,9 +354,9 @@ func (s *Topo) Open() <-chan error {
 			source.Open(s.ctx.WithMeta(s.name, source.GetName(), store), s.drain)
 		}
 		// activate checkpoint
-		s.mu.Lock()
+		s.mu.RLock()
 		coordinator := s.coordinator
-		s.mu.Unlock()
+		s.mu.RUnlock()
 		if coordinator != nil {
 			return coordinator.Activate()
 		}

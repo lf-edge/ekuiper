@@ -43,7 +43,7 @@ func TestAPIs(t *testing.T) {
 	st := NewState(r, func(string, bool) {})
 	assert.Equal(t, r, st.Rule)
 	assert.NotNil(t, st.logger)
-	assert.Equal(t, Stopped, st.currentState)
+	assert.Equal(t, Stopped, st.GetState())
 	assert.Equal(t, 0, len(st.actionQ))
 	assert.Equal(t, "", st.GetLastWill())
 	err = st.ResetStreamOffset("test", nil)
@@ -100,7 +100,7 @@ func TestAPIs(t *testing.T) {
 	em = "{\n  \"status\": \"stopped\",\n  \"message\": \"canceled manually\",\n  \"lastStartTimestamp\": 0,\n  \"lastStopTimestamp\": 0,\n  \"nextStartTimestamp\": 0,\n  \"source_demo_0_records_in_total\": 0,\n  \"source_demo_0_records_out_total\": 0,\n  \"source_demo_0_messages_processed_total\": 0,\n  \"source_demo_0_process_latency_us\": 0,\n  \"source_demo_0_buffer_length\": 0,\n  \"source_demo_0_last_invocation\": 0,\n  \"source_demo_0_exceptions_total\": 0,\n  \"source_demo_0_last_exception\": \"\",\n  \"source_demo_0_last_exception_time\": 0,\n  \"source_demo_0_connection_status\": 1,\n  \"source_demo_0_connection_last_connected_time\": 1,\n  \"source_demo_0_connection_last_disconnected_time\": 0,\n  \"source_demo_0_connection_last_disconnected_message\": \"\",\n  \"source_demo_0_connection_last_try_time\": 0,\n  \"op_2_project_0_records_in_total\": 0,\n  \"op_2_project_0_records_out_total\": 0,\n  \"op_2_project_0_messages_processed_total\": 0,\n  \"op_2_project_0_process_latency_us\": 0,\n  \"op_2_project_0_buffer_length\": 0,\n  \"op_2_project_0_last_invocation\": 0,\n  \"op_2_project_0_exceptions_total\": 0,\n  \"op_2_project_0_last_exception\": \"\",\n  \"op_2_project_0_last_exception_time\": 0,\n  \"op_logToMemory_0_0_transform_0_records_in_total\": 0,\n  \"op_logToMemory_0_0_transform_0_records_out_total\": 0,\n  \"op_logToMemory_0_0_transform_0_messages_processed_total\": 0,\n  \"op_logToMemory_0_0_transform_0_process_latency_us\": 0,\n  \"op_logToMemory_0_0_transform_0_buffer_length\": 0,\n  \"op_logToMemory_0_0_transform_0_last_invocation\": 0,\n  \"op_logToMemory_0_0_transform_0_exceptions_total\": 0,\n  \"op_logToMemory_0_0_transform_0_last_exception\": \"\",\n  \"op_logToMemory_0_0_transform_0_last_exception_time\": 0,\n  \"op_logToMemory_0_1_encode_0_records_in_total\": 0,\n  \"op_logToMemory_0_1_encode_0_records_out_total\": 0,\n  \"op_logToMemory_0_1_encode_0_messages_processed_total\": 0,\n  \"op_logToMemory_0_1_encode_0_process_latency_us\": 0,\n  \"op_logToMemory_0_1_encode_0_buffer_length\": 0,\n  \"op_logToMemory_0_1_encode_0_last_invocation\": 0,\n  \"op_logToMemory_0_1_encode_0_exceptions_total\": 0,\n  \"op_logToMemory_0_1_encode_0_last_exception\": \"\",\n  \"op_logToMemory_0_1_encode_0_last_exception_time\": 0,\n  \"sink_logToMemory_0_0_records_in_total\": 0,\n  \"sink_logToMemory_0_0_records_out_total\": 0,\n  \"sink_logToMemory_0_0_messages_processed_total\": 0,\n  \"sink_logToMemory_0_0_process_latency_us\": 0,\n  \"sink_logToMemory_0_0_buffer_length\": 0,\n  \"sink_logToMemory_0_0_last_invocation\": 0,\n  \"sink_logToMemory_0_0_exceptions_total\": 0,\n  \"sink_logToMemory_0_0_last_exception\": \"\",\n  \"sink_logToMemory_0_0_last_exception_time\": 0,\n  \"sink_logToMemory_0_0_connection_status\": 1,\n  \"sink_logToMemory_0_0_connection_last_connected_time\": 1,\n  \"sink_logToMemory_0_0_connection_last_disconnected_time\": 0,\n  \"sink_logToMemory_0_0_connection_last_disconnected_message\": \"\",\n  \"sink_logToMemory_0_0_connection_last_try_time\": 0\n}"
 	rsm = re.ReplaceAllString(st.GetStatusMessage(), `connection_last_connected_time": 1`)
 	assert.Equal(t, em, rsm)
-	assert.Equal(t, Stopped, st.currentState)
+	assert.Equal(t, Stopped, st.GetState())
 	// Update rule
 	st.Rule = def.GetDefaultRule("testAPI", "select abc from demo where a > 3")
 	_, e = st.Validate()
@@ -108,7 +108,7 @@ func TestAPIs(t *testing.T) {
 	e = st.Start()
 	assert.NoError(t, e)
 	time.Sleep(100 * time.Millisecond)
-	assert.Equal(t, Running, st.currentState)
+	assert.Equal(t, Running, st.GetState())
 	err = st.ResetStreamOffset("test", nil)
 	assert.EqualError(t, err, "stream test not found in topo")
 	assert.Equal(t, []string{"demo"}, st.GetStreams())
@@ -243,7 +243,7 @@ func TestLongScheduleTransit(t *testing.T) {
 	st.actionQ = append(st.actionQ, ActionSignalScheduledStart)
 	_ = st.ScheduleStart()
 	st.nextAction()
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(500 * time.Millisecond)
 	assert.Equal(t, Running, st.GetState())
 	// Time move out of schedule, scheduled stop
 	timex.Add(30 * time.Minute)
