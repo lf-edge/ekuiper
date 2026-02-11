@@ -214,6 +214,12 @@ lint:tools/lint/bin/golangci-lint
 	@echo "linting"
 	tools/lint/bin/golangci-lint run ./... ./extensions/... ./tools/kubernetes/...
 
+target ?= ./docs
+markdown-lint:
+	@echo "markdown linting"
+	@npm list markdownlint-cli >/dev/null 2>&1 || npm install --save-dev markdownlint-cli
+	npx markdownlint --fix --config .github/workflows/markdown_config.json $(target)
+
 tools/lint/bin/golangci-lint:
 	GOBIN=$(shell pwd)/tools/lint/bin go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 
