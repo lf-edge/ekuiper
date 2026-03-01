@@ -1,0 +1,6 @@
+syntax = "proto3";
+
+message SensorData {
+  double temperature = 1;
+  int32 humidity = 2;
+}
