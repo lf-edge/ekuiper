@@ -38,6 +38,7 @@ func transformSourceNode(ctx api.StreamContext, t *DataSourcePlan, mockSourcesPr
 	if t.streamFields == nil && options.Experiment != nil && options.Experiment.UseSliceTuple {
 		return nil, nil, 0, errors.New("slice tuple mode does not support wildcard/schemaless")
 	}
+	emitterName := t.name
 	mockProps, isMock := mockSourcesProp[string(t.name)]
 	if isMock {
 		t.streamStmt.Options.TYPE = "simulator"
@@ -68,10 +69,10 @@ func transformSourceNode(ctx api.StreamContext, t *DataSourcePlan, mockSourcesPr
 			return nil, nil, 0, err
 		}
 	}
-	return splitSource(ctx, t, si, options, mockProps, index, ruleId, pp)
+	return splitSource(ctx, t, si, options, mockProps, index, ruleId, pp, emitterName)
 }
 
-func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, options *def.RuleOption, mockProps map[string]any, index int, ruleId string, pp node.UnOperation) (node.DataSourceNode, []node.OperatorNode, int, error) {
+func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, options *def.RuleOption, mockProps map[string]any, index int, ruleId string, pp node.UnOperation, emitterName ast.StreamName) (node.DataSourceNode, []node.OperatorNode, int, error) {
 	// Get all props
 	props := nodeConf.GetSourceConf(t.streamStmt.Options.TYPE, t.streamStmt.Options)
 	sp := &SourcePropsForSplit{}
@@ -96,6 +97,7 @@ func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, option
 	}
 
 	var ops []node.OperatorNode
+	emitterOpAdded := false
 	// If having unique connection id AND unique sub id for each connection, need to share the sub node; Case 1 is neuron; Case 2 is edgeX
 	needShareCon := hasConId || (hasSubId && conId != "")
 	if !needShareCon {
@@ -133,9 +135,10 @@ func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, option
 		}
 		index++
 		// another node to set emitter
-		op := Transform(&operator.EmitterOp{Emitter: string(t.name)}, fmt.Sprintf("%d_emitter", index), options)
+		op := Transform(&operator.EmitterOp{Emitter: string(emitterName)}, fmt.Sprintf("%d_emitter", index), options)
 		index++
 		ops = append(ops, op)
+		emitterOpAdded = true
 	}
 	if len(t.colAliasMapping) > 0 {
 		props["colAliasMapping"] = t.colAliasMapping
@@ -205,6 +208,11 @@ func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, option
 	// Create the preprocessor node if needed
 	if pp != nil {
 		ops = append(ops, Transform(pp, fmt.Sprintf("%d_preprocessor", index), options))
+		index++
+	}
+
+	if t.name != emitterName && !emitterOpAdded {
+		ops = append(ops, Transform(&operator.EmitterOp{Emitter: string(emitterName)}, fmt.Sprintf("%d_emitter", index), options))
 		index++
 	}
 
