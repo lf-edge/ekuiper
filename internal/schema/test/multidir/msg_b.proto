@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+message VehicleStatus {
+  int32 speed = 1;
+  string vin = 2;
+  BatteryInfo battery = 3;
+}
+
+message BatteryInfo {
+  double voltage = 1;
+  int32 level = 2;
+}

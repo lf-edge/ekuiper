@@ -36,6 +36,19 @@ func (p *PbType) Scan(logger api.Logger, schemaDir string) (map[string]*modules.
 	} else {
 		newSchemas = make(map[string]*modules.Files, len(files))
 		for _, file := range files {
+			// Subdirectory: treat as a single schema ID containing multiple .proto files
+			if file.IsDir() {
+				schemaId := file.Name()
+				ffs, ok := newSchemas[schemaId]
+				if !ok {
+					ffs = &modules.Files{}
+					newSchemas[schemaId] = ffs
+				}
+				// SchemaFile points to the directory itself
+				ffs.SchemaFile = filepath.Join(schemaDir, file.Name())
+				logger.Infof("schema directory %s/%s loaded", schemaDir, schemaId)
+				continue
+			}
 			fileName := filepath.Base(file.Name())
 			ext := filepath.Ext(fileName)
 			schemaId := strings.TrimSuffix(fileName, filepath.Ext(fileName))
@@ -59,15 +72,48 @@ func (p *PbType) Scan(logger api.Logger, schemaDir string) (map[string]*modules.
 }
 
 func (p *PbType) Infer(_ api.Logger, filePath string, messageId string) (ast.StreamFields, error) {
-	if fds, err := protoParser.ParseFiles(filePath); err != nil {
-		return nil, fmt.Errorf("parse schema file %s failed: %s", filePath, err)
-	} else {
-		messageDescriptor := fds[0].FindMessage(messageId)
-		if messageDescriptor == nil {
-			return nil, fmt.Errorf("message type %s not found in schema file %s", messageId, filePath)
-		}
-		return convertMessage(messageDescriptor)
+	protoFiles, err := collectProtoFiles(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("collect proto files from %s failed: %s", filePath, err)
 	}
+	fds, err := protoParser.ParseFiles(protoFiles...)
+	if err != nil {
+		return nil, fmt.Errorf("parse schema file(s) %s failed: %s", filePath, err)
+	}
+	for _, fd := range fds {
+		messageDescriptor := fd.FindMessage(messageId)
+		if messageDescriptor != nil {
+			return convertMessage(messageDescriptor)
+		}
+	}
+	return nil, fmt.Errorf("message type %s not found in schema path %s", messageId, filePath)
+}
+
+// collectProtoFiles returns a list of .proto file paths for the given path.
+// If the path is a directory, it returns dir-relative paths (e.g. "multidir/msg_a.proto").
+// If it is a single file, it returns the path as-is.
+func collectProtoFiles(path string) ([]string, error) {
+	info, err := os.Stat(path)
+	if err != nil {
+		return nil, err
+	}
+	if !info.IsDir() {
+		return []string{path}, nil
+	}
+	entries, err := os.ReadDir(path)
+	if err != nil {
+		return nil, err
+	}
+	var result []string
+	for _, e := range entries {
+		if !e.IsDir() && strings.HasSuffix(e.Name(), ".proto") {
+			result = append(result, filepath.Join(path, e.Name()))
+		}
+	}
+	if len(result) == 0 {
+		return nil, fmt.Errorf("no .proto files found in directory %s", path)
+	}
+	return result, nil
 }
 
 func convertMessage(m *desc.MessageDescriptor) (ast.StreamFields, error) {

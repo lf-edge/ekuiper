@@ -16,6 +16,9 @@ package protobuf
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/jhump/protoreflect/desc"            //nolint:staticcheck
 	"github.com/jhump/protoreflect/desc/protoparse" //nolint:staticcheck
@@ -44,19 +47,52 @@ func NewConverter(schemaFile string, soFile string, messageName string) (message
 	if soFile != "" {
 		return static.LoadStaticConverter(soFile, messageName)
 	} else {
-		if fds, err := protoParser.ParseFiles(schemaFile); err != nil {
-			return nil, fmt.Errorf("parse schema file %s failed: %s", schemaFile, err)
-		} else {
-			messageDescriptor := fds[0].FindMessage(messageName)
-			if messageDescriptor == nil {
-				return nil, fmt.Errorf("message type %s not found in schema file %s", messageName, schemaFile)
+		protoFiles, err := collectProtoFiles(schemaFile)
+		if err != nil {
+			return nil, fmt.Errorf("collect proto files from %s failed: %s", schemaFile, err)
+		}
+		fds, err := protoParser.ParseFiles(protoFiles...)
+		if err != nil {
+			return nil, fmt.Errorf("parse schema file(s) %s failed: %s", schemaFile, err)
+		}
+		for _, fd := range fds {
+			messageDescriptor := fd.FindMessage(messageName)
+			if messageDescriptor != nil {
+				return &Converter{
+					descriptor: messageDescriptor,
+					fc:         GetFieldConverter(),
+				}, nil
 			}
-			return &Converter{
-				descriptor: messageDescriptor,
-				fc:         GetFieldConverter(),
-			}, nil
+		}
+		return nil, fmt.Errorf("message type %s not found in schema path %s", messageName, schemaFile)
+	}
+}
+
+// collectProtoFiles returns a list of .proto file paths for the given path.
+// If the path is a directory, it returns full paths for directory entries.
+// If it is a single file, it returns the path as-is.
+func collectProtoFiles(path string) ([]string, error) {
+	info, err := os.Stat(path)
+	if err != nil {
+		return nil, err
+	}
+	if !info.IsDir() {
+		return []string{path}, nil
+	}
+	entries, err := os.ReadDir(path)
+	if err != nil {
+		return nil, err
+	}
+	var result []string
+	for _, e := range entries {
+		if !e.IsDir() && strings.HasSuffix(e.Name(), ".proto") {
+			result = append(result, filepath.Join(path, e.Name()))
 		}
 	}
+	if len(result) == 0 {
+		return nil, fmt.Errorf("no .proto files found in directory %s", path)
+	}
+	return result, nil
 }
 
 func (c *Converter) Encode(ctx api.StreamContext, d any) (b []byte, err error) {

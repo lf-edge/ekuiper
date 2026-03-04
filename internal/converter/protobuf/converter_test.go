@@ -16,6 +16,7 @@ package protobuf
 
 import (
 	"fmt"
+	"path/filepath"
 	"reflect"
 	"testing"
 
@@ -299,4 +300,54 @@ func TestErr(t *testing.T) {
 	errWithCode, ok = err.(errorx.ErrorWithCode)
 	require.True(t, ok)
 	require.Equal(t, errorx.CovnerterErr, errWithCode.Code())
+}
+
+// ---- collectProtoFiles tests ----
+
+func TestCollectProtoFiles_SingleFile(t *testing.T) {
+	result, err := collectProtoFiles("../../schema/test/test1.proto")
+	require.NoError(t, err)
+	assert.Equal(t, []string{"../../schema/test/test1.proto"}, result)
+}
+
+func TestCollectProtoFiles_Directory(t *testing.T) {
+	result, err := collectProtoFiles("../../schema/test/multidir")
+	require.NoError(t, err)
+	assert.Len(t, result, 2)
+	assert.Contains(t, result, filepath.Join("../../schema/test/multidir", "msg_a.proto"))
+	assert.Contains(t, result, filepath.Join("../../schema/test/multidir", "msg_b.proto"))
+}
+
+func TestCollectProtoFiles_EmptyDir(t *testing.T) {
+	emptyDir := t.TempDir()
+	_, err := collectProtoFiles(emptyDir)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "no .proto files found")
+}
+
+func TestCollectProtoFiles_NotExist(t *testing.T) {
+	_, err := collectProtoFiles("../../schema/test/nonexistent")
+	assert.Error(t, err)
+}
+
+// ---- Directory-based NewConverter tests ----
+
+func TestNewConverter_FromDirectory(t *testing.T) {
+	// SensorData is defined in multidir/msg_a.proto
+	c, err := NewConverter("../../schema/test/multidir", "", "SensorData")
+	require.NoError(t, err)
+	require.NotNil(t, c)
+}
+
+func TestNewConverter_FromDirectory_SecondFile(t *testing.T) {
+	// VehicleStatus is defined in multidir/msg_b.proto
+	c, err := NewConverter("../../schema/test/multidir", "", "VehicleStatus")
+	require.NoError(t, err)
+	require.NotNil(t, c)
+}
+
+func TestNewConverter_FromDirectory_NotFound(t *testing.T) {
+	_, err := NewConverter("../../schema/test/multidir", "", "NonExistentMsg")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "not found")
 }
