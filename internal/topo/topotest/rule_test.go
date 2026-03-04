@@ -996,7 +996,8 @@ func TestSingleSQL(t *testing.T) {
 					"ts":    1541152489252,
 				}},
 			},
-			W: 15,
+			W:  15,
+			TL: 500,
 			M: map[string]interface{}{
 				"sink_memory_0_0_records_in_total":  int64(3),
 				"sink_memory_0_0_records_out_total": int64(3),
@@ -1035,6 +1036,7 @@ func TestSingleSQL(t *testing.T) {
 				"source_demoTable_0_records_in_total":  int64(5),
 				"source_demoTable_0_records_out_total": int64(5),
 			},
+			TL: 500,
 		},
 		{
 			Name: `TestSingleSQLRule12`,
@@ -1053,7 +1055,8 @@ func TestSingleSQL(t *testing.T) {
 					"demoTs":   1541152489252,
 				}},
 			},
-			W: 15,
+			W:  15,
+			TL: 500,
 			M: map[string]interface{}{
 				"op_5_join_aligner_0_records_in_total":  int64(8),
 				"op_5_join_aligner_0_records_out_total": int64(5),

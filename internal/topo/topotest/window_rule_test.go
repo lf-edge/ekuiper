@@ -622,6 +622,7 @@ func TestWindow(t *testing.T) {
 				"source_table1_0_records_in_total":  int64(1),
 				"source_table1_0_records_out_total": int64(1),
 			},
+			TL: 500,
 		},
 		{
 			Name: `TestWindowRule12`,

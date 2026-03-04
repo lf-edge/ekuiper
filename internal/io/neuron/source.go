@@ -27,6 +27,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 	"github.com/lf-edge/ekuiper/v2/pkg/nng"
+	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
@@ -49,6 +50,7 @@ type source struct {
 	cli   *nng.Sock
 	props map[string]any
 	conId string
+	mu    syncx.RWMutex
 }
 
 func (s *source) Provision(_ api.StreamContext, props map[string]any) error {
@@ -102,19 +104,24 @@ func (s *source) Subscribe(ctx api.StreamContext, ingest api.BytesIngest, ingest
 					return nil
 				default:
 					// no receiving deadline, will wait until the socket closed
-					if msg, err := s.cli.Recv(); err == nil {
-						connected = true
-						ctx.GetLogger().Debugf("nng received message %s", string(msg))
-						rawData, meta := extractTraceMeta(ctx, msg)
-						ingest(ctx, rawData, meta, timex.GetNow())
-					} else if err == mangos.ErrClosed {
-						if connected {
-							ctx.GetLogger().Infof("neuron connection closed, retry after 1 second")
-							ingestErr(ctx, errors.New("neuron connection closed"))
-							time.Sleep(1 * time.Second)
-							connected = false
+					s.mu.RLock()
+					cli := s.cli
+					s.mu.RUnlock()
+					if cli != nil {
+						if msg, err := cli.Recv(); err == nil {
+							connected = true
+							ctx.GetLogger().Debugf("nng received message %s", string(msg))
+							rawData, meta := extractTraceMeta(ctx, msg)
+							ingest(ctx, rawData, meta, timex.GetNow())
+						} else if err == mangos.ErrClosed {
+							if connected {
+								ctx.GetLogger().Infof("neuron connection closed, retry after 1 second")
+								ingestErr(ctx, errors.New("neuron connection closed"))
+								time.Sleep(1 * time.Second)
+								connected = false
+							}
+							continue
 						}
-						continue
 					}
 				}
 			}
@@ -129,6 +136,8 @@ func (s *source) Subscribe(ctx api.StreamContext, ingest api.BytesIngest, ingest
 func (s *source) Close(ctx api.StreamContext) error {
 	ctx.GetLogger().Infof("closing neuron source")
 	_ = connection.DetachConnection(ctx, s.conId)
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	s.cli = nil
 	return nil
 }

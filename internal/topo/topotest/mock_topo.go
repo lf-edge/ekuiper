@@ -47,6 +47,7 @@ type RuleTest struct {
 	M    map[string]any     // final metrics
 	T    *def.PrintableTopo // printable topo, an optional field
 	W    int                // wait time for each data sending, in milli
+	TL   int                // table load wait time before first data, in milli (for tests using lookup tables)
 }
 
 // CommonResultFunc A function to convert memory sink result to map slice
@@ -119,7 +120,7 @@ func DoRuleTestWithResultFunc(t *testing.T, tests []RuleTest, opt *def.RuleOptio
 				}
 			}
 			// Send async
-			go sendData(dataLength, datas, tp, POSTLEAP, wait)
+			go sendData(dataLength, datas, tp, POSTLEAP, wait, tt.TL)
 			// Receive data
 			limit := len(tt.R)
 			consumer := pubsub.CreateSub(id, nil, id, limit)
@@ -206,12 +207,14 @@ func CompareMetrics(tp *topo.Topo, m map[string]interface{}) (err error) {
 	return nil
 }
 
-func sendData(dataLength int, datas [][]*xsql.Tuple, tp *topo.Topo, postleap int, wait int) {
+func sendData(dataLength int, datas [][]*xsql.Tuple, tp *topo.Topo, postleap int, wait int, tableLoadWait int) {
 	// TODO assume multiple data source send the data in order and has the same length
 	conf.Log.Infof("Send clock init to %d", timex.GetNowInMilli())
+	// wait for table to load (only for tests using lookup tables)
+	if tableLoadWait > 0 {
+		time.Sleep(time.Duration(tableLoadWait) * time.Millisecond)
+	}
 	for i := 0; i < dataLength; i++ {
-		// wait for table to load
-		time.Sleep(100 * time.Millisecond)
 		for _, d := range datas {
 			time.Sleep(time.Duration(wait) * time.Millisecond)
 			// Make sure time is going forward only
@@ -473,7 +476,7 @@ func DoCheckpointRuleTest(t *testing.T, tests []RuleCheckpointTest, opt *def.Rul
 				}
 			}
 			// Send async
-			go sendData(tt.PauseSize, datas, tp, 100, wait)
+			go sendData(tt.PauseSize, datas, tp, 100, wait, 0)
 			conf.Log.Debugf("Send first phase data done at %d", timex.GetNowInMilli())
 			// compare checkpoint count
 			// Wait longer than checkpoint interval (2s) to ensure at least one checkpoint completes
@@ -504,7 +507,7 @@ func DoCheckpointRuleTest(t *testing.T, tests []RuleCheckpointTest, opt *def.Rul
 			}
 
 			conf.Log.Debugf("After open stream at %d", timex.GetNowInMilli())
-			go sendData(dataLength-tt.PauseSize, [][]*xsql.Tuple{datas[0][tt.PauseSize:]}, tp, POSTLEAP, 10)
+			go sendData(dataLength-tt.PauseSize, [][]*xsql.Tuple{datas[0][tt.PauseSize:]}, tp, POSTLEAP, 10, 0)
 			// Receive data
 			limit := len(tt.R)
 			consumer := pubsub.CreateSub(id, nil, id, limit)
