@@ -66,8 +66,8 @@ func (c *kafkaSourceConf) validate() error {
 	return nil
 }
 
-func (c *kafkaSourceConf) GetReaderConfig() kafkago.ReaderConfig {
-	return kafkago.ReaderConfig{
+func (c *kafkaSourceConf) GetReaderConfig() *kafkago.ReaderConfig {
+	return &kafkago.ReaderConfig{
 		Brokers:     strings.Split(c.Brokers, ","),
 		GroupID:     c.GroupID,
 		Topic:       c.Topic,
@@ -102,6 +102,10 @@ func (k *KafkaSource) Provision(ctx api.StreamContext, configs map[string]any) e
 		return err
 	}
 	k.sc = kConf
+	if err := k.sc.GetReaderConfig().Validate(); err != nil {
+		conf.Log.Errorf("kafka souce config validate err: %v", err)
+		return fmt.Errorf("kafka souce config validate err: %v", err)
+	}
 	tlsConfig, err := cert.GenTLSConfig(ctx, configs)
 	if err != nil {
 		conf.Log.Errorf("kafka tls conf error: %v", err)
@@ -173,13 +177,18 @@ func (k *KafkaSource) Connect(ctx api.StreamContext, sch api.StatusChangeHandler
 		TLS:           k.tlsConfig,
 		SASLMechanism: k.mechanism,
 	}
-	reader := kafkago.NewReader(readerConfig)
+	reader := kafkago.NewReader(*readerConfig)
 	k.reader = reader
-	err := k.reader.SetOffset(kafkago.LastOffset)
-	if err != nil {
-		k.connected = false
-		sch(api.ConnectionDisconnected, err.Error())
-		return err
+	if len(k.sc.GroupID) < 1 {
+		err := k.reader.SetOffset(kafkago.LastOffset)
+		if err != nil {
+			k.connected = false
+			sch(api.ConnectionDisconnected, err.Error())
+			return fmt.Errorf("kafka source SetOffset error: %v", err)
+		} else {
+			k.connected = true
+			sch(api.ConnectionConnected, "")
+		}
 	} else {
 		k.connected = true
 		sch(api.ConnectionConnected, "")
@@ -193,6 +202,7 @@ func (k *KafkaSource) handleConnectedSch(err error) {
 		k.connected = false
 		k.sch(api.ConnectionDisconnected, err.Error())
 	} else if !k.connected && err == nil {
+		k.connected = true
 		k.sch(api.ConnectionConnected, "")
 	}
 }
@@ -231,9 +241,11 @@ func (k *KafkaSource) Rewind(offset interface{}) error {
 	default:
 		return fmt.Errorf("%v can't be set as offset", offset)
 	}
-	if err := k.reader.SetOffset(offsetV); err != nil {
-		conf.Log.Errorf("kafka offset error: %v", err)
-		return fmt.Errorf("set kafka offset failed, err:%v", err)
+	if len(k.sc.GroupID) < 1 {
+		if err := k.reader.SetOffset(offsetV); err != nil {
+			conf.Log.Errorf("kafka offset error: %v", err)
+			return fmt.Errorf("set kafka offset failed, err:%v", err)
+		}
 	}
 	return nil
 }
