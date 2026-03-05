@@ -55,7 +55,8 @@ eKuiper processing at the edge can greatly reduce system response latency, save 
 
 - Management
 
-  - [A free web based management dashboard](https://hub.docker.com/r/emqx/ekuiper-manager) for visualized management
+  - [A free dockerised web based management dashboard](https://hub.docker.com/r/emqx/ekuiper-manager) for visualized management
+  - [An open-source free web based management dashboard](https://github.com/ankur-paan/ekuiper-manager) for visualized management based on latest ekuiper release
   - Swagger API playground available at https://ankur-paan.github.io/ekuiper-manager/
   - Plugins, streams and rules management through CLI, REST API and config maps(Kubernetes)
   - Easily be integrated with Kubernetes
