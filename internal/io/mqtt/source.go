@@ -123,7 +123,7 @@ func (ms *SourceConnector) onMessage(ctx api.StreamContext, msg any, ingest api.
 		if tid, ok := props["traceparent"]; ok {
 			meta["traceId"] = tid
 		}
-		meta["mqttproperties"] = props
+		meta["properties"] = props
 	}
 	ingest(ctx, payload, meta, rcvTime)
 }
