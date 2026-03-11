@@ -188,6 +188,16 @@ For those who prefer a hands-on approach, the Command Line Interface (CLI) provi
 
 More details can be found at [Streams Management with CLI](../../../api/cli/streams.md).
 
+## Message Properties (MQTT v5)
+
+When `protocolVersion` is set to `5`, MQTT v5 `User Properties` from incoming messages will be added into the message metadata (`meta`) under the key `properties` as a `map[string]string`.
+
+Example:
+
+```sql
+SELECT meta(properties) AS props FROM demo
+```
+
 ## Migration Guide
 
 Starting from version 1.5.0, eKuiper has modified the MQTT source broker configuration, transitioning from `servers` to `server`. As a result, users can now specify only a single MQTT broker address, as opposed to an array of addresses.
