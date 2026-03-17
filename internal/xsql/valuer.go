@@ -282,6 +282,11 @@ type ValuerEval struct {
 	// IntegerFloatDivision will set the eval system to treat
 	// a division between two integers as a floating point division.
 	IntegerFloatDivision bool
+
+	// Optimization fields
+	cachedArgs []interface{}
+	cachedKeys []string
+	depth      int16
 }
 
 // Eval evaluates an expression and returns a value.
@@ -290,6 +295,8 @@ func (v *ValuerEval) Eval(expr ast.Expr) interface{} {
 	if expr == nil {
 		return nil
 	}
+	v.depth++
+	defer func() { v.depth-- }()
 	switch et := expr.(type) {
 	case *ast.BinaryExpr:
 		return v.evalBinaryExpr(et)
@@ -375,9 +382,17 @@ func (v *ValuerEval) Eval(expr ast.Expr) interface{} {
 					return val
 				}
 				if len(et.Args) > 0 {
+					var args []interface{}
+					if v.depth == 1 {
+						if cap(v.cachedArgs) < len(et.Args) {
+							v.cachedArgs = make([]interface{}, 0, len(et.Args))
+						}
+						args = v.cachedArgs[:len(et.Args)]
+					} else {
+						args = make([]interface{}, len(et.Args))
+					}
 					switch ft {
 					case ast.FuncTypeAgg:
-						args = make([]interface{}, len(et.Args))
 						for i, arg := range et.Args {
 							if aggreValuer, ok := valuer.(AggregateCallValuer); ok {
 								args[i] = aggreValuer.GetAllTuples().AggregateEval(arg, aggreValuer.GetSingleCallValuer())
@@ -389,7 +404,6 @@ func (v *ValuerEval) Eval(expr ast.Expr) interface{} {
 							}
 						}
 					case ast.FuncTypeScalar, ast.FuncTypeSrf:
-						args = make([]interface{}, len(et.Args))
 						for i, arg := range et.Args {
 							args[i] = v.Eval(arg)
 							if _, ok := args[i].(error); ok {
@@ -397,7 +411,24 @@ func (v *ValuerEval) Eval(expr ast.Expr) interface{} {
 							}
 						}
 					case ast.FuncTypeCols:
-						var keys []string
+						var (
+							keys []string
+						)
+						if v.depth == 1 {
+							// For Cols func, argument count can expand due to wildcard
+							// We start with a reasonable capacity
+							if cap(v.cachedArgs) < len(et.Args)*2 {
+								v.cachedArgs = make([]interface{}, 0, len(et.Args)*2)
+							}
+							if cap(v.cachedKeys) < len(et.Args)*2 {
+								v.cachedKeys = make([]string, 0, len(et.Args)*2)
+							}
+							args = v.cachedArgs[:0]
+							keys = v.cachedKeys[:0]
+						} else {
+							args = make([]interface{}, 0, len(et.Args))
+							keys = make([]string, 0, len(et.Args))
+						}
 						for _, arg := range et.Args { // In the parser, the col func arguments must be ColField
 							cf, ok := arg.(*ast.ColFuncField)
 							if !ok {
@@ -424,6 +455,10 @@ func (v *ValuerEval) Eval(expr ast.Expr) interface{} {
 							}
 						}
 						args = append(args, keys)
+						if v.depth == 1 {
+							v.cachedArgs = args
+							v.cachedKeys = keys
+						}
 					default:
 						// won't happen
 						return fmt.Errorf("unknown function type")
