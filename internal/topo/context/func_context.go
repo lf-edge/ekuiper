@@ -16,13 +16,15 @@ package context
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 )
 
 type DefaultFuncContext struct {
 	api.StreamContext
-	funcId int
+	funcId   int
+	keyCache sync.Map
 }
 
 func NewDefaultFuncContext(ctx api.StreamContext, id int) *DefaultFuncContext {
@@ -57,5 +59,10 @@ func (c *DefaultFuncContext) GetFuncId() int {
 }
 
 func (c *DefaultFuncContext) convertKey(key string) string {
-	return fmt.Sprintf("$$func%d_%s", c.funcId, key)
+	if v, ok := c.keyCache.Load(key); ok {
+		return v.(string)
+	}
+	newKey := fmt.Sprintf("$$func%d_%s", c.funcId, key)
+	c.keyCache.Store(key, newKey)
+	return newKey
 }

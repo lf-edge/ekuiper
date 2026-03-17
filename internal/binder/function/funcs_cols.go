@@ -89,7 +89,7 @@ func changedFunc(ctx api.FunctionContext, args []interface{}, keys []string) (Re
 		if err != nil {
 			return nil, err
 		}
-		if !reflect.DeepEqual(v, lv) {
+		if !isEqual(v, lv) {
 			if r == nil {
 				r = make(ResultCols)
 			}
@@ -101,4 +101,33 @@ func changedFunc(ctx api.FunctionContext, args []interface{}, keys []string) (Re
 		}
 	}
 	return r, nil
+}
+
+func isEqual(v1, v2 interface{}) bool {
+	if v1 == nil || v2 == nil {
+		return v1 == v2
+	}
+	switch t1 := v1.(type) {
+	case string:
+		if t2, ok := v2.(string); ok {
+			return t1 == t2
+		}
+	case int64:
+		if t2, ok := v2.(int64); ok {
+			return t1 == t2
+		}
+	case float64:
+		if t2, ok := v2.(float64); ok {
+			return t1 == t2
+		}
+	case bool:
+		if t2, ok := v2.(bool); ok {
+			return t1 == t2
+		}
+	case int:
+		if t2, ok := v2.(int); ok {
+			return t1 == t2
+		}
+	}
+	return reflect.DeepEqual(v1, v2)
 }
