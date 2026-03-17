@@ -148,6 +148,10 @@ func (sm *DefaultStatManager) incTotalExceptions(err string) {
 }
 
 func (sm *DefaultStatManager) ProcessTimeStart() {
+	if sm.totalRecordsIn.Load()%128 != 0 {
+		sm.processTimeStart.Store(0)
+		return
+	}
 	now := time.Now()
 	sm.lastInvocation.Store(now.UnixMilli())
 	sm.processTimeStart.Store(now.UnixNano())
