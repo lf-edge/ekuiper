@@ -139,6 +139,14 @@ func (pp *ProjectOp) getVE(tuple xsql.RawRow, agg xsql.AggregateData, wr *xsql.W
 				pp.mvs = make(xsql.MultiValuerList, 3)
 			}
 		}
+		// Pre-allocate buffers based on field counts
+		fullLen := len(pp.Fields) + len(pp.AliasFields)
+		if cap(pp.kvs) < fullLen*2 {
+			pp.kvs = make([]interface{}, 0, fullLen*2)
+		}
+		if cap(pp.alias) < len(pp.AliasFields)*2 {
+			pp.alias = make([]interface{}, 0, len(pp.AliasFields)*2)
+		}
 	}
 
 	pp.wv.Data = tuple
@@ -212,6 +220,8 @@ func (pp *ProjectOp) project(row xsql.RawRow, ve *xsql.ValuerEval) error {
 		// Calculate all fields then pick the needed ones
 		// To make sure all calculations are run with the same context (e.g. alias values)
 		// Do not set value during calculations
+		pp.kvs = pp.kvs[:0]
+		pp.alias = pp.alias[:0]
 
 		for _, f := range pp.ExprFields {
 			if f.Invisible {
@@ -246,14 +256,15 @@ func (pp *ProjectOp) project(row xsql.RawRow, ve *xsql.ValuerEval) error {
 			}
 		}
 		row.Pick(pp.AllWildcard, pp.ColNames, pp.WildcardEmitters, pp.ExceptNames, pp.SendNil)
-		for i := 0; i < len(pp.kvs); i += 2 {
+
+		kvsLen := len(pp.kvs)
+		for i := 0; i < kvsLen; i += 2 {
 			row.Set(pp.kvs[i].(string), pp.kvs[i+1])
 		}
-		pp.kvs = pp.kvs[:0]
-		for i := 0; i < len(pp.alias); i += 2 {
+		aliasLen := len(pp.alias)
+		for i := 0; i < aliasLen; i += 2 {
 			row.AppendAlias(pp.alias[i].(string), pp.alias[i+1])
 		}
-		pp.alias = pp.alias[:0]
 	}
 	return nil
 }
