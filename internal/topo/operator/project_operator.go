@@ -45,6 +45,12 @@ type ProjectOp struct {
 
 	kvs   []interface{}
 	alias []interface{}
+
+	ve  *xsql.ValuerEval
+	wv  *xsql.WildcardValuer
+	wrv *xsql.WindowRangeValuer
+	mvs xsql.MultiValuerList
+	mav *xsql.AggregateMultiValuer
 }
 
 // Apply
@@ -116,14 +122,49 @@ func (pp *ProjectOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Fun
 
 func (pp *ProjectOp) getVE(tuple xsql.RawRow, agg xsql.AggregateData, wr *xsql.WindowRange, fv *xsql.FunctionValuer, afv *xsql.AggregateFunctionValuer) *xsql.ValuerEval {
 	afv.SetData(agg)
+	// Lazy init
+	if pp.ve == nil {
+		pp.ve = &xsql.ValuerEval{}
+		pp.wv = &xsql.WildcardValuer{}
+		if pp.IsAggregate {
+			pp.mvs = make(xsql.MultiValuerList, 4)
+			pp.mav = &xsql.AggregateMultiValuer{
+				MultiValuerList: pp.mvs,
+			}
+		} else {
+			if wr != nil {
+				pp.mvs = make(xsql.MultiValuerList, 4)
+				pp.wrv = &xsql.WindowRangeValuer{}
+			} else {
+				pp.mvs = make(xsql.MultiValuerList, 3)
+			}
+		}
+	}
+
+	pp.wv.Data = tuple
 	if pp.IsAggregate {
-		return &xsql.ValuerEval{Valuer: xsql.MultiAggregateValuer(agg, fv, tuple, fv, afv, &xsql.WildcardValuer{Data: tuple})}
+		pp.mvs[0] = tuple
+		pp.mvs[1] = fv
+		pp.mvs[2] = afv
+		pp.mvs[3] = pp.wv
+		pp.mav.Data = agg
+		pp.mav.SingleCallValuer = fv
+		pp.ve.Valuer = pp.mav
 	} else {
 		if wr != nil {
-			return &xsql.ValuerEval{Valuer: xsql.MultiValuer(tuple, &xsql.WindowRangeValuer{WindowRange: wr}, fv, &xsql.WildcardValuer{Data: tuple})}
+			pp.wrv.WindowRange = wr
+			pp.mvs[0] = tuple
+			pp.mvs[1] = pp.wrv
+			pp.mvs[2] = fv
+			pp.mvs[3] = pp.wv
+		} else {
+			pp.mvs[0] = tuple
+			pp.mvs[1] = fv
+			pp.mvs[2] = pp.wv
 		}
-		return &xsql.ValuerEval{Valuer: xsql.MultiValuer(tuple, fv, &xsql.WildcardValuer{Data: tuple})}
+		pp.ve.Valuer = pp.mvs
 	}
+	return pp.ve
 }
 
 func (pp *ProjectOp) getRowVE(tuple xsql.Row, wr *xsql.WindowRange, fv *xsql.FunctionValuer, afv *xsql.AggregateFunctionValuer) *xsql.ValuerEval {

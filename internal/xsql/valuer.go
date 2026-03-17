@@ -100,12 +100,12 @@ func (wv *WildcardValuer) Meta(_, _ string) (interface{}, bool) {
 // MultiValuer returns a Valuer that iterates over multiple Valuer instances
 // to find a match.
 func MultiValuer(valuers ...Valuer) Valuer {
-	return multiValuer(valuers)
+	return MultiValuerList(valuers)
 }
 
-type multiValuer []Valuer
+type MultiValuerList []Valuer
 
-func (a multiValuer) Value(key, table string) (interface{}, bool) {
+func (a MultiValuerList) Value(key, table string) (interface{}, bool) {
 	for _, valuer := range a {
 		if v, ok := valuer.Value(key, table); ok {
 			return v, true
@@ -114,7 +114,7 @@ func (a multiValuer) Value(key, table string) (interface{}, bool) {
 	return nil, false
 }
 
-func (a multiValuer) Meta(key, table string) (interface{}, bool) {
+func (a MultiValuerList) Meta(key, table string) (interface{}, bool) {
 	for _, valuer := range a {
 		if v, ok := valuer.Meta(key, table); ok {
 			return v, true
@@ -123,7 +123,7 @@ func (a multiValuer) Meta(key, table string) (interface{}, bool) {
 	return nil, false
 }
 
-func (a multiValuer) AppendAlias(key string, value interface{}) bool {
+func (a MultiValuerList) AppendAlias(key string, value interface{}) bool {
 	for _, valuer := range a {
 		if vv, ok := valuer.(AliasValuer); ok {
 			if ok := vv.AppendAlias(key, value); ok {
@@ -134,7 +134,7 @@ func (a multiValuer) AppendAlias(key string, value interface{}) bool {
 	return false
 }
 
-func (a multiValuer) AliasValue(key string) (interface{}, bool) {
+func (a MultiValuerList) AliasValue(key string) (interface{}, bool) {
 	for _, valuer := range a {
 		if vv, ok := valuer.(AliasValuer); ok {
 			return vv.AliasValue(key)
@@ -143,7 +143,7 @@ func (a multiValuer) AliasValue(key string) (interface{}, bool) {
 	return nil, false
 }
 
-func (a multiValuer) FuncValue(key string) (interface{}, bool) {
+func (a MultiValuerList) FuncValue(key string) (interface{}, bool) {
 	for _, valuer := range a {
 		if vv, ok := valuer.(FuncValuer); ok {
 			if r, ok := vv.FuncValue(key); ok {
@@ -154,7 +154,7 @@ func (a multiValuer) FuncValue(key string) (interface{}, bool) {
 	return nil, false
 }
 
-func (a multiValuer) Call(name string, funcId int, args []interface{}) (interface{}, bool) {
+func (a MultiValuerList) Call(name string, funcId int, args []interface{}) (interface{}, bool) {
 	for _, valuer := range a {
 		if valuer, ok := valuer.(CallValuer); ok {
 			if v, ok := valuer.Call(name, funcId, args); ok {
@@ -167,7 +167,7 @@ func (a multiValuer) Call(name string, funcId int, args []interface{}) (interfac
 	return nil, false
 }
 
-func (a multiValuer) ValueByIndex(index int, sourceIndex int) (any, bool) {
+func (a MultiValuerList) ValueByIndex(index int, sourceIndex int) (any, bool) {
 	for _, valuer := range a {
 		if iv, ok := valuer.(model.IndexValuer); ok {
 			return iv.ValueByIndex(index, sourceIndex)
@@ -176,7 +176,7 @@ func (a multiValuer) ValueByIndex(index int, sourceIndex int) (any, bool) {
 	return nil, false
 }
 
-func (a multiValuer) SetByIndex(index int, value any) {
+func (a MultiValuerList) SetByIndex(index int, value any) {
 	for _, valuer := range a {
 		if iv, ok := valuer.(model.IndexValuer); ok {
 			iv.SetByIndex(index, value)
@@ -186,7 +186,7 @@ func (a multiValuer) SetByIndex(index int, value any) {
 	panic("implement me")
 }
 
-func (a multiValuer) TempByIndex(index int) any {
+func (a MultiValuerList) TempByIndex(index int) any {
 	for _, valuer := range a {
 		if iv, ok := valuer.(model.IndexValuer); ok {
 			return iv.TempByIndex(index)
@@ -195,7 +195,7 @@ func (a multiValuer) TempByIndex(index int) any {
 	return nil
 }
 
-func (a multiValuer) SetTempByIndex(index int, value any) {
+func (a MultiValuerList) SetTempByIndex(index int, value any) {
 	for _, valuer := range a {
 		if iv, ok := valuer.(model.IndexValuer); ok {
 			iv.SetTempByIndex(index, value)
@@ -205,24 +205,24 @@ func (a multiValuer) SetTempByIndex(index int, value any) {
 	panic("implement me")
 }
 
-type multiAggregateValuer struct {
-	data AggregateData
-	multiValuer
-	singleCallValuer CallValuer
+type AggregateMultiValuer struct {
+	Data             AggregateData
+	MultiValuerList
+	SingleCallValuer CallValuer
 }
 
 func MultiAggregateValuer(data AggregateData, singleCallValuer CallValuer, valuers ...Valuer) Valuer {
-	return &multiAggregateValuer{
-		data:             data,
-		multiValuer:      valuers,
-		singleCallValuer: singleCallValuer,
+	return &AggregateMultiValuer{
+		Data:             data,
+		MultiValuerList:  valuers,
+		SingleCallValuer: singleCallValuer,
 	}
 }
 
-func (a *multiAggregateValuer) Call(name string, funcId int, args []interface{}) (interface{}, bool) {
+func (a *AggregateMultiValuer) Call(name string, funcId int, args []interface{}) (interface{}, bool) {
 	// assume the aggFuncMap already cache the custom agg funcs in IsAggFunc()
 	isAgg := function.IsAggFunc(name)
-	for _, valuer := range a.multiValuer {
+	for _, valuer := range a.MultiValuerList {
 		if a, ok := valuer.(AggregateCallValuer); ok && isAgg {
 			if v, ok := a.Call(name, funcId, args); ok {
 				return v, true
@@ -238,30 +238,30 @@ func (a *multiAggregateValuer) Call(name string, funcId int, args []interface{})
 	return nil, false
 }
 
-func (a *multiAggregateValuer) GetAllTuples() AggregateData {
-	return a.data
+func (a *AggregateMultiValuer) GetAllTuples() AggregateData {
+	return a.Data
 }
 
-func (a *multiAggregateValuer) GetSingleCallValuer() CallValuer {
-	return a.singleCallValuer
+func (a *AggregateMultiValuer) GetSingleCallValuer() CallValuer {
+	return a.SingleCallValuer
 }
 
-func (a *multiAggregateValuer) AppendAlias(key string, value interface{}) bool {
-	if vv, ok := a.data.(AliasValuer); ok {
+func (a *AggregateMultiValuer) AppendAlias(key string, value interface{}) bool {
+	if vv, ok := a.Data.(AliasValuer); ok {
 		if ok := vv.AppendAlias(key, value); ok {
 			return true
 		}
 		return false
 	} else {
-		return a.multiValuer.AppendAlias(key, value)
+		return a.MultiValuerList.AppendAlias(key, value)
 	}
 }
 
-func (a *multiAggregateValuer) AliasValue(key string) (interface{}, bool) {
-	if vv, ok := a.data.(AliasValuer); ok {
+func (a *AggregateMultiValuer) AliasValue(key string) (interface{}, bool) {
+	if vv, ok := a.Data.(AliasValuer); ok {
 		return vv.AliasValue(key)
 	} else {
-		return a.multiValuer.AliasValue(key)
+		return a.MultiValuerList.AliasValue(key)
 	}
 }
 
