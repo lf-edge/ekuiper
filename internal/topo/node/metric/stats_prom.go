@@ -76,47 +76,37 @@ type PrometheusStatManager struct {
 }
 
 func (sm *PrometheusStatManager) IncTotalRecordsIn() {
-	sm.Lock()
-	defer sm.Unlock()
-	sm.totalRecordsIn++
+	sm.totalRecordsIn.Add(1)
 	sm.pTotalRecordsIn.Inc()
 }
 
 func (sm *PrometheusStatManager) IncTotalMessagesProcessed(n int64) {
-	sm.Lock()
-	defer sm.Unlock()
-	sm.totalMessagesProcessed++
+	sm.totalMessagesProcessed.Add(n)
 	sm.pTotalMessagesProcessed.Add(float64(n))
 }
 
 func (sm *PrometheusStatManager) IncTotalRecordsOut() {
-	sm.Lock()
-	defer sm.Unlock()
-	sm.totalRecordsOut++
+	sm.totalRecordsOut.Add(1)
 	sm.pTotalRecordsOut.Inc()
 }
 
 func (sm *PrometheusStatManager) IncTotalExceptions(err string) {
-	sm.Lock()
-	defer sm.Unlock()
 	sm.pTotalExceptions.Inc()
 	sm.DefaultStatManager.incTotalExceptions(err)
 }
 
 func (sm *PrometheusStatManager) ProcessTimeEnd() {
-	sm.Lock()
-	defer sm.Unlock()
-	if !sm.processTimeStart.IsZero() {
-		sm.processLatency = int64(time.Since(sm.processTimeStart) / time.Microsecond)
-		sm.pProcessLatency.Set(float64(sm.processLatency))
-		sm.pProcessLatencyHist.Observe(float64(sm.processLatency))
+	start := sm.processTimeStart.Load()
+	if start != 0 {
+		latency := int64(time.Since(time.Unix(0, start)) / time.Microsecond)
+		sm.processLatency.Store(latency)
+		sm.pProcessLatency.Set(float64(latency))
+		sm.pProcessLatencyHist.Observe(float64(latency))
 	}
 }
 
 func (sm *PrometheusStatManager) SetBufferLength(l int64) {
-	sm.Lock()
-	defer sm.Unlock()
-	sm.bufferLength = l
+	sm.bufferLength.Store(l)
 	sm.pBufferLength.Set(float64(l))
 }
 
@@ -138,8 +128,6 @@ func (sm *PrometheusStatManager) Clean(ruleId string) {
 }
 
 func (sm *PrometheusStatManager) SetConnectionState(state string, message string) {
-	sm.Lock()
-	defer sm.Unlock()
 	switch state {
 	case api.ConnectionDisconnected:
 		sm.pConnectionStatus.Set(-1)
@@ -148,5 +136,6 @@ func (sm *PrometheusStatManager) SetConnectionState(state string, message string
 	case api.ConnectionConnected:
 		sm.pConnectionStatus.Set(1)
 	}
-	setMemConnState(sm.connectionState, state, message)
+	// DefaultStatManager.SetConnectionState still uses a lock for connectionState field
+	sm.DefaultStatManager.SetConnectionState(state, message)
 }

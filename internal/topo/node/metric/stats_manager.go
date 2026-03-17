@@ -15,6 +15,7 @@
 package metric
 
 import (
+	"sync/atomic"
 	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
@@ -58,25 +59,24 @@ type StatManager interface {
 	Clean(ruleId string)
 }
 
-// DefaultStatManager The statManager is not thread safe. Make sure it is used in only one instance
 type DefaultStatManager struct {
 	// metrics
-	totalRecordsIn         int64
-	totalRecordsOut        int64
-	totalMessagesProcessed int64
+	totalRecordsIn         atomic.Int64
+	totalRecordsOut        atomic.Int64
+	totalMessagesProcessed atomic.Int64
 
-	processLatency    int64
-	lastInvocation    time.Time
-	bufferLength      int64
-	totalExceptions   int64
-	lastException     string
-	lastExceptionTime time.Time
+	processLatency    atomic.Int64
+	lastInvocation    atomic.Int64 // UnixMilli
+	bufferLength      atomic.Int64
+	totalExceptions   atomic.Int64
+	lastException     atomic.Pointer[string]
+	lastExceptionTime atomic.Int64 // UnixMilli
 
 	connectionState *ConnectionStatManager
 	// configs
 	opType           string //"source", "op", "sink"
 	prefix           string
-	processTimeStart time.Time
+	processTimeStart atomic.Int64 // UnixNano
 	opId             string
 	instanceId       int
 	syncx.RWMutex
@@ -125,63 +125,48 @@ func (sm *DefaultStatManager) SetConnectionState(status string, message string) 
 }
 
 func (sm *DefaultStatManager) IncTotalRecordsIn() {
-	sm.Lock()
-	defer sm.Unlock()
-	sm.totalRecordsIn++
+	sm.totalRecordsIn.Add(1)
 }
 
 func (sm *DefaultStatManager) IncTotalMessagesProcessed(n int64) {
-	sm.Lock()
-	defer sm.Unlock()
-	sm.totalMessagesProcessed += n
+	sm.totalMessagesProcessed.Add(n)
 }
 
 func (sm *DefaultStatManager) IncTotalRecordsOut() {
-	sm.Lock()
-	defer sm.Unlock()
-	sm.totalRecordsOut++
+	sm.totalRecordsOut.Add(1)
 }
 
 func (sm *DefaultStatManager) IncTotalExceptions(err string) {
-	sm.Lock()
-	defer sm.Unlock()
 	sm.incTotalExceptions(err)
 }
 
 func (sm *DefaultStatManager) incTotalExceptions(err string) {
-	sm.totalExceptions++
-	var t time.Time
-	sm.processTimeStart = t
-	sm.lastException = err
-	sm.lastExceptionTime = time.Now()
+	sm.totalExceptions.Add(1)
+	sm.processTimeStart.Store(0)
+	sm.lastException.Store(&err)
+	sm.lastExceptionTime.Store(time.Now().UnixMilli())
 }
 
 func (sm *DefaultStatManager) ProcessTimeStart() {
-	sm.Lock()
-	defer sm.Unlock()
-	sm.lastInvocation = time.Now()
-	sm.processTimeStart = sm.lastInvocation
+	now := time.Now()
+	sm.lastInvocation.Store(now.UnixMilli())
+	sm.processTimeStart.Store(now.UnixNano())
 }
 
 func (sm *DefaultStatManager) ProcessTimeEnd() {
-	sm.Lock()
-	defer sm.Unlock()
-	if !sm.processTimeStart.IsZero() {
-		sm.processLatency = int64(time.Since(sm.processTimeStart) / time.Microsecond)
+	start := sm.processTimeStart.Load()
+	if start != 0 {
+		sm.processLatency.Store(int64(time.Since(time.Unix(0, start)) / time.Microsecond))
 	}
 }
 
 func (sm *DefaultStatManager) SetBufferLength(l int64) {
-	sm.Lock()
-	defer sm.Unlock()
-	sm.bufferLength = l
+	sm.bufferLength.Store(l)
 }
 
 func (sm *DefaultStatManager) SetProcessTimeStart(t time.Time) {
-	sm.Lock()
-	defer sm.Unlock()
-	sm.processTimeStart = t
-	sm.lastInvocation = t
+	sm.processTimeStart.Store(t.UnixNano())
+	sm.lastInvocation.Store(t.UnixMilli())
 }
 
 func (sm *DefaultStatManager) GetMetrics() []any {
@@ -193,24 +178,22 @@ func (sm *DefaultStatManager) GetMetrics() []any {
 	} else {
 		result = make([]any, 9)
 	}
+	lastException := ""
+	if ptr := sm.lastException.Load(); ptr != nil {
+		lastException = *ptr
+	}
 	copy(result, []any{
-		sm.totalRecordsIn,
-		sm.totalRecordsOut,
-		sm.totalMessagesProcessed,
-		sm.processLatency,
-		sm.bufferLength,
-		int64(0),
-		sm.totalExceptions,
-		sm.lastException,
-		int64(0),
+		sm.totalRecordsIn.Load(),
+		sm.totalRecordsOut.Load(),
+		sm.totalMessagesProcessed.Load(),
+		sm.processLatency.Load(),
+		sm.bufferLength.Load(),
+		sm.lastInvocation.Load(),
+		sm.totalExceptions.Load(),
+		lastException,
+		sm.lastExceptionTime.Load(),
 	})
 
-	if !sm.lastInvocation.IsZero() {
-		result[5] = sm.lastInvocation.UnixMilli()
-	}
-	if !sm.lastExceptionTime.IsZero() {
-		result[8] = sm.lastExceptionTime.UnixMilli()
-	}
 	if sm.connectionState != nil {
 		result[9] = sm.connectionState.connStatus
 		if !sm.connectionState.lastConnectedTime.IsZero() {
