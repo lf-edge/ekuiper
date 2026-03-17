@@ -296,7 +296,13 @@ func (v *ValuerEval) Eval(expr ast.Expr) interface{} {
 		return nil
 	}
 	v.depth++
-	defer func() { v.depth-- }()
+	r := v.evalInner(expr)
+	v.depth--
+	return r
+}
+
+// evalInner is the body of Eval, split out so that Eval itself can be inlined.
+func (v *ValuerEval) evalInner(expr ast.Expr) interface{} {
 	switch et := expr.(type) {
 	case *ast.BinaryExpr:
 		return v.evalBinaryExpr(et)
@@ -853,7 +859,93 @@ func (v *ValuerEval) subset(result interface{}, expr ast.Expr) interface{} {
 	}
 }
 
-// SimpleDataEval lhs and rhs are non-nil
+// evalInt64Pair evaluates a binary op for two int64 operands.
+// Called as a fast-path from SimpleDataEval.
+func evalInt64Pair(lhs, rhs int64, op ast.Token, floatDiv bool) any {
+	switch op {
+	case ast.EQ:
+		return lhs == rhs
+	case ast.NEQ:
+		return lhs != rhs
+	case ast.LT:
+		return lhs < rhs
+	case ast.LTE:
+		return lhs <= rhs
+	case ast.GT:
+		return lhs > rhs
+	case ast.GTE:
+		return lhs >= rhs
+	case ast.ADD:
+		return lhs + rhs
+	case ast.SUB:
+		return lhs - rhs
+	case ast.MUL:
+		return lhs * rhs
+	case ast.DIV:
+		if floatDiv {
+			if rhs == 0 {
+				return fmt.Errorf("divided by zero")
+			}
+			return float64(lhs) / float64(rhs)
+		}
+		if rhs == 0 {
+			return fmt.Errorf("divided by zero")
+		}
+		return lhs / rhs
+	case ast.MOD:
+		if rhs == 0 {
+			return fmt.Errorf("divided by zero")
+		}
+		return lhs % rhs
+	case ast.BITWISE_AND:
+		return lhs & rhs
+	case ast.BITWISE_OR:
+		return lhs | rhs
+	case ast.BITWISE_XOR:
+		return lhs ^ rhs
+	default:
+		return invalidOpError(lhs, op, rhs)
+	}
+}
+
+// evalFloat64Pair evaluates a binary op for two float64 operands.
+// Called as a fast-path from SimpleDataEval.
+func evalFloat64Pair(lhs, rhs float64, op ast.Token) any {
+	switch op {
+	case ast.EQ:
+		return lhs == rhs
+	case ast.NEQ:
+		return lhs != rhs
+	case ast.LT:
+		return lhs < rhs
+	case ast.LTE:
+		return lhs <= rhs
+	case ast.GT:
+		return lhs > rhs
+	case ast.GTE:
+		return lhs >= rhs
+	case ast.ADD:
+		return lhs + rhs
+	case ast.SUB:
+		return lhs - rhs
+	case ast.MUL:
+		return lhs * rhs
+	case ast.DIV:
+		if rhs == 0 {
+			return fmt.Errorf("divided by zero")
+		}
+		return lhs / rhs
+	case ast.MOD:
+		if rhs == 0 {
+			return fmt.Errorf("divided by zero")
+		}
+		return math.Mod(lhs, rhs)
+	default:
+		return invalidOpError(lhs, op, rhs)
+	}
+}
+
+// SimpleDataEval evaluates a binary operation on two non-nil operands.
 func (v *ValuerEval) SimpleDataEval(lhs, rhs any, op ast.Token) any {
 	if lhs == nil || rhs == nil {
 		// for relationship, return false
@@ -866,6 +958,17 @@ func (v *ValuerEval) SimpleDataEval(lhs, rhs any, op ast.Token) any {
 	}
 	lhs = convertNum(lhs)
 	rhs = convertNum(rhs)
+	// Fast path: identical int64 or float64 types (most common in sensor data)
+	if li, ok := lhs.(int64); ok {
+		if ri, ok2 := rhs.(int64); ok2 {
+			return evalInt64Pair(li, ri, op, v.IntegerFloatDivision)
+		}
+	}
+	if lf, ok := lhs.(float64); ok {
+		if rf, ok2 := rhs.(float64); ok2 {
+			return evalFloat64Pair(lf, rf, op)
+		}
+	}
 	// Evaluate if both sides are simple types.
 	switch lhs := lhs.(type) {
 	case bool:
@@ -1279,11 +1382,31 @@ func invalidOpError(lhs interface{}, op ast.Token, rhs interface{}) error {
 }
 
 func convertNum(para interface{}) interface{} {
-	if isInt(para) {
-		// Already check type of para so that there will be no error, just ignore error
-		para, _ = cast.ToInt64(para, cast.CONVERT_SAMEKIND)
-	} else if isFloat(para) {
-		para, _ = cast.ToFloat64(para, cast.CONVERT_SAMEKIND)
+	switch v := para.(type) {
+	case int64:
+		return v
+	case float64:
+		return v
+	case int:
+		return int64(v)
+	case int32:
+		return int64(v)
+	case int16:
+		return int64(v)
+	case int8:
+		return int64(v)
+	case uint:
+		return int64(v)
+	case uint64:
+		return int64(v)
+	case uint32:
+		return int64(v)
+	case uint16:
+		return int64(v)
+	case uint8:
+		return int64(v)
+	case float32:
+		return float64(v)
 	}
 	return para
 }

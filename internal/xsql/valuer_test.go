@@ -463,3 +463,51 @@ func TestLike(t *testing.T) {
 		}
 	}
 }
+
+func BenchmarkSimpleDataEval_Int64(b *testing.B) {
+	ve := &ValuerEval{}
+	lhs := int64(10)
+	rhs := int64(20)
+	op := ast.ADD
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = ve.SimpleDataEval(lhs, rhs, op)
+	}
+}
+
+func BenchmarkSimpleDataEval_Float64(b *testing.B) {
+	ve := &ValuerEval{}
+	lhs := 10.5
+	rhs := 20.5
+	op := ast.ADD
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = ve.SimpleDataEval(lhs, rhs, op)
+	}
+}
+
+func BenchmarkEval_FieldRef(b *testing.B) {
+	msg := map[string]interface{}{"a": int64(10)}
+	tuple := &Tuple{Emitter: "src", Message: msg}
+	ve := &ValuerEval{Valuer: tuple}
+	expr := &ast.FieldRef{Name: "a", StreamName: ast.DefaultStream}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = ve.Eval(expr)
+	}
+}
+
+func BenchmarkEval_BinaryExpr(b *testing.B) {
+	msg := map[string]interface{}{"a": int64(10), "b": int64(20)}
+	tuple := &Tuple{Emitter: "src", Message: msg}
+	ve := &ValuerEval{Valuer: tuple}
+	expr := &ast.BinaryExpr{
+		LHS: &ast.FieldRef{Name: "a", StreamName: ast.DefaultStream},
+		OP:  ast.ADD,
+		RHS: &ast.FieldRef{Name: "b", StreamName: ast.DefaultStream},
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = ve.Eval(expr)
+	}
+}
