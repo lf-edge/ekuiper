@@ -51,6 +51,20 @@ type ProjectOp struct {
 	wrv *xsql.WindowRangeValuer
 	mvs xsql.MultiValuerList
 	mav *xsql.AggregateMultiValuer
+
+	// compiledExprs caches pre-compiled accessors for ExprFields.
+	// For simple FieldRef fields, isDirect=true and we skip the AST walk.
+	compiledExprs []compiledField
+}
+
+// compiledField caches whether an ExprField is a simple direct lookup
+// or requires the full ValuerEval walk.
+type compiledField struct {
+	name     string   // output field name
+	isDirect bool     // true: use dirKey/dirTable directly on row
+	dirKey   string   // source key for direct access
+	dirTable string   // source table for direct access (empty = default)
+	expr     ast.Expr // non-nil when isDirect == false (complex expr)
 }
 
 // Apply
@@ -147,6 +161,23 @@ func (pp *ProjectOp) getVE(tuple xsql.RawRow, agg xsql.AggregateData, wr *xsql.W
 		if cap(pp.alias) < len(pp.AliasFields)*2 {
 			pp.alias = make([]interface{}, 0, len(pp.AliasFields)*2)
 		}
+		// Pre-compile ExprField accessors: for simple FieldRef (non-alias, non-indexed)
+		// we can call row.Value directly, skipping the full Eval dispatch.
+		pp.compiledExprs = make([]compiledField, 0, len(pp.ExprFields))
+		for _, f := range pp.ExprFields {
+			if f.Invisible {
+				continue
+			}
+			cf := compiledField{name: f.Name, expr: f.Expr}
+			if fr, ok := f.Expr.(*ast.FieldRef); ok && !fr.IsAlias() && !fr.HasIndex {
+				cf.isDirect = true
+				cf.dirKey = fr.Name
+				if fr.StreamName != ast.DefaultStream {
+					cf.dirTable = string(fr.StreamName)
+				}
+			}
+			pp.compiledExprs = append(pp.compiledExprs, cf)
+		}
 	}
 
 	pp.wv.Data = tuple
@@ -223,13 +254,16 @@ func (pp *ProjectOp) project(row xsql.RawRow, ve *xsql.ValuerEval) error {
 		pp.kvs = pp.kvs[:0]
 		pp.alias = pp.alias[:0]
 
-		for _, f := range pp.ExprFields {
-			if f.Invisible {
-				continue
-			}
-			vi := ve.Eval(f.Expr)
-			if e, ok := vi.(error); ok {
-				return fmt.Errorf("expr: %s meet error, err:%v", f.Expr.String(), e)
+		for _, cf := range pp.compiledExprs {
+			var vi interface{}
+			if cf.isDirect {
+				// Fast path: direct map lookup, skips AST walk
+				vi, _ = row.Value(cf.dirKey, cf.dirTable)
+			} else {
+				vi = ve.Eval(cf.expr)
+				if e, ok := vi.(error); ok {
+					return fmt.Errorf("expr: %s meet error, err:%v", cf.expr.String(), e)
+				}
 			}
 			if vi != nil {
 				switch vt := vi.(type) {
@@ -238,7 +272,7 @@ func (pp *ProjectOp) project(row xsql.RawRow, ve *xsql.ValuerEval) error {
 						pp.kvs = append(pp.kvs, k, v)
 					}
 				default:
-					pp.kvs = append(pp.kvs, f.Name, vi)
+					pp.kvs = append(pp.kvs, cf.name, vi)
 				}
 			}
 		}
