@@ -382,7 +382,6 @@ func (v *ValuerEval) Eval(expr ast.Expr) interface{} {
 					return val
 				}
 				if len(et.Args) > 0 {
-					var args []interface{}
 					if v.depth == 1 {
 						if cap(v.cachedArgs) < len(et.Args) {
 							v.cachedArgs = make([]interface{}, 0, len(et.Args))
