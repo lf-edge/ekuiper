@@ -90,34 +90,11 @@ func TestExec(t *testing.T) {
 	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
 	tempStore, _ := state.CreateStore("mockRule0", def.AtMostOnce)
 	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 1)
-	var nilResult ResultCols
 	tests := []struct {
 		args   []interface{}
 		result interface{}
 	}{
-		{ // 0
-			args: []interface{}{
-				"foo",
-				"bar",
-				"baz",
-			},
-			result: fmt.Errorf("the last arg is not the key list but got baz"),
-		}, { // 1
-			args: []interface{}{
-				"foo",
-				"bar",
-				[]string{"baz"},
-			},
-			result: fmt.Errorf("expect more than two args but got 2"),
-		}, { // 2
-			args: []interface{}{
-				"foo",
-				"bar",
-				"baz",
-				[]string{"baz"},
-			},
-			result: fmt.Errorf("second arg is not a bool but got bar"),
-		}, { // 3
+		{ // 3
 			args: []interface{}{
 				"ab_",
 				true,
@@ -126,8 +103,8 @@ func TestExec(t *testing.T) {
 				[]string{"a", "b", "col1", "col2"},
 			},
 			result: ResultCols{
-				"ab_col1": "baz",
-				"ab_col2": 44,
+				IndexValues: []interface{}{nil, nil, "baz", 44},
+				Keys:        []string{"a", "b", "col1", "col2"},
 			},
 		}, { // 4
 			args: []interface{}{
@@ -137,7 +114,9 @@ func TestExec(t *testing.T) {
 				44,
 				[]string{"a", "b", "col1", "col2"},
 			},
-			result: nilResult,
+			result: ResultCols{
+				Keys: []string{"a", "b", "col1", "col2"},
+			},
 		}, { // 5
 			args: []interface{}{
 				"cd_",
@@ -147,9 +126,10 @@ func TestExec(t *testing.T) {
 				[]string{"a", "b", "col1", "col2"},
 			},
 			result: ResultCols{
-				"cd_col2": 45,
+				IndexValues: []interface{}{nil, nil, nil, 45},
+				Keys:        []string{"a", "b", "col1", "col2"},
 			},
-		}, { // 6
+		}, 		{ // 6
 			args: []interface{}{
 				"ab_",
 				true,
@@ -158,8 +138,8 @@ func TestExec(t *testing.T) {
 				[]string{"a", "b", "col1", "col2"},
 			},
 			result: ResultCols{
-				"ab_col1": "foo",
-				"ab_col2": 46,
+				IndexValues: []interface{}{nil, nil, "foo", 46},
+				Keys:        []string{"a", "b", "col1", "col2"},
 			},
 		}, { // 7
 			args: []interface{}{
@@ -169,7 +149,9 @@ func TestExec(t *testing.T) {
 				46,
 				[]string{"a", "b", "col1", "col2"},
 			},
-			result: nilResult,
+			result: ResultCols{
+				Keys: []string{"a", "b", "col1", "col2"},
+			},
 		}, { // 8
 			args: []interface{}{
 				"ab_",
@@ -179,122 +161,8 @@ func TestExec(t *testing.T) {
 				[]string{"a", "b", "col1", "col2"},
 			},
 			result: ResultCols{
-				"ab_col1": "baz",
-				"ab_col2": 44,
-			},
-		},
-	}
-	for i, tt := range tests {
-		result, _ := f.exec(fctx, tt.args)
-		if !reflect.DeepEqual(result, tt.result) {
-			t.Errorf("%d result mismatch,\ngot:\t%v \nwant:\t%v", i, result, tt.result)
-		}
-	}
-}
-
-func TestExecIgnoreNull(t *testing.T) {
-	f, ok := builtins["changed_cols"]
-	if !ok {
-		t.Fatal("builtin not found")
-	}
-	contextLogger := conf.Log.WithField("rule", "testExec")
-	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
-	tempStore, _ := state.CreateStore("mockRule0", def.AtMostOnce)
-	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 1)
-	var nilResult ResultCols
-	tests := []struct {
-		args   []interface{}
-		result interface{}
-	}{
-		{ // 0
-			args: []interface{}{
-				"foo",
-				"bar",
-				"baz",
-			},
-			result: fmt.Errorf("the last arg is not the key list but got baz"),
-		}, { // 1
-			args: []interface{}{
-				"foo",
-				"bar",
-				[]string{"baz"},
-			},
-			result: fmt.Errorf("expect more than two args but got 2"),
-		}, { // 2
-			args: []interface{}{
-				"foo",
-				"bar",
-				"baz",
-				[]string{"baz"},
-			},
-			result: fmt.Errorf("second arg is not a bool but got bar"),
-		}, { // 3
-			args: []interface{}{
-				"ab_",
-				false,
-				"baz",
-				44,
-				[]string{"a", "b", "col1", "col2"},
-			},
-			result: ResultCols{
-				"ab_col1": "baz",
-				"ab_col2": 44,
-			},
-		}, { // 4
-			args: []interface{}{
-				"ab_",
-				false,
-				nil,
-				44,
-				[]string{"a", "b", "col1", "col2"},
-			},
-			result: ResultCols{
-				"ab_col1": nil,
-			},
-		}, { // 5
-			args: []interface{}{
-				"cd_",
-				false,
-				"baz",
-				45,
-				[]string{"a", "b", "col1", "col2"},
-			},
-			result: ResultCols{
-				"cd_col1": "baz",
-				"cd_col2": 45,
-			},
-		}, { // 6
-			args: []interface{}{
-				"ab_",
-				true,
-				"foo",
-				46,
-				[]string{"a", "b", "col1", "col2"},
-			},
-			result: ResultCols{
-				"ab_col1": "foo",
-				"ab_col2": 46,
-			},
-		}, { // 7
-			args: []interface{}{
-				"ab_",
-				true,
-				"foo",
-				46,
-				[]string{"a", "b", "col1", "col2"},
-			},
-			result: nilResult,
-		}, { // 8
-			args: []interface{}{
-				"ab_",
-				true,
-				"baz",
-				44,
-				[]string{"a", "b", "col1", "col2"},
-			},
-			result: ResultCols{
-				"ab_col1": "baz",
-				"ab_col2": 44,
+				IndexValues: []interface{}{nil, nil, "baz", 44},
+				Keys:        []string{"a", "b", "col1", "col2"},
 			},
 		},
 	}

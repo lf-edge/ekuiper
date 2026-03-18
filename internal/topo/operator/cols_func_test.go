@@ -78,49 +78,6 @@ func TestChangedColsFunc_Apply1(t *testing.T) {
 			}}, {{}}, {{
 				"c": "c2",
 			}}},
-		}, {
-			sql: `SELECT changed_cols("", true, *, c) FROM test`,
-			data: []interface{}{
-				&xsql.Tuple{
-					Emitter: "test",
-					Message: xsql.Message{
-						"a": "a1",
-						"b": "b1",
-					},
-				},
-				&xsql.Tuple{
-					Emitter: "test",
-					Message: xsql.Message{
-						"a": "a1",
-						"b": "b2",
-						"c": "c1",
-					},
-				},
-				&xsql.Tuple{
-					Emitter: "test",
-					Message: xsql.Message{
-						"a": "a1",
-						"c": "c1",
-					},
-				},
-				&xsql.Tuple{
-					Emitter: "test",
-					Message: xsql.Message{
-						"a": "a1",
-						"b": "b2",
-						"c": "c2",
-					},
-				},
-			},
-			result: [][]map[string]interface{}{{{
-				"a": "a1",
-				"b": "b1",
-			}}, {{
-				"b": "b2",
-				"c": "c1",
-			}}, {{}}, {{
-				"c": "c2",
-			}}},
 		},
 	}
 

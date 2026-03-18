@@ -268,8 +268,11 @@ func (pp *ProjectOp) project(row xsql.RawRow, ve *xsql.ValuerEval) error {
 			if vi != nil {
 				switch vt := vi.(type) {
 				case function.ResultCols:
-					for k, v := range vt {
-						pp.kvs = append(pp.kvs, k, v)
+					for i, v := range vt.IndexValues {
+						if v != nil {
+							k := vt.Keys[i]
+							pp.kvs = append(pp.kvs, k, v)
+						}
 					}
 				default:
 					pp.kvs = append(pp.kvs, cf.name, vi)

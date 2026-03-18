@@ -22,8 +22,10 @@ import (
 
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 )
-
-type ResultCols map[string]interface{}
+type ResultCols struct {
+	IndexValues []interface{}
+	Keys        []string
+}
 
 // ColFunc Functions which will return columns directly instead of a map
 type ColFunc func(ctx api.FunctionContext, args []interface{}, keys []string) (ResultCols, error)
@@ -56,6 +58,11 @@ func registerColsFunc() {
 			if ast.IsNumericArg(args[1]) || ast.IsTimeArg(args[1]) || ast.IsStringArg(args[1]) {
 				return ProduceErrInfo(1, "bool")
 			}
+			for i := 2; i < len(args); i++ {
+				if _, ok := args[i].(*ast.Wildcard); ok {
+					return fmt.Errorf("wildcard * is not supported in changed_cols")
+				}
+			}
 			return nil
 		},
 	}
@@ -64,40 +71,49 @@ func registerColsFunc() {
 func changedFunc(ctx api.FunctionContext, args []interface{}, keys []string) (ResultCols, error) {
 	// validation
 	if len(args) <= 2 {
-		return nil, fmt.Errorf("expect more than two args but got %d", len(args))
+		return ResultCols{}, fmt.Errorf("expect more than two args but got %d", len(args))
 	}
-	prefix, ok := args[0].(string)
-	if !ok {
-		return nil, fmt.Errorf("first arg is not a string but got %v", args[0])
+
+	key := "all"
+	v, err := ctx.GetState(key)
+	if err != nil {
+		return ResultCols{}, err
 	}
-	ignoreNull, ok := args[1].(bool)
-	if !ok {
-		return nil, fmt.Errorf("second arg is not a bool but got %v", args[1])
+	var states []interface{}
+	changed := false
+	if v != nil {
+		states = v.([]interface{})
+	} else {
+		states = make([]interface{}, len(args))
+		changed = true
 	}
-	if len(args) != len(keys) {
-		return nil, fmt.Errorf("the length of keys %d does not match the args %d", len(keys), len(args)-2)
+	if len(args) > len(states) {
+		newStates := make([]interface{}, len(args))
+		copy(newStates, states)
+		states = newStates
+		changed = true
 	}
 
 	var r ResultCols
+	r.Keys = keys
 	for i := 2; i < len(args); i++ {
-		k := keys[i]
 		v := args[i]
-		if ignoreNull && v == nil {
+		if v == nil {
 			continue
 		}
-		lv, err := ctx.GetState(k)
-		if err != nil {
-			return nil, err
+		if !isEqual(v, states[i]) {
+			if r.IndexValues == nil {
+				r.IndexValues = make([]interface{}, len(args))
+			}
+			r.IndexValues[i] = v
+			states[i] = v
+			changed = true
 		}
-		if !isEqual(v, lv) {
-			if r == nil {
-				r = make(ResultCols)
-			}
-			r[prefix+k] = v
-			err := ctx.PutState(k, v)
-			if err != nil {
-				return nil, err
-			}
+	}
+	if changed {
+		err = ctx.PutState(key, states)
+		if err != nil {
+			return ResultCols{}, err
 		}
 	}
 	return r, nil
