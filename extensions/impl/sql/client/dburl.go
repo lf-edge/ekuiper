@@ -17,7 +17,6 @@ package client
 import (
 	"database/sql"
 	"fmt"
-	"strings"
 
 	"github.com/xo/dburl"
 
@@ -31,10 +30,6 @@ func ParseDBUrl(urlstr string) (string, string, error) {
 		return "", "", err
 	}
 	// Open returns *sql.DB from urlstr
-	// As we use modernc.org/sqlite with `sqlite` as driver name and dburl use `sqlite3` as driver name, we need to fix it before open sql.DB
-	if strings.ToLower(u.Driver) == "sqlite3" {
-		u.Driver = "sqlite"
-	}
 	return u.Driver, u.DSN, nil
 }
 

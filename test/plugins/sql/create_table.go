@@ -17,11 +17,11 @@ package main
 import (
 	"database/sql"
 
-	_ "modernc.org/sqlite"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 func main() {
-	db, err := sql.Open("sqlite", "file:/tmp/test.db")
+	db, err := sql.Open("sqlite3", "file:/tmp/test.db")
 	if err != nil {
 		panic(err)
 	}

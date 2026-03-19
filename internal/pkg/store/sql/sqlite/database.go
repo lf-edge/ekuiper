@@ -21,7 +21,7 @@ import (
 	"path"
 
 	// introduce sqlite
-	_ "modernc.org/sqlite"
+	_ "github.com/mattn/go-sqlite3"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf/logger"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store/definition"
@@ -35,7 +35,7 @@ type Database struct {
 }
 
 func NewSqliteDatabase(c definition.Config, name string) (definition.Database, error) {
-	logger.Log.Infof("use cgo disabled sqlite as store %v", name)
+	logger.Log.Infof("use cgo sqlite as store %v", name)
 	sqliteConf := c.Sqlite
 	dir := sqliteConf.Path
 	if sqliteConf.Name != "" {
@@ -53,7 +53,7 @@ func NewSqliteDatabase(c definition.Config, name string) (definition.Database, e
 }
 
 func (d *Database) Connect() error {
-	db, err := sql.Open("sqlite", connectionString(d.Path))
+	db, err := sql.Open("sqlite3", connectionString(d.Path))
 	if err != nil {
 		return err
 	}

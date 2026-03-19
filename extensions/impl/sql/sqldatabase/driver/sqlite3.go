@@ -17,5 +17,5 @@
 package driver
 
 import (
-	_ "modernc.org/sqlite" // SQLite3 driver
+	_ "github.com/mattn/go-sqlite3" // SQLite3 driver
 )
