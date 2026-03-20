@@ -108,6 +108,12 @@ func updateFieldIndex(ctx api.StreamContext, stmt *ast.SelectStatement, af []*as
 			case *ast.FieldRef:
 				if nf.IsColumn() {
 					sc := schema.GetStreamSchemaIndex(string(nf.StreamName))
+					if sc == nil {
+						streamsFromStmt := xsql.GetStreams(stmt)
+						if len(streamsFromStmt) == 1 {
+							sc = schema.GetStreamSchemaIndex(streamsFromStmt[0])
+						}
+					}
 					if sc != nil {
 						if si, ok := sc[nf.Name]; ok {
 							nf.SourceIndex = si
@@ -148,10 +154,10 @@ func updateFieldIndex(ctx api.StreamContext, stmt *ast.SelectStatement, af []*as
 	}
 	index := len(stmt.Fields)
 	for _, fieldExpr := range fieldExprs {
-		index = doUpdateIndex(ctx, fieldExpr, index, aliasIndex)
+		index = doUpdateIndex(ctx, stmt, fieldExpr, index, aliasIndex)
 	}
 	// Add sink index for other non-select fields
-	index = doUpdateIndex(ctx, stmt, index, aliasIndex)
+	index = doUpdateIndex(ctx, stmt, stmt, index, aliasIndex)
 	ctx.GetLogger().Infof("assign %d field index", index)
 	// Set temp index for analytic funcs
 	index = 0
@@ -166,13 +172,19 @@ func updateFieldIndex(ctx api.StreamContext, stmt *ast.SelectStatement, af []*as
 	ctx.GetLogger().Infof("assign %d temp index", index)
 }
 
-func doUpdateIndex(ctx api.StreamContext, root ast.Node, index int, aliasIndex map[string]int) int {
+func doUpdateIndex(ctx api.StreamContext, stmt *ast.SelectStatement, root ast.Node, index int, aliasIndex map[string]int) int {
 	ast.WalkFunc(root, func(n ast.Node) bool {
 		switch nf := n.(type) {
 		case *ast.FieldRef:
 			nf.HasIndex = true
 			if nf.IsColumn() {
 				sc := schema.GetStreamSchemaIndex(string(nf.StreamName))
+				if sc == nil {
+					streamsFromStmt := xsql.GetStreams(stmt)
+					if len(streamsFromStmt) == 1 {
+						sc = schema.GetStreamSchemaIndex(streamsFromStmt[0])
+					}
+				}
 				if sc != nil {
 					if si, ok := sc[nf.Name]; ok {
 						nf.SourceIndex = si

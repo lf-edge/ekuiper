@@ -3358,3 +3358,36 @@ func TestSliceNilField(t *testing.T) {
 		})
 	}
 }
+
+
+func TestProjectOp_SliceTuple_ComplexExpression(t *testing.T) {
+	sql := "SELECT abs(a) FROM test"
+	stmt, err := xsql.NewParser(strings.NewReader(sql)).Parse()
+	require.NoError(t, err)
+
+	pp := &ProjectOp{}
+	parseStmtWithSlice(pp, stmt.Fields, true)
+
+	// In current parseStmtWithSlice, inner ast.FieldRef elements of ast.Call 
+	// don't get HasIndex=true automatically. Let's fix that for this test.
+	ast.WalkFunc(stmt.Fields[0].Expr, func(n ast.Node) bool {
+		if fr, ok := n.(*ast.FieldRef); ok {
+			fr.HasIndex = true
+			fr.SourceIndex = constSourceIndex[fr.Name]
+		}
+		return true
+	})
+
+	fv, afv := xsql.NewFunctionValuersForOp(nil)
+	
+	sliceTuple := &xsql.SliceTuple{
+		SourceContent: make([]interface{}, 5),
+	}
+	sliceTuple.SourceContent[constSourceIndex["a"]] = int64(-42)
+	
+	ve := pp.getRowVE(sliceTuple, nil, fv, afv)
+	err = pp.project(sliceTuple, ve)
+	require.NoError(t, err)
+
+	require.Equal(t, int64(42), sliceTuple.SourceContent[0])
+}

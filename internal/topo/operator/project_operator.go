@@ -55,6 +55,8 @@ type ProjectOp struct {
 	// compiledExprs caches pre-compiled accessors for ExprFields.
 	// For simple FieldRef fields, isDirect=true and we skip the AST walk.
 	compiledExprs []compiledField
+	aliasIndices  []int
+	fieldIndices  []int
 }
 
 // compiledField caches whether an ExprField is a simple direct lookup
@@ -178,6 +180,14 @@ func (pp *ProjectOp) getVE(tuple xsql.RawRow, agg xsql.AggregateData, wr *xsql.W
 			}
 			pp.compiledExprs = append(pp.compiledExprs, cf)
 		}
+		pp.aliasIndices = make([]int, len(pp.AliasFields))
+		for i, f := range pp.AliasFields {
+			pp.aliasIndices[i] = getExprIndex(f.Expr)
+		}
+		pp.fieldIndices = make([]int, len(pp.Fields))
+		for i, f := range pp.Fields {
+			pp.fieldIndices[i] = getExprIndex(f.Expr)
+		}
 	}
 
 	pp.wv.Data = tuple
@@ -217,33 +227,32 @@ func (pp *ProjectOp) getRowVE(tuple xsql.Row, wr *xsql.WindowRange, fv *xsql.Fun
 func (pp *ProjectOp) project(row xsql.RawRow, ve *xsql.ValuerEval) error {
 	switch rt := row.(type) {
 	case *xsql.SliceTuple:
-		for _, f := range pp.AliasFields {
+		for i, f := range pp.AliasFields {
 			vi := ve.Eval(f.Expr)
 			if e, ok := vi.(error); ok {
 				return fmt.Errorf("expr: %s meet error, err:%v", f.Expr.String(), e)
 			}
 			if pp.SendNil && vi == nil {
-				// set it to a typed nil to distinguish from nil
-				// so that the encoder can treat it differently from nil
 				vi = cast.TNil
 			}
-			fr := f.Expr.(*ast.FieldRef)
-			rt.SetByIndex(fr.Index, vi)
+			index := pp.aliasIndices[i]
+			if index >= 0 {
+				rt.SetByIndex(index, vi)
+			}
 		}
-		for _, f := range pp.Fields {
+		for i, f := range pp.Fields {
 			if f.AName == "" {
 				vi := ve.Eval(f.Expr)
 				if e, ok := vi.(error); ok {
 					return fmt.Errorf("expr: %s meet error, err:%v", f.Expr.String(), e)
 				}
-				// TODO deal with other types
 				if pp.SendNil && vi == nil {
-					// set it to a typed nil to distinguish from nil
-					// so that the encoder can treat it differently from nil
 					vi = cast.TNil
 				}
-				fr := f.Expr.(*ast.FieldRef)
-				rt.SetByIndex(fr.Index, vi)
+				index := pp.fieldIndices[i]
+				if index >= 0 {
+					rt.SetByIndex(index, vi)
+				}
 			}
 		}
 		rt.Compact(pp.FieldLen)
@@ -304,4 +313,19 @@ func (pp *ProjectOp) project(row xsql.RawRow, ve *xsql.ValuerEval) error {
 		}
 	}
 	return nil
+}
+
+func getExprIndex(expr ast.Expr) int {
+	if fr, ok := expr.(*ast.FieldRef); ok {
+		return fr.Index
+	}
+	var targetIdx int = -1
+	ast.WalkFunc(expr, func(n ast.Node) bool {
+		if fr, ok := n.(*ast.FieldRef); ok {
+			targetIdx = fr.Index
+			return false // stop walking
+		}
+		return true
+	})
+	return targetIdx
 }
