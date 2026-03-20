@@ -21,6 +21,7 @@ import (
 
 	"github.com/gorilla/mux"
 
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/rule"
 )
@@ -263,7 +264,6 @@ func rulesBulkStartHandler(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	w.WriteHeader(http.StatusOK)
 	jsonResponse(payload, w, logger)
 }
 
@@ -298,7 +298,6 @@ func rulesBulkStopHandler(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	w.WriteHeader(http.StatusOK)
 	jsonResponse(payload, w, logger)
 }
 
@@ -331,7 +330,10 @@ func findRules(tags *RuleTagRequest) ([]string, error) {
 			rr := fetchedRules[ruleID]
 
 			rs := rule.NewState(rr, func(id string, b bool) {
-				registry.updateTrigger(id, b)
+				err := registry.updateTrigger(id, b)
+				if err != nil {
+					conf.Log.Warn(err.Error())
+				}
 			})
 			registry.register(ruleID, rs)
 		}

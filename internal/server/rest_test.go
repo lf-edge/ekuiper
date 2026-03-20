@@ -1106,6 +1106,7 @@ func (suite *RestTestSuite) TestRulesBulkStartAndStopHandlers() {
 	fmt.Println("------- bulk start ------")
 	json.Unmarshal(body, &resStart)
 	for _, v := range resStart {
+		require.Equal(suite.T(), true, v.Success)
 		fmt.Println(v)
 	}
 	require.Equal(suite.T(), http.StatusOK, w.Code)
@@ -1121,6 +1122,7 @@ func (suite *RestTestSuite) TestRulesBulkStartAndStopHandlers() {
 	fmt.Println("------- bulk stop ------")
 	json.Unmarshal(body, &resStop)
 	for _, v := range resStop {
+		require.Equal(suite.T(), true, v.Success)
 		fmt.Println(v)
 	}
 	require.Equal(suite.T(), http.StatusOK, w.Code)
