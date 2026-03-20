@@ -332,7 +332,7 @@ func findRules(tags *RuleTagRequest) ([]string, error) {
 			rs := rule.NewState(rr, func(id string, b bool) {
 				err := registry.updateTrigger(id, b)
 				if err != nil {
-					conf.Log.Warn(err.Error())
+					conf.Log.Warnf("update trigger error: %v", err)
 				}
 			})
 			registry.register(ruleID, rs)
