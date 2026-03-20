@@ -79,7 +79,7 @@ require (
 	github.com/u2takey/ffmpeg-go v0.5.0
 	github.com/uber/athenadriver v1.1.15
 	github.com/ugorji/go/codec v1.2.12
-	github.com/urfave/cli v1.22.15
+	github.com/urfave/cli v1.22.16
 	github.com/utahta/go-cronowriter v1.2.0
 	github.com/valyala/fastjson v1.6.4
 	github.com/vertica/vertica-sql-go v1.3.3
@@ -107,6 +107,7 @@ require (
 )
 
 require (
+	github.com/Azure/azure-sdk-for-go/sdk/storage/azblob v1.6.4 // indirect
 	github.com/DataDog/zstd v1.4.5 // indirect
 	github.com/apache/arrow-go/v18 v18.4.0 // indirect
 	github.com/aws/aws-sdk-go-v2/config v1.31.8 // indirect
@@ -119,6 +120,7 @@ require (
 	github.com/cockroachdb/logtags v0.0.0-20230118201751-21c54148d20b // indirect
 	github.com/cockroachdb/redact v1.1.5 // indirect
 	github.com/cockroachdb/tokenbucket v0.0.0-20230807174530-cc333fc44b06 // indirect
+	github.com/docker/cli v29.3.0+incompatible // indirect
 	github.com/emirpasic/gods v1.18.1 // indirect
 	github.com/envoyproxy/go-control-plane/envoy v1.36.0 // indirect
 	github.com/fxamacker/cbor/v2 v2.7.0 // indirect
@@ -148,6 +150,7 @@ require (
 	github.com/moby/moby/api v1.54.0 // indirect
 	github.com/moby/moby/client v0.3.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
+	github.com/opencontainers/runc v1.3.5 // indirect
 	github.com/openziti/channel/v4 v4.3.7 // indirect
 	github.com/petermattis/goid v0.0.0-20250813065127-a731cc31b4fe // indirect
 	github.com/pierrec/lz4 v2.6.1+incompatible // indirect
@@ -177,7 +180,6 @@ require (
 	github.com/99designs/keyring v1.2.2 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.20.0 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/internal v1.11.2 // indirect
-	github.com/Azure/azure-sdk-for-go/sdk/storage/azblob v1.0.0 // indirect
 	github.com/BurntSushi/toml v1.4.0 // indirect
 	github.com/ClickHouse/ch-go v0.65.0 // indirect
 	github.com/DATA-DOG/go-sqlmock v1.4.1 // indirect
@@ -221,7 +223,7 @@ require (
 	github.com/couchbase/go-couchbase v0.1.1 // indirect
 	github.com/couchbase/gomemcached v0.3.1 // indirect
 	github.com/couchbase/goutils v0.1.2 // indirect
-	github.com/cpuguy83/go-md2man/v2 v2.0.4 // indirect
+	github.com/cpuguy83/go-md2man/v2 v2.0.5 // indirect
 	github.com/danieljoos/wincred v1.2.2 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
@@ -317,8 +319,8 @@ require (
 	github.com/mtibben/percent v0.2.1 // indirect
 	github.com/muhlemmer/gu v0.3.1 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
-	github.com/nats-io/nats.go v1.39.1 // indirect
-	github.com/nats-io/nkeys v0.4.9 // indirect
+	github.com/nats-io/nats.go v1.49.0 // indirect
+	github.com/nats-io/nkeys v0.4.15 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
 	github.com/ncruces/go-strftime v0.1.9 // indirect
 	github.com/nxadm/tail v1.4.11 // indirect
@@ -388,7 +390,7 @@ require (
 	golang.org/x/sync v0.20.0 // indirect
 	golang.org/x/sys v0.42.0 // indirect
 	golang.org/x/term v0.41.0 // indirect
-	golang.org/x/time v0.12.0
+	golang.org/x/time v0.15.0
 	golang.org/x/tools v0.42.0 // indirect
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da // indirect
 	google.golang.org/api v0.230.0 // indirect
@@ -425,16 +427,6 @@ replace (
 )
 
 go 1.25.4
-
-replace github.com/opencontainers/runc => github.com/opencontainers/runc v1.3.5
-
-replace github.com/docker/cli => github.com/docker/cli v29.3.0+incompatible
-
-replace github.com/Azure/azure-sdk-for-go/sdk/azidentity => github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.13.1
-
-replace github.com/Azure/azure-sdk-for-go/sdk/storage/azblob => github.com/Azure/azure-sdk-for-go/sdk/storage/azblob v1.6.4
-
-replace github.com/golang-jwt/jwt => github.com/golang-jwt/jwt v3.2.2+incompatible
 
 replace github.com/golang-jwt/jwt/v4 => github.com/golang-jwt/jwt/v4 v4.5.2
 
