@@ -17,15 +17,15 @@ package util
 import (
 	"encoding/json"
 	"fmt"
+	"net"
 	"net/http"
 	"os"
 	"path"
+	"strconv"
 	"strings"
 	"time"
 
 	kconf "github.com/lf-edge/ekuiper/tools/kubernetes/conf"
-
-	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
 
 type (
@@ -168,7 +168,7 @@ func (s *server) processDir() bool {
 		return false
 	}
 	conf := kconf.GetConf()
-	host := "http://" + cast.JoinHostPortInt(conf.GetIp(), conf.GetPort())
+	host := "http://" + joinHostPortInt(conf.GetIp(), conf.GetPort())
 	for _, entry := range dirEntries {
 		if !strings.HasSuffix(entry.Name(), ".json") {
 			continue
@@ -231,4 +231,8 @@ func Process() {
 	}
 	fmt.Println("Kuiper kubernetes tool is started successfully!")
 	se.watchFolders()
+}
+
+func joinHostPortInt(host string, port int) string {
+	return net.JoinHostPort(host, strconv.Itoa(port))
 }
