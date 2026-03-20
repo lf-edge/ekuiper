@@ -17,5 +17,5 @@
 package driver
 
 import (
-	_ "github.com/jackc/pgx/v4/stdlib" // PostgreSQL PGX driver
+	_ "github.com/jackc/pgx/v5/stdlib" // PostgreSQL PGX driver
 )
