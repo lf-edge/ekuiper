@@ -433,5 +433,3 @@ replace github.com/golang-jwt/jwt/v4 => github.com/golang-jwt/jwt/v4 v4.5.2
 replace github.com/nats-io/nats-server/v2 => github.com/nats-io/nats-server/v2 v2.12.5
 
 replace github.com/disintegration/imaging => github.com/disintegration/imaging v1.6.3-0.20201218193011-d40f48ce0f09
-
-replace gopkg.in/yaml.v2 => github.com/go-yaml/yaml v2.1.0+incompatible
