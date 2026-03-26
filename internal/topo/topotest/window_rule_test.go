@@ -723,7 +723,7 @@ func TestWindow(t *testing.T) {
 		},
 	}
 	for _, opt := range options {
-		DoRuleTest(t, tests, opt, 15)
+		DoRuleTestDeterministic(t, tests, opt, 15)
 	}
 
 	v2Opt := &def.RuleOption{
@@ -738,7 +738,7 @@ func TestWindow(t *testing.T) {
 	for _, tt := range tests {
 		if strings.Contains(strings.ToLower(tt.Sql), "slidingwindow") {
 			tts := []RuleTest{tt}
-			DoRuleTest(t, tts, v2Opt, 15)
+			DoRuleTestDeterministic(t, tts, v2Opt, 15)
 		}
 	}
 }
@@ -1411,7 +1411,7 @@ func TestEventWindow(t *testing.T) {
 		},
 	}
 	for _, opt := range options {
-		DoRuleTest(t, tests, opt, 10)
+		DoRuleTestDeterministic(t, tests, opt, 10)
 	}
 }
 
@@ -1590,7 +1590,7 @@ func TestWindowError(t *testing.T) {
 		},
 	}
 	HandleStream(true, streamList, t)
-	DoRuleTest(t, tests, &def.RuleOption{
+	DoRuleTestDeterministic(t, tests, &def.RuleOption{
 		BufferLength: 100,
 		SendError:    true,
 	}, 0)
@@ -1642,6 +1642,6 @@ func TestEventSlidingWindow(t *testing.T) {
 		},
 	}
 	for _, opt := range options {
-		DoRuleTest(t, tests, opt, 10)
+		DoRuleTestDeterministic(t, tests, opt, 10)
 	}
 }

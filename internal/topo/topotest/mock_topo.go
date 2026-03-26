@@ -75,6 +75,10 @@ func DoRuleTest(t *testing.T, tests []RuleTest, opt *def.RuleOption, w int) {
 	DoRuleTestWithResultFunc(t, tests, opt, w, CommonResultFunc)
 }
 
+func DoRuleTestDeterministic(t *testing.T, tests []RuleTest, opt *def.RuleOption, w int) {
+	DoRuleTestDeterministicWithResultFunc(t, tests, opt, w, CommonResultFunc)
+}
+
 func DoRuleTestWithResultFunc(t *testing.T, tests []RuleTest, opt *def.RuleOption, w int, resultFunc func(result []any) [][]map[string]any) {
 	for _, tt := range tests {
 		t.Run(tt.Name, func(t *testing.T) {
@@ -207,6 +211,65 @@ func CompareMetrics(tp *topo.Topo, m map[string]interface{}) (err error) {
 	return nil
 }
 
+func DoRuleTestDeterministicWithResultFunc(t *testing.T, tests []RuleTest, opt *def.RuleOption, w int, resultFunc func(result []any) [][]map[string]any) {
+	for _, tt := range tests {
+		id := strings.ReplaceAll(strings.ReplaceAll(tt.Name, "#", "_"), "/", "_")
+		conf.Log.Debugf("run deterministic test %s", id)
+		datas, dataLength, tp, errCh := createTestRule(t, id, tt, opt)
+		if tp == nil {
+			t.Errorf("topo is not created successfully")
+			return
+		}
+		defer tp.Cancel()
+
+		wait := tt.W
+		if wait == 0 {
+			if w > 0 {
+				wait = w
+			} else {
+				wait = 5
+			}
+		}
+		switch opt.Qos {
+		case def.ExactlyOnce:
+			wait *= 10
+		case def.AtLeastOnce:
+			wait *= 3
+		default:
+		}
+
+		limit := len(tt.R)
+		consumer := pubsub.CreateSub(id, nil, id, limit)
+		sinkResult := make([]any, 0, limit)
+
+		go sendData(dataLength, datas, tp, POSTLEAP, wait, tt.TL)
+
+		maxRetries := 100
+		for i := 0; i < maxRetries; i++ {
+			select {
+			case tuple := <-consumer:
+				sinkResult = append(sinkResult, tuple)
+				if len(sinkResult) >= limit {
+					conf.Log.Debugf("test %s received %d results", id, len(sinkResult))
+					assert.Equal(t, tt.R, resultFunc(sinkResult))
+					metricsErr := CompareMetrics(tp, tt.M)
+					assert.NoError(t, metricsErr)
+					goto nextTest
+				}
+			case <-errCh:
+				conf.Log.Debugf("test %s received error", id)
+				goto nextTest
+			default:
+			}
+		}
+
+	nextTest:
+		if len(sinkResult) < limit {
+			conf.Log.Debugf("test %s timeout, received %d of %d results", id, len(sinkResult), limit)
+		}
+	}
+}
+
 func sendData(dataLength int, datas [][]*xsql.Tuple, tp *topo.Topo, postleap int, wait int, tableLoadWait int) {
 	// TODO assume multiple data source send the data in order and has the same length
 	conf.Log.Infof("Send clock init to %d", timex.GetNowInMilli())
@@ -238,7 +301,6 @@ func sendData(dataLength int, datas [][]*xsql.Tuple, tp *topo.Topo, postleap int
 	conf.Log.Infof("Clock add to %d", timex.GetNowInMilli())
 }
 
-// create a test rule with memory sink
 func createTestRule(t *testing.T, id string, tt RuleTest, opt *def.RuleOption) ([][]*xsql.Tuple, int, *topo.Topo, <-chan error) {
 	// Create stream
 	var (
@@ -293,7 +355,6 @@ func createTestRule(t *testing.T, id string, tt RuleTest, opt *def.RuleOption) (
 	return datas, dataLength, tp, errCh
 }
 
-// HandleStream Create or drop streams
 func HandleStream(createOrDrop bool, names []string, t *testing.T) {
 	p := processor.NewStreamProcessor()
 	for _, name := range names {

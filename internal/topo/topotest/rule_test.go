@@ -66,7 +66,7 @@ func TestSharedSourceSchemaless(t *testing.T) {
 		},
 	}
 	for _, opt := range options {
-		DoRuleTest(t, tests, opt, 0)
+		DoRuleTestDeterministic(t, tests, opt, 0)
 	}
 }
 
@@ -161,7 +161,7 @@ func TestWindowFuncSQL(t *testing.T) {
 		},
 	}
 	for _, opt := range options {
-		DoRuleTest(t, tests, opt, 0)
+		DoRuleTestDeterministic(t, tests, opt, 0)
 	}
 }
 
@@ -408,7 +408,7 @@ func TestAccAggSQL(t *testing.T) {
 		},
 	}
 	for _, opt := range options {
-		DoRuleTest(t, tests, opt, 0)
+		DoRuleTestDeterministic(t, tests, opt, 0)
 	}
 }
 
@@ -526,7 +526,7 @@ func TestSRFSQL(t *testing.T) {
 		},
 	}
 	for _, opt := range options {
-		DoRuleTest(t, tests, opt, 0)
+		DoRuleTestDeterministic(t, tests, opt, 0)
 	}
 }
 
@@ -1276,7 +1276,7 @@ func TestSingleSQL(t *testing.T) {
 		},
 	}
 	for _, opt := range options {
-		DoRuleTest(t, tests, opt, 0)
+		DoRuleTestDeterministic(t, tests, opt, 0)
 	}
 }
 
@@ -1420,7 +1420,7 @@ func TestSingleSQLWithEventTime(t *testing.T) {
 		},
 	}
 	for _, opt := range options {
-		DoRuleTest(t, tests, opt, 0)
+		DoRuleTestDeterministic(t, tests, opt, 0)
 	}
 }
 
@@ -1662,7 +1662,7 @@ func TestSingleSQLForBinary(t *testing.T) {
 		},
 	}
 	for _, opt := range options {
-		DoRuleTest(t, tests, opt, 0)
+		DoRuleTestDeterministic(t, tests, opt, 0)
 	}
 }
 
@@ -1742,7 +1742,7 @@ func TestWindowSQL(t *testing.T) {
 		},
 	}
 	for _, opt := range options {
-		DoRuleTest(t, tests, opt, 0)
+		DoRuleTestDeterministic(t, tests, opt, 0)
 	}
 }
 
@@ -1876,7 +1876,7 @@ func TestAliasSQL(t *testing.T) {
 		},
 	}
 	for _, opt := range options {
-		DoRuleTest(t, tests, opt, 0)
+		DoRuleTestDeterministic(t, tests, opt, 0)
 	}
 }
 
