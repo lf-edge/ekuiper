@@ -139,6 +139,15 @@ func DoRuleTestDeterministicWithResultFunc(t *testing.T, tests []RuleTest, opt *
 			if len(sinkResult) < limit {
 				conf.Log.Debugf("test %s timeout, received %d of %d results", id, len(sinkResult), limit)
 			}
+			for {
+				select {
+				case tuple := <-consumer:
+					sinkResult = append(sinkResult, tuple)
+				default:
+					goto done
+				}
+			}
+		done:
 			time.Sleep(100 * time.Millisecond)
 			assert.Equal(t, tt.R, resultFunc(sinkResult))
 			metricsErr := CompareMetrics(tp, tt.M)
