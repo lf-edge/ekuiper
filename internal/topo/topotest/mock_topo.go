@@ -138,6 +138,7 @@ func DoRuleTestDeterministicWithResultFunc(t *testing.T, tests []RuleTest, opt *
 			if len(sinkResult) < limit {
 				conf.Log.Debugf("test %s timeout, received %d of %d results", id, len(sinkResult), limit)
 			}
+			time.Sleep(100 * time.Millisecond)
 			assert.Equal(t, tt.R, resultFunc(sinkResult))
 			metricsErr := CompareMetrics(tp, tt.M)
 			assert.NoError(t, metricsErr)
