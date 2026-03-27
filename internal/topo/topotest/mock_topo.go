@@ -132,7 +132,7 @@ func DoRuleTestDeterministicWithResultFunc(t *testing.T, tests []RuleTest, opt *
 						conf.Log.Debugf("test %s received error", id)
 					}
 					goto nextTest
-				default:
+				case <-time.After(10 * time.Millisecond):
 				}
 			}
 
