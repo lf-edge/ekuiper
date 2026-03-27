@@ -113,14 +113,13 @@ func DoRuleTestDeterministicWithResultFunc(t *testing.T, tests []RuleTest, opt *
 
 			go sendData(dataLength, datas, tp, POSTLEAP, wait, tt.TL)
 
-			maxRetries := 2000
+			maxRetries := 100
 			for i := 0; i < maxRetries; i++ {
 				select {
 				case tuple := <-consumer:
 					sinkResult = append(sinkResult, tuple)
 					if len(sinkResult) >= limit {
 						conf.Log.Debugf("test %s received %d results", id, len(sinkResult))
-						time.Sleep(100 * time.Millisecond)
 						assert.Equal(t, tt.R, resultFunc(sinkResult))
 						metricsErr := CompareMetrics(tp, tt.M)
 						assert.NoError(t, metricsErr)
@@ -131,7 +130,7 @@ func DoRuleTestDeterministicWithResultFunc(t *testing.T, tests []RuleTest, opt *
 						conf.Log.Debugf("test %s received error", id)
 					}
 					goto nextTest
-				case <-time.After(10 * time.Millisecond):
+				default:
 				}
 			}
 
@@ -139,16 +138,6 @@ func DoRuleTestDeterministicWithResultFunc(t *testing.T, tests []RuleTest, opt *
 			if len(sinkResult) < limit {
 				conf.Log.Debugf("test %s timeout, received %d of %d results", id, len(sinkResult), limit)
 			}
-			for {
-				select {
-				case tuple := <-consumer:
-					sinkResult = append(sinkResult, tuple)
-				default:
-					goto done
-				}
-			}
-		done:
-			time.Sleep(100 * time.Millisecond)
 			assert.Equal(t, tt.R, resultFunc(sinkResult))
 			metricsErr := CompareMetrics(tp, tt.M)
 			assert.NoError(t, metricsErr)
