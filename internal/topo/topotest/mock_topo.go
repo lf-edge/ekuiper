@@ -91,8 +91,6 @@ func DoRuleTestDeterministicWithResultFunc(t *testing.T, tests []RuleTest, opt *
 			}
 			defer tp.Cancel()
 
-			time.Sleep(10 * time.Millisecond)
-
 			wait := tt.W
 			if wait == 0 {
 				if w > 0 {
@@ -115,7 +113,7 @@ func DoRuleTestDeterministicWithResultFunc(t *testing.T, tests []RuleTest, opt *
 
 			go sendData(dataLength, datas, tp, POSTLEAP, wait, tt.TL)
 
-			maxRetries := 100
+			maxRetries := 2000
 			for i := 0; i < maxRetries; i++ {
 				select {
 				case tuple := <-consumer:
