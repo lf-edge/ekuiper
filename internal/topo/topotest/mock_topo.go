@@ -144,8 +144,8 @@ func DoRuleTestDeterministicWithResultFunc(t *testing.T, tests []RuleTest, opt *
 				default:
 					break
 				}
+				break
 			}
-
 			conf.Log.Debugf("test %s received %d results", id, len(sinkResult))
 			assert.Equal(t, tt.R, resultFunc(sinkResult))
 			metricsErr := CompareMetrics(tp, tt.M)
