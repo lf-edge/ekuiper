@@ -110,34 +110,43 @@ func DoRuleTestDeterministicWithResultFunc(t *testing.T, tests []RuleTest, opt *
 			limit := len(tt.R)
 			consumer := pubsub.CreateSub(id, nil, id, limit)
 			sinkResult := make([]any, 0, limit)
+			conf.Log.Debugf("test create memory sub %s", id)
+			ticker := time.After(10 * time.Second)
 
 			go sendData(dataLength, datas, tp, POSTLEAP, wait, tt.TL)
 
-			maxRetries := 100
-			for i := 0; i < maxRetries; i++ {
+		outerloop:
+			for {
 				select {
+				case err := <-errCh:
+					conf.Log.Debugf("test %s receive error signal: %v", id, err)
+					_ = tp.GracefulStop(0)
+					break outerloop
 				case tuple := <-consumer:
 					sinkResult = append(sinkResult, tuple)
-					if len(sinkResult) >= limit {
-						conf.Log.Debugf("test %s received %d results", id, len(sinkResult))
-						assert.Equal(t, tt.R, resultFunc(sinkResult))
-						metricsErr := CompareMetrics(tp, tt.M)
-						assert.NoError(t, metricsErr)
-						goto nextTest
+					conf.Log.Debugf("test %s append result %v", id, tuple)
+					if dataLength == 0 && len(sinkResult) == limit {
+						break outerloop
 					}
-				case err := <-errCh:
-					if err != nil {
-						conf.Log.Debugf("test %s received error", id)
-					}
-					goto nextTest
-				default:
+				case <-ticker:
+					_ = tp.GracefulStop(0)
+					conf.Log.Warnf("test %s timed out after 10s", id)
+					break outerloop
 				}
 			}
 
-		nextTest:
-			if len(sinkResult) < limit {
-				conf.Log.Debugf("test %s timeout, received %d of %d results", id, len(sinkResult), limit)
+		outloop:
+			for {
+				select {
+				case tuple := <-consumer:
+					sinkResult = append(sinkResult, tuple)
+					conf.Log.Debugf("test %s append result %v", id, tuple)
+				default:
+					break outloop
+				}
 			}
+
+			conf.Log.Debugf("test %s receive %d result", id, len(sinkResult))
 			assert.Equal(t, tt.R, resultFunc(sinkResult))
 			metricsErr := CompareMetrics(tp, tt.M)
 			assert.NoError(t, metricsErr)
