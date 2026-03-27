@@ -120,6 +120,7 @@ func DoRuleTestDeterministicWithResultFunc(t *testing.T, tests []RuleTest, opt *
 					sinkResult = append(sinkResult, tuple)
 					if len(sinkResult) >= limit {
 						conf.Log.Debugf("test %s received %d results", id, len(sinkResult))
+						time.Sleep(100 * time.Millisecond)
 						assert.Equal(t, tt.R, resultFunc(sinkResult))
 						metricsErr := CompareMetrics(tp, tt.M)
 						assert.NoError(t, metricsErr)
