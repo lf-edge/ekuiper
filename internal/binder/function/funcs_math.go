@@ -283,7 +283,7 @@ func registerMathFunc() {
 			if v, e := cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND); e == nil {
 				r := math.Log(v)
 				if math.IsNaN(r) {
-					return nil, true
+					return fmt.Errorf("The argument must be a strictly positive number but got %v", v), true
 				} else {
 					return r, true
 				}
@@ -316,7 +316,7 @@ func registerMathFunc() {
 			if !math.IsNaN(r) {
 				return r, true
 			}
-			return nil, true
+			return fmt.Errorf("The argument must be a strictly positive number but got %v", v), true
 		},
 		val: func(_ api.FunctionContext, args []ast.Expr) error {
 			if len(args) != 1 && len(args) != 2 {
@@ -474,7 +474,7 @@ func registerMathFunc() {
 			if v, e := cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND); e == nil {
 				r := math.Sqrt(v)
 				if math.IsNaN(r) {
-					return nil, true
+					return fmt.Errorf("The argument must be a positive number but got %v", v), true
 				} else {
 					return r, true
 				}
