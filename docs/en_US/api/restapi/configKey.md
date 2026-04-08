@@ -85,11 +85,9 @@ PUT http://localhost:9081/metadata/sources/{name}/confKeys/{confKey}
 Register the Config Key named demo_conf under the MQTT source
 
 ```shell
- curl -X PUT http://localhost:9081/metadata/sources/mqtt/confKeys/demo_conf
- {
-   "demo_conf": {
+ curl -X PUT http://localhost:9081/metadata/sources/mqtt/confKeys/demo_conf \
+    -d '{
         "qos": 0,
         "server": "tcp://10.211.55.6:1883"
-    }
- }
+    }'
 ```
