@@ -84,11 +84,9 @@ PUT http://localhost:9081/metadata/sources/{name}/confKeys/{confKey}
 在 MQTT 源下注册名为 demo_conf 的 Config Key
 
 ```shell
- curl -X PUT http://localhost:9081/metadata/sources/mqtt/confKeys/demo_conf
- {
-   "demo_conf": {
+ curl -X PUT http://localhost:9081/metadata/sources/mqtt/confKeys/demo_conf \
+    -d '{
         "qos": 0,
         "server": "tcp://10.211.55.6:1883"
-    }
- }
+    }'
 ```
