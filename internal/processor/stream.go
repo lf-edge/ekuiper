@@ -452,7 +452,12 @@ func (p *StreamProcessor) execDescribe(stmt ast.NameNode, st ast.StreamType) (r 
 		buff.WriteString("Fields\n--------------------------------------------------------------------------------\n")
 		for _, f := range s.StreamFields {
 			buff.WriteString(f.Name + "\t")
-			buff.WriteString(printFieldType(f.FieldType))
+
+			ft := printFieldType(f.FieldType)
+			if f.Default != nil {
+				ft += fmt.Sprintf(" DEFAULT %s", f.Default.String())
+			}
+			buff.WriteString(ft)
 			buff.WriteString("\n")
 		}
 		buff.WriteString("\n")
@@ -712,7 +717,7 @@ func DescribeToJson(s string) string {
 	sections := strings.Split(q, "\n\n")
 	fields, options := sections[0], sections[1]
 	type field struct {
-		Name, Type string
+		Name, Type, DefaultClause string
 	}
 	type output struct {
 		Fields  []field
@@ -722,7 +727,12 @@ func DescribeToJson(s string) string {
 	for _, f := range strings.Split(fields, "\n") {
 		split := strings.Split(f, "\t")
 		n, t := split[0], split[1]
-		o.Fields = append(o.Fields, field{Name: n, Type: t})
+		fld := field{Name: n, Type: t}
+		if len(split) >= 4 {
+			d := split[3]
+			fld.DefaultClause = d
+		}
+		o.Fields = append(o.Fields, fld)
 	}
 	for _, f := range strings.Split(strings.Trim(options, "\n"), "\n") {
 		split := strings.Split(f, " ")
