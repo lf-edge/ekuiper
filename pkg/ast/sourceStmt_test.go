@@ -82,12 +82,12 @@ func TestToJsonFields(t *testing.T) {
 			},
 		}, {
 			input: []StreamField{
-				{Name: "USERID", FieldType: &BasicType{Type: BIGINT}},
-				{Name: "FIRST_NAME", FieldType: &BasicType{Type: STRINGS}},
-				{Name: "LAST_NAME", FieldType: &BasicType{Type: STRINGS}},
+				{Name: "USERID", FieldType: &BasicType{Type: BIGINT}, Default: &IntegerLiteral{Val: 10}},
+				{Name: "FIRST_NAME", FieldType: &BasicType{Type: STRINGS}, Default: &StringLiteral{Val: "foo"}},
+				{Name: "LAST_NAME", FieldType: &BasicType{Type: STRINGS}, Default: &StringLiteral{Val: "bar"}},
 				{Name: "NICKNAMES", FieldType: &ArrayType{Type: STRINGS}},
 				{Name: "data", FieldType: &BasicType{Type: BYTEA}},
-				{Name: "Gender", FieldType: &BasicType{Type: BOOLEAN}},
+				{Name: "Gender", FieldType: &BasicType{Type: BOOLEAN}, Default: &BooleanLiteral{Val: true}},
 				{Name: "ADDRESS", FieldType: &RecType{
 					StreamFields: []StreamField{
 						{Name: "STREET_NAME", FieldType: &BasicType{Type: STRINGS}},
@@ -96,12 +96,12 @@ func TestToJsonFields(t *testing.T) {
 				}},
 			},
 			output: map[string]*JsonStreamField{
-				"USERID":     {Type: "bigint"},
-				"FIRST_NAME": {Type: "string"},
-				"LAST_NAME":  {Type: "string"},
+				"USERID":     {Type: "bigint", DefaultValue: "10"},
+				"FIRST_NAME": {Type: "string", DefaultValue: "foo"},
+				"LAST_NAME":  {Type: "string", DefaultValue: "bar"},
 				"NICKNAMES":  {Type: "array", Items: &JsonStreamField{Type: "string"}},
 				"data":       {Type: "bytea"},
-				"Gender":     {Type: "boolean"},
+				"Gender":     {Type: "boolean", DefaultValue: "true"},
 				"ADDRESS": {Type: "struct", Properties: map[string]*JsonStreamField{
 					"STREET_NAME": {Type: "string"},
 					"NUMBER":      {Type: "bigint"},

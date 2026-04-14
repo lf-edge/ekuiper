@@ -17,6 +17,8 @@ package ast
 import (
 	"encoding/json"
 	"fmt"
+
+	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
 
 const (
@@ -48,14 +50,16 @@ type StreamStmt struct {
 type StreamField struct {
 	Name string
 	FieldType
+	Default Literal // the DEFAULT clause is optional
 }
 
 type JsonStreamField struct {
-	Type       string                      `json:"type,omitempty"`
-	Items      *JsonStreamField            `json:"items,omitempty"`
-	Properties map[string]*JsonStreamField `json:"properties,omitempty"`
-	HasIndex   bool                        `json:"hasIndex,omitempty"`
-	Index      int                         `json:"index"`
+	Type         string                      `json:"type,omitempty"`
+	DefaultValue string                      `json:"default,omitempty"`
+	Items        *JsonStreamField            `json:"items,omitempty"`
+	Properties   map[string]*JsonStreamField `json:"properties,omitempty"`
+	HasIndex     bool                        `json:"hasIndex,omitempty"`
+	Index        int                         `json:"index"`
 
 	Selected bool `json:"selected,omitempty"`
 }
@@ -97,7 +101,11 @@ func convertSchema(sfs StreamFields) map[string]*JsonStreamField {
 	if len(sfs) > 0 {
 		result := make(map[string]*JsonStreamField, len(sfs))
 		for _, sf := range sfs {
-			result[sf.Name] = convertFieldType(sf.FieldType)
+			jsonField := convertFieldType(sf.FieldType)
+			if sf.Default != nil {
+				jsonField.DefaultValue = sf.Default.String()
+			}
+			result[sf.Name] = jsonField
 		}
 		return result
 	}
@@ -141,12 +149,74 @@ func fieldsTypeFromSchema(mjsf map[string]*JsonStreamField) (StreamFields, error
 		if err != nil {
 			return nil, err
 		}
-		sfs = append(sfs, StreamField{
+
+		field := StreamField{
 			Name:      k,
 			FieldType: ft,
-		})
+		}
+
+		var def Literal
+		def, err = fieldDefaultClauseFromSchema(v)
+		if def != nil && err == nil {
+			field.Default = def
+		}
+
+		sfs = append(sfs, field)
 	}
 	return sfs, nil
+}
+
+func fieldDefaultClauseFromSchema(v *JsonStreamField) (Literal, error) {
+	if v.DefaultValue == "" {
+		return nil, nil
+	}
+
+	var lit Literal
+	switch v.Type {
+	case "bigint":
+		val, err := cast.ToInt64(v.DefaultValue, cast.CONVERT_ALL)
+		if err != nil {
+			return nil, err
+		}
+
+		lit = &IntegerLiteral{Val: val}
+	case "string":
+		lit = &StringLiteral{Val: v.DefaultValue}
+	case "boolean":
+		val, err := cast.ToBool(v.DefaultValue, cast.CONVERT_ALL)
+		if err != nil {
+			return nil, err
+		}
+
+		lit = &BooleanLiteral{Val: val}
+	case "float":
+		val, err := cast.ToFloat64(v.DefaultValue, cast.CONVERT_ALL)
+		if err != nil {
+			return nil, err
+		}
+
+		lit = &NumberLiteral{Val: val}
+	default:
+		return nil, fmt.Errorf("unsupported type %s", v.Type)
+	}
+
+	return lit, nil
+}
+
+func GetTypeOfDefault(defClause string) Literal {
+	if val, err := cast.ToInt64(defClause, cast.CONVERT_ALL); err == nil {
+		return &IntegerLiteral{Val: val}
+	}
+
+	if val, err := cast.ToFloat64(defClause, cast.CONVERT_ALL); err == nil {
+		return &NumberLiteral{Val: val}
+	}
+
+	if val, err := cast.ToBool(defClause, cast.CONVERT_ALL); err == nil {
+		return &BooleanLiteral{Val: val}
+	}
+
+	return &StringLiteral{Val: defClause}
 }
 
 func fieldTypeFromSchema(v *JsonStreamField) (FieldType, error) {
@@ -364,4 +434,40 @@ func CheckSchemaIndex(schema map[string]*JsonStreamField) bool {
 		return field != nil && field.HasIndex
 	}
 	return false
+}
+
+func PruneDefaultConstraintValue(constraintValue string, fieldType FieldType) (Literal, error) {
+	var matchErr error
+
+	switch t := fieldType.(type) {
+	case *BasicType:
+		switch t.Type {
+		case BIGINT:
+			var value int64
+			value, matchErr = cast.ToInt64(constraintValue, cast.CONVERT_ALL)
+			if matchErr == nil {
+				return &IntegerLiteral{Val: value}, nil
+			}
+		case FLOAT:
+			var value float64
+			value, matchErr = cast.ToFloat64(constraintValue, cast.CONVERT_ALL)
+			if matchErr == nil {
+				return &NumberLiteral{Val: value}, nil
+			}
+		case STRINGS:
+			return &StringLiteral{Val: constraintValue}, nil
+		case BOOLEAN:
+			var value bool
+			value, matchErr = cast.ToBool(constraintValue, cast.CONVERT_ALL)
+			if matchErr == nil {
+				return &BooleanLiteral{Val: value}, nil
+			}
+		default:
+			matchErr = fmt.Errorf("DEFAULT clause is not supported for %s", t.Type.String())
+		}
+	default:
+		matchErr = fmt.Errorf("DEFAULT clause is not supported for %T", t)
+	}
+
+	return nil, matchErr
 }

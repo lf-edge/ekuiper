@@ -1453,6 +1453,21 @@ func (p *Parser) parseStreamField() (*ast.StreamField, error) {
 
 		if tok2, lit2 := p.scanIgnoreWhitespace(); tok2 == ast.COMMA {
 			// Just consume the comma.
+		} else if tok2 == ast.DEFAULT {
+			if f, err := p.parseStreamDefaultClause(field.FieldType); err != nil {
+				return nil, err
+			} else {
+				field.Default = f
+			}
+
+			if tok3, lit3 := p.scanIgnoreWhitespace(); tok3 == ast.COMMA {
+				// consume COMMA token
+			} else if tok3 == ast.RPAREN {
+				p.unscan()
+			} else {
+				return nil, fmt.Errorf("found %q, expect comma or rparen.", lit3)
+			}
+
 		} else if tok2 == ast.RPAREN {
 			p.unscan()
 		} else {
@@ -1462,6 +1477,21 @@ func (p *Parser) parseStreamField() (*ast.StreamField, error) {
 		return nil, fmt.Errorf("found %q, expect stream field name.", lit)
 	}
 	return field, nil
+}
+
+func (p *Parser) parseStreamDefaultClause(fieldType ast.FieldType) (ast.Literal, error) {
+	tok, lit := p.scanIgnoreWhitespace()
+	switch tok {
+	case ast.INTEGER, ast.NUMBER, ast.STRING, ast.SINGLEQUOTE, ast.TRUE, ast.FALSE:
+		literalValue, err := ast.PruneDefaultConstraintValue(lit, fieldType)
+		if err != nil {
+			return nil, err
+		}
+
+		return literalValue, nil
+	default:
+		return nil, fmt.Errorf("found %q, expect default constraint value.", lit)
+	}
 }
 
 func (p *Parser) parseStreamArrayType() (ast.FieldType, error) {

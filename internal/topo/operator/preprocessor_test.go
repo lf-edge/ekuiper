@@ -543,6 +543,58 @@ func TestPreprocessor_Apply(t *testing.T) {
 				},
 			},
 		},
+		{ // 29
+			stmt: &ast.StreamStmt{
+				Name: ast.StreamName("demo"),
+				StreamFields: []ast.StreamField{
+					{Name: "ab", FieldType: &ast.BasicType{Type: ast.BIGINT}, Default: &ast.IntegerLiteral{Val: 22}},
+					{Name: "cd", FieldType: &ast.BasicType{Type: ast.STRINGS}},
+				},
+			},
+			data: []byte(`{"cd": "hello"}`),
+			result: &xsql.Tuple{
+				Message: xsql.Message{
+					"ab": int64(22),
+					"cd": "hello",
+				},
+			},
+		},
+		{ // 30
+			stmt: &ast.StreamStmt{
+				Name: ast.StreamName("demo"),
+				StreamFields: []ast.StreamField{
+					{Name: "ab", FieldType: &ast.BasicType{Type: ast.STRINGS}, Default: &ast.StringLiteral{Val: "foo"}},
+					{Name: "cd", FieldType: &ast.BasicType{Type: ast.FLOAT}},
+				},
+			},
+			data: []byte(`{"cd": 44.4}`),
+			result: &xsql.Tuple{
+				Message: xsql.Message{
+					"ab": "foo",
+					"cd": float64(44.4),
+				},
+			},
+		},
+		{ // 31
+			stmt: &ast.StreamStmt{
+				Name: ast.StreamName("demo"),
+				StreamFields: []ast.StreamField{
+					{Name: "ab", FieldType: &ast.BasicType{Type: ast.BIGINT}, Default: &ast.IntegerLiteral{Val: 22}},
+					{Name: "cd", FieldType: &ast.BasicType{Type: ast.FLOAT}, Default: &ast.NumberLiteral{Val: 55.23}},
+					{Name: "ef", FieldType: &ast.BasicType{Type: ast.BOOLEAN}, Default: &ast.BooleanLiteral{Val: false}},
+					{Name: "gh", FieldType: &ast.BasicType{Type: ast.STRINGS}, Default: &ast.StringLiteral{Val: "foo bar"}},
+				},
+			},
+			data: []byte(`{}`),
+			result: &xsql.Tuple{
+				Message: xsql.Message{
+					"ab": int64(22),
+					"cd": float64(55.23),
+					"ef": false,
+					"gh": "foo bar",
+				},
+			},
+		},
 	}
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
