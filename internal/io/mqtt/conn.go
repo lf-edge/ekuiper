@@ -16,7 +16,6 @@ package mqtt
 
 import (
 	"fmt"
-	"sync"
 	"sync/atomic"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
@@ -31,21 +30,28 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
 )
 
+type topicSubscription struct {
+	Qos     byte
+	Handler client.MessageHandler
+	Refs    map[string]struct{}
+}
+
 type Connection struct {
 	mu syncx.Mutex
+	sm syncx.RWMutex
 	client.Client
 	id        string
 	server    string
 	connected atomic.Bool
 	status    atomic.Value
 	scHandler api.StatusChangeHandler
-	// key is the topic. Each topic will have only one connector map[string]*client.SubscriptionInfo
-	subscriptions sync.Map
+	// key is the topic. Each topic maintains one physical subscription and a ref set of logical subscribers.
+	subscriptions map[string]*topicSubscription
 }
 
 func CreateConnection(_ api.StreamContext) modules.Connection {
 	return &Connection{
-		subscriptions: sync.Map{},
+		subscriptions: make(map[string]*topicSubscription),
 	}
 }
 
@@ -130,15 +136,12 @@ func (conn *Connection) onConnect(ctx api.StreamContext) {
 		ctx.GetLogger().Warnf("sc handler has not set yet")
 	}
 	ctx.GetLogger().Infof("The connection to mqtt broker is established")
-	conn.subscriptions.Range(func(k, v any) bool {
-		topic := k.(string)
-		info := v.(*client.SubscriptionInfo)
-		err := conn.Subscribe(ctx, topic, info.Qos, info.Handler)
+	for topic, info := range conn.getPhysicalSubscriptions() {
+		err := conn.subscribePhysical(ctx, topic, info.Qos, info.Handler)
 		if err != nil { // should never happen. If happens because of connection, it will retry later
 			ctx.GetLogger().Errorf("Failed to subscribe topic %s: %v", topic, err)
 		}
-		return true
-	})
+	}
 }
 
 func (conn *Connection) onConnectLost(ctx api.StreamContext, err error) {
@@ -170,7 +173,20 @@ func (conn *Connection) DetachSub(ctx api.StreamContext, props map[string]any) {
 		ctx.GetLogger().Warnf("cannot find topic to unsub: %v", props)
 		return
 	}
-	conn.subscriptions.Delete(topic)
+	refID := getSubscriberID(ctx)
+	shouldUnsubscribe := false
+	conn.sm.Lock()
+	if info, ok := conn.subscriptions[topic]; ok {
+		delete(info.Refs, refID)
+		if len(info.Refs) == 0 {
+			delete(conn.subscriptions, topic)
+			shouldUnsubscribe = true
+		}
+	}
+	conn.sm.Unlock()
+	if !shouldUnsubscribe {
+		return
+	}
 	if conn.Client != nil {
 		err = conn.Client.Unsubscribe(ctx, topic)
 		if err != nil {
@@ -209,11 +225,36 @@ func (conn *Connection) Publish(ctx api.StreamContext, topic string, qos byte, r
 }
 
 func (conn *Connection) Subscribe(ctx api.StreamContext, topic string, qos byte, callback client.MessageHandler) error {
-	conn.subscriptions.Store(topic, &client.SubscriptionInfo{
+	refID := getSubscriberID(ctx)
+	conn.sm.Lock()
+	if info, ok := conn.subscriptions[topic]; ok {
+		if info.Qos != qos {
+			conn.sm.Unlock()
+			return fmt.Errorf("topic %s already subscribed with qos %d, cannot subscribe with qos %d", topic, info.Qos, qos)
+		}
+		info.Refs[refID] = struct{}{}
+		conn.sm.Unlock()
+		return nil
+	}
+	conn.subscriptions[topic] = &topicSubscription{
 		Qos:     qos,
 		Handler: callback,
-	})
-	err := conn.Client.Subscribe(ctx, topic, qos, callback)
+		Refs: map[string]struct{}{
+			refID: {},
+		},
+	}
+	conn.sm.Unlock()
+	err := conn.subscribePhysical(ctx, topic, qos, callback)
+	if err != nil {
+		conn.sm.Lock()
+		if info, ok := conn.subscriptions[topic]; ok && info.Qos == qos {
+			delete(info.Refs, refID)
+			if len(info.Refs) == 0 {
+				delete(conn.subscriptions, topic)
+			}
+		}
+		conn.sm.Unlock()
+	}
 	return err
 }
 
@@ -231,6 +272,30 @@ func getTopicFromProps(props map[string]any) (string, error) {
 		return v.(string), nil
 	}
 	return "", fmt.Errorf("topic or datasource not defined")
+}
+
+func getSubscriberID(ctx api.StreamContext) string {
+	return fmt.Sprintf("%s/%s/%d", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId())
+}
+
+func (conn *Connection) subscribePhysical(ctx api.StreamContext, topic string, qos byte, callback client.MessageHandler) error {
+	return conn.Client.Subscribe(ctx, topic, qos, callback)
+}
+
+func (conn *Connection) getPhysicalSubscriptions() map[string]*client.SubscriptionInfo {
+	conn.sm.RLock()
+	defer conn.sm.RUnlock()
+	snapshot := make(map[string]*client.SubscriptionInfo, len(conn.subscriptions))
+	for topic, info := range conn.subscriptions {
+		if len(info.Refs) == 0 {
+			continue
+		}
+		snapshot[topic] = &client.SubscriptionInfo{
+			Qos:     info.Qos,
+			Handler: info.Handler,
+		}
+	}
+	return snapshot
 }
 
 var _ modules.StatefulDialer = &Connection{}

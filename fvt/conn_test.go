@@ -296,10 +296,10 @@ func (s *ConnectionTestSuite) TestSharedConnectionPeerRuleStopImpactRepro() {
 	err = server.Publish(sourceTpc, []byte(`{"seq":2}`), false, 0)
 	s.Require().NoError(err)
 	activeGot := s.waitForMemoryTuple(activeSub, 2, 3*time.Second)
-	s.False(activeGot, "expected reproduction: after stopping peer rule, active rule should stop receiving on shared mqtt connection")
+	s.False(activeGot, "expected reproduction: after stopping peer rule, active rule still stops receiving on shared stream")
 }
 
-func (s *ConnectionTestSuite) TestSharedConnectionPeerRuleRestartImpactRepro() {
+func (s *ConnectionTestSuite) TestSharedConnectionPeerRuleRestartDoesNotImpactActiveRule() {
 	const brokerAddr = ":5884"
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
 	connID := "connSharedRestart" + suffix
@@ -335,12 +335,7 @@ func (s *ConnectionTestSuite) TestSharedConnectionPeerRuleRestartImpactRepro() {
 	s.Require().NoError(err)
 	s.Require().Equal(http.StatusOK, resp.StatusCode)
 
-	err = server.Publish(sourceTpc, []byte(`{"seq":2}`), false, 0)
-	s.Require().NoError(err)
-	peerGot := s.waitForMemoryTuple(peerSub, 2, 3*time.Second)
-	activeGot := s.waitForMemoryTuple(activeSub, 2, 3*time.Second)
-	s.False(peerGot && activeGot, "expected reproduction: after restarting peer rule, at least one rule should stop receiving on shared mqtt connection")
-	s.T().Logf("restart reproduction result: peerGot=%v, activeGot=%v", peerGot, activeGot)
+	s.requireSharedSourceReady(server, sourceTpc, peerSub, activeSub, 2)
 }
 
 func (s *ConnectionTestSuite) startInlineBroker(id, addr string) (*mqtt.Server, *listeners.TCP) {
@@ -476,19 +471,21 @@ func (s *ConnectionTestSuite) waitForMemoryTuple(ch chan any, seq int, timeout t
 		select {
 		case msg := <-ch:
 			mt, ok := msg.([]pubsub.MemTuple)
-			if !ok || len(mt) != 1 {
+			if !ok || len(mt) == 0 {
 				continue
 			}
-			m := mt[0].ToMap()
-			if v, ok := m["seq"]; ok {
-				switch vt := v.(type) {
-				case float64:
-					if int(vt) == seq {
-						return true
-					}
-				case int:
-					if vt == seq {
-						return true
+			for _, tuple := range mt {
+				m := tuple.ToMap()
+				if v, ok := m["seq"]; ok {
+					switch vt := v.(type) {
+					case float64:
+						if int(vt) == seq {
+							return true
+						}
+					case int:
+						if vt == seq {
+							return true
+						}
 					}
 				}
 			}

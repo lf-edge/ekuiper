@@ -145,7 +145,7 @@ func TestNoClient(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestSharedConnectionCloseOneSourceStopsPeerSource(t *testing.T) {
+func TestSharedConnectionCloseOneSourceDoesNotStopPeerSource(t *testing.T) {
 	url, cancelBroker, err := testx.InitBroker("TestSharedConnectionCloseOneSourceStopsPeerSource")
 	require.NoError(t, err)
 	defer cancelBroker()
@@ -203,10 +203,10 @@ func TestSharedConnectionCloseOneSourceStopsPeerSource(t *testing.T) {
 	time.Sleep(200 * time.Millisecond)
 
 	publishMQTTMessage(t, url, "demo/shared/close-peer", []byte("after-close"))
-	assertNoMessage(t, activeCh, 800*time.Millisecond)
+	require.Equal(t, []byte("after-close"), waitForMessage(t, activeCh, 5*time.Second))
 }
 
-func TestSharedConnectionRestartSourceRecoversAfterPeerClose(t *testing.T) {
+func TestSharedConnectionRestartSourceStillReceivesAfterPeerClose(t *testing.T) {
 	url, cancelBroker, err := testx.InitBroker("TestSharedConnectionRestartSourceRecoversAfterPeerClose")
 	require.NoError(t, err)
 	defer cancelBroker()
@@ -261,8 +261,8 @@ func TestSharedConnectionRestartSourceRecoversAfterPeerClose(t *testing.T) {
 	require.NoError(t, peer.Close(peerCtx))
 	peerClosed = true
 	time.Sleep(200 * time.Millisecond)
-	publishMQTTMessage(t, url, "demo/shared/restart-peer", []byte("dropped-after-peer-close"))
-	assertNoMessage(t, activeCh, 800*time.Millisecond)
+	publishMQTTMessage(t, url, "demo/shared/restart-peer", []byte("after-peer-close"))
+	require.Equal(t, []byte("after-peer-close"), waitForMessage(t, activeCh, 5*time.Second))
 
 	require.NoError(t, active.Close(activeCtx))
 	activeClosed = true
