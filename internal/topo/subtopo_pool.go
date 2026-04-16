@@ -46,6 +46,7 @@ func GetOrCreateSubTopo(ctx api.StreamContext, name string) (*SrcSubTopo, bool) 
 		}
 		subTopoPool[name] = ac
 	}
+	ac.inPool.Store(true)
 	// shared connection can create without reference, so the ctx may be nil
 	if ctx != nil {
 		ac.AddRef(ctx, nil)
@@ -56,6 +57,9 @@ func GetOrCreateSubTopo(ctx api.StreamContext, name string) (*SrcSubTopo, bool) 
 func RemoveSubTopo(name string) {
 	lock.Lock()
 	defer lock.Unlock()
+	if ac, ok := subTopoPool[name]; ok {
+		ac.inPool.Store(false)
+	}
 	delete(subTopoPool, name)
 	conf.Log.Infof("Delete SubTopo %s", name)
 }

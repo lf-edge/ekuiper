@@ -17,6 +17,7 @@ package topo
 import (
 	"context"
 	"fmt"
+	"sort"
 	"sync"
 	"sync/atomic"
 
@@ -59,6 +60,7 @@ type SrcSubTopo struct {
 	refRules map[string]chan<- error // map[ruleId]errCh, notify the rule for errors
 	// Runtime state, affect the running loop. Update when any rule opened or all rules stopped
 	opened           atomic.Bool
+	inPool           atomic.Bool
 	cancel           context.CancelFunc
 	enableCheckpoint bool
 }
@@ -145,6 +147,8 @@ func (s *SrcSubTopo) Open(ctx api.StreamContext, parentErrCh chan<- error) {
 func (s *SrcSubTopo) notifyError(poe error) {
 	s.RLock()
 	defer s.RUnlock()
+	refRules := sortedRefRuleIDs(s.refRules)
+	conf.Log.Warnf("Sub topo %s notifying error %v to refs %v", s.name, poe, refRules)
 	// Notify error to all ref rules
 	for k, ch := range s.refRules {
 		conf.Log.Debugf("Notify error %v to rule %s", poe, k)
@@ -160,6 +164,16 @@ func (s *SrcSubTopo) GetName() string {
 	return s.name
 }
 
+func (s *SrcSubTopo) debugMetrics() (int, int) {
+	s.RLock()
+	defer s.RUnlock()
+	inPool := 0
+	if s.inPool.Load() {
+		inPool = 1
+	}
+	return len(s.refRules), inPool
+}
+
 func (s *SrcSubTopo) SubMetrics() (keys []string, values []any) {
 	for i, v := range s.source.GetMetrics() {
 		keys = append(keys, fmt.Sprintf("source_%s_0_%s", s.source.GetName(), metric.MetricNames[i]))
@@ -171,6 +185,12 @@ func (s *SrcSubTopo) SubMetrics() (keys []string, values []any) {
 			values = append(values, v)
 		}
 	}
+	refCount, inPool := s.debugMetrics()
+	keys = append(keys,
+		fmt.Sprintf("subtopo_%s_ref_count", s.name),
+		fmt.Sprintf("subtopo_%s_in_pool", s.name),
+	)
+	values = append(values, refCount, inPool)
 	return
 }
 
@@ -201,7 +221,9 @@ func (s *SrcSubTopo) Close(ctx api.StreamContext, ruleId string, runId int) {
 		// Only do clean up when rule is deleted instead of updated
 		if ch != nil {
 			delete(s.refRules, ruleId)
+			remainingRefs := sortedRefRuleIDs(s.refRules)
 			if len(s.refRules) == 0 {
+				ctx.GetLogger().Warnf("Removing sub topo %s after rule %s close; remainingRefs=%v opened=%v inPool=%v", s.name, ruleId, remainingRefs, s.opened.Load(), s.inPool.Load())
 				if s.cancel != nil {
 					s.cancel()
 				}
@@ -210,7 +232,7 @@ func (s *SrcSubTopo) Close(ctx api.StreamContext, ruleId string, runId int) {
 				}
 				RemoveSubTopo(s.name)
 			}
-			ctx.GetLogger().Infof("Sub topo %s dereference %s with %d ref", s.name, ctx.GetRuleId(), len(s.refRules))
+			ctx.GetLogger().Infof("Sub topo %s dereference %s with %d ref: %v", s.name, ctx.GetRuleId(), len(s.refRules), remainingRefs)
 		}
 		ctx.GetLogger().Infof("Sub topo %s update schema for rule %s change", s.name, ctx.GetRuleId())
 		for _, op := range s.ops {
@@ -240,6 +262,15 @@ func (s *SrcSubTopo) EnableCheckpoint(sources *[]checkpoint.StreamTask, ops *[]c
 		*ops = append(*ops, op)
 	}
 	s.enableCheckpoint = true
+}
+
+func sortedRefRuleIDs(refRules map[string]chan<- error) []string {
+	result := make([]string, 0, len(refRules))
+	for ruleID := range refRules {
+		result = append(result, ruleID)
+	}
+	sort.Strings(result)
+	return result
 }
 
 func prepareSharedContext(parCtx api.StreamContext, k string, qos def.Qos) (api.StreamContext, context.CancelFunc, error) {
