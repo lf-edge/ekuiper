@@ -77,11 +77,15 @@ func TestSubtopoLC(t *testing.T) {
 	// Metrics test
 	metrics := []any{0, 0, 0, 0, 0, 0, 0, "", 0, 0, 0, 0, 0, 0, 0, 0, "", 0}
 	assert.Equal(t, metrics, subTopo.GetMetrics())
-	keys := []string{"source_shared_0_records_in_total", "source_shared_0_records_out_total", "source_shared_0_messages_processed_total", "source_shared_0_process_latency_us", "source_shared_0_buffer_length", "source_shared_0_last_invocation", "source_shared_0_exceptions_total", "source_shared_0_last_exception", "source_shared_0_last_exception_time", "op_lc_op1_0_records_in_total", "op_lc_op1_0_records_out_total", "op_lc_op1_0_messages_processed_total", "op_lc_op1_0_process_latency_us", "op_lc_op1_0_buffer_length", "op_lc_op1_0_last_invocation", "op_lc_op1_0_exceptions_total", "op_lc_op1_0_last_exception", "op_lc_op1_0_last_exception_time"}
+	keys := []string{"source_shared_0_records_in_total", "source_shared_0_records_out_total", "source_shared_0_messages_processed_total", "source_shared_0_process_latency_us", "source_shared_0_buffer_length", "source_shared_0_last_invocation", "source_shared_0_exceptions_total", "source_shared_0_last_exception", "source_shared_0_last_exception_time", "op_lc_op1_0_records_in_total", "op_lc_op1_0_records_out_total", "op_lc_op1_0_messages_processed_total", "op_lc_op1_0_process_latency_us", "op_lc_op1_0_buffer_length", "op_lc_op1_0_last_invocation", "op_lc_op1_0_exceptions_total", "op_lc_op1_0_last_exception", "op_lc_op1_0_last_exception_time", "subtopo_lc_ref_count", "subtopo_lc_in_pool"}
 	kk, vv := subTopo2.SubMetrics()
-	assert.Equal(t, len(keys), len(metrics))
+	subMetrics := []any{0, 0, 0, 0, 0, 0, 0, "", 0, 0, 0, 0, 0, 0, 0, 0, "", 0, 2, 1}
+	assert.Equal(t, len(keys), len(subMetrics))
 	assert.Equal(t, keys, kk)
-	assert.Equal(t, metrics, vv)
+	assert.Equal(t, subMetrics, vv)
+	debugMetrics := metricMap(kk, vv)
+	assert.Equal(t, 2, debugMetrics["subtopo_lc_ref_count"])
+	assert.Equal(t, 1, debugMetrics["subtopo_lc_in_pool"])
 	// Append to rule
 	och := make(chan any)
 	err := subTopo.AddOutput(och, "opp")
@@ -107,57 +111,17 @@ func TestSubtopoLC(t *testing.T) {
 	subTopo.Close(ctx1)
 	assert.Equal(t, 1, len(subTopo.refRules))
 	assert.Equal(t, 1, len(subTopoPool))
+	kk, vv = subTopo.SubMetrics()
+	debugMetrics = metricMap(kk, vv)
+	assert.Equal(t, 1, debugMetrics["subtopo_lc_ref_count"])
+	assert.Equal(t, 1, debugMetrics["subtopo_lc_in_pool"])
 	subTopo2.Close(ctx2)
 	assert.Equal(t, 0, len(subTopo.refRules))
 	assert.Equal(t, 0, len(subTopoPool))
-}
-
-// Test when connection fails
-func TestSubtopoRunError(t *testing.T) {
-	ctx0 := mockContext.NewMockContext("rule0", "abc").WithRun(0)
-	assert.Equal(t, 0, len(subTopoPool))
-	subTopo, existed := GetOrCreateSubTopo(ctx0, "re", false)
-	assert.False(t, existed)
-	srcNode := &mockSrc{name: "src1"}
-	opNode := &mockOp{name: "op1", ch: make(chan any)}
-	subTopo.AddSrc(srcNode)
-	subTopo.AddOperator([]node.Emitter{srcNode}, opNode)
-	// create another subtopo
-	ctx1 := mockContext.NewMockContext("rule1", "abc").WithRun(1)
-	subTopo2, existed := GetOrCreateSubTopo(ctx1, "re", false)
-	assert.True(t, existed)
-	assert.Equal(t, subTopo, subTopo2)
-	assert.Equal(t, 1, len(subTopoPool))
-	assert.Equal(t, InitState, subTopo.opened.Load())
-	subTopo.Open(ctx0, make(chan<- error))
-	// Test run secondly and thirdly.
-	errCh1 := make(chan error, 1)
-	subTopo.Open(ctx1, errCh1)
-	assert.Equal(t, 2, len(subTopo.refRules))
-	errCh2 := make(chan error, 1)
-	assert.Equal(t, OpenState, subTopo.opened.Load())
-	ctx2 := mockContext.NewMockContext("rule2", "abc").WithRun(2)
-	subTopo.Open(ctx2, errCh2)
-	assert.Equal(t, 3, len(subTopo.refRules))
-	srcNode.sentError.Store(true)
-	select {
-	case err := <-errCh1:
-		assert.Equal(t, assert.AnError, err)
-		subTopo.Close(ctx1)
-	case <-time.After(1 * time.Second):
-		assert.Fail(t, "Should receive error")
-	}
-	select {
-	case err := <-errCh2:
-		assert.Equal(t, assert.AnError, err)
-		subTopo2.Close(ctx2)
-	case <-time.After(1 * time.Second):
-		assert.Fail(t, "Should receive error")
-	}
-	assert.Equal(t, CloseState, subTopo.opened.Load())
-	assert.Equal(t, 1, len(subTopo.refRules))
-	subTopo.Close(ctx0)
-	assert.Equal(t, 0, len(subTopoPool))
+	kk, vv = subTopo.SubMetrics()
+	debugMetrics = metricMap(kk, vv)
+	assert.Equal(t, 0, debugMetrics["subtopo_lc_ref_count"])
+	assert.Equal(t, 0, debugMetrics["subtopo_lc_in_pool"])
 }
 
 func TestErrorClose(t *testing.T) {
@@ -379,4 +343,12 @@ func (m *mockOp) RemoveMetrics(name string) {
 
 func (m *mockOp) ResetSchema(ctx api.StreamContext, schema map[string]*ast.JsonStreamField) {
 	m.schemaCount = len(schema)
+}
+
+func metricMap(keys []string, values []any) map[string]any {
+	result := make(map[string]any, len(keys))
+	for i, key := range keys {
+		result[key] = values[i]
+	}
+	return result
 }

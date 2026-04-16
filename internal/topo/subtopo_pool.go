@@ -49,6 +49,7 @@ func GetOrCreateSubTopo(ctx api.StreamContext, name string, isSliceMode bool) (*
 		}
 		subTopoPool[name] = ac
 	}
+	ac.inPool.Store(true)
 	ac.Init(ctx)
 	return ac, ok
 }
@@ -56,6 +57,9 @@ func GetOrCreateSubTopo(ctx api.StreamContext, name string, isSliceMode bool) (*
 func RemoveSubTopo(name string) {
 	lock.Lock()
 	defer lock.Unlock()
+	if ac, ok := subTopoPool[name]; ok {
+		ac.inPool.Store(false)
+	}
 	delete(subTopoPool, name)
 	conf.Log.Infof("Delete SubTopo %s", name)
 }
@@ -74,6 +78,7 @@ func CloseSubTopo(ctx api.StreamContext, s *SrcSubTopo, runId int) {
 		if sourceSub, ok := s.source.(*SrcSubTopo); ok {
 			ss = sourceSub
 		}
+		s.inPool.Store(false)
 		delete(subTopoPool, s.name)
 		conf.Log.Infof("Delete SubTopo %s", s.name)
 		// Unlock before recursive call to avoid deadlock

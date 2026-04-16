@@ -17,6 +17,7 @@ package topo
 import (
 	"context"
 	"fmt"
+	"sort"
 	"sync/atomic"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
@@ -52,6 +53,7 @@ type SrcSubTopo struct {
 	refRules map[string]map[int]chan<- error // map[ruleId][runId]errCh, notify the rule for errors
 	// Runtime state, affect the running loop. Update when any rule opened or all rules stopped
 	opened           atomic.Int32 // 0 is init, 1 is open, -1 is close
+	inPool           atomic.Bool
 	cancel           context.CancelFunc
 	enableCheckpoint bool
 }
@@ -215,6 +217,7 @@ func (s *SrcSubTopo) removeRef(ctx api.StreamContext) (ruleClose bool, destroy b
 	rr, ok := s.refRules[ctx.GetRuleId()]
 	if ok { // Run inside ok to make sure clean up only run once
 		delete(rr, ctx.GetRunId())
+		remainingRefs := sortedRefRuleIDs(s.refRules)
 		if len(rr) == 0 {
 			delete(s.refRules, ctx.GetRuleId())
 			ruleClose = true
@@ -223,14 +226,19 @@ func (s *SrcSubTopo) removeRef(ctx api.StreamContext) (ruleClose bool, destroy b
 		if len(s.refRules) == 0 {
 			destroy = true
 			s.opened.Store(CloseState)
-			ctx.GetLogger().Infof("subtopo %s closed", s.name)
+			ctx.GetLogger().Warnf("Removing sub topo %s after rule %s close; remainingRefs=%v opened=%v inPool=%v", s.name, ctx.GetRuleId(), remainingRefs, s.opened.Load(), s.inPool.Load())
+		} else {
+			ctx.GetLogger().Infof("Sub topo %s dereference %s with %d ref: %v", s.name, ctx.GetRuleId(), len(s.refRules), remainingRefs)
 		}
 	}
 	return
 }
 
 func (s *SrcSubTopo) notifyError(poe error) {
-	// Notify error to all ref rules
+	s.RLock()
+	refRules := sortedRefRuleIDs(s.refRules)
+	conf.Log.Warnf("Sub topo %s notifying error %v to refs %v", s.name, poe, refRules)
+	s.RUnlock()
 	for k, rr := range s.refRules {
 		conf.Log.Debugf("Notify error %v to rule %s", poe, k)
 		for _, e := range rr {
@@ -258,6 +266,12 @@ func (s *SrcSubTopo) SubMetrics() (keys []string, values []any) {
 			values = append(values, v)
 		}
 	}
+	refCount, inPool := s.debugMetrics()
+	keys = append(keys,
+		fmt.Sprintf("subtopo_%s_ref_count", s.name),
+		fmt.Sprintf("subtopo_%s_in_pool", s.name),
+	)
+	values = append(values, refCount, inPool)
 	return
 }
 
@@ -312,6 +326,25 @@ func prepareSharedContext(parCtx api.StreamContext, k string, qos def.Qos) (api.
 	}
 	sctx, cancel := ctx.WithCancel()
 	return sctx.WithMeta(ruleId, opId, store).WithRun(0), cancel, nil
+}
+
+func sortedRefRuleIDs(refRules map[string]map[int]chan<- error) []string {
+	result := make([]string, 0, len(refRules))
+	for ruleID := range refRules {
+		result = append(result, ruleID)
+	}
+	sort.Strings(result)
+	return result
+}
+
+func (s *SrcSubTopo) debugMetrics() (int, int) {
+	s.RLock()
+	defer s.RUnlock()
+	inPool := 0
+	if s.inPool.Load() {
+		inPool = 1
+	}
+	return len(s.refRules), inPool
 }
 
 var (
