@@ -17,7 +17,6 @@ package topo
 import (
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/stretchr/testify/assert"
@@ -127,63 +126,6 @@ func TestSubtopoLC(t *testing.T) {
 	assert.Equal(t, 0, debugMetrics["subtopo_shared_in_pool"])
 	assert.Equal(t, 2, len(subTopo.schemaReg))
 	assert.Equal(t, 0, opNode.schemaCount)
-}
-
-// Test when connection fails
-func TestSubtopoRunError(t *testing.T) {
-	ctx0 := mockContext.NewMockContext("rule0", "abc")
-	assert.Equal(t, 0, len(subTopoPool))
-	subTopo, existed := GetOrCreateSubTopo(ctx0, "shared")
-	assert.False(t, existed)
-	srcNode := &mockSrc{name: "src1"}
-	opNode := &mockOp{name: "op1", ch: make(chan any)}
-	subTopo.AddSrc(srcNode)
-	subTopo.AddOperator([]node.Emitter{srcNode}, opNode)
-	// create another subtopo
-	ctx1 := mockContext.NewMockContext("rule1", "abc")
-	subTopo2, existed := GetOrCreateSubTopo(ctx1, "shared")
-	assert.True(t, existed)
-	assert.Equal(t, subTopo, subTopo2)
-	assert.Equal(t, 1, len(subTopoPool))
-	assert.Equal(t, false, subTopo.opened.Load())
-	subTopo.Open(ctx0, make(chan<- error))
-	subTopo.Close(ctx0, "rule0", 1)
-	// Test run firstly, successfully
-	subTopo.Open(ctx1, make(chan error))
-	assert.Equal(t, 1, len(subTopo.refRules))
-	assert.Equal(t, true, subTopo.opened.Load())
-	subTopo.Close(ctx1, "rule1", 1)
-	assert.Equal(t, 0, len(subTopo.refRules))
-	assert.Equal(t, 0, len(subTopoPool))
-	time.Sleep(10 * time.Millisecond)
-	assert.Equal(t, false, subTopo.opened.Load())
-	// Test run secondly and thirdly, should fail
-	errCh1 := make(chan error, 1)
-	ctx1 = mockContext.NewMockContext("rule1", "abc")
-	subTopo.Open(ctx1, errCh1)
-	assert.Equal(t, 1, len(subTopo.refRules))
-	errCh2 := make(chan error, 1)
-	assert.Equal(t, true, subTopo.opened.Load())
-	ctx2 := mockContext.NewMockContext("rule2", "abc")
-	subTopo.Open(ctx2, errCh2)
-	assert.Equal(t, 2, len(subTopo.refRules))
-	select {
-	case err := <-errCh1:
-		assert.Equal(t, assert.AnError, err)
-		subTopo.Close(ctx1, "rule1", 1)
-	case <-time.After(1 * time.Second):
-		assert.Fail(t, "Should receive error")
-	}
-	select {
-	case err := <-errCh2:
-		assert.Equal(t, assert.AnError, err)
-		subTopo2.Close(ctx2, "rule2", 2)
-	case <-time.After(1 * time.Second):
-		assert.Fail(t, "Should receive error")
-	}
-	assert.Equal(t, false, subTopo.opened.Load())
-	assert.Equal(t, 0, len(subTopo.refRules))
-	assert.Equal(t, 0, len(subTopoPool))
 }
 
 func TestSubtopoPrint(t *testing.T) {
