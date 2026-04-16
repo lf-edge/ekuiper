@@ -118,14 +118,10 @@ func (s *SharedLayer) Detach(ctx api.StreamContext, isClose bool) error {
 			delete(s.streamMap, ruleID)
 			delete(s.wildcardMap, ruleID)
 			delete(s.reg, ruleID)
-			newSchema := make(map[string]*ast.JsonStreamField)
-			for _, si := range s.reg {
-				newSchema, err = s.merge(newSchema, si.schema)
-				if err != nil {
-					return err
-				}
+			s.schema, err = s.rebuildSchema()
+			if err != nil {
+				return err
 			}
-			s.schema = newSchema
 			s.updateReg()
 		}
 	}
@@ -165,6 +161,26 @@ func (s *SharedLayer) merge(originSchema, newSchema map[string]*ast.JsonStreamFi
 		}
 	}
 	return ss, nil
+}
+
+func (s *SharedLayer) rebuildSchema() (map[string]*ast.JsonStreamField, error) {
+	if len(s.wildcardMap) > 0 {
+		for ruleID := range s.wildcardMap {
+			if info, ok := s.reg[ruleID]; ok {
+				return info.schema, nil
+			}
+		}
+		return nil, nil
+	}
+	newSchema := make(map[string]*ast.JsonStreamField)
+	for _, si := range s.reg {
+		var err error
+		newSchema, err = s.merge(newSchema, si.schema)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return newSchema, nil
 }
 
 func mergeSchema(originSchema, newSchema map[string]*ast.JsonStreamField) (map[string]*ast.JsonStreamField, error) {

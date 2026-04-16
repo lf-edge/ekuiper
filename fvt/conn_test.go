@@ -257,7 +257,7 @@ func (s *ConnectionTestSuite) TestConnStatus() {
 	})
 }
 
-func (s *ConnectionTestSuite) TestSharedConnectionPeerRuleStopImpactRepro() {
+func (s *ConnectionTestSuite) TestSharedConnectionPeerRuleStopDoesNotImpactActiveRule() {
 	const brokerAddr = ":5883"
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
 	connID := "connSharedStop" + suffix
@@ -296,7 +296,7 @@ func (s *ConnectionTestSuite) TestSharedConnectionPeerRuleStopImpactRepro() {
 	err = server.Publish(sourceTpc, []byte(`{"seq":2}`), false, 0)
 	s.Require().NoError(err)
 	activeGot := s.waitForMemoryTuple(activeSub, 2, 3*time.Second)
-	s.False(activeGot, "expected reproduction: after stopping peer rule, active rule still stops receiving on shared stream")
+	s.True(activeGot, "active rule should keep receiving after stopping peer rule on shared stream")
 }
 
 func (s *ConnectionTestSuite) TestSharedConnectionPeerRuleRestartDoesNotImpactActiveRule() {

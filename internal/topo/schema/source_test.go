@@ -266,3 +266,23 @@ func TestAttachDetachSchema(t *testing.T) {
 	}
 	require.Equal(t, r, er)
 }
+
+func TestDetachKeepsWildcardSchemaWhenOtherWildcardRuleStillAttached(t *testing.T) {
+	f := newSharedLayer()
+	f.RegSchema("rule1", "demo", nil, true)
+	f.RegSchema("rule2", "demo", nil, true)
+
+	ctx1 := mockContext.NewMockContext("rule1", "t1")
+	ctx2 := mockContext.NewMockContext("rule2", "t1")
+
+	require.NoError(t, f.Attach(ctx1))
+	require.NoError(t, f.Attach(ctx2))
+	require.Nil(t, f.GetSchema())
+
+	require.NoError(t, f.Detach(ctx1, true))
+	require.Nil(t, f.GetSchema())
+
+	r := GetRuleSchema("rule2")
+	require.Nil(t, r.Schema["demo"])
+	require.True(t, r.Wildcard["demo"])
+}
