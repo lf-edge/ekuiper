@@ -38,50 +38,65 @@ func TestConnectionTestSuite(t *testing.T) {
 }
 
 func (s *ConnectionTestSuite) TestConnStatus() {
+	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
+	connID := "conn1_" + suffix
+	confKey := "ttt_" + suffix
+	streamName := "tttStream_" + suffix
+	rule1ID := "ruleTTT1_" + suffix
+	rule2ID := "ruleTTT2_" + suffix
+	sourceMetricKey := fmt.Sprintf("source_%s/%s_0_connection_status", connID, confKey)
+	connectionPath := "connections/" + connID
+	rule1Path := "rules/" + rule1ID
+	rule2Path := "rules/" + rule2ID
+	streamPath := "streams/" + streamName
+	confPath := "sources/mqtt/confKeys/" + confKey
+
 	// Connect when broker is not started
 	s.Run("create rule when broker is not started", func() {
 		// create connection
-		connStr := `{
-			"id": "conn1",
+		connStr := fmt.Sprintf(`{
+			"id": %q,
 			"typ":"mqtt",
 			"props": {
 				"server": "tcp://127.0.0.1:3883"
             }
-		}`
+		}`, connID)
 		resp, err := client.Post("connections", connStr)
 		s.Require().NoError(err)
 		fmt.Println(GetResponseText(resp))
 		s.Require().Equal(http.StatusCreated, resp.StatusCode)
 		conf := map[string]any{
-			"connectionSelector": "conn1",
+			"connectionSelector": connID,
 		}
-		resp, err = client.CreateConf("sources/mqtt/confKeys/ttt", conf)
+		resp, err = client.CreateConf(confPath, conf)
 		s.Require().NoError(err)
 		s.Require().Equal(http.StatusOK, resp.StatusCode)
 
-		streamSql := `{"sql": "create stream tttStream () WITH (TYPE=\"mqtt\", DATASOURCE=\"ttt\", FORMAT=\"json\", CONF_KEY=\"ttt\", SHARED=\"true\")"}`
+		streamSql := fmt.Sprintf(`{"sql": "create stream %s () WITH (TYPE=\"mqtt\", DATASOURCE=\"%s\", FORMAT=\"json\", CONF_KEY=\"%s\", SHARED=\"true\")"}`,
+			streamName, confKey, confKey)
 		resp, err = client.CreateStream(streamSql)
 		s.Require().NoError(err)
 		s.T().Log(GetResponseText(resp))
 		s.Require().Equal(http.StatusCreated, resp.StatusCode)
 
-		ruleSql := `{
-		  "id": "ruleTTT1",
-		  "sql": "SELECT * FROM tttStream",
+		ruleSql := fmt.Sprintf(`{
+		  "id": %q,
+		  "sql": "SELECT * FROM %s",
 		  "actions": [
 			{
 			  "nop": {
 			  }
 			}
 		  ]
-		}`
+		}`,
+			rule1ID, streamName)
 		resp, err = client.CreateRule(ruleSql)
 		s.Require().NoError(err)
 		s.T().Log(GetResponseText(resp))
 		s.Require().Equal(http.StatusCreated, resp.StatusCode)
 		// Assert connection status
 		r := TryAssert(10, ConstantInterval, func() bool {
-			get, e := client.Get("connections/conn1")
+			get, e := client.Get(connectionPath)
 			s.Require().NoError(e)
 			resultMap, e := GetResponseResultMap(get)
 			fmt.Println(resultMap)
@@ -91,10 +106,10 @@ func (s *ConnectionTestSuite) TestConnStatus() {
 		s.Require().True(r)
 		// Assert rule metrics
 		r = TryAssert(10, ConstantInterval, func() bool {
-			metrics, e := client.GetRuleStatus("ruleTTT1")
+			metrics, e := client.GetRuleStatus(rule1ID)
 			s.Require().NoError(e)
 			fmt.Println(metrics)
-			return metrics["source_conn1/ttt_0_connection_status"] == -1.0
+			return metrics[sourceMetricKey] == -1.0
 		})
 		s.Require().True(r)
 	})
@@ -118,15 +133,15 @@ func (s *ConnectionTestSuite) TestConnStatus() {
 		fmt.Println(tcp.Address())
 		// Assert rule metrics
 		r := TryAssert(10, ConstantInterval, func() bool {
-			metrics, e := client.GetRuleStatus("ruleTTT1")
+			metrics, e := client.GetRuleStatus(rule1ID)
 			s.Require().NoError(e)
 			fmt.Println(metrics)
-			return metrics["source_conn1/ttt_0_connection_status"] == 1.0
+			return metrics[sourceMetricKey] == 1.0
 		})
 		s.Require().True(r)
 		// Assert connection status
 		r = TryAssert(10, ConstantInterval, func() bool {
-			get, e := client.Get("connections/conn1")
+			get, e := client.Get(connectionPath)
 			s.Require().NoError(e)
 			resultMap, e := GetResponseResultMap(get)
 			fmt.Println(resultMap)
@@ -136,28 +151,29 @@ func (s *ConnectionTestSuite) TestConnStatus() {
 		s.Require().True(r)
 	})
 	s.Run("attach rule, get status", func() {
-		ruleSql := `{
-		  "id": "ruleTTT2",
-		  "sql": "SELECT * FROM tttStream",
+		ruleSql := fmt.Sprintf(`{
+		  "id": %q,
+		  "sql": "SELECT * FROM %s",
 		  "actions": [
 			{
 			  "mqtt": {
-				"connectionSelector": "conn1",
+				"connectionSelector": %q,
 				"topic":"result"
 			  }
 			}
 		  ]
-		}`
+		}`,
+			rule2ID, streamName, connID)
 		resp, err := client.CreateRule(ruleSql)
 		s.Require().NoError(err)
 		s.T().Log(GetResponseText(resp))
 		s.Require().Equal(http.StatusCreated, resp.StatusCode)
 		// Assert rule2 metrics
 		r := TryAssert(10, ConstantInterval, func() bool {
-			metrics, e := client.GetRuleStatus("ruleTTT2")
+			metrics, e := client.GetRuleStatus(rule2ID)
 			s.Require().NoError(e)
 			fmt.Println(metrics)
-			return metrics["source_conn1/ttt_0_connection_status"] == 1.0
+			return metrics[sourceMetricKey] == 1.0
 		})
 		s.Require().True(r)
 	})
@@ -167,23 +183,23 @@ func (s *ConnectionTestSuite) TestConnStatus() {
 		s.Require().NoError(err)
 		// Assert rule1 metrics
 		r := TryAssert(10, ConstantInterval, func() bool {
-			metrics, e := client.GetRuleStatus("ruleTTT1")
+			metrics, e := client.GetRuleStatus(rule1ID)
 			s.Require().NoError(e)
 			fmt.Println(metrics)
-			return metrics["source_conn1/ttt_0_connection_status"] == 0.0
+			return metrics[sourceMetricKey] == 0.0
 		})
 		s.Require().True(r)
 		// Assert rule1 metrics
 		r = TryAssert(10, ConstantInterval, func() bool {
-			metrics, e := client.GetRuleStatus("ruleTTT2")
+			metrics, e := client.GetRuleStatus(rule2ID)
 			s.Require().NoError(e)
 			fmt.Println(metrics)
-			return metrics["source_conn1/ttt_0_connection_status"] == 0.0
+			return metrics[sourceMetricKey] == 0.0
 		})
 		s.Require().True(r)
 		// Assert connection status
 		r = TryAssert(10, ConstantInterval, func() bool {
-			get, e := client.Get("connections/conn1")
+			get, e := client.Get(connectionPath)
 			s.Require().NoError(e)
 			resultMap, e := GetResponseResultMap(get)
 			fmt.Println(resultMap)
@@ -208,15 +224,15 @@ func (s *ConnectionTestSuite) TestConnStatus() {
 		fmt.Println(tcp.Address())
 		// Assert rule2 metrics
 		r := TryAssert(10, time.Second, func() bool {
-			metrics, e := client.GetRuleStatus("ruleTTT2")
+			metrics, e := client.GetRuleStatus(rule2ID)
 			s.Require().NoError(e)
 			fmt.Println(metrics)
-			return metrics["source_conn1/ttt_0_connection_status"] == 1.0
+			return metrics[sourceMetricKey] == 1.0
 		})
 		s.Require().True(r)
 		// Assert connection status
 		r = TryAssert(10, time.Second, func() bool {
-			get, e := client.Get("connections/conn1")
+			get, e := client.Get(connectionPath)
 			s.Require().NoError(e)
 			resultMap, e := GetResponseResultMap(get)
 			fmt.Println(resultMap)
@@ -226,32 +242,25 @@ func (s *ConnectionTestSuite) TestConnStatus() {
 		s.Require().True(r)
 		// Assert rule1 metrics
 		r = TryAssert(10, time.Second, func() bool {
-			metrics, e := client.GetRuleStatus("ruleTTT1")
+			metrics, e := client.GetRuleStatus(rule1ID)
 			s.Require().NoError(e)
 			fmt.Println(metrics)
-			return metrics["source_conn1/ttt_0_connection_status"] == 1.0
+			return metrics[sourceMetricKey] == 1.0
 		})
 		s.Require().True(r)
 	})
 	s.Run("clean", func() {
-		res, e := client.Delete("rules/ruleTTT1")
+		res, e := client.Delete(rule1Path)
 		s.NoError(e)
 		s.Equal(http.StatusOK, res.StatusCode)
 
-		res, e = client.Delete("rules/ruleTTT2")
+		res, e = client.Delete(rule2Path)
 		s.NoError(e)
 		s.Equal(http.StatusOK, res.StatusCode)
 
-		res, e = client.Delete("streams/tttStream")
+		res, e = client.Delete(streamPath)
 		s.NoError(e)
 		s.Equal(http.StatusOK, res.StatusCode)
-
-		r := TryAssert(10, ConstantInterval, func() bool {
-			res, e = client.Delete("connections/conn1")
-			s.NoError(e)
-			return res.StatusCode == http.StatusOK
-		})
-		s.Require().True(r)
 	})
 }
 

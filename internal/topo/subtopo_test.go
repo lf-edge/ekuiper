@@ -186,6 +186,62 @@ func TestSubtopoRunError(t *testing.T) {
 	assert.Equal(t, 0, len(subTopoPool))
 }
 
+func TestSharedConnectionSimulationKeepsSubtopoAliveAfterFirstError(t *testing.T) {
+	for name := range subTopoPool {
+		RemoveSubTopo(name)
+	}
+	defer func() {
+		for name := range subTopoPool {
+			RemoveSubTopo(name)
+		}
+	}()
+
+	ctx1 := mockContext.NewMockContext("rule1", "abc")
+	ctx2 := mockContext.NewMockContext("rule2", "abc")
+	subTopo, existed := GetOrCreateSubTopo(ctx1, "shared_connection")
+	assert.False(t, existed)
+	subTopo2, existed := GetOrCreateSubTopo(ctx2, "shared_connection")
+	assert.True(t, existed)
+	assert.Same(t, subTopo, subTopo2)
+
+	// Start at runCount=2 so the first open fails and the second open succeeds.
+	srcNode := &mockSrc{name: "shared_connection", runCount: 2}
+	subTopo.AddSrc(srcNode)
+	assert.NoError(t, subTopo.AddOutput(make(chan any), "rule1.1"))
+	assert.NoError(t, subTopo.AddOutput(make(chan any), "rule2.2"))
+
+	errCh1 := make(chan error, 1)
+	errCh2 := make(chan error, 1)
+	subTopo.Open(ctx1, errCh1)
+	select {
+	case err := <-errCh1:
+		assert.Equal(t, assert.AnError, err)
+	case <-time.After(time.Second):
+		assert.Fail(t, "Should receive error")
+	}
+
+	subTopo.Close(ctx1, "rule1", 1)
+	assert.Equal(t, 1, len(subTopo.refRules))
+	assert.Equal(t, 1, len(subTopoPool))
+	_, ok := subTopo.refRules["rule2"]
+	assert.True(t, ok)
+	assert.Eventually(t, func() bool {
+		return !subTopo.opened.Load()
+	}, time.Second, 10*time.Millisecond)
+
+	subTopo.Open(ctx2, errCh2)
+	select {
+	case err := <-errCh2:
+		assert.Fail(t, fmt.Sprintf("unexpected error reopening shared source: %v", err))
+	case <-time.After(50 * time.Millisecond):
+	}
+	assert.Equal(t, 4, srcNode.runCount)
+
+	subTopo.Close(ctx2, "rule2", 2)
+	assert.Equal(t, 0, len(subTopo.refRules))
+	assert.Equal(t, 0, len(subTopoPool))
+}
+
 func TestSubtopoPrint(t *testing.T) {
 	tt := &def.PrintableTopo{
 		Sources: []string{"source_shared"},
