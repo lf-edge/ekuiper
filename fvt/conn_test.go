@@ -27,6 +27,8 @@ import (
 	"github.com/mochi-mqtt/server/v2/hooks/auth"
 	"github.com/mochi-mqtt/server/v2/listeners"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/lf-edge/ekuiper/v2/internal/io/memory/pubsub"
 )
 
 type ConnectionTestSuite struct {
@@ -253,6 +255,247 @@ func (s *ConnectionTestSuite) TestConnStatus() {
 		})
 		s.Require().True(r)
 	})
+}
+
+func (s *ConnectionTestSuite) TestSharedConnectionPeerRuleStopImpactRepro() {
+	const brokerAddr = ":5883"
+	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
+	connID := "connSharedStop" + suffix
+	confKey := "sharedStopConf" + suffix
+	streamName := "sharedStopStream" + suffix
+	ruleActive := "ruleSharedStopActive" + suffix
+	rulePeer := "ruleSharedStopPeer" + suffix
+	sourceTpc := "fvt/shared/stop/" + suffix
+	memActive := "fvt/shared/stop/active/" + suffix
+	memPeer := "fvt/shared/stop/peer/" + suffix
+
+	activeSub := pubsub.CreateSub(memActive, nil, memActive, 1024)
+	defer pubsub.CloseSourceConsumerChannel(memActive, memActive)
+	peerSub := pubsub.CreateSub(memPeer, nil, memPeer, 1024)
+	defer pubsub.CloseSourceConsumerChannel(memPeer, memPeer)
+
+	server, tcp := s.startInlineBroker("sharedStopBroker", brokerAddr)
+	defer func() {
+		err := server.Close()
+		s.Require().NoError(err)
+		tcp.Close(nil)
+	}()
+
+	s.createSharedConnectionArtifacts(connID, confKey, streamName, tcp.Address(), sourceTpc)
+	defer s.cleanupSharedConnectionArtifacts(ruleActive, rulePeer, streamName, confKey, connID)
+
+	s.createMemoryRule(ruleActive, streamName, memActive)
+	s.createMemoryRule(rulePeer, streamName, memPeer)
+
+	s.requireSharedSourceReady(server, sourceTpc, peerSub, activeSub, 1)
+
+	resp, err := client.StopRule(rulePeer)
+	s.Require().NoError(err)
+	s.Require().Equal(http.StatusOK, resp.StatusCode)
+
+	err = server.Publish(sourceTpc, []byte(`{"seq":2}`), false, 0)
+	s.Require().NoError(err)
+	activeGot := s.waitForMemoryTuple(activeSub, 2, 3*time.Second)
+	s.False(activeGot, "expected reproduction: after stopping peer rule, active rule should stop receiving on shared mqtt connection")
+}
+
+func (s *ConnectionTestSuite) TestSharedConnectionPeerRuleRestartImpactRepro() {
+	const brokerAddr = ":5884"
+	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
+	connID := "connSharedRestart" + suffix
+	confKey := "sharedRestartConf" + suffix
+	streamName := "sharedRestartStream" + suffix
+	ruleActive := "ruleSharedRestartActive" + suffix
+	rulePeer := "ruleSharedRestartPeer" + suffix
+	sourceTpc := "fvt/shared/restart/" + suffix
+	memActive := "fvt/shared/restart/active/" + suffix
+	memPeer := "fvt/shared/restart/peer/" + suffix
+
+	activeSub := pubsub.CreateSub(memActive, nil, memActive, 1024)
+	defer pubsub.CloseSourceConsumerChannel(memActive, memActive)
+	peerSub := pubsub.CreateSub(memPeer, nil, memPeer, 1024)
+	defer pubsub.CloseSourceConsumerChannel(memPeer, memPeer)
+
+	server, tcp := s.startInlineBroker("sharedRestartBroker", brokerAddr)
+	defer func() {
+		err := server.Close()
+		s.Require().NoError(err)
+		tcp.Close(nil)
+	}()
+
+	s.createSharedConnectionArtifacts(connID, confKey, streamName, tcp.Address(), sourceTpc)
+	defer s.cleanupSharedConnectionArtifacts(ruleActive, rulePeer, streamName, confKey, connID)
+
+	s.createMemoryRule(ruleActive, streamName, memActive)
+	s.createMemoryRule(rulePeer, streamName, memPeer)
+
+	s.requireSharedSourceReady(server, sourceTpc, peerSub, activeSub, 1)
+
+	resp, err := client.RestartRule(rulePeer)
+	s.Require().NoError(err)
+	s.Require().Equal(http.StatusOK, resp.StatusCode)
+
+	err = server.Publish(sourceTpc, []byte(`{"seq":2}`), false, 0)
+	s.Require().NoError(err)
+	peerGot := s.waitForMemoryTuple(peerSub, 2, 3*time.Second)
+	activeGot := s.waitForMemoryTuple(activeSub, 2, 3*time.Second)
+	s.False(peerGot && activeGot, "expected reproduction: after restarting peer rule, at least one rule should stop receiving on shared mqtt connection")
+	s.T().Logf("restart reproduction result: peerGot=%v, activeGot=%v", peerGot, activeGot)
+}
+
+func (s *ConnectionTestSuite) startInlineBroker(id, addr string) (*mqtt.Server, *listeners.TCP) {
+	server := mqtt.New(&mqtt.Options{InlineClient: true})
+	_ = server.AddHook(new(auth.AllowHook), nil)
+	tcp := listeners.NewTCP(listeners.Config{ID: id, Address: addr})
+	err := server.AddListener(tcp)
+	s.Require().NoError(err)
+	go func() {
+		err = server.Serve()
+		fmt.Println(err)
+	}()
+	return server, tcp
+}
+
+func (s *ConnectionTestSuite) createSharedConnectionArtifacts(connID, confKey, streamName, brokerURL, sourceTopic string) {
+	connStr := fmt.Sprintf(`{
+		"id": %q,
+		"typ":"mqtt",
+		"props": {
+			"server": %q,
+			"protocolVersion": "3.1.1"
+		}
+	}`, connID, brokerURL)
+	resp, err := client.Post("connections", connStr)
+	s.Require().NoError(err)
+	body, readErr := GetResponseText(resp)
+	s.Require().NoError(readErr)
+	s.Require().Equalf(http.StatusCreated, resp.StatusCode, "create connection failed: %s", body)
+
+	conf := map[string]any{
+		"connectionSelector": connID,
+		"qos":                0,
+	}
+	resp, err = client.CreateConf("sources/mqtt/confKeys/"+confKey, conf)
+	s.Require().NoError(err)
+	body, readErr = GetResponseText(resp)
+	s.Require().NoError(readErr)
+	s.Require().Equalf(http.StatusOK, resp.StatusCode, "create source conf failed: %s", body)
+
+	streamSQL := fmt.Sprintf(`{"sql": "create stream %s () WITH (TYPE=\"mqtt\", DATASOURCE=\"%s\", FORMAT=\"json\", CONF_KEY=\"%s\", SHARED=\"true\")"}`, streamName, sourceTopic, confKey)
+	resp, err = client.CreateStream(streamSQL)
+	s.Require().NoError(err)
+	body, readErr = GetResponseText(resp)
+	s.Require().NoError(readErr)
+	s.Require().Equalf(http.StatusCreated, resp.StatusCode, "create stream failed: %s", body)
+}
+
+func (s *ConnectionTestSuite) createMemoryRule(ruleName, streamName, memoryTopic string) {
+	ruleSQL := fmt.Sprintf(`{
+	  "id": %q,
+	  "sql": "SELECT * FROM %s",
+	  "actions": [
+		{
+		  "memory": {
+			"topic": %q
+		  }
+		}
+	  ]
+	}`, ruleName, streamName, memoryTopic)
+	resp, err := client.CreateRule(ruleSQL)
+	s.Require().NoError(err)
+	body, readErr := GetResponseText(resp)
+	s.Require().NoError(readErr)
+	s.Require().Equalf(http.StatusCreated, resp.StatusCode, "create rule failed: %s", body)
+}
+
+func (s *ConnectionTestSuite) cleanupSharedConnectionArtifacts(ruleActive, rulePeer, streamName, confKey, connID string) {
+	res, err := client.Delete("rules/" + rulePeer)
+	s.NoError(err)
+	if err == nil {
+		s.True(res.StatusCode == http.StatusOK || res.StatusCode == http.StatusNotFound)
+	}
+
+	res, err = client.Delete("rules/" + ruleActive)
+	s.NoError(err)
+	if err == nil {
+		s.True(res.StatusCode == http.StatusOK || res.StatusCode == http.StatusNotFound)
+	}
+
+	res, err = client.Delete("streams/" + streamName)
+	s.NoError(err)
+	if err == nil {
+		s.True(res.StatusCode == http.StatusOK || res.StatusCode == http.StatusNotFound)
+	}
+
+	res, err = client.Delete("metadata/sources/mqtt/confKeys/" + confKey)
+	s.NoError(err)
+	if err == nil {
+		if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusNotFound {
+			body, _ := GetResponseText(res)
+			s.T().Logf("cleanup confKey %s returned %d: %s", confKey, res.StatusCode, body)
+		}
+	}
+
+	_ = TryAssert(10, ConstantInterval, func() bool {
+		res, err = client.Delete("connections/" + connID)
+		s.NoError(err)
+		if err != nil {
+			return false
+		}
+		return res.StatusCode == http.StatusOK || res.StatusCode == http.StatusNotFound
+	})
+}
+
+func (s *ConnectionTestSuite) requireMemoryTuple(ch chan any, seq int, timeout time.Duration) {
+	s.Require().True(s.waitForMemoryTuple(ch, seq, timeout), "did not receive expected memory tuple")
+}
+
+func (s *ConnectionTestSuite) requireSharedSourceReady(server *mqtt.Server, sourceTopic string, peerSub, activeSub chan any, seq int) {
+	deadline := time.Now().Add(5 * time.Second)
+	peerReady := false
+	activeReady := false
+	payload := []byte(fmt.Sprintf(`{"seq":%d}`, seq))
+	time.Sleep(300 * time.Millisecond)
+	for time.Now().Before(deadline) && !(peerReady && activeReady) {
+		err := server.Publish(sourceTopic, payload, false, 0)
+		s.Require().NoError(err)
+		if !peerReady {
+			peerReady = s.waitForMemoryTuple(peerSub, seq, 300*time.Millisecond)
+		}
+		if !activeReady {
+			activeReady = s.waitForMemoryTuple(activeSub, seq, 300*time.Millisecond)
+		}
+	}
+	s.True(peerReady, "peer rule did not receive baseline tuple")
+	s.True(activeReady, "active rule did not receive baseline tuple")
+}
+
+func (s *ConnectionTestSuite) waitForMemoryTuple(ch chan any, seq int, timeout time.Duration) bool {
+	deadline := time.After(timeout)
+	for {
+		select {
+		case msg := <-ch:
+			mt, ok := msg.([]pubsub.MemTuple)
+			if !ok || len(mt) != 1 {
+				continue
+			}
+			m := mt[0].ToMap()
+			if v, ok := m["seq"]; ok {
+				switch vt := v.(type) {
+				case float64:
+					if int(vt) == seq {
+						return true
+					}
+				case int:
+					if vt == seq {
+						return true
+					}
+				}
+			}
+		case <-deadline:
+			return false
+		}
+	}
 }
 
 func (s *ConnectionTestSuite) TestSourcePing() {

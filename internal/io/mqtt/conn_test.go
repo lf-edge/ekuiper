@@ -24,6 +24,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/testx"
+	"github.com/lf-edge/ekuiper/v2/internal/xsql"
+	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
@@ -141,4 +143,178 @@ func TestNoClient(t *testing.T) {
 	assert.True(t, errorx.IsIOError(err))
 	err = c.Close(ctx)
 	assert.NoError(t, err)
+}
+
+func TestSharedConnectionCloseOneSourceStopsPeerSource(t *testing.T) {
+	url, cancelBroker, err := testx.InitBroker("TestSharedConnectionCloseOneSourceStopsPeerSource")
+	require.NoError(t, err)
+	defer cancelBroker()
+
+	require.NoError(t, connection.InitConnectionManager4Test())
+	setupCtx := mockContext.NewMockContext("setup", "setup")
+	cw, err := connection.CreateNamedConnection(setupCtx, "mqtt.shared.close-peer", "mqtt", map[string]any{
+		"server":          url,
+		"protocolVersion": "3.1.1",
+	})
+	require.NoError(t, err)
+	_, err = cw.Wait(setupCtx)
+	require.NoError(t, err)
+
+	props := map[string]any{
+		"server":             url,
+		"protocolVersion":    "3.1.1",
+		"connectionSelector": "mqtt.shared.close-peer",
+		"datasource":         "demo/shared/close-peer",
+		"qos":                0,
+	}
+
+	peerCtx := mockContext.NewMockContext("peerRule", "source")
+	peer := &SourceConnector{}
+	require.NoError(t, peer.Provision(peerCtx, props))
+	require.NoError(t, peer.Connect(peerCtx, func(status string, message string) {}))
+	peerClosed := false
+	defer func() {
+		if !peerClosed {
+			require.NoError(t, peer.Close(peerCtx))
+		}
+	}()
+
+	activeCtx := mockContext.NewMockContext("activeRule", "source")
+	active := &SourceConnector{}
+	require.NoError(t, active.Provision(activeCtx, props))
+	require.NoError(t, active.Connect(activeCtx, func(status string, message string) {}))
+	activeClosed := false
+	defer func() {
+		if !activeClosed {
+			require.NoError(t, active.Close(activeCtx))
+		}
+	}()
+
+	activeCh := make(chan []byte, 4)
+	require.NoError(t, active.Subscribe(activeCtx, func(ctx api.StreamContext, payload []byte, meta map[string]any, ts time.Time) {
+		activeCh <- append([]byte(nil), payload...)
+	}, nil))
+
+	publishMQTTMessage(t, url, "demo/shared/close-peer", []byte("before-close"))
+	require.Equal(t, []byte("before-close"), waitForMessage(t, activeCh, 5*time.Second))
+
+	require.NoError(t, peer.Close(peerCtx))
+	peerClosed = true
+	time.Sleep(200 * time.Millisecond)
+
+	publishMQTTMessage(t, url, "demo/shared/close-peer", []byte("after-close"))
+	assertNoMessage(t, activeCh, 800*time.Millisecond)
+}
+
+func TestSharedConnectionRestartSourceRecoversAfterPeerClose(t *testing.T) {
+	url, cancelBroker, err := testx.InitBroker("TestSharedConnectionRestartSourceRecoversAfterPeerClose")
+	require.NoError(t, err)
+	defer cancelBroker()
+
+	require.NoError(t, connection.InitConnectionManager4Test())
+	setupCtx := mockContext.NewMockContext("setup", "setup")
+	cw, err := connection.CreateNamedConnection(setupCtx, "mqtt.shared.restart-peer", "mqtt", map[string]any{
+		"server":          url,
+		"protocolVersion": "3.1.1",
+	})
+	require.NoError(t, err)
+	_, err = cw.Wait(setupCtx)
+	require.NoError(t, err)
+
+	props := map[string]any{
+		"server":             url,
+		"protocolVersion":    "3.1.1",
+		"connectionSelector": "mqtt.shared.restart-peer",
+		"datasource":         "demo/shared/restart-peer",
+		"qos":                0,
+	}
+
+	peerCtx := mockContext.NewMockContext("peerRule", "source")
+	peer := &SourceConnector{}
+	require.NoError(t, peer.Provision(peerCtx, props))
+	require.NoError(t, peer.Connect(peerCtx, func(status string, message string) {}))
+	peerClosed := false
+	defer func() {
+		if !peerClosed {
+			require.NoError(t, peer.Close(peerCtx))
+		}
+	}()
+
+	activeCtx := mockContext.NewMockContext("activeRule", "source")
+	active := &SourceConnector{}
+	require.NoError(t, active.Provision(activeCtx, props))
+	require.NoError(t, active.Connect(activeCtx, func(status string, message string) {}))
+	activeClosed := false
+	defer func() {
+		if !activeClosed {
+			require.NoError(t, active.Close(activeCtx))
+		}
+	}()
+	activeCh := make(chan []byte, 4)
+	require.NoError(t, active.Subscribe(activeCtx, func(ctx api.StreamContext, payload []byte, meta map[string]any, ts time.Time) {
+		activeCh <- append([]byte(nil), payload...)
+	}, nil))
+
+	publishMQTTMessage(t, url, "demo/shared/restart-peer", []byte("before-break"))
+	require.Equal(t, []byte("before-break"), waitForMessage(t, activeCh, 5*time.Second))
+
+	require.NoError(t, peer.Close(peerCtx))
+	peerClosed = true
+	time.Sleep(200 * time.Millisecond)
+	publishMQTTMessage(t, url, "demo/shared/restart-peer", []byte("dropped-after-peer-close"))
+	assertNoMessage(t, activeCh, 800*time.Millisecond)
+
+	require.NoError(t, active.Close(activeCtx))
+	activeClosed = true
+
+	restartCtx := mockContext.NewMockContext("activeRuleRestart", "source")
+	restarted := &SourceConnector{}
+	require.NoError(t, restarted.Provision(restartCtx, props))
+	require.NoError(t, restarted.Connect(restartCtx, func(status string, message string) {}))
+	defer func() {
+		require.NoError(t, restarted.Close(restartCtx))
+	}()
+
+	restartedCh := make(chan []byte, 4)
+	require.NoError(t, restarted.Subscribe(restartCtx, func(ctx api.StreamContext, payload []byte, meta map[string]any, ts time.Time) {
+		restartedCh <- append([]byte(nil), payload...)
+	}, nil))
+
+	publishMQTTMessage(t, url, "demo/shared/restart-peer", []byte("after-restart"))
+	require.Equal(t, []byte("after-restart"), waitForMessage(t, restartedCh, 5*time.Second))
+}
+
+func publishMQTTMessage(t *testing.T, url, topic string, payload []byte) {
+	t.Helper()
+	sinkCtx := mockContext.NewMockContext("publisher", "sink")
+	sink := &Sink{}
+	require.NoError(t, sink.Provision(sinkCtx, map[string]any{
+		"server":          url,
+		"protocolVersion": "3.1.1",
+		"topic":           topic,
+		"qos":             0,
+	}))
+	require.NoError(t, sink.Connect(sinkCtx, func(status string, message string) {}))
+	require.NoError(t, sink.Collect(sinkCtx, &xsql.RawTuple{Rawdata: payload, Timestamp: time.Now()}))
+	require.NoError(t, sink.Close(sinkCtx))
+}
+
+func waitForMessage(t *testing.T, ch <-chan []byte, timeout time.Duration) []byte {
+	t.Helper()
+	select {
+	case msg := <-ch:
+		return msg
+	case <-time.After(timeout):
+		t.Fatalf("timeout waiting for mqtt message")
+		return nil
+	}
+}
+
+func assertNoMessage(t *testing.T, ch <-chan []byte, timeout time.Duration) {
+	t.Helper()
+	select {
+	case msg := <-ch:
+		t.Fatalf("unexpected mqtt message: %s", string(msg))
+	case <-time.After(timeout):
+	}
 }
