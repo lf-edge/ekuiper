@@ -92,6 +92,9 @@ func (ms *SourceConnector) Connect(ctx api.StreamContext, sch api.StatusChangeHa
 	if err != nil {
 		return err
 	}
+	if ms.cfg.SelId != "" {
+		ctx.GetLogger().Infof("action=use_shared_mqtt_connection role=source connId=%s connectionKey=%s rule=%s stream=%s topic=%s", cw.ID, ms.cfg.SelId, ctx.GetRuleId(), ctx.GetOpId(), ms.tpc)
+	}
 	ms.conId = cw.ID
 	// wait for connection
 	conn, err := cw.Wait(ctx)

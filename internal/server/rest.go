@@ -735,6 +735,7 @@ func rulesHandler(w http.ResponseWriter, r *http.Request) {
 			handleError(w, err, "", logger)
 			return
 		}
+		conf.Log.Infof("create rule:%v", id)
 		w.WriteHeader(http.StatusCreated)
 		fmt.Fprintf(w, "Rule %s was created successfully.", id)
 	case http.MethodGet:
@@ -787,6 +788,7 @@ func ruleHandler(w http.ResponseWriter, r *http.Request) {
 			handleError(w, err, "Update rule error", logger)
 			return
 		}
+		conf.Log.Infof("update rule:%v", name)
 		w.WriteHeader(http.StatusOK)
 		_, _ = fmt.Fprintf(w, "Rule %s was updated successfully.", name)
 	}
@@ -846,6 +848,7 @@ func startRuleHandler(w http.ResponseWriter, r *http.Request) {
 		handleError(w, err, "start rule error", logger)
 		return
 	}
+	conf.Log.Infof("start rule:%v", name)
 	w.WriteHeader(http.StatusOK)
 	_, _ = fmt.Fprintf(w, "Rule %s was started", name)
 }
@@ -861,6 +864,7 @@ func stopRuleHandler(w http.ResponseWriter, r *http.Request) {
 		handleError(w, err, "stop rule error", logger)
 		return
 	}
+	conf.Log.Infof("stop rule:%v", name)
 	w.WriteHeader(http.StatusOK)
 	_, _ = fmt.Fprintf(w, "Rule %s was stopped.", name)
 }
@@ -876,6 +880,7 @@ func restartRuleHandler(w http.ResponseWriter, r *http.Request) {
 		handleError(w, err, "restart rule error", logger)
 		return
 	}
+	conf.Log.Infof("restart rule:%v", name)
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprintf(w, "Rule %s was restarted", name)
 }
