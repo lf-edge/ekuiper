@@ -103,7 +103,7 @@ func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, option
 			subId = us.SubId(props)
 		}
 		selName := fmt.Sprintf("%s/%s", conId, subId)
-		srcSubtopo, existed := topo.GetOrCreateSubTopo(nil, selName)
+		srcSubtopo, existed := topo.GetOrCreateSubTopo(ctx, selName)
 		if !existed {
 			var scn node.DataSourceNode
 			scn, err = node.NewSourceNode(ctx, selName, ss, props, options)
