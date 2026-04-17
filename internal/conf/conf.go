@@ -290,6 +290,15 @@ func ValidateRuleOption(option *def.RuleOption) error {
 	if err := schedule.ValidateRanges(option.CronDatetimeRange); err != nil {
 		errs = errors.Join(errs, fmt.Errorf("validate cronDatetimeRange failed, err:%v", err))
 	}
+	if option.Qos >= def.AtLeastOnce {
+		if option.DisableBufferFullDiscard == nil {
+			t := true
+			option.DisableBufferFullDiscard = &t
+		} else if !*option.DisableBufferFullDiscard {
+			Log.Warnf("QoS is %d but disableBufferFullDiscard is explicitly set to false, this may lead to silent data loss during congestion.", option.Qos)
+			errs = errors.Join(errs, fmt.Errorf("invalidDisableBufferFullDiscard:disableBufferFullDiscard must be true when qos is %d or higher", def.AtLeastOnce))
+		}
+	}
 	return errs
 }
 

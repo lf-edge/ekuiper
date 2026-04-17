@@ -107,6 +107,26 @@ func TestRuleOptionValidate(t *testing.T) {
 				},
 			},
 		},
+		{
+			s: &def.RuleOption{
+				Qos: def.AtLeastOnce,
+			},
+			e: &def.RuleOption{
+				Qos: def.AtLeastOnce,
+				DisableBufferFullDiscard: func() *bool { b := true; return &b }(),
+			},
+		},
+		{
+			s: &def.RuleOption{
+				Qos: def.AtLeastOnce,
+				DisableBufferFullDiscard: func() *bool { b := false; return &b }(),
+			},
+			e: &def.RuleOption{
+				Qos: def.AtLeastOnce,
+				DisableBufferFullDiscard: func() *bool { b := false; return &b }(),
+			},
+			err: "invalidDisableBufferFullDiscard:disableBufferFullDiscard must be true when qos is 1 or higher",
+		},
 	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 	for i, tt := range tests {

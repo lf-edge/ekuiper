@@ -506,7 +506,7 @@ func CreateLogicalPlan(stmt *ast.SelectStatement, opt *def.RuleOption, store kv.
 }
 
 func checkSharedSourceOption(streams []*streamInfo, opt *def.RuleOption) error {
-	if !opt.DisableBufferFullDiscard {
+	if opt.DisableBufferFullDiscard == nil || !*opt.DisableBufferFullDiscard {
 		return nil
 	}
 	for _, stream := range streams {
