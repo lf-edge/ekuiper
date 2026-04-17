@@ -41,7 +41,7 @@ require (
 	github.com/gorilla/websocket v1.5.3
 	github.com/influxdata/influxdb-client-go/v2 v2.14.0
 	github.com/influxdata/influxdb1-client v0.0.0-20220302092344-a9ab5670611c
-	github.com/jackc/pgx/v5 v5.8.0
+	github.com/jackc/pgx/v5 v5.9.0
 	github.com/jhump/protoreflect v1.17.0
 	github.com/jinzhu/now v1.1.5
 	github.com/jmrobles/h2go v0.5.0
