@@ -1245,6 +1245,7 @@ func TestSingleSQL(t *testing.T) {
 		},
 	}
 	HandleStream(true, streamList, t)
+	bTrue := true
 	options := []*def.RuleOption{
 		{
 			BufferLength: 100,
@@ -1252,7 +1253,7 @@ func TestSingleSQL(t *testing.T) {
 			PlanOptimizeStrategy: &def.PlanOptimizeStrategy{
 				EnableIncrementalWindow: true,
 			},
-			DisableBufferFullDiscard: true,
+			DisableBufferFullDiscard: &bTrue,
 		},
 		{
 			BufferLength:       100,
@@ -1262,7 +1263,7 @@ func TestSingleSQL(t *testing.T) {
 			PlanOptimizeStrategy: &def.PlanOptimizeStrategy{
 				EnableIncrementalWindow: true,
 			},
-			DisableBufferFullDiscard: true,
+			DisableBufferFullDiscard: &bTrue,
 		},
 		{
 			BufferLength:       100,
@@ -1272,7 +1273,7 @@ func TestSingleSQL(t *testing.T) {
 			PlanOptimizeStrategy: &def.PlanOptimizeStrategy{
 				EnableIncrementalWindow: true,
 			},
-			DisableBufferFullDiscard: true,
+			DisableBufferFullDiscard: &bTrue,
 		},
 	}
 	for _, opt := range options {

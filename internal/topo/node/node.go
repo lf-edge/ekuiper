@@ -67,7 +67,7 @@ func newDefaultNode(name string, options *def.RuleOption) *defaultNode {
 		outputs:                  make(map[string]chan any),
 		concurrency:              c,
 		sendError:                options.SendError,
-		disableBufferFullDiscard: options.DisableBufferFullDiscard,
+		disableBufferFullDiscard: options.DisableBufferFullDiscard != nil && *options.DisableBufferFullDiscard,
 	}
 }
 
@@ -116,6 +116,9 @@ func (o *defaultNode) GetName() string {
 
 func (o *defaultNode) SetQos(qos def.Qos) {
 	o.qos = qos
+	if qos >= def.AtLeastOnce {
+		o.disableBufferFullDiscard = true
+	}
 }
 
 func (o *defaultNode) GetMetrics() []any {
