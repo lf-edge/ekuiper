@@ -130,6 +130,9 @@ func FetchConnection(ctx api.StreamContext, refId, typ string, props map[string]
 	defer globalConnectionManager.Unlock()
 	if _, ok := globalConnectionManager.connectionPool[conId]; ok {
 		conf.Log.Infof("FetchConnection return existed conn %s", conId)
+		if conId != refId {
+			conf.Log.Infof("action=reuse_connection connId=%s type=%s connectionKey=%s rule=%s op=%s refId=%s", conId, typ, conId, ctx.GetRuleId(), ctx.GetOpId(), refId)
+		}
 	} else {
 		if conId != refId {
 			return nil, fmt.Errorf("connection %s not existed", conId)
@@ -341,6 +344,9 @@ func attachConnection(conId string, refId string, sc api.StatusChangeHandler) (*
 		return nil, fmt.Errorf("connection %s not existed", conId)
 	}
 	meta.AddRef(refId, sc)
+	if conId != refId {
+		conf.Log.Infof("action=attach_connection_ref connId=%s type=%s connectionKey=%s refId=%s refCount=%d", conId, meta.Typ, conId, refId, meta.GetRefCount())
+	}
 	return meta.cw, nil
 }
 
@@ -354,7 +360,13 @@ func detachConnection(ctx api.StreamContext, conId string) error {
 	meta.DeRef(refId)
 	globalConnectionManager.connectionPool[conId] = meta
 	conf.Log.Infof("detachConnection remove conn:%v,ref:%v", conId, refId)
+	if conId != refId {
+		conf.Log.Infof("action=detach_connection_ref connId=%s type=%s connectionKey=%s rule=%s op=%s refId=%s refCount=%d", conId, meta.Typ, conId, ctx.GetRuleId(), ctx.GetOpId(), refId, meta.GetRefCount())
+	}
 	if !meta.Named && meta.GetRefCount() == 0 {
+		if conId != refId {
+			conf.Log.Infof("action=close_connection connId=%s type=%s connectionKey=%s rule=%s op=%s reason=zero_ref", conId, meta.Typ, conId, ctx.GetRuleId(), ctx.GetOpId())
+		}
 		close(meta.cw.detachCh)
 		conn, err := meta.cw.Wait(ctx)
 		if conn != nil && err == nil {

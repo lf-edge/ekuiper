@@ -80,6 +80,9 @@ func (ms *Sink) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) erro
 	if err != nil {
 		return err
 	}
+	if ms.adconf.SelId != "" {
+		ctx.GetLogger().Infof("action=use_shared_mqtt_connection role=sink connId=%s connectionKey=%s rule=%s topic=%s", ms.cw.ID, ms.adconf.SelId, ctx.GetRuleId(), ms.adconf.Tpc)
+	}
 	conn, err := ms.cw.Wait(ctx)
 	if conn == nil {
 		return fmt.Errorf("mqtt client not ready: %v", err)
