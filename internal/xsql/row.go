@@ -314,6 +314,16 @@ func (r *RawTuple) Meta(key, table string) (any, bool) {
 	return v, ok
 }
 
+func (r *RawTuple) Clone() *RawTuple {
+	return &RawTuple{
+		Emitter:   r.Emitter,
+		Timestamp: r.Timestamp,
+		Rawdata:   r.Rawdata,
+		Metadata:  r.Metadata,
+		Props:     r.Props,
+	}
+}
+
 var (
 	_ api.RawTuple        = &RawTuple{}
 	_ api.HasDynamicProps = &RawTuple{}
