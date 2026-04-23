@@ -41,6 +41,8 @@ Below is the list of data types supported.
 | 7   | array     | The array type, can be any simple types or array and type.                                                                |
 | 8   | struct    | The complex type.                                 |
 
+eKuiper allows inserting a default clause next to a type definition. The DEFAULT clause allows the engine to insert a default value in absence of the field. This check is done only if strict validation is activated. The DEFAULT clause supports only the following types: STRING, BOOLEAN, FLOAT and BIGINT.
+
 ### Stream Properties
 
 | Property name    | Optional | Description                                                                                                                                                                                                                                 |
@@ -236,4 +238,15 @@ please refer to the [Versioning Logic](../../guide/rules/overview.md#versioning-
 ```sql
 version_stream
 () WITH ( datasource = "topic", FORMAT = "json", VERSION = "1756436910");
+```
+
+### Creating a stream with DEFAULT fields
+
+```sql
+CREATE STREAM demo (
+    temperature FLOAT DEFAULT 12.0,
+    status STRING DEFAULT "unknown",
+    active BOOLEAN DEFAULT false,
+    user_id BIGINT DEFAULT 2
+) WITH (DATASOURCE="sensor/data", FORMAT="JSON", StrictValidation="true");
 ```
