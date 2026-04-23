@@ -129,7 +129,11 @@ func (conn *Connection) onConnect(ctx api.StreamContext) {
 	} else {
 		ctx.GetLogger().Warnf("sc handler has not set yet")
 	}
-	ctx.GetLogger().Infof("The connection to mqtt broker is established")
+	if ctx.GetRuleId() != "" {
+		ctx.GetLogger().Infof("action=mqtt_connection_established connId=%s rule=%s op=%s server=%s", conn.id, ctx.GetRuleId(), ctx.GetOpId(), conn.server)
+	} else {
+		ctx.GetLogger().Infof("action=mqtt_connection_established connId=%s server=%s", conn.id, conn.server)
+	}
 	conn.subscriptions.Range(func(k, v any) bool {
 		topic := k.(string)
 		info := v.(*client.SubscriptionInfo)
@@ -150,7 +154,11 @@ func (conn *Connection) onConnectLost(ctx api.StreamContext, err error) {
 	if handler != nil {
 		handler(api.ConnectionDisconnected, err.Error())
 	}
-	ctx.GetLogger().Infof("%v", err)
+	if ctx.GetRuleId() != "" {
+		ctx.GetLogger().Warnf("action=mqtt_connection_disconnected connId=%s rule=%s op=%s server=%s err=%v", conn.id, ctx.GetRuleId(), ctx.GetOpId(), conn.server, err)
+	} else {
+		ctx.GetLogger().Warnf("action=mqtt_connection_disconnected connId=%s server=%s err=%v", conn.id, conn.server, err)
+	}
 }
 
 func (conn *Connection) onReconnecting(ctx api.StreamContext) {
