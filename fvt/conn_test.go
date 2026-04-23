@@ -520,6 +520,15 @@ func (s *ConnectionTestSuite) TestSinkPing() {
 // and multiple non-shared streams simultaneously, with each rule receiving only the data
 // published to its respective MQTT topic.
 func (s *ConnectionTestSuite) TestSharedConnE2E() {
+	// Start a local mock MQTT broker for this test.
+	mockBroker := mqtt.New(nil)
+	_ = mockBroker.AddHook(new(auth.AllowHook), nil)
+	mockTCP := listeners.NewTCP(listeners.Config{ID: "sharedE2EBroker", Address: ":1884"})
+	s.Require().NoError(mockBroker.AddListener(mockTCP))
+	go func() { _ = mockBroker.Serve() }()
+	defer mockBroker.Close()
+	const localBroker = "tcp://127.0.0.1:1884"
+
 	// Pre-clean any leftover state from a previous interrupted run.
 	client.Delete("rules/sharedE2ERule1")
 	client.Delete("rules/sharedE2ERule2")
@@ -550,9 +559,9 @@ func (s *ConnectionTestSuite) TestSharedConnE2E() {
 	defer pubsub.CloseSourceConsumerChannel(result4Topic, result4Topic)
 	defer pubsub.CloseSourceConsumerChannel(result5Topic, result5Topic)
 
-	// Connect a paho publisher to the shared broker at 127.0.0.1:1883.
+	// Connect a paho publisher to the local mock broker.
 	pahoOpts := pahomqtt.NewClientOptions().
-		AddBroker(MQTTBroker).
+		AddBroker(localBroker).
 		SetClientID("sharedE2EPublisher")
 	publisher := pahomqtt.NewClient(pahoOpts)
 	token := publisher.Connect()
@@ -561,13 +570,13 @@ func (s *ConnectionTestSuite) TestSharedConnE2E() {
 	defer publisher.Disconnect(200)
 
 	s.Run("create connection", func() {
-		connStr := `{
+		connStr := fmt.Sprintf(`{
 			"id": "sharedE2EConn",
 			"typ": "mqtt",
 			"props": {
-				"server": "tcp://127.0.0.1:1883"
+				"server": "%s"
 			}
-		}`
+		}`, localBroker)
 		resp, err := client.Post("connections", connStr)
 		s.Require().NoError(err)
 		s.Require().Equal(http.StatusCreated, resp.StatusCode)
@@ -735,6 +744,15 @@ func (s *ConnectionTestSuite) TestSharedConnE2E() {
 // SubTopo timing the race is probabilistic, but each pattern raises the likelihood that a
 // latent reference-counting gap will be exposed.
 func (s *ConnectionTestSuite) TestSharedConnStaleSubscription() {
+	// Start a local mock MQTT broker for this test.
+	mockBroker := mqtt.New(nil)
+	_ = mockBroker.AddHook(new(auth.AllowHook), nil)
+	mockTCP := listeners.NewTCP(listeners.Config{ID: "staleBroker", Address: ":1885"})
+	s.Require().NoError(mockBroker.AddListener(mockTCP))
+	go func() { _ = mockBroker.Serve() }()
+	defer mockBroker.Close()
+	const localBroker = "tcp://127.0.0.1:1885"
+
 	client.Delete("rules/staleRule1")
 	client.Delete("rules/staleRule2")
 	client.Delete("streams/staleStream")
@@ -750,7 +768,7 @@ func (s *ConnectionTestSuite) TestSharedConnStaleSubscription() {
 	defer pubsub.CloseSourceConsumerChannel(staleTopic2, staleTopic2)
 
 	pahoOpts := pahomqtt.NewClientOptions().
-		AddBroker(MQTTBroker).
+		AddBroker(localBroker).
 		SetClientID("staleConnPublisher")
 	publisher := pahomqtt.NewClient(pahoOpts)
 	tok := publisher.Connect()
@@ -766,7 +784,7 @@ func (s *ConnectionTestSuite) TestSharedConnStaleSubscription() {
 	}
 
 	s.Run("setup", func() {
-		resp, err := client.Post("connections", `{"id":"staleConn","typ":"mqtt","props":{"server":"tcp://127.0.0.1:1883"}}`)
+		resp, err := client.Post("connections", fmt.Sprintf(`{"id":"staleConn","typ":"mqtt","props":{"server":"%s"}}`, localBroker))
 		s.Require().NoError(err)
 		s.Require().Equal(http.StatusCreated, resp.StatusCode)
 
