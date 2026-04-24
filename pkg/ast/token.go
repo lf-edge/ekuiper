@@ -110,6 +110,7 @@ const (
 	OVER
 	PARTITION
 	INVISIBLE
+	DEFAULT
 
 	TRUE
 	FALSE
@@ -188,6 +189,7 @@ var Tokens = []string{
 	OVER:      "OVER",
 	PARTITION: "PARTITION",
 	INVISIBLE: "INVISIBLE",
+	DEFAULT:   "DEFAULT",
 
 	AND:        "AND",
 	OR:         "OR",

@@ -211,6 +211,8 @@ func (s *Scanner) ScanIdent() (tok ast.Token, lit string) {
 		return ast.WHEN, lit
 	case "THEN":
 		return ast.THEN, lit
+	case "DEFAULT":
+		return ast.DEFAULT, lit
 	case "ELSE":
 		return ast.ELSE, lit
 	case "END":
