@@ -4672,8 +4672,9 @@ func TestCheckSharedSourceOption(t *testing.T) {
 			},
 		},
 	}
+	b := true
 	r1 := &def.RuleOption{
-		DisableBufferFullDiscard: true,
+		DisableBufferFullDiscard: &b,
 	}
 	require.Error(t, checkSharedSourceOption(s1, r1))
 }
