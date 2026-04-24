@@ -52,6 +52,7 @@ const (
 type KafkaSink struct {
 	props          map[string]any
 	writer         *kafkago.Writer
+	transport      *kafkago.Transport
 	kc             *kafkaConf
 	tlsConfig      *tls.Config
 	headersMap     map[string]string
@@ -209,6 +210,11 @@ func (k *KafkaSink) ping(address string) error {
 
 func (k *KafkaSink) buildKafkaWriter(ctx api.StreamContext) {
 	brokers := strings.Split(k.kc.Brokers, ",")
+	transport := &kafkago.Transport{
+		SASL: k.mechanism,
+		TLS:  k.tlsConfig,
+	}
+	k.transport = transport
 	w := &kafkago.Writer{
 		Addr: kafkago.TCP(brokers...),
 		// kafka java-client default balancer
@@ -220,19 +226,21 @@ func (k *KafkaSink) buildKafkaWriter(ctx api.StreamContext) {
 		BatchSize:              k.kc.BatchSize,
 		BatchBytes:             k.kc.BatchBytes,
 		BatchTimeout:           k.kc.BatchTimeout,
-		Transport: &kafkago.Transport{
-			SASL: k.mechanism,
-			TLS:  k.tlsConfig,
-		},
-		Compression: toCompression(k.kc.Compression),
-		RuleID:      ctx.GetRuleId(),
-		OpID:        ctx.GetOpId(),
+		Transport:              transport,
+		Compression:            toCompression(k.kc.Compression),
+		RuleID:                 ctx.GetRuleId(),
+		OpID:                   ctx.GetOpId(),
 	}
 	k.writer = w
 }
 
 func (k *KafkaSink) Close(ctx api.StreamContext) error {
-	return k.writer.Close()
+	err := k.writer.Close()
+	if k.transport != nil {
+		k.transport.CloseIdleConnections()
+		k.transport = nil
+	}
+	return err
 }
 
 func (k *KafkaSink) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) error {
