@@ -128,10 +128,14 @@ jobs:
   run_fvt_tests:
     uses: ./.github/workflows/run_fvt_tests.yaml
 
+  run_kafka_fvt_tests:
+    uses: ./.github/workflows/run_kafka_fvt_tests.yaml
+
   upload_coverage:
     needs:
       - run_unit_tests
       - run_fvt_tests
+      - run_kafka_fvt_tests
     runs-on: ubuntu-latest
     steps:
       - name: Download ut coverage reports

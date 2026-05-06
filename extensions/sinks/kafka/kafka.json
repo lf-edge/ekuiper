@@ -21,10 +21,27 @@
   ],
   "properties": [
     {
+      "name": "connectionSelector",
+      "default": "",
+      "optional": true,
+      "control": "select",
+      "type": "string",
+      "values": [],
+      "hint": {
+        "en_US": "specify the source to reuse the connection defined in connection configuration.",
+        "zh_CN": "复用 connection 中定义的连接"
+      },
+      "label": {
+        "en_US": "Connection selector",
+        "zh_CN": "复用连接信息"
+      }
+    },
+    {
       "name": "brokers",
       "default": "127.0.0.1:9092,127.0.0.2:9092",
       "optional": false,
       "control": "text",
+      "connection_related": true,
       "type": "string",
       "hint": {
         "en_US": "The url of the Kafka broker list",
@@ -70,6 +87,7 @@
       "default": "none",
       "optional": false,
       "control": "select",
+      "connection_related": true,
       "values": [
         "none",
         "plain",
@@ -90,6 +108,7 @@
       "default": "",
       "optional": true,
       "control": "text",
+      "connection_related": true,
       "type": "string",
       "hint": {
         "en_US": "Sasl username for authentication",
@@ -105,6 +124,7 @@
       "default": "",
       "optional": true,
       "control": "text",
+      "connection_related": true,
       "type": "string",
       "hint": {
         "en_US": "Sasl password for authentication",
@@ -168,6 +188,7 @@
       "default": true,
       "optional": true,
       "control": "radio",
+      "connection_related": true,
       "type": "bool",
       "hint": {
         "en_US": "Control if to skip the certification verification. If it is set to true, then skip certification verification; Otherwise, verify the certification.",
