@@ -119,10 +119,21 @@ func TestKafkaConnectionSelectorSinkE2E(t *testing.T) {
 	defer cancel()
 	msg, err := reader.ReadMessage(readCtx)
 	require.NoError(t, err)
-	var got map[string]any
-	require.NoError(t, json.Unmarshal(msg.Value, &got), "kafka payload: %s", string(msg.Value))
+	got := decodeKafkaPayload(t, msg.Value)
 	require.Equal(t, float64(42), got["v"])
 	require.Equal(t, "memory", got["source"])
+}
+
+func decodeKafkaPayload(t *testing.T, payload []byte) map[string]any {
+	t.Helper()
+	var got map[string]any
+	if err := json.Unmarshal(payload, &got); err == nil {
+		return got
+	}
+	var batch []map[string]any
+	require.NoError(t, json.Unmarshal(payload, &batch), "kafka payload: %s", string(payload))
+	require.Len(t, batch, 1, "kafka payload: %s", string(payload))
+	return batch[0]
 }
 
 func cleanupKafkaConnectionSelectorFVT(t *testing.T) {
