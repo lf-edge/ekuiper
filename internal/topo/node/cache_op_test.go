@@ -23,7 +23,6 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"golang.org/x/exp/maps"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
@@ -174,7 +173,9 @@ func TestRunError(t *testing.T) {
 	assert.Error(t, err)
 	assert.True(t, strings.Contains(err.Error(), "cache op should have only 1 output but got"), err.Error())
 	// Test done
-	maps.Clear(op.outputs)
+	for name := range op.outputs {
+		delete(op.outputs, name)
+	}
 	err = op.AddOutput(make(chan any, 2), "output1")
 	assert.NoError(t, err)
 	op.Exec(ctx, errCh)
