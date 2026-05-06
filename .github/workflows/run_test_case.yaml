@@ -143,6 +143,9 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y ffmpeg libzmq3-dev pkg-config
+      - name: Prepare eKuiper runtime directories
+        run: |
+          mkdir -p data log plugins/sources plugins/sinks plugins/functions
       - name: Start Redpanda
         run: |
           docker run -d --name redpanda \
