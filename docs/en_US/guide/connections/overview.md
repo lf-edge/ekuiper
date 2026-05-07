@@ -17,6 +17,7 @@ eKuiper v2 introduced an internal connection pool component and adapted a series
 - SQL Connection
 - HTTP Connection (including REST sink, HTTP Pull source, and HTTP push source connections)
 - WebSocket Connection
+- Kafka Connection
 
 Other connection types may be gradually integrated in subsequent versions. Connection types integrated into the
 connection pool can be independently created via API and accessed.
@@ -89,7 +90,7 @@ demo_conf: #Conf_key
 #Override the global configurations
 demo2_conf: #Conf_key
   qos: 0
-  connentionSelector: mqttcon1
+  connectionSelector: mqttcon1
   servers: [ tcp://10.211.55.6:1883, tcp://127.0.0.1 ]
 ```
 
@@ -118,7 +119,12 @@ will trigger the subscription.
 
 :::
 
-You can also reuse the defined connection resource in the rule's action via `connentionSelector`.
+You can also reuse the defined connection resource in the rule's action via `connectionSelector`.
+
+For Kafka sinks, `connectionSelector` can be used to reuse a Kafka connection resource. The Kafka connection is used to
+manage connection status and verify broker connectivity by pinging the configured brokers. When a Kafka sink references
+the connection, connection-related properties such as `brokers`, SASL, and TLS settings are copied from the selected
+connection. The sink still creates its own Kafka producer for publishing messages.
 
 ## Connection Status
 

@@ -6,7 +6,7 @@ Source/Sink in rules can be created and managed independently in the form of con
 
 ### Create connection
 
-To create a connection, provide the connection's id, type, and configuration parameters. Currently, `mqtt`/`nng`/`httppush`/`websocket`/`edgex`/`sql` type connections are supported. Here we take creating an mqtt connection as an example.
+To create a connection, provide the connection's id, type, and configuration parameters. Currently, `mqtt`/`nng`/`httppush`/`websocket`/`edgex`/`sql`/`kafka` type connections are supported. Here we take creating an mqtt connection as an example.
 
 ```shell
 POST http://localhost:9081/connections
@@ -19,9 +19,23 @@ POST http://localhost:9081/connections
 }
 ```
 
+To create a Kafka connection, use `kafka` as the connection type and provide the Kafka connection properties in `props`.
+
+```shell
+POST http://localhost:9081/connections
+{
+  "id": "kafka-1",
+  "typ": "kafka",
+  "props": {
+    "brokers": "127.0.0.1:9092",
+    "saslAuthType": "none"
+  }
+}
+```
+
 ### Update connection
 
-To update a connection, provide the connection's id, type, and configuration parameters. Currently, `mqtt`/`nng`/`httppush`/`websocket`/`edgex`/`sql` types of connections are supported. Here we take updating the mqtt connection as an example. If the connection is referenced by a rule, it cannot be updated.
+To update a connection, provide the connection's id, type, and configuration parameters. Currently, `mqtt`/`nng`/`httppush`/`websocket`/`edgex`/`sql`/`kafka` types of connections are supported. Here we take updating the mqtt connection as an example. If the connection is referenced by a rule, it cannot be updated.
 
 ```shell
 PUT http://localhost:9081/connections/connection-1

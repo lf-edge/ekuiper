@@ -14,6 +14,7 @@ v2 增加了内部的连接池组件，并适配了一系列连接类型：
 - SQL 连接
 - HTTP 连接 （包括 REST sink，HTTP Pull source，HTTP push source 使用的连接）
 - WebSocket 连接
+- Kafka 连接
 
 其余连接类型可能会在后续版本中陆续接入。接入连接池的连接类型可通过 API 进行资源的独立创建，并获取 API。
 
@@ -73,7 +74,7 @@ demo_conf: #Conf_key
 #Override the global configurations
 demo2_conf: #Conf_key
    qos: 0
-   connentionSelector: mqttcon1
+   connectionSelector: mqttcon1
    servers: [ tcp://10.211.55.6:1883, tcp://127.0.0.1 ]
 ```
 
@@ -99,7 +100,11 @@ demo2 (
 
 :::
 
-也可以在规则的 action 中，通过 connentionSelector 重用定义的连接资源。
+也可以在规则的 action 中，通过 `connectionSelector` 重用定义的连接资源。
+
+对于 Kafka sink，可以通过 `connectionSelector` 重用 Kafka 连接资源。Kafka 连接用于管理连接状态，并通过 ping 配置的 broker
+来验证连通性。当 Kafka sink 引用该连接时，`brokers`、SASL、TLS 等连接相关配置会从选中的连接中复制。sink 仍会创建自己的 Kafka
+producer 用于发送消息。
 
 ## 连接状态
 
