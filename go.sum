@@ -373,8 +373,8 @@ github.com/apache/arrow/go/v15 v15.0.2/go.mod h1:DGXsR3ajT524njufqf95822i+KTh+ye
 github.com/apache/calcite-avatica-go/v5 v5.3.0 h1:7Gooh7opt3TObRe7WstTWbQGaA16ERjzoGeB26l3s/w=
 github.com/apache/calcite-avatica-go/v5 v5.3.0/go.mod h1:xgozzeFAHCh2ZZ7NCrD4CHx9waunSMOMXLDZRj9Gn3s=
 github.com/apache/thrift v0.17.0/go.mod h1:OLxhMRJxomX+1I/KUw03qoV3mMz16BwaKI+d4fPBx7Q=
-github.com/apache/thrift v0.22.0 h1:r7mTJdj51TMDe6RtcmNdQxgn9XcyfGDOzegMDRg47uc=
-github.com/apache/thrift v0.22.0/go.mod h1:1e7J/O1Ae6ZQMTYdy9xa3w9k+XHWPfRvdPyJeynQ+/g=
+github.com/apache/thrift v0.23.0 h1:wKR6YnefQSEnxpEfmgTPuJibNG4bF0p2TK34tHLWi3s=
+github.com/apache/thrift v0.23.0/go.mod h1:zPt6WxgvTOM6hF92y8C+MkEM5LMxZuk4JcQOiU4Esvs=
 github.com/apapsch/go-jsonmerge/v2 v2.0.0 h1:axGnT1gRIfimI7gJifB699GoE/oq+F2MU7Dml6nw9rQ=
 github.com/apapsch/go-jsonmerge/v2 v2.0.0/go.mod h1:lvDnEdqiQrp0O42VQGgmlKpxL1AP2+08jFMw88y4klk=
 github.com/apple/foundationdb/bindings/go v0.0.0-20250221231555-5140696da2df h1:XlE/l8moueBRTJr7xt0/9f0HJ1FaLupzguIKoj0a74g=
