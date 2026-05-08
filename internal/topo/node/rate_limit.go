@@ -220,8 +220,8 @@ func (o *RateLimitOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 						o.Broadcast(val)
 						o.onSend(ctx, val)
 						o.latest = nil
-						for key := range o.frameSet {
-							delete(o.frameSet, key)
+						for k := range o.frameSet {
+							delete(o.frameSet, k)
 						}
 					} else {
 						ctx.GetLogger().Debugf("ratelimit had nothing to sent at %d", t.UnixMilli())

@@ -173,9 +173,10 @@ func TestRunError(t *testing.T) {
 	assert.Error(t, err)
 	assert.True(t, strings.Contains(err.Error(), "cache op should have only 1 output but got"), err.Error())
 	// Test done
-	for name := range op.outputs {
-		delete(op.outputs, name)
+	for k := range op.outputs {
+		delete(op.outputs, k)
 	}
+
 	err = op.AddOutput(make(chan any, 2), "output1")
 	assert.NoError(t, err)
 	op.Exec(ctx, errCh)
