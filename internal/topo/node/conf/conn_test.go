@@ -44,3 +44,26 @@ func TestOverwriteProps(t *testing.T) {
 	_, err = OverwriteByConnectionConf("mqtt", oldProps)
 	require.Error(t, err)
 }
+
+func TestOverwriteKafkaConnectionProps(t *testing.T) {
+	conf.IsTesting = true
+	connProps := map[string]interface{}{
+		"brokers":      "127.0.0.1:9092",
+		"saslAuthType": "plain",
+		"saslUserName": "user",
+		"password":     "secret",
+	}
+	require.NoError(t, conf.WriteCfgIntoKVStorage("connections", "kafka", "kafkaConn1", connProps))
+	sinkProps := map[string]interface{}{
+		"connectionSelector": "kafkaConn1",
+		"topic":              "test-topic",
+	}
+
+	newProps, err := OverwriteByConnectionConf("kafka", sinkProps)
+	require.NoError(t, err)
+	require.Equal(t, "kafkaConn1", newProps["connectionSelector"])
+	require.Equal(t, "test-topic", newProps["topic"])
+	for k, v := range connProps {
+		require.Equal(t, v, newProps[k])
+	}
+}

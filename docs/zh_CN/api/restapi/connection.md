@@ -6,7 +6,7 @@
 
 ### 创建连接
 
-创建连接去要提供连接的 id, 类型和配置参数。目前已经支持了 `mqtt`/`nng`/`httppush`/`websocket`/`edgex`/`sql` 类型的连接，这里以创建 mqtt 连接为例。
+创建连接需要提供连接的 id、类型和配置参数。目前已经支持了 `mqtt`/`nng`/`httppush`/`websocket`/`edgex`/`sql`/`kafka` 类型的连接，这里以创建 mqtt 连接为例。
 
 ```shell
 POST http://localhost:9081/connections
@@ -19,9 +19,23 @@ POST http://localhost:9081/connections
 }
 ```
 
+创建 Kafka 连接时，将连接类型设置为 `kafka`，并在 `props` 中提供 Kafka 连接配置。
+
+```shell
+POST http://localhost:9081/connections
+{
+  "id": "kafka-1",
+  "typ": "kafka",
+  "props": {
+    "brokers": "127.0.0.1:9092",
+    "saslAuthType": "none"
+  }
+}
+```
+
 ### 更新连接
 
-更新连接要提供连接的 id, 类型和配置参数。目前已经支持了 `mqtt`/`nng`/`httppush`/`websocket`/`edgex`/`sql` 类型的连接，这里以更新 mqtt 连接为例。如果连接被规则引用中，则无法被更新。
+更新连接要提供连接的 id、类型和配置参数。目前已经支持了 `mqtt`/`nng`/`httppush`/`websocket`/`edgex`/`sql`/`kafka` 类型的连接，这里以更新 mqtt 连接为例。如果连接被规则引用中，则无法被更新。
 
 ```shell
 PUT http://localhost:9081/connections/connection-1

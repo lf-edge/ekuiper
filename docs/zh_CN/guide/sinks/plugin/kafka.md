@@ -56,7 +56,8 @@ $(PLUGINS_CUSTOM):
 
 | 属性名称               | 是否可选 | 说明                                                                            |
 |--------------------|------|-------------------------------------------------------------------------------|
-| brokers            | 否    | broker地址列表 ,用 "," 分割                                                          |
+| connectionSelector | 是    | 重用选中的 Kafka 连接。设置该参数后，`brokers`、SASL、TLS 等 Kafka 连接相关配置会从选中的连接中复制。          |
+| brokers            | 是    | broker 地址列表，用 "," 分割。未设置 `connectionSelector` 时必填。                              |
 | topic              | 否    | kafka 主题                                                                      |
 | saslAuthType       | 否    | sasl 认证类型 , 支持none，plain，scram                                                |
 | saslUserName       | 是    | sasl 用户名                                                                      |
@@ -78,6 +79,45 @@ $(PLUGINS_CUSTOM):
 其他通用的 sink 属性也支持，请参阅[公共属性](../overview.md#公共属性)。
 
 你可以通过 api 的方式提前检查对应 sink 端点的连通性: [连通性检查](../../../api/restapi/connection.md#连通性检查)
+
+### 连接重用
+
+可以创建 Kafka 连接，并在 Kafka sink 中通过 `connectionSelector` 重用其中的连接相关配置。Kafka 连接会 ping 配置的 broker
+并管理连接状态。Kafka sink 会复制选中连接的配置，并创建自己的 Kafka producer 用于发送消息。
+
+创建 Kafka 连接：
+
+```shell
+POST http://localhost:9081/connections
+{
+  "id": "kafka-1",
+  "typ": "kafka",
+  "props": {
+    "brokers": "127.0.0.1:9092",
+    "saslAuthType": "none"
+  }
+}
+```
+
+在 Kafka sink 中使用该连接：
+
+```json
+{
+  "id": "kafka",
+  "sql": "SELECT * FROM demo_stream",
+  "actions": [
+    {
+      "kafka": {
+        "connectionSelector": "kafka-1",
+        "topic": "test_topic"
+      }
+    }
+  ]
+}
+```
+
+设置 `connectionSelector` 后，sink action 中直接配置的连接相关参数会被忽略，包括 `brokers`、`saslAuthType`、`saslUserName`、`password`、`insecureSkipVerify`
+以及 TLS 证书相关参数。
 
 ### 设置 key 和 headers
 

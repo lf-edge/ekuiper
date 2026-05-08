@@ -56,7 +56,8 @@ Restart the eKuiper server to activate the plugin.
 
 | Property name      | Optional | Description                                                                                                                                                                                       |
 |--------------------|----------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| brokers            | false    | The broker address list ,split with ","                                                                                                                                                           |
+| connectionSelector | true     | Reuse the selected Kafka connection. When this property is set, Kafka connection-related properties such as `brokers`, SASL, and TLS settings are copied from the selected connection.             |
+| brokers            | true     | The broker address list, split with ",". Required when `connectionSelector` is not set.                                                                                                            |
 | topic              | false    | The topic of the Kafka                                                                                                                                                                            |
 | saslAuthType       | false    | The Kafka sasl authType, support none,plain,scram                                                                                                                                                 |
 | saslUserName       | true     | The sasl user name                                                                                                                                                                                |
@@ -76,6 +77,46 @@ Restart the eKuiper server to activate the plugin.
 | batchBytes         | true     | Set the maximum number of bytes for Kafka client to send batch messages to the server, default is 1048576         |
 
 You can check the connectivity of the corresponding sink endpoint in advance through the API: [Connectivity Check](../../../api/restapi/connection.md#connectivity-check)
+
+### Connection Reuse
+
+You can create a Kafka connection and reuse its connection-related properties in Kafka sinks through
+`connectionSelector`. The Kafka connection is used to ping the configured brokers and manage connection status. The
+Kafka sink copies the selected connection's configuration and creates its own Kafka producer for publishing messages.
+
+Create a Kafka connection:
+
+```shell
+POST http://localhost:9081/connections
+{
+  "id": "kafka-1",
+  "typ": "kafka",
+  "props": {
+    "brokers": "127.0.0.1:9092",
+    "saslAuthType": "none"
+  }
+}
+```
+
+Use the connection in a Kafka sink:
+
+```json
+{
+  "id": "kafka",
+  "sql": "SELECT * FROM demo_stream",
+  "actions": [
+    {
+      "kafka": {
+        "connectionSelector": "kafka-1",
+        "topic": "test_topic"
+      }
+    }
+  ]
+}
+```
+
+When `connectionSelector` is set, the sink ignores connection-related properties configured directly in the sink action,
+including `brokers`, `saslAuthType`, `saslUserName`, `password`, `insecureSkipVerify`, and TLS certificate properties.
 
 ### Setting Kafka Key and Headers
 

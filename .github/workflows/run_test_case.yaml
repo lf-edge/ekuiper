@@ -128,10 +128,72 @@ jobs:
   run_fvt_tests:
     uses: ./.github/workflows/run_fvt_tests.yaml
 
+  run_kafka_fvt_tests:
+    name: Run Kafka fvt tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      DEBIAN_FRONTEND: noninteractive
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25.4'
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg libzmq3-dev pkg-config
+      - name: Prepare eKuiper runtime directories
+        run: |
+          mkdir -p data log plugins/sources plugins/sinks plugins/functions
+      - name: Start Redpanda
+        run: |
+          docker run -d --name redpanda \
+            -p 9092:9092 \
+            docker.redpanda.com/redpandadata/redpanda:v24.3.6 \
+            redpanda start \
+            --overprovisioned \
+            --smp 1 \
+            --memory 512M \
+            --reserve-memory 0M \
+            --node-id 0 \
+            --check=false \
+            --kafka-addr PLAINTEXT://0.0.0.0:9092 \
+            --advertise-kafka-addr PLAINTEXT://127.0.0.1:9092 \
+            --set redpanda.auto_create_topics_enabled=true
+      - name: Wait for Redpanda
+        run: |
+          for i in {1..60}; do
+            if docker exec redpanda rpk cluster info >/dev/null 2>&1; then
+              exit 0
+            fi
+            sleep 1
+          done
+          docker logs redpanda
+          exit 1
+      - name: Run Kafka connection selector FVT
+        env:
+          FVT_KAFKA_BROKER: 127.0.0.1:9092
+          KUIPER__BASIC__ALLOWEXTERNALFILEACCESS: "true"
+        run: |
+          go test -trimpath -race -tags="full deadlock" -count=1 -v ./fvt -run TestKafkaConnectionSelectorSinkE2E
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: kafka_fvt_stream_log
+          path: log/stream.log
+      - name: Dump Redpanda logs
+        if: failure()
+        run: docker logs redpanda
+      - name: Stop Redpanda
+        if: always()
+        run: docker rm -f redpanda
+
   upload_coverage:
     needs:
       - run_unit_tests
       - run_fvt_tests
+      - run_kafka_fvt_tests
     runs-on: ubuntu-latest
     steps:
       - name: Download ut coverage reports
