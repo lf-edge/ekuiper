@@ -39,6 +39,11 @@ type ProjectOp struct {
 	IsAggregate bool // Whether the project is used in an aggregate context. This is set by planner by analyzing the SQL query
 	EnableLimit bool
 	LimitCount  int
+	// ExprIndices holds the SinkContent output slot index for each entry in
+	// ExprFields when operating in slice-tuple mode.  Each ExprField (a
+	// non-alias, non-FieldRef expression) gets a dedicated sink slot whose
+	// position is pre-computed by the planner.
+	ExprIndices []int
 
 	SendMeta bool
 	SendNil  bool
@@ -147,22 +152,49 @@ func (pp *ProjectOp) project(row xsql.RawRow, ve *xsql.ValuerEval) error {
 				// so that the encoder can treat it differently from nil
 				vi = cast.TNil
 			}
-			fr := f.Expr.(*ast.FieldRef)
+			fr, ok := f.Expr.(*ast.FieldRef)
+			if !ok {
+				return fmt.Errorf("alias field %q has no sink index in slice mode: expression type %T is not a FieldRef; ensure the rule uses the SQL planner path", f.AName, f.Expr)
+			}
 			rt.SetByIndex(fr.Index, vi)
+		}
+		// Evaluate expressions that are not plain field references (e.g. CASE WHEN,
+		// arithmetic, function calls without alias).  Their dedicated output slots
+		// are pre-assigned by the planner and stored in ExprIndices.
+		exprIndex := 0
+		for _, f := range pp.ExprFields {
+			if f.Invisible {
+				continue
+			}
+			vi := ve.Eval(f.Expr)
+			if e, ok := vi.(error); ok {
+				return fmt.Errorf("expr: %s meet error, err:%v", f.Expr.String(), e)
+			}
+			if pp.SendNil && vi == nil {
+				vi = cast.TNil
+			}
+			if exprIndex >= len(pp.ExprIndices) {
+				return fmt.Errorf("expr %q has no pre-assigned sink slot in slice mode: ExprIndices length %d < ExprFields length %d; ensure the rule uses the SQL planner path", f.Expr.String(), len(pp.ExprIndices), len(pp.ExprFields))
+			}
+			rt.SetByIndex(pp.ExprIndices[exprIndex], vi)
+			exprIndex++
 		}
 		for _, f := range pp.Fields {
 			if f.AName == "" {
+				fr, ok := f.Expr.(*ast.FieldRef)
+				if !ok {
+					// ExprField: already handled in the ExprFields loop above.
+					continue
+				}
 				vi := ve.Eval(f.Expr)
 				if e, ok := vi.(error); ok {
 					return fmt.Errorf("expr: %s meet error, err:%v", f.Expr.String(), e)
 				}
-				// TODO deal with other types
 				if pp.SendNil && vi == nil {
 					// set it to a typed nil to distinguish from nil
 					// so that the encoder can treat it differently from nil
 					vi = cast.TNil
 				}
-				fr := f.Expr.(*ast.FieldRef)
 				rt.SetByIndex(fr.Index, vi)
 			}
 		}

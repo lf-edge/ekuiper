@@ -996,3 +996,21 @@ func TestPlannerGraphWithStream(t *testing.T) {
 		})
 	}
 }
+
+func TestPlanByGraphRejectSliceTuple(t *testing.T) {
+	_, err := PlanByGraph(&def.Rule{
+		Id: "test",
+		Graph: &def.RuleGraph{
+			Nodes: map[string]*def.GraphNode{},
+		},
+		Options: &def.RuleOption{
+			Experiment: &def.ExpOpts{UseSliceTuple: true},
+		},
+	})
+	if err == nil {
+		t.Fatal("expected graph slice-tuple mode error, got nil")
+	}
+	if err.Error() != "graph mode does not support slice-tuple mode" {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
