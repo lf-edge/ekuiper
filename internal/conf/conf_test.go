@@ -112,17 +112,17 @@ func TestRuleOptionValidate(t *testing.T) {
 				Qos: def.AtLeastOnce,
 			},
 			e: &def.RuleOption{
-				Qos: def.AtLeastOnce,
+				Qos:                      def.AtLeastOnce,
 				DisableBufferFullDiscard: func() *bool { b := true; return &b }(),
 			},
 		},
 		{
 			s: &def.RuleOption{
-				Qos: def.AtLeastOnce,
+				Qos:                      def.AtLeastOnce,
 				DisableBufferFullDiscard: func() *bool { b := false; return &b }(),
 			},
 			e: &def.RuleOption{
-				Qos: def.AtLeastOnce,
+				Qos:                      def.AtLeastOnce,
 				DisableBufferFullDiscard: func() *bool { b := false; return &b }(),
 			},
 			err: "invalidDisableBufferFullDiscard:disableBufferFullDiscard must be true when qos is 1 or higher",

@@ -27,7 +27,7 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
-	"github.com/yisaer/file-rotatelogs"
+	rotatelogs "github.com/yisaer/file-rotatelogs"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf/logger"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
