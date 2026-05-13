@@ -32,7 +32,7 @@ var (
 	lock        syncx.Mutex
 )
 
-func GetOrCreateSubTopo(ctx api.StreamContext, name string, isSliceMode bool) (*SrcSubTopo, bool) {
+func GetOrCreateSubTopo(ctx api.StreamContext, name string, isSliceMode bool, init func(*SrcSubTopo) error) (*SrcSubTopo, bool, error) {
 	lock.Lock()
 	defer lock.Unlock()
 	ac, ok := subTopoPool[name]
@@ -47,10 +47,15 @@ func GetOrCreateSubTopo(ctx api.StreamContext, name string, isSliceMode bool) (*
 			refRules:    make(map[string]map[int]chan<- error),
 			isSliceMode: isSliceMode,
 		}
+		if init != nil {
+			if err := init(ac); err != nil {
+				return nil, false, err
+			}
+		}
 		subTopoPool[name] = ac
 	}
 	ac.Init(ctx)
-	return ac, ok
+	return ac, ok, nil
 }
 
 func RemoveSubTopo(name string) {
