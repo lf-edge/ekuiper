@@ -15,7 +15,9 @@
 package topo
 
 import (
+	"errors"
 	"fmt"
+	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -33,13 +35,15 @@ import (
 func TestSubtopoLC(t *testing.T) {
 	ctx1 := mockContext.NewMockContext("rule1", "abc").WithRun(1)
 	assert.Equal(t, 0, len(subTopoPool))
-	subTopo, existed := GetOrCreateSubTopo(ctx1, "lc", false)
-	assert.False(t, existed)
-	// Test creation
 	srcNode := &mockSrc{name: "shared"}
 	opNode := &mockOp{name: "op1", ch: make(chan any)}
-	subTopo.AddSrc(srcNode)
-	subTopo.AddOperator([]node.Emitter{srcNode}, opNode)
+	subTopo, err := GetOrCreateSubTopo(ctx1, "lc", false, func(subTopo *SrcSubTopo) error {
+		subTopo.AddSrc(srcNode)
+		subTopo.AddOperator([]node.Emitter{srcNode}, opNode)
+		return nil
+	})
+	assert.NoError(t, err)
+	// Test creation
 	subTopo.StoreSchema("rule1", "shared", map[string]*ast.JsonStreamField{
 		"field1": {Type: "string"},
 	}, false)
@@ -65,8 +69,8 @@ func TestSubtopoLC(t *testing.T) {
 	assert.Equal(t, 1, opNode.schemaCount)
 	// Run another
 	ctx2 := mockContext.NewMockContext("rule2", "abc").WithRun(2)
-	subTopo2, existed := GetOrCreateSubTopo(ctx2, "lc", false)
-	assert.True(t, existed)
+	subTopo2, err := GetOrCreateSubTopo(ctx2, "lc", false, nil)
+	assert.NoError(t, err)
 	assert.Equal(t, subTopo, subTopo2)
 	subTopo.StoreSchema("rule2", "shared", map[string]*ast.JsonStreamField{
 		"field2": {Type: "string"},
@@ -84,7 +88,7 @@ func TestSubtopoLC(t *testing.T) {
 	assert.Equal(t, metrics, vv)
 	// Append to rule
 	och := make(chan any)
-	err := subTopo.AddOutput(och, "opp")
+	err = subTopo.AddOutput(och, "opp")
 	assert.NoError(t, err)
 	var ochOut chan<- any = och
 	assert.Equal(t, 1, len(opNode.outputs))
@@ -112,20 +116,107 @@ func TestSubtopoLC(t *testing.T) {
 	assert.Equal(t, 0, len(subTopoPool))
 }
 
+func TestGetOrCreateSubTopoDoesNotExposePartialSubTopo(t *testing.T) {
+	origPool := subTopoPool
+	subTopoPool = make(map[string]*SrcSubTopo)
+	defer func() { subTopoPool = origPool }()
+
+	ctx1 := mockContext.NewMockContext("rule1", "abc").WithRun(1)
+	ctx2 := mockContext.NewMockContext("rule2", "abc").WithRun(2)
+	srcNode := &mockSrc{name: "shared"}
+
+	initStarted := make(chan struct{})
+	releaseInit := make(chan struct{})
+	creatorDone := make(chan struct{})
+	var creatorTopo *SrcSubTopo
+	var creatorErr error
+	go func() {
+		creatorTopo, creatorErr = GetOrCreateSubTopo(ctx1, "initRace", false, func(subTopo *SrcSubTopo) error {
+			close(initStarted)
+			<-releaseInit
+			subTopo.AddSrc(srcNode)
+			return nil
+		})
+		close(creatorDone)
+	}()
+
+	<-initStarted
+
+	secondStarted := make(chan struct{})
+	loadedDone := make(chan struct{})
+	var secondInitCalled atomic.Bool
+	var loadedTopo *SrcSubTopo
+	var loadedErr error
+	go func() {
+		close(secondStarted)
+		loadedTopo, loadedErr = GetOrCreateSubTopo(ctx2, "initRace", false, func(subTopo *SrcSubTopo) error {
+			secondInitCalled.Store(true)
+			subTopo.AddSrc(&mockSrc{name: "unexpected"})
+			return nil
+		})
+		close(loadedDone)
+	}()
+	<-secondStarted
+
+	select {
+	case <-loadedDone:
+		t.Fatal("second caller observed the subtopo before the creator finished initialization")
+	case <-time.After(20 * time.Millisecond):
+	}
+
+	close(releaseInit)
+	select {
+	case <-creatorDone:
+	case <-time.After(time.Second):
+		t.Fatal("creator did not finish")
+	}
+	select {
+	case <-loadedDone:
+	case <-time.After(time.Second):
+		t.Fatal("second caller did not finish")
+	}
+
+	assert.NoError(t, creatorErr)
+	assert.NoError(t, loadedErr)
+	assert.False(t, secondInitCalled.Load())
+	assert.Equal(t, creatorTopo, loadedTopo)
+	assert.Equal(t, srcNode, loadedTopo.tail)
+	assert.Equal(t, 2, len(loadedTopo.refRules))
+}
+
+func TestGetOrCreateSubTopoWrapsInitError(t *testing.T) {
+	origPool := subTopoPool
+	subTopoPool = make(map[string]*SrcSubTopo)
+	defer func() { subTopoPool = origPool }()
+
+	ctx := mockContext.NewMockContext("rule1", "abc").WithRun(1)
+	initErr := errors.New("boom")
+	subTopo, err := GetOrCreateSubTopo(ctx, "badInit", true, func(subTopo *SrcSubTopo) error {
+		return initErr
+	})
+	assert.Nil(t, subTopo)
+	assert.ErrorIs(t, err, initErr)
+	assert.True(t, strings.Contains(err.Error(), "badInit"))
+	assert.True(t, strings.Contains(err.Error(), "slice mode true"))
+	assert.Equal(t, 0, len(subTopoPool))
+}
+
 // Test when connection fails
 func TestSubtopoRunError(t *testing.T) {
 	ctx0 := mockContext.NewMockContext("rule0", "abc").WithRun(0)
 	assert.Equal(t, 0, len(subTopoPool))
-	subTopo, existed := GetOrCreateSubTopo(ctx0, "re", false)
-	assert.False(t, existed)
 	srcNode := &mockSrc{name: "src1"}
 	opNode := &mockOp{name: "op1", ch: make(chan any)}
-	subTopo.AddSrc(srcNode)
-	subTopo.AddOperator([]node.Emitter{srcNode}, opNode)
+	subTopo, err := GetOrCreateSubTopo(ctx0, "re", false, func(subTopo *SrcSubTopo) error {
+		subTopo.AddSrc(srcNode)
+		subTopo.AddOperator([]node.Emitter{srcNode}, opNode)
+		return nil
+	})
+	assert.NoError(t, err)
 	// create another subtopo
 	ctx1 := mockContext.NewMockContext("rule1", "abc").WithRun(1)
-	subTopo2, existed := GetOrCreateSubTopo(ctx1, "re", false)
-	assert.True(t, existed)
+	subTopo2, err := GetOrCreateSubTopo(ctx1, "re", false, nil)
+	assert.NoError(t, err)
 	assert.Equal(t, subTopo, subTopo2)
 	assert.Equal(t, 1, len(subTopoPool))
 	assert.Equal(t, InitState, subTopo.opened.Load())
@@ -163,12 +254,14 @@ func TestSubtopoRunError(t *testing.T) {
 func TestErrorClose(t *testing.T) {
 	ctx0 := mockContext.NewMockContext("rule0", "abc").WithRun(0)
 	assert.Equal(t, 0, len(subTopoPool))
-	subTopo, existed := GetOrCreateSubTopo(ctx0, "ee", false)
-	assert.False(t, existed)
 	srcNode := &mockSrc{name: "src1"}
 	opNode := &mockOp{name: "op1", ch: make(chan any)}
-	subTopo.AddSrc(srcNode)
-	subTopo.AddOperator([]node.Emitter{srcNode}, opNode)
+	subTopo, err := GetOrCreateSubTopo(ctx0, "ee", false, func(subTopo *SrcSubTopo) error {
+		subTopo.AddSrc(srcNode)
+		subTopo.AddOperator([]node.Emitter{srcNode}, opNode)
+		return nil
+	})
+	assert.NoError(t, err)
 	// create and run subtopo
 	ctx1 := mockContext.NewMockContext("rule1", "abc").WithRun(1)
 	errCh1 := make(chan error, 1)
@@ -198,7 +291,11 @@ func TestSubtopoPrint(t *testing.T) {
 		},
 	}
 	ctx0 := mockContext.NewMockContext("rule0", "abc")
-	subTopo, _ := GetOrCreateSubTopo(ctx0, "shared", false)
+	subTopo, err := GetOrCreateSubTopo(ctx0, "shared", false, func(subTopo *SrcSubTopo) error {
+		subTopo.AddSrc(&mockSrc{name: "shared"})
+		return nil
+	})
+	assert.NoError(t, err)
 	subTopo.topo = tt
 	subTopo.tail = &mockOp{name: "op1", ch: make(chan any)}
 	ptopo := &def.PrintableTopo{
@@ -221,19 +318,19 @@ func TestSubtopoPrint(t *testing.T) {
 	RemoveSubTopo("shared")
 }
 
-// because subtopo create and open is not atomic
-// test close in-between, which is supposed to close finally
 func TestSubtopoConcurrency(t *testing.T) {
 	subTopoPool = make(map[string]*SrcSubTopo)
 	// These are happened during planning syncly
 	ctx := mockContext.NewMockContext("rule1", "abc").WithRun(1)
 	assert.Equal(t, 0, len(subTopoPool))
-	subTopo, existed := GetOrCreateSubTopo(ctx, "shared", false)
-	assert.False(t, existed)
 	srcNode := &mockSrc{name: "shared"}
 	opNode := &mockOp{name: "op1", ch: make(chan any)}
-	subTopo.AddSrc(srcNode)
-	subTopo.AddOperator([]node.Emitter{srcNode}, opNode)
+	subTopo, err := GetOrCreateSubTopo(ctx, "shared", false, func(subTopo *SrcSubTopo) error {
+		subTopo.AddSrc(srcNode)
+		subTopo.AddOperator([]node.Emitter{srcNode}, opNode)
+		return nil
+	})
+	assert.NoError(t, err)
 	subTopo.StoreSchema("rule1", "shared", map[string]*ast.JsonStreamField{
 		"field1": {Type: "string"},
 	}, false)

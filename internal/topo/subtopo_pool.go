@@ -32,7 +32,7 @@ var (
 	lock        syncx.Mutex
 )
 
-func GetOrCreateSubTopo(ctx api.StreamContext, name string, isSliceMode bool) (*SrcSubTopo, bool) {
+func GetOrCreateSubTopo(ctx api.StreamContext, name string, isSliceMode bool, init func(*SrcSubTopo) error) (*SrcSubTopo, error) {
 	lock.Lock()
 	defer lock.Unlock()
 	ac, ok := subTopoPool[name]
@@ -47,10 +47,21 @@ func GetOrCreateSubTopo(ctx api.StreamContext, name string, isSliceMode bool) (*
 			refRules:    make(map[string]map[int]chan<- error),
 			isSliceMode: isSliceMode,
 		}
+		if init != nil {
+			// init runs under the pool lock so a new subtopo is not visible before
+			// it is usable. Keep init lightweight; node Provision must not perform
+			// time-consuming work. TODO: revisit if any source init becomes slow.
+			if err := init(ac); err != nil {
+				return nil, fmt.Errorf("init subtopo %s with slice mode %t: %w", name, isSliceMode, err)
+			}
+		}
 		subTopoPool[name] = ac
+		ctx.GetLogger().Infof("Create SubTopo %s", name)
+	} else {
+		ctx.GetLogger().Infof("Load SubTopo %s", name)
 	}
 	ac.Init(ctx)
-	return ac, ok
+	return ac, nil
 }
 
 func RemoveSubTopo(name string) {
