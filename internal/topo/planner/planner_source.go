@@ -110,6 +110,12 @@ func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, option
 			subId = us.SubId(props)
 		}
 		selName := fmt.Sprintf("%s/%s", conId, subId)
+		var scn node.DataSourceNode
+		scn, err = node.NewSourceNode(ctx, selName, ss, props, options)
+		if err != nil {
+			return nil, nil, 0, err
+		}
+
 		subCtx := ctx
 		if t.streamStmt.Options.SHARED && !t.inRuleTest {
 			// For shared stream, the rule id is the shared subtopo. Subtopo only has one run so runId is always 0
@@ -117,20 +123,21 @@ func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, option
 		}
 		srcSubtopo, existed := topo.GetOrCreateSubTopo(subCtx, selName, false)
 		if !existed {
-			var scn node.DataSourceNode
-			scn, err = node.NewSourceNode(ctx, selName, ss, props, options)
-			if err == nil {
-				ctx.GetLogger().Infof("Create SubTopo %s for shared connection", selName)
-				srcSubtopo.AddSrc(scn)
-			}
+			ctx.GetLogger().Infof("Create SubTopo %s for shared connection", selName)
+			srcSubtopo.AddSrc(scn)
 		} else {
 			ctx.GetLogger().Infof("Load SubTopo %s for shared connection", selName)
 		}
 		srcConnNode = srcSubtopo
-		if err != nil {
-			topo.RemoveSubTopo(selName)
-			return nil, nil, 0, err
-		}
+
+		defer func() {
+			// If splitSource fails before returning, clean up the ref early,
+			// as it has not been attached to the topo yet.
+			if err != nil {
+				srcSubtopo.Close(subCtx)
+			}
+		}()
+
 		index++
 		// another node to set emitter
 		op := Transform(&operator.EmitterOp{Emitter: string(t.name)}, fmt.Sprintf("%d_emitter", index), options)

@@ -275,6 +275,14 @@ func (s *SrcSubTopo) OpsCount() int {
 	return len(s.ops)
 }
 
+// RefCount returns the number of rules currently referencing this sub-topology.
+// It is intended for use in tests to verify cleanup after planning errors.
+func (s *SrcSubTopo) RefCount() int {
+	s.RLock()
+	defer s.RUnlock()
+	return len(s.refRules)
+}
+
 func (s *SrcSubTopo) StoreSchema(ruleID, dataSource string, schema map[string]*ast.JsonStreamField, isWildCard bool) {
 	s.schemaLayer.RegSchema(ruleID, dataSource, schema, isWildCard)
 }

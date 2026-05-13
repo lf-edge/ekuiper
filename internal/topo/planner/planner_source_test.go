@@ -16,6 +16,7 @@ package planner
 
 import (
 	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
@@ -30,6 +31,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/v2/internal/schema"
+	"github.com/lf-edge/ekuiper/v2/internal/topo"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/message"
@@ -577,4 +579,117 @@ func (m *MockLookupBytes) Connect(ctx api.StreamContext, _ api.StatusChangeHandl
 
 func (m *MockLookupBytes) Lookup(ctx api.StreamContext, fields []string, keys []string, values []any) ([][]byte, error) {
 	return nil, nil
+}
+
+// TestSharedConnSubtopoCleanedUpAfterPlanFailure is a regression test for the
+// "buffer full, drop message" bug that occurs when a rule sharing an MQTT connection
+// fails to plan (e.g. mande converter: message type not found in proto schema).
+//
+// Without the fix: createTopo returns nil without calling tp.Cancel(), so the shared
+// connection subtopo retains the failed rule's ref and output channel. The subtopo then
+// keeps broadcasting to an unread channel, filling the buffer and dropping messages
+// for all other rules that share the same connection.
+//
+// With the fix: createTopo's deferred cancel calls tp.Cancel() on error, which calls
+// SrcSubTopo.Close() and removes the stale ref and output channel.
+func TestSharedConnSubtopoCleanedUpAfterPlanFailure(t *testing.T) {
+	conf.IsTesting = true
+	schema.InitRegistry()
+
+	// Register a converter that always fails, simulating "UP_XX_YY not found in proto".
+	modules.RegisterConverter("errfmt", func(_ api.StreamContext, _ string, _ map[string]*ast.JsonStreamField, _ map[string]any) (message.Converter, error) {
+		return nil, errors.New("message type UP_Test_T1 not found in schema path fake.proto")
+	})
+	t.Cleanup(func() { delete(modules.Converters, "errfmt") })
+
+	kv, err := store.GetKV("stream")
+	require.NoError(t, err)
+
+	// A stream with a shared MQTT connection (connectionSelector).
+	streamSQL := `CREATE STREAM planFailSrc () WITH (DATASOURCE="t/planfail", FORMAT="json", TYPE="mqtt", CONF_KEY="planFailConn");`
+	s, _ := json.Marshal(&xsql.StreamInfo{StreamType: ast.TypeStream, Statement: streamSQL})
+	require.NoError(t, kv.Set("planFailSrc", string(s)))
+	t.Cleanup(func() { _ = kv.Delete("planFailSrc") })
+
+	meta.InitYamlConfigManager()
+	dataDir, _ := conf.GetDataLoc()
+	require.NoError(t, os.MkdirAll(filepath.Join(dataDir, "sources"), 0o755))
+	connConf := map[string]any{
+		"connectionSelector": "mqtt.localConnection",
+		"interval":           "1s",
+	}
+	bs, _ := json.Marshal(connConf)
+	require.NoError(t, meta.AddSourceConfKey("mqtt", "planFailConn", "", bs))
+	t.Cleanup(func() { _ = meta.DelSourceConfKey("mqtt", "planFailConn", "") })
+
+	// Record pool size before planning to detect leaks.
+	sizeBefore := topo.GetSubTopoPoolSize()
+
+	// Plan a rule with a bad sink format — buildActions fails after buildOps succeeds.
+	// buildOps registered the shared connection subtopo; buildActions then fails.
+	rule := def.GetDefaultRule("planFailRule", "SELECT * FROM planFailSrc")
+	rule.Actions = []map[string]any{
+		{"logToMemory": map[string]any{"format": "errfmt"}},
+	}
+	tp, _, err := PlanSQLWithSourcesAndSinks(rule, nil)
+	assert.Error(t, err, "planning with invalid sink format must fail")
+	assert.Nil(t, tp, "failed plan must return nil topo")
+
+	// KEY ASSERTION: the shared connection subtopo must be cleaned up.
+	// Without the fix, sizeAfter > sizeBefore (pool has a stale entry).
+	// With the fix, the subtopo is destroyed because all refs were removed.
+	sizeAfter := topo.GetSubTopoPoolSize()
+	assert.Equal(t, sizeBefore, sizeAfter,
+		"shared connection subtopo must be removed from pool after failed plan; "+
+			"leaked subtopo would cause 'buffer full, drop message' for other rules")
+}
+
+// TestSharedConnSubtopoCleanedUpAfterSplitSourceFailure is a regression test for the
+// "planner failure after shared-connection ref registration" leak bug.
+// It triggers an error in checkFeatures inside splitSource, which happens AFTER GetOrCreateSubTopo
+// registers the ref, but BEFORE tp.AddSrc() is ever called.
+func TestSharedConnSubtopoCleanedUpAfterSplitSourceFailure(t *testing.T) {
+	conf.IsTesting = true
+	schema.InitRegistry()
+
+	kv, err := store.GetKV("stream")
+	require.NoError(t, err)
+
+	// A stream with a shared MQTT connection AND conflicting merger configurations
+	// (merger and mergeField set together causes checkFeatures to fail).
+	streamSQL := `CREATE STREAM planSplitFailSrc () WITH (DATASOURCE="t/plansplitfail", FORMAT="json", TYPE="mqtt", CONF_KEY="planSplitFailConn", MERGER="m1", MERGEFIELD="m2");`
+	s, _ := json.Marshal(&xsql.StreamInfo{StreamType: ast.TypeStream, Statement: streamSQL})
+	require.NoError(t, kv.Set("planSplitFailSrc", string(s)))
+	t.Cleanup(func() { _ = kv.Delete("planSplitFailSrc") })
+
+	meta.InitYamlConfigManager()
+	dataDir, _ := conf.GetDataLoc()
+	require.NoError(t, os.MkdirAll(filepath.Join(dataDir, "sources"), 0o755))
+	connConf := map[string]any{
+		"connectionSelector": "mqtt.localConnection",
+	}
+	bs, _ := json.Marshal(connConf)
+	require.NoError(t, meta.AddSourceConfKey("mqtt", "planSplitFailConn", "", bs))
+	t.Cleanup(func() { _ = meta.DelSourceConfKey("mqtt", "planSplitFailConn", "") })
+
+	// Record pool size before planning to detect leaks.
+	sizeBefore := topo.GetSubTopoPoolSize()
+
+	// Plan a rule. buildOps -> planSource -> splitSource
+	// splitSource calls GetOrCreateSubTopo for the shared connection, registers ref,
+	// then fails at checkFeatures because both MERGER and MERGEFIELD are set.
+	// Since the error happens before tp.AddSrc, tp.Cancel() won't clean this up.
+	// The new defer in splitSource itself must clean it up.
+	rule := def.GetDefaultRule("planSplitFailRule", "SELECT * FROM planSplitFailSrc")
+	rule.Actions = []map[string]any{
+		{"logToMemory": map[string]any{}},
+	}
+	tp, _, err := PlanSQLWithSourcesAndSinks(rule, nil)
+	assert.Error(t, err, "planning with invalid merger source config must fail")
+	assert.Nil(t, tp, "failed plan must return nil topo")
+
+	// KEY ASSERTION: the shared connection subtopo must be cleaned up by splitSource's defer.
+	sizeAfter := topo.GetSubTopoPoolSize()
+	assert.Equal(t, sizeBefore, sizeAfter,
+		"shared connection subtopo must be cleaned up if splitSource fails internally before tp.AddSrc")
 }
