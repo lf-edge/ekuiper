@@ -32,7 +32,7 @@ var (
 	lock        syncx.Mutex
 )
 
-func GetOrCreateSubTopo(ctx api.StreamContext, name string, isSliceMode bool, init func(*SrcSubTopo) error) (*SrcSubTopo, bool, error) {
+func GetOrCreateSubTopo(ctx api.StreamContext, name string, isSliceMode bool, init func(*SrcSubTopo) error) (*SrcSubTopo, error) {
 	lock.Lock()
 	defer lock.Unlock()
 	ac, ok := subTopoPool[name]
@@ -52,13 +52,16 @@ func GetOrCreateSubTopo(ctx api.StreamContext, name string, isSliceMode bool, in
 			// it is usable. Keep init lightweight; node Provision must not perform
 			// time-consuming work. TODO: revisit if any source init becomes slow.
 			if err := init(ac); err != nil {
-				return nil, false, fmt.Errorf("init subtopo %s with slice mode %t: %w", name, isSliceMode, err)
+				return nil, fmt.Errorf("init subtopo %s with slice mode %t: %w", name, isSliceMode, err)
 			}
 		}
 		subTopoPool[name] = ac
+		ctx.GetLogger().Infof("Create SubTopo %s", name)
+	} else {
+		ctx.GetLogger().Infof("Load SubTopo %s", name)
 	}
 	ac.Init(ctx)
-	return ac, ok, nil
+	return ac, nil
 }
 
 func RemoveSubTopo(name string) {
