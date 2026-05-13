@@ -193,6 +193,16 @@ func removePubConsumer(topic string, sourceId string, c *pubConsumers) {
 	}
 }
 
+// GetPubCount returns the number of producers for a topic. For testing only.
+func GetPubCount(topic string) int {
+	mu.RLock()
+	defer mu.RUnlock()
+	if c, exists := pubTopics[topic]; exists {
+		return c.count
+	}
+	return 0
+}
+
 // Reset For testing only
 func Reset() {
 	pubTopics = make(map[string]*pubConsumers)
