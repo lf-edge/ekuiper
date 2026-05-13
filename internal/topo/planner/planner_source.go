@@ -72,7 +72,7 @@ func transformSourceNode(ctx api.StreamContext, t *DataSourcePlan, mockSourcesPr
 	return splitSource(ctx, t, si, options, mockProps, index, ruleId, pp, emitterName)
 }
 
-func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, options *def.RuleOption, mockProps map[string]any, index int, ruleId string, pp node.UnOperation, emitterName ast.StreamName) (node.DataSourceNode, []node.OperatorNode, int, error) {
+func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, options *def.RuleOption, mockProps map[string]any, index int, ruleId string, pp node.UnOperation, emitterName ast.StreamName) (_ node.DataSourceNode, _ []node.OperatorNode, _ int, err error) {
 	// Get all props
 	props := nodeConf.GetSourceConf(t.streamStmt.Options.TYPE, t.streamStmt.Options)
 	sp := &SourcePropsForSplit{}
@@ -83,10 +83,7 @@ func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, option
 	}
 	_ = cast.MapToStruct(props, sp)
 	// Create the connector node as source node
-	var (
-		err         error
-		srcConnNode node.DataSourceNode
-	)
+	var srcConnNode node.DataSourceNode
 	// Some connection only allow one subscription. The source should implement UniqueSub to provide a subId to avoid multiple connection.
 	us, hasSubId := ss.(model.UniqueSub)
 	conId := sp.SelId
@@ -112,23 +109,33 @@ func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, option
 			subId = us.SubId(props)
 		}
 		selName := fmt.Sprintf("%s/%s", conId, subId)
+
 		subCtx := ctx
 		if t.streamStmt.Options.SHARED && !t.inRuleTest {
 			// For shared stream, the rule id is the shared subtopo. Subtopo only has one run so runId is always 0
 			subCtx = subCtx.(*context.DefaultContext).WithRuleId(fmt.Sprintf("$$subtopo_%s", t.name)).WithRun(0)
 		}
-		srcSubtopo, err := topo.GetOrCreateSubTopo(subCtx, selName, false, func(srcSubtopo *topo.SrcSubTopo) error {
-			scn, err := node.NewSourceNode(ctx, selName, ss, props, options)
-			if err != nil {
-				return err
+		var connSubtopo *topo.SrcSubTopo
+		connSubtopo, err = topo.GetOrCreateSubTopo(subCtx, selName, false, func(st *topo.SrcSubTopo) error {
+			scn, initErr := node.NewSourceNode(ctx, selName, ss, props, options)
+			if initErr != nil {
+				return initErr
 			}
-			srcSubtopo.AddSrc(scn)
+			st.AddSrc(scn)
 			return nil
 		})
 		if err != nil {
 			return nil, nil, 0, err
 		}
-		srcConnNode = srcSubtopo
+		srcConnNode = connSubtopo
+
+		defer func() {
+			// If splitSource fails before returning, clean up the ref early,
+			// as it has not been attached to the topo yet.
+			if err != nil {
+				connSubtopo.Close(subCtx)
+			}
+		}()
 		index++
 		// another node to set emitter
 		op := Transform(&operator.EmitterOp{Emitter: string(emitterName)}, fmt.Sprintf("%d_emitter", index), options)
@@ -228,6 +235,7 @@ func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, option
 			return nil, nil, 0, err
 		}
 		if isSliceRule != srcSubtopo.IsSliceMode() {
+			srcSubtopo.Close(ctx)
 			return nil, nil, 0, fmt.Errorf("rules refer to shared stream must be the same mode, stream slice mode: %v but rule slice mode: %v", srcSubtopo.IsSliceMode(), isSliceRule)
 		}
 		srcSubtopo.StoreSchema(ruleId, string(t.name), t.streamFields, t.isWildCard)

@@ -71,6 +71,14 @@ func RemoveSubTopo(name string) {
 	conf.Log.Infof("Delete SubTopo %s", name)
 }
 
+// GetSubTopoPoolSize returns the number of entries in the subtopo pool.
+// It is intended for use in tests to verify cleanup after planning errors.
+func GetSubTopoPoolSize() int {
+	lock.Lock()
+	defer lock.Unlock()
+	return len(subTopoPool)
+}
+
 // CloseSubTopo closes the subtopo safely. It locks the pool first to avoid deadlock.
 func CloseSubTopo(ctx api.StreamContext, s *SrcSubTopo, runId int) {
 	lock.Lock()

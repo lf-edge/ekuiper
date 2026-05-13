@@ -477,3 +477,59 @@ func (m *mockOp) RemoveMetrics(name string) {
 func (m *mockOp) ResetSchema(ctx api.StreamContext, schema map[string]*ast.JsonStreamField) {
 	m.schemaCount = len(schema)
 }
+
+// TestCancelReleasesSubtopoRef verifies that cancelling a partial (never-opened) topo
+// correctly removes its ref from the shared connection subtopo.
+//
+// This is the core plumbing test for the bug fix: when a rule's topo.Cancel() is called
+// after a planning failure, Topo.doClose() must call SrcSubTopo.Close() which removes
+// the rule's ref and output channel from the subtopo.
+func TestCancelReleasesSubtopoRef(t *testing.T) {
+	// Reset pool for test isolation.
+	origPool := subTopoPool
+	subTopoPool = make(map[string]*SrcSubTopo)
+	defer func() { subTopoPool = origPool }()
+
+	// Build a shared connection subtopo with a mock source (like the real MQTT case).
+	ctx1 := mockContext.NewMockContext("rule1", "abc").WithRun(1)
+	subTopo, err := GetOrCreateSubTopo(ctx1, "connSubTopo", false, nil)
+	assert.NoError(t, err)
+
+	srcNode := &mockSrc{name: "shared"}
+	opNode := &mockOp{name: "op1", ch: make(chan any)}
+	subTopo.AddSrc(srcNode)
+	subTopo.AddOperator([]node.Emitter{srcNode}, opNode)
+	assert.Equal(t, 1, subTopo.RefCount(), "setup: rule1 should have 1 ref after GetOrCreateSubTopo")
+
+	// Allocate a topo for rule2 that shares the same connection subtopo.
+	// This simulates plantopo.buildOps succeeding (subtopo registered for rule2).
+	tp, err := NewWithNameAndOptions("rule2", &def.RuleOption{})
+	assert.NoError(t, err)
+
+	// Manually wire rule2 into the subtopo, as the planner would do.
+	ctx2 := tp.GetContext() // ruleId="rule2", runId=tp.runId
+	subTopo2, _ := GetOrCreateSubTopo(ctx2, "connSubTopo", false, nil)
+	assert.Equal(t, subTopo, subTopo2)
+	assert.Equal(t, 2, subTopo.RefCount(), "rule1 + rule2 should each hold a ref")
+
+	// Add rule2's output channel to the subtopo's tail (as topo.AddOperator does).
+	ch := make(chan any, 1)
+	err = subTopo.AddOutput(ch, "rule2.0_emitter")
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(opNode.outputs), "subtopo tail should have rule2's output channel")
+
+	// Add the subtopo as a source to rule2's topo (needed for Cancel to call Close).
+	tp.AddSrc(subTopo)
+
+	// Simulate buildActions failure → tp.Cancel() is called.
+	tp.Cancel()
+
+	// KEY ASSERTIONS: rule2's ref and output channel must be removed.
+	assert.Equal(t, 1, subTopo.RefCount(), "after Cancel, rule2 ref must be removed")
+	assert.Equal(t, 0, len(opNode.outputs), "after Cancel, rule2 output channel must be removed from subtopo tail")
+	assert.Equal(t, 1, len(subTopoPool), "subtopo pool must still have the entry (rule1 still holds a ref)")
+
+	// Cleanup rule1.
+	subTopo.Close(ctx1)
+	assert.Equal(t, 0, len(subTopoPool), "subtopo pool must be empty after all refs removed")
+}
