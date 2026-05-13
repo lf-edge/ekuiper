@@ -70,6 +70,7 @@ func TestSharedInmemoryNode(t *testing.T) {
 	}
 	mockclock.GetMockClock().Add(100)
 	go func() {
+		time.Sleep(10 * time.Millisecond)
 		if gerr := snk.CollectList(ctx, &xsql.TransformedTupleList{Content: []api.MessageTuple{rawTuple}}); gerr != nil {
 			t.Error(gerr)
 		}
