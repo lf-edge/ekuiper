@@ -194,6 +194,7 @@ func TestUpdateInmemoryNode(t *testing.T) {
 	}
 	mockclock.GetMockClock().Add(100)
 	go func() {
+		time.Sleep(10 * time.Millisecond)
 		if gerr := snk.Collect(ctx, rawTuple); gerr != nil {
 			t.Error(gerr)
 		}
