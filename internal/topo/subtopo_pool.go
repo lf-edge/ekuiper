@@ -28,15 +28,43 @@ import (
 )
 
 var (
-	subTopoPool = make(map[string]*SrcSubTopo)
-	lock        syncx.Mutex
+	subTopoPool     = make(map[string]*SrcSubTopo)
+	subTopoCreating = make(map[string]*subTopoCreation)
+	lock            syncx.Mutex
 )
 
+type subTopoCreation struct {
+	ready chan struct{}
+	err   error
+}
+
 func GetOrCreateSubTopo(ctx api.StreamContext, name string, isSliceMode bool, init func(*SrcSubTopo) error) (*SrcSubTopo, bool, error) {
-	lock.Lock()
-	defer lock.Unlock()
-	ac, ok := subTopoPool[name]
-	if !ok {
+	for {
+		lock.Lock()
+		ac, ok := subTopoPool[name]
+		if ok {
+			ac.Init(ctx)
+			lock.Unlock()
+			return ac, true, nil
+		}
+		creating, ok := subTopoCreating[name]
+		if ok {
+			ready := creating.ready
+			lock.Unlock()
+			<-ready
+			if creating.err != nil {
+				return nil, false, creating.err
+			}
+			continue
+		}
+		if init == nil {
+			lock.Unlock()
+			return nil, false, fmt.Errorf("init subtopo %s with slice mode %t: missing initializer", name, isSliceMode)
+		}
+		creating = &subTopoCreation{ready: make(chan struct{})}
+		subTopoCreating[name] = creating
+		lock.Unlock()
+
 		ac = &SrcSubTopo{
 			name: name,
 			topo: &def.PrintableTopo{
@@ -47,15 +75,23 @@ func GetOrCreateSubTopo(ctx api.StreamContext, name string, isSliceMode bool, in
 			refRules:    make(map[string]map[int]chan<- error),
 			isSliceMode: isSliceMode,
 		}
-		if init != nil {
-			if err := init(ac); err != nil {
-				return nil, false, err
-			}
+		if err := init(ac); err != nil {
+			creating.err = fmt.Errorf("init subtopo %s with slice mode %t: %w", name, isSliceMode, err)
 		}
-		subTopoPool[name] = ac
+
+		lock.Lock()
+		if creating.err == nil {
+			subTopoPool[name] = ac
+			ac.Init(ctx)
+		}
+		delete(subTopoCreating, name)
+		close(creating.ready)
+		lock.Unlock()
+		if creating.err != nil {
+			return nil, false, creating.err
+		}
+		return ac, false, nil
 	}
-	ac.Init(ctx)
-	return ac, ok, nil
 }
 
 func RemoveSubTopo(name string) {
