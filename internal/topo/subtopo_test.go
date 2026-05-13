@@ -15,7 +15,9 @@
 package topo
 
 import (
+	"errors"
 	"fmt"
+	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -186,6 +188,24 @@ func TestGetOrCreateSubTopoDoesNotExposePartialSubTopo(t *testing.T) {
 	assert.Equal(t, creatorTopo, loadedTopo)
 	assert.Equal(t, srcNode, loadedTopo.tail)
 	assert.Equal(t, 2, len(loadedTopo.refRules))
+}
+
+func TestGetOrCreateSubTopoWrapsInitError(t *testing.T) {
+	origPool := subTopoPool
+	subTopoPool = make(map[string]*SrcSubTopo)
+	defer func() { subTopoPool = origPool }()
+
+	ctx := mockContext.NewMockContext("rule1", "abc").WithRun(1)
+	initErr := errors.New("boom")
+	subTopo, existed, err := GetOrCreateSubTopo(ctx, "badInit", true, func(subTopo *SrcSubTopo) error {
+		return initErr
+	})
+	assert.Nil(t, subTopo)
+	assert.False(t, existed)
+	assert.ErrorIs(t, err, initErr)
+	assert.True(t, strings.Contains(err.Error(), "badInit"))
+	assert.True(t, strings.Contains(err.Error(), "slice mode true"))
+	assert.Equal(t, 0, len(subTopoPool))
 }
 
 // Test when connection fails

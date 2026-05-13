@@ -52,7 +52,7 @@ func GetOrCreateSubTopo(ctx api.StreamContext, name string, isSliceMode bool, in
 			// it is usable. Keep init lightweight; node Provision must not perform
 			// time-consuming work. TODO: revisit if any source init becomes slow.
 			if err := init(ac); err != nil {
-				return nil, false, err
+				return nil, false, fmt.Errorf("init subtopo %s with slice mode %t: %w", name, isSliceMode, err)
 			}
 		}
 		subTopoPool[name] = ac
