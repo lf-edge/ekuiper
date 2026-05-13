@@ -92,6 +92,11 @@ func Test_SlicePlan(t *testing.T) {
 			},
 		},
 		{
+			name: "qualified wildcard",
+			sql:  `SELECT src1.* FROM src1`,
+			err:  "slice tuple mode does not support qualified wildcard src1.*",
+		},
+		{
 			name: "alias, expression and filter",
 			sql:  `SELECT a + b as ab, concat(c, d), b FROM src1 WHERE c > 5`,
 			stmt: &ast.SelectStatement{
@@ -140,14 +145,14 @@ func Test_SlicePlan(t *testing.T) {
 									Name:        "c",
 									HasIndex:    true,
 									SourceIndex: 2,
-									Index:       1,
+									Index:       0,
 								},
 								&ast.FieldRef{
 									StreamName:  "src1",
 									Name:        "d",
 									HasIndex:    true,
 									SourceIndex: 3,
-									Index:       2,
+									Index:       0,
 								},
 							},
 						},
@@ -159,7 +164,7 @@ func Test_SlicePlan(t *testing.T) {
 							Name:        "b",
 							HasIndex:    true,
 							SourceIndex: 1,
-							Index:       3,
+							Index:       2,
 						},
 					},
 				},
@@ -517,6 +522,10 @@ func Test_SlicePlan(t *testing.T) {
 				},
 			}
 			_, stmt, err := PlanSQLWithSourcesAndSinks(rule, nil)
+			if tt.err != "" {
+				require.EqualError(t, err, tt.err)
+				return
+			}
 			require.NoError(t, err)
 			require.Equal(t, tt.stmt, stmt)
 		})

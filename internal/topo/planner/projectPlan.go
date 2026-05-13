@@ -33,8 +33,11 @@ type ProjectPlan struct {
 	wildcardEmitters map[string]bool
 	aliasFields      ast.Fields
 	exprFields       ast.Fields
-	enableLimit      bool
-	limitCount       int
+	// exprIndices holds the SinkContent output slot for each exprField entry
+	// when UseSliceTuple is enabled.  Populated by createLogicalPlanFull.
+	exprIndices []int
+	enableLimit bool
+	limitCount  int
 }
 
 func (p ProjectPlan) Init() *ProjectPlan {
@@ -60,7 +63,11 @@ func (p ProjectPlan) Init() *ProjectPlan {
 					}
 				}
 			default:
-				p.exprFields = append(p.exprFields, field)
+				// Invisible ExprFields must not appear in the output or in
+				// exprIndices; exclude them so both slices stay in sync.
+				if !field.Invisible {
+					p.exprFields = append(p.exprFields, field)
+				}
 			}
 		}
 	}

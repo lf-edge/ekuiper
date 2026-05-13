@@ -103,6 +103,47 @@ func updateFieldIndex(ctx api.StreamContext, stmt *ast.SelectStatement, af []*as
 	)
 	count := 0
 	for _, f := range stmt.Fields {
+		// ExprField: a visible, non-alias field whose top-level expression is
+		// not a *ast.FieldRef (e.g. CASE WHEN, arithmetic, bare function call).
+		// It gets exactly one output slot.  We assign SourceIndex to inner
+		// column FieldRefs but do NOT consume slots for them individually.
+		if f.AName == "" {
+			switch f.Expr.(type) {
+			case *ast.FieldRef, *ast.Wildcard:
+				// handled by the generic walk below
+			default:
+				if !f.Invisible {
+					count++ // one slot for the whole ExprField output
+				}
+				ast.WalkFunc(f.Expr, func(n ast.Node) bool {
+					nf, ok := n.(*ast.FieldRef)
+					if !ok {
+						return true
+					}
+					if nf.IsColumn() {
+						sc := schema.GetStreamSchemaIndex(string(nf.StreamName))
+						if sc != nil {
+							if si, ok2 := sc[nf.Name]; ok2 {
+								nf.SourceIndex = si
+								ctx.GetLogger().Debugf("update field source index %s to %d", nf.Name, nf.SourceIndex)
+							}
+						} else {
+							panic(fmt.Sprintf("field %s.%s not found in schema index", nf.StreamName, nf.Name))
+						}
+						nf.HasIndex = true
+					} else {
+						nf.SourceIndex = -1
+						if aindex, ok2 := aliasIndex[nf.Name]; ok2 && nf.IsAlias() {
+							nf.Index = aindex
+						} else {
+							fieldExprs = append(fieldExprs, nf.Expression)
+						}
+					}
+					return true
+				})
+				continue
+			}
+		}
 		ast.WalkFunc(f.Expr, func(n ast.Node) bool {
 			switch nf := n.(type) {
 			case *ast.FieldRef:
@@ -466,7 +507,7 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *def.RuleOption, sources ma
 	case *OrderPlan:
 		op = Transform(&operator.OrderOp{SortFields: t.SortFields}, fmt.Sprintf("%d_order", newIndex), options)
 	case *ProjectPlan:
-		op = Transform(&operator.ProjectOp{Fields: t.fields, FieldLen: t.fieldLen, ColNames: t.colNames, AliasFields: t.aliasFields, ExprFields: t.exprFields, ExceptNames: t.exceptNames, IsAggregate: t.isAggregate, AllWildcard: t.allWildcard, WildcardEmitters: t.wildcardEmitters, SendMeta: t.sendMeta, SendNil: t.sendNil, LimitCount: t.limitCount, EnableLimit: t.enableLimit}, fmt.Sprintf("%d_project", newIndex), options)
+		op = Transform(&operator.ProjectOp{Fields: t.fields, FieldLen: t.fieldLen, ColNames: t.colNames, AliasFields: t.aliasFields, ExprFields: t.exprFields, ExprIndices: t.exprIndices, ExceptNames: t.exceptNames, IsAggregate: t.isAggregate, AllWildcard: t.allWildcard, WildcardEmitters: t.wildcardEmitters, SendMeta: t.sendMeta, SendNil: t.sendNil, LimitCount: t.limitCount, EnableLimit: t.enableLimit}, fmt.Sprintf("%d_project", newIndex), options)
 	case *ProjectSetPlan:
 		op = Transform(&operator.ProjectSetOperator{SrfMapping: t.SrfMapping, LimitCount: t.limitCount, EnableLimit: t.enableLimit}, fmt.Sprintf("%d_projectset", newIndex), options)
 	case *WindowFuncPlan:
@@ -855,6 +896,31 @@ func createLogicalPlanFull(stmt *ast.SelectStatement, opt *def.RuleOption, store
 			enableLimit: enableLimit,
 			limitCount:  limitCount,
 		}.Init()
+		// In slice-tuple mode, assign a dedicated SinkContent slot to each
+		// ExprField (a non-alias, non-FieldRef visible expression such as a
+		// bare CASE WHEN or arithmetic expression).  The slot sequence must
+		// match the count used by updateFieldIndex: one slot per visible
+		// non-wildcard field in declaration order.
+		if opt.Experiment != nil && opt.Experiment.UseSliceTuple && len(p.(*ProjectPlan).exprFields) > 0 {
+			proj := p.(*ProjectPlan)
+			sinkIndex := 0
+			for _, field := range proj.fields {
+				if field.Invisible {
+					continue
+				}
+				switch field.Expr.(type) {
+				case *ast.Wildcard:
+					// wildcards consume no output slot
+				default:
+					if field.AName == "" {
+						if _, isFieldRef := field.Expr.(*ast.FieldRef); !isFieldRef {
+							proj.exprIndices = append(proj.exprIndices, sinkIndex)
+						}
+					}
+					sinkIndex++
+				}
+			}
+		}
 		p.SetChildren(children)
 		children = []LogicalPlan{p}
 	}

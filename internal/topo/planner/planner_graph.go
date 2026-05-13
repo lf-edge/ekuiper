@@ -52,6 +52,9 @@ func PlanByGraph(rule *def.Rule) (*topo.Topo, error) {
 	if ruleGraph == nil {
 		return nil, errors.New("no graph")
 	}
+	if rule.Options != nil && rule.Options.Experiment != nil && rule.Options.Experiment.UseSliceTuple {
+		return nil, errors.New("graph mode does not support slice-tuple mode")
+	}
 	tp, err := topo.NewWithNameAndOptions(rule.Id, rule.Options)
 	if err != nil {
 		return nil, err

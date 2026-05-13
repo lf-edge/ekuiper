@@ -90,8 +90,13 @@ func decorateStmt(s *ast.SelectStatement, opt *def.RuleOption, isTemp bool) ([]*
 	if opt.Experiment != nil && opt.Experiment.UseSliceTuple {
 		var wcIndex []int
 		for i, f := range s.Fields {
-			if _, ok := f.Expr.(*ast.Wildcard); ok {
+			switch expr := f.Expr.(type) {
+			case *ast.Wildcard:
 				wcIndex = append(wcIndex, i)
+			case *ast.FieldRef:
+				if expr.Name == "*" {
+					return nil, nil, nil, fmt.Errorf("slice tuple mode does not support qualified wildcard %s", expr.String())
+				}
 			}
 		}
 		if len(wcIndex) > 0 {

@@ -92,12 +92,35 @@ func parseStmtWithSlice(p *ProjectOp, fields ast.Fields, hasIndex bool) {
 					}
 				}
 			default:
-				p.ExprFields = append(p.ExprFields, field)
+				// ExprField: assign a dedicated output slot and walk inner
+				// FieldRefs to set their SourceIndex (for reading source data).
+				if hasIndex && !field.Invisible {
+					p.ExprIndices = append(p.ExprIndices, index)
+					ast.WalkFunc(field.Expr, func(n ast.Node) bool {
+						if nf, ok := n.(*ast.FieldRef); ok && !nf.IsAlias() {
+							nf.SourceIndex = constSourceIndex[nf.Name]
+							nf.HasIndex = true
+						}
+						return true
+					})
+				}
+				if !field.Invisible {
+					index++
+					p.ExprFields = append(p.ExprFields, field)
+				}
 			}
 		}
 	}
 	p.Fields = fields
-	p.FieldLen = len(fields)
+	// FieldLen counts only visible fields, matching the planner's behaviour in
+	// slice-tuple mode so that Compact() trims to the right length.
+	fieldLen := 0
+	for _, f := range fields {
+		if !f.Invisible {
+			fieldLen++
+		}
+	}
+	p.FieldLen = fieldLen
 }
 
 func parseResult(opResult interface{}, aggregate bool) (result []map[string]interface{}, err error) {
@@ -3285,6 +3308,26 @@ func TestProjectSlice(t *testing.T) {
 				SourceContent: model.SliceVal{nil, "a0"},
 			},
 		},
+		{
+			name: "case_when_no_alias",
+			sql:  `SELECT CASE WHEN a > 'a0' THEN 'greater' ELSE 'lesser' END FROM test`,
+			data: &xsql.SliceTuple{
+				SourceContent: model.SliceVal{"b0", "b0", "c0"}, // a="b0" > "a0"
+			},
+			result: &xsql.SliceTuple{
+				SourceContent: model.SliceVal{"greater"},
+			},
+		},
+		{
+			name: "expr_mixed_with_fields",
+			sql:  `SELECT a, CASE WHEN a > 'a0' THEN 'hi' ELSE 'lo' END, b FROM test`,
+			data: &xsql.SliceTuple{
+				SourceContent: model.SliceVal{"b0", "b0", "c0"},
+			},
+			result: &xsql.SliceTuple{
+				SourceContent: model.SliceVal{"b0", "hi", "b0"},
+			},
+		},
 	}
 	contextLogger := conf.Log.WithField("rule", "TestProjectPlan_Apply1")
 	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
@@ -3357,4 +3400,165 @@ func TestSliceNilField(t *testing.T) {
 			require.Equal(t, tt.result, opResult)
 		})
 	}
+}
+
+// TestProjectSliceCaseExprInterfaceConversion verifies that a manually
+// constructed ProjectOp whose AliasFields entry carries a raw *ast.CaseExpr
+// (simulating the graph-API path that bypasses the analyzer) returns a
+// descriptive error instead of panicking with "interface conversion:
+// ast.Expr is *ast.CaseExpr, not *ast.FieldRef".
+func TestProjectSliceCaseExprInterfaceConversion(t *testing.T) {
+	contextLogger := conf.Log.WithField("rule", "TestProjectSliceCaseExprInterfaceConversion")
+	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
+
+	caseExpr := &ast.CaseExpr{
+		WhenClauses: []*ast.WhenClause{
+			{
+				Expr: &ast.BinaryExpr{
+					OP:  ast.GT,
+					LHS: &ast.FieldRef{Name: "a", HasIndex: true, SourceIndex: 0, Index: 0},
+					RHS: &ast.StringLiteral{Val: "a0"},
+				},
+				Result: &ast.StringLiteral{Val: "greater"},
+			},
+		},
+		ElseClause: &ast.StringLiteral{Val: "lesser"},
+	}
+	// Alias field whose Expr is a raw CaseExpr — not wrapped in *ast.FieldRef
+	// by the analyzer.  This replicates the graph-API path.
+	pp := &ProjectOp{
+		AliasFields: ast.Fields{
+			{AName: "status", Expr: caseExpr},
+		},
+		Fields:   ast.Fields{{AName: "status", Expr: caseExpr}},
+		FieldLen: 1,
+	}
+	data := &xsql.SliceTuple{
+		SourceContent: model.SliceVal{"b0", "b0", "c0"},
+	}
+	fv, afv := xsql.NewFunctionValuersForOp(nil)
+	result := pp.Apply(ctx, data, fv, afv)
+	require.Error(t, result.(error))
+	require.Contains(t, result.(error).Error(), "no sink index in slice mode")
+}
+
+// TestProjectSliceCaseWhenNoAlias verifies that a bare CASE WHEN expression
+// (no alias, ExprField in slice mode) is evaluated and stored in the correct
+// SinkContent slot without panicking.
+func TestProjectSliceCaseWhenNoAlias(t *testing.T) {
+	contextLogger := conf.Log.WithField("rule", "TestProjectSliceCaseWhenNoAlias")
+	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
+
+	stmt, err := xsql.NewParser(strings.NewReader(
+		`SELECT CASE WHEN a > 'a0' THEN 'greater' ELSE 'lesser' END FROM test`,
+	)).Parse()
+	require.NoError(t, err)
+	pp := &ProjectOp{IsAggregate: xsql.WithAggFields(stmt)}
+	parseStmtWithSlice(pp, stmt.Fields, true)
+
+	data := &xsql.SliceTuple{
+		SourceContent: model.SliceVal{"b0", "b0", "c0"}, // a="b0" > "a0" → "greater"
+	}
+	fv, afv := xsql.NewFunctionValuersForOp(nil)
+	opResult := pp.Apply(ctx, data, fv, afv)
+	require.Equal(t, &xsql.SliceTuple{
+		SourceContent: model.SliceVal{"greater"},
+	}, opResult)
+}
+
+// TestProjectSliceInvisibleExprField verifies that an invisible ExprField is
+// excluded from both ExprFields and the sink output.  Shape:
+//
+//	SELECT CASE WHEN a > 'a0' THEN 'greater' ELSE 'lesser' END invisible, b FROM test
+//
+// After projection only 'b' should appear in SourceContent; the invisible
+// CASE WHEN must not consume a sink slot.
+func TestProjectSliceInvisibleExprField(t *testing.T) {
+	contextLogger := conf.Log.WithField("rule", "TestProjectSliceInvisibleExprField")
+	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
+
+	stmt, err := xsql.NewParser(strings.NewReader(
+		`SELECT CASE WHEN a > 'a0' THEN 'greater' ELSE 'lesser' END, b FROM test`,
+	)).Parse()
+	require.NoError(t, err)
+	// Mark the first field (the CASE WHEN expression) as invisible to simulate
+	// the planner hiding intermediate analytic fields from the final output.
+	stmt.Fields[0].Invisible = true
+
+	pp := &ProjectOp{IsAggregate: xsql.WithAggFields(stmt)}
+	parseStmtWithSlice(pp, stmt.Fields, true)
+
+	// ExprFields must NOT contain the invisible CASE WHEN.
+	require.Empty(t, pp.ExprFields, "invisible ExprField must be excluded from ExprFields")
+	require.Empty(t, pp.ExprIndices, "invisible ExprField must not produce an ExprIndex")
+
+	// Only 'b' is visible; slot 0 → b.
+	data := &xsql.SliceTuple{
+		SourceContent: model.SliceVal{"b0", "b1", "c0"}, // a=b0, b=b1
+	}
+	fv, afv := xsql.NewFunctionValuersForOp(nil)
+	opResult := pp.Apply(ctx, data, fv, afv)
+	require.Equal(t, &xsql.SliceTuple{
+		SourceContent: model.SliceVal{"b1"},
+	}, opResult)
+}
+
+// TestProjectSliceExprFieldMissingIndex verifies that a ProjectOp whose
+// ExprFields slice is longer than ExprIndices (e.g. constructed via the graph
+// API before the fix, or any manual construction) returns a descriptive error
+// instead of silently dropping the result.
+func TestProjectSliceExprFieldMissingIndex(t *testing.T) {
+	contextLogger := conf.Log.WithField("rule", "TestProjectSliceExprFieldMissingIndex")
+	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
+
+	caseExpr := &ast.CaseExpr{
+		WhenClauses: []*ast.WhenClause{
+			{
+				Expr:   &ast.BinaryExpr{OP: ast.GT, LHS: &ast.FieldRef{Name: "a", HasIndex: true, SourceIndex: 0}, RHS: &ast.StringLiteral{Val: "a0"}},
+				Result: &ast.StringLiteral{Val: "greater"},
+			},
+		},
+		ElseClause: &ast.StringLiteral{Val: "lesser"},
+	}
+	// ExprIndices intentionally empty — simulates the pre-fix graph path.
+	pp := &ProjectOp{
+		ExprFields: ast.Fields{{Name: "case_1", Expr: caseExpr}},
+		// ExprIndices: nil
+		FieldLen: 1,
+	}
+	data := &xsql.SliceTuple{SourceContent: model.SliceVal{"b0"}}
+	fv, afv := xsql.NewFunctionValuersForOp(nil)
+	result := pp.Apply(ctx, data, fv, afv)
+	require.Error(t, result.(error))
+	require.Contains(t, result.(error).Error(), "no pre-assigned sink slot")
+}
+
+func TestProjectSliceInvisibleManualExprField(t *testing.T) {
+	contextLogger := conf.Log.WithField("rule", "TestProjectSliceInvisibleManualExprField")
+	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
+
+	invisibleExpr := &ast.BinaryExpr{
+		OP:  ast.ADD,
+		LHS: &ast.FieldRef{Name: "a", HasIndex: true, SourceIndex: 0},
+		RHS: &ast.IntegerLiteral{Val: 1},
+	}
+	visibleExpr := &ast.BinaryExpr{
+		OP:  ast.ADD,
+		LHS: &ast.FieldRef{Name: "b", HasIndex: true, SourceIndex: 1},
+		RHS: &ast.IntegerLiteral{Val: 1},
+	}
+	pp := &ProjectOp{
+		ExprFields: ast.Fields{
+			{Name: "hidden", Expr: invisibleExpr, Invisible: true},
+			{Name: "visible", Expr: visibleExpr},
+		},
+		ExprIndices: []int{0},
+		FieldLen:    1,
+	}
+	data := &xsql.SliceTuple{SourceContent: model.SliceVal{1, 2}}
+	fv, afv := xsql.NewFunctionValuersForOp(nil)
+	result := pp.Apply(ctx, data, fv, afv)
+	require.Equal(t, &xsql.SliceTuple{
+		SourceContent: model.SliceVal{int64(3)},
+	}, result)
 }
