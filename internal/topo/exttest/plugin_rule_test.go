@@ -118,7 +118,10 @@ func TestExtensions(t *testing.T) {
 					conf.Log.Errorf("receive wrong tuple %v", rt)
 				}
 			}
-			return maps[:1]
+			if len(maps) > 1 {
+				return maps[:1]
+			}
+			return maps
 		})
 	}
 }
