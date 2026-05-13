@@ -79,34 +79,61 @@ func GetSubTopoPoolSize() int {
 	return len(subTopoPool)
 }
 
-// CloseSubTopo closes the subtopo safely. It locks the pool first to avoid deadlock.
-func CloseSubTopo(ctx api.StreamContext, s *SrcSubTopo, runId int) {
+// CloseSubTopo decrements the reference count for ctx's rule on s and, when
+// the last reference is removed, atomically cancels the subtopo and evicts it
+// from the pool. Both locks (pool first, then subtopo) are held for the entire
+// operation, so the destroy decision and the pool delete are one atomic step —
+// no zombie window is possible. This mirrors GetOrCreateSubTopo: the pool file
+// is the sole owner of all mutations to lock and subTopoPool.
+func CloseSubTopo(ctx api.StreamContext, s *SrcSubTopo) {
 	lock.Lock()
-
 	s.Lock()
-	// Check again if it is empty because it may be added again during unlock
-	if len(s.refRules) == 0 {
+
+	isStop, isDestroy := s.removeRef(ctx)
+	// Always detach the rule from the schema layer, even if the sub-topology is being destroyed.
+	// This ensures RemoveRuleSchema is called for the global registry.
+	err := s.schemaLayer.Detach(ctx, isStop)
+	if err != nil {
+		ctx.GetLogger().Warnf("subtopo %s detach schema layer failed: %s", s.name, err)
+	} else if !isDestroy {
+		// Only update surviving rules' operators if the sub-topology isn't being destroyed.
+		ctx.GetLogger().Infof("subtopo %s update schema for rule %s change", s.name, ctx.GetRuleId())
+		for _, op := range s.ops {
+			if so, ok := op.(node.SchemaNode); ok {
+				so.ResetSchema(ctx, s.schemaLayer.GetSchema())
+			}
+		}
+	}
+
+	if isDestroy {
 		if s.cancel != nil {
 			s.cancel()
 		}
-		var ss *SrcSubTopo
+		delete(subTopoPool, s.name)
+		conf.Log.Infof("Delete SubTopo %s", s.name)
+	}
+	_ = s.RemoveOutput(fmt.Sprintf("%s.%d", ctx.GetRuleId(), ctx.GetRunId()))
+
+	// Capture chained source subtopo pointer before releasing locks.
+	var ss *SrcSubTopo
+	if isDestroy {
 		if sourceSub, ok := s.source.(*SrcSubTopo); ok {
 			ss = sourceSub
 		}
-		delete(subTopoPool, s.name)
-		conf.Log.Infof("Delete SubTopo %s", s.name)
-		// Unlock before recursive call to avoid deadlock
-		s.Unlock()
-		lock.Unlock()
+	}
 
-		if ss != nil {
-			subCtx := ctx.(*kctx.DefaultContext).WithRuleId(fmt.Sprintf("$$subtopo_%s", s.name)).WithRun(0)
-			ss.Close(subCtx)
+	s.Unlock()
+	lock.Unlock()
+
+	// If the destroyed subtopo's source was itself a subtopo (chained connection),
+	// close it now — after releasing all locks to avoid any nesting issue.
+	if isDestroy && ss != nil {
+		if dctx, ok := ctx.(*kctx.DefaultContext); ok {
+			subCtx := dctx.WithRuleId(fmt.Sprintf("$$subtopo_%s", s.name)).WithRun(0)
+			CloseSubTopo(subCtx, ss)
+		} else {
+			ctx.GetLogger().Warnf("subtopo %s chained close failed: context is not DefaultContext", s.name)
 		}
-	} else {
-		// Unlock if no deletion
-		s.Unlock()
-		lock.Unlock()
 	}
 }
 

@@ -140,34 +140,11 @@ func (s *SrcSubTopo) Open(ctx api.StreamContext, parentErrCh chan<- error) {
 	}
 }
 
-// Close is different from main topo because this will run multiple times.
-// Close ref rule will run close subtopo
+// Close satisfies the node.DataSourceNode interface. All pool-lifecycle logic
+// (reference counting, pool eviction, chained close) lives in CloseSubTopo so
+// that subtopo_pool.go is the single owner of the pool lock and map.
 func (s *SrcSubTopo) Close(ctx api.StreamContext) {
-	s.Lock()
-	isStop, isDestroy := s.removeRef(ctx)
-	if isDestroy { // destroy this subtopo
-		// The cleanup logic is moved to CloseSubTopo
-		// It will unlock inside CloseSubTopo
-	} else {
-		ctx.GetLogger().Infof("subtopo %s update schema for rule %s change", s.name, ctx.GetRuleId())
-		err := s.schemaLayer.Detach(ctx, isStop)
-		if err != nil {
-			ctx.GetLogger().Warnf("detach schema layer failed: %s", err)
-		} else {
-			for _, op := range s.ops {
-				if so, ok := op.(node.SchemaNode); ok {
-					so.ResetSchema(ctx, s.schemaLayer.GetSchema())
-				}
-			}
-		}
-	}
-	_ = s.RemoveOutput(fmt.Sprintf("%s.%d", ctx.GetRuleId(), ctx.GetRunId()))
-	// Unlock before calling CloseSubTopo to avoid deadlock as CloseSubTopo will lock s again
-	s.Unlock()
-
-	if isDestroy {
-		CloseSubTopo(ctx, s, ctx.GetRunId())
-	}
+	CloseSubTopo(ctx, s)
 }
 
 // IsSliceMode this is a constant set when creating new subtopo
