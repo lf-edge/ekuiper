@@ -290,6 +290,17 @@ func createTopo(rule *def.Rule, lp LogicalPlan, mockSourcesProp map[string]map[s
 	tp.SetStreams(streamsFromStmt)
 	tp.SetSinkSchema(schema)
 
+	// Cancel the partial topo on any planning error so that shared connection/stream
+	// subtopo refs and output channels registered during buildOps are cleaned up.
+	// Without this, a failed buildActions would leave the rule permanently registered
+	// in the shared subtopo's refRules with an unread output channel, causing
+	// "buffer full, drop message" errors for other rules.
+	defer func() {
+		if err != nil {
+			tp.Cancel()
+		}
+	}()
+
 	input, _, err := buildOps(lp, tp, rule.Options, mockSourcesProp, streamsFromStmt, 0)
 	if err != nil {
 		return nil, err
