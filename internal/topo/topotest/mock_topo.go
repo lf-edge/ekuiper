@@ -572,6 +572,7 @@ func DoCheckpointRuleTest(t *testing.T, tests []RuleCheckpointTest, opt *def.Rul
 		})
 	}
 }
+
 func waitTopoReady(t *testing.T, tp *topo.Topo, id string) {
 	// Wait for topology to be fully ready (all sources and sinks connected)
 	for retry := 100; retry > 0; retry-- {
