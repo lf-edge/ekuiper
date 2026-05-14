@@ -16,6 +16,7 @@ package kafka
 
 import (
 	"encoding/json"
+	"net"
 	"strconv"
 	"testing"
 	"time"
@@ -95,6 +96,29 @@ func TestKafkaSink(t *testing.T) {
 	//	require.Error(t, ks.Provision(ctx, configs), i)
 	//}
 	//failpoint.Disable("github.com/lf-edge/ekuiper/v2/extensions/impl/kafka/kafkaErr")
+}
+
+func TestKafkaSinkPingWithoutTopic(t *testing.T) {
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	require.NoError(t, err)
+	defer listener.Close()
+	errCh := make(chan error, 1)
+	go func() {
+		conn, err := listener.Accept()
+		if err != nil {
+			errCh <- err
+			return
+		}
+		errCh <- conn.Close()
+	}()
+
+	ks := &KafkaSink{}
+	ctx := mockContext.NewMockContext("1", "2")
+	err = ks.Ping(ctx, map[string]any{
+		"brokers": listener.Addr().String(),
+	})
+	require.NoError(t, err)
+	require.NoError(t, <-errCh)
 }
 
 func TestKafkaSinkBuildMsg(t *testing.T) {
