@@ -31,6 +31,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/metrics"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cert"
+	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 	"github.com/lf-edge/ekuiper/v2/pkg/model"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
@@ -57,6 +58,7 @@ type KafkaSink struct {
 	tlsConfig      *tls.Config
 	headersMap     map[string]string
 	headerTemplate string
+	cw             *connection.ConnWrapper
 	saslConf       *saslConf
 	mechanism      sasl.Mechanism
 	LastStats      kafkago.WriterStats
@@ -97,6 +99,7 @@ type kafkaConf struct {
 	kafkaWriterConf
 	Brokers        string        `json:"brokers"`
 	Topic          string        `json:"topic"`
+	SelId          string        `json:"connectionSelector"`
 	MaxAttempts    int           `json:"maxAttempts"`
 	RequiredACKs   int           `json:"requiredACKs"`
 	Key            string        `json:"key"`
@@ -183,29 +186,37 @@ func (k *KafkaSink) Provision(ctx api.StreamContext, configs map[string]any) err
 }
 
 func (k *KafkaSink) Ping(ctx api.StreamContext, props map[string]any) error {
-	if err := k.Provision(ctx, props); err != nil {
+	conf, err := newKafkaConnectionConf(ctx, props)
+	if err != nil {
 		return err
 	}
-	for _, broker := range strings.Split(k.kc.Brokers, ",") {
-		err := k.ping(broker)
-		if err != nil {
+	hasBroker := false
+	for _, broker := range strings.Split(conf.Brokers, ",") {
+		broker = strings.TrimSpace(broker)
+		if broker == "" {
+			continue
+		}
+		hasBroker = true
+		if err := conf.pingBrokerRaw(broker); err != nil {
 			return err
 		}
+	}
+	if !hasBroker {
+		return fmt.Errorf("brokers can not be empty")
 	}
 	return nil
 }
 
-func (k *KafkaSink) ping(address string) error {
+func (c *kafkaConnectionConf) pingBrokerRaw(address string) error {
 	d := &kafkago.Dialer{
-		TLS:           k.tlsConfig,
-		SASLMechanism: k.mechanism,
+		TLS:           c.tlsConfig,
+		SASLMechanism: c.mechanism,
 	}
-	c, err := d.Dial("tcp", address)
+	conn, err := d.Dial("tcp", address)
 	if err != nil {
 		return err
 	}
-	c.Close()
-	return nil
+	return conn.Close()
 }
 
 func (k *KafkaSink) buildKafkaWriter(ctx api.StreamContext) {
@@ -235,10 +246,19 @@ func (k *KafkaSink) buildKafkaWriter(ctx api.StreamContext) {
 }
 
 func (k *KafkaSink) Close(ctx api.StreamContext) error {
-	err := k.writer.Close()
+	var err error
+	if k.writer != nil {
+		err = k.writer.Close()
+	}
 	if k.transport != nil {
 		k.transport.CloseIdleConnections()
 		k.transport = nil
+	}
+	if k.cw != nil {
+		if detachErr := connection.DetachConnection(ctx, k.cw.ID); detachErr != nil && err == nil {
+			err = detachErr
+		}
+		k.cw = nil
 	}
 	return err
 }
@@ -246,6 +266,15 @@ func (k *KafkaSink) Close(ctx api.StreamContext) error {
 func (k *KafkaSink) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) error {
 	k.ruleID = ctx.GetRuleId()
 	k.opID = ctx.GetOpId()
+	if k.kc.SelId != "" {
+		refID := fmt.Sprintf("%s_%s_%d", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId())
+		cw, err := connection.FetchConnection(ctx, refID, "kafka", k.props, sch)
+		if err != nil {
+			return err
+		}
+		k.cw = cw
+		ctx.GetLogger().Infof("action=use_shared_kafka_connection role=sink connId=%s connectionKey=%s rule=%s topic=%s", k.cw.ID, k.kc.SelId, ctx.GetRuleId(), k.kc.Topic)
+	}
 	k.buildKafkaWriter(ctx)
 	k.connected = true
 	sch(api.ConnectionConnected, "")

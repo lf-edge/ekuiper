@@ -194,7 +194,12 @@ func TestHandleScheduleRule(t *testing.T) {
 
 func TestRunScheduleRuleChecker(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
-	go runScheduleRuleCheckerByInterval(3*time.Second, ctx)
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		runScheduleRuleCheckerByInterval(3*time.Second, ctx)
+	}()
 	time.Sleep(1 * time.Second)
 	cancel()
+	<-done
 }
