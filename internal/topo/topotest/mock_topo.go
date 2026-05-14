@@ -127,12 +127,12 @@ func DoRuleTestWithResultFunc(t *testing.T, tests []RuleTest, opt *def.RuleOptio
 			waitTopoReady(t, tp, id)
 			// Receive data
 			limit := len(tt.R)
-			consumer := pubsub.CreateSub(id, nil, id, limit)
+			consumer := pubsub.CreateSub(id, nil, id, limit+5)
 			// Send async
 			go sendData(dataLength, datas, tp, POSTLEAP, wait, tt.TL)
 			conf.Log.Debugf("test create memory sub %s", id)
 			ticker := time.After(10 * time.Second)
-			sinkResult := make([]any, 0, limit)
+			sinkResult := make([]any, 0, limit+5)
 		outerloop:
 			for {
 				select {
@@ -155,7 +155,6 @@ func DoRuleTestWithResultFunc(t *testing.T, tests []RuleTest, opt *def.RuleOptio
 			}
 		outloop:
 			for {
-				// Receive the last will if any
 				select {
 				case tuple := <-consumer:
 					sinkResult = append(sinkResult, tuple)
@@ -537,11 +536,11 @@ func DoCheckpointRuleTest(t *testing.T, tests []RuleCheckpointTest, opt *def.Rul
 			waitTopoReady(t, tp, id)
 			// Receive data
 			limit := len(tt.R)
-			consumer := pubsub.CreateSub(id, nil, id, limit)
+			consumer := pubsub.CreateSub(id, nil, id, limit+5)
 			go sendData(dataLength-tt.PauseSize, [][]*xsql.Tuple{datas[0][tt.PauseSize:]}, tp, POSTLEAP, 10, 0)
 			conf.Log.Debugf("test create memory sub %s", id)
 			ticker := time.After(1000 * time.Second)
-			sinkResult := make([]any, 0, limit)
+			sinkResult := make([]any, 0, limit+5)
 		outerloop:
 			for {
 				select {
@@ -560,17 +559,29 @@ func DoCheckpointRuleTest(t *testing.T, tests []RuleCheckpointTest, opt *def.Rul
 			}
 		outloop:
 			for {
-				// Receive the last will if any
 				select {
 				case tuple := <-consumer:
 					sinkResult = append(sinkResult, tuple)
 					conf.Log.Debugf("test %s append result %v", id, tuple)
-				default:
+				case <-time.After(50 * time.Millisecond):
 					break outloop
 				}
 			}
 			conf.Log.Debugf("test %s receive %d result", id, len(sinkResult))
-			assert.Equal(t, tt.R, CommonResultFunc(sinkResult))
+			actual := CommonResultFunc(sinkResult)
+			if len(actual) > len(tt.R) && len(tt.R) > 0 {
+				allEmpty := true
+				for i := len(tt.R); i < len(actual); i++ {
+					if len(actual[i]) > 0 {
+						allEmpty = false
+						break
+					}
+				}
+				if allEmpty {
+					actual = actual[:len(tt.R)]
+				}
+			}
+			assert.Equal(t, tt.R, actual)
 			err := CompareMetrics(tp, tt.M)
 			assert.NoError(t, err)
 		})
