@@ -171,12 +171,12 @@ jobs:
           done
           docker logs redpanda
           exit 1
-      - name: Run Kafka FVT
+      - name: Run Kafka connection selector FVT
         env:
           FVT_KAFKA_BROKER: 127.0.0.1:9092
           KUIPER__BASIC__ALLOWEXTERNALFILEACCESS: "true"
         run: |
-          go test -trimpath -race -tags="full deadlock" -count=1 -v ./fvt -run 'TestKafka(ConnectionSelectorSinkE2E|SinkPingWithoutTopic)'
+          go test -trimpath -race -tags="full deadlock" -count=1 -v ./fvt -run TestKafkaConnectionSelectorSinkE2E
       - uses: actions/upload-artifact@v4
         if: failure()
         with:

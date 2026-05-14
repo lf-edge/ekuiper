@@ -55,6 +55,15 @@ func TestKafkaConnectionSelectorSinkE2E(t *testing.T) {
 	})
 	require.NoError(t, createKafkaTopic(broker, outputTopic, 30*time.Second))
 
+	resp, err := client.Post("metadata/sinks/connection/kafka", fmt.Sprintf(`{
+		"brokers": %q,
+		"insecureSkipVerify": false,
+		"saslAuthType": "none",
+		"resourceId": "kafkacon"
+	}`, broker))
+	require.NoError(t, err)
+	require.Equal(t, http.StatusOK, resp.StatusCode, mustReadResponseText(t, resp))
+
 	reader := kafkago.NewReader(kafkago.ReaderConfig{
 		Brokers:   []string{broker},
 		Topic:     outputTopic,
@@ -65,7 +74,7 @@ func TestKafkaConnectionSelectorSinkE2E(t *testing.T) {
 	require.NoError(t, reader.SetOffset(kafkago.FirstOffset))
 	defer reader.Close()
 
-	resp, err := client.Post("connections", fmt.Sprintf(`{
+	resp, err = client.Post("connections", fmt.Sprintf(`{
 		"id": %q,
 		"typ": "kafka",
 		"props": {
@@ -128,23 +137,6 @@ func TestKafkaConnectionSelectorSinkE2E(t *testing.T) {
 	got := decodeKafkaPayload(t, msg.Value)
 	require.Equal(t, float64(42), got["v"])
 	require.Equal(t, "memory", got["source"])
-}
-
-func TestKafkaSinkPingWithoutTopic(t *testing.T) {
-	broker := os.Getenv("FVT_KAFKA_BROKER")
-	if broker == "" {
-		t.Skip("FVT_KAFKA_BROKER is not set")
-	}
-	require.NoError(t, waitKafkaBroker(broker, 30*time.Second))
-
-	resp, err := client.Post("metadata/sinks/connection/kafka", fmt.Sprintf(`{
-		"brokers": %q,
-		"insecureSkipVerify": false,
-		"saslAuthType": "none",
-		"resourceId": "kafkacon"
-	}`, broker))
-	require.NoError(t, err)
-	require.Equal(t, http.StatusOK, resp.StatusCode, mustReadResponseText(t, resp))
 }
 
 func decodeKafkaPayload(t *testing.T, payload []byte) map[string]any {
