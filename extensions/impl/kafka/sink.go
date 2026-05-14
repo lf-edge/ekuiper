@@ -190,7 +190,33 @@ func (k *KafkaSink) Ping(ctx api.StreamContext, props map[string]any) error {
 	if err != nil {
 		return err
 	}
-	return conf.ping()
+	hasBroker := false
+	for _, broker := range strings.Split(conf.Brokers, ",") {
+		broker = strings.TrimSpace(broker)
+		if broker == "" {
+			continue
+		}
+		hasBroker = true
+		if err := conf.pingBrokerRaw(broker); err != nil {
+			return err
+		}
+	}
+	if !hasBroker {
+		return fmt.Errorf("brokers can not be empty")
+	}
+	return nil
+}
+
+func (c *kafkaConnectionConf) pingBrokerRaw(address string) error {
+	d := &kafkago.Dialer{
+		TLS:           c.tlsConfig,
+		SASLMechanism: c.mechanism,
+	}
+	conn, err := d.Dial("tcp", address)
+	if err != nil {
+		return err
+	}
+	return conn.Close()
 }
 
 func (k *KafkaSink) buildKafkaWriter(ctx api.StreamContext) {
