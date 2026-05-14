@@ -124,6 +124,23 @@ func TestKafkaConnectionSelectorSinkE2E(t *testing.T) {
 	require.Equal(t, "memory", got["source"])
 }
 
+func TestKafkaSinkPingWithoutTopic(t *testing.T) {
+	broker := os.Getenv("FVT_KAFKA_BROKER")
+	if broker == "" {
+		t.Skip("FVT_KAFKA_BROKER is not set")
+	}
+	require.NoError(t, waitKafkaBroker(broker, 30*time.Second))
+
+	resp, err := client.Post("metadata/sinks/connection/kafka", fmt.Sprintf(`{
+		"brokers": %q,
+		"insecureSkipVerify": false,
+		"saslAuthType": "none",
+		"resourceId": "kafkacon"
+	}`, broker))
+	require.NoError(t, err)
+	require.Equal(t, http.StatusOK, resp.StatusCode, mustReadResponseText(t, resp))
+}
+
 func decodeKafkaPayload(t *testing.T, payload []byte) map[string]any {
 	t.Helper()
 	var got map[string]any
