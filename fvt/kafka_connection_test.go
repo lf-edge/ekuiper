@@ -108,6 +108,12 @@ func TestKafkaConnectionSelectorSinkE2E(t *testing.T) {
 		return status["status"] == "running"
 	}), "kafka connection selector rule did not reach running state")
 
+	resp, err = client.Delete("connections/" + connID)
+	require.NoError(t, err)
+	deleteResp := mustReadResponseText(t, resp)
+	require.Equal(t, http.StatusBadRequest, resp.StatusCode, deleteResp)
+	require.Contains(t, deleteResp, "can't be dropped due to rule references")
+
 	ctx := mockContext.NewMockContext("kafkaConnectionSelectorFVT", "memoryProducer")
 	pubsub.Produce(ctx, inputTopic, &xsql.Tuple{
 		Message:   map[string]any{"v": 42, "source": "memory"},

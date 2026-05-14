@@ -16,6 +16,7 @@ package kafka
 
 import (
 	"encoding/json"
+	"fmt"
 	"net"
 	"strconv"
 	"testing"
@@ -25,6 +26,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/testx"
+	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
 
@@ -119,6 +121,46 @@ func TestKafkaSinkPingWithoutTopic(t *testing.T) {
 	})
 	require.NoError(t, err)
 	require.NoError(t, <-errCh)
+}
+
+func TestKafkaSinkConnectionSelectorReference(t *testing.T) {
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	require.NoError(t, err)
+	defer listener.Close()
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		for {
+			conn, err := listener.Accept()
+			if err != nil {
+				return
+			}
+			_ = conn.Close()
+		}
+	}()
+
+	ctx := mockContext.NewMockContext("rule", "op")
+	connID := fmt.Sprintf("kafkaConnRef%d", time.Now().UnixNano())
+	_, err = connection.CreateNamedConnection(ctx, connID, "kafka", map[string]any{
+		"brokers": listener.Addr().String(),
+	})
+	require.NoError(t, err)
+	defer connection.DropNameConnection(ctx, connID)
+
+	ks := &KafkaSink{}
+	require.NoError(t, ks.Provision(ctx, map[string]any{
+		"brokers":            listener.Addr().String(),
+		"topic":              "test-topic",
+		"connectionSelector": connID,
+	}))
+	require.NoError(t, ks.Connect(ctx, func(status string, message string) {
+		// do nothing
+	}))
+	require.ErrorContains(t, connection.DropNameConnection(ctx, connID), "can't be dropped due to rule references")
+	require.NoError(t, ks.Close(ctx))
+	require.NoError(t, connection.DropNameConnection(ctx, connID))
+	listener.Close()
+	<-done
 }
 
 func TestKafkaSinkBuildMsg(t *testing.T) {
