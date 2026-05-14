@@ -98,7 +98,7 @@ func DoRuleTestWithResultFunc(t *testing.T, tests []RuleTest, opt *def.RuleOptio
 				if w > 0 {
 					wait = w
 				} else {
-					wait = 5
+					wait = 50
 				}
 			}
 			switch opt.Qos {
@@ -128,11 +128,11 @@ func DoRuleTestWithResultFunc(t *testing.T, tests []RuleTest, opt *def.RuleOptio
 			// Receive data
 			limit := len(tt.R)
 			consumer := pubsub.CreateSub(id, nil, id, limit+5)
-			// Send async
-			go sendData(dataLength, datas, tp, POSTLEAP, wait, tt.TL)
 			conf.Log.Debugf("test create memory sub %s", id)
-			ticker := time.After(10 * time.Second)
+			ticker := time.After(30 * time.Second)
 			sinkResult := make([]any, 0, limit+5)
+			// Send data synchronously so the consumer is ready before any clock tick
+			sendData(dataLength, datas, tp, POSTLEAP, wait, tt.TL)
 		outerloop:
 			for {
 				select {
@@ -153,14 +153,14 @@ func DoRuleTestWithResultFunc(t *testing.T, tests []RuleTest, opt *def.RuleOptio
 					break outerloop
 				}
 			}
-		outloop:
+		drainloop:
 			for {
 				select {
 				case tuple := <-consumer:
 					sinkResult = append(sinkResult, tuple)
 					conf.Log.Debugf("test %s append result %v", id, tuple)
-				default:
-					break outloop
+				case <-time.After(100 * time.Millisecond):
+					break drainloop
 				}
 			}
 			conf.Log.Debugf("test %s receive %d result", id, len(sinkResult))
@@ -471,7 +471,7 @@ func DoCheckpointRuleTest(t *testing.T, tests []RuleCheckpointTest, opt *def.Rul
 				if w > 0 {
 					wait = w
 				} else {
-					wait = 5
+					wait = 50
 				}
 			}
 			switch opt.Qos {
@@ -537,8 +537,9 @@ func DoCheckpointRuleTest(t *testing.T, tests []RuleCheckpointTest, opt *def.Rul
 			// Receive data
 			limit := len(tt.R)
 			consumer := pubsub.CreateSub(id, nil, id, limit+5)
-			go sendData(dataLength-tt.PauseSize, [][]*xsql.Tuple{datas[0][tt.PauseSize:]}, tp, POSTLEAP, 10, 0)
 			conf.Log.Debugf("test create memory sub %s", id)
+			time.Sleep(20 * time.Millisecond)
+			go sendData(dataLength-tt.PauseSize, [][]*xsql.Tuple{datas[0][tt.PauseSize:]}, tp, POSTLEAP, 10, 0)
 			ticker := time.After(1000 * time.Second)
 			sinkResult := make([]any, 0, limit+5)
 		outerloop:
@@ -563,7 +564,7 @@ func DoCheckpointRuleTest(t *testing.T, tests []RuleCheckpointTest, opt *def.Rul
 				case tuple := <-consumer:
 					sinkResult = append(sinkResult, tuple)
 					conf.Log.Debugf("test %s append result %v", id, tuple)
-				case <-time.After(50 * time.Millisecond):
+				case <-time.After(100 * time.Millisecond):
 					break outloop
 				}
 			}
