@@ -81,6 +81,10 @@ func DoRuleTestWithResultFunc(t *testing.T, tests []RuleTest, opt *def.RuleOptio
 		t.Run(tt.Name, func(t *testing.T) {
 			id := strings.ReplaceAll(strings.ReplaceAll(t.Name(), "#", "_"), "/", "_")
 			conf.Log.Debugf("run test %s", id)
+			// Drop any stale checkpoint state from a previous run of the same rule ID
+			if opt != nil && opt.Qos >= def.AtLeastOnce {
+				_ = pkgstore.DropTS(id)
+			}
 			// Create the rule which sink to memory topic
 			datas, dataLength, tp, errCh := createTestRule(t, id, tt, opt)
 			if tp == nil {
@@ -299,11 +303,6 @@ func createTestRule(t *testing.T, id string, tt RuleTest, opt *def.RuleOption) (
 		},
 		Options: opt,
 	}
-	// Drop any stale checkpoint state from a previous run of the same rule ID
-	// (e.g. when go test -count N repeats the same subtest N times).
-	if opt != nil && opt.Qos >= def.AtLeastOnce {
-		_ = pkgstore.DropTS(id)
-	}
 	tp, err := planner.Plan(rule)
 	if err != nil {
 		t.Error(err)
@@ -456,6 +455,10 @@ func DoCheckpointRuleTest(t *testing.T, tests []RuleCheckpointTest, opt *def.Rul
 		t.Run(tt.Name, func(t *testing.T) {
 			id := strings.ReplaceAll(strings.ReplaceAll(t.Name(), "#", "_"), "/", "_")
 			conf.Log.Debugf("run test %s", id)
+			// Drop any stale checkpoint state from a previous run (but NOT during restart after checkpoint)
+			if opt != nil && opt.Qos >= def.AtLeastOnce {
+				_ = pkgstore.DropTS(id)
+			}
 			// Create the rule which sink to memory topic
 			datas, dataLength, tp, _ := createTestRule(t, id, tt.RuleTest, opt)
 			if tp == nil {
@@ -531,10 +534,11 @@ func DoCheckpointRuleTest(t *testing.T, tests []RuleCheckpointTest, opt *def.Rul
 			}
 
 			conf.Log.Debugf("After open stream at %d", timex.GetNowInMilli())
-			go sendData(dataLength-tt.PauseSize, [][]*xsql.Tuple{datas[0][tt.PauseSize:]}, tp, POSTLEAP, 10, 0)
+			waitTopoReady(t, tp, id)
 			// Receive data
 			limit := len(tt.R)
 			consumer := pubsub.CreateSub(id, nil, id, limit)
+			go sendData(dataLength-tt.PauseSize, [][]*xsql.Tuple{datas[0][tt.PauseSize:]}, tp, POSTLEAP, 10, 0)
 			conf.Log.Debugf("test create memory sub %s", id)
 			ticker := time.After(1000 * time.Second)
 			sinkResult := make([]any, 0, limit)
@@ -574,34 +578,24 @@ func DoCheckpointRuleTest(t *testing.T, tests []RuleCheckpointTest, opt *def.Rul
 }
 
 func waitTopoReady(t *testing.T, tp *topo.Topo, id string) {
-	// Wait for topology to be fully ready (all sources and sinks connected)
 	for retry := 100; retry > 0; retry-- {
 		allReady := true
 		keys, values := tp.GetMetrics()
-		sourceCount := 0
-		sinkCount := 0
 		for i, key := range keys {
 			if strings.HasSuffix(key, "_connection_status") {
-				if strings.HasPrefix(key, "source_") {
-					sourceCount++
-				} else if strings.HasPrefix(key, "sink_") {
-					sinkCount++
-				}
 				if values[i] != 1 && values[i] != "connected" {
 					allReady = false
 					break
 				}
 			}
 		}
-		// Also check sink readiness via pubsub for memory sinks
 		if allReady && pubsub.GetPubCount(id) > 0 {
-			// In ExactlyOnce mode, wait for coordinator to be activated if not already
 			if tp.GetCoordinator() != nil {
 				if tp.GetCoordinator().IsActivated() {
-					break
+					return
 				}
 			} else {
-				break
+				return
 			}
 		}
 		time.Sleep(50 * time.Millisecond)
