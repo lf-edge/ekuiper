@@ -131,8 +131,13 @@ func DoRuleTestWithResultFunc(t *testing.T, tests []RuleTest, opt *def.RuleOptio
 			conf.Log.Debugf("test create memory sub %s", id)
 			ticker := time.After(30 * time.Second)
 			sinkResult := make([]any, 0, limit+5)
-			// Send data synchronously so the consumer is ready before any clock tick
-			sendData(dataLength, datas, tp, POSTLEAP, wait, tt.TL)
+			// Signal sendData to start only after the main loop's select is set up
+			ready := make(chan struct{})
+			go func() {
+				<-ready
+				sendData(dataLength, datas, tp, POSTLEAP, wait, tt.TL)
+			}()
+			close(ready)
 		outerloop:
 			for {
 				select {

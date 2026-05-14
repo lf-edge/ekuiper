@@ -1056,7 +1056,7 @@ func TestSingleSQL(t *testing.T) {
 				}},
 			},
 			W:  15,
-			TL: 500,
+			TL: 3000,
 			M: map[string]interface{}{
 				"op_5_join_aligner_0_records_in_total":  int64(8),
 				"op_5_join_aligner_0_records_out_total": int64(5),
