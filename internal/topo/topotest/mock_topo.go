@@ -397,9 +397,9 @@ func HandleStream(createOrDrop bool, names []string, t *testing.T) {
 				sql = `CREATE STREAM lsessionDemo (
 				) WITH (DATASOURCE="lsessionDemo", TYPE="mock", FORMAT="json");`
 			case "ext":
-				sql = "CREATE STREAM ext (count bigint) WITH (DATASOURCE=\"ext\", FORMAT=\"JSON\", TYPE=\"random\", CONF_KEY=\"ext\",STRICT_VALIDATION=\"true\", INTERVAL=\"10ms\")"
+				sql = "CREATE STREAM ext (count bigint) WITH (DATASOURCE=\"ext\", FORMAT=\"JSON\", TYPE=\"random\", CONF_KEY=\"ext\",STRICT_VALIDATION=\"true\")"
 			case "ext2":
-				sql = "CREATE STREAM ext2 (count bigint) WITH (DATASOURCE=\"ext2\", FORMAT=\"JSON\", TYPE=\"random\", CONF_KEY=\"dedup\", INTERVAL=\"10ms\")"
+				sql = "CREATE STREAM ext2 (count bigint) WITH (DATASOURCE=\"ext2\", FORMAT=\"JSON\", TYPE=\"random\", CONF_KEY=\"dedup\")"
 			case "text":
 				sql = "CREATE STREAM text (slogan string, brand string) WITH (DATASOURCE=\"text\", TYPE=\"mock\", FORMAT=\"JSON\")"
 			case "binDemo":
