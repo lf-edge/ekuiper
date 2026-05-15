@@ -124,8 +124,6 @@ func DoRuleTestWithResultFunc(t *testing.T, tests []RuleTest, opt *def.RuleOptio
 					t.FailNow()
 				}
 			}
-			waitTopoReady(t, tp, id)
-			// Receive data
 			limit := len(tt.R)
 			consumer := pubsub.CreateSub(id, nil, id, limit+5)
 			conf.Log.Debugf("test create memory sub %s", id)
@@ -615,6 +613,6 @@ func waitTopoReady(t *testing.T, tp *topo.Topo, id string) {
 				return
 			}
 		}
-		time.Sleep(50 * time.Millisecond)
+		time.Sleep(10 * time.Millisecond)
 	}
 }
