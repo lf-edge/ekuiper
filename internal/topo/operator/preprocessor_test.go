@@ -595,17 +595,19 @@ func TestPreprocessor_Apply(t *testing.T) {
 				},
 			},
 		},
-		{
+		{ // 32
 			stmt: &ast.StreamStmt{
 				Name: ast.StreamName("demo"),
 				StreamFields: []ast.StreamField{
 					{Name: "bb", FieldType: &ast.BasicType{Type: ast.STRINGS}, Default: &ast.StringLiteral{Val: "10"}},
+					{Name: "cc", FieldType: &ast.BasicType{Type: ast.STRINGS}, Default: &ast.StringLiteral{Val: "false"}},
 				},
 			},
 			data: []byte(`{}`),
 			result: &xsql.Tuple{
 				Message: xsql.Message{
 					"bb": "10",
+					"cc": "false",
 				},
 			},
 		},
