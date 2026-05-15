@@ -16,6 +16,7 @@ package node
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
@@ -31,6 +32,8 @@ type JoinAlignNode struct {
 	// table states
 	batch map[string][]*xsql.Tuple
 	size  map[string]int
+
+	mu sync.RWMutex
 }
 
 const BatchKey = "$$batchInputs"
@@ -93,6 +96,7 @@ func (n *JoinAlignNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 					switch d := data.(type) {
 					case *xsql.Tuple:
 						log.Debugf("JoinAlignNode receive tuple input %v", d)
+						n.mu.Lock()
 						if b, ok := n.batch[d.Emitter]; ok {
 							s := n.size[d.Emitter]
 							if len(b) >= s {
@@ -104,6 +108,7 @@ func (n *JoinAlignNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 						} else {
 							n.alignBatch(ctx, d)
 						}
+						n.mu.Unlock()
 					case *xsql.WindowTuples:
 						log.Debugf("JoinAlignNode receive window input %v", d)
 						n.alignBatch(ctx, d)
@@ -134,12 +139,32 @@ func (n *JoinAlignNode) alignBatch(ctx api.StreamContext, input any) {
 	case *xsql.WindowTuples:
 		w = t
 	}
+
+	n.mu.RLock()
 	for _, contents := range n.batch {
 		for _, v := range contents {
 			w = w.AddTuple(v)
 		}
 	}
+	n.mu.RUnlock()
+
 	n.Broadcast(w)
 	n.onSend(ctx, w)
 	n.statManager.SetBufferLength(int64(len(n.input)))
+}
+
+func (n *JoinAlignNode) CaptureSnapshot() *xsql.WindowTuples {
+	n.mu.RLock()
+	defer n.mu.RUnlock()
+
+	w := &xsql.WindowTuples{
+		Content: make([]xsql.Row, 0),
+	}
+
+	for _, contents := range n.batch {
+		for _, n := range contents {
+			w = w.AddTuple(n)
+		}
+	}
+	return w
 }

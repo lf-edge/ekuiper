@@ -215,3 +215,51 @@ func TestAlignTable(t *testing.T) {
 		})
 	}
 }
+
+func TestCaptureSnapshot(t *testing.T) {
+	tests := []struct {
+		name string
+		in   []any
+		out  []any
+	}{
+		{
+			name: "retain exceed",
+			in: []any{
+				&xsql.Tuple{
+					Emitter: "table1",
+					Message: map[string]any{"id": 1, "t1": "data2"},
+				},
+				&xsql.Tuple{
+					Emitter: "table1",
+					Message: map[string]any{"id": 1, "t1": "data3"},
+				},
+				&xsql.Tuple{
+					Emitter: "table1",
+					Message: map[string]any{"id": 1, "t1": "data4"},
+				},
+				&xsql.Tuple{
+					Emitter: "stream1",
+					Message: map[string]any{"id": 1, "a": 3},
+				},
+			},
+			out: []any{
+				&xsql.WindowTuples{
+					Content: []xsql.Row{
+						&xsql.Tuple{
+							Emitter: "stream1",
+							Message: map[string]any{"id": 1, "a": 3},
+						},
+						&xsql.Tuple{
+							Emitter: "table1",
+							Message: map[string]any{"id": 1, "t1": "data3"},
+						},
+						&xsql.Tuple{
+							Emitter: "table1",
+							Message: map[string]any{"id": 1, "t1": "data4"},
+						},
+					},
+				},
+			},
+		},
+	}
+}

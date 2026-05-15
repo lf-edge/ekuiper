@@ -17,6 +17,7 @@ package rule
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -290,6 +291,17 @@ func (s *State) GetTopoGraph() *def.PrintableTopo {
 	} else {
 		return s.topoGraph
 	}
+}
+
+func (s *State) GetPlainTopology() (*topo.Topo, error) {
+	s.ruleLock.RLock()
+	defer s.ruleLock.RUnlock()
+
+	if s.topology != nil {
+		return s.topology, nil
+	}
+
+	return s.topology, errors.New("nil topology")
 }
 
 func (s *State) SetIsTraceEnabled(isEnabled bool, stra kctx.TraceStrategy) error {
