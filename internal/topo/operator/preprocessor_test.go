@@ -595,6 +595,20 @@ func TestPreprocessor_Apply(t *testing.T) {
 				},
 			},
 		},
+		{
+			stmt: &ast.StreamStmt{
+				Name: ast.StreamName("demo"),
+				StreamFields: []ast.StreamField{
+					{Name: "bb", FieldType: &ast.BasicType{Type: ast.STRINGS}, Default: &ast.StringLiteral{Val: "10"}},
+				},
+			},
+			data: []byte(`{}`),
+			result: &xsql.Tuple{
+				Message: xsql.Message{
+					"bb": "10",
+				},
+			},
+		},
 	}
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))

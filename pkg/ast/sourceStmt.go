@@ -203,20 +203,26 @@ func fieldDefaultClauseFromSchema(v *JsonStreamField) (Literal, error) {
 	return lit, nil
 }
 
-func GetTypeOfDefault(defClause string) Literal {
-	if val, err := cast.ToInt64(defClause, cast.CONVERT_ALL); err == nil {
-		return &IntegerLiteral{Val: val}
+func GetTypeOfDefault(defClause string, fieldType string) Literal {
+	switch fieldType {
+	case BIGINT.String():
+		if val, err := cast.ToInt64(defClause, cast.CONVERT_ALL); err == nil {
+			return &IntegerLiteral{Val: val}
+		}
+
+	case FLOAT.String():
+		if val, err := cast.ToFloat64(defClause, cast.CONVERT_ALL); err == nil {
+			return &NumberLiteral{Val: val}
+		}
+	case STRINGS.String():
+		return &StringLiteral{Val: defClause}
+	case BOOLEAN.String():
+		if val, err := cast.ToBool(defClause, cast.CONVERT_ALL); err == nil {
+			return &BooleanLiteral{Val: val}
+		}
 	}
 
-	if val, err := cast.ToFloat64(defClause, cast.CONVERT_ALL); err == nil {
-		return &NumberLiteral{Val: val}
-	}
-
-	if val, err := cast.ToBool(defClause, cast.CONVERT_ALL); err == nil {
-		return &BooleanLiteral{Val: val}
-	}
-
-	return &StringLiteral{Val: defClause}
+	return nil
 }
 
 func fieldTypeFromSchema(v *JsonStreamField) (FieldType, error) {
