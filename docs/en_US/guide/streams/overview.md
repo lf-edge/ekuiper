@@ -248,5 +248,5 @@ CREATE STREAM demo (
     status STRING DEFAULT "unknown",
     active BOOLEAN DEFAULT false,
     user_id BIGINT DEFAULT 2
-) WITH (DATASOURCE="sensor/data", FORMAT="JSON", StrictValidation="true");
+) WITH (DATASOURCE="sensor/data", FORMAT="JSON", STRICT_VALIDATION="true");
 ```
