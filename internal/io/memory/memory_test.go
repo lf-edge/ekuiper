@@ -69,12 +69,6 @@ func TestSharedInmemoryNode(t *testing.T) {
 		Metadata: nil,
 	}
 	mockclock.GetMockClock().Add(100)
-	go func() {
-		time.Sleep(10 * time.Millisecond)
-		if gerr := snk.CollectList(ctx, &xsql.TransformedTupleList{Content: []api.MessageTuple{rawTuple}}); gerr != nil {
-			t.Error(gerr)
-		}
-	}()
 	err = src.Subscribe(ctx, func(ctx api.StreamContext, res any, meta map[string]any, ts time.Time) {
 		expected := []pubsub.MemTuple{&xsql.Tuple{
 			Emitter:   "",
@@ -85,6 +79,9 @@ func TestSharedInmemoryNode(t *testing.T) {
 		assert.Equal(t, expected, res)
 		cancel()
 	}, nil)
+	if gerr := snk.CollectList(ctx, &xsql.TransformedTupleList{Content: []api.MessageTuple{rawTuple}}); gerr != nil {
+		t.Error(gerr)
+	}
 	assert.NoError(t, err)
 	<-ctx.Done()
 }
@@ -129,12 +126,6 @@ func TestUpdateListInmemoryNode(t *testing.T) {
 		Metadata: nil,
 	}
 	mockclock.GetMockClock().Add(100)
-	go func() {
-		time.Sleep(10 * time.Millisecond)
-		if gerr := snk.CollectList(ctx, &xsql.TransformedTupleList{Content: []api.MessageTuple{rawTuple}}); gerr != nil {
-			t.Error(gerr)
-		}
-	}()
 	err = src.Subscribe(ctx, func(ctx api.StreamContext, res any, meta map[string]any, ts time.Time) {
 		expected := []pubsub.MemTuple{&pubsub.UpdatableTuple{
 			MemTuple: &xsql.Tuple{
@@ -150,6 +141,9 @@ func TestUpdateListInmemoryNode(t *testing.T) {
 		cancel()
 	}, nil)
 	assert.NoError(t, err)
+	if gerr := snk.CollectList(ctx, &xsql.TransformedTupleList{Content: []api.MessageTuple{rawTuple}}); gerr != nil {
+		t.Error(gerr)
+	}
 	<-ctx.Done()
 }
 
@@ -193,12 +187,6 @@ func TestUpdateInmemoryNode(t *testing.T) {
 		Metadata: nil,
 	}
 	mockclock.GetMockClock().Add(100)
-	go func() {
-		time.Sleep(10 * time.Millisecond)
-		if gerr := snk.Collect(ctx, rawTuple); gerr != nil {
-			t.Error(gerr)
-		}
-	}()
 	err = src.Subscribe(ctx, func(ctx api.StreamContext, res any, meta map[string]any, ts time.Time) {
 		expected := &pubsub.UpdatableTuple{
 			MemTuple: &xsql.Tuple{
@@ -214,6 +202,9 @@ func TestUpdateInmemoryNode(t *testing.T) {
 		cancel()
 	}, nil)
 	assert.NoError(t, err)
+	if gerr := snk.Collect(ctx, rawTuple); gerr != nil {
+		t.Error(gerr)
+	}
 	<-ctx.Done()
 }
 

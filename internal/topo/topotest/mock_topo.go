@@ -1,4 +1,4 @@
-// Copyright 2021-2025 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -98,7 +98,7 @@ func DoRuleTestWithResultFunc(t *testing.T, tests []RuleTest, opt *def.RuleOptio
 				if w > 0 {
 					wait = w
 				} else {
-					wait = 50
+					wait = 5
 				}
 			}
 			switch opt.Qos {
@@ -129,13 +129,7 @@ func DoRuleTestWithResultFunc(t *testing.T, tests []RuleTest, opt *def.RuleOptio
 			conf.Log.Debugf("test create memory sub %s", id)
 			ticker := time.After(30 * time.Second)
 			sinkResult := make([]any, 0, limit+5)
-			// Signal sendData to start only after the main loop's select is set up
-			ready := make(chan struct{})
-			go func() {
-				<-ready
-				sendData(dataLength, datas, tp, POSTLEAP, wait, tt.TL)
-			}()
-			close(ready)
+			go sendData(dataLength, datas, tp, POSTLEAP, wait, tt.TL)
 		outerloop:
 			for {
 				select {
@@ -474,7 +468,7 @@ func DoCheckpointRuleTest(t *testing.T, tests []RuleCheckpointTest, opt *def.Rul
 				if w > 0 {
 					wait = w
 				} else {
-					wait = 50
+					wait = 5
 				}
 			}
 			switch opt.Qos {
@@ -615,4 +609,5 @@ func waitTopoReady(t *testing.T, tp *topo.Topo, id string) {
 		}
 		time.Sleep(10 * time.Millisecond)
 	}
+	t.Fatalf("topology %s not ready within timeout", id)
 }
