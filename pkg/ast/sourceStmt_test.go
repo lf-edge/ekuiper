@@ -96,12 +96,12 @@ func TestToJsonFields(t *testing.T) {
 				}},
 			},
 			output: map[string]*JsonStreamField{
-				"USERID":     {Type: "bigint", DefaultValue: "10"},
-				"FIRST_NAME": {Type: "string", DefaultValue: "foo"},
-				"LAST_NAME":  {Type: "string", DefaultValue: "bar"},
+				"USERID":     {Type: "bigint", HasDefaultValue: true, DefaultValue: "10"},
+				"FIRST_NAME": {Type: "string", HasDefaultValue: true, DefaultValue: "foo"},
+				"LAST_NAME":  {Type: "string", HasDefaultValue: true, DefaultValue: "bar"},
 				"NICKNAMES":  {Type: "array", Items: &JsonStreamField{Type: "string"}},
 				"data":       {Type: "bytea"},
-				"Gender":     {Type: "boolean", DefaultValue: "true"},
+				"Gender":     {Type: "boolean", HasDefaultValue: true, DefaultValue: "true"},
 				"ADDRESS": {Type: "struct", Properties: map[string]*JsonStreamField{
 					"STREET_NAME": {Type: "string"},
 					"NUMBER":      {Type: "bigint"},
