@@ -535,7 +535,7 @@ func TestParser_ParseCreateStream(t *testing.T) {
 			stmt: &ast.StreamStmt{
 				Name: ast.StreamName("demo"),
 				StreamFields: []ast.StreamField{
-					{Name: "USEIR", FieldType: &ast.BasicType{Type: ast.BIGINT}, Default: &ast.StringLiteral{Val: "bar"}},
+					{Name: "USERID", FieldType: &ast.BasicType{Type: ast.BIGINT}, Default: &ast.StringLiteral{Val: "bar"}},
 				},
 				Options: &ast.Options{
 					DATASOURCE: "users",
