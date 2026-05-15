@@ -717,7 +717,8 @@ func DescribeToJson(s string) string {
 	sections := strings.Split(q, "\n\n")
 	fields, options := sections[0], sections[1]
 	type field struct {
-		Name, Type, DefaultClause string
+		Name, Type    string
+		DefaultClause string `json:",omitempty"`
 	}
 	type output struct {
 		Fields  []field

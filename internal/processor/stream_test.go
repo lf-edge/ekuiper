@@ -369,28 +369,23 @@ func TestDescribeToJson(t *testing.T) {
 		},
 		{
 			"Name": "FIRST_NAME",
-			"Type": "string",
-			"DefaultClause": ""
+			"Type": "string"
 		},
 		{
 			"Name": "LAST_NAME",
-			"Type": "string",
-			"DefaultClause": ""
+			"Type": "string"
 		},
 		{
 			"Name": "NICKNAMES",
-			"Type": "array(string)",
-			"DefaultClause": ""
+			"Type": "array(string)"
 		},
 		{
 			"Name": "Gender",
-			"Type": "boolean",
-			"DefaultClause": ""
+			"Type": "boolean"
 		},
 		{
 			"Name": "ADDRESS",
-			"Type": "struct(STREET_NAME string, NUMBER bigint)",
-			"DefaultClause": ""
+			"Type": "struct(STREET_NAME string, NUMBER bigint)"
 		}
 	],
 	"Options": {
