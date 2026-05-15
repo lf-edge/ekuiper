@@ -30,6 +30,7 @@ type MockSource struct {
 	data   []*xsql.Tuple
 	offset int
 	eof    api.EOFIngest
+	sch    api.StatusChangeHandler
 	syncx.RWMutex
 }
 
@@ -49,7 +50,7 @@ func (m *MockSource) SetEofIngest(eof api.EOFIngest) {
 }
 
 func (m *MockSource) Connect(_ api.StreamContext, sch api.StatusChangeHandler) error {
-	sch(api.ConnectionConnected, "")
+	m.sch = sch
 	return nil
 }
 
@@ -58,6 +59,7 @@ func (m *MockSource) Subscribe(ctx api.StreamContext, ingest api.TupleIngest, in
 	mockClock := timex.Clock
 	log.Infof("%d: mock source %s starts", timex.GetNowInMilli(), ctx.GetOpId())
 	log.Debugf("mock source %s starts with offset %d", ctx.GetOpId(), m.offset)
+	ctx.GetState("/ready")
 	for i, d := range m.data {
 		if i < m.offset {
 			log.Debugf("mock source is skipping %d", i)
@@ -70,6 +72,8 @@ func (m *MockSource) Subscribe(ctx api.StreamContext, ingest api.TupleIngest, in
 			diff = TIMELEAP * time.Millisecond
 		}
 		next := mockClock.After(diff)
+		// Signal readiness: mock clock timer is now registered
+		m.sch(api.ConnectionConnected, "")
 		// Mock timer, only send out the data once the mock time goes to the timestamp.
 		// Another mechanism must be imposed to move forward the mock time.
 		select {

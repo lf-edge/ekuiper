@@ -127,6 +127,7 @@ func DoRuleTestWithResultFunc(t *testing.T, tests []RuleTest, opt *def.RuleOptio
 			limit := len(tt.R)
 			consumer := pubsub.CreateSub(id, nil, id, limit+5)
 			conf.Log.Debugf("test create memory sub %s", id)
+			waitTopoReady(t, tp, id)
 			ticker := time.After(30 * time.Second)
 			sinkResult := make([]any, 0, limit+5)
 			go sendData(dataLength, datas, tp, POSTLEAP, wait, tt.TL)
@@ -150,15 +151,23 @@ func DoRuleTestWithResultFunc(t *testing.T, tests []RuleTest, opt *def.RuleOptio
 					break outerloop
 				}
 			}
+		// Fast drain: collect everything immediately available
 		drainloop:
 			for {
 				select {
 				case tuple := <-consumer:
 					sinkResult = append(sinkResult, tuple)
 					conf.Log.Debugf("test %s append result %v", id, tuple)
-				case <-time.After(100 * time.Millisecond):
+				default:
 					break drainloop
 				}
+			}
+			// One more attempt to catch shutdown-flushed results
+			select {
+			case tuple := <-consumer:
+				sinkResult = append(sinkResult, tuple)
+				conf.Log.Debugf("test %s append result %v", id, tuple)
+			case <-time.After(50 * time.Millisecond):
 			}
 			conf.Log.Debugf("test %s receive %d result", id, len(sinkResult))
 			actual := resultFunc(sinkResult)
@@ -555,15 +564,23 @@ func DoCheckpointRuleTest(t *testing.T, tests []RuleCheckpointTest, opt *def.Rul
 					break outerloop
 				}
 			}
-		outloop:
+		// Fast drain: collect everything immediately available
+		cpDrainloop:
 			for {
 				select {
 				case tuple := <-consumer:
 					sinkResult = append(sinkResult, tuple)
 					conf.Log.Debugf("test %s append result %v", id, tuple)
-				case <-time.After(100 * time.Millisecond):
-					break outloop
+				default:
+					break cpDrainloop
 				}
+			}
+			// One more attempt to catch shutdown-flushed results
+			select {
+			case tuple := <-consumer:
+				sinkResult = append(sinkResult, tuple)
+				conf.Log.Debugf("test %s append result %v", id, tuple)
+			case <-time.After(50 * time.Millisecond):
 			}
 			conf.Log.Debugf("test %s receive %d result", id, len(sinkResult))
 			actual := CommonResultFunc(sinkResult)
