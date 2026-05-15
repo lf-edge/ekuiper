@@ -301,9 +301,9 @@ func (s *RuleTestSuite) TestStreamSchema() {
 	schema, err := client.GetStreamSchema(streamName)
 	s.Require().NoError(err)
 	expected := map[string]any{
-		"age":  map[string]any{"type": "string", "index": float64(0)},
-		"id":   map[string]any{"type": "bigint", "index": float64(0)},
-		"name": map[string]any{"type": "string", "index": float64(0)},
+		"age":  map[string]any{"type": "string", "default": "", "hasDefaultValue": false, "index": float64(0)},
+		"id":   map[string]any{"type": "bigint", "default": "", "hasDefaultValue": false, "index": float64(0)},
+		"name": map[string]any{"type": "string", "default": "", "hasDefaultValue": false, "index": float64(0)},
 	}
 	s.Require().Equal(expected, schema)
 }
