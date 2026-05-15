@@ -454,10 +454,10 @@ func (p *StreamProcessor) execDescribe(stmt ast.NameNode, st ast.StreamType) (r 
 			buff.WriteString(f.Name + "\t")
 
 			ft := printFieldType(f.FieldType)
-			if f.Default != nil {
-				ft += fmt.Sprintf(" DEFAULT %s", f.Default.String())
-			}
 			buff.WriteString(ft)
+			if f.Default != nil {
+				buff.WriteString(fmt.Sprintf("\tDEFAULT\t%s", f.Default.String()))
+			}
 			buff.WriteString("\n")
 		}
 		buff.WriteString("\n")
