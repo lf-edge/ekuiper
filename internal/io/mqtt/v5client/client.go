@@ -72,6 +72,7 @@ func Provision(ctx api.StreamContext, props map[string]any, onConnect client.Con
 
 	cliCfg := autopaho.ClientConfig{
 		ServerUrls: []*url.URL{cc.serverUrl},
+		TlsCfg:     cc.tls,
 		// TODO backoff?
 		ConnectRetryDelay: time.Second,
 		KeepAlive:         20, // Keepalive message should be sent every 20 seconds
