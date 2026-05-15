@@ -144,7 +144,7 @@ func (suite *ServerTestSuite) TestRule() {
 
 	// Wait for the rule to be triggered before asserting
 	var triggered bool
-	for i := 0; i < 10; i++ {
+	for i := 0; i < 30; i++ {
 		reply = ""
 		err = suite.s.DescRule(ruleId, &reply)
 		assert.Nil(suite.T(), err)

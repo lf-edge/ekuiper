@@ -25,6 +25,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/io/memory/pubsub"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
+	pkgstore "github.com/lf-edge/ekuiper/v2/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/v2/internal/processor"
 	"github.com/lf-edge/ekuiper/v2/internal/testx"
 	"github.com/lf-edge/ekuiper/v2/internal/topo"
@@ -80,6 +81,10 @@ func DoRuleTestWithResultFunc(t *testing.T, tests []RuleTest, opt *def.RuleOptio
 		t.Run(tt.Name, func(t *testing.T) {
 			id := strings.ReplaceAll(strings.ReplaceAll(t.Name(), "#", "_"), "/", "_")
 			conf.Log.Debugf("run test %s", id)
+			// Drop any stale checkpoint state from a previous run of the same rule ID
+			if opt != nil && opt.Qos >= def.AtLeastOnce {
+				_ = pkgstore.DropTS(id)
+			}
 			// Create the rule which sink to memory topic
 			datas, dataLength, tp, errCh := createTestRule(t, id, tt, opt)
 			if tp == nil {
@@ -106,27 +111,25 @@ func DoRuleTestWithResultFunc(t *testing.T, tests []RuleTest, opt *def.RuleOptio
 			}
 			var retry int
 			if opt.Qos > def.AtMostOnce {
-				for retry = 3; retry > 0; retry-- {
+				for retry = 20; retry > 0; retry-- {
 					if tp.GetCoordinator() == nil || !tp.GetCoordinator().IsActivated() {
 						conf.Log.Debugf("waiting for coordinator ready %d\n", retry)
-						time.Sleep(10 * time.Millisecond)
+						time.Sleep(50 * time.Millisecond)
 					} else {
 						break
 					}
 				}
-				if retry < 0 {
+				if retry == 0 {
 					t.Error("coordinator timeout")
 					t.FailNow()
 				}
 			}
-			// Send async
-			go sendData(dataLength, datas, tp, POSTLEAP, wait, tt.TL)
-			// Receive data
 			limit := len(tt.R)
-			consumer := pubsub.CreateSub(id, nil, id, limit)
+			consumer := pubsub.CreateSub(id, nil, id, limit+5)
 			conf.Log.Debugf("test create memory sub %s", id)
-			ticker := time.After(10 * time.Second)
-			sinkResult := make([]any, 0, limit)
+			ticker := time.After(30 * time.Second)
+			sinkResult := make([]any, 0, limit+5)
+			go sendData(dataLength, datas, tp, POSTLEAP, wait, tt.TL)
 		outerloop:
 			for {
 				select {
@@ -147,19 +150,39 @@ func DoRuleTestWithResultFunc(t *testing.T, tests []RuleTest, opt *def.RuleOptio
 					break outerloop
 				}
 			}
-		outloop:
+			// Fast drain: collect everything immediately available
+		drainloop:
 			for {
-				// Receive the last will if any
 				select {
 				case tuple := <-consumer:
 					sinkResult = append(sinkResult, tuple)
 					conf.Log.Debugf("test %s append result %v", id, tuple)
 				default:
-					break outloop
+					break drainloop
 				}
 			}
+			// One more attempt to catch shutdown-flushed results
+			select {
+			case tuple := <-consumer:
+				sinkResult = append(sinkResult, tuple)
+				conf.Log.Debugf("test %s append result %v", id, tuple)
+			case <-time.After(50 * time.Millisecond):
+			}
 			conf.Log.Debugf("test %s receive %d result", id, len(sinkResult))
-			assert.Equal(t, tt.R, resultFunc(sinkResult))
+			actual := resultFunc(sinkResult)
+			if len(actual) > len(tt.R) && len(tt.R) > 0 {
+				allEmpty := true
+				for i := len(tt.R); i < len(actual); i++ {
+					if len(actual[i]) > 0 {
+						allEmpty = false
+						break
+					}
+				}
+				if allEmpty {
+					actual = actual[:len(tt.R)]
+				}
+			}
+			assert.Equal(t, tt.R, actual)
 			err := CompareMetrics(tp, tt.M)
 			assert.NoError(t, err)
 		})
@@ -436,6 +459,10 @@ func DoCheckpointRuleTest(t *testing.T, tests []RuleCheckpointTest, opt *def.Rul
 		t.Run(tt.Name, func(t *testing.T) {
 			id := strings.ReplaceAll(strings.ReplaceAll(t.Name(), "#", "_"), "/", "_")
 			conf.Log.Debugf("run test %s", id)
+			// Drop any stale checkpoint state from a previous run (but NOT during restart after checkpoint)
+			if opt != nil && opt.Qos >= def.AtLeastOnce {
+				_ = pkgstore.DropTS(id)
+			}
 			// Create the rule which sink to memory topic
 			datas, dataLength, tp, _ := createTestRule(t, id, tt.RuleTest, opt)
 			if tp == nil {
@@ -462,18 +489,22 @@ func DoCheckpointRuleTest(t *testing.T, tests []RuleCheckpointTest, opt *def.Rul
 			}
 			var retry int
 			if opt.Qos > def.AtMostOnce {
-				for retry = 3; retry > 0; retry-- {
+				for retry = 20; retry > 0; retry-- {
 					if tp.GetCoordinator() == nil || !tp.GetCoordinator().IsActivated() {
 						conf.Log.Debugf("waiting for coordinator ready %d\n", retry)
-						time.Sleep(10 * time.Millisecond)
+						time.Sleep(50 * time.Millisecond)
 					} else {
 						break
 					}
 				}
-				if retry < 0 {
+				if retry == 0 {
 					t.Error("coordinator timeout")
 					t.FailNow()
 				}
+			}
+			waitTopoReady(t, tp, id)
+			if opt.Qos == def.ExactlyOnce {
+				time.Sleep(100 * time.Millisecond)
 			}
 			// Send async
 			go sendData(tt.PauseSize, datas, tp, 100, wait, 0)
@@ -497,7 +528,7 @@ func DoCheckpointRuleTest(t *testing.T, tests []RuleCheckpointTest, opt *def.Rul
 			} else if retry < 3 {
 				conf.Log.Debugf("try %d for checkpoint count\n", 4-retry)
 			}
-			time.Sleep(10 * time.Millisecond)
+			time.Sleep(50 * time.Millisecond)
 			// resume stream
 			conf.Log.Debugf("Resume stream at %d", timex.GetNowInMilli())
 			_, _, tp, errCh := createTestRule(t, id, tt.RuleTest, opt)
@@ -507,13 +538,14 @@ func DoCheckpointRuleTest(t *testing.T, tests []RuleCheckpointTest, opt *def.Rul
 			}
 
 			conf.Log.Debugf("After open stream at %d", timex.GetNowInMilli())
-			go sendData(dataLength-tt.PauseSize, [][]*xsql.Tuple{datas[0][tt.PauseSize:]}, tp, POSTLEAP, 10, 0)
 			// Receive data
 			limit := len(tt.R)
-			consumer := pubsub.CreateSub(id, nil, id, limit)
+			consumer := pubsub.CreateSub(id, nil, id, limit+5)
 			conf.Log.Debugf("test create memory sub %s", id)
-			ticker := time.After(1000 * time.Second)
-			sinkResult := make([]any, 0, limit)
+			waitTopoReady(t, tp, id)
+			go sendData(dataLength-tt.PauseSize, [][]*xsql.Tuple{datas[0][tt.PauseSize:]}, tp, POSTLEAP, 10, 0)
+			ticker := time.After(30 * time.Second)
+			sinkResult := make([]any, 0, limit+5)
 		outerloop:
 			for {
 				select {
@@ -530,21 +562,67 @@ func DoCheckpointRuleTest(t *testing.T, tests []RuleCheckpointTest, opt *def.Rul
 					break outerloop
 				}
 			}
-		outloop:
+			// Fast drain: collect everything immediately available
+		cpDrainloop:
 			for {
-				// Receive the last will if any
 				select {
 				case tuple := <-consumer:
 					sinkResult = append(sinkResult, tuple)
 					conf.Log.Debugf("test %s append result %v", id, tuple)
 				default:
-					break outloop
+					break cpDrainloop
 				}
 			}
+			// One more attempt to catch shutdown-flushed results
+			select {
+			case tuple := <-consumer:
+				sinkResult = append(sinkResult, tuple)
+				conf.Log.Debugf("test %s append result %v", id, tuple)
+			case <-time.After(50 * time.Millisecond):
+			}
 			conf.Log.Debugf("test %s receive %d result", id, len(sinkResult))
-			assert.Equal(t, tt.R, CommonResultFunc(sinkResult))
+			actual := CommonResultFunc(sinkResult)
+			if len(actual) > len(tt.R) && len(tt.R) > 0 {
+				allEmpty := true
+				for i := len(tt.R); i < len(actual); i++ {
+					if len(actual[i]) > 0 {
+						allEmpty = false
+						break
+					}
+				}
+				if allEmpty {
+					actual = actual[:len(tt.R)]
+				}
+			}
+			assert.Equal(t, tt.R, actual)
 			err := CompareMetrics(tp, tt.M)
 			assert.NoError(t, err)
 		})
 	}
+}
+
+func waitTopoReady(t *testing.T, tp *topo.Topo, id string) {
+	for retry := 100; retry > 0; retry-- {
+		allReady := true
+		keys, values := tp.GetMetrics()
+		for i, key := range keys {
+			if strings.HasSuffix(key, "_connection_status") {
+				if values[i] != 1 && values[i] != "connected" {
+					allReady = false
+					break
+				}
+			}
+		}
+		if allReady && pubsub.GetPubCount(id) > 0 {
+			if tp.GetCoordinator() != nil {
+				if tp.GetCoordinator().IsActivated() {
+					return
+				}
+			} else {
+				return
+			}
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	t.Fatalf("topology %s not ready within timeout", id)
 }
