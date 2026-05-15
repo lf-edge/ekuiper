@@ -54,12 +54,13 @@ type StreamField struct {
 }
 
 type JsonStreamField struct {
-	Type         string                      `json:"type,omitempty"`
-	DefaultValue string                      `json:"default,omitempty"`
-	Items        *JsonStreamField            `json:"items,omitempty"`
-	Properties   map[string]*JsonStreamField `json:"properties,omitempty"`
-	HasIndex     bool                        `json:"hasIndex,omitempty"`
-	Index        int                         `json:"index"`
+	Type            string                      `json:"type,omitempty"`
+	DefaultValue    string                      `json:"default"`
+	HasDefaultValue bool                        `json:"hasDefaultValue"`
+	Items           *JsonStreamField            `json:"items,omitempty"`
+	Properties      map[string]*JsonStreamField `json:"properties,omitempty"`
+	HasIndex        bool                        `json:"hasIndex,omitempty"`
+	Index           int                         `json:"index"`
 
 	Selected bool `json:"selected,omitempty"`
 }
@@ -104,6 +105,7 @@ func convertSchema(sfs StreamFields) map[string]*JsonStreamField {
 			jsonField := convertFieldType(sf.FieldType)
 			if sf.Default != nil {
 				jsonField.DefaultValue = sf.Default.String()
+				jsonField.HasDefaultValue = true
 			}
 			result[sf.Name] = jsonField
 		}
