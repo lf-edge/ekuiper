@@ -47,7 +47,12 @@ func (p *defaultFieldProcessor) validateAndConvertMessage(schema map[string]*ast
 		// If the field is missing and a default value is defined,
 		// set the field value using the default.
 		if !ok && sf.HasDefaultValue {
-			switch val := ast.GetTypeOfDefault(sf.DefaultValue, sf.Type).(type) {
+			lit, err := ast.GetTypeOfDefault(sf.DefaultValue, sf.Type)
+			if err != nil {
+				return nil, err
+			}
+
+			switch val := lit.(type) {
 			case *ast.IntegerLiteral:
 				v = val.Val
 			case *ast.NumberLiteral:
