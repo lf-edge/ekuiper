@@ -173,7 +173,7 @@ func fieldsTypeFromSchema(mjsf map[string]*JsonStreamField) (StreamFields, error
 }
 
 func fieldDefaultClauseFromSchema(v *JsonStreamField) (Literal, error) {
-	if v.DefaultValue == "" {
+	if !v.HasDefaultValue {
 		return nil, nil
 	}
 
