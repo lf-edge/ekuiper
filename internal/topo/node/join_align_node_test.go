@@ -223,7 +223,7 @@ func TestCaptureSnapshot(t *testing.T) {
 		out  []any
 	}{
 		{
-			name: "retain exceed",
+			name: "capture snapshot",
 			in: []any{
 				&xsql.Tuple{
 					Emitter: "table1",
@@ -237,18 +237,10 @@ func TestCaptureSnapshot(t *testing.T) {
 					Emitter: "table1",
 					Message: map[string]any{"id": 1, "t1": "data4"},
 				},
-				&xsql.Tuple{
-					Emitter: "stream1",
-					Message: map[string]any{"id": 1, "a": 3},
-				},
 			},
 			out: []any{
 				&xsql.WindowTuples{
 					Content: []xsql.Row{
-						&xsql.Tuple{
-							Emitter: "stream1",
-							Message: map[string]any{"id": 1, "a": 3},
-						},
 						&xsql.Tuple{
 							Emitter: "table1",
 							Message: map[string]any{"id": 1, "t1": "data3"},
@@ -261,5 +253,37 @@ func TestCaptureSnapshot(t *testing.T) {
 				},
 			},
 		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			n, e := NewJoinAlignNode(
+				"align",
+				[]string{"table1"},
+				[]int{2, 9999},
+				&def.RuleOption{
+					SendError: true,
+				},
+			)
+			assert.NoError(t, e)
+			assert.NoError(t, e)
+			ctx := mockContext.NewMockContext("test", "test")
+			errCh := make(chan error)
+			n.Exec(ctx, errCh)
+			defer n.Close()
+			for _, in := range tt.in {
+				n.input <- in
+			}
+
+			got := n.CaptureSnapshot()
+			r := []any{got}
+			if tt.out != nil {
+				if !reflect.DeepEqual(tt.out, r) {
+					assert.Equal(t, tt.out, r)
+				}
+			} else {
+				assert.Equal(t, tt.out, r)
+			}
+		})
 	}
 }

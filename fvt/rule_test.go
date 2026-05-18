@@ -714,6 +714,61 @@ func (s *RuleTestSuite) TestDataTemplateArrayDecode() {
 	s.assertRecvMemTupleList(subCh, expected)
 }
 
+func (s *RuleTestSuite) TestShowScanTableContent() {
+	client.DeleteStream("sensorStream")
+	client.DeleteTables("deviceTable")
+	client.DeleteRule("joinTestRule")
+
+	streamSql := `
+	CREATE STREAM sensorStream (
+    	id BIGINT,
+    	temperature FLOAT,
+   	 	humidity FLOAT
+	) WITH (DATASOURCE="sensorStream", TYPE="mock", FORMAT="json");
+	`
+
+	resp, err := client.CreateStream(streamSql)
+	s.Require().NoError(err)
+	s.T().Log(GetResponseText(resp))
+	s.Require().Equal(http.StatusCreated, resp.StatusCode)
+
+	tableSql := `
+	CREATE TABLE deviceTable (
+    	id BIGINT,
+    	name STRING,
+    	location STRING
+	) WITH (DATASOURCE="devices.json", FORMAT="json", TYPE="file");
+	`
+	resp, err = client.CreateTable(tableSql)
+	s.Require().NoError(err)
+	s.T().Log(GetResponseText(resp))
+	s.Require().Equal(http.StatusCreated, resp.StatusCode)
+
+	ruleSql := `
+	{
+  		"id": "joinTestRule",
+  		"sql": "SELECT sensorStream.id, sensorStream.temperature, deviceTable.name, deviceTable.location FROM sensorStream INNER JOIN deviceTable ON sensorStream.id = deviceTable.id",
+  		"actions": [
+    		{
+      			"log": {}
+    		}
+  		]
+	}
+	`
+	resp, err = client.CreateRule(ruleSql)
+	s.Require().NoError(err)
+	s.T().Log(GetResponseText(resp))
+	s.Require().Equal(http.StatusCreated, resp.StatusCode)
+
+	times := 5
+	for i := range times {
+		resp, err = client.GetRuleScanTableSnapshot("joinTestRule")
+		s.Require().NoError(err)
+		s.T().Log(GetResponseText(resp))
+	}
+
+}
+
 func (s *RuleTestSuite) assertRecvMemTupleList(subCh chan any, expect []map[string]any) {
 	d := <-subCh
 	mt, ok := d.([]pubsub.MemTuple)

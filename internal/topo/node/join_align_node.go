@@ -96,19 +96,27 @@ func (n *JoinAlignNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 					switch d := data.(type) {
 					case *xsql.Tuple:
 						log.Debugf("JoinAlignNode receive tuple input %v", d)
-						n.mu.Lock()
-						if b, ok := n.batch[d.Emitter]; ok {
-							s := n.size[d.Emitter]
-							if len(b) >= s {
-								b = b[s-len(b)+1:]
+						tryTakeBatch := func() bool {
+							n.mu.Lock()
+							defer n.mu.Unlock()
+
+							if b, ok := n.batch[d.Emitter]; ok {
+								s := n.size[d.Emitter]
+								if len(b) >= s {
+									b = b[s-len(b)+1:]
+								}
+								b = append(b, d)
+								n.batch[d.Emitter] = b
+								_ = ctx.PutState(BatchKey, n.batch)
+								return true
 							}
-							b = append(b, d)
-							n.batch[d.Emitter] = b
-							_ = ctx.PutState(BatchKey, n.batch)
-						} else {
+
+							return false
+						}
+
+						if !tryTakeBatch() {
 							n.alignBatch(ctx, d)
 						}
-						n.mu.Unlock()
 					case *xsql.WindowTuples:
 						log.Debugf("JoinAlignNode receive window input %v", d)
 						n.alignBatch(ctx, d)
