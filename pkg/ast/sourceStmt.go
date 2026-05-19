@@ -203,7 +203,7 @@ func fieldDefaultClauseFromSchema(v *JsonStreamField) (Literal, error) {
 
 		lit = &NumberLiteral{Val: val}
 	default:
-		return nil, fmt.Errorf("unsupported type %s", v.Type)
+		return nil, fmt.Errorf("DEFAULT clause is not supported for %s", v.Type)
 	}
 
 	return lit, nil
