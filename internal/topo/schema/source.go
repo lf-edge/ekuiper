@@ -118,14 +118,21 @@ func (s *SharedLayer) Detach(ctx api.StreamContext, isClose bool) error {
 			delete(s.streamMap, ruleID)
 			delete(s.wildcardMap, ruleID)
 			delete(s.reg, ruleID)
-			newSchema := make(map[string]*ast.JsonStreamField)
-			for _, si := range s.reg {
-				newSchema, err = s.merge(newSchema, si.schema)
-				if err != nil {
-					return err
+			// If any remaining rule is still wildcard, keep schema as nil (schemaless).
+			// Merging nil wildcard schemas would produce {} which causes the decoder to
+			// reject every field and emit empty tuples.
+			if len(s.wildcardMap) > 0 {
+				s.schema = nil
+			} else {
+				newSchema := make(map[string]*ast.JsonStreamField)
+				for _, si := range s.reg {
+					newSchema, err = s.merge(newSchema, si.schema)
+					if err != nil {
+						return err
+					}
 				}
+				s.schema = newSchema
 			}
-			s.schema = newSchema
 			s.updateReg()
 		}
 	}
