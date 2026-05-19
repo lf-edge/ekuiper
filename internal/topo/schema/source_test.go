@@ -266,3 +266,29 @@ func TestAttachDetachSchema(t *testing.T) {
 	}
 	require.Equal(t, r, er)
 }
+
+// TestDetachWildcardKeepsWildcard verifies that when one wildcard rule closes while another
+// wildcard rule is still running, the shared schema remains nil (schemaless). Previously
+// the Detach logic would merge nil schemas and produce {} (empty non-nil map), causing the
+// JSON decoder to reject every field and output empty tuples {}.
+func TestDetachWildcardKeepsWildcard(t *testing.T) {
+	f := newSharedLayer()
+	ctx1 := mockContext.NewMockContext("rule1", "t1")
+	ctx2 := mockContext.NewMockContext("rule2", "t2")
+
+	// Both rules are wildcard (SELECT *)
+	f.RegSchema("rule1", "demo", nil, true)
+	f.RegSchema("rule2", "demo", nil, true)
+	require.NoError(t, f.Attach(ctx1))
+	require.NoError(t, f.Attach(ctx2))
+	require.Nil(t, f.GetSchema(), "both wildcard: schema should be nil")
+
+	// Stop rule1 — rule2 (also wildcard) is still running
+	require.NoError(t, f.Detach(ctx1, true))
+	require.Nil(t, f.GetSchema(), "after wildcard rule1 closes, remaining wildcard rule2 must keep schema nil")
+
+	// Stop rule2 as well — no rules left, schema collapses to empty
+	require.NoError(t, f.Detach(ctx2, true))
+	require.NotNil(t, f.GetSchema(), "after all rules close the schema map should be non-nil empty")
+	require.Empty(t, f.GetSchema(), "after all rules close the schema map should be empty")
+}
