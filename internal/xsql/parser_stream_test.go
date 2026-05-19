@@ -476,6 +476,7 @@ func TestParser_ParseCreateStream(t *testing.T) {
 					USERID BIGINT DEFAULT 10,
 					FIRST_NAME STRING DEFAULT "foo bar",
 					LAST_NAME STRING DEFAULT "bar mock",
+					MOCK_VALUE FLOAT DEFAULT 90.22,
 					PICTURE BYTEA,
 				) WITH (DATASOURCE="users", FORMAT="JSON");`,
 			stmt: &ast.StreamStmt{
@@ -484,6 +485,7 @@ func TestParser_ParseCreateStream(t *testing.T) {
 					{Name: "USERID", FieldType: &ast.BasicType{Type: ast.BIGINT}, Default: &ast.IntegerLiteral{Val: 10}},
 					{Name: "FIRST_NAME", FieldType: &ast.BasicType{Type: ast.STRINGS}, Default: &ast.StringLiteral{Val: "foo bar"}},
 					{Name: "LAST_NAME", FieldType: &ast.BasicType{Type: ast.STRINGS}, Default: &ast.StringLiteral{Val: "bar mock"}},
+					{Name: "MOCK_VALUE", FieldType: &ast.BasicType{Type: ast.FLOAT}, Default: &ast.NumberLiteral{Val: 90.22}},
 					{Name: "PICTURE", FieldType: &ast.BasicType{Type: ast.BYTEA}},
 				},
 				Options: &ast.Options{
