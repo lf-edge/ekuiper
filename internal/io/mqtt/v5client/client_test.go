@@ -30,6 +30,18 @@ import (
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
 
+func TestValidateConfigGeneratesTLSConfig(t *testing.T) {
+	ctx, _ := mockContext.NewMockContext("ruleTls", "op1").WithCancel()
+	cc, err := ValidateConfig(ctx, map[string]any{
+		"server":             "ssl://broker.emqx.io:8883",
+		"insecureSkipVerify": true,
+	})
+	require.NoError(t, err)
+	require.Equal(t, "ssl", cc.serverUrl.Scheme)
+	require.NotNil(t, cc.tls)
+	require.True(t, cc.tls.InsecureSkipVerify)
+}
+
 func TestV5MultiTopicSubscribe(t *testing.T) {
 	server := mqtt.New(nil)
 	// Allow all connections.
