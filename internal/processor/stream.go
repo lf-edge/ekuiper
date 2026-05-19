@@ -727,6 +727,9 @@ func DescribeToJson(s string) string {
 	o := output{Options: make(map[string]string)}
 	for _, f := range strings.Split(fields, "\n") {
 		split := strings.Split(f, "\t")
+		if len(split) < 2 {
+			continue
+		}
 		n, t := split[0], split[1]
 		fld := field{Name: n, Type: t}
 		if len(split) >= 4 {
