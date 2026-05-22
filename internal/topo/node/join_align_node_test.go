@@ -18,6 +18,7 @@ import (
 	"errors"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
@@ -275,6 +276,7 @@ func TestCaptureSnapshot(t *testing.T) {
 				n.input <- in
 			}
 
+			time.Sleep(20 * time.Millisecond)
 			got := n.CaptureSnapshot()
 			r := []any{got}
 			if tt.out != nil {
