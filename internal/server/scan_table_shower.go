@@ -35,19 +35,20 @@ func rulesShowScanTable(w http.ResponseWriter, r *http.Request) {
 
 	topo, err := registry.GetRulePlainTopo(ruleName)
 	if err != nil {
-		handleError(w, err, "", logger)
+		handleError(w, err, fmt.Sprintf("failed to get topology for rule %s", ruleName), logger)
 		return
 	}
 
 	ops := topo.GetOperators()
 	joinNode := extractJoinNode(ops)
 	if joinNode == nil {
+		handleError(w, fmt.Errorf("join node is not found for %s", ruleName), "scan table error", logger)
 		return
 	}
 
 	tuples := joinNode.CaptureSnapshot()
-	if tuples.Len() == 0 {
-		handleError(w, fmt.Errorf(""), "", logger)
+	if tuples == nil || tuples.Len() == 0 {
+		handleError(w, fmt.Errorf("unable to find tuples for the given scan table"), "scan table error", logger)
 		return
 	}
 

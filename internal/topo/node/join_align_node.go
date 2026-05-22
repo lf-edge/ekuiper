@@ -165,6 +165,10 @@ func (n *JoinAlignNode) CaptureSnapshot() *xsql.WindowTuples {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
+	if len(n.batch) == 0 {
+		return nil
+	}
+
 	w := &xsql.WindowTuples{
 		Content: make([]xsql.Row, 0),
 	}
