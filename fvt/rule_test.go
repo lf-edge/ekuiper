@@ -734,7 +734,7 @@ func (s *RuleTestSuite) TestShowScanTableContentWithErrors() {
 
 		devicesJSON, _ := json.Marshal(devicesData)
 		devicesPath := filepath.Join(dataLoc, "devices.json")
-		os.WriteFile(devicesPath, devicesJSON, 0644)
+		os.WriteFile(devicesPath, devicesJSON, 0o644)
 		defer os.Remove(devicesPath)
 
 		streamSql := `{"sql": "CREATE STREAM simpleStream (id BIGINT, temperature FLOAT, humidity FLOAT) WITH (DATASOURCE=\"sensorStream\", TYPE=\"simulator\", FORMAT=\"json\")"}`
@@ -780,7 +780,7 @@ func (s *RuleTestSuite) TestShowScanTableContentWithErrors() {
 		dataLoc, err := conf.GetDataLoc()
 		s.Require().NoError(err)
 		devicesPath := filepath.Join(dataLoc, "devices.json")
-		os.WriteFile(devicesPath, []byte(``), 0644)
+		os.WriteFile(devicesPath, []byte(``), 0o644)
 		defer os.Remove(devicesPath)
 
 		streamSql := `{"sql": "CREATE STREAM sensorStream (id BIGINT, temperature FLOAT, humidity FLOAT) WITH (DATASOURCE=\"sensorStream\", TYPE=\"simulator\", FORMAT=\"json\")"}`
@@ -841,7 +841,7 @@ func (s *RuleTestSuite) TestShowScanTableContent() {
 	}
 	devicesJSON, _ := json.Marshal(devicesData)
 	devicesPath := filepath.Join(dataLoc, "devices.json")
-	os.WriteFile(devicesPath, devicesJSON, 0644)
+	os.WriteFile(devicesPath, devicesJSON, 0o644)
 	defer os.Remove(devicesPath)
 
 	streamSql := `{"sql": "CREATE STREAM sensorStream (id BIGINT, temperature FLOAT, humidity FLOAT) WITH (DATASOURCE=\"sensorStream\", TYPE=\"simulator\", FORMAT=\"json\")"}`
@@ -901,7 +901,6 @@ func (s *RuleTestSuite) TestShowScanTableContent() {
 		s.Require().Equal(expected, result[i].ScanTableContent,
 			fmt.Sprintf("Tuple %d content mismatch", i))
 	}
-
 }
 
 func (s *RuleTestSuite) assertRecvMemTupleList(subCh chan any, expect []map[string]any) {
