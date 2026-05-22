@@ -278,10 +278,6 @@ func TestCaptureSnapshot(t *testing.T) {
 			got := n.CaptureSnapshot()
 			r := []any{got}
 			if tt.out != nil {
-				if !reflect.DeepEqual(tt.out, r) {
-					assert.Equal(t, tt.out, r)
-				}
-			} else {
 				assert.Equal(t, tt.out, r)
 			}
 		})
