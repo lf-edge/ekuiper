@@ -30,7 +30,6 @@ type ShowScanResponse struct {
 }
 
 func rulesShowScanTable(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
 	vars := mux.Vars(r)
 	ruleName := vars["name"]
 
