@@ -771,10 +771,10 @@ func (s *RuleTestSuite) TestShowScanTableContentWithErrors() {
 	})
 
 	s.Run("testNoData", func() {
-		client.DeleteStream("mockStream")
 		client.DeleteTables("deviceTable")
 		client.DeleteRule("joinTestRule")
-		defer client.DeleteStream("mockStream")
+		client.DeleteStream("sensorStream")
+		defer client.DeleteStream("sensorStream")
 		defer client.DeleteTables("deviceTable")
 
 		dataLoc, err := conf.GetDataLoc()
