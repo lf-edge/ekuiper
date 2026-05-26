@@ -301,7 +301,7 @@ func (s *State) GetPlainTopology() (*topo.Topo, error) {
 		return s.topology, nil
 	}
 
-	return s.topology, errors.New("topology not initialized, rule may not have been started")
+	return nil, errors.New("topology not initialized, rule may not have been started")
 }
 
 func (s *State) SetIsTraceEnabled(isEnabled bool, stra kctx.TraceStrategy) error {
