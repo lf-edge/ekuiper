@@ -261,7 +261,7 @@ func TestCaptureSnapshot(t *testing.T) {
 			n, e := NewJoinAlignNode(
 				"align",
 				[]string{"table1"},
-				[]int{2, 9999},
+				[]int{2},
 				&def.RuleOption{
 					SendError: true,
 				},
