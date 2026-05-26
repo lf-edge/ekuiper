@@ -267,7 +267,6 @@ func TestCaptureSnapshot(t *testing.T) {
 				},
 			)
 			assert.NoError(t, e)
-			assert.NoError(t, e)
 			ctx := mockContext.NewMockContext("test", "test")
 			errCh := make(chan error)
 			n.Exec(ctx, errCh)
