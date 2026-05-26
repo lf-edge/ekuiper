@@ -69,7 +69,10 @@ func (n *JoinAlignNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 			if s, err := ctx.GetState(BatchKey); err == nil {
 				switch st := s.(type) {
 				case map[string][]*xsql.Tuple:
+					n.mu.Lock()
 					n.batch = st
+					n.mu.Unlock()
+
 					log.Infof("Restore batch state %+v", st)
 				case nil:
 					log.Debugf("Restore batch state, nothing")
@@ -79,9 +82,12 @@ func (n *JoinAlignNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 			} else {
 				log.Warnf("Restore batch state fails: %s", err)
 			}
+
+			n.mu.Lock()
 			if n.batch == nil {
 				n.batch = make(map[string][]*xsql.Tuple)
 			}
+			n.mu.Unlock()
 
 			for {
 				log.Debugf("JoinAlignNode %s is looping", n.name)
