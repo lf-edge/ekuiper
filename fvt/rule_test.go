@@ -891,13 +891,14 @@ func (s *RuleTestSuite) TestShowScanTableContent() {
 	var result []server.ShowScanResponse
 	err = json.Unmarshal(body, &result)
 	s.Require().NoError(err)
-	s.Require().Greater(len(result), 0, "Expected at least one tuple in scan table")
 
 	expectedDevices := []map[string]interface{}{
 		{"id": float64(1), "name": "Device1", "location": "Room1"},
 		{"id": float64(2), "name": "Device2", "location": "Room2"},
 		{"id": float64(3), "name": "Device3", "location": "Room3"},
 	}
+
+	s.Require().GreaterOrEqual(len(result), len(expectedDevices), "Mismatch between result and expected result")
 
 	for i, expected := range expectedDevices {
 		s.Require().Equal("deviceTable", result[i].Emitter)
