@@ -180,8 +180,8 @@ func (n *JoinAlignNode) CaptureSnapshot() *xsql.WindowTuples {
 	}
 
 	for _, contents := range n.batch {
-		for _, n := range contents {
-			w = w.AddTuple(n)
+		for _, tuple := range contents {
+			w = w.AddTuple(tuple)
 		}
 	}
 	return w
