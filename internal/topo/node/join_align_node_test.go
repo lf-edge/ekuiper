@@ -275,11 +275,13 @@ func TestCaptureSnapshot(t *testing.T) {
 				n.input <- in
 			}
 
-			time.Sleep(20 * time.Millisecond)
-			got := n.CaptureSnapshot()
-			r := []any{got}
+			var got any
 			if tt.out != nil {
-				assert.Equal(t, tt.out, r)
+				assert.Eventually(t, func() bool {
+					got = n.CaptureSnapshot()
+					return reflect.DeepEqual([]any{got}, tt.out)
+				}, time.Second, 10*time.Millisecond)
+				assert.Equal(t, tt.out, []any{got})
 			}
 		})
 	}
