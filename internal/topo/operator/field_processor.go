@@ -40,13 +40,13 @@ func (p *defaultFieldProcessor) validateAndConvert(tuple *xsql.Tuple) error {
 func (p *defaultFieldProcessor) validateAndConvertMessage(schema map[string]*ast.JsonStreamField, message xsql.Message) (map[string]interface{}, error) {
 	for name, sf := range schema {
 		v, ok := message.Value(name, "")
-		if !ok && !sf.HasDefaultValue {
+		if !ok && sf.DefaultValue == nil {
 			return nil, fmt.Errorf("field %s is not found", name)
 		}
 
 		// If the field is missing and a default value is defined,
 		// set the field value using the default.
-		if !ok && sf.HasDefaultValue {
+		if !ok && sf.DefaultValue != nil {
 			lit, err := ast.GetTypeOfDefault(sf.DefaultValue, sf.Type)
 			if err != nil {
 				return nil, err

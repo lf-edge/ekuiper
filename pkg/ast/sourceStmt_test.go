@@ -65,6 +65,17 @@ func TestPrintFieldType(t *testing.T) {
 }
 
 func TestToJsonFields(t *testing.T) {
+	defaultValues := struct {
+		userId              string
+		firstName, lastName string
+		gender              string
+	}{
+		userId:    "10",
+		firstName: "foo",
+		lastName:  "bar",
+		gender:    "true",
+	}
+
 	tests := []struct {
 		input  StreamFields
 		output map[string]*JsonStreamField
@@ -96,12 +107,12 @@ func TestToJsonFields(t *testing.T) {
 				}},
 			},
 			output: map[string]*JsonStreamField{
-				"USERID":     {Type: "bigint", HasDefaultValue: true, DefaultValue: "10"},
-				"FIRST_NAME": {Type: "string", HasDefaultValue: true, DefaultValue: "foo"},
-				"LAST_NAME":  {Type: "string", HasDefaultValue: true, DefaultValue: "bar"},
+				"USERID":     {Type: "bigint", DefaultValue: &defaultValues.userId},
+				"FIRST_NAME": {Type: "string", DefaultValue: &defaultValues.firstName},
+				"LAST_NAME":  {Type: "string", DefaultValue: &defaultValues.lastName},
 				"NICKNAMES":  {Type: "array", Items: &JsonStreamField{Type: "string"}},
 				"data":       {Type: "bytea"},
-				"Gender":     {Type: "boolean", HasDefaultValue: true, DefaultValue: "true"},
+				"Gender":     {Type: "boolean", DefaultValue: &defaultValues.gender},
 				"ADDRESS": {Type: "struct", Properties: map[string]*JsonStreamField{
 					"STREET_NAME": {Type: "string"},
 					"NUMBER":      {Type: "bigint"},

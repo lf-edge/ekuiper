@@ -54,13 +54,12 @@ type StreamField struct {
 }
 
 type JsonStreamField struct {
-	Type            string                      `json:"type,omitempty"`
-	DefaultValue    string                      `json:"default"`
-	HasDefaultValue bool                        `json:"hasDefaultValue"`
-	Items           *JsonStreamField            `json:"items,omitempty"`
-	Properties      map[string]*JsonStreamField `json:"properties,omitempty"`
-	HasIndex        bool                        `json:"hasIndex,omitempty"`
-	Index           int                         `json:"index"`
+	Type         string                      `json:"type,omitempty"`
+	DefaultValue *string                     `json:"default,omitempty"`
+	Items        *JsonStreamField            `json:"items,omitempty"`
+	Properties   map[string]*JsonStreamField `json:"properties,omitempty"`
+	HasIndex     bool                        `json:"hasIndex,omitempty"`
+	Index        int                         `json:"index"`
 
 	Selected bool `json:"selected,omitempty"`
 }
@@ -104,8 +103,8 @@ func convertSchema(sfs StreamFields) map[string]*JsonStreamField {
 		for _, sf := range sfs {
 			jsonField := convertFieldType(sf.FieldType)
 			if sf.Default != nil {
-				jsonField.DefaultValue = sf.Default.String()
-				jsonField.HasDefaultValue = true
+				defaultValue := sf.Default.String()
+				jsonField.DefaultValue = &defaultValue
 			}
 			result[sf.Name] = jsonField
 		}
@@ -173,7 +172,7 @@ func fieldsTypeFromSchema(mjsf map[string]*JsonStreamField) (StreamFields, error
 }
 
 func fieldDefaultClauseFromSchema(v *JsonStreamField) (Literal, error) {
-	if !v.HasDefaultValue {
+	if v.DefaultValue == nil {
 		return nil, nil
 	}
 
@@ -187,7 +186,7 @@ func fieldDefaultClauseFromSchema(v *JsonStreamField) (Literal, error) {
 
 		lit = &IntegerLiteral{Val: val}
 	case "string":
-		lit = &StringLiteral{Val: v.DefaultValue}
+		lit = &StringLiteral{Val: *v.DefaultValue}
 	case "boolean":
 		val, err := cast.ToBool(v.DefaultValue, cast.CONVERT_ALL)
 		if err != nil {
@@ -209,25 +208,25 @@ func fieldDefaultClauseFromSchema(v *JsonStreamField) (Literal, error) {
 	return lit, nil
 }
 
-func GetTypeOfDefault(defClause string, fieldType string) (Literal, error) {
+func GetTypeOfDefault(defClause *string, fieldType string) (Literal, error) {
 	var err error
 
 	switch fieldType {
 	case BIGINT.String():
 		var val int64
-		if val, err = cast.ToInt64(defClause, cast.CONVERT_ALL); err == nil {
+		if val, err = cast.ToInt64(*defClause, cast.CONVERT_ALL); err == nil {
 			return &IntegerLiteral{Val: val}, nil
 		}
 	case FLOAT.String():
 		var val float64
-		if val, err = cast.ToFloat64(defClause, cast.CONVERT_ALL); err == nil {
+		if val, err = cast.ToFloat64(*defClause, cast.CONVERT_ALL); err == nil {
 			return &NumberLiteral{Val: val}, nil
 		}
 	case STRINGS.String():
-		return &StringLiteral{Val: defClause}, nil
+		return &StringLiteral{Val: *defClause}, nil
 	case BOOLEAN.String():
 		var val bool
-		if val, err = cast.ToBool(defClause, cast.CONVERT_ALL); err == nil {
+		if val, err = cast.ToBool(*defClause, cast.CONVERT_ALL); err == nil {
 			return &BooleanLiteral{Val: val}, nil
 		}
 	default:
