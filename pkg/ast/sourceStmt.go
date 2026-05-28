@@ -208,34 +208,6 @@ func fieldDefaultClauseFromSchema(v *JsonStreamField) (Literal, error) {
 	return lit, nil
 }
 
-func GetTypeOfDefault(defClause *string, fieldType string) (Literal, error) {
-	var err error
-
-	switch fieldType {
-	case BIGINT.String():
-		var val int64
-		if val, err = cast.ToInt64(*defClause, cast.CONVERT_ALL); err == nil {
-			return &IntegerLiteral{Val: val}, nil
-		}
-	case FLOAT.String():
-		var val float64
-		if val, err = cast.ToFloat64(*defClause, cast.CONVERT_ALL); err == nil {
-			return &NumberLiteral{Val: val}, nil
-		}
-	case STRINGS.String():
-		return &StringLiteral{Val: *defClause}, nil
-	case BOOLEAN.String():
-		var val bool
-		if val, err = cast.ToBool(*defClause, cast.CONVERT_ALL); err == nil {
-			return &BooleanLiteral{Val: val}, nil
-		}
-	default:
-		err = fmt.Errorf("field type %s is not valid for DEFAULT clause", fieldType)
-	}
-
-	return nil, err
-}
-
 func fieldTypeFromSchema(v *JsonStreamField) (FieldType, error) {
 	var ft FieldType
 	switch v.Type {
@@ -453,38 +425,58 @@ func CheckSchemaIndex(schema map[string]*JsonStreamField) bool {
 	return false
 }
 
-func PruneDefaultConstraintValue(constraintValue string, fieldType FieldType) (Literal, error) {
+func GetDefaultClause(constraintValue *string, fieldType any) (Literal, error) {
 	var matchErr error
 
 	switch t := fieldType.(type) {
-	case *BasicType:
-		switch t.Type {
-		case BIGINT:
-			var value int64
-			value, matchErr = cast.ToInt64(constraintValue, cast.CONVERT_ALL)
-			if matchErr == nil {
-				return &IntegerLiteral{Val: value}, nil
+	case FieldType:
+		switch ft := fieldType.(type) {
+		case *BasicType:
+			lit, err := getClause(*constraintValue, ft.Type.String())
+			if err != nil {
+				return nil, err
 			}
-		case FLOAT:
-			var value float64
-			value, matchErr = cast.ToFloat64(constraintValue, cast.CONVERT_ALL)
-			if matchErr == nil {
-				return &NumberLiteral{Val: value}, nil
-			}
-		case STRINGS:
-			return &StringLiteral{Val: constraintValue}, nil
-		case BOOLEAN:
-			var value bool
-			value, matchErr = cast.ToBool(constraintValue, cast.CONVERT_ALL)
-			if matchErr == nil {
-				return &BooleanLiteral{Val: value}, nil
-			}
+			return lit, err
 		default:
-			matchErr = fmt.Errorf("DEFAULT clause is not supported for %s", t.Type.String())
+			matchErr = fmt.Errorf("DEFAULT clause is not supported for %T", ft)
 		}
+	case string:
+		lit, err := getClause(*constraintValue, t)
+		if err != nil {
+			return nil, err
+		}
+		return lit, err
 	default:
-		matchErr = fmt.Errorf("DEFAULT clause is not supported for %T", t)
+		matchErr = fmt.Errorf("unsupported type %T", t)
 	}
 
 	return nil, matchErr
+}
+
+func getClause(clauseValue string, fieldType string) (Literal, error) {
+	var err error
+
+	switch fieldType {
+	case BIGINT.String():
+		var val int64
+		if val, err = cast.ToInt64(clauseValue, cast.CONVERT_ALL); err == nil {
+			return &IntegerLiteral{Val: val}, nil
+		}
+	case FLOAT.String():
+		var val float64
+		if val, err = cast.ToFloat64(clauseValue, cast.CONVERT_ALL); err == nil {
+			return &NumberLiteral{Val: val}, nil
+		}
+	case STRINGS.String():
+		return &StringLiteral{Val: clauseValue}, nil
+	case BOOLEAN.String():
+		var val bool
+		if val, err = cast.ToBool(clauseValue, cast.CONVERT_ALL); err == nil {
+			return &BooleanLiteral{Val: val}, nil
+		}
+	default:
+		err = fmt.Errorf("DEFAULT clause is not supported for %s", fieldType)
+	}
+
+	return nil, err
 }

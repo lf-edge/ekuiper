@@ -1483,7 +1483,7 @@ func (p *Parser) parseStreamDefaultClause(fieldType ast.FieldType) (ast.Literal,
 	tok, lit := p.scanIgnoreWhiteSpaceWithNegativeNum()
 	switch tok {
 	case ast.INTEGER, ast.NUMBER, ast.STRING, ast.SINGLEQUOTE, ast.TRUE, ast.FALSE:
-		literalValue, err := ast.PruneDefaultConstraintValue(lit, fieldType)
+		literalValue, err := ast.GetDefaultClause(&lit, fieldType)
 		if err != nil {
 			return nil, err
 		}
