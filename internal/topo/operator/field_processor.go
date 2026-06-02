@@ -61,7 +61,16 @@ func (p *defaultFieldProcessor) validateAndConvertMessage(schema map[string]*ast
 				v = val.Val
 			case *ast.StringLiteral:
 				v = val.Val
+			default:
+				err = fmt.Errorf("unsupported default literal type %T", lit)
 			}
+
+			if err != nil {
+				return nil, err
+			}
+
+			message[name] = v
+			continue
 		}
 
 		if nv, err := p.validateAndConvertField(sf, v); err != nil {

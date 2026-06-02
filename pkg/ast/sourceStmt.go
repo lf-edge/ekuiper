@@ -65,12 +65,28 @@ type JsonStreamField struct {
 }
 
 func (u *StreamField) MarshalJSON() ([]byte, error) {
+	var defaultValue *string
+
+	if u.Default != nil {
+		def := u.Default.String()
+
+		// validate that the default value is compatible with the field type
+		_, err := GetDefaultClause(&def, u.FieldType)
+		if err != nil {
+			return nil, err
+		}
+
+		defaultValue = &def
+	}
+
 	return json.Marshal(&struct {
-		FieldType interface{}
-		Name      string
+		FieldType     interface{}
+		Name          string
+		DefaultClause *string `json:",omitempty"`
 	}{
-		FieldType: printFieldTypeForJson(u.FieldType),
-		Name:      u.Name,
+		FieldType:     printFieldTypeForJson(u.FieldType),
+		Name:          u.Name,
+		DefaultClause: defaultValue,
 	})
 }
 
@@ -176,36 +192,7 @@ func fieldDefaultClauseFromSchema(v *JsonStreamField) (Literal, error) {
 		return nil, nil
 	}
 
-	var lit Literal
-	switch v.Type {
-	case "bigint":
-		val, err := cast.ToInt64(v.DefaultValue, cast.CONVERT_ALL)
-		if err != nil {
-			return nil, err
-		}
-
-		lit = &IntegerLiteral{Val: val}
-	case "string":
-		lit = &StringLiteral{Val: *v.DefaultValue}
-	case "boolean":
-		val, err := cast.ToBool(v.DefaultValue, cast.CONVERT_ALL)
-		if err != nil {
-			return nil, err
-		}
-
-		lit = &BooleanLiteral{Val: val}
-	case "float":
-		val, err := cast.ToFloat64(v.DefaultValue, cast.CONVERT_ALL)
-		if err != nil {
-			return nil, err
-		}
-
-		lit = &NumberLiteral{Val: val}
-	default:
-		return nil, fmt.Errorf("DEFAULT clause is not supported for %s", v.Type)
-	}
-
-	return lit, nil
+	return getClause(*v.DefaultValue, v.Type)
 }
 
 func fieldTypeFromSchema(v *JsonStreamField) (FieldType, error) {

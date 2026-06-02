@@ -15,6 +15,8 @@
 package ast
 
 import (
+	"encoding/json"
+	"errors"
 	"reflect"
 	"testing"
 )
@@ -60,6 +62,96 @@ func TestPrintFieldType(t *testing.T) {
 		result, _ := doPrintFieldTypeForJson(tt.ft)
 		if !reflect.DeepEqual(tt.printed, result) {
 			t.Errorf("%d. \nstmt mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.printed, result)
+		}
+	}
+}
+
+func TestMarshalJSON(t *testing.T) {
+	tests := []struct {
+		input  StreamField
+		output string
+		err    error
+	}{
+		{
+			input: StreamField{
+				Name:      "id",
+				FieldType: &BasicType{Type: BIGINT},
+				Default:   &IntegerLiteral{Val: 10},
+			},
+			output: `{"FieldType":"bigint","Name":"id","DefaultClause":"10"}`,
+			err:    nil,
+		},
+		{
+			input: StreamField{
+				Name:      "foo",
+				FieldType: &BasicType{Type: FLOAT},
+				Default:   &NumberLiteral{Val: -55.340},
+			},
+			output: `{"FieldType":"float","Name":"foo","DefaultClause":"-55.340000"}`,
+			err:    nil,
+		},
+		{
+			input: StreamField{
+				Name:      "bar",
+				FieldType: &BasicType{Type: STRINGS},
+				Default:   &StringLiteral{Val: ""},
+			},
+			output: `{"FieldType":"string","Name":"bar","DefaultClause":""}`,
+			err:    nil,
+		},
+		{
+			input: StreamField{
+				Name:      "mock",
+				FieldType: &BasicType{Type: STRINGS},
+			},
+			output: `{"FieldType":"string","Name":"mock"}`,
+			err:    nil,
+		},
+		{
+			input: StreamField{
+				Name:      "motion",
+				FieldType: &BasicType{Type: BOOLEAN},
+				Default:   &BooleanLiteral{Val: false},
+			},
+			output: `{"FieldType":"boolean","Name":"motion","DefaultClause":"false"}`,
+			err:    nil,
+		},
+		{
+			input: StreamField{
+				Name:      "clock",
+				FieldType: &BasicType{Type: DATETIME},
+				Default:   &StringLiteral{Val: "something"},
+			},
+			output: "",
+			err:    errors.New("DEFAULT clause is not supported for datetime"),
+		},
+	}
+
+	t.Logf("The test bucket size is %d.", len(tests))
+	for i, test := range tests {
+		var got, exp map[string]any
+		result, err := test.input.MarshalJSON()
+		if err != nil {
+			if test.err != nil {
+				if err.Error() != test.err.Error() {
+					t.Errorf("%d. \nstmt mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, test.err, err)
+				}
+			} else {
+				t.Fatalf("failed to marshal json object %v", err)
+			}
+			continue
+		}
+
+		if err1 := json.Unmarshal(result, &got); err1 != nil {
+			t.Fatalf("failed to unmarshal result got %v", err1)
+		}
+
+		if err2 := json.Unmarshal([]byte(test.output), &exp); err2 != nil {
+			t.Fatalf("failed to unmarshal result got %v", err2)
+		}
+
+		if !reflect.DeepEqual(got, exp) {
+			t.Errorf("%d. \nstmt mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, test.output, string(result))
 		}
 	}
 }
