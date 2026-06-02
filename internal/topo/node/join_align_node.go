@@ -113,7 +113,7 @@ func (n *JoinAlignNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 								}
 								b = append(b, d)
 								n.batch[d.Emitter] = b
-								_ = ctx.PutState(BatchKey, n.batch)
+								_ = ctx.PutState(BatchKey, n.copyImmutable(n.batch))
 								return true
 							}
 
@@ -169,20 +169,35 @@ func (n *JoinAlignNode) alignBatch(ctx api.StreamContext, input any) {
 
 func (n *JoinAlignNode) CaptureSnapshot() *xsql.WindowTuples {
 	n.mu.RLock()
-	defer n.mu.RUnlock()
-
 	if len(n.batch) == 0 {
+		n.mu.RUnlock()
 		return nil
 	}
+
+	immutableBatch := n.copyImmutable(n.batch)
+	n.mu.RUnlock()
 
 	w := &xsql.WindowTuples{
 		Content: make([]xsql.Row, 0),
 	}
 
-	for _, contents := range n.batch {
+	for _, contents := range immutableBatch {
 		for _, tuple := range contents {
 			w = w.AddTuple(tuple)
 		}
 	}
+
 	return w
+}
+
+func (n *JoinAlignNode) copyImmutable(src map[string][]*xsql.Tuple) map[string][]*xsql.Tuple {
+	destination := make(map[string][]*xsql.Tuple, len(src))
+
+	for emitters, tuples := range src {
+		tupleList := make([]*xsql.Tuple, len(tuples))
+		copy(tupleList, tuples)
+		destination[emitters] = tupleList
+	}
+
+	return destination
 }

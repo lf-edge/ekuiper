@@ -206,7 +206,7 @@ func createRestServer(ip string, port int, needToken bool) *http.Server {
 	r.HandleFunc("/rules/{name}/explain", explainRuleHandler).Methods(http.MethodGet)
 	r.HandleFunc("/rules/tags/match", rulesTagsHandler).Methods(http.MethodGet)
 	r.HandleFunc("/rules/{name}/tags", ruleTagHandler).Methods(http.MethodPut, http.MethodPatch, http.MethodDelete)
-	r.HandleFunc("/rules/{name}/show/scantable", rulesShowScanTable).Methods(http.MethodGet)
+	r.HandleFunc("/rules/{name}/show/scantables", rulesShowScanTable).Methods(http.MethodGet)
 	r.HandleFunc("/rules/bulkstart", rulesBulkStartHandler).Methods(http.MethodPost)
 	r.HandleFunc("/rules/bulkstop", rulesBulkStopHandler).Methods(http.MethodPost)
 	r.HandleFunc("/ruleset/export", exportHandler).Methods(http.MethodPost)
