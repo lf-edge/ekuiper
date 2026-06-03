@@ -24,12 +24,12 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 )
 
-type ShowScanResponse struct {
+type ShowScanTablesResponse struct {
 	Emitter          string         `json:"emitter"`
 	ScanTableContent map[string]any `json:"content"`
 }
 
-func rulesShowScanTable(w http.ResponseWriter, r *http.Request) {
+func rulesShowScanTables(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	ruleName := vars["name"]
 
@@ -52,7 +52,7 @@ func rulesShowScanTable(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res := make([]ShowScanResponse, tuples.Len())
+	res := make([]ShowScanTablesResponse, tuples.Len())
 	for index, row := range tuples.Content {
 		if t, ok := row.(*xsql.Tuple); ok {
 			res[index].Emitter = t.Emitter

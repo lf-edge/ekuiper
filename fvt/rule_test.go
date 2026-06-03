@@ -888,7 +888,7 @@ func (s *RuleTestSuite) TestShowScanTableContent() {
 	s.Require().NoError(err)
 	s.T().Log(string(body))
 
-	var result []server.ShowScanResponse
+	var result []server.ShowScanTablesResponse
 	err = json.Unmarshal(body, &result)
 	s.Require().NoError(err)
 
