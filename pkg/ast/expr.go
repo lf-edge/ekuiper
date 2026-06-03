@@ -16,7 +16,6 @@ package ast
 
 import (
 	"errors"
-	"fmt"
 	"strconv"
 )
 
@@ -191,7 +190,7 @@ func (nl *NumberLiteral) expr()    {}
 func (nl *NumberLiteral) literal() {}
 func (nl *NumberLiteral) node()    {}
 func (nl *NumberLiteral) String() string {
-	return fmt.Sprintf("%f", nl.Val)
+	return strconv.FormatFloat(nl.Val, 'g', -1, 64)
 }
 
 func (sl *StringLiteral) expr()    {}
