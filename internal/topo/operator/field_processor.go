@@ -40,9 +40,39 @@ func (p *defaultFieldProcessor) validateAndConvert(tuple *xsql.Tuple) error {
 func (p *defaultFieldProcessor) validateAndConvertMessage(schema map[string]*ast.JsonStreamField, message xsql.Message) (map[string]interface{}, error) {
 	for name, sf := range schema {
 		v, ok := message.Value(name, "")
-		if !ok {
+		if !ok && sf.DefaultValue == nil {
 			return nil, fmt.Errorf("field %s is not found", name)
 		}
+
+		// If the field is missing and a default value is defined,
+		// set the field value using the default.
+		if !ok && sf.DefaultValue != nil {
+			lit, err := ast.GetDefaultClause(sf.DefaultValue, sf.Type)
+			if err != nil {
+				return nil, err
+			}
+
+			switch val := lit.(type) {
+			case *ast.IntegerLiteral:
+				v = val.Val
+			case *ast.NumberLiteral:
+				v = val.Val
+			case *ast.BooleanLiteral:
+				v = val.Val
+			case *ast.StringLiteral:
+				v = val.Val
+			default:
+				err = fmt.Errorf("unsupported default literal type %T", lit)
+			}
+
+			if err != nil {
+				return nil, err
+			}
+
+			message[name] = v
+			continue
+		}
+
 		if nv, err := p.validateAndConvertField(sf, v); err != nil {
 			return nil, fmt.Errorf("field %s type mismatch: %v", name, err)
 		} else {
@@ -61,6 +91,7 @@ func (p *defaultFieldProcessor) validateAndConvertField(sf *ast.JsonStreamField,
 		if jtype == reflect.Int64 {
 			return t, nil
 		}
+
 		return cast.ToInt64(t, cast.CONVERT_SAMEKIND)
 	case (ast.FLOAT).String():
 		if jtype == reflect.Float64 {

@@ -15,6 +15,8 @@
 package ast
 
 import (
+	"encoding/json"
+	"errors"
 	"reflect"
 	"testing"
 )
@@ -64,7 +66,108 @@ func TestPrintFieldType(t *testing.T) {
 	}
 }
 
+func TestMarshalJSON(t *testing.T) {
+	tests := []struct {
+		input  StreamField
+		output string
+		err    error
+	}{
+		{
+			input: StreamField{
+				Name:      "id",
+				FieldType: &BasicType{Type: BIGINT},
+				Default:   &IntegerLiteral{Val: 10},
+			},
+			output: `{"FieldType":"bigint","Name":"id","DefaultClause":"10"}`,
+			err:    nil,
+		},
+		{
+			input: StreamField{
+				Name:      "foo",
+				FieldType: &BasicType{Type: FLOAT},
+				Default:   &NumberLiteral{Val: -55.340},
+			},
+			output: `{"FieldType":"float","Name":"foo","DefaultClause":"-55.340000"}`,
+			err:    nil,
+		},
+		{
+			input: StreamField{
+				Name:      "bar",
+				FieldType: &BasicType{Type: STRINGS},
+				Default:   &StringLiteral{Val: ""},
+			},
+			output: `{"FieldType":"string","Name":"bar","DefaultClause":""}`,
+			err:    nil,
+		},
+		{
+			input: StreamField{
+				Name:      "mock",
+				FieldType: &BasicType{Type: STRINGS},
+			},
+			output: `{"FieldType":"string","Name":"mock"}`,
+			err:    nil,
+		},
+		{
+			input: StreamField{
+				Name:      "motion",
+				FieldType: &BasicType{Type: BOOLEAN},
+				Default:   &BooleanLiteral{Val: false},
+			},
+			output: `{"FieldType":"boolean","Name":"motion","DefaultClause":"false"}`,
+			err:    nil,
+		},
+		{
+			input: StreamField{
+				Name:      "clock",
+				FieldType: &BasicType{Type: DATETIME},
+				Default:   &StringLiteral{Val: "something"},
+			},
+			output: "",
+			err:    errors.New("DEFAULT clause is not supported for datetime"),
+		},
+	}
+
+	t.Logf("The test bucket size is %d.", len(tests))
+	for i, test := range tests {
+		var got, exp map[string]any
+		result, err := test.input.MarshalJSON()
+		if err != nil {
+			if test.err != nil {
+				if err.Error() != test.err.Error() {
+					t.Errorf("%d. \nstmt mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, test.err, err)
+				}
+			} else {
+				t.Fatalf("failed to marshal json object %v", err)
+			}
+			continue
+		}
+
+		if err1 := json.Unmarshal(result, &got); err1 != nil {
+			t.Fatalf("failed to unmarshal result got %v", err1)
+		}
+
+		if err2 := json.Unmarshal([]byte(test.output), &exp); err2 != nil {
+			t.Fatalf("failed to unmarshal result got %v", err2)
+		}
+
+		if !reflect.DeepEqual(got, exp) {
+			t.Errorf("%d. \nstmt mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, test.output, string(result))
+		}
+	}
+}
+
 func TestToJsonFields(t *testing.T) {
+	defaultValues := struct {
+		userId              string
+		firstName, lastName string
+		gender              string
+	}{
+		userId:    "10",
+		firstName: "foo",
+		lastName:  "bar",
+		gender:    "true",
+	}
+
 	tests := []struct {
 		input  StreamFields
 		output map[string]*JsonStreamField
@@ -82,12 +185,12 @@ func TestToJsonFields(t *testing.T) {
 			},
 		}, {
 			input: []StreamField{
-				{Name: "USERID", FieldType: &BasicType{Type: BIGINT}},
-				{Name: "FIRST_NAME", FieldType: &BasicType{Type: STRINGS}},
-				{Name: "LAST_NAME", FieldType: &BasicType{Type: STRINGS}},
+				{Name: "USERID", FieldType: &BasicType{Type: BIGINT}, Default: &IntegerLiteral{Val: 10}},
+				{Name: "FIRST_NAME", FieldType: &BasicType{Type: STRINGS}, Default: &StringLiteral{Val: "foo"}},
+				{Name: "LAST_NAME", FieldType: &BasicType{Type: STRINGS}, Default: &StringLiteral{Val: "bar"}},
 				{Name: "NICKNAMES", FieldType: &ArrayType{Type: STRINGS}},
 				{Name: "data", FieldType: &BasicType{Type: BYTEA}},
-				{Name: "Gender", FieldType: &BasicType{Type: BOOLEAN}},
+				{Name: "Gender", FieldType: &BasicType{Type: BOOLEAN}, Default: &BooleanLiteral{Val: true}},
 				{Name: "ADDRESS", FieldType: &RecType{
 					StreamFields: []StreamField{
 						{Name: "STREET_NAME", FieldType: &BasicType{Type: STRINGS}},
@@ -96,12 +199,12 @@ func TestToJsonFields(t *testing.T) {
 				}},
 			},
 			output: map[string]*JsonStreamField{
-				"USERID":     {Type: "bigint"},
-				"FIRST_NAME": {Type: "string"},
-				"LAST_NAME":  {Type: "string"},
+				"USERID":     {Type: "bigint", DefaultValue: &defaultValues.userId},
+				"FIRST_NAME": {Type: "string", DefaultValue: &defaultValues.firstName},
+				"LAST_NAME":  {Type: "string", DefaultValue: &defaultValues.lastName},
 				"NICKNAMES":  {Type: "array", Items: &JsonStreamField{Type: "string"}},
 				"data":       {Type: "bytea"},
-				"Gender":     {Type: "boolean"},
+				"Gender":     {Type: "boolean", DefaultValue: &defaultValues.gender},
 				"ADDRESS": {Type: "struct", Properties: map[string]*JsonStreamField{
 					"STREET_NAME": {Type: "string"},
 					"NUMBER":      {Type: "bigint"},

@@ -358,13 +358,14 @@ func TestDescribeToJson(t *testing.T) {
 	}{
 		{
 			s: "Fields\n--------------------------------------------------------------------------------\n" +
-				"USERID\tbigint\nFIRST_NAME\tstring\nLAST_NAME\tstring\nNICKNAMES\tarray(string)\nGender\tboolean\nADDRESS\t" +
+				"USERID\tbigint\tDEFAULT\t22\nFIRST_NAME\tstring\nLAST_NAME\tstring\nNICKNAMES\tarray(string)\nGender\tboolean\nADDRESS\t" +
 				"struct(STREET_NAME string, NUMBER bigint)\n\nDATASOURCE: users\nFORMAT: JSON\nKEY: USERID\n",
 			r: `{
 	"Fields": [
 		{
 			"Name": "USERID",
-			"Type": "bigint"
+			"Type": "bigint",
+			"DefaultClause": "22"
 		},
 		{
 			"Name": "FIRST_NAME",

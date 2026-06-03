@@ -17,6 +17,8 @@ package ast
 import (
 	"encoding/json"
 	"fmt"
+
+	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
 
 const (
@@ -48,25 +50,43 @@ type StreamStmt struct {
 type StreamField struct {
 	Name string
 	FieldType
+	Default Literal // the DEFAULT clause is optional
 }
 
 type JsonStreamField struct {
-	Type       string                      `json:"type,omitempty"`
-	Items      *JsonStreamField            `json:"items,omitempty"`
-	Properties map[string]*JsonStreamField `json:"properties,omitempty"`
-	HasIndex   bool                        `json:"hasIndex,omitempty"`
-	Index      int                         `json:"index"`
+	Type         string                      `json:"type,omitempty"`
+	DefaultValue *string                     `json:"default,omitempty"`
+	Items        *JsonStreamField            `json:"items,omitempty"`
+	Properties   map[string]*JsonStreamField `json:"properties,omitempty"`
+	HasIndex     bool                        `json:"hasIndex,omitempty"`
+	Index        int                         `json:"index"`
 
 	Selected bool `json:"selected,omitempty"`
 }
 
 func (u *StreamField) MarshalJSON() ([]byte, error) {
+	var defaultValue *string
+
+	if u.Default != nil {
+		def := u.Default.String()
+
+		// validate that the default value is compatible with the field type
+		_, err := GetDefaultClause(&def, u.FieldType)
+		if err != nil {
+			return nil, err
+		}
+
+		defaultValue = &def
+	}
+
 	return json.Marshal(&struct {
-		FieldType interface{}
-		Name      string
+		FieldType     interface{}
+		Name          string
+		DefaultClause *string `json:",omitempty"`
 	}{
-		FieldType: printFieldTypeForJson(u.FieldType),
-		Name:      u.Name,
+		FieldType:     printFieldTypeForJson(u.FieldType),
+		Name:          u.Name,
+		DefaultClause: defaultValue,
 	})
 }
 
@@ -97,7 +117,12 @@ func convertSchema(sfs StreamFields) map[string]*JsonStreamField {
 	if len(sfs) > 0 {
 		result := make(map[string]*JsonStreamField, len(sfs))
 		for _, sf := range sfs {
-			result[sf.Name] = convertFieldType(sf.FieldType)
+			jsonField := convertFieldType(sf.FieldType)
+			if sf.Default != nil {
+				defaultValue := sf.Default.String()
+				jsonField.DefaultValue = &defaultValue
+			}
+			result[sf.Name] = jsonField
 		}
 		return result
 	}
@@ -141,12 +166,33 @@ func fieldsTypeFromSchema(mjsf map[string]*JsonStreamField) (StreamFields, error
 		if err != nil {
 			return nil, err
 		}
-		sfs = append(sfs, StreamField{
+
+		field := StreamField{
 			Name:      k,
 			FieldType: ft,
-		})
+		}
+
+		var def Literal
+		def, err = fieldDefaultClauseFromSchema(v)
+		if err != nil {
+			return nil, err
+		}
+
+		if def != nil {
+			field.Default = def
+		}
+
+		sfs = append(sfs, field)
 	}
 	return sfs, nil
+}
+
+func fieldDefaultClauseFromSchema(v *JsonStreamField) (Literal, error) {
+	if v.DefaultValue == nil {
+		return nil, nil
+	}
+
+	return getClause(*v.DefaultValue, v.Type)
 }
 
 func fieldTypeFromSchema(v *JsonStreamField) (FieldType, error) {
@@ -364,4 +410,60 @@ func CheckSchemaIndex(schema map[string]*JsonStreamField) bool {
 		return field != nil && field.HasIndex
 	}
 	return false
+}
+
+func GetDefaultClause(constraintValue *string, fieldType any) (Literal, error) {
+	var matchErr error
+
+	switch t := fieldType.(type) {
+	case FieldType:
+		switch ft := fieldType.(type) {
+		case *BasicType:
+			lit, err := getClause(*constraintValue, ft.Type.String())
+			if err != nil {
+				return nil, err
+			}
+			return lit, err
+		default:
+			matchErr = fmt.Errorf("DEFAULT clause is not supported for %T", ft)
+		}
+	case string:
+		lit, err := getClause(*constraintValue, t)
+		if err != nil {
+			return nil, err
+		}
+		return lit, err
+	default:
+		matchErr = fmt.Errorf("unsupported type %T", t)
+	}
+
+	return nil, matchErr
+}
+
+func getClause(clauseValue string, fieldType string) (Literal, error) {
+	var err error
+
+	switch fieldType {
+	case BIGINT.String():
+		var val int64
+		if val, err = cast.ToInt64(clauseValue, cast.CONVERT_ALL); err == nil {
+			return &IntegerLiteral{Val: val}, nil
+		}
+	case FLOAT.String():
+		var val float64
+		if val, err = cast.ToFloat64(clauseValue, cast.CONVERT_ALL); err == nil {
+			return &NumberLiteral{Val: val}, nil
+		}
+	case STRINGS.String():
+		return &StringLiteral{Val: clauseValue}, nil
+	case BOOLEAN.String():
+		var val bool
+		if val, err = cast.ToBool(clauseValue, cast.CONVERT_ALL); err == nil {
+			return &BooleanLiteral{Val: val}, nil
+		}
+	default:
+		err = fmt.Errorf("DEFAULT clause is not supported for %s", fieldType)
+	}
+
+	return nil, err
 }
