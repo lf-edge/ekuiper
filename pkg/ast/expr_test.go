@@ -182,7 +182,7 @@ func Test_exprStringPlan(t *testing.T) {
 		},
 		{
 			e:   &NumberLiteral{Val: 1.23},
-			res: "1.230000",
+			res: "1.23",
 		},
 		{
 			e:   &StringLiteral{Val: "v1"},

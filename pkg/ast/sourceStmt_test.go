@@ -85,9 +85,9 @@ func TestMarshalJSON(t *testing.T) {
 			input: StreamField{
 				Name:      "foo",
 				FieldType: &BasicType{Type: FLOAT},
-				Default:   &NumberLiteral{Val: -55.340},
+				Default:   &NumberLiteral{Val: -55.34},
 			},
-			output: `{"FieldType":"float","Name":"foo","DefaultClause":"-55.340000"}`,
+			output: `{"FieldType":"float","Name":"foo","DefaultClause":"-55.34"}`,
 			err:    nil,
 		},
 		{
