@@ -61,7 +61,7 @@ var tests = []struct {
 }{
 	{ // 0
 		sql: `SELECT count(*) FROM src1 HAVING sin(temp) > 0.3`,
-		r:   newErrorStruct("Not allowed to call non-aggregate functions in HAVING clause: binaryExpr:{ Call:{ name:sin, args:[src1.temp] } > 0.300000 }."),
+		r:   newErrorStruct("Not allowed to call non-aggregate functions in HAVING clause: binaryExpr:{ Call:{ name:sin, args:[src1.temp] } > 0.3 }."),
 	},
 	{ // 1
 		sql: `SELECT count(*) FROM src1 WHERE name = "dname" HAVING sin(count(*)) > 0.3`,
