@@ -281,7 +281,6 @@ func TestCaptureSnapshot(t *testing.T) {
 					got = n.CaptureSnapshot()
 					return reflect.DeepEqual([]any{got}, tt.out)
 				}, time.Second, 10*time.Millisecond)
-				assert.Equal(t, tt.out, []any{got})
 			}
 		})
 	}

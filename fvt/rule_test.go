@@ -29,6 +29,7 @@ import (
 	"github.com/mochi-mqtt/server/v2/hooks/auth"
 	"github.com/mochi-mqtt/server/v2/listeners"
 	"github.com/mochi-mqtt/server/v2/packets"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
@@ -732,7 +733,8 @@ func (s *RuleTestSuite) TestShowScanTableContentWithErrors() {
 			{"id": int64(3), "name": "Device3", "location": "Room3"},
 		}
 
-		devicesJSON, _ := json.Marshal(devicesData)
+		devicesJSON, marshalErr := json.Marshal(devicesData)
+		s.Require().NoError(marshalErr)
 		devicesPath := filepath.Join(dataLoc, "devices.json")
 		err = os.WriteFile(devicesPath, devicesJSON, 0o644)
 		s.Require().NoError(err)
@@ -763,12 +765,15 @@ func (s *RuleTestSuite) TestShowScanTableContentWithErrors() {
 		s.T().Log(GetResponseText(resp))
 		s.Require().Equal(http.StatusCreated, resp.StatusCode)
 
-		time.Sleep(2 * time.Second)
+		require.Eventually(s.T(), func() bool {
+			resp, err := client.GetRuleScanTablesSnapshot("testRule")
+			if err != nil {
+				return false
+			}
 
-		resp, err = client.GetRuleScanTableSnapshot("testRule")
-		s.Require().NoError(err)
-		s.T().Log(GetResponseText(resp))
-		s.Require().Equal(http.StatusBadRequest, resp.StatusCode)
+			s.T().Log(GetResponseText(resp))
+			return http.StatusBadRequest == resp.StatusCode
+		}, 3*time.Second, 200*time.Millisecond)
 	})
 
 	s.Run("testNoData", func() {
@@ -815,12 +820,15 @@ func (s *RuleTestSuite) TestShowScanTableContentWithErrors() {
 		s.T().Log(GetResponseText(resp))
 		s.Require().Equal(http.StatusCreated, resp.StatusCode)
 
-		time.Sleep(2 * time.Second)
+		require.Eventually(s.T(), func() bool {
+			resp, err := client.GetRuleScanTablesSnapshot("joinTestRule")
+			if err != nil {
+				return false
+			}
+			s.T().Log(GetResponseText(resp))
 
-		resp, err = client.GetRuleScanTableSnapshot("joinTestRule")
-		s.Require().NoError(err)
-		s.T().Log(GetResponseText(resp))
-		s.Require().Equal(http.StatusBadRequest, resp.StatusCode)
+			return http.StatusBadRequest == resp.StatusCode
+		}, 3*time.Second, 200*time.Millisecond)
 	})
 }
 
@@ -841,7 +849,8 @@ func (s *RuleTestSuite) TestShowScanTableContent() {
 		{"id": int64(2), "name": "Device2", "location": "Room2"},
 		{"id": int64(3), "name": "Device3", "location": "Room3"},
 	}
-	devicesJSON, _ := json.Marshal(devicesData)
+	devicesJSON, marshalErr := json.Marshal(devicesData)
+	s.Require().NoError(marshalErr)
 	devicesPath := filepath.Join(dataLoc, "devices.json")
 	err = os.WriteFile(devicesPath, devicesJSON, 0o644)
 	s.Require().NoError(err)
@@ -877,17 +886,23 @@ func (s *RuleTestSuite) TestShowScanTableContent() {
 	s.T().Log(GetResponseText(resp))
 	s.Require().Equal(http.StatusCreated, resp.StatusCode)
 
-	time.Sleep(2 * time.Second)
+	var res *http.Response
+	require.Eventually(s.T(), func() bool {
+		resp, err = client.GetRuleScanTablesSnapshot("joinTestRule")
+		if err != nil {
+			return false
+		}
 
-	resp, err = client.GetRuleScanTableSnapshot("joinTestRule")
-	s.Require().NoError(err)
-	s.Require().Equal(http.StatusOK, resp.StatusCode)
+		if resp.StatusCode != http.StatusOK {
+			return false
+		}
 
-	body, err := io.ReadAll(resp.Body)
-	resp.Body.Close()
-	s.Require().NoError(err)
-	s.T().Log(string(body))
+		res = resp
+		return true
+	}, 3*time.Second, 200*time.Millisecond)
 
+	body, err := io.ReadAll(res.Body)
+	defer res.Body.Close()
 	var result []server.ShowScanTablesResponse
 	err = json.Unmarshal(body, &result)
 	s.Require().NoError(err)
