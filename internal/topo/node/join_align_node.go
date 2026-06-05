@@ -195,7 +195,12 @@ func (n *JoinAlignNode) copyImmutable(src map[string][]*xsql.Tuple) map[string][
 
 	for emitters, tuples := range src {
 		tupleList := make([]*xsql.Tuple, len(tuples))
-		copy(tupleList, tuples)
+		for tupleIndex, tuple := range tuples {
+			tupleList[tupleIndex] = &xsql.Tuple{
+				Emitter: tuple.Emitter,
+				Message: tuple.Message,
+			}
+		}
 		destination[emitters] = tupleList
 	}
 
