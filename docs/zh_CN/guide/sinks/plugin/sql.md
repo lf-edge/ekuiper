@@ -7,6 +7,8 @@
 此插件必须与至少一个数据库驱动程序一起使用。我们使用构建标签来确定将包含哪个驱动程序。[eKuiper - SQL 数据库插件 GitHub 页面](https://github.com/lf-edge/ekuiper/tree/master/extensions/sqldatabase/driver)列出了所有支持的驱动程序。
 该插件默认支持 `sqlserver\postgres\mysql\sqlite3\oracle` 驱动。用户可以自己编译只支持一个驱动的插件，例如如果他只想要 MySQL，那么他可以用 build tag mysql 构建。
 
+DuckDB 也已支持，但由于它依赖 CGO，默认构建不包含它——需要用 `duckdb` 构建标签编译插件（见下方的 DuckDB 构建指令）。
+
 当使用 `sqlserver` 作为目标 source 时，需要确认该 `sqlserver` 暴露了 1434 端口。
 
 ### 默认构建指令
@@ -22,6 +24,16 @@
 ```shell
 # cd $eKuiper_src
 # go build -trimpath --buildmode=plugin -tags mysql -o plugins/sinks/Sql.so extensions/sinks/sql/sql.go
+# cp plugins/sinks/Sql.so $eKuiper_install/plugins/sinks
+```
+
+### DuckDB 构建指令
+
+DuckDB 需要 CGO 和 C/C++ 编译器。
+
+```shell
+# cd $eKuiper_src
+# CGO_ENABLED=1 go build -trimpath --buildmode=plugin -tags duckdb -o plugins/sinks/Sql.so extensions/sinks/sql/sql.go
 # cp plugins/sinks/Sql.so $eKuiper_install/plugins/sinks
 ```
 
@@ -119,3 +131,5 @@
   ]
 }
 ```
+
+> DuckDB 示例：将 `"url"` 设为 `"duckdb:///绝对路径/to.db"`（相对路径用 `"duckdb://test.db"`）。DuckDB 是单写者模型，因此文件模式下请将 eKuiper 的 SQL `maxConnections` 设为 1，以避免锁竞争。
