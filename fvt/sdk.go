@@ -284,7 +284,7 @@ func (sdk *SDK) RemoveRuleTags(name string, keys []string) (resp *http.Response,
 }
 
 func (sdk *SDK) GetRuleScanTablesSnapshot(ruleName string) (resp *http.Response, err error) {
-	req, err := http.NewRequest(http.MethodGet, sdk.baseUrl.JoinPath("rules", ruleName, "show", "scantables").String(), nil)
+	req, err := http.NewRequest(http.MethodGet, sdk.baseUrl.JoinPath("rules", ruleName, "scantables").String(), nil)
 	if err != nil {
 		fmt.Println(err)
 		return
