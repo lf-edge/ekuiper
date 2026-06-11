@@ -24,7 +24,7 @@ User config: url = "duckdb:///path/to/file.db"
 ### Driver Name Resolution
 
 - `xo/dburl` v0.23.2 natively supports the `duckdb://` scheme (alias `dk`), parsing it to driver name `"duckdb"`.
-- `go-duckdb` (`github.com/marcboeker/go-duckdb`) registers itself under the name `"duckdb"` via `sql.Register("duckdb", ...)`.
+- `duckdb-go` (`github.com/duckdb/duckdb-go/v2`) registers itself under the name `"duckdb"` via `sql.Register("duckdb", ...)`.
 - Names match — no fixup needed in `dburl.go` (unlike sqlite3 which requires a rename from "sqlite3" to "sqlite").
 
 ### SQL Dialect
@@ -48,7 +48,7 @@ A blank-import driver file with build tag, matching the pattern of `clickhouse.g
 package driver
 
 import (
-    _ "github.com/marcboeker/go-duckdb/v2"
+    _ "github.com/duckdb/duckdb-go/v2"
 )
 ```
 
@@ -56,10 +56,10 @@ Build tag `(all || most || duckdb) && !no_duckdb` — consistent with all other 
 
 ### 2. Modified: `go.mod` / `go.sum`
 
-Add the `github.com/marcboeker/go-duckdb/v2` dependency (it is a v2 module — the `/v2` suffix is required in the import path). Latest stable release is `v2.4.3` (bundles DuckDB v1.4.1). Note: starting at v2.5.0 the project migrates to `github.com/duckdb/duckdb-go`; pin to `v2.4.3` for now.
+Add the official `github.com/duckdb/duckdb-go/v2` dependency (the successor to the deprecated `github.com/marcboeker/go-duckdb`; it is a v2 module, so the `/v2` suffix is required in the import path). Pinned version is `v2.10503.1`. It ships pre-built per-platform bindings, so no DuckDB C++ is compiled from source, but CGO is still required to link them.
 
 ```bash
-go get github.com/marcboeker/go-duckdb/v2@v2.4.3
+go get github.com/duckdb/duckdb-go/v2@v2.10503.1
 ```
 
 ### 3. No changes needed
@@ -118,14 +118,14 @@ Reference: `extensions/impl/sql/sink_test.go`.
 - Test cases:
   1. URL parsing: `dburl.Parse(...)` returns driver="duckdb" for the chosen URL.
   2. Connection open: `sql.Open("duckdb", dsn)` succeeds for in-memory mode.
-  3. INSERT flow: configure sink with an in-memory DuckDB URL, `table: "test"`, verify data writes correctly.
+  3. INSERT flow: configure sink with a file-mode DuckDB URL (`duckdb://<tempfile>`), `table: "t"`, verify the row round-trips.
 - Tests run with: `CGO_ENABLED=1 go test -tags duckdb ./extensions/impl/sql/`
 
 ## Risks / To Verify During Implementation
 
-1. **In-memory URL → DSN mapping (unverified).** The doc claims in-memory mode works, but how `xo/dburl` translates a `duckdb`-scheme URL into the DSN that `go-duckdb` expects (`""` or `":memory:"`) has not been verified. Implementation must confirm the working URL empirically before documenting it for users. If dburl does not produce a valid in-memory DSN, the file-mode URL may be the only supported form.
+1. **URL → DSN mapping (file mode confirmed).** File mode `duckdb://<abspath>` is verified working: `xo/dburl` translates it to a DSN that `duckdb-go` accepts as a file path, and the sink round-trips data (see `TestDuckDBSinkCollect`). In-memory mode (`""` / `:memory:`) reached through a dburl URL remains unverified; users should prefer file mode.
 2. **Test isolation.** DuckDB tests require CGO + the `duckdb` build tag; they will not run in CI's default test matrix. Decide whether to add a dedicated CI job or keep tests manual.
-3. **Version pinning.** go-duckdb v2.5.0+ migrates to a new module path (`github.com/duckdb/duckdb-go`). Pin to v2.4.3 to avoid a future forced import-path migration.
+3. **Version pinning (resolved).** Using the official `github.com/duckdb/duckdb-go/v2` upstream directly (the deprecated `marcboeker/go-duckdb` was avoided per user decision).
 
 ## Documentation
 

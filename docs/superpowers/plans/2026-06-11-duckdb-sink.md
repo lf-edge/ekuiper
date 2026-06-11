@@ -4,9 +4,9 @@
 
 **Goal:** Add DuckDB write support to eKuiper's existing SQL sink so that rules can stream data into a DuckDB database file.
 
-**Architecture:** eKuiper's SQL sink (`extensions/impl/sql/`) is fully driver-agnostic — connection management, INSERT/UPDATE/DELETE SQL construction, and the connection pool all flow through Go's `database/sql`. Adding a new database only requires registering its Go driver so `sql.Open("<driver>", dsn)` works. DuckDB plugs in by adding one driver-registration file that blank-imports `github.com/marcboeker/go-duckdb/v2`, which registers itself under the name `"duckdb"`. The `xo/dburl` library already maps the `duckdb://` URL scheme to driver name `"duckdb"`, so no URL-fixup code is needed.
+**Architecture:** eKuiper's SQL sink (`extensions/impl/sql/`) is fully driver-agnostic — connection management, INSERT/UPDATE/DELETE SQL construction, and the connection pool all flow through Go's `database/sql`. Adding a new database only requires registering its Go driver so `sql.Open("<driver>", dsn)` works. DuckDB plugs in by adding one driver-registration file that blank-imports `github.com/duckdb/duckdb-go/v2`, which registers itself under the name `"duckdb"`. The `xo/dburl` library already maps the `duckdb://` URL scheme to driver name `"duckdb"`, so no URL-fixup code is needed.
 
-**Tech Stack:** Go 1.25, `database/sql`, `github.com/marcboeker/go-duckdb/v2` (CGO — binds DuckDB C++), `github.com/xo/dburl` (URL→driver parsing), `github.com/stretchr/testify`. Tests gated behind a `duckdb` build tag.
+**Tech Stack:** Go 1.25, `database/sql`, `github.com/duckdb/duckdb-go/v2` (CGO — ships pre-built DuckDB bindings), `github.com/xo/dburl` (URL→driver parsing), `github.com/stretchr/testify`. Tests gated behind a `duckdb` build tag.
 
 **Spec:** `docs/superpowers/specs/2026-06-11-duckdb-sink-design.md`
 
@@ -20,7 +20,7 @@
 | `extensions/impl/sql/client/dburl_test.go` | Create | Non-gated unit test: `ParseDBUrl`/`ParseDriver` recognize the `duckdb` scheme. Runs in the default build (no CGO). |
 | `extensions/impl/sql/client/duckdb_driver_test.go` | Create | `duckdb`-tagged test: `sql.Open("duckdb", "")` succeeds — proves the driver is registered. |
 | `extensions/impl/sql/duckdb_test.go` | Create | `duckdb`-tagged end-to-end test: sink writes a row to a DuckDB file and it round-trips. |
-| `go.mod` / `go.sum` | Modify | Add `github.com/marcboeker/go-duckdb/v2 v2.4.3`. |
+| `go.mod` / `go.sum` | Modify | Add `github.com/duckdb/duckdb-go/v2 v2.10503.1`. |
 | `docs/en_US/guide/sinks/plugin/sql.md` | Modify | Add DuckDB to supported list + build command + URL sample. |
 | `docs/zh_CN/guide/sinks/plugin/sql.md` | Modify | Chinese equivalent. |
 
@@ -150,9 +150,9 @@ Expected: FAIL with `sql: unknown driver "duckdb" (forgotten import?)`. This con
 
 Run:
 ```bash
-go get github.com/marcboeker/go-duckdb/v2@v2.4.3
+go get github.com/duckdb/duckdb-go/v2@v2.10503.1
 ```
-This updates `go.mod` and `go.sum`. Requires network access. (go-duckdb is a v2 module — the `/v2` suffix in the import path is mandatory.)
+This updates `go.mod` and `go.sum`. Requires network access. (duckdb-go is a v2 module — the `/v2` suffix in the import path is mandatory.)
 
 - [ ] **Step 4: Create the driver registration file**
 
@@ -178,7 +178,7 @@ Create `extensions/impl/sql/sqldatabase/driver/duckdb.go`:
 package driver
 
 import (
-	_ "github.com/marcboeker/go-duckdb/v2" // DuckDB driver (registers as "duckdb")
+	_ "github.com/duckdb/duckdb-go/v2" // DuckDB driver (registers as "duckdb")
 )
 ```
 
@@ -390,7 +390,7 @@ git commit -m "docs(sql): document duckdb sink support"
 - [ ] `CGO_ENABLED=0 go test ./extensions/impl/sql/client/` passes (Task 1, runs in default CI).
 - [ ] `CGO_ENABLED=1 go test -tags duckdb ./extensions/impl/sql/...` passes (Tasks 2 & 3).
 - [ ] `CGO_ENABLED=0 go build ./extensions/impl/sql/...` still succeeds (default build unaffected).
-- [ ] `go.mod` contains `github.com/marcboeker/go-duckdb/v2 v2.4.3`.
+- [ ] `go.mod` contains `github.com/duckdb/duckdb-go/v2 v2.10503.1`.
 - [ ] Both English and Chinese SQL sink docs mention DuckDB, its build command, and a URL sample.
 - [ ] A custom plugin can be built and used: `CGO_ENABLED=1 go build -trimpath --buildmode=plugin -tags duckdb -o plugins/sinks/Sql.so extensions/sinks/sql/sql.go`.
 
@@ -398,9 +398,9 @@ git commit -m "docs(sql): document duckdb sink support"
 
 ## Notes for the implementer
 
-- **Why `/v2`:** `github.com/marcboeker/go-duckdb` is a v2 Go module. The import path must include `/v2` or it will not resolve. Verified against the package source.
+- **Why `/v2`:** `github.com/duckdb/duckdb-go` is a v2 Go module. The import path must include `/v2` (i.e. `github.com/duckdb/duckdb-go/v2`) or it will not resolve. The non-`/v2` path `github.com/duckdb/duckdb-go` still serves the old marcboeker module and is rejected by the toolchain — always use the `/v2` path.
 - **Driver name:** go-duckdb calls `sql.Register("duckdb", ...)`; `xo/dburl` maps `duckdb://` → driver `"duckdb"`. They match, which is why `client/dburl.go` needs no special-case (unlike sqlite3, which dburl names `"sqlite3"` but the modernc driver registers as `"sqlite"`).
-- **CGO is mandatory** for go-duckdb (it embeds the DuckDB C++ engine). The default `CGO_ENABLED=0` eKuiper build cannot use it; that is why the driver is gated behind the `duckdb` build tag rather than placed in the `base` set.
-- **First compile is slow** (compiles bundled DuckDB C++). Subsequent builds are cached.
+- **CGO is mandatory** for duckdb-go (it links the DuckDB engine). The default `CGO_ENABLED=0` eKuiper build cannot use it; that is why the driver is gated behind the `duckdb` build tag rather than placed in the `base` set.
+- **Builds are fast** — duckdb-go v2.x ships pre-built per-platform static bindings (no DuckDB C++ compiled from source), though CGO is still required to link them.
 - **CI gap:** eKuiper's CI test matrix uses `-tags "full deadlock"`, which does not include `duckdb`. The Task 2/3 tests therefore do not run in default CI. Running them is a local/manual step unless a dedicated CI job is added (out of scope for this plan).
 - **DuckDB single-writer:** DuckDB serializes writes to a file. If a deployment opens many connections, set eKuiper's SQL `maxConnections` to 1 (see `internal/conf` `SQLConf.MaxConnections`, consumed in `client/dburl.go:openDB`).
