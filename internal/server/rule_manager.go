@@ -27,6 +27,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/v2/internal/processor"
+	"github.com/lf-edge/ekuiper/v2/internal/topo"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/planner"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/rule"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/rule/machine"
@@ -405,6 +406,19 @@ func (rr *RuleRegistry) GetRuleTopo(name string) (string, error) {
 		}
 	} else {
 		return "", errorx.NewWithCode(errorx.NOT_FOUND, fmt.Sprintf("Rule %s is not found", name))
+	}
+}
+
+func (rr *RuleRegistry) GetRulePlainTopo(name string) (*topo.Topo, error) {
+	if rs, ok := registry.load(name); ok {
+		topo, err := rs.GetPlainTopology()
+		if err != nil {
+			return nil, err
+		}
+
+		return topo, nil
+	} else {
+		return nil, errorx.NewWithCode(errorx.NOT_FOUND, fmt.Sprintf("Rule %s is not found", name))
 	}
 }
 

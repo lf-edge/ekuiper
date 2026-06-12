@@ -16,6 +16,7 @@ package node
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
@@ -31,6 +32,8 @@ type JoinAlignNode struct {
 	// table states
 	batch map[string][]*xsql.Tuple
 	size  map[string]int
+
+	mu sync.RWMutex
 }
 
 const BatchKey = "$$batchInputs"
@@ -66,7 +69,10 @@ func (n *JoinAlignNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 			if s, err := ctx.GetState(BatchKey); err == nil {
 				switch st := s.(type) {
 				case map[string][]*xsql.Tuple:
+					n.mu.Lock()
 					n.batch = st
+					n.mu.Unlock()
+
 					log.Infof("Restore batch state %+v", st)
 				case nil:
 					log.Debugf("Restore batch state, nothing")
@@ -76,9 +82,12 @@ func (n *JoinAlignNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 			} else {
 				log.Warnf("Restore batch state fails: %s", err)
 			}
+
+			n.mu.Lock()
 			if n.batch == nil {
 				n.batch = make(map[string][]*xsql.Tuple)
 			}
+			n.mu.Unlock()
 
 			for {
 				log.Debugf("JoinAlignNode %s is looping", n.name)
@@ -93,15 +102,25 @@ func (n *JoinAlignNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 					switch d := data.(type) {
 					case *xsql.Tuple:
 						log.Debugf("JoinAlignNode receive tuple input %v", d)
-						if b, ok := n.batch[d.Emitter]; ok {
-							s := n.size[d.Emitter]
-							if len(b) >= s {
-								b = b[s-len(b)+1:]
+						tryTakeBatch := func() bool {
+							n.mu.Lock()
+							defer n.mu.Unlock()
+
+							if b, ok := n.batch[d.Emitter]; ok {
+								s := n.size[d.Emitter]
+								if len(b) >= s {
+									b = b[s-len(b)+1:]
+								}
+								b = append(b, d)
+								n.batch[d.Emitter] = b
+								_ = ctx.PutState(BatchKey, n.copyImmutable(n.batch))
+								return true
 							}
-							b = append(b, d)
-							n.batch[d.Emitter] = b
-							_ = ctx.PutState(BatchKey, n.batch)
-						} else {
+
+							return false
+						}
+
+						if !tryTakeBatch() {
 							n.alignBatch(ctx, d)
 						}
 					case *xsql.WindowTuples:
@@ -134,12 +153,56 @@ func (n *JoinAlignNode) alignBatch(ctx api.StreamContext, input any) {
 	case *xsql.WindowTuples:
 		w = t
 	}
+
+	n.mu.RLock()
 	for _, contents := range n.batch {
 		for _, v := range contents {
 			w = w.AddTuple(v)
 		}
 	}
+	n.mu.RUnlock()
+
 	n.Broadcast(w)
 	n.onSend(ctx, w)
 	n.statManager.SetBufferLength(int64(len(n.input)))
+}
+
+func (n *JoinAlignNode) CaptureSnapshot() *xsql.WindowTuples {
+	n.mu.RLock()
+	if len(n.batch) == 0 {
+		n.mu.RUnlock()
+		return nil
+	}
+
+	immutableBatch := n.copyImmutable(n.batch)
+	n.mu.RUnlock()
+
+	w := &xsql.WindowTuples{
+		Content: make([]xsql.Row, 0),
+	}
+
+	for _, contents := range immutableBatch {
+		for _, tuple := range contents {
+			w = w.AddTuple(tuple)
+		}
+	}
+
+	return w
+}
+
+func (n *JoinAlignNode) copyImmutable(src map[string][]*xsql.Tuple) map[string][]*xsql.Tuple {
+	destination := make(map[string][]*xsql.Tuple, len(src))
+
+	for emitters, tuples := range src {
+		tupleList := make([]*xsql.Tuple, len(tuples))
+		for tupleIndex, tuple := range tuples {
+			tupleList[tupleIndex] = &xsql.Tuple{
+				Emitter: tuple.Emitter,
+				Message: tuple.Message,
+			}
+		}
+		destination[emitters] = tupleList
+	}
+
+	return destination
 }

@@ -15,9 +15,12 @@
 package fvt
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
+	"path/filepath"
 	"sort"
 	"testing"
 	"time"
@@ -26,8 +29,10 @@ import (
 	"github.com/mochi-mqtt/server/v2/hooks/auth"
 	"github.com/mochi-mqtt/server/v2/listeners"
 	"github.com/mochi-mqtt/server/v2/packets"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/io/memory/pubsub"
 	"github.com/lf-edge/ekuiper/v2/internal/server"
 	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
@@ -712,6 +717,209 @@ func (s *RuleTestSuite) TestDataTemplateArrayDecode() {
 		{"v": float64(2)},
 	}
 	s.assertRecvMemTupleList(subCh, expected)
+}
+
+func (s *RuleTestSuite) TestShowScanTableContentWithErrors() {
+	s.Run("testNoJoin", func() {
+		client.DeleteStream("simpleStream")
+		client.DeleteRule("testRule")
+		defer client.DeleteStream("simpleStream")
+		dataLoc, err := conf.GetDataLoc()
+		s.Require().NoError(err)
+
+		devicesData := []map[string]interface{}{
+			{"id": int64(1), "name": "Device1", "location": "Room1"},
+			{"id": int64(2), "name": "Device2", "location": "Room2"},
+			{"id": int64(3), "name": "Device3", "location": "Room3"},
+		}
+
+		devicesJSON, marshalErr := json.Marshal(devicesData)
+		s.Require().NoError(marshalErr)
+		devicesPath := filepath.Join(dataLoc, "devices.json")
+		err = os.WriteFile(devicesPath, devicesJSON, 0o644)
+		s.Require().NoError(err)
+		defer os.Remove(devicesPath)
+
+		streamSql := `{"sql": "CREATE STREAM simpleStream (id BIGINT, temperature FLOAT, humidity FLOAT) WITH (DATASOURCE=\"sensorStream\", TYPE=\"simulator\", FORMAT=\"json\")"}`
+
+		resp, err := client.CreateStream(streamSql)
+		s.Require().NoError(err)
+		s.T().Log(GetResponseText(resp))
+		s.Require().Equal(http.StatusCreated, resp.StatusCode)
+
+		ruleSql := `
+    	{
+        	"id": "testRule",
+        	"sql": "SELECT count(*) FROM simpleStream",
+        	"actions": [
+        	{
+            	"log": {}
+        	}
+        	]
+    	}
+    	`
+		defer client.DeleteRule("testRule")
+
+		resp, err = client.CreateRule(ruleSql)
+		s.Require().NoError(err)
+		s.T().Log(GetResponseText(resp))
+		s.Require().Equal(http.StatusCreated, resp.StatusCode)
+
+		require.Eventually(s.T(), func() bool {
+			resp, err := client.GetRuleScanTablesSnapshot("testRule")
+			if err != nil {
+				return false
+			}
+
+			s.T().Log(GetResponseText(resp))
+			return http.StatusBadRequest == resp.StatusCode
+		}, 3*time.Second, 200*time.Millisecond)
+	})
+
+	s.Run("testNoData", func() {
+		client.DeleteTables("deviceTable")
+		client.DeleteRule("joinTestRule")
+		client.DeleteStream("sensorStream")
+		defer client.DeleteStream("sensorStream")
+		defer client.DeleteTables("deviceTable")
+
+		dataLoc, err := conf.GetDataLoc()
+		s.Require().NoError(err)
+		devicesPath := filepath.Join(dataLoc, "devices.json")
+		err = os.WriteFile(devicesPath, []byte(``), 0o644)
+		s.Require().NoError(err)
+		defer os.Remove(devicesPath)
+
+		streamSql := `{"sql": "CREATE STREAM sensorStream (id BIGINT, temperature FLOAT, humidity FLOAT) WITH (DATASOURCE=\"sensorStream\", TYPE=\"simulator\", FORMAT=\"json\")"}`
+
+		resp, err := client.CreateStream(streamSql)
+		s.Require().NoError(err)
+		s.T().Log(GetResponseText(resp))
+		s.Require().Equal(http.StatusCreated, resp.StatusCode)
+
+		tableSql := `{"sql": "CREATE TABLE deviceTable (id BIGINT, name STRING, location STRING) WITH (DATASOURCE=\"devices.json\", FORMAT=\"json\", TYPE=\"file\")"}`
+
+		resp, err = client.CreateTable(tableSql)
+		s.Require().NoError(err)
+		s.T().Log(GetResponseText(resp))
+		s.Require().Equal(http.StatusCreated, resp.StatusCode)
+
+		ruleSql := `
+    	{
+        	"id": "joinTestRule",
+        	"sql": "SELECT sensorStream.id, sensorStream.temperature, deviceTable.name, deviceTable.location FROM sensorStream INNER JOIN deviceTable ON sensorStream.id = deviceTable.id",
+        	"actions": [
+        	{
+            	"log": {}
+        	}
+        	]
+    	}
+    	`
+		resp, err = client.CreateRule(ruleSql)
+		s.Require().NoError(err)
+		s.T().Log(GetResponseText(resp))
+		s.Require().Equal(http.StatusCreated, resp.StatusCode)
+
+		require.Eventually(s.T(), func() bool {
+			resp, err := client.GetRuleScanTablesSnapshot("joinTestRule")
+			if err != nil {
+				return false
+			}
+			s.T().Log(GetResponseText(resp))
+
+			return http.StatusBadRequest == resp.StatusCode
+		}, 3*time.Second, 200*time.Millisecond)
+	})
+}
+
+func (s *RuleTestSuite) TestShowScanTableContent() {
+	client.DeleteStream("sensorStream")
+	client.DeleteTables("deviceTable")
+	client.DeleteRule("joinTestRule")
+
+	defer client.DeleteStream("sensorStream")
+	defer client.DeleteTables("deviceTable")
+	defer client.DeleteRule("joinTestRule")
+
+	dataLoc, err := conf.GetDataLoc()
+	s.Require().NoError(err)
+
+	devicesData := []map[string]interface{}{
+		{"id": int64(1), "name": "Device1", "location": "Room1"},
+		{"id": int64(2), "name": "Device2", "location": "Room2"},
+		{"id": int64(3), "name": "Device3", "location": "Room3"},
+	}
+	devicesJSON, marshalErr := json.Marshal(devicesData)
+	s.Require().NoError(marshalErr)
+	devicesPath := filepath.Join(dataLoc, "devices.json")
+	err = os.WriteFile(devicesPath, devicesJSON, 0o644)
+	s.Require().NoError(err)
+	defer os.Remove(devicesPath)
+
+	streamSql := `{"sql": "CREATE STREAM sensorStream (id BIGINT, temperature FLOAT, humidity FLOAT) WITH (DATASOURCE=\"sensorStream\", TYPE=\"simulator\", FORMAT=\"json\")"}`
+
+	resp, err := client.CreateStream(streamSql)
+	s.Require().NoError(err)
+	s.T().Log(GetResponseText(resp))
+	s.Require().Equal(http.StatusCreated, resp.StatusCode)
+
+	tableSql := `{"sql": "CREATE TABLE deviceTable (id BIGINT, name STRING, location STRING) WITH (DATASOURCE=\"devices.json\", FORMAT=\"json\", TYPE=\"file\")"}`
+
+	resp, err = client.CreateTable(tableSql)
+	s.Require().NoError(err)
+	s.T().Log(GetResponseText(resp))
+	s.Require().Equal(http.StatusCreated, resp.StatusCode)
+
+	ruleSql := `
+    {
+        "id": "joinTestRule",
+        "sql": "SELECT sensorStream.id, sensorStream.temperature, deviceTable.name, deviceTable.location FROM sensorStream INNER JOIN deviceTable ON sensorStream.id = deviceTable.id",
+        "actions": [
+        {
+            "log": {}
+        }
+        ]
+    }
+    `
+	resp, err = client.CreateRule(ruleSql)
+	s.Require().NoError(err)
+	s.T().Log(GetResponseText(resp))
+	s.Require().Equal(http.StatusCreated, resp.StatusCode)
+
+	var res *http.Response
+	require.Eventually(s.T(), func() bool {
+		resp, err = client.GetRuleScanTablesSnapshot("joinTestRule")
+		if err != nil {
+			return false
+		}
+
+		if resp.StatusCode != http.StatusOK {
+			return false
+		}
+
+		res = resp
+		return true
+	}, 3*time.Second, 200*time.Millisecond)
+
+	body, err := io.ReadAll(res.Body)
+	defer res.Body.Close()
+	var result []server.ShowScanTablesResponse
+	err = json.Unmarshal(body, &result)
+	s.Require().NoError(err)
+
+	expectedDevices := []map[string]interface{}{
+		{"id": float64(1), "name": "Device1", "location": "Room1"},
+		{"id": float64(2), "name": "Device2", "location": "Room2"},
+		{"id": float64(3), "name": "Device3", "location": "Room3"},
+	}
+
+	s.Require().GreaterOrEqual(len(result), len(expectedDevices), "Mismatch between result and expected result")
+
+	for i, expected := range expectedDevices {
+		s.Require().Equal("deviceTable", result[i].Emitter)
+		s.Require().Equal(expected, result[i].ScanTableContent,
+			fmt.Sprintf("Tuple %d content mismatch", i))
+	}
 }
 
 func (s *RuleTestSuite) assertRecvMemTupleList(subCh chan any, expect []map[string]any) {

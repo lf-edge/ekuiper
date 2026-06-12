@@ -18,6 +18,7 @@ import (
 	"errors"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
@@ -211,6 +212,75 @@ func TestAlignTable(t *testing.T) {
 				}
 			} else {
 				assert.Equal(t, tt.out, r)
+			}
+		})
+	}
+}
+
+func TestCaptureSnapshot(t *testing.T) {
+	tests := []struct {
+		name string
+		in   []any
+		out  []any
+	}{
+		{
+			name: "capture snapshot",
+			in: []any{
+				&xsql.Tuple{
+					Emitter: "table1",
+					Message: map[string]any{"id": 1, "t1": "data2"},
+				},
+				&xsql.Tuple{
+					Emitter: "table1",
+					Message: map[string]any{"id": 1, "t1": "data3"},
+				},
+				&xsql.Tuple{
+					Emitter: "table1",
+					Message: map[string]any{"id": 1, "t1": "data4"},
+				},
+			},
+			out: []any{
+				&xsql.WindowTuples{
+					Content: []xsql.Row{
+						&xsql.Tuple{
+							Emitter: "table1",
+							Message: map[string]any{"id": 1, "t1": "data3"},
+						},
+						&xsql.Tuple{
+							Emitter: "table1",
+							Message: map[string]any{"id": 1, "t1": "data4"},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			n, e := NewJoinAlignNode(
+				"align",
+				[]string{"table1"},
+				[]int{2},
+				&def.RuleOption{
+					SendError: true,
+				},
+			)
+			assert.NoError(t, e)
+			ctx := mockContext.NewMockContext("test", "test")
+			errCh := make(chan error)
+			n.Exec(ctx, errCh)
+			defer n.Close()
+			for _, in := range tt.in {
+				n.input <- in
+			}
+
+			var got any
+			if tt.out != nil {
+				assert.Eventually(t, func() bool {
+					got = n.CaptureSnapshot()
+					return reflect.DeepEqual([]any{got}, tt.out)
+				}, time.Second, 10*time.Millisecond)
 			}
 		})
 	}

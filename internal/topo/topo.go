@@ -236,6 +236,14 @@ func (s *Topo) GetStreams() []string {
 	return s.streams
 }
 
+func (s *Topo) GetOperators() []node.OperatorNode {
+	if s == nil {
+		return nil
+	}
+
+	return s.ops
+}
+
 func (s *Topo) SetSinkSchema(sinkSchema map[string]*ast.JsonStreamField) {
 	s.sinkSchema = sinkSchema
 }
