@@ -129,3 +129,13 @@ The API is used for drop the table definition.
 ```shell
 DELETE http://localhost:9081/tables/{id}
 ```
+
+## query a scan table
+
+This API allows users to directly query the content of scan tables related to a specific rule.
+
+```shell
+GET http://localhost:9081/rules/{rule}/scantables
+```
+
+This GET call returns the actual content of each scan table associated with the given rule.
