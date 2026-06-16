@@ -10,6 +10,8 @@ This [repository](https://github.com/lf-edge/ekuiper/tree/master/extensions/sqld
 This plugin supports `sqlserver\postgres\mysql\sqlite3\oracle` drivers by default. User can compile plugin that only support one driver by himself,
 for example, if he only wants mysql, then he can build with build tag `mysql`.
 
+DuckDB is also supported, but because it requires CGO it is not included in the default build — build the plugin with the `duckdb` build tag (see the DuckDB build command below).
+
 When using `sqlserver` as the target, you need to confirm that the `sqlserver` exposes port 1434.
 
 ### Default build command
@@ -25,6 +27,16 @@ When using `sqlserver` as the target, you need to confirm that the `sqlserver` e
 ```shell
 # cd $eKuiper_src
 # go build -trimpath --buildmode=plugin -tags mysql -o plugins/sinks/Sql.so extensions/sinks/sql/sql.go
+# cp plugins/sinks/Sql.so $eKuiper_install/plugins/sinks
+```
+
+### DuckDB build command
+
+DuckDB requires CGO and a C/C++ compiler.
+
+```shell
+# cd $eKuiper_src
+# CGO_ENABLED=1 go build -trimpath --buildmode=plugin -tags duckdb -o plugins/sinks/Sql.so extensions/sinks/sql/sql.go
 # cp plugins/sinks/Sql.so $eKuiper_install/plugins/sinks
 ```
 
@@ -122,3 +134,5 @@ By specifying the `rowkindField` and `keyField`, the sink can generate insert, u
   ]
 }
 ```
+
+> DuckDB example: set `"url": "duckdb:///absolute/path/to.db"` (or `"duckdb://test.db"` for a relative path). DuckDB is single-writer, so for file mode set eKuiper's SQL `maxConnections` to 1 to avoid lock contention.
