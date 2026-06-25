@@ -77,7 +77,7 @@ func (kv *sqlKvStore) initPreparedStmt() error {
 		if err != nil {
 			return err
 		}
-		kv.preparedGetByPrefixStmt, err = db.Prepare(fmt.Sprintf("SELECT key, val FROM %s WHERE key LIKE ?", kv.table))
+		kv.preparedGetByPrefixStmt, err = db.Prepare(fmt.Sprintf("SELECT key, val FROM '%s' WHERE key LIKE ?", kv.table))
 		if err != nil {
 			return err
 		}
