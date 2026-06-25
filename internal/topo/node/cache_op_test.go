@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
@@ -119,6 +120,11 @@ func TestCacheRun(t *testing.T) {
 	index := 0
 	errCh := make(chan error)
 	cacheOp.Exec(ctx, errCh)
+	select {
+	case err := <-errCh:
+		require.NoError(t, err)
+	case <-time.After(100 * time.Millisecond):
+	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var r any
