@@ -25,6 +25,8 @@ import (
 type tableWriter struct {
 	pool *client.TableSessionPool
 	conf *iotdbConfig
+	// lastAuto is the monotonic cursor for auto-generated timestamps.
+	lastAuto int64
 }
 
 func (w *tableWriter) connect(ctx api.StreamContext, conf *iotdbConfig) error {
@@ -56,7 +58,6 @@ func (w *tableWriter) connect(ctx api.StreamContext, conf *iotdbConfig) error {
 	}
 	createDBSQL := fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s", conf.Database)
 	if err := autoSession.ExecuteNonQueryStatement(createDBSQL); err != nil {
-		autoSession.Close()
 		// 数据库可能已存在，记录 warning 但不阻断连接
 		ctx.GetLogger().Warnf("iotdb table writer: auto-create database %q failed (may already exist): %v", conf.Database, err)
 	} else {
@@ -110,27 +111,8 @@ func (w *tableWriter) write(ctx api.StreamContext, data []map[string]any) error 
 		if err != nil {
 			return fmt.Errorf("failed to create relational tablet: %w", err)
 		}
-
-		for rowIdx, row := range chunk {
-			ts, err := extractTimestamp(row, w.conf.TsFieldName)
-			if err != nil {
-				return err
-			}
-			tablet.SetTimestamp(ts, rowIdx)
-			for colIdx, m := range w.conf.Measurements {
-				raw, ok := row[m]
-				if !ok {
-					raw = nil
-				}
-				val, err := convertValue(raw, w.conf.DataTypes[colIdx])
-				if err != nil {
-					return fmt.Errorf("convert column %q row %d: %w", m, rowIdx, err)
-				}
-				if err := tablet.SetValueAt(val, colIdx, rowIdx); err != nil {
-					return fmt.Errorf("set value at (%d, %d): %w", colIdx, rowIdx, err)
-				}
-			}
-			tablet.RowSize++
+		if err := fillTablet(tablet, chunk, w.conf, &w.lastAuto); err != nil {
+			return err
 		}
 
 		session, err := w.pool.GetSession()

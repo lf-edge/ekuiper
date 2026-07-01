@@ -16,6 +16,7 @@ package iotdb
 
 import (
 	"fmt"
+	"math"
 
 	"github.com/apache/iotdb-client-go/v2/client"
 
@@ -85,9 +86,12 @@ func convertValue(v any, dt string) (any, error) {
 	}
 	switch dt {
 	case "INT32":
-		i, err := cast.ToInt(v, cast.CONVERT_ALL)
+		i, err := cast.ToInt64(v, cast.CONVERT_ALL)
 		if err != nil {
 			return nil, err
+		}
+		if i < math.MinInt32 || i > math.MaxInt32 {
+			return nil, fmt.Errorf("value %d overflows INT32 range", i)
 		}
 		return int32(i), nil
 	case "INT64", "TIMESTAMP":
@@ -100,6 +104,11 @@ func convertValue(v any, dt string) (any, error) {
 		f, err := cast.ToFloat64(v, cast.CONVERT_ALL)
 		if err != nil {
 			return nil, err
+		}
+		// float64 -> float32 silently yields +/-Inf when the magnitude is out of
+		// range; reject that instead of writing a bogus infinity.
+		if !math.IsInf(f, 0) && math.IsInf(float64(float32(f)), 0) {
+			return nil, fmt.Errorf("value %v overflows FLOAT range", f)
 		}
 		return float32(f), nil
 	case "DOUBLE":
@@ -123,4 +132,54 @@ func convertValue(v any, dt string) (any, error) {
 	default:
 		return nil, fmt.Errorf("unsupported IoTDB data type %q", dt)
 	}
+}
+
+// nextTimestamp resolves the timestamp for a single row.
+//
+// An explicit timestamp supplied via tsFieldName is used as-is. An
+// auto-generated timestamp (field absent or tsFieldName empty) is forced to
+// strictly increase within a writer via lastAuto, so that multiple rows in one
+// batch do not collapse onto the same millisecond and overwrite each other in
+// IoTDB (where (device/table, timestamp) is the primary key).
+func nextTimestamp(row map[string]any, tsFieldName string, lastAuto *int64) (int64, error) {
+	if tsFieldName != "" {
+		if _, ok := row[tsFieldName]; ok {
+			return extractTimestamp(row, tsFieldName)
+		}
+	}
+	ts, err := extractTimestamp(row, tsFieldName)
+	if err != nil {
+		return 0, err
+	}
+	if ts <= *lastAuto {
+		ts = *lastAuto + 1
+	}
+	*lastAuto = ts
+	return ts, nil
+}
+
+// fillTablet populates a tablet from a chunk of rows. It is shared by the tree
+// and table writers; only tablet construction and the insert call differ
+// between the two models. lastAuto carries the monotonic auto-timestamp cursor
+// across batches for a single writer.
+func fillTablet(tablet *client.Tablet, chunk []map[string]any, conf *iotdbConfig, lastAuto *int64) error {
+	for rowIdx, row := range chunk {
+		ts, err := nextTimestamp(row, conf.TsFieldName, lastAuto)
+		if err != nil {
+			return err
+		}
+		tablet.SetTimestamp(ts, rowIdx)
+		for colIdx, m := range conf.Measurements {
+			// a missing key yields a nil value, which SetValueAt records as null
+			val, err := convertValue(row[m], conf.DataTypes[colIdx])
+			if err != nil {
+				return fmt.Errorf("convert column %q row %d: %w", m, rowIdx, err)
+			}
+			if err := tablet.SetValueAt(val, colIdx, rowIdx); err != nil {
+				return fmt.Errorf("set value at (%d, %d): %w", colIdx, rowIdx, err)
+			}
+		}
+		tablet.RowSize++
+	}
+	return nil
 }

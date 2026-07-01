@@ -16,6 +16,7 @@ package iotdb
 
 import (
 	"fmt"
+	"net"
 	"strings"
 )
 
@@ -160,11 +161,15 @@ func (c *iotdbConfig) validate() error {
 	return nil
 }
 
-// splitAddr parses an "host:port" string into its parts.
+// splitAddr parses an "host:port" string into its parts. It uses
+// net.SplitHostPort so IPv6 literals such as "[::1]:6667" are handled correctly.
 func splitAddr(addr string) (host string, port string, err error) {
-	parts := strings.Split(addr, ":")
-	if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
+	host, port, err = net.SplitHostPort(addr)
+	if err != nil {
+		return "", "", fmt.Errorf("invalid addr %q, expected host:port: %w", addr, err)
+	}
+	if host == "" || port == "" {
 		return "", "", fmt.Errorf("invalid addr %q, expected host:port", addr)
 	}
-	return parts[0], parts[1], nil
+	return host, port, nil
 }

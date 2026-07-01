@@ -126,6 +126,6 @@ func (s *iotdbSink) Info() model.SinkInfo {
 
 // interface compliance check
 var (
-	_ api.TupleCollector  = &iotdbSink{}
+	_ api.TupleCollector = &iotdbSink{}
 	_ model.SinkInfoNode = &iotdbSink{}
 )

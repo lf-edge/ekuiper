@@ -26,8 +26,10 @@ import (
 
 // treeWriter writes data using the IoTDB tree model via SessionPool.
 type treeWriter struct {
-	pool client.SessionPool
+	pool *client.SessionPool
 	conf *iotdbConfig
+	// lastAuto is the monotonic cursor for auto-generated timestamps.
+	lastAuto int64
 }
 
 func (w *treeWriter) connect(ctx api.StreamContext, conf *iotdbConfig) error {
@@ -48,7 +50,8 @@ func (w *treeWriter) connect(ctx api.StreamContext, conf *iotdbConfig) error {
 		poolConfig.NodeUrls = conf.NodeUrls
 	}
 
-	w.pool = client.NewSessionPool(poolConfig, conf.PoolSize, int(conf.Timeout), 60000, false)
+	pool := client.NewSessionPool(poolConfig, conf.PoolSize, int(conf.Timeout), 60000, false)
+	w.pool = &pool
 
 	// test connection by acquiring and releasing a session
 	session, err := w.pool.GetSession()
@@ -95,27 +98,8 @@ func (w *treeWriter) write(ctx api.StreamContext, data []map[string]any) error {
 		if err != nil {
 			return fmt.Errorf("failed to create tablet: %w", err)
 		}
-
-		for rowIdx, row := range chunk {
-			ts, err := extractTimestamp(row, w.conf.TsFieldName)
-			if err != nil {
-				return err
-			}
-			tablet.SetTimestamp(ts, rowIdx)
-			for colIdx, m := range w.conf.Measurements {
-				raw, ok := row[m]
-				if !ok {
-					raw = nil
-				}
-				val, err := convertValue(raw, w.conf.DataTypes[colIdx])
-				if err != nil {
-					return fmt.Errorf("convert column %q row %d: %w", m, rowIdx, err)
-				}
-				if err := tablet.SetValueAt(val, colIdx, rowIdx); err != nil {
-					return fmt.Errorf("set value at (%d, %d): %w", colIdx, rowIdx, err)
-				}
-			}
-			tablet.RowSize++
+		if err := fillTablet(tablet, chunk, w.conf, &w.lastAuto); err != nil {
+			return err
 		}
 
 		if w.conf.IsAligned {
@@ -134,7 +118,9 @@ func (w *treeWriter) write(ctx api.StreamContext, data []map[string]any) error {
 }
 
 func (w *treeWriter) close() error {
-	w.pool.Close()
+	if w.pool != nil {
+		w.pool.Close()
+	}
 	return nil
 }
 

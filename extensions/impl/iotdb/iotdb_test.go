@@ -435,6 +435,7 @@ func TestConvertValue(t *testing.T) {
 		{"int to TIMESTAMP", 1700000000000, "TIMESTAMP", int64(1700000000000), false},
 		{"unsupported type", 1, "UNKNOWN", nil, true},
 		{"invalid bool source", "notabool", "BOOLEAN", nil, true},
+		{"int32 overflow errors", int64(1) << 40, "INT32", nil, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -519,4 +520,37 @@ func TestGetSink(t *testing.T) {
 	assert.NotNil(t, sink)
 	_, ok := sink.(*iotdbSink)
 	assert.True(t, ok)
+}
+
+func TestWriterCloseWithoutConnect(t *testing.T) {
+	// close() before a successful connect() must not panic even though the
+	// underlying session pool was never initialized.
+	assert.NotPanics(t, func() {
+		tw := &treeWriter{}
+		assert.NoError(t, tw.close())
+	})
+	assert.NotPanics(t, func() {
+		tbw := &tableWriter{}
+		assert.NoError(t, tbw.close())
+	})
+}
+
+func TestNextTimestamp(t *testing.T) {
+	// explicit timestamps are used verbatim and do not advance the auto cursor
+	var last int64
+	ts, err := nextTimestamp(map[string]any{"ts": 100}, "ts", &last)
+	assert.NoError(t, err)
+	assert.Equal(t, int64(100), ts)
+	assert.Equal(t, int64(0), last)
+
+	// auto timestamps strictly increase within a batch even within the same millisecond
+	last = 0
+	t1, err := nextTimestamp(map[string]any{}, "", &last)
+	assert.NoError(t, err)
+	t2, err := nextTimestamp(map[string]any{}, "", &last)
+	assert.NoError(t, err)
+	t3, err := nextTimestamp(map[string]any{}, "", &last)
+	assert.NoError(t, err)
+	assert.Greater(t, t2, t1)
+	assert.Greater(t, t3, t2)
 }
