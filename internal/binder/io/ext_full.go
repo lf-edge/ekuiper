@@ -22,6 +22,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/extensions/impl/image"
 	"github.com/lf-edge/ekuiper/v2/extensions/impl/influx"
 	"github.com/lf-edge/ekuiper/v2/extensions/impl/influx2"
+	"github.com/lf-edge/ekuiper/v2/extensions/impl/iotdb"
 	"github.com/lf-edge/ekuiper/v2/extensions/impl/kafka"
 	sql2 "github.com/lf-edge/ekuiper/v2/extensions/impl/sql"
 	"github.com/lf-edge/ekuiper/v2/extensions/impl/video"
@@ -35,6 +36,7 @@ func init() {
 	modules.RegisterSink("image", func() api.Sink { return image.GetSink() })
 	modules.RegisterSink("influx", func() api.Sink { return influx.GetSink() })
 	modules.RegisterSink("influx2", func() api.Sink { return influx2.GetSink() })
+	modules.RegisterSink("iotdb", func() api.Sink { return iotdb.GetSink() })
 	modules.RegisterSource("sql", sql2.GetSource)
 	modules.RegisterLookupSource("sql", sql2.GetLookupSource)
 	modules.RegisterSink("sql", sql2.GetSink)

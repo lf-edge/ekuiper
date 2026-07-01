@@ -338,6 +338,10 @@
                   "path": "guide/sinks/plugin/influx2"
                 },
                 {
+                  "title": "IoTDB Sink",
+                  "path": "guide/sinks/plugin/iotdb"
+                },
+                {
                   "title": "Image Sink",
                   "path": "guide/sinks/plugin/image"
                 },
@@ -1112,6 +1116,10 @@
                 {
                   "title": "InfluxDBV2 Sink",
                   "path": "guide/sinks/plugin/influx2"
+                },
+                {
+                  "title": "IoTDB Sink",
+                  "path": "guide/sinks/plugin/iotdb"
                 },
                 {
                   "title": "Image Sink",
