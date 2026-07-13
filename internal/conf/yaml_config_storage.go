@@ -291,3 +291,36 @@ func splitKey(key string) (string, string, string, error) {
 	}
 	return keys[0], keys[1], keys[2], nil
 }
+
+const provisionHashKey = "connectionYamlProvision.hash"
+
+// GetConnectionYamlHash returns the stored provision hash, empty string if none.
+func GetConnectionYamlHash() string {
+	kvStorage, err := getKVStorage()
+	if err != nil {
+		return ""
+	}
+	val, err := kvStorage.GetByPrefix(provisionHashKey)
+	if err != nil || len(val) == 0 {
+		return ""
+	}
+	v, ok := val[provisionHashKey]
+	if !ok {
+		return ""
+	}
+	h, ok := v["hash"]
+	if !ok {
+		return ""
+	}
+	s, _ := h.(string)
+	return s
+}
+
+// SetConnectionYamlHash stores the provision hash.
+func SetConnectionYamlHash(h string) error {
+	kvStorage, err := getKVStorage()
+	if err != nil {
+		return err
+	}
+	return kvStorage.Set(provisionHashKey, map[string]interface{}{"hash": h})
+}
