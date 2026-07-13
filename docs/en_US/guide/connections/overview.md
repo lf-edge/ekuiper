@@ -138,3 +138,68 @@ Users can retrieve the connection status via the connection API. Additionally, u
 the rule's source/sink metrics, for example, the `source_demo_0_connection_status` metric indicates the connection
 status of the `demo` stream. For a complete list of supported connection metrics, please refer to
 the [Metrics List](../../operation/usage/monitor_with_prometheus.md#metric-types).
+
+## connection.yaml File Configuration
+
+Connections can also be defined in `etc/connections/connection.yaml`. Connections in this file are automatically loaded
+when the service starts.
+
+`connection.yaml` serves as an initialization manifest for preset connections, not as a runtime state store. The service
+reads the file at startup and executes the declared operations, but does not maintain synchronization with the file
+afterward. As a result, deletion must be explicitly declared—removing an entry from the file does not implicitly delete
+the corresponding connection.
+
+### Basic Configuration
+
+```yaml
+mqtt:
+  localConnection:          # Connection ID
+    server: tcp://127.0.0.1:1883
+    username: ekuiper
+    password: password
+  cloudConnection:
+    server: tcp://broker.emqx.io:1883
+    username: user1
+    password: password
+```
+
+### xOperation Field
+
+`connection.yaml` supports an `xOperation` field to explicitly control connection creation and deletion.
+
+- `create` (default): Write the connection to KV storage. If a connection with the same ID already exists in KV, skip
+  it (no overwrite).
+- `delete`: Delete the specified connection from KV storage.
+
+When `xOperation` is not specified, it defaults to `create`.
+
+#### Delete Connection
+
+```yaml
+mqtt:
+  cloudConnection:
+    xOperation: delete
+```
+
+After upgrade and restart, `connections.mqtt.cloudConnection` will be deleted.
+
+#### Seed Connection (No Overwrite)
+
+```yaml
+mqtt:
+  localConnection:
+    xOperation: create
+    server: tcp://127.0.0.1:1883
+```
+
+If `localConnection` already exists (e.g., created via API), it will not be overwritten.
+
+### Key Behaviors
+
+- The `xOperation` field is automatically stripped when writing to KV and is not stored as part of the connection
+  configuration.
+- Connections created via REST API are not affected by YAML operations: `create` does not overwrite existing ones,
+  and `delete` only removes entries explicitly specified in the YAML.
+- Deleting a non-existent connection is an idempotent operation (no error, no side effects).
+- Emptying `connection.yaml` does not delete existing connections. Deletion must be explicitly configured
+  with `xOperation: delete`.

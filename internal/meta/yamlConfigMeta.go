@@ -89,21 +89,68 @@ func loadConfigOperatorForSink(pluginName string) {
 	}
 }
 
+const (
+	// connectionYamlOpKey is the YAML control field. LoadConfigFromPath lowercases keys,
+	// so the runtime form is "xoperation"; parsing also accepts mixed case.
+	connectionYamlOpKey  = "xoperation"
+	connectionYamlCreate = "create"
+	connectionYamlDelete = "delete"
+)
+
 // loadConfigOperatorForConnection
 // Try to load ConfigOperator for plugin from /etc/connections/connection.yaml /data/connections/connection.yaml
-// If plugin not exist in /etc/connections/connection.yaml, no error response
+// If plugin not exist in /etc/connections/connection.yaml, no error response.
 func loadConfigOperatorForConnection(pluginName string) {
 	yamlKey := fmt.Sprintf(ConnectionCfgOperatorKeyTemplate, pluginName)
 
 	if cfg, _ := conf.NewConfigOperatorFromConnectionStorage(pluginName); cfg != nil {
 		ConfigManager.lock.Lock()
 		ConfigManager.cfgOperators[yamlKey] = cfg
-		conns := cfg.CopyConfContent()
-		for id, props := range conns {
-			err := conf.WriteCfgIntoKVStorage("connections", pluginName, id, props)
-			if err != nil {
-				conf.Log.Errorf("save connection %s err:%v", yamlKey, err)
+		existingConns := cfg.CopyUpdatableConfContent()
+		for id, props := range cfg.CopyReadOnlyConfContent() {
+			op := connectionYamlCreate
+			v, ok := props[connectionYamlOpKey]
+			if ok {
+				op, ok = v.(string)
+				if !ok {
+					conf.Log.Errorf("connection %s.%s: %s must be a string", pluginName, id, connectionYamlOpKey)
+					continue
+				}
 			}
+			switch op {
+			case connectionYamlDelete:
+				if err := conf.DropCfgKeyFromStorage("connections", pluginName, id); err != nil {
+					conf.Log.Errorf("delete connection %s.%s err:%v", pluginName, id, err)
+				}
+			case connectionYamlCreate:
+				if _, exists := existingConns[id]; exists {
+					continue
+				}
+				clean := make(map[string]interface{}, len(props))
+				for k, v := range props {
+					clean[k] = v
+				}
+				delete(clean, connectionYamlOpKey)
+				if err := conf.WriteCfgIntoKVStorage("connections", pluginName, id, clean); err != nil {
+					conf.Log.Errorf("save connection %s err:%v", yamlKey, err)
+				}
+			default:
+				conf.Log.Errorf("connection %s.%s: unknown xOperation %q", pluginName, id, op)
+			}
+		}
+		if stored, err := conf.GetCfgFromKVStorage("connections", pluginName, ""); err != nil {
+			conf.Log.Errorf("reload connection config operator for %s err:%v", pluginName, err)
+		} else {
+			refreshed := conf.NewConfigOperatorForConnection(pluginName)
+			cf := make(map[string]map[string]interface{}, len(stored))
+			prefix := fmt.Sprintf("connections.%s.", pluginName)
+			for fullKey, props := range stored {
+				if strings.HasPrefix(fullKey, prefix) {
+					cf[strings.TrimPrefix(fullKey, prefix)] = props
+				}
+			}
+			refreshed.LoadConfContent(cf)
+			ConfigManager.cfgOperators[yamlKey] = refreshed
 		}
 		ConfigManager.lock.Unlock()
 	}

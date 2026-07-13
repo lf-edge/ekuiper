@@ -117,3 +117,60 @@ producer 用于发送消息。
 用户可通过连接 API 获取连接的状态。同时，用户也可通过规则的指标查看规则 source/sink
 中连接的状态，例如 `source_demo_0_connection_status` 指标表示 demo
 流的连接状态。所有支持的连接指标请查看[指标列表](../../operation/usage/monitor_with_prometheus.md#运行指标)。
+
+## connection.yaml 文件配置
+
+除 API 外，连接也可在 `etc/connections/connection.yaml` 中定义。该文件中的连接在服务启动时自动加载。
+
+`connection.yaml` 的定位是预置连接的初始化清单，而非运行时状态的持久化。服务启动时读取文件并执行声明的操作，之后不再与文件保持同步。因此，删除操作必须显式声明，移除文件条目不会隐式删除已有连接。
+
+### 基本配置
+
+```yaml
+mqtt:
+  localConnection:          # 连接 ID
+    server: tcp://127.0.0.1:1883
+    username: ekuiper
+    password: password
+  cloudConnection:
+    server: tcp://broker.emqx.io:1883
+    username: user1
+    password: password
+```
+
+### xOperation 操作字段
+
+`connection.yaml` 支持通过 `xOperation` 字段显式控制连接的创建和删除。
+
+- `create`（默认）：将连接写入 KV 存储。如果 KV 中已存在同名连接，则跳过（不覆盖）。
+- `delete`：从 KV 存储中删除指定连接。
+
+未指定 `xOperation` 时，默认为 `create`。
+
+#### 删除连接
+
+```yaml
+mqtt:
+  cloudConnection:
+    xOperation: delete
+```
+
+升级重启后，`connections.mqtt.cloudConnection` 会被删除。
+
+#### 种子连接（不覆盖已有）
+
+```yaml
+mqtt:
+  localConnection:
+    xOperation: create
+    server: tcp://127.0.0.1:1883
+```
+
+如果 `localConnection` 已存在（如通过 API 创建），则不会覆盖。
+
+### 关键行为
+
+- `xOperation` 字段在写入 KV 时会被自动剥离，不会作为连接配置的一部分。
+- REST API 创建的连接不受 YAML 操作影响：`create` 不覆盖已有的，`delete` 只删除 YAML 中明确指定的。
+- 删除不存在的连接是幂等操作（无错误、无副作用）。
+- 清空 `connection.yaml` 不表示删除已有连接。删除必须显式配置 `xOperation: delete`。
