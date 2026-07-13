@@ -365,3 +365,95 @@ func TestLoadConfigOperatorForConnectionYamlOps(t *testing.T) {
 		require.False(t, exists)
 	})
 }
+
+func TestLoadConfigOperatorForConnectionYamlHash(t *testing.T) {
+	yamlPath := setupConnectionYamlTest(t)
+
+	t.Run("unchanged hash skips provisioning", func(t *testing.T) {
+		require.NoError(t, conf.ClearKVStorage())
+		writeConnectionYaml(t, yamlPath, `mqtt:
+  cloud:
+    server: "tcp://broker:1883"
+`)
+		loadConfigOperatorForConnection("mqtt")
+		storedHash := conf.GetConnectionYamlHash()
+		require.NotEmpty(t, storedHash)
+
+		require.NoError(t, conf.WriteCfgIntoKVStorage("connections", "mqtt", "cloud", map[string]interface{}{
+			"server": "tcp://user:1883",
+		}))
+
+		loadConfigOperatorForConnection("mqtt")
+		got, err := conf.GetCfgFromKVStorage("connections", "mqtt", "cloud")
+		require.NoError(t, err)
+		require.Equal(t, map[string]interface{}{"server": "tcp://user:1883"}, got["connections.mqtt.cloud"])
+	})
+
+	t.Run("changed hash runs provisioning", func(t *testing.T) {
+		require.NoError(t, conf.ClearKVStorage())
+		writeConnectionYaml(t, yamlPath, `mqtt:
+  cloud:
+    server: "tcp://broker:1883"
+`)
+		loadConfigOperatorForConnection("mqtt")
+		storedHash := conf.GetConnectionYamlHash()
+		require.NotEmpty(t, storedHash)
+
+		writeConnectionYaml(t, yamlPath, `mqtt:
+  newconn:
+    server: "tcp://new:1883"
+`)
+		loadConfigOperatorForConnection("mqtt")
+		got, err := conf.GetCfgFromKVStorage("connections", "mqtt", "newconn")
+		require.NoError(t, err)
+		require.Equal(t, map[string]interface{}{"server": "tcp://new:1883"}, got["connections.mqtt.newconn"])
+
+		newHash := conf.GetConnectionYamlHash()
+		require.NotEqual(t, storedHash, newHash)
+	})
+
+	t.Run("delete with API-created then same YAML skips re-creation", func(t *testing.T) {
+		require.NoError(t, conf.ClearKVStorage())
+		writeConnectionYaml(t, yamlPath, `mqtt:
+  cloud:
+    server: "tcp://broker:1883"
+`)
+		loadConfigOperatorForConnection("mqtt")
+
+		require.NoError(t, conf.WriteCfgIntoKVStorage("connections", "mqtt", "cloud", map[string]interface{}{
+			"server": "tcp://api:1883",
+		}))
+
+		writeConnectionYaml(t, yamlPath, `mqtt:
+  cloud:
+    xOperation: delete
+`)
+		loadConfigOperatorForConnection("mqtt")
+		got, err := conf.GetCfgFromKVStorage("connections", "mqtt", "")
+		require.NoError(t, err)
+		_, cloudExists := got["connections.mqtt.cloud"]
+		require.False(t, cloudExists, "cloud should be deleted")
+
+		loadConfigOperatorForConnection("mqtt")
+		got, err = conf.GetCfgFromKVStorage("connections", "mqtt", "")
+		require.NoError(t, err)
+		_, cloudExists = got["connections.mqtt.cloud"]
+		require.False(t, cloudExists, "cloud should not be recreated on same hash")
+	})
+
+	t.Run("operations execute and hash is stored", func(t *testing.T) {
+		require.NoError(t, conf.ClearKVStorage())
+		require.Empty(t, conf.GetConnectionYamlHash())
+
+		writeConnectionYaml(t, yamlPath, `mqtt:
+  provisioned:
+    server: "tcp://broker:1883"
+`)
+		loadConfigOperatorForConnection("mqtt")
+
+		require.NotEmpty(t, conf.GetConnectionYamlHash())
+		got, err := conf.GetCfgFromKVStorage("connections", "mqtt", "provisioned")
+		require.NoError(t, err)
+		require.Equal(t, map[string]interface{}{"server": "tcp://broker:1883"}, got["connections.mqtt.provisioned"])
+	})
+}

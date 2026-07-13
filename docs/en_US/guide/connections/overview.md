@@ -145,9 +145,19 @@ Connections can also be defined in `etc/connections/connection.yaml`. Connection
 when the service starts.
 
 `connection.yaml` serves as an initialization manifest for preset connections, not as a runtime state store. The service
-reads the file at startup and executes the declared operations, but does not maintain synchronization with the file
-afterward. As a result, deletion must be explicitly declared—removing an entry from the file does not implicitly delete
-the corresponding connection.
+reads the file at startup, computes a SHA-256 hash of its effective content (file content plus any environment variable
+overrides), and compares it with the previously stored hash:
+
+- **Hash unchanged**: Provisioning is skipped entirely. Connections deleted via REST API will not be recreated.
+- **Hash changed**: The declared create/delete operations are executed, and the new hash is stored. `create` operations
+  still skip connections that already exist in KV (e.g., created via REST API), so re-provisioning never overwrites
+  runtime-created connections. Operations must succeed before the hash is updated; on failure the hash is not written,
+  so the next restart retries.
+
+Because of this content-hash mechanism, modifying `connection.yaml` (or changing an environment variable override such
+as `CONNECTION__MQTT__CLOUD__SERVER`) is required to trigger re-provisioning. Simply restarting the service without
+changing anything will not re-apply operations. Additionally, deletion must be explicitly declared — removing an entry
+from the file does not implicitly delete the corresponding connection.
 
 ### Basic Configuration
 

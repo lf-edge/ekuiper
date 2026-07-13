@@ -106,6 +106,18 @@ func loadConfigOperatorForConnection(pluginName string) {
 	if cfg, _ := conf.NewConfigOperatorFromConnectionStorage(pluginName); cfg != nil {
 		ConfigManager.lock.Lock()
 		ConfigManager.cfgOperators[yamlKey] = cfg
+
+		hash, err := conf.ComputeConnectionYamlHash()
+		if err != nil {
+			conf.Log.Errorf("compute connection.yaml hash for %s: %v", pluginName, err)
+		}
+		storedHash := conf.GetConnectionYamlHash()
+		if hash != "" && hash == storedHash {
+			conf.Log.Infof("connection.yaml unchanged for %s, skipping provisioning", pluginName)
+			ConfigManager.lock.Unlock()
+			return
+		}
+
 		existingConns := cfg.CopyUpdatableConfContent()
 		for id, props := range cfg.CopyReadOnlyConfContent() {
 			op := connectionYamlCreate
@@ -136,6 +148,11 @@ func loadConfigOperatorForConnection(pluginName string) {
 				}
 			default:
 				conf.Log.Errorf("connection %s.%s: unknown xOperation %q", pluginName, id, op)
+			}
+		}
+		if hash != "" {
+			if err := conf.SetConnectionYamlHash(hash); err != nil {
+				conf.Log.Errorf("save connection.yaml hash for %s: %v", pluginName, err)
 			}
 		}
 		if stored, err := conf.GetCfgFromKVStorage("connections", pluginName, ""); err != nil {
