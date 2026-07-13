@@ -146,3 +146,222 @@ func TestReplaceConfigurations(t *testing.T) {
 		},
 	}, got)
 }
+
+func setupConnectionYamlTest(t *testing.T) string {
+	t.Helper()
+	// These tests mutate global env/config cache state; do not mark them t.Parallel().
+	require.NoError(t, conf.ClearKVStorage())
+	t.Cleanup(func() {
+		require.NoError(t, conf.ClearKVStorage())
+	})
+
+	baseDir := t.TempDir()
+	t.Setenv(conf.KuiperBaseKey, baseDir)
+	require.NoError(t, os.MkdirAll(filepath.Join(baseDir, "etc", "connections"), os.ModePerm))
+
+	confDir, err := conf.GetConfLoc()
+	require.NoError(t, err)
+	yamlPath := filepath.Join(confDir, "connections", "connection.yaml")
+	delete(conf.LoadConfigCache, yamlPath)
+	t.Cleanup(func() {
+		delete(conf.LoadConfigCache, yamlPath)
+	})
+	return yamlPath
+}
+
+func writeConnectionYaml(t *testing.T, yamlPath, content string) {
+	t.Helper()
+	delete(conf.LoadConfigCache, yamlPath)
+	require.NoError(t, os.WriteFile(yamlPath, []byte(content), 0o644))
+}
+
+func TestLoadConfigOperatorForConnectionYamlOps(t *testing.T) {
+	yamlPath := setupConnectionYamlTest(t)
+
+	t.Run("default create seeds missing connection and leaves API connection alone", func(t *testing.T) {
+		require.NoError(t, conf.ClearKVStorage())
+		// REST/API-created connection not present in YAML
+		require.NoError(t, conf.WriteCfgIntoKVStorage("connections", "mqtt", "usercreated", map[string]interface{}{
+			"server": "tcp://user:1883",
+		}))
+		writeConnectionYaml(t, yamlPath, `mqtt:
+  cloud:
+    server: "tcp://broker:1883"
+    username: ekuiper
+`)
+		loadConfigOperatorForConnection("mqtt")
+
+		got, err := conf.GetCfgFromKVStorage("connections", "mqtt", "")
+		require.NoError(t, err)
+		require.Equal(t, map[string]interface{}{
+			"server":   "tcp://broker:1883",
+			"username": "ekuiper",
+		}, got["connections.mqtt.cloud"])
+		require.Equal(t, map[string]interface{}{
+			"server": "tcp://user:1883",
+		}, got["connections.mqtt.usercreated"])
+	})
+
+	t.Run("create does not overwrite existing KV on reload", func(t *testing.T) {
+		require.NoError(t, conf.ClearKVStorage())
+		require.NoError(t, conf.WriteCfgIntoKVStorage("connections", "mqtt", "cloud", map[string]interface{}{
+			"server": "tcp://existing:1883",
+		}))
+		writeConnectionYaml(t, yamlPath, `mqtt:
+  cloud:
+    xOperation: create
+    server: "tcp://yaml:1883"
+`)
+		loadConfigOperatorForConnection("mqtt")
+
+		got, err := conf.GetCfgFromKVStorage("connections", "mqtt", "cloud")
+		require.NoError(t, err)
+		require.Equal(t, map[string]interface{}{"server": "tcp://existing:1883"}, got["connections.mqtt.cloud"])
+	})
+
+	t.Run("delete removes target and does not remove unrelated API connection", func(t *testing.T) {
+		require.NoError(t, conf.ClearKVStorage())
+		require.NoError(t, conf.WriteCfgIntoKVStorage("connections", "mqtt", "cloud", map[string]interface{}{
+			"server": "tcp://remote:1883",
+		}))
+		require.NoError(t, conf.WriteCfgIntoKVStorage("connections", "mqtt", "usercreated", map[string]interface{}{
+			"server": "tcp://user:1883",
+		}))
+		writeConnectionYaml(t, yamlPath, `mqtt:
+  cloud:
+    xOperation: delete
+`)
+		loadConfigOperatorForConnection("mqtt")
+
+		got, err := conf.GetCfgFromKVStorage("connections", "mqtt", "")
+		require.NoError(t, err)
+		_, cloudExists := got["connections.mqtt.cloud"]
+		require.False(t, cloudExists, "cloud should be deleted by xOperation")
+		require.Equal(t, map[string]interface{}{"server": "tcp://user:1883"}, got["connections.mqtt.usercreated"])
+	})
+
+	t.Run("delete missing connection is success no-op", func(t *testing.T) {
+		require.NoError(t, conf.ClearKVStorage())
+		writeConnectionYaml(t, yamlPath, `mqtt:
+  missing:
+    xOperation: delete
+`)
+		loadConfigOperatorForConnection("mqtt")
+
+		got, err := conf.GetCfgFromKVStorage("connections", "mqtt", "")
+		require.NoError(t, err)
+		require.Empty(t, got)
+	})
+
+	t.Run("xOperation is not written into KV props", func(t *testing.T) {
+		require.NoError(t, conf.ClearKVStorage())
+		writeConnectionYaml(t, yamlPath, `mqtt:
+  local:
+    xOperation: create
+    server: "tcp://127.0.0.1:1883"
+`)
+		loadConfigOperatorForConnection("mqtt")
+
+		got, err := conf.GetCfgFromKVStorage("connections", "mqtt", "local")
+		require.NoError(t, err)
+		props := got["connections.mqtt.local"]
+		require.NotNil(t, props)
+		_, hasOp := props["xoperation"]
+		require.False(t, hasOp)
+		_, hasOpCamel := props["xOperation"]
+		require.False(t, hasOpCamel)
+		require.Equal(t, "tcp://127.0.0.1:1883", props["server"])
+
+		cfgOps, ok := GetConfOperator("connections.mqtt")
+		require.True(t, ok)
+		liveProps := cfgOps.CopyConfContent()["local"]
+		require.NotContains(t, liveProps, "xoperation")
+		require.NotContains(t, liveProps, "xOperation")
+		require.Equal(t, "tcp://127.0.0.1:1883", liveProps["server"])
+	})
+
+	t.Run("unknown operation skips only that entry", func(t *testing.T) {
+		require.NoError(t, conf.ClearKVStorage())
+		require.NoError(t, conf.WriteCfgIntoKVStorage("connections", "mqtt", "keep", map[string]interface{}{
+			"server": "tcp://keep:1883",
+		}))
+		writeConnectionYaml(t, yamlPath, `mqtt:
+  keep:
+    xOperation: delete
+  bad:
+    xOperation: upsert
+    server: "tcp://bad:1883"
+`)
+		loadConfigOperatorForConnection("mqtt")
+
+		got, err := conf.GetCfgFromKVStorage("connections", "mqtt", "")
+		require.NoError(t, err)
+		_, keepExists := got["connections.mqtt.keep"]
+		require.False(t, keepExists)
+		_, badExists := got["connections.mqtt.bad"]
+		require.False(t, badExists)
+	})
+
+	t.Run("operation value is case sensitive", func(t *testing.T) {
+		require.NoError(t, conf.ClearKVStorage())
+		writeConnectionYaml(t, yamlPath, `mqtt:
+  cloud:
+    xOperation: Delete
+`)
+		loadConfigOperatorForConnection("mqtt")
+
+		got, err := conf.GetCfgFromKVStorage("connections", "mqtt", "")
+		require.NoError(t, err)
+		require.Empty(t, got)
+	})
+
+	t.Run("non-string operation skips only that entry", func(t *testing.T) {
+		require.NoError(t, conf.ClearKVStorage())
+		writeConnectionYaml(t, yamlPath, `mqtt:
+  local:
+    server: "tcp://127.0.0.1:1883"
+  bad:
+    xOperation: 1
+    server: "tcp://bad:1883"
+`)
+		loadConfigOperatorForConnection("mqtt")
+
+		got, err := conf.GetCfgFromKVStorage("connections", "mqtt", "")
+		require.NoError(t, err)
+		require.Equal(t, map[string]interface{}{"server": "tcp://127.0.0.1:1883"}, got["connections.mqtt.local"])
+		_, badExists := got["connections.mqtt.bad"]
+		require.False(t, badExists)
+	})
+
+	t.Run("null entry is rejected and does not delete", func(t *testing.T) {
+		require.NoError(t, conf.ClearKVStorage())
+		require.NoError(t, conf.WriteCfgIntoKVStorage("connections", "mqtt", "cloud", map[string]interface{}{
+			"server": "tcp://remote:1883",
+		}))
+		writeConnectionYaml(t, yamlPath, `mqtt:
+  cloud: null
+`)
+		// NewConfigOperatorFromConnectionStorage rejects non-map entries; load is a no-op.
+		loadConfigOperatorForConnection("mqtt")
+		got, err := conf.GetCfgFromKVStorage("connections", "mqtt", "cloud")
+		require.NoError(t, err)
+		require.Equal(t, map[string]interface{}{"server": "tcp://remote:1883"}, got["connections.mqtt.cloud"])
+	})
+
+	t.Run("delete entry is not exposed as live connection config", func(t *testing.T) {
+		require.NoError(t, conf.ClearKVStorage())
+		require.NoError(t, conf.WriteCfgIntoKVStorage("connections", "mqtt", "cloud", map[string]interface{}{
+			"server": "tcp://remote:1883",
+		}))
+		writeConnectionYaml(t, yamlPath, `mqtt:
+  cloud:
+    xOperation: delete
+`)
+		loadConfigOperatorForConnection("mqtt")
+
+		cfgOps, ok := GetConfOperator("connections.mqtt")
+		require.True(t, ok)
+		_, exists := cfgOps.CopyConfContent()["cloud"]
+		require.False(t, exists)
+	})
+}
