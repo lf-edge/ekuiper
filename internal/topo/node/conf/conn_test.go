@@ -15,6 +15,8 @@
 package conf
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/pingcap/failpoint"
@@ -65,5 +67,58 @@ func TestOverwriteKafkaConnectionProps(t *testing.T) {
 	require.Equal(t, "test-topic", newProps["topic"])
 	for k, v := range connProps {
 		require.Equal(t, v, newProps[k])
+	}
+}
+
+func TestOverwriteIgnoresOperationEntriesFromConnectionYaml(t *testing.T) {
+	baseDir := t.TempDir()
+	t.Setenv(conf.KuiperBaseKey, baseDir)
+	require.NoError(t, os.MkdirAll(filepath.Join(baseDir, "etc", "connections"), os.ModePerm))
+
+	yamlPath := filepath.Join(baseDir, "etc", "connections", "connection.yaml")
+	require.NoError(t, os.WriteFile(yamlPath, []byte(`operationtest:
+  deleted:
+    xOperation: delete
+    server: tcp://deleted:1883
+  rejected:
+    xOperation: unsupported
+    server: tcp://rejected:1883
+  created:
+    xOperation: create
+    server: tcp://created:1883
+  defaultCreate:
+    server: tcp://default:1883
+`), 0o644))
+	delete(conf.LoadConfigCache, yamlPath)
+	t.Cleanup(func() {
+		delete(conf.LoadConfigCache, yamlPath)
+	})
+
+	for _, selector := range []string{"deleted", "rejected"} {
+		t.Run(selector, func(t *testing.T) {
+			props := map[string]interface{}{
+				"connectionSelector": selector,
+			}
+			got, err := OverwriteByConnectionConf("operationtest", props)
+			require.NoError(t, err)
+			require.Equal(t, map[string]interface{}{
+				"connectionSelector": selector,
+			}, got)
+		})
+	}
+
+	for selector, server := range map[string]string{
+		"created":       "tcp://created:1883",
+		"defaultcreate": "tcp://default:1883",
+	} {
+		t.Run(selector, func(t *testing.T) {
+			got, err := OverwriteByConnectionConf("operationtest", map[string]interface{}{
+				"connectionSelector": selector,
+			})
+			require.NoError(t, err)
+			require.Equal(t, selector, got["connectionSelector"])
+			require.Equal(t, server, got["server"])
+			require.NotContains(t, got, "xoperation")
+		})
 	}
 }

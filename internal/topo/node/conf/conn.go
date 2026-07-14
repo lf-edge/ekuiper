@@ -34,13 +34,33 @@ func OverwriteByConnectionConf(connType string, props map[string]interface{}) (m
 	if err != nil {
 		return nil, err
 	}
+	// Honor provisioning operations when reading connection.yaml directly.
+	// Deleted or rejected entries must not be selectable even if a stale KV
+	// entry exists, while valid create entries retain the original YAML/KV
+	// merge behavior.
+	if readOnlyProps, exists := yamlOps.CopyReadOnlyConfContent()[connSelector]; exists {
+		if rawOperation, specified := readOnlyProps[connectionOperationKey]; specified {
+			operation, ok := rawOperation.(string)
+			if !ok || operation != connectionOperationCreate {
+				return props, nil
+			}
+		}
+	}
 	cfg := yamlOps.CopyConfContent()
 	connProps, ok := cfg[connSelector]
 	if !ok {
 		return props, nil
 	}
 	for k, v := range connProps {
+		if k == connectionOperationKey {
+			continue
+		}
 		props[k] = v
 	}
 	return props, nil
 }
+
+const (
+	connectionOperationKey    = "xoperation"
+	connectionOperationCreate = "create"
+)
