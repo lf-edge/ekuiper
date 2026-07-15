@@ -23,6 +23,8 @@ import (
 	"path/filepath"
 	"reflect"
 	"sort"
+	"strings"
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -30,8 +32,17 @@ import (
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/testx"
+	"github.com/lf-edge/ekuiper/v2/pkg/kv"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
+
+type failingSetKV struct {
+	kv.KeyValue
+}
+
+func (failingSetKV) Set(string, interface{}) error {
+	return fmt.Errorf("injected schema DB write failure")
+}
 
 func init() {
 	testx.InitEnv("schema")
@@ -418,4 +429,184 @@ func TestInvalidInfo(t *testing.T) {
 		err := CreateOrUpdateSchema(tt.info)
 		assert.EqualError(t, err, tt.err)
 	}
+}
+
+func TestUpsert(t *testing.T) {
+	modules.RegisterSchemaType(modules.PROTOBUF, &PbType{}, ".proto")
+	require.NoError(t, InitRegistry())
+	const name = "upsert_concurrent_test"
+	_ = DeleteSchema(modules.PROTOBUF, name)
+	defer func() {
+		_ = DeleteSchema(modules.PROTOBUF, name)
+	}()
+
+	dataDir, err := conf.GetDataLoc()
+	require.NoError(t, err)
+	tempDir := filepath.Join(dataDir, "uploads", "schemas")
+	require.NoError(t, os.MkdirAll(tempDir, 0o755))
+	paths := make([]string, 2)
+	contents := []string{
+		"message First { required string name = 1; }",
+		"message Second { required int32 id = 1; }",
+	}
+	for i, content := range contents {
+		file, createErr := os.CreateTemp(tempDir, ".upsert-test-*.proto")
+		require.NoError(t, createErr)
+		paths[i] = file.Name()
+		_, writeErr := file.WriteString(content)
+		require.NoError(t, writeErr)
+		require.NoError(t, file.Close())
+		defer os.Remove(paths[i])
+	}
+
+	createdResults := make(chan bool, 2)
+	errorResults := make(chan error, 2)
+	var wg sync.WaitGroup
+	for _, path := range paths {
+		wg.Add(1)
+		go func(path string) {
+			defer wg.Done()
+			created, upsertErr := Upsert(&Info{
+				Type:     modules.PROTOBUF,
+				Name:     name,
+				FilePath: localFileURL(path),
+			})
+			createdResults <- created
+			errorResults <- upsertErr
+		}(path)
+	}
+	wg.Wait()
+	close(createdResults)
+	close(errorResults)
+	for upsertErr := range errorResults {
+		require.NoError(t, upsertErr)
+	}
+	createdCount := 0
+	for created := range createdResults {
+		if created {
+			createdCount++
+		}
+	}
+	require.Equal(t, 1, createdCount)
+
+	gotten, err := GetSchema(modules.PROTOBUF, name)
+	require.NoError(t, err)
+	require.Contains(t, contents, gotten.Content)
+	_, script := GetSchemaInstallScript(modules.PROTOBUF + "_" + name)
+	require.NotContains(t, script, ".upsert-test-")
+	require.True(t, strings.Contains(script, "/schemas/protobuf/") || strings.Contains(script, "\\schemas\\protobuf\\"))
+}
+
+func TestUpsertRollsBackFilesWhenPersistenceFails(t *testing.T) {
+	modules.RegisterSchemaType(modules.PROTOBUF, &PbType{}, ".proto")
+	require.NoError(t, InitRegistry())
+
+	dataDir, err := conf.GetDataLoc()
+	require.NoError(t, err)
+	schemaDir := filepath.Join(dataDir, "schemas", modules.PROTOBUF)
+
+	t.Run("create", func(t *testing.T) {
+		const name = "upsert_db_failure_create"
+		_ = DeleteSchema(modules.PROTOBUF, name)
+		defer func() { _ = DeleteSchema(modules.PROTOBUF, name) }()
+
+		originalDB := schemaDb
+		schemaDb = failingSetKV{KeyValue: originalDB}
+		defer func() { schemaDb = originalDB }()
+
+		created, upsertErr := Upsert(&Info{
+			Type:    modules.PROTOBUF,
+			Name:    name,
+			Content: "message Created { required string value = 1; }",
+		})
+		require.False(t, created)
+		require.EqualError(t, upsertErr, "injected schema DB write failure")
+		_, getErr := GetSchema(modules.PROTOBUF, name)
+		require.Error(t, getErr)
+		require.NoFileExists(t, filepath.Join(schemaDir, name+".proto"))
+	})
+
+	t.Run("update", func(t *testing.T) {
+		const name = "upsert_db_failure_update"
+		_ = DeleteSchema(modules.PROTOBUF, name)
+		defer func() { _ = DeleteSchema(modules.PROTOBUF, name) }()
+
+		const originalContent = "message Original { required string value = 1; }"
+		created, upsertErr := Upsert(&Info{
+			Type:    modules.PROTOBUF,
+			Name:    name,
+			Content: originalContent,
+		})
+		require.NoError(t, upsertErr)
+		require.True(t, created)
+		_, originalScript := GetSchemaInstallScript(modules.PROTOBUF + "_" + name)
+
+		originalDB := schemaDb
+		schemaDb = failingSetKV{KeyValue: originalDB}
+		defer func() { schemaDb = originalDB }()
+
+		created, upsertErr = Upsert(&Info{
+			Type:    modules.PROTOBUF,
+			Name:    name,
+			Content: "message Updated { required int32 value = 1; }",
+		})
+		require.False(t, created)
+		require.EqualError(t, upsertErr, "injected schema DB write failure")
+		gotten, getErr := GetSchema(modules.PROTOBUF, name)
+		require.NoError(t, getErr)
+		require.Equal(t, originalContent, gotten.Content)
+		_, currentScript := GetSchemaInstallScript(modules.PROTOBUF + "_" + name)
+		require.Equal(t, originalScript, currentScript)
+	})
+}
+
+func TestFileReplacementTransaction(t *testing.T) {
+	t.Run("rolls back a partial installation", func(t *testing.T) {
+		dir := t.TempDir()
+		targetFile := filepath.Join(dir, "schema.proto")
+		require.NoError(t, os.WriteFile(targetFile, []byte("old schema"), 0o600))
+		sourceFile := filepath.Join(dir, "new.proto")
+		require.NoError(t, os.WriteFile(sourceFile, []byte("new schema"), 0o600))
+
+		targetDir := filepath.Join(dir, "supporting")
+		require.NoError(t, os.Mkdir(targetDir, 0o755))
+		require.NoError(t, os.WriteFile(filepath.Join(targetDir, "old.txt"), []byte("old support"), 0o600))
+
+		replacements := []fileReplacement{
+			{source: sourceFile, target: targetFile},
+			{target: targetDir},
+			{source: filepath.Join(dir, "missing.proto"), target: filepath.Join(dir, "third.proto")},
+		}
+		err := commitFileReplacements(replacements, filepath.Join(dir, "backup"))
+		require.Error(t, err)
+		content, err := os.ReadFile(targetFile)
+		require.NoError(t, err)
+		require.Equal(t, "old schema", string(content))
+		support, err := os.ReadFile(filepath.Join(targetDir, "old.txt"))
+		require.NoError(t, err)
+		require.Equal(t, "old support", string(support))
+		require.NoFileExists(t, replacements[2].target)
+	})
+
+	t.Run("handles empty replacement list", func(t *testing.T) {
+		require.NoError(t, commitFileReplacements(nil, filepath.Join(t.TempDir(), "backup")))
+	})
+
+	t.Run("reports backup directory error", func(t *testing.T) {
+		dir := t.TempDir()
+		backupPath := filepath.Join(dir, "backup")
+		require.NoError(t, os.WriteFile(backupPath, []byte("not a directory"), 0o600))
+		err := commitFileReplacements([]fileReplacement{{target: filepath.Join(dir, "target")}}, backupPath)
+		require.Error(t, err)
+	})
+
+	t.Run("reports rollback error", func(t *testing.T) {
+		dir := t.TempDir()
+		err := rollbackFileReplacements([]fileReplacement{{
+			target:    filepath.Join(dir, "target"),
+			backup:    filepath.Join(dir, "missing-backup"),
+			hadTarget: true,
+		}})
+		require.Error(t, err)
+	})
 }
