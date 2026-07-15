@@ -19,10 +19,17 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"io"
+	"mime"
+	"mime/multipart"
 	"net/http"
+	"net/url"
+	"os"
+	"path/filepath"
 
 	"github.com/gorilla/mux"
 
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/schema"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	"github.com/lf-edge/ekuiper/v2/pkg/validate"
@@ -43,7 +50,180 @@ func (sc schemaComp) register() {
 
 func (sc schemaComp) rest(r *mux.Router) {
 	r.HandleFunc("/schemas/{type}", schemasHandler).Methods(http.MethodGet, http.MethodPost)
+	r.HandleFunc("/schemas/{type}/{name}/upload", schemaUploadHandler).Methods(http.MethodPut)
 	r.HandleFunc("/schemas/{type}/{name}", schemaHandler).Methods(http.MethodPut, http.MethodDelete, http.MethodGet)
+}
+
+const maxSchemaUploadFieldSize = 4 << 10
+
+type schemaUpload struct {
+	path    string
+	version string
+}
+
+func (u *schemaUpload) cleanup() {
+	if u != nil && u.path != "" {
+		_ = os.Remove(u.path)
+	}
+}
+
+func (u *schemaUpload) fileURL() string {
+	return (&url.URL{Scheme: "file", Path: u.path}).String()
+}
+
+type schemaUploadResponse struct {
+	Type string `json:"type"`
+	Name string `json:"name"`
+}
+
+func schemaUploadHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	vars := mux.Vars(r)
+	st := vars["type"]
+	name := vars["name"]
+	if err := validate.ValidateID(name); err != nil {
+		handleErrorWithStatus(w, err, "", http.StatusBadRequest, logger)
+		return
+	}
+
+	mediaType, _, err := mime.ParseMediaType(r.Header.Get("Content-Type"))
+	if err != nil || mediaType != "multipart/form-data" {
+		if err == nil {
+			err = fmt.Errorf("content type must be multipart/form-data")
+		}
+		handleErrorWithStatus(w, err, "Invalid content type", http.StatusUnsupportedMediaType, logger)
+		return
+	}
+	mr, err := r.MultipartReader()
+	if err != nil {
+		handleErrorWithStatus(w, err, "Invalid multipart body", http.StatusBadRequest, logger)
+		return
+	}
+	upload, err := receiveSchemaUpload(mr)
+	if err != nil {
+		handleErrorWithStatus(w, err, "Invalid multipart body", http.StatusBadRequest, logger)
+		return
+	}
+	defer upload.cleanup()
+
+	sch := &schema.Info{
+		Type:     st,
+		Name:     name,
+		FilePath: upload.fileURL(),
+		Version:  upload.version,
+	}
+	if err = sch.Validate(); err != nil {
+		handleErrorWithStatus(w, err, "Invalid schema", http.StatusBadRequest, logger)
+		return
+	}
+	created, err := schema.Upsert(sch)
+	if err != nil {
+		handleErrorWithStatus(w, err, "schema upsert error", http.StatusBadRequest, logger)
+		return
+	}
+
+	payload, err := json.Marshal(schemaUploadResponse{Type: st, Name: name})
+	if err != nil {
+		handleErrorWithStatus(w, err, "Error encoding response", http.StatusInternalServerError, logger)
+		return
+	}
+	w.Header().Set(ContentType, ContentTypeJSON)
+	w.Header().Set("Location", fmt.Sprintf("/schemas/%s/%s", st, name))
+	if created {
+		w.WriteHeader(http.StatusCreated)
+	} else {
+		w.WriteHeader(http.StatusOK)
+	}
+	if _, err = w.Write(payload); err != nil {
+		logger.Errorf("Error writing schema upload response: %v", err)
+	}
+}
+
+func receiveSchemaUpload(mr *multipart.Reader) (_ *schemaUpload, retErr error) {
+	dataDir, err := conf.GetDataLoc()
+	if err != nil {
+		return nil, err
+	}
+	tempDir := filepath.Join(dataDir, "uploads", "schemas")
+	if err = os.MkdirAll(tempDir, 0o755); err != nil {
+		return nil, err
+	}
+	upload := &schemaUpload{}
+	defer func() {
+		if retErr != nil {
+			upload.cleanup()
+		}
+	}()
+	fileSeen := false
+	versionSeen := false
+	for {
+		part, nextErr := mr.NextPart()
+		if nextErr == io.EOF {
+			break
+		}
+		if nextErr != nil {
+			return nil, nextErr
+		}
+		fieldName := part.FormName()
+		switch fieldName {
+		case "file":
+			if fileSeen {
+				_ = part.Close()
+				return nil, fmt.Errorf("file field must appear exactly once")
+			}
+			fileSeen = true
+			ext := filepath.Ext(part.FileName())
+			tempFile, createErr := os.CreateTemp(tempDir, ".upload-*"+ext)
+			if createErr != nil {
+				_ = part.Close()
+				return nil, createErr
+			}
+			upload.path = tempFile.Name()
+			_, copyErr := io.Copy(tempFile, part)
+			closeErr := tempFile.Close()
+			partCloseErr := part.Close()
+			if copyErr != nil {
+				return nil, copyErr
+			}
+			if closeErr != nil {
+				return nil, closeErr
+			}
+			if partCloseErr != nil {
+				return nil, partCloseErr
+			}
+		case "version":
+			if versionSeen {
+				_ = part.Close()
+				return nil, fmt.Errorf("version field must not be repeated")
+			}
+			versionSeen = true
+			value, readErr := io.ReadAll(io.LimitReader(part, maxSchemaUploadFieldSize+1))
+			partCloseErr := part.Close()
+			if readErr != nil {
+				return nil, readErr
+			}
+			if partCloseErr != nil {
+				return nil, partCloseErr
+			}
+			if len(value) > maxSchemaUploadFieldSize {
+				return nil, fmt.Errorf("version field is too large")
+			}
+			upload.version = string(value)
+		default:
+			_, copyErr := io.Copy(io.Discard, part)
+			partCloseErr := part.Close()
+			if copyErr != nil {
+				return nil, copyErr
+			}
+			if partCloseErr != nil {
+				return nil, partCloseErr
+			}
+		}
+	}
+	if !fileSeen {
+		return nil, fmt.Errorf("file field is required")
+	}
+	return upload, nil
 }
 
 func (sc schemaComp) exporter() ConfManager {
