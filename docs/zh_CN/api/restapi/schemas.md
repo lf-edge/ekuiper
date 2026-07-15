@@ -70,7 +70,11 @@ curl -X PUT http://localhost:9081/schemas/protobuf/schema1/upload \
   -F "file=@/path/to/schema1.proto"
 ```
 
-multipart 请求包含一个必填的 `file` 字段和一个可选的 `version` 字段。模式不存在时创建并返回 `201 Created`；模式已存在时替换并返回 `200 OK`。请求完成后，服务端会删除上传产生的临时文件。
+请求不包含 JSON body，模式类型和名称来自 URL。multipart body 只包含一个必填的 `file` 字段和一个可选的 `version` 字段。
+
+模式不存在时创建并返回 `201 Created`；模式已存在时替换并返回 `200 OK`。请求完成后，服务端会删除上传产生的临时文件。
+
+响应示例：
 
 ```json
 {

@@ -69,7 +69,11 @@ curl -X PUT http://localhost:9081/schemas/protobuf/schema1/upload \
   -F "file=@/path/to/schema1.proto"
 ```
 
-The multipart request contains one required `file` field and an optional `version` field. If the schema does not exist, the API creates it and returns `201 Created`. If it already exists, the API replaces it and returns `200 OK`. The temporary uploaded file is removed after the request completes.
+The request has no JSON body. The schema type and name come from the URL. The multipart body contains one required `file` field and an optional `version` field.
+
+If the schema does not exist, the API creates it and returns `201 Created`. If it already exists, the API replaces it and returns `200 OK`. The temporary uploaded file is removed after the request completes.
+
+Response example:
 
 ```json
 {
