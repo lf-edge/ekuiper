@@ -32,8 +32,17 @@ import (
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/testx"
+	"github.com/lf-edge/ekuiper/v2/pkg/kv"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
+
+type failingSetKV struct {
+	kv.KeyValue
+}
+
+func (failingSetKV) Set(string, interface{}) error {
+	return fmt.Errorf("injected schema DB write failure")
+}
 
 func init() {
 	testx.InitEnv("schema")
@@ -486,4 +495,67 @@ func TestUpsert(t *testing.T) {
 	_, script := GetSchemaInstallScript(modules.PROTOBUF + "_" + name)
 	require.NotContains(t, script, ".upsert-test-")
 	require.True(t, strings.Contains(script, "/schemas/protobuf/") || strings.Contains(script, "\\schemas\\protobuf\\"))
+}
+
+func TestUpsertRollsBackFilesWhenPersistenceFails(t *testing.T) {
+	modules.RegisterSchemaType(modules.PROTOBUF, &PbType{}, ".proto")
+	require.NoError(t, InitRegistry())
+
+	dataDir, err := conf.GetDataLoc()
+	require.NoError(t, err)
+	schemaDir := filepath.Join(dataDir, "schemas", modules.PROTOBUF)
+
+	t.Run("create", func(t *testing.T) {
+		const name = "upsert_db_failure_create"
+		_ = DeleteSchema(modules.PROTOBUF, name)
+		defer func() { _ = DeleteSchema(modules.PROTOBUF, name) }()
+
+		originalDB := schemaDb
+		schemaDb = failingSetKV{KeyValue: originalDB}
+		defer func() { schemaDb = originalDB }()
+
+		created, upsertErr := Upsert(&Info{
+			Type:    modules.PROTOBUF,
+			Name:    name,
+			Content: "message Created { required string value = 1; }",
+		})
+		require.False(t, created)
+		require.EqualError(t, upsertErr, "injected schema DB write failure")
+		_, getErr := GetSchema(modules.PROTOBUF, name)
+		require.Error(t, getErr)
+		require.NoFileExists(t, filepath.Join(schemaDir, name+".proto"))
+	})
+
+	t.Run("update", func(t *testing.T) {
+		const name = "upsert_db_failure_update"
+		_ = DeleteSchema(modules.PROTOBUF, name)
+		defer func() { _ = DeleteSchema(modules.PROTOBUF, name) }()
+
+		const originalContent = "message Original { required string value = 1; }"
+		created, upsertErr := Upsert(&Info{
+			Type:    modules.PROTOBUF,
+			Name:    name,
+			Content: originalContent,
+		})
+		require.NoError(t, upsertErr)
+		require.True(t, created)
+		_, originalScript := GetSchemaInstallScript(modules.PROTOBUF + "_" + name)
+
+		originalDB := schemaDb
+		schemaDb = failingSetKV{KeyValue: originalDB}
+		defer func() { schemaDb = originalDB }()
+
+		created, upsertErr = Upsert(&Info{
+			Type:    modules.PROTOBUF,
+			Name:    name,
+			Content: "message Updated { required int32 value = 1; }",
+		})
+		require.False(t, created)
+		require.EqualError(t, upsertErr, "injected schema DB write failure")
+		gotten, getErr := GetSchema(modules.PROTOBUF, name)
+		require.NoError(t, getErr)
+		require.Equal(t, originalContent, gotten.Content)
+		_, currentScript := GetSchemaInstallScript(modules.PROTOBUF + "_" + name)
+		require.Equal(t, originalScript, currentScript)
+	})
 }
