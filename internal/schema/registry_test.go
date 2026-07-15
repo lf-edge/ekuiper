@@ -23,6 +23,8 @@ import (
 	"path/filepath"
 	"reflect"
 	"sort"
+	"strings"
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -418,4 +420,70 @@ func TestInvalidInfo(t *testing.T) {
 		err := CreateOrUpdateSchema(tt.info)
 		assert.EqualError(t, err, tt.err)
 	}
+}
+
+func TestUpsert(t *testing.T) {
+	modules.RegisterSchemaType(modules.PROTOBUF, &PbType{}, ".proto")
+	require.NoError(t, InitRegistry())
+	const name = "upsert_concurrent_test"
+	_ = DeleteSchema(modules.PROTOBUF, name)
+	defer func() {
+		_ = DeleteSchema(modules.PROTOBUF, name)
+	}()
+
+	dataDir, err := conf.GetDataLoc()
+	require.NoError(t, err)
+	tempDir := filepath.Join(dataDir, "uploads", "schemas")
+	require.NoError(t, os.MkdirAll(tempDir, 0o755))
+	paths := make([]string, 2)
+	contents := []string{
+		"message First { required string name = 1; }",
+		"message Second { required int32 id = 1; }",
+	}
+	for i, content := range contents {
+		file, createErr := os.CreateTemp(tempDir, ".upsert-test-*.proto")
+		require.NoError(t, createErr)
+		paths[i] = file.Name()
+		_, writeErr := file.WriteString(content)
+		require.NoError(t, writeErr)
+		require.NoError(t, file.Close())
+		defer os.Remove(paths[i])
+	}
+
+	createdResults := make(chan bool, 2)
+	errorResults := make(chan error, 2)
+	var wg sync.WaitGroup
+	for _, path := range paths {
+		wg.Add(1)
+		go func(path string) {
+			defer wg.Done()
+			created, upsertErr := Upsert(&Info{
+				Type:     modules.PROTOBUF,
+				Name:     name,
+				FilePath: localFileURL(path),
+			})
+			createdResults <- created
+			errorResults <- upsertErr
+		}(path)
+	}
+	wg.Wait()
+	close(createdResults)
+	close(errorResults)
+	for upsertErr := range errorResults {
+		require.NoError(t, upsertErr)
+	}
+	createdCount := 0
+	for created := range createdResults {
+		if created {
+			createdCount++
+		}
+	}
+	require.Equal(t, 1, createdCount)
+
+	gotten, err := GetSchema(modules.PROTOBUF, name)
+	require.NoError(t, err)
+	require.Contains(t, contents, gotten.Content)
+	_, script := GetSchemaInstallScript(modules.PROTOBUF + "_" + name)
+	require.NotContains(t, script, ".upsert-test-")
+	require.True(t, strings.Contains(script, "/schemas/protobuf/") || strings.Contains(script, "\\schemas\\protobuf\\"))
 }

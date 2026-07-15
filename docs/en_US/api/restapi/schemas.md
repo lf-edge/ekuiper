@@ -56,6 +56,28 @@ Schema with static plugin：
      - content: the text content of the schema.
 3. soFile：The so file of the static plugin. Detail about the plugin creation, please check [customize format](../../guide/serialization/serialization.md#format-extension).
 
+## Upload a schema file
+
+Use multipart form data to create or update a schema from a local file. The uploaded file has the same semantics as the `file` property of the JSON API: its type and content are handled by the schema implementation. For example, protobuf accepts a single schema file or a zip archive with supporting files.
+
+```shell
+PUT http://localhost:9081/schemas/{type}/{name}/upload
+```
+
+```shell
+curl -X PUT http://localhost:9081/schemas/protobuf/schema1/upload \
+  -F "file=@/path/to/schema1.proto"
+```
+
+The multipart request contains one required `file` field and an optional `version` field. If the schema does not exist, the API creates it and returns `201 Created`. If it already exists, the API replaces it and returns `200 OK`. The temporary uploaded file is removed after the request completes.
+
+```json
+{
+  "type": "protobuf",
+  "name": "schema1"
+}
+```
+
 ## Show schemas
 
 The API is used for displaying all schemas defined in the server.

@@ -19,6 +19,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -147,30 +148,39 @@ func GetAllForType(schemaType string) ([]string, error) {
 }
 
 func Register(info *Info) error {
-	err := func() error {
-		registry.RLock()
-		defer registry.RUnlock()
-		if _, ok := registry.schemas[info.Type]; !ok {
-			return fmt.Errorf("schema type %s not found", info.Type)
-		}
-		if _, ok := registry.schemas[info.Type][info.Name]; ok {
-			return fmt.Errorf("schema %s.%s already registered", info.Type, info.Name)
-		}
-		return nil
-	}()
-	if err != nil {
-		return err
+	registry.Lock()
+	defer registry.Unlock()
+	if _, ok := registry.schemas[info.Type]; !ok {
+		return fmt.Errorf("schema type %s not found", info.Type)
 	}
-	err = CreateOrUpdateSchema(info)
-	if err != nil {
-		return err
+	if _, ok := registry.schemas[info.Type][info.Name]; ok {
+		return fmt.Errorf("schema %s.%s already registered", info.Type, info.Name)
 	}
-	return nil
+	return createOrUpdateSchemaLocked(info, false)
 }
 
 func CreateOrUpdateSchema(info *Info) error {
 	registry.Lock()
 	defer registry.Unlock()
+	return createOrUpdateSchemaLocked(info, false)
+}
+
+// Upsert creates or updates a schema and reports whether a new schema was created.
+// Uploaded files use this entry point so their temporary source path is not persisted.
+func Upsert(info *Info) (bool, error) {
+	registry.Lock()
+	defer registry.Unlock()
+	if _, ok := registry.schemas[info.Type]; !ok {
+		return false, fmt.Errorf("schema type %s not found", info.Type)
+	}
+	_, existed := registry.schemas[info.Type][info.Name]
+	if err := createOrUpdateSchemaLocked(info, true); err != nil {
+		return false, err
+	}
+	return !existed, nil
+}
+
+func createOrUpdateSchemaLocked(info *Info, persistInstalledPath bool) error {
 	if strings.Contains(info.Type, "/") || strings.Contains(info.Type, "\\") || strings.Contains(info.Type, "..") {
 		return fmt.Errorf("schema type %s is invalid", info.Type)
 	}
@@ -264,7 +274,7 @@ func CreateOrUpdateSchema(info *Info) error {
 				if err != nil {
 					return err
 				}
-			} else {
+			} else if !sameLocalFile(info.FilePath, schemaFile) {
 				_, err := httpx.DownloadFile(etcDir, targetName, info.FilePath)
 				if err != nil {
 					return err
@@ -276,18 +286,36 @@ func CreateOrUpdateSchema(info *Info) error {
 
 	if info.SoPath != "" {
 		soFile := filepath.Join(etcDir, info.Name+".so")
-		_, err := httpx.DownloadFile(etcDir, info.Name+".so", info.SoPath)
-		if err != nil {
-			return err
+		if !sameLocalFile(info.SoPath, soFile) {
+			_, err := httpx.DownloadFile(etcDir, info.Name+".so", info.SoPath)
+			if err != nil {
+				return err
+			}
 		}
 		ffs.SoFile = soFile
 	}
 	ffs.Version = info.Version
+	installInfo := info
+	if persistInstalledPath {
+		installInfo = &Info{
+			Type:    info.Type,
+			Name:    info.Name,
+			Version: info.Version,
+		}
+		if ffs.SchemaFile != "" {
+			installInfo.FilePath = localFileURL(ffs.SchemaFile)
+		}
+		if ffs.SoFile != "" {
+			installInfo.SoPath = localFileURL(ffs.SoFile)
+		}
+	}
+	if err := storeSchemaInstallScript(installInfo); err != nil {
+		return err
+	}
 	registry.schemas[info.Type][info.Name] = ffs
-	storeSchemaInstallScript(info)
 	// clean up old ffs
 	if offs != nil && info.Version != "" {
-		if offs.SchemaFile != "" {
+		if offs.SchemaFile != "" && offs.SchemaFile != ffs.SchemaFile {
 			err := os.Remove(offs.SchemaFile)
 			if err != nil {
 				conf.Log.Errorf("cannot delete old schema file %s: %s", offs.SchemaFile, err)
@@ -295,6 +323,30 @@ func CreateOrUpdateSchema(info *Info) error {
 		}
 	}
 	return nil
+}
+
+func localFileURL(path string) string {
+	absPath, err := filepath.Abs(path)
+	if err != nil {
+		absPath = path
+	}
+	return (&url.URL{Scheme: "file", Path: absPath}).String()
+}
+
+func sameLocalFile(uri string, target string) bool {
+	u, err := url.ParseRequestURI(uri)
+	if err != nil || u.Scheme != "file" || u.Host != "" || u.Path == "" {
+		return false
+	}
+	sourceInfo, err := os.Stat(u.Path)
+	if err != nil {
+		return false
+	}
+	targetInfo, err := os.Stat(target)
+	if err != nil {
+		return false
+	}
+	return os.SameFile(sourceInfo, targetInfo)
 }
 
 func GetSchema(schemaType string, name string) (*Info, error) {
@@ -506,10 +558,10 @@ func schemaInstallWhenReboot() {
 	}
 }
 
-func storeSchemaInstallScript(info *Info) {
+func storeSchemaInstallScript(info *Info) error {
 	key := info.Type + "_" + info.Name
 	val := info.InstallScript()
-	_ = schemaDb.Set(key, val)
+	return schemaDb.Set(key, val)
 }
 
 func removeSchemaInstallScript(schemaType string, name string) {
