@@ -559,3 +559,54 @@ func TestUpsertRollsBackFilesWhenPersistenceFails(t *testing.T) {
 		require.Equal(t, originalScript, currentScript)
 	})
 }
+
+func TestFileReplacementTransaction(t *testing.T) {
+	t.Run("rolls back a partial installation", func(t *testing.T) {
+		dir := t.TempDir()
+		targetFile := filepath.Join(dir, "schema.proto")
+		require.NoError(t, os.WriteFile(targetFile, []byte("old schema"), 0o600))
+		sourceFile := filepath.Join(dir, "new.proto")
+		require.NoError(t, os.WriteFile(sourceFile, []byte("new schema"), 0o600))
+
+		targetDir := filepath.Join(dir, "supporting")
+		require.NoError(t, os.Mkdir(targetDir, 0o755))
+		require.NoError(t, os.WriteFile(filepath.Join(targetDir, "old.txt"), []byte("old support"), 0o600))
+
+		replacements := []fileReplacement{
+			{source: sourceFile, target: targetFile},
+			{target: targetDir},
+			{source: filepath.Join(dir, "missing.proto"), target: filepath.Join(dir, "third.proto")},
+		}
+		err := commitFileReplacements(replacements, filepath.Join(dir, "backup"))
+		require.Error(t, err)
+		content, err := os.ReadFile(targetFile)
+		require.NoError(t, err)
+		require.Equal(t, "old schema", string(content))
+		support, err := os.ReadFile(filepath.Join(targetDir, "old.txt"))
+		require.NoError(t, err)
+		require.Equal(t, "old support", string(support))
+		require.NoFileExists(t, replacements[2].target)
+	})
+
+	t.Run("handles empty replacement list", func(t *testing.T) {
+		require.NoError(t, commitFileReplacements(nil, filepath.Join(t.TempDir(), "backup")))
+	})
+
+	t.Run("reports backup directory error", func(t *testing.T) {
+		dir := t.TempDir()
+		backupPath := filepath.Join(dir, "backup")
+		require.NoError(t, os.WriteFile(backupPath, []byte("not a directory"), 0o600))
+		err := commitFileReplacements([]fileReplacement{{target: filepath.Join(dir, "target")}}, backupPath)
+		require.Error(t, err)
+	})
+
+	t.Run("reports rollback error", func(t *testing.T) {
+		dir := t.TempDir()
+		err := rollbackFileReplacements([]fileReplacement{{
+			target:    filepath.Join(dir, "target"),
+			backup:    filepath.Join(dir, "missing-backup"),
+			hadTarget: true,
+		}})
+		require.Error(t, err)
+	})
+}
