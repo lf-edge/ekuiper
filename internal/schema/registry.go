@@ -18,12 +18,12 @@ import (
 	"archive/zip"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
-
-	"github.com/google/uuid"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/filex"
@@ -49,6 +49,14 @@ type Registry struct {
 	syncx.RWMutex
 	// The map of schema files for all types
 	schemas map[string]map[string]*modules.Files
+}
+
+type fileReplacement struct {
+	source    string
+	target    string
+	backup    string
+	installed bool
+	hadTarget bool
 }
 
 // Registry provide the method to add, update, get and parse and delete schemas
@@ -147,30 +155,39 @@ func GetAllForType(schemaType string) ([]string, error) {
 }
 
 func Register(info *Info) error {
-	err := func() error {
-		registry.RLock()
-		defer registry.RUnlock()
-		if _, ok := registry.schemas[info.Type]; !ok {
-			return fmt.Errorf("schema type %s not found", info.Type)
-		}
-		if _, ok := registry.schemas[info.Type][info.Name]; ok {
-			return fmt.Errorf("schema %s.%s already registered", info.Type, info.Name)
-		}
-		return nil
-	}()
-	if err != nil {
-		return err
+	registry.Lock()
+	defer registry.Unlock()
+	if _, ok := registry.schemas[info.Type]; !ok {
+		return fmt.Errorf("schema type %s not found", info.Type)
 	}
-	err = CreateOrUpdateSchema(info)
-	if err != nil {
-		return err
+	if _, ok := registry.schemas[info.Type][info.Name]; ok {
+		return fmt.Errorf("schema %s.%s already registered", info.Type, info.Name)
 	}
-	return nil
+	return createOrUpdateSchemaLocked(info, false)
 }
 
 func CreateOrUpdateSchema(info *Info) error {
 	registry.Lock()
 	defer registry.Unlock()
+	return createOrUpdateSchemaLocked(info, false)
+}
+
+// Upsert creates or updates a schema and reports whether a new schema was created.
+// Uploaded files use this entry point so their temporary source path is not persisted.
+func Upsert(info *Info) (bool, error) {
+	registry.Lock()
+	defer registry.Unlock()
+	if _, ok := registry.schemas[info.Type]; !ok {
+		return false, fmt.Errorf("schema type %s not found", info.Type)
+	}
+	_, existed := registry.schemas[info.Type][info.Name]
+	if err := createOrUpdateSchemaLocked(info, true); err != nil {
+		return false, err
+	}
+	return !existed, nil
+}
+
+func createOrUpdateSchemaLocked(info *Info, persistInstalledPath bool) error {
 	if strings.Contains(info.Type, "/") || strings.Contains(info.Type, "\\") || strings.Contains(info.Type, "..") {
 		return fmt.Errorf("schema type %s is invalid", info.Type)
 	}
@@ -198,32 +215,42 @@ func CreateOrUpdateSchema(info *Info) error {
 	etcDir := filepath.Join(dataDir, "schemas", info.Type)
 	// make sure info.Type does not escape from root
 	if err := os.MkdirAll(etcDir, os.ModePerm); err != nil {
-		conf.Log.Warnf("failed to create directory %s: %v", info.Type, err)
+		return fmt.Errorf("failed to create schema directory %s: %w", etcDir, err)
 	}
+	stageDir, err := os.MkdirTemp(etcDir, ".schema-install-")
+	if err != nil {
+		return fmt.Errorf("failed to create schema staging directory: %w", err)
+	}
+	removeStageDir := true
+	defer func() {
+		if removeStageDir {
+			_ = os.RemoveAll(stageDir)
+		}
+	}()
+	payloadDir := filepath.Join(stageDir, "payload")
+	if err := os.Mkdir(payloadDir, 0o755); err != nil {
+		return fmt.Errorf("failed to create schema payload directory: %w", err)
+	}
+
 	ffs := &modules.Files{}
+	replacements := make([]fileReplacement, 0, 3)
 	// If file path is a .zip, it must have the name.type file and a folder of the same name to hold the supporting files. Other files will all be ignored.
 	// Otherwise, save the file in the upper folder
 	if info.Content != "" || info.FilePath != "" {
 		supportingDir := filepath.Join(etcDir, info.Name)
-		err := os.RemoveAll(filepath.Join(etcDir, info.Name))
-		if err != nil {
-			conf.Log.Errorf("cannot delete schema supporting files %s: %s", supportingDir, err)
-		}
-
 		schemaFileName := info.Name + st.Ext
 		targetName := schemaFileName
 		if info.Version != "" {
 			targetName = fmt.Sprintf("%s@%s%s", info.Name, info.Version, st.Ext)
 		}
 		schemaFile := filepath.Join(etcDir, targetName)
+		stagedSchemaFile := filepath.Join(payloadDir, targetName)
 		if filepath.Ext(info.FilePath) == ".zip" {
 			conf.Log.Infof("unzipping schema file %s", info.FilePath)
-			tmpFileName := uuid.New().String() + ".zip"
-			tmpFile, err := httpx.DownloadFile(etcDir, tmpFileName, info.FilePath)
+			tmpFile, err := httpx.DownloadFile(stageDir, "archive.zip", info.FilePath)
 			if err != nil {
 				return err
 			}
-			defer os.Remove(tmpFile)
 			reader, err := zip.OpenReader(tmpFile)
 			if err != nil {
 				return err
@@ -234,12 +261,12 @@ func CreateOrUpdateSchema(info *Info) error {
 				fileName := file.Name
 				// Check if it's the exact file we want
 				if fileName == schemaFileName {
-					err = filex.UnzipTo(file, etcDir, targetName)
+					err = filex.UnzipTo(file, payloadDir, targetName)
 					found = true
 				} else if fileName == info.Name && file.FileInfo().IsDir() {
-					err = filex.UnzipTo(file, etcDir, info.Name)
+					err = filex.UnzipTo(file, payloadDir, info.Name)
 				} else if strings.HasPrefix(fileName, info.Name+"/") {
-					err = filex.UnzipTo(file, etcDir, fileName)
+					err = filex.UnzipTo(file, payloadDir, fileName)
 				} else {
 					// Skip files that don't match our criteria
 					continue
@@ -252,42 +279,70 @@ func CreateOrUpdateSchema(info *Info) error {
 				return fmt.Errorf("schema file %s not found inside the zip", schemaFileName)
 			}
 		} else {
-			if _, err := os.Stat(schemaFile); os.IsNotExist(err) {
-				file, err := os.Create(schemaFile)
-				if err != nil {
-					return err
-				}
-				defer file.Close()
-			}
 			if info.Content != "" {
-				err := os.WriteFile(schemaFile, cast.StringToBytes(info.Content), 0o666)
+				err := os.WriteFile(stagedSchemaFile, cast.StringToBytes(info.Content), 0o666)
 				if err != nil {
 					return err
 				}
 			} else {
-				_, err := httpx.DownloadFile(etcDir, targetName, info.FilePath)
+				_, err := httpx.DownloadFile(payloadDir, targetName, info.FilePath)
 				if err != nil {
 					return err
 				}
 			}
 		}
 		ffs.SchemaFile = schemaFile
+		replacements = append(replacements, fileReplacement{source: stagedSchemaFile, target: schemaFile})
+		stagedSupportingDir := filepath.Join(payloadDir, info.Name)
+		if _, err := os.Stat(stagedSupportingDir); err != nil {
+			if !os.IsNotExist(err) {
+				return err
+			}
+			stagedSupportingDir = ""
+		}
+		replacements = append(replacements, fileReplacement{source: stagedSupportingDir, target: supportingDir})
 	}
 
 	if info.SoPath != "" {
 		soFile := filepath.Join(etcDir, info.Name+".so")
-		_, err := httpx.DownloadFile(etcDir, info.Name+".so", info.SoPath)
+		stagedSoFile, err := httpx.DownloadFile(payloadDir, info.Name+".so", info.SoPath)
 		if err != nil {
 			return err
 		}
 		ffs.SoFile = soFile
+		replacements = append(replacements, fileReplacement{source: stagedSoFile, target: soFile})
 	}
 	ffs.Version = info.Version
+	installInfo := info
+	if persistInstalledPath {
+		installInfo = &Info{
+			Type:    info.Type,
+			Name:    info.Name,
+			Version: info.Version,
+		}
+		if ffs.SchemaFile != "" {
+			installInfo.FilePath = localFileURL(ffs.SchemaFile)
+		}
+		if ffs.SoFile != "" {
+			installInfo.SoPath = localFileURL(ffs.SoFile)
+		}
+	}
+	backupDir := filepath.Join(stageDir, ".backup")
+	if err := commitFileReplacements(replacements, backupDir); err != nil {
+		removeStageDir = false
+		return fmt.Errorf("failed to install schema files; staging directory retained at %s: %w", stageDir, err)
+	}
+	if err := storeSchemaInstallScript(installInfo); err != nil {
+		if rollbackErr := rollbackFileReplacements(replacements); rollbackErr != nil {
+			removeStageDir = false
+			return errors.Join(err, fmt.Errorf("failed to roll back schema files: %w", rollbackErr))
+		}
+		return err
+	}
 	registry.schemas[info.Type][info.Name] = ffs
-	storeSchemaInstallScript(info)
 	// clean up old ffs
 	if offs != nil && info.Version != "" {
-		if offs.SchemaFile != "" {
+		if offs.SchemaFile != "" && offs.SchemaFile != ffs.SchemaFile {
 			err := os.Remove(offs.SchemaFile)
 			if err != nil {
 				conf.Log.Errorf("cannot delete old schema file %s: %s", offs.SchemaFile, err)
@@ -295,6 +350,72 @@ func CreateOrUpdateSchema(info *Info) error {
 		}
 	}
 	return nil
+}
+
+func commitFileReplacements(replacements []fileReplacement, backupDir string) error {
+	if len(replacements) == 0 {
+		return nil
+	}
+	if err := os.MkdirAll(backupDir, 0o755); err != nil {
+		return err
+	}
+	for i := range replacements {
+		replacement := &replacements[i]
+		if _, err := os.Lstat(replacement.target); err == nil {
+			replacement.backup = filepath.Join(backupDir, fmt.Sprintf("%d", i))
+			if err := os.Rename(replacement.target, replacement.backup); err != nil {
+				return rollbackAfterCommitError(replacements[:i], err)
+			}
+			replacement.hadTarget = true
+		} else if !os.IsNotExist(err) {
+			return rollbackAfterCommitError(replacements[:i], err)
+		}
+		if replacement.source == "" {
+			continue
+		}
+		if err := os.Rename(replacement.source, replacement.target); err != nil {
+			return rollbackAfterCommitError(replacements[:i+1], err)
+		}
+		replacement.installed = true
+	}
+	return nil
+}
+
+func rollbackAfterCommitError(replacements []fileReplacement, commitErr error) error {
+	if rollbackErr := rollbackFileReplacements(replacements); rollbackErr != nil {
+		return errors.Join(commitErr, fmt.Errorf("failed to roll back partial file installation: %w", rollbackErr))
+	}
+	return commitErr
+}
+
+func rollbackFileReplacements(replacements []fileReplacement) error {
+	var errs []error
+	for i := len(replacements) - 1; i >= 0; i-- {
+		replacement := &replacements[i]
+		if replacement.installed {
+			if err := os.RemoveAll(replacement.target); err != nil {
+				errs = append(errs, err)
+				continue
+			}
+			replacement.installed = false
+		}
+		if replacement.hadTarget {
+			if err := os.Rename(replacement.backup, replacement.target); err != nil {
+				errs = append(errs, err)
+				continue
+			}
+			replacement.hadTarget = false
+		}
+	}
+	return errors.Join(errs...)
+}
+
+func localFileURL(path string) string {
+	absPath, err := filepath.Abs(path)
+	if err != nil {
+		absPath = path
+	}
+	return (&url.URL{Scheme: "file", Path: absPath}).String()
 }
 
 func GetSchema(schemaType string, name string) (*Info, error) {
@@ -506,10 +627,10 @@ func schemaInstallWhenReboot() {
 	}
 }
 
-func storeSchemaInstallScript(info *Info) {
+func storeSchemaInstallScript(info *Info) error {
 	key := info.Type + "_" + info.Name
 	val := info.InstallScript()
-	_ = schemaDb.Set(key, val)
+	return schemaDb.Set(key, val)
 }
 
 func removeSchemaInstallScript(schemaType string, name string) {

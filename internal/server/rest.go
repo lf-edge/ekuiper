@@ -106,6 +106,21 @@ func handleError(w http.ResponseWriter, err error, prefix string, logger api.Log
 	http.Error(w, packageInternalErrorCode(err, message), ec)
 }
 
+func handleErrorWithStatus(w http.ResponseWriter, err error, prefix string, status int, logger api.Logger) {
+	message := prefix
+	if message != "" {
+		message += ": "
+	}
+	message += err.Error()
+	logger.Error(message)
+	w.Header().Set(ContentType, ContentTypeJSON)
+	w.WriteHeader(status)
+	_, writeErr := w.Write([]byte(packageInternalErrorCode(err, message)))
+	if writeErr != nil {
+		logger.Errorf("Error writing error response: %v", writeErr)
+	}
+}
+
 func packageInternalErrorCode(err error, msg string) string {
 	errCode := errorx.Undefined_Err
 	if errWithCode, ok := err.(errorx.ErrorWithCode); ok {

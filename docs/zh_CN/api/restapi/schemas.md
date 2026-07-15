@@ -57,6 +57,32 @@ POST http://localhost:9081/schemas/protobuf
    - content：模式文件的内容。
 3. soFile：静态插件 so。插件创建请看[自定义格式](../../guide/serialization/serialization.md#格式扩展)。
 
+## 上传模式文件
+
+使用 multipart form data 从本地文件创建或更新模式。上传文件与 JSON API 的 `file` 属性语义相同，文件类型和内容由对应的模式实现处理。例如，protobuf 可以处理单个模式文件或包含支持文件的 ZIP 压缩文件。
+
+```shell
+PUT http://localhost:9081/schemas/{type}/{name}/upload
+```
+
+```shell
+curl -X PUT http://localhost:9081/schemas/protobuf/schema1/upload \
+  -F "file=@/path/to/schema1.proto"
+```
+
+请求不包含 JSON body，模式类型和名称来自 URL。multipart body 只包含一个必填的 `file` 字段和一个可选的 `version` 字段。
+
+模式不存在时创建并返回 `201 Created`；模式已存在时替换并返回 `200 OK`。请求完成后，服务端会删除上传产生的临时文件。
+
+响应示例：
+
+```json
+{
+  "type": "protobuf",
+  "name": "schema1"
+}
+```
+
 ## 显示模式
 
 该 API 用于显示服务器中为模式类型定义的所有模式。
