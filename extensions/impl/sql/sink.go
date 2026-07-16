@@ -18,6 +18,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"regexp"
 	"strings"
 	"time"
 
@@ -33,6 +34,10 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	"github.com/lf-edge/ekuiper/v2/pkg/model"
 )
+
+// validIdentifierPattern matches standard SQL identifiers:
+// must start with a letter or underscore, followed by letters, digits, or underscores.
+var validIdentifierPattern = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
 
 const (
 	LblInsert = "insert"
@@ -91,6 +96,17 @@ func (c *sqlSinkConfig) getValuesByKeys(ctx api.StreamContext, mapData map[strin
 func quoteSQLString(s string) string {
 	// SQL string literal escaping: ' -> ''.
 	return "'" + strings.ReplaceAll(s, "'", "''") + "'"
+}
+
+// quoteIdentifier wraps a SQL identifier in double quotes and escapes embedded double quotes.
+// This prevents SQL injection through attacker-controlled column/table names.
+func quoteIdentifier(identifier string) string {
+	return "\"" + strings.ReplaceAll(identifier, "\"", "\"\"") + "\""
+}
+
+// isValidIdentifier checks whether the given name is a safe SQL identifier.
+func isValidIdentifier(name string) bool {
+	return validIdentifierPattern.MatchString(name)
 }
 
 func (s *SQLSinkConnector) Ping(ctx api.StreamContext, props map[string]any) error {
@@ -262,17 +278,17 @@ func (s *SQLSinkConnector) save(ctx api.StreamContext, table string, data map[st
 		if err != nil {
 			return err
 		}
-		sqlStr = fmt.Sprintf("UPDATE %s SET ", table)
+		sqlStr = fmt.Sprintf("UPDATE %s SET ", quoteIdentifier(table))
 		for i, key := range keys {
 			if i != 0 {
 				sqlStr += ","
 			}
-			sqlStr += fmt.Sprintf("%s=%s", key, vals[i])
+			sqlStr += fmt.Sprintf("%s=%s", quoteIdentifier(key), vals[i])
 		}
 		if ksv, ok := keyval.(string); ok {
-			sqlStr += fmt.Sprintf(" WHERE %s = %s;", s.config.KeyField, quoteSQLString(ksv))
+			sqlStr += fmt.Sprintf(" WHERE %s = %s;", quoteIdentifier(s.config.KeyField), quoteSQLString(ksv))
 		} else {
-			sqlStr += fmt.Sprintf(" WHERE %s = %v;", s.config.KeyField, keyval)
+			sqlStr += fmt.Sprintf(" WHERE %s = %v;", quoteIdentifier(s.config.KeyField), keyval)
 		}
 	case ast.RowkindDelete:
 		keyval, ok := data[s.config.KeyField]
@@ -280,9 +296,9 @@ func (s *SQLSinkConnector) save(ctx api.StreamContext, table string, data map[st
 			return fmt.Errorf("field %s does not exist in data %v", s.config.KeyField, data)
 		}
 		if ksv, ok := keyval.(string); ok {
-			sqlStr = fmt.Sprintf("DELETE FROM %s WHERE %s = %s;", table, s.config.KeyField, quoteSQLString(ksv))
+			sqlStr = fmt.Sprintf("DELETE FROM %s WHERE %s = %s;", quoteIdentifier(table), quoteIdentifier(s.config.KeyField), quoteSQLString(ksv))
 		} else {
-			sqlStr = fmt.Sprintf("DELETE FROM %s WHERE %s = %v;", table, s.config.KeyField, keyval)
+			sqlStr = fmt.Sprintf("DELETE FROM %s WHERE %s = %v;", quoteIdentifier(table), quoteIdentifier(s.config.KeyField), keyval)
 		}
 	default:
 		return fmt.Errorf("invalid rowkind %s", rowkind)
@@ -324,13 +340,19 @@ func (s *SQLSinkConnector) extractKeys(item map[string]any) []string {
 	}
 	keys := make([]string, 0, len(item))
 	for k := range item {
-		keys = append(keys, k)
+		if isValidIdentifier(k) {
+			keys = append(keys, k)
+		}
 	}
 	return keys
 }
 
 func buildInsertSQL(table string, keys []string, values []string) string {
-	sql := fmt.Sprintf("INSERT INTO %s (%s) values ", table, strings.Join(keys, ",")) + strings.Join(values, ",") + ";"
+	quotedKeys := make([]string, len(keys))
+	for i, k := range keys {
+		quotedKeys[i] = quoteIdentifier(k)
+	}
+	sql := fmt.Sprintf("INSERT INTO %s (%s) values ", quoteIdentifier(table), strings.Join(quotedKeys, ",")) + strings.Join(values, ",") + ";"
 	return sql
 }
 
