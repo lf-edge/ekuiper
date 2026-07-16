@@ -143,14 +143,15 @@ func TestRuleActionParse_Apply(t *testing.T) {
 					},
 				},
 				Options: &def.RuleOption{
-					IsEventTime:        true,
-					LateTol:            cast.DurationConf(time.Second),
-					Concurrency:        1,
-					BufferLength:       10240,
-					SendMetaToSink:     false,
-					Qos:                def.ExactlyOnce,
-					CheckpointInterval: cast.DurationConf(time.Minute),
-					SendError:          false,
+					IsEventTime:              true,
+					LateTol:                  cast.DurationConf(time.Second),
+					Concurrency:              1,
+					BufferLength:             10240,
+					SendMetaToSink:           false,
+					Qos:                      def.ExactlyOnce,
+					CheckpointInterval:       cast.DurationConf(time.Minute),
+					SendError:                false,
+					DisableBufferFullDiscard: boolPtr(true),
 					RestartStrategy: &def.RestartStrategy{
 						Attempts: 0,
 					},
@@ -256,4 +257,8 @@ func TestAllRules(t *testing.T) {
 		return
 	}
 	assert.Equal(t, expected, all)
+}
+
+func boolPtr(b bool) *bool {
+	return &b
 }
