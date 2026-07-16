@@ -886,7 +886,7 @@ func (s *RuleTestSuite) TestShowScanTableContent() {
 	s.T().Log(GetResponseText(resp))
 	s.Require().Equal(http.StatusCreated, resp.StatusCode)
 
-	var res *http.Response
+	var result []server.ShowScanTablesResponse
 	require.Eventually(s.T(), func() bool {
 		resp, err = client.GetRuleScanTablesSnapshot("joinTestRule")
 		if err != nil {
@@ -894,18 +894,28 @@ func (s *RuleTestSuite) TestShowScanTableContent() {
 		}
 
 		if resp.StatusCode != http.StatusOK {
+			resp.Body.Close()
 			return false
 		}
 
-		res = resp
-		return true
-	}, 3*time.Second, 200*time.Millisecond)
+		body, readErr := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		if readErr != nil {
+			return false
+		}
 
-	body, err := io.ReadAll(res.Body)
-	defer res.Body.Close()
-	var result []server.ShowScanTablesResponse
-	err = json.Unmarshal(body, &result)
-	s.Require().NoError(err)
+		var r []server.ShowScanTablesResponse
+		if unmarshalErr := json.Unmarshal(body, &r); unmarshalErr != nil {
+			return false
+		}
+
+		if len(r) < 3 {
+			return false
+		}
+
+		result = r
+		return true
+	}, 5*time.Second, 200*time.Millisecond)
 
 	expectedDevices := []map[string]interface{}{
 		{"id": float64(1), "name": "Device1", "location": "Room1"},
