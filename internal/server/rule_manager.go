@@ -135,9 +135,8 @@ func (rr *RuleRegistry) CreateRule(name, ruleJson string) (id string, err error)
 	ruleJson = replace.ReplaceRuleJson(ruleJson, conf.IsTesting)
 	// create state and save
 	rs := rule.NewState(r, func(id string, b bool) {
-		err = rr.updateTrigger(id, b)
-		if err != nil {
-			conf.Log.Warnf("update trigger error: %v", err)
+		if e := rr.updateTrigger(id, b); e != nil {
+			conf.Log.Warnf("update trigger error: %v", e)
 		}
 	})
 	// Validate the topo
