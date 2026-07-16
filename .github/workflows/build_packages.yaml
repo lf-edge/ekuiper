@@ -358,6 +358,7 @@ jobs:
         file: deploy/docker/Dockerfile-kubernetes-tool
 
   release:
+    if: contains(fromJSON('["release", "workflow_dispatch"]'), github.event_name)
     runs-on: ubuntu-22.04
     permissions:
       contents: write

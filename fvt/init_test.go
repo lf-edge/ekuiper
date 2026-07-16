@@ -70,7 +70,7 @@ func init() {
 	// Start eKuiper
 	cmd.Version = "fvt"
 	go cmd.Main()
-	count := 10
+	count := 300
 	for count > 0 {
 		time.Sleep(ConstantInterval)
 		resp, err := client.Get("ping")
@@ -81,6 +81,6 @@ func init() {
 		count--
 	}
 	if count == 0 {
-		fmt.Println("service not ready after 10 tries")
+		log.Fatal("service not ready after 30s")
 	}
 }
