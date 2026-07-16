@@ -1,9 +1,11 @@
 package schema
 
 import (
+	"os"
 	"path/filepath"
 	"testing"
 
+	"github.com/jhump/protoreflect/desc/protoparse" //nolint:staticcheck
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -51,34 +53,6 @@ func TestInferProtobufWithEmbedType(t *testing.T) {
 	if !assert.Equal(t, expected, result) {
 		t.Errorf("InferProtobuf result is not expected, got %v, expected %v", result, expected)
 	}
-}
-
-// ---- collectProtoFiles tests ----
-
-func TestCollectProtoFiles_SingleFile(t *testing.T) {
-	result, err := collectProtoFiles("test/test1.proto")
-	require.NoError(t, err)
-	assert.Equal(t, []string{"test/test1.proto"}, result)
-}
-
-func TestCollectProtoFiles_Directory(t *testing.T) {
-	result, err := collectProtoFiles("test/multidir")
-	require.NoError(t, err)
-	assert.Len(t, result, 2)
-	assert.Contains(t, result, filepath.Join("test/multidir", "msg_a.proto"))
-	assert.Contains(t, result, filepath.Join("test/multidir", "msg_b.proto"))
-}
-
-func TestCollectProtoFiles_EmptyDir(t *testing.T) {
-	emptyDir := t.TempDir()
-	_, err := collectProtoFiles(emptyDir)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "no .proto files found")
-}
-
-func TestCollectProtoFiles_NotExist(t *testing.T) {
-	_, err := collectProtoFiles("test/nonexistent")
-	assert.Error(t, err)
 }
 
 // ---- Directory-based Scan tests ----
@@ -140,4 +114,61 @@ func TestInfer_FromDirectory_MessageNotFound(t *testing.T) {
 	_, err := pt.Infer(nil, "test/multidir", "NonExistentMessage")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "not found")
+}
+
+func TestInfer_AbsolutePaths(t *testing.T) {
+	root := createAbsolutePathTestSchemas(t)
+	originalParser := protoParser
+	protoParser = &protoparse.Parser{ImportPaths: []string{root}}
+	t.Cleanup(func() { protoParser = originalParser })
+
+	tests := []struct {
+		name        string
+		schemaPath  string
+		messageName string
+	}{
+		{
+			name:        "single file",
+			schemaPath:  filepath.Join(root, "single.proto"),
+			messageName: "SingleMessage",
+		},
+		{
+			name:        "directory",
+			schemaPath:  filepath.Join(root, "bundle"),
+			messageName: "SecondMessage",
+		},
+		{
+			name:        "proto import",
+			schemaPath:  filepath.Join(root, "importing.proto"),
+			messageName: "ImportingMessage",
+		},
+	}
+	pt := &PbType{}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			fields, err := pt.Infer(nil, tt.schemaPath, tt.messageName)
+			require.NoError(t, err)
+			require.Len(t, fields, 1)
+		})
+	}
+}
+
+func createAbsolutePathTestSchemas(t *testing.T) string {
+	t.Helper()
+	root := t.TempDir()
+	require.NoError(t, os.MkdirAll(filepath.Join(root, "bundle"), 0o755))
+	require.NoError(t, os.MkdirAll(filepath.Join(root, "support"), 0o755))
+	files := map[string]string{
+		"single.proto":         `syntax = "proto3"; message SingleMessage { string value = 1; }`,
+		"bundle/first.proto":   `syntax = "proto3"; message FirstMessage { string value = 1; }`,
+		"bundle/second.proto":  `syntax = "proto3"; message SecondMessage { int32 value = 1; }`,
+		"support/common.proto": `syntax = "proto3"; message CommonMessage { string value = 1; }`,
+		"importing.proto": `syntax = "proto3";
+import "support/common.proto";
+message ImportingMessage { CommonMessage common = 1; }`,
+	}
+	for name, content := range files {
+		require.NoError(t, os.WriteFile(filepath.Join(root, filepath.FromSlash(name)), []byte(content), 0o600))
+	}
+	return root
 }
