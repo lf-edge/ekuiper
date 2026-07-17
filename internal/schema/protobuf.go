@@ -14,6 +14,7 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/protoutil"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
@@ -72,9 +73,13 @@ func (p *PbType) Scan(logger api.Logger, schemaDir string) (map[string]*modules.
 }
 
 func (p *PbType) Infer(_ api.Logger, filePath string, messageId string) (ast.StreamFields, error) {
-	protoFiles, err := collectProtoFiles(filePath)
+	protoFiles, err := protoutil.CollectFiles(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("collect proto files from %s failed: %s", filePath, err)
+	}
+	protoFiles, err = protoutil.ResolveFiles(protoParser.ImportPaths, protoFiles)
+	if err != nil {
+		return nil, fmt.Errorf("resolve proto files from %s failed: %s", filePath, err)
 	}
 	fds, err := protoParser.ParseFiles(protoFiles...)
 	if err != nil {
@@ -87,33 +92,6 @@ func (p *PbType) Infer(_ api.Logger, filePath string, messageId string) (ast.Str
 		}
 	}
 	return nil, fmt.Errorf("message type %s not found in schema path %s", messageId, filePath)
-}
-
-// collectProtoFiles returns a list of .proto file paths for the given path.
-// If the path is a directory, it returns dir-relative paths (e.g. "multidir/msg_a.proto").
-// If it is a single file, it returns the path as-is.
-func collectProtoFiles(path string) ([]string, error) {
-	info, err := os.Stat(path)
-	if err != nil {
-		return nil, err
-	}
-	if !info.IsDir() {
-		return []string{path}, nil
-	}
-	entries, err := os.ReadDir(path)
-	if err != nil {
-		return nil, err
-	}
-	var result []string
-	for _, e := range entries {
-		if !e.IsDir() && strings.HasSuffix(e.Name(), ".proto") {
-			result = append(result, filepath.Join(path, e.Name()))
-		}
-	}
-	if len(result) == 0 {
-		return nil, fmt.Errorf("no .proto files found in directory %s", path)
-	}
-	return result, nil
 }
 
 func convertMessage(m *desc.MessageDescriptor) (ast.StreamFields, error) {

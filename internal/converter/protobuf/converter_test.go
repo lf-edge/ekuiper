@@ -1,4 +1,4 @@
-// Copyright 2022-2023 EMQ Technologies Co., Ltd.
+// Copyright 2022-2026 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,10 +16,12 @@ package protobuf
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"reflect"
 	"testing"
 
+	"github.com/jhump/protoreflect/desc/protoparse" //nolint:staticcheck
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -302,34 +304,6 @@ func TestErr(t *testing.T) {
 	require.Equal(t, errorx.CovnerterErr, errWithCode.Code())
 }
 
-// ---- collectProtoFiles tests ----
-
-func TestCollectProtoFiles_SingleFile(t *testing.T) {
-	result, err := collectProtoFiles("../../schema/test/test1.proto")
-	require.NoError(t, err)
-	assert.Equal(t, []string{"../../schema/test/test1.proto"}, result)
-}
-
-func TestCollectProtoFiles_Directory(t *testing.T) {
-	result, err := collectProtoFiles("../../schema/test/multidir")
-	require.NoError(t, err)
-	assert.Len(t, result, 2)
-	assert.Contains(t, result, filepath.Join("../../schema/test/multidir", "msg_a.proto"))
-	assert.Contains(t, result, filepath.Join("../../schema/test/multidir", "msg_b.proto"))
-}
-
-func TestCollectProtoFiles_EmptyDir(t *testing.T) {
-	emptyDir := t.TempDir()
-	_, err := collectProtoFiles(emptyDir)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "no .proto files found")
-}
-
-func TestCollectProtoFiles_NotExist(t *testing.T) {
-	_, err := collectProtoFiles("../../schema/test/nonexistent")
-	assert.Error(t, err)
-}
-
 // ---- Directory-based NewConverter tests ----
 
 func TestNewConverter_FromDirectory(t *testing.T) {
@@ -350,4 +324,60 @@ func TestNewConverter_FromDirectory_NotFound(t *testing.T) {
 	_, err := NewConverter("../../schema/test/multidir", "", "NonExistentMsg")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "not found")
+}
+
+func TestNewConverter_AbsolutePaths(t *testing.T) {
+	root := createAbsolutePathTestSchemas(t)
+	originalParser := protoParser
+	protoParser = &protoparse.Parser{ImportPaths: []string{root}}
+	t.Cleanup(func() { protoParser = originalParser })
+
+	tests := []struct {
+		name        string
+		schemaPath  string
+		messageName string
+	}{
+		{
+			name:        "single file",
+			schemaPath:  filepath.Join(root, "single.proto"),
+			messageName: "SingleMessage",
+		},
+		{
+			name:        "directory",
+			schemaPath:  filepath.Join(root, "bundle"),
+			messageName: "SecondMessage",
+		},
+		{
+			name:        "proto import",
+			schemaPath:  filepath.Join(root, "importing.proto"),
+			messageName: "ImportingMessage",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			converter, err := NewConverter(tt.schemaPath, "", tt.messageName)
+			require.NoError(t, err)
+			require.NotNil(t, converter)
+		})
+	}
+}
+
+func createAbsolutePathTestSchemas(t *testing.T) string {
+	t.Helper()
+	root := t.TempDir()
+	require.NoError(t, os.MkdirAll(filepath.Join(root, "bundle"), 0o755))
+	require.NoError(t, os.MkdirAll(filepath.Join(root, "support"), 0o755))
+	files := map[string]string{
+		"single.proto":         `syntax = "proto3"; message SingleMessage { string value = 1; }`,
+		"bundle/first.proto":   `syntax = "proto3"; message FirstMessage { string value = 1; }`,
+		"bundle/second.proto":  `syntax = "proto3"; message SecondMessage { int32 value = 1; }`,
+		"support/common.proto": `syntax = "proto3"; message CommonMessage { string value = 1; }`,
+		"importing.proto": `syntax = "proto3";
+import "support/common.proto";
+message ImportingMessage { CommonMessage common = 1; }`,
+	}
+	for name, content := range files {
+		require.NoError(t, os.WriteFile(filepath.Join(root, filepath.FromSlash(name)), []byte(content), 0o600))
+	}
+	return root
 }
