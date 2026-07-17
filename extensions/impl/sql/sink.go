@@ -59,6 +59,7 @@ type sqlSinkConfig struct {
 	Fields       []string `json:"fields"`
 	RowKindField string   `json:"rowKindField"`
 	KeyField     string   `json:"keyField"`
+	driver       string
 }
 
 func (c *sqlSinkConfig) buildInsertSql(ctx api.StreamContext, mapData map[string]interface{}, keys []string) (string, error) {
@@ -98,10 +99,34 @@ func quoteSQLString(s string) string {
 	return "'" + strings.ReplaceAll(s, "'", "''") + "'"
 }
 
-// quoteIdentifier wraps a SQL identifier in double quotes and escapes embedded double quotes.
-// This prevents SQL injection through attacker-controlled column/table names.
-func quoteIdentifier(identifier string) string {
-	return "\"" + strings.ReplaceAll(identifier, "\"", "\"\"") + "\""
+// quoteIdentifier wraps a SQL identifier in dialect-appropriate quotes and escapes
+// embedded quote characters. This prevents SQL injection through attacker-controlled
+// column/table names.
+func quoteIdentifier(driver, identifier string) string {
+	q := identifierQuoteChar(driver)
+	return q + strings.ReplaceAll(identifier, q, q+q) + q
+}
+
+// quoteTableName splits a possibly schema-qualified table name (e.g. "public.events")
+// by dot and quotes each component with the dialect-appropriate quote character.
+func quoteTableName(driver, table string) string {
+	parts := strings.Split(table, ".")
+	for i, p := range parts {
+		parts[i] = quoteIdentifier(driver, p)
+	}
+	return strings.Join(parts, ".")
+}
+
+// identifierQuoteChar returns the SQL identifier quoting character for a given driver.
+func identifierQuoteChar(driver string) string {
+	switch driver {
+	case "mysql":
+		return "`"
+	case "sqlserver", "mssql":
+		return "\""
+	default:
+		return "\""
+	}
 }
 
 // isValidIdentifier checks whether the given name is a safe SQL identifier.
@@ -140,6 +165,11 @@ func (s *SQLSinkConnector) Provision(ctx api.StreamContext, configs map[string]a
 	if c.RowKindField != "" && c.KeyField == "" {
 		return fmt.Errorf("keyField is required when rowKindField is set")
 	}
+	driver, err := client.ParseDriver(c.DBUrl)
+	if err != nil {
+		return fmt.Errorf("failed to parse sql driver from dburl: %v", err)
+	}
+	c.driver = driver
 	s.config = c
 	s.props = configs
 	return nil
@@ -188,6 +218,10 @@ func (s *SQLSinkConnector) Collect(ctx api.StreamContext, item api.MessageTuple)
 func (s *SQLSinkConnector) collect(ctx api.StreamContext, item map[string]any) (err error) {
 	if len(s.config.RowKindField) < 1 {
 		keys := s.extractKeys(item)
+		if len(keys) == 0 {
+			ctx.GetLogger().Warn("no valid columns found in incoming message, skipping")
+			return nil
+		}
 		var values []string = nil
 		var vars string
 		vars, err = s.config.buildInsertSql(ctx, item, keys)
@@ -195,11 +229,8 @@ func (s *SQLSinkConnector) collect(ctx api.StreamContext, item map[string]any) (
 			return err
 		}
 		values = append(values, vars)
-		if keys != nil {
-			sqlStr := buildInsertSQL(s.config.Table, keys, values)
-			return s.writeToDB(ctx, sqlStr)
-		}
-		return nil
+		sqlStr := buildInsertSQL(s.config.driver, s.config.Table, keys, values)
+		return s.writeToDB(ctx, sqlStr)
 	}
 	return s.save(ctx, s.config.Table, item)
 }
@@ -219,6 +250,10 @@ func (s *SQLSinkConnector) collectList(ctx api.StreamContext, items []map[string
 		return nil
 	}
 	keys := s.extractKeys(items[0])
+	if len(keys) == 0 {
+		ctx.GetLogger().Warn("no valid columns found in incoming message, skipping")
+		return nil
+	}
 	var values []string = nil
 	var vars string
 	if len(s.config.RowKindField) < 1 {
@@ -229,11 +264,8 @@ func (s *SQLSinkConnector) collectList(ctx api.StreamContext, items []map[string
 			}
 			values = append(values, vars)
 		}
-		if keys != nil {
-			sqlStr := buildInsertSQL(s.config.Table, keys, values)
-			return s.writeToDB(ctx, sqlStr)
-		}
-		return nil
+		sqlStr := buildInsertSQL(s.config.driver, s.config.Table, keys, values)
+		return s.writeToDB(ctx, sqlStr)
 	}
 	for _, el := range items {
 		err := s.save(ctx, s.config.Table, el)
@@ -261,14 +293,16 @@ func (s *SQLSinkConnector) save(ctx api.StreamContext, table string, data map[st
 	var sqlStr string
 	switch rowkind {
 	case ast.RowkindInsert:
+		if len(keys) == 0 {
+			ctx.GetLogger().Warn("no valid columns found in incoming message, skipping")
+			return nil
+		}
 		vars, err := s.config.buildInsertSql(ctx, data, keys)
 		if err != nil {
 			return err
 		}
 		values := []string{vars}
-		if keys != nil {
-			sqlStr = buildInsertSQL(table, keys, values)
-		}
+		sqlStr = buildInsertSQL(s.config.driver, table, keys, values)
 	case ast.RowkindUpdate:
 		keyval, ok := data[s.config.KeyField]
 		if !ok {
@@ -278,27 +312,29 @@ func (s *SQLSinkConnector) save(ctx api.StreamContext, table string, data map[st
 		if err != nil {
 			return err
 		}
-		sqlStr = fmt.Sprintf("UPDATE %s SET ", quoteIdentifier(table))
+		drv := s.config.driver
+		sqlStr = fmt.Sprintf("UPDATE %s SET ", quoteTableName(drv, table))
 		for i, key := range keys {
 			if i != 0 {
 				sqlStr += ","
 			}
-			sqlStr += fmt.Sprintf("%s=%s", quoteIdentifier(key), vals[i])
+			sqlStr += fmt.Sprintf("%s=%s", quoteIdentifier(drv, key), vals[i])
 		}
 		if ksv, ok := keyval.(string); ok {
-			sqlStr += fmt.Sprintf(" WHERE %s = %s;", quoteIdentifier(s.config.KeyField), quoteSQLString(ksv))
+			sqlStr += fmt.Sprintf(" WHERE %s = %s;", quoteIdentifier(drv, s.config.KeyField), quoteSQLString(ksv))
 		} else {
-			sqlStr += fmt.Sprintf(" WHERE %s = %v;", quoteIdentifier(s.config.KeyField), keyval)
+			sqlStr += fmt.Sprintf(" WHERE %s = %v;", quoteIdentifier(drv, s.config.KeyField), keyval)
 		}
 	case ast.RowkindDelete:
 		keyval, ok := data[s.config.KeyField]
 		if !ok {
 			return fmt.Errorf("field %s does not exist in data %v", s.config.KeyField, data)
 		}
+		drv := s.config.driver
 		if ksv, ok := keyval.(string); ok {
-			sqlStr = fmt.Sprintf("DELETE FROM %s WHERE %s = %s;", quoteIdentifier(table), quoteIdentifier(s.config.KeyField), quoteSQLString(ksv))
+			sqlStr = fmt.Sprintf("DELETE FROM %s WHERE %s = %s;", quoteTableName(drv, table), quoteIdentifier(drv, s.config.KeyField), quoteSQLString(ksv))
 		} else {
-			sqlStr = fmt.Sprintf("DELETE FROM %s WHERE %s = %v;", quoteIdentifier(table), quoteIdentifier(s.config.KeyField), keyval)
+			sqlStr = fmt.Sprintf("DELETE FROM %s WHERE %s = %v;", quoteTableName(drv, table), quoteIdentifier(drv, s.config.KeyField), keyval)
 		}
 	default:
 		return fmt.Errorf("invalid rowkind %s", rowkind)
@@ -347,12 +383,12 @@ func (s *SQLSinkConnector) extractKeys(item map[string]any) []string {
 	return keys
 }
 
-func buildInsertSQL(table string, keys []string, values []string) string {
+func buildInsertSQL(driver, table string, keys []string, values []string) string {
 	quotedKeys := make([]string, len(keys))
 	for i, k := range keys {
-		quotedKeys[i] = quoteIdentifier(k)
+		quotedKeys[i] = quoteIdentifier(driver, k)
 	}
-	sql := fmt.Sprintf("INSERT INTO %s (%s) values ", quoteIdentifier(table), strings.Join(quotedKeys, ",")) + strings.Join(values, ",") + ";"
+	sql := fmt.Sprintf("INSERT INTO %s (%s) values ", quoteTableName(driver, table), strings.Join(quotedKeys, ",")) + strings.Join(values, ",") + ";"
 	return sql
 }
 
