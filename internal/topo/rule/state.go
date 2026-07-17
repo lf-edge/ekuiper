@@ -55,16 +55,28 @@ type State struct {
 	stoppedMetrics []any
 	// State machine
 	sm machine.StateMachine
+	// deleted prevents a State removed from the registry from being started by
+	// a goroutine that retained the old pointer.
+	deleted bool
 }
 
 // NewState provision a state instance only.
 // Do not plan or run as before. If the Rule is not triggered, do not plan or run.
 // When called by recover Rule, expect
 func NewState(rule *def.Rule, updateTriggerFunc func(string, bool)) *State {
+	return newState(rule, updateTriggerFunc, machine.Stopped)
+}
+
+// NewLoadedState creates a registered rule that is waiting for deferred startup planning.
+func NewLoadedState(rule *def.Rule, updateTriggerFunc func(string, bool)) *State {
+	return newState(rule, updateTriggerFunc, machine.Loaded)
+}
+
+func newState(rule *def.Rule, updateTriggerFunc func(string, bool), initialState machine.RunState) *State {
 	contextLogger := conf.Log.WithField("Rule", rule.Id)
 	return &State{
 		Rule:          rule,
-		sm:            machine.NewStateMachine(contextLogger),
+		sm:            machine.NewStateMachine(contextLogger, initialState),
 		logger:        contextLogger,
 		updateTrigger: updateTriggerFunc,
 	}
@@ -94,12 +106,18 @@ func (s *State) SetRule(r *def.Rule) {
 func (s *State) ValidateAndRun(newRule *def.Rule) error {
 	s.ruleLock.Lock()
 	defer s.ruleLock.Unlock()
+	if s.deleted {
+		return s.deletedError()
+	}
 	return s.doValidateAndRun(newRule)
 }
 
 func (s *State) Bootstrap() error {
 	s.ruleLock.Lock()
 	defer s.ruleLock.Unlock()
+	if s.deleted {
+		return s.deletedError()
+	}
 	s.Rule.Triggered = true
 	return s.doValidateAndRun(s.Rule)
 }
@@ -114,11 +132,30 @@ func (s *State) Start() error {
 	}
 	s.ruleLock.Lock()
 	defer s.ruleLock.Unlock()
+	if s.deleted {
+		return s.deletedError()
+	}
 	// Bootstrap may have completed the start while this call was waiting for ruleLock.
 	if s.sm.CurrentState() != machine.Starting {
 		return nil
 	}
 	// delegate to rule patrol checker
+	if s.Rule.IsScheduleRule() {
+		s.transitState(machine.ScheduledStop, "")
+		return nil
+	}
+	return s.doStart()
+}
+
+// StartIfLoaded plans and starts a recovered rule only while it is still in
+// Loaded state. The rule lock makes this decision atomic with delete, update,
+// and explicit API start operations.
+func (s *State) StartIfLoaded() error {
+	s.ruleLock.Lock()
+	defer s.ruleLock.Unlock()
+	if s.deleted || s.sm.TriggerStartIfLoaded() {
+		return nil
+	}
 	if s.Rule.IsScheduleRule() {
 		s.transitState(machine.ScheduledStop, "")
 		return nil
@@ -133,6 +170,9 @@ func (s *State) ScheduleStart() error {
 	}
 	s.ruleLock.Lock()
 	defer s.ruleLock.Unlock()
+	if s.deleted {
+		return s.deletedError()
+	}
 	// Bootstrap may have completed the start while this call was waiting for ruleLock.
 	if s.sm.CurrentState() != machine.Starting {
 		return nil
@@ -174,11 +214,16 @@ func (s *State) StopWithLastWill(msg string) {
 func (s *State) Delete() {
 	s.ruleLock.Lock()
 	defer s.ruleLock.Unlock()
+	s.deleted = true
 	if s.topology != nil {
 		s.topology.Cancel()
 		s.topology.RemoveMetrics()
 		s.topology = nil
 	}
+}
+
+func (s *State) deletedError() error {
+	return errorx.NewWithCode(errorx.NOT_FOUND, fmt.Sprintf("Rule %s has been deleted", s.Rule.Id))
 }
 
 func (s *State) GetState() machine.RunState {

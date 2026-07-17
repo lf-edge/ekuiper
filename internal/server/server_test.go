@@ -1,4 +1,4 @@
-// Copyright 2023-2024 EMQ Technologies Co., Ltd.
+// Copyright 2023-2026 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package server
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"strconv"
 	"testing"
 	"time"
@@ -25,6 +26,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/schedule"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/rule"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/rule/machine"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
@@ -202,4 +204,30 @@ func TestRunScheduleRuleChecker(t *testing.T) {
 	time.Sleep(1 * time.Second)
 	cancel()
 	<-done
+}
+
+func TestRestAvailableWithLoadedRules(t *testing.T) {
+	loaded := rule.NewLoadedState(def.GetDefaultRule("restLoaded", "select * from demo"), func(string, bool) {})
+	defer loaded.Delete()
+
+	srv := &http.Server{
+		Addr: "127.0.0.1:0",
+		Handler: http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(http.StatusOK)
+		}),
+	}
+	ln, err := startRestService(srv)
+	require.NoError(t, err)
+	defer func() {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		defer cancel()
+		require.NoError(t, srv.Shutdown(ctx))
+	}()
+
+	client := &http.Client{Timeout: time.Second}
+	resp, err := client.Get("http://" + ln.Addr().String() + "/ping")
+	require.NoError(t, err)
+	defer resp.Body.Close()
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+	require.Equal(t, machine.Loaded, loaded.GetState())
 }

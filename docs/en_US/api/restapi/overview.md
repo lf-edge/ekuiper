@@ -22,6 +22,11 @@ GET http://localhost:9081
 
 ## ping
 
+The endpoint returns HTTP 200 when the REST management API is available. It
+does not indicate that all persisted rules have finished startup recovery.
+During server startup, triggered rules may still have the `loaded` or
+`starting` status while their topologies are planned in the background.
+
 ```shell
 GET http://localhost:9081/ping
 ```

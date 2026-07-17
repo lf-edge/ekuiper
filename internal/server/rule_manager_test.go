@@ -1,4 +1,4 @@
-// Copyright 2024-2025 EMQ Technologies Co., Ltd.
+// Copyright 2024-2026 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,12 +15,16 @@
 package server
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
+	"github.com/lf-edge/ekuiper/v2/internal/processor"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/rule"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/rule/machine"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 )
 
@@ -52,6 +56,56 @@ func TestErrors(t *testing.T) {
 	registry.register("test", rule.NewState(def.GetDefaultRule("testErrors", "select * from demo"), func(string, bool) {}))
 	err = registry.StartRule("test")
 	assert.EqualError(t, err, "fail to get stream demo, please check if stream is created")
+}
+
+func TestLoadRule(t *testing.T) {
+	rr := &RuleRegistry{internal: make(map[string]*rule.State)}
+	triggered := def.GetDefaultRule("loadedRule", "select * from demo")
+	triggered.Triggered = true
+	stopped := def.GetDefaultRule("stoppedRule", "select * from demo")
+	stopped.Triggered = false
+
+	require.Contains(t, rr.LoadRule(triggered), "pending start")
+	require.Contains(t, rr.LoadRule(stopped), "was stopped")
+
+	loadedState, ok := rr.load(triggered.Id)
+	require.True(t, ok)
+	require.Equal(t, machine.Loaded, loadedState.GetState())
+	status, err := rr.GetRuleStatusV2(triggered.Id)
+	require.NoError(t, err)
+	require.Equal(t, "loaded", status["status"])
+	stoppedState, ok := rr.load(stopped.Id)
+	require.True(t, ok)
+	require.Equal(t, machine.Stopped, stoppedState.GetState())
+	loadedState.Delete()
+	stoppedState.Delete()
+}
+
+func TestStartLoadedRules(t *testing.T) {
+	sp := processor.NewStreamProcessor()
+	_, err := sp.ExecStmt(`CREATE STREAM recoveryDemo () WITH (FORMAT="JSON", TYPE="memory", DATASOURCE="test")`)
+	require.NoError(t, err)
+	defer sp.ExecStmt(`DROP STREAM recoveryDemo`)
+
+	rr := &RuleRegistry{internal: make(map[string]*rule.State)}
+	invalid := rule.NewLoadedState(def.GetDefaultRule("invalidLoaded", "select * from missingRecoveryStream"), func(string, bool) {})
+	valid := rule.NewLoadedState(def.GetDefaultRule("validLoaded", "select * from recoveryDemo"), func(string, bool) {})
+	defer invalid.Delete()
+	defer valid.Delete()
+	rr.register("invalidLoaded", invalid)
+	rr.register("validLoaded", valid)
+
+	startLoadedRules(context.Background(), rr, []string{"invalidLoaded", "validLoaded"})
+	require.Equal(t, machine.StoppedByErr, invalid.GetState())
+	require.Equal(t, machine.Running, valid.GetState())
+
+	canceled := rule.NewLoadedState(def.GetDefaultRule("canceledLoaded", "select * from recoveryDemo"), func(string, bool) {})
+	defer canceled.Delete()
+	rr.register("canceledLoaded", canceled)
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	startLoadedRules(ctx, rr, []string{"canceledLoaded"})
+	require.Equal(t, machine.Loaded, canceled.GetState())
 }
 
 func TestCoverage(t *testing.T) {

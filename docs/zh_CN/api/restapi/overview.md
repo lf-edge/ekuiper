@@ -20,6 +20,8 @@ GET http://localhost:9081
 
 ## ping
 
+当 REST 管理接口可用时，该接口返回 HTTP 200。它不表示所有持久化规则均已完成启动恢复。服务器启动期间，已触发的规则会在后台依次完成拓扑规划，其状态可能暂时为 `loaded` 或 `starting`。
+
 ```shell
 GET http://localhost:9081/ping
 ```

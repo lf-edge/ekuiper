@@ -161,10 +161,19 @@ POST http://localhost:9081/rules/{id}/restart
 
 ## get the status of a rule
 
-The command is used to get the status of the rule. If the rule is running, the metrics will be retrieved realtime. The status can be
+The command is used to get the status of the rule. If the rule is running, the metrics will be retrieved in real time. The `status` field can be:
 
-- $metrics
-- stopped: $reason
+- `loaded`: the rule is registered and waiting for background topology planning during server startup
+- `starting`: the rule is being planned and started
+- `running`: the rule is running; metric fields are populated in the response
+- `stopping`: the rule is being stopped
+- `stopped`: the rule was stopped intentionally or has not been started
+- `stopped by error`: the rule stopped because of a planning or runtime error
+- `stopped: waiting for next schedule.`: a scheduled rule is waiting for its next run
+
+The REST API becomes available before persisted triggered rules are planned. Clients that need to wait for startup recovery can query `GET /rules` until no rule has the `loaded` or `starting` status. A `stopped by error` status means that the startup attempt finished but failed.
+
+Topology and sink-schema endpoints require a planned rule and may temporarily return a not-started error while its status is `loaded` or `starting`.
 
 ```shell
 GET http://localhost:9081/rules/{id}/status

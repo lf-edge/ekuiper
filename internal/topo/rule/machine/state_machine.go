@@ -28,6 +28,7 @@ const (
 	Stopping
 	ScheduledStop
 	StoppedByErr
+	Loaded
 )
 
 var StateName = map[RunState]string{
@@ -37,6 +38,7 @@ var StateName = map[RunState]string{
 	Stopping:      "stopping",
 	ScheduledStop: "stopped: waiting for next schedule.",
 	StoppedByErr:  "stopped by error",
+	Loaded:        "loaded",
 }
 
 type StateMachine struct {
@@ -50,10 +52,10 @@ type StateMachine struct {
 	logger             api.Logger
 }
 
-func NewStateMachine(logger api.Logger) StateMachine {
+func NewStateMachine(logger api.Logger, initialState RunState) StateMachine {
 	return StateMachine{
 		actionQ:      make([]ActionSignal, 0),
-		currentState: Stopped,
+		currentState: initialState,
 		logger:       logger,
 	}
 }
@@ -82,7 +84,7 @@ func (s *StateMachine) TriggerAction(action ActionSignal) bool {
 			s.actionQ = append(s.actionQ, ActionSignalStart)
 			s.logger.Infof("defer start action to action queue because current RunState is stopping")
 			return true
-		case Stopped, StoppedByErr:
+		case Stopped, StoppedByErr, Loaded:
 			s.currentState = Starting
 			return false
 		}
@@ -95,13 +97,13 @@ func (s *StateMachine) TriggerAction(action ActionSignal) bool {
 			s.actionQ = append(s.actionQ, action)
 			s.logger.Infof("defer stop action to action queue because current RunState is starting")
 			return true
-		case Running, ScheduledStop: // do stop
+		case Running, ScheduledStop, Loaded: // do stop
 			s.currentState = Stopping
 			return false
 		}
 	case ActionSignalScheduledStart:
 		switch ss {
-		case ScheduledStop, Stopped, StoppedByErr:
+		case ScheduledStop, Stopped, StoppedByErr, Loaded:
 			s.currentState = Starting
 			return false
 		case Starting, Running:
@@ -114,7 +116,7 @@ func (s *StateMachine) TriggerAction(action ActionSignal) bool {
 		}
 	case ActionSignalScheduledStop:
 		switch ss {
-		case Running:
+		case Running, Loaded:
 			s.currentState = Stopping
 			return false
 		case ScheduledStop, Stopped, StoppedByErr:
@@ -126,6 +128,18 @@ func (s *StateMachine) TriggerAction(action ActionSignal) bool {
 			return true
 		}
 	}
+	return false
+}
+
+// TriggerStartIfLoaded atomically changes Loaded to Starting. It returns true
+// when another lifecycle operation has already moved the rule out of Loaded.
+func (s *StateMachine) TriggerStartIfLoaded() bool {
+	s.Lock()
+	defer s.Unlock()
+	if s.currentState != Loaded {
+		return true
+	}
+	s.currentState = Starting
 	return false
 }
 

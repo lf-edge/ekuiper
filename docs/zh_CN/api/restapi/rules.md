@@ -156,10 +156,19 @@ POST http://localhost:9081/rules/{id}/restart
 
 ## 获取规则的状态
 
-该命令用于获取规则的状态。 如果规则正在运行，则将实时检索状态指标。 状态可以是：
+该命令用于获取规则状态。规则运行时，响应会包含实时指标。`status` 字段可能为：
 
-- $metrics
-- 停止： $reason
+- `loaded`：服务器启动期间，规则已注册并等待后台拓扑规划
+- `starting`：规则正在规划和启动
+- `running`：规则正在运行，响应包含指标字段
+- `stopping`：规则正在停止
+- `stopped`：规则被主动停止或尚未启动
+- `stopped by error`：规则因规划错误或运行时错误停止
+- `stopped: waiting for next schedule.`：定时规则正在等待下一次运行
+
+REST 管理接口会在持久化的 triggered 规则完成规划前可用。需要等待启动恢复完成的客户端可查询 `GET /rules`，直到所有规则均不再处于 `loaded` 或 `starting` 状态。`stopped by error` 表示该规则的启动尝试已经结束，但启动失败。
+
+拓扑和 sink schema 接口依赖已经完成规划的规则，因此规则处于 `loaded` 或 `starting` 状态时，这些接口可能暂时返回规则尚未启动的错误。
 
 ```shell
 GET http://localhost:9081/rules/{id}/status

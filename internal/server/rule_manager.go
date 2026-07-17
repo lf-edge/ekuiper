@@ -1,4 +1,4 @@
-// Copyright 2021-2025 EMQ Technologies Co., Ltd.
+// Copyright 2021-2026 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -177,6 +177,27 @@ func (rr *RuleRegistry) RecoverRule(r *def.Rule) string {
 		}
 	}
 	return fmt.Sprintf("Rule %s was started.", r.Id)
+}
+
+// LoadRule registers a recovered rule without planning it. Triggered rules
+// enter Loaded state until the startup recovery worker processes them.
+func (rr *RuleRegistry) LoadRule(r *def.Rule) string {
+	triggerFunc := func(id string, b bool) {
+		if err := rr.updateTrigger(id, b); err != nil {
+			conf.Log.Warnf("update trigger error: %v", err)
+		}
+	}
+	var rs *rule.State
+	if r.Triggered {
+		rs = rule.NewLoadedState(r, triggerFunc)
+	} else {
+		rs = rule.NewState(r, triggerFunc)
+	}
+	rr.register(r.Id, rs)
+	if r.Triggered {
+		return fmt.Sprintf("Rule %s loaded (pending start).", r.Id)
+	}
+	return fmt.Sprintf("Rule %s was stopped.", r.Id)
 }
 
 // UpsertRule validates the new rule, then update the db, then restart the rule

@@ -330,3 +330,110 @@ func TestStartRechecksStateAfterLock(t *testing.T) {
 		})
 	}
 }
+
+func TestLoadedStateLifecycle(t *testing.T) {
+	sp := processor.NewStreamProcessor()
+	_, err := sp.ExecStmt(`CREATE STREAM loadedDemo () WITH (FORMAT="JSON", TYPE="memory", DATASOURCE="test")`)
+	require.NoError(t, err)
+	defer sp.ExecStmt(`DROP STREAM loadedDemo`)
+
+	t.Run("status and deferred start", func(t *testing.T) {
+		st := NewLoadedState(def.GetDefaultRule("loadedStart", "select * from loadedDemo"), func(string, bool) {})
+		defer st.Delete()
+		require.Equal(t, machine.Loaded, st.GetState())
+		require.Contains(t, st.GetStatusMessage(), `"status": "loaded"`)
+		require.Nil(t, st.topology)
+
+		require.NoError(t, st.StartIfLoaded())
+		require.Equal(t, machine.Running, st.GetState())
+		require.NotNil(t, st.topology)
+	})
+
+	t.Run("stop prevents deferred start", func(t *testing.T) {
+		st := NewLoadedState(def.GetDefaultRule("loadedStop", "select * from loadedDemo"), func(string, bool) {})
+		defer st.Delete()
+		st.Stop()
+		require.Equal(t, machine.Stopped, st.GetState())
+
+		require.NoError(t, st.StartIfLoaded())
+		require.Equal(t, machine.Stopped, st.GetState())
+		require.Nil(t, st.topology)
+	})
+
+	t.Run("concurrent stop wins before planning", func(t *testing.T) {
+		st := NewLoadedState(def.GetDefaultRule("loadedConcurrentStop", "select * from loadedDemo"), func(string, bool) {})
+		defer st.Delete()
+		st.ruleLock.Lock()
+		locked := true
+		defer func() {
+			if locked {
+				st.ruleLock.Unlock()
+			}
+		}()
+		stopDone := make(chan struct{})
+		go func() {
+			defer close(stopDone)
+			st.Stop()
+		}()
+		require.Eventually(t, func() bool {
+			return st.GetState() == machine.Stopping
+		}, time.Second, time.Millisecond)
+		startDone := make(chan error, 1)
+		go func() {
+			startDone <- st.StartIfLoaded()
+		}()
+		st.ruleLock.Unlock()
+		locked = false
+
+		<-stopDone
+		require.NoError(t, <-startDone)
+		require.Equal(t, machine.Stopped, st.GetState())
+		require.Nil(t, st.topology)
+	})
+
+	t.Run("delete invalidates retained pointer", func(t *testing.T) {
+		st := NewLoadedState(def.GetDefaultRule("loadedDelete", "select * from loadedDemo"), func(string, bool) {})
+		st.Delete()
+		require.True(t, st.deleted)
+
+		require.NoError(t, st.StartIfLoaded())
+		require.Nil(t, st.topology)
+		require.ErrorContains(t, st.Bootstrap(), "has been deleted")
+	})
+
+	t.Run("explicit start wins", func(t *testing.T) {
+		st := NewLoadedState(def.GetDefaultRule("loadedExplicit", "select * from loadedDemo"), func(string, bool) {})
+		defer st.Delete()
+		require.NoError(t, st.Bootstrap())
+		require.Equal(t, machine.Running, st.GetState())
+		topology := st.topology
+
+		require.NoError(t, st.StartIfLoaded())
+		require.Same(t, topology, st.topology)
+	})
+
+	t.Run("update wins", func(t *testing.T) {
+		st := NewLoadedState(def.GetDefaultRule("loadedUpdate", "select * from loadedDemo"), func(string, bool) {})
+		defer st.Delete()
+		updated := def.GetDefaultRule("loadedUpdate", "select * from loadedDemo where true")
+		updated.Triggered = true
+		require.NoError(t, st.ValidateAndRun(updated))
+		require.Equal(t, machine.Running, st.GetState())
+		topology := st.topology
+
+		require.NoError(t, st.StartIfLoaded())
+		require.Same(t, topology, st.topology)
+	})
+
+	t.Run("scheduled rule waits for patrol", func(t *testing.T) {
+		r := def.GetDefaultRule("loadedSchedule", "select * from loadedDemo")
+		r.Options.Cron = "* * * * *"
+		r.Options.Duration = "2s"
+		st := NewLoadedState(r, func(string, bool) {})
+		defer st.Delete()
+
+		require.NoError(t, st.StartIfLoaded())
+		require.Equal(t, machine.ScheduledStop, st.GetState())
+		require.Nil(t, st.topology)
+	})
+}

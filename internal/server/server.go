@@ -1,4 +1,4 @@
-// Copyright 2022-2025 EMQ Technologies Co., Ltd.
+// Copyright 2022-2026 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -49,6 +49,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cert"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
+	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 	"github.com/lf-edge/ekuiper/v2/pkg/model"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 	"github.com/lf-edge/ekuiper/v2/pkg/tracer"
@@ -75,6 +76,47 @@ var newNetListener = newTcpListener
 func newTcpListener(addr string, logger *logrus.Logger) (net.Listener, error) {
 	logger.Info("using ListenMode 'http'")
 	return net.Listen("tcp", addr)
+}
+
+func startLoadedRules(ctx context.Context, rr *RuleRegistry, names []string) {
+	logger.Info("Starting loaded rules in background")
+	for _, name := range names {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+		}
+		rs, ok := rr.load(name)
+		if !ok {
+			continue
+		}
+		if panicOrError := infra.SafeRun(func() error {
+			return rs.StartIfLoaded()
+		}); panicOrError != nil {
+			logger.Errorf("Rule %s start failed: %s", name, panicOrError)
+		}
+	}
+}
+
+// startRestService binds the REST socket before returning, then serves it in
+// the background. Callers may start deferred work only after this succeeds.
+func startRestService(srvRest *http.Server) (net.Listener, error) {
+	ln, err := newNetListener(srvRest.Addr, logger)
+	if err != nil {
+		return nil, err
+	}
+	go func() {
+		var serveErr error
+		if conf.Config.Basic.RestTls == nil {
+			serveErr = srvRest.Serve(ln)
+		} else {
+			serveErr = srvRest.ServeTLS(ln, conf.Config.Basic.RestTls.Certfile, conf.Config.Basic.RestTls.Keyfile)
+		}
+		if serveErr != nil && serveErr != http.ErrServerClosed {
+			logger.Fatal("Error serving rest service: ", serveErr)
+		}
+	}()
+	return ln, nil
 }
 
 func stopEKuiper() {
@@ -261,44 +303,44 @@ func StartUp(Version string) {
 	registry = &RuleRegistry{internal: make(map[string]*rule.State)}
 	// Start lookup tables
 	streamProcessor.RecoverLookupTable()
-	// Start rules
+	// Load rules into the registry without planning them.
+	var triggeredRules []string
 	if rules, err := ruleProcessor.GetAllRules(); err != nil {
-		logger.Infof("Start rules error: %s", err)
+		logger.Infof("Load rules error: %s", err)
 	} else {
-		logger.Info("Starting rules")
-		var reply string
+		logger.Info("Loading rules")
 		for _, name := range rules {
-			rule, err := ruleProcessor.GetRuleById(name)
+			r, err := ruleProcessor.GetRuleById(name)
 			if err != nil {
 				logger.Error(err)
 				continue
 			}
-			reply = registry.RecoverRule(rule)
-			if len(reply) != 0 {
+			if reply := registry.LoadRule(r); len(reply) != 0 {
 				logger.Info(reply)
+			}
+			if r.Triggered {
+				triggeredRules = append(triggeredRules, r.Id)
 			}
 		}
 	}
-	go runScheduleRuleChecker(serverCtx)
 	metrics.InitMetricsDumpJob(serverCtx)
 	async.InitManager()
 
 	// Start rest service
+	stopSignal = make(chan struct{})
 	srvRest := createRestServer(conf.Config.Basic.RestIp, conf.Config.Basic.RestPort, conf.Config.Basic.Authentication)
+	_, listenErr := startRestService(srvRest)
+	if listenErr != nil {
+		panic(listenErr)
+	}
+
+	// The REST socket is bound before any deferred planning starts.
+	go runScheduleRuleChecker(serverCtx)
+	var ruleRecoveryWg sync.WaitGroup
+	ruleRecoveryWg.Add(1)
 	go func() {
-		var err error
-		ln, listenErr := newNetListener(srvRest.Addr, logger)
-		if listenErr != nil {
-			panic(listenErr)
-		}
-		if conf.Config.Basic.RestTls == nil {
-			err = srvRest.Serve(ln)
-		} else {
-			err = srvRest.ServeTLS(ln, conf.Config.Basic.RestTls.Certfile, conf.Config.Basic.RestTls.Keyfile)
-		}
-		if err != nil && err != http.ErrServerClosed {
-			logger.Fatal("Error serving rest service: ", err)
-		}
+		defer ruleRecoveryWg.Done()
+		startLoadedRules(serverCtx, registry, triggeredRules)
 	}()
 
 	// Start extend services
@@ -314,7 +356,6 @@ func StartUp(Version string) {
 	if conf.Config.Basic.RestTls != nil {
 		restHttpType = "https"
 	}
-	stopSignal = make(chan struct{})
 	msg := fmt.Sprintf("Serving kuiper (version - %s) on port %d, and restful api on %s://%s.", Version, conf.Config.Basic.Port, restHttpType, cast.JoinHostPortInt(conf.Config.Basic.RestIp, conf.Config.Basic.RestPort))
 	logger.Info(msg)
 	fmt.Println(msg)
@@ -343,6 +384,7 @@ func StartUp(Version string) {
 			logger.Errorf("rest server shutdown error: %v", err)
 		}
 		logger.Info("rest server successfully shutdown.")
+		ruleRecoveryWg.Wait()
 		wg := sync.WaitGroup{}
 		wg.Add(1)
 		go func() {
