@@ -18,7 +18,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"go.nanomsg.org/mangos/v3"
@@ -96,7 +95,6 @@ func (s *source) Subscribe(ctx api.StreamContext, ingest api.BytesIngest, ingest
 	ctx.GetLogger().Infof("neuron source receiving loop started")
 	go func() {
 		err := infra.SafeRun(func() error {
-			connected := true
 			for {
 				select {
 				case <-ctx.Done():
@@ -109,18 +107,13 @@ func (s *source) Subscribe(ctx api.StreamContext, ingest api.BytesIngest, ingest
 					s.mu.RUnlock()
 					if cli != nil {
 						if msg, err := cli.Recv(); err == nil {
-							connected = true
 							ctx.GetLogger().Debugf("nng received message %s", string(msg))
 							rawData, meta := extractTraceMeta(ctx, msg)
 							ingest(ctx, rawData, meta, timex.GetNow())
 						} else if err == mangos.ErrClosed {
-							if connected {
-								ctx.GetLogger().Infof("neuron connection closed, retry after 1 second")
-								ingestErr(ctx, errors.New("neuron connection closed"))
-								time.Sleep(1 * time.Second)
-								connected = false
-							}
-							continue
+							ctx.GetLogger().Infof("neuron connection closed, stopping receive loop")
+							ingestErr(ctx, errors.New("neuron connection closed"))
+							return nil
 						}
 					}
 				}

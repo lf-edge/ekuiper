@@ -15,18 +15,32 @@
 package neuron
 
 import (
+	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.nanomsg.org/mangos/v3"
 	_ "go.nanomsg.org/mangos/v3/transport/ipc"
 
 	"github.com/lf-edge/ekuiper/v2/pkg/mock"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/model"
+	"github.com/lf-edge/ekuiper/v2/pkg/nng"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
+
+type closedSocket struct {
+	mangos.Socket
+	calls atomic.Int32
+}
+
+func (s *closedSocket) Recv() ([]byte, error) {
+	s.calls.Add(1)
+	return nil, mangos.ErrClosed
+}
 
 func TestRun(t *testing.T) {
 	exp := []api.MessageTuple{
@@ -43,6 +57,27 @@ func TestRun(t *testing.T) {
 	}, exp, func() {
 		// do nothing
 	})
+}
+
+func TestSubscribeStopsAfterSocketClosed(t *testing.T) {
+	ctx, cancel := mockContext.NewMockContext("neuronClosed", "source").WithCancel()
+	defer cancel()
+	sock := &closedSocket{}
+	s := &source{c: &nng.SockConf{}, cli: &nng.Sock{Socket: sock}}
+	errCh := make(chan error, 1)
+
+	require.NoError(t, s.Subscribe(ctx, func(api.StreamContext, []byte, map[string]any, time.Time) {}, func(_ api.StreamContext, err error) {
+		errCh <- err
+	}))
+	select {
+	case err := <-errCh:
+		require.EqualError(t, err, "neuron connection closed")
+	case <-time.After(time.Second):
+		t.Fatal("closed socket error was not reported")
+	}
+	require.Never(t, func() bool {
+		return sock.calls.Load() > 1
+	}, 1200*time.Millisecond, 20*time.Millisecond)
 }
 
 func TestProvision(t *testing.T) {
