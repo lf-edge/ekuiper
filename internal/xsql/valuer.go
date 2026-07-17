@@ -1,4 +1,4 @@
-// Copyright 2022-2025 EMQ Technologies Co., Ltd.
+// Copyright 2022-2026 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -1245,27 +1245,31 @@ func invalidOpError(lhs interface{}, op ast.Token, rhs interface{}) error {
 }
 
 func convertNum(para interface{}) interface{} {
-	if isInt(para) {
-		// Already check type of para so that there will be no error, just ignore error
-		para, _ = cast.ToInt64(para, cast.CONVERT_SAMEKIND)
-	} else if isFloat(para) {
-		para, _ = cast.ToFloat64(para, cast.CONVERT_SAMEKIND)
+	switch v := para.(type) {
+	case int:
+		return int64(v)
+	case int8:
+		return int64(v)
+	case int16:
+		return int64(v)
+	case int32:
+		return int64(v)
+	case int64:
+		return v
+	case uint:
+		return int64(v)
+	case uint8:
+		return int64(v)
+	case uint16:
+		return int64(v)
+	case uint32:
+		return int64(v)
+	case uint64:
+		return int64(v)
+	case float32:
+		return float64(v)
+	case float64:
+		return v
 	}
 	return para
-}
-
-func isInt(para interface{}) bool {
-	switch para.(type) {
-	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
-		return true
-	}
-	return false
-}
-
-func isFloat(para interface{}) bool {
-	switch para.(type) {
-	case float32, float64:
-		return true
-	}
-	return false
 }
