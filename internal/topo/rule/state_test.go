@@ -1,4 +1,4 @@
-// Copyright 2022-2025 EMQ Technologies Co., Ltd.
+// Copyright 2022-2026 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/schedule"
@@ -277,4 +278,55 @@ func sendAction(st *State, a machine.ActionSignal) {
 
 func TestRuleRestart(t *testing.T) {
 	// TODO added later
+}
+
+func TestStartRechecksStateAfterLock(t *testing.T) {
+	tests := []struct {
+		name  string
+		start func(*State) error
+	}{
+		{
+			name: "start",
+			start: func(st *State) error {
+				return st.Start()
+			},
+		},
+		{
+			name: "scheduled start",
+			start: func(st *State) error {
+				return st.ScheduleStart()
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			st := NewState(def.GetDefaultRule("testLockRecheck", "select * from demo"), func(string, bool) {})
+
+			// Hold ruleLock so the start operation stops after changing the state to Starting.
+			st.ruleLock.Lock()
+			locked := true
+			defer func() {
+				if locked {
+					st.ruleLock.Unlock()
+				}
+				st.Delete()
+			}()
+			done := make(chan error, 1)
+			go func() {
+				done <- tt.start(st)
+			}()
+			require.Eventually(t, func() bool {
+				return st.GetState() == machine.Starting
+			}, time.Second, time.Millisecond)
+
+			// Model Bootstrap winning ruleLock and completing the API start first.
+			st.transitState(machine.Running, "")
+			st.ruleLock.Unlock()
+			locked = false
+
+			require.NoError(t, <-done)
+			assert.Equal(t, machine.Running, st.GetState())
+			assert.Nil(t, st.topology, "the stale start operation must not plan or launch the topology")
+		})
+	}
 }

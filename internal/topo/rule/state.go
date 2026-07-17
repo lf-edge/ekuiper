@@ -1,4 +1,4 @@
-// Copyright 2024-2025 EMQ Technologies Co., Ltd.
+// Copyright 2024-2026 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -114,6 +114,10 @@ func (s *State) Start() error {
 	}
 	s.ruleLock.Lock()
 	defer s.ruleLock.Unlock()
+	// Bootstrap may have completed the start while this call was waiting for ruleLock.
+	if s.sm.CurrentState() != machine.Starting {
+		return nil
+	}
 	// delegate to rule patrol checker
 	if s.Rule.IsScheduleRule() {
 		s.transitState(machine.ScheduledStop, "")
@@ -129,6 +133,10 @@ func (s *State) ScheduleStart() error {
 	}
 	s.ruleLock.Lock()
 	defer s.ruleLock.Unlock()
+	// Bootstrap may have completed the start while this call was waiting for ruleLock.
+	if s.sm.CurrentState() != machine.Starting {
+		return nil
+	}
 	// doStart trigger the Rule run. If no trigger error, the Rule will run async and control the state by itself
 	s.logger.Infof("schedule to run rule %s", s.Rule.Id)
 	return s.doStart()
