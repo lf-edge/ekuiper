@@ -1,4 +1,4 @@
-// Copyright 2022-2025 EMQ Technologies Co., Ltd.
+// Copyright 2022-2026 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -3561,4 +3561,72 @@ func TestProjectSliceInvisibleManualExprField(t *testing.T) {
 	require.Equal(t, &xsql.SliceTuple{
 		SourceContent: model.SliceVal{int64(3)},
 	}, result)
+}
+
+func TestProjectClearsCachedValuesAfterError(t *testing.T) {
+	contextLogger := conf.Log.WithField("rule", "TestProjectClearsCachedValuesAfterError")
+	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
+	pp := &ProjectOp{
+		ExprFields: ast.Fields{
+			{Name: "carry", Expr: &ast.FieldRef{Name: "carry"}},
+			{
+				Name: "calculated",
+				Expr: &ast.BinaryExpr{
+					OP:  ast.MUL,
+					LHS: &ast.FieldRef{Name: "value"},
+					RHS: &ast.IntegerLiteral{Val: 2},
+				},
+			},
+		},
+	}
+	fv, afv := xsql.NewFunctionValuersForOp(nil)
+
+	failed := &xsql.Tuple{
+		Emitter: "test",
+		Message: xsql.Message{"carry": "stale", "value": "not-a-number"},
+	}
+	result := pp.Apply(ctx, failed, fv, afv)
+	require.Error(t, result.(error))
+
+	succeeded := &xsql.Tuple{
+		Emitter: "test",
+		Message: xsql.Message{"value": int64(2)},
+	}
+	result = pp.Apply(ctx, succeeded, fv, afv)
+	require.Same(t, succeeded, result)
+	require.Equal(t, map[string]any{"calculated": int64(4)}, succeeded.ToMap())
+}
+
+func TestProjectClearsCachedAliasesAfterError(t *testing.T) {
+	contextLogger := conf.Log.WithField("rule", "TestProjectClearsCachedAliasesAfterError")
+	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
+	pp := &ProjectOp{
+		AliasFields: ast.Fields{
+			{AName: "carry", Expr: &ast.FieldRef{Name: "carry"}},
+			{
+				AName: "calculated",
+				Expr: &ast.BinaryExpr{
+					OP:  ast.MUL,
+					LHS: &ast.FieldRef{Name: "value"},
+					RHS: &ast.IntegerLiteral{Val: 2},
+				},
+			},
+		},
+	}
+	fv, afv := xsql.NewFunctionValuersForOp(nil)
+
+	failed := &xsql.Tuple{
+		Emitter: "test",
+		Message: xsql.Message{"carry": "stale", "value": "not-a-number"},
+	}
+	result := pp.Apply(ctx, failed, fv, afv)
+	require.Error(t, result.(error))
+
+	succeeded := &xsql.Tuple{
+		Emitter: "test",
+		Message: xsql.Message{"value": int64(2)},
+	}
+	result = pp.Apply(ctx, succeeded, fv, afv)
+	require.Same(t, succeeded, result)
+	require.Equal(t, map[string]any{"calculated": int64(4)}, succeeded.ToMap())
 }

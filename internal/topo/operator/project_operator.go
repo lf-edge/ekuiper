@@ -1,4 +1,4 @@
-// Copyright 2022-2025 EMQ Technologies Co., Ltd.
+// Copyright 2022-2026 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -203,6 +203,8 @@ func (pp *ProjectOp) project(row xsql.RawRow, ve *xsql.ValuerEval) error {
 		// Calculate all fields then pick the needed ones
 		// To make sure all calculations are run with the same context (e.g. alias values)
 		// Do not set value during calculations
+		pp.kvs = pp.kvs[:0]
+		pp.alias = pp.alias[:0]
 
 		for _, f := range pp.ExprFields {
 			if f.Invisible {
@@ -240,11 +242,9 @@ func (pp *ProjectOp) project(row xsql.RawRow, ve *xsql.ValuerEval) error {
 		for i := 0; i < len(pp.kvs); i += 2 {
 			row.Set(pp.kvs[i].(string), pp.kvs[i+1])
 		}
-		pp.kvs = pp.kvs[:0]
 		for i := 0; i < len(pp.alias); i += 2 {
 			row.AppendAlias(pp.alias[i].(string), pp.alias[i+1])
 		}
-		pp.alias = pp.alias[:0]
 	}
 	return nil
 }
