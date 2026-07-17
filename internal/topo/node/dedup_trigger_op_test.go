@@ -1,4 +1,4 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2026 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/topotest/mockclock"
@@ -204,7 +205,7 @@ func TestExec(t *testing.T) {
 	ctx := context.NewMockContext("test", "test")
 	resultChan := make(chan any, 100)
 	errChan := make(chan error)
-	node.outputs["output"] = resultChan
+	require.NoError(t, node.AddOutput(resultChan, "output"))
 	node.Exec(ctx, errChan)
 	expResults := []any{
 		map[string]any{"begin": int64(90), "finish": int64(180), "ts": int64(180), "ruleId": "new", "ranges": []map[string]any{{"start_key": "90", "end_key": "180"}}},

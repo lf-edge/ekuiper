@@ -1,4 +1,4 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2026 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
 package node
 
 import (
+	"fmt"
 	"sync"
 	"testing"
 	"time"
@@ -39,6 +40,8 @@ func TestOutputs(t *testing.T) {
 	err = n.RemoveOutput("rule.4")
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(n.outputs))
+	assert.Len(t, n.outputSlice, 1)
+	assert.Equal(t, "rule.2_test", n.outputSlice[0].name)
 }
 
 func TestMultipleOutputsBroadcast(t *testing.T) {
@@ -110,6 +113,29 @@ func TestMultipleOutputsBroadcast(t *testing.T) {
 			assert.False(t, result1 == result2)
 			assert.Equal(t, tt.data, result1)
 			assert.Equal(t, tt.data, result2)
+		})
+	}
+}
+
+func BenchmarkBroadcastOutputs(b *testing.B) {
+	for _, outputCount := range []int{1, 4, 16} {
+		b.Run(fmt.Sprintf("outputs_%d", outputCount), func(b *testing.B) {
+			ctx := mockContext.NewMockContext("benchmark", "broadcast")
+			n := newDefaultNode("test", &def.RuleOption{})
+			n.ctx = ctx
+			outputs := make([]chan any, outputCount)
+			for i := range outputs {
+				outputs[i] = make(chan any, 1)
+				require.NoError(b, n.AddOutput(outputs[i], fmt.Sprintf("output_%d", i)))
+			}
+
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				n.Broadcast(i)
+				for _, output := range outputs {
+					<-output
+				}
+			}
 		})
 	}
 }

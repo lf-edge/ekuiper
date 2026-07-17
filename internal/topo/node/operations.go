@@ -1,4 +1,4 @@
-// Copyright 2021-2024 EMQ Technologies Co., Ltd.
+// Copyright 2021-2026 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -94,6 +94,7 @@ func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
 	}()
 
 	fv, afv := xsql.NewFunctionValuersForOp(exeCtx)
+	done := ctx.Done()
 
 	for {
 		select {
@@ -122,7 +123,7 @@ func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
 			o.onProcessEnd(ctx)
 			o.statManager.SetBufferLength(int64(len(o.input)))
 		// is cancelling
-		case <-ctx.Done():
+		case <-done:
 			logger.Infof("unary operator %s instance %d cancelling....", o.name, ctx.GetInstanceId())
 			cancel()
 			return
