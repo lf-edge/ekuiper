@@ -1,4 +1,4 @@
-// Copyright 2023-2025 EMQ Technologies Co., Ltd.
+// Copyright 2023-2026 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -260,7 +260,11 @@ func SetConsoleAndFileLog(consoleLog, fileLog bool) error {
 }
 
 func SetLogFormat(disableTimestamp bool) {
-	Log.Formatter.(*logrus.TextFormatter).DisableTimestamp = disableTimestamp
+	Log.SetFormatter(&logrus.TextFormatter{
+		DisableColors:    true,
+		DisableTimestamp: disableTimestamp,
+		FullTimestamp:    true,
+	})
 }
 
 func ValidateRuleOption(option *def.RuleOption) error {
