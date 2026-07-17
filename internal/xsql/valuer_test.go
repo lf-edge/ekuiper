@@ -1,4 +1,4 @@
-// Copyright 2021-2024 EMQ Technologies Co., Ltd.
+// Copyright 2021-2026 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package xsql
 import (
 	"errors"
 	"fmt"
+	"math"
 	"reflect"
 	"strings"
 	"testing"
@@ -461,5 +462,46 @@ func TestLike(t *testing.T) {
 				t.Errorf("%d-%s. \nstmt mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, sqls[j], tt.r[j], result)
 			}
 		}
+	}
+}
+
+func TestConvertNum(t *testing.T) {
+	type namedInt int64
+	tests := []struct {
+		name  string
+		input any
+		want  any
+	}{
+		{name: "int", input: int(-1), want: int64(-1)},
+		{name: "int8", input: int8(-8), want: int64(-8)},
+		{name: "int16", input: int16(-16), want: int64(-16)},
+		{name: "int32", input: int32(-32), want: int64(-32)},
+		{name: "int64", input: int64(-64), want: int64(-64)},
+		{name: "uint", input: uint(1), want: int64(1)},
+		{name: "uint8", input: uint8(8), want: int64(8)},
+		{name: "uint16", input: uint16(16), want: int64(16)},
+		{name: "uint32", input: uint32(32), want: int64(32)},
+		{name: "uint64 overflow", input: uint64(math.MaxUint64), want: int64(-1)},
+		{name: "float32", input: float32(1.25), want: float64(1.25)},
+		{name: "float64", input: float64(2.5), want: float64(2.5)},
+		{name: "string", input: "1", want: "1"},
+		{name: "bool", input: true, want: true},
+		{name: "nil", input: nil, want: nil},
+		{name: "uintptr", input: uintptr(1), want: uintptr(1)},
+		{name: "named int", input: namedInt(1), want: namedInt(1)},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := convertNum(tt.input); !reflect.DeepEqual(tt.want, got) {
+				t.Errorf("convertNum(%T(%v)) = %T(%v), want %T(%v)", tt.input, tt.input, got, got, tt.want, tt.want)
+			}
+		})
+	}
+}
+
+func BenchmarkSimpleDataEvalInt64(b *testing.B) {
+	ve := &ValuerEval{}
+	for i := 0; i < b.N; i++ {
+		_ = ve.SimpleDataEval(int64(10), int64(20), ast.ADD)
 	}
 }
