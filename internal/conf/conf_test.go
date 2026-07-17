@@ -1,4 +1,4 @@
-// Copyright 2023-2025 EMQ Technologies Co., Ltd.
+// Copyright 2023-2026 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,15 +17,51 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"sync"
 	"testing"
 	"time"
 
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
+
+func TestSetLogFormatConcurrent(t *testing.T) {
+	originalFormatter := Log.Formatter
+	t.Cleanup(func() {
+		Log.SetFormatter(originalFormatter)
+	})
+
+	const iterations = 1000
+	start := make(chan struct{})
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		<-start
+		for range iterations {
+			Log.Info("test concurrent log format update")
+		}
+	}()
+	go func() {
+		defer wg.Done()
+		<-start
+		for i := range iterations {
+			SetLogFormat(i%2 == 0)
+		}
+	}()
+	close(start)
+	wg.Wait()
+
+	formatter, ok := Log.Formatter.(*logrus.TextFormatter)
+	require.True(t, ok)
+	require.True(t, formatter.DisableColors)
+	require.True(t, formatter.FullTimestamp)
+	require.False(t, formatter.DisableTimestamp)
+}
 
 func TestRuleOptionValidate(t *testing.T) {
 	tests := []struct {
