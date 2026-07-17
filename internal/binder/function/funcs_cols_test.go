@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2026 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -302,6 +302,56 @@ func TestExecIgnoreNull(t *testing.T) {
 		result, _ := f.exec(fctx, tt.args)
 		if !reflect.DeepEqual(result, tt.result) {
 			t.Errorf("%d result mismatch,\ngot:\t%v \nwant:\t%v", i, result, tt.result)
+		}
+	}
+}
+
+func TestChangedValueEqual(t *testing.T) {
+	tests := []struct {
+		name string
+		v1   any
+		v2   any
+		want bool
+	}{
+		{name: "nil", want: true},
+		{name: "one nil", v1: int64(1), want: false},
+		{name: "string", v1: "value", v2: "value", want: true},
+		{name: "different string", v1: "value", v2: "other", want: false},
+		{name: "int64", v1: int64(1), v2: int64(1), want: true},
+		{name: "different numeric types", v1: int64(1), v2: int(1), want: false},
+		{name: "float64", v1: float64(1.5), v2: float64(1.5), want: true},
+		{name: "bool", v1: true, v2: true, want: true},
+		{name: "int", v1: int(1), v2: int(1), want: true},
+		{name: "slice fallback", v1: []int{1, 2}, v2: []int{1, 2}, want: true},
+		{name: "map fallback", v1: map[string]any{"a": 1}, v2: map[string]any{"a": 2}, want: false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := changedValueEqual(tt.v1, tt.v2); got != tt.want {
+				t.Errorf("changedValueEqual(%v, %v) = %v, want %v", tt.v1, tt.v2, got, tt.want)
+			}
+		})
+	}
+}
+
+func BenchmarkChangedColsStable(b *testing.B) {
+	contextLogger := conf.Log.WithField("rule", "BenchmarkChangedColsStable")
+	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+	tempStore, err := state.CreateStore("BenchmarkChangedColsStable", def.AtMostOnce)
+	if err != nil {
+		b.Fatal(err)
+	}
+	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("BenchmarkChangedColsStable", "changed_cols", tempStore), 1)
+	args := []any{"p_", true, "same", int64(42), true}
+	keys := []string{"prefix", "ignore", "string", "integer", "boolean"}
+	if _, err := changedFunc(fctx, args, keys); err != nil {
+		b.Fatal(err)
+	}
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		if _, err := changedFunc(fctx, args, keys); err != nil {
+			b.Fatal(err)
 		}
 	}
 }

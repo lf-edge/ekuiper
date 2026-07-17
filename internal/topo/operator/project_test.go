@@ -3630,3 +3630,48 @@ func TestProjectClearsCachedAliasesAfterError(t *testing.T) {
 	require.Same(t, succeeded, result)
 	require.Equal(t, map[string]any{"calculated": int64(4)}, succeeded.ToMap())
 }
+
+func TestProjectReusesValuer(t *testing.T) {
+	pp := &ProjectOp{}
+	fv, afv := xsql.NewFunctionValuersForOp(nil)
+	first := &xsql.Tuple{Emitter: "test", Message: xsql.Message{"a": int64(1)}}
+	second := &xsql.Tuple{Emitter: "test", Message: xsql.Message{"a": int64(2)}}
+	field := &ast.FieldRef{Name: "a"}
+
+	ve := pp.getRowVE(first, nil, fv, afv)
+	require.Equal(t, int64(1), ve.Eval(field))
+	reused := pp.getRowVE(second, nil, fv, afv)
+	require.Same(t, ve, reused)
+	require.Equal(t, int64(2), reused.Eval(field))
+
+	windowed := pp.getVE(second, nil, xsql.NewWindowRange(10, 20, 30), fv, afv)
+	require.Same(t, ve, windowed)
+	require.Equal(t, int64(10), windowed.Eval(&ast.Call{Name: "window_start"}))
+
+	withoutWindow := pp.getRowVE(first, nil, fv, afv)
+	require.Same(t, ve, withoutWindow)
+	require.Equal(t, int64(1), withoutWindow.Eval(field))
+}
+
+func BenchmarkSliceProjectEvaluation(b *testing.B) {
+	stmt, err := xsql.NewParser(strings.NewReader("SELECT a, b, c FROM test")).Parse()
+	if err != nil {
+		b.Fatal(err)
+	}
+	pp := &ProjectOp{}
+	parseStmtWithSlice(pp, stmt.Fields, true)
+	fv, afv := xsql.NewFunctionValuersForOp(nil)
+	source := model.SliceVal{int64(10), int64(20), int64(30)}
+	sink := make(model.SliceVal, 0, pp.FieldLen)
+	tuple := &xsql.SliceTuple{}
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		tuple.SourceContent = source
+		tuple.SinkContent = sink[:0]
+		ve := pp.getRowVE(tuple, nil, fv, afv)
+		if err := pp.project(tuple, ve); err != nil {
+			b.Fatal(err)
+		}
+	}
+}
