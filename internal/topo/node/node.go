@@ -1,4 +1,4 @@
-// Copyright 2021-2025 EMQ Technologies Co., Ltd.
+// Copyright 2021-2026 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -48,6 +48,7 @@ type defaultNode struct {
 	qos         def.Qos
 	outputMu    syncx.RWMutex
 	outputs     map[string]chan any
+	outputSlice []namedOutput
 	opsWg       *sync.WaitGroup
 	// tracing state
 	span                     trace.Span
@@ -74,6 +75,7 @@ func (o *defaultNode) AddOutput(output chan any, name string) error {
 	o.outputMu.Lock()
 	defer o.outputMu.Unlock()
 	o.outputs[name] = output
+	o.rebuildOutputSlice()
 	return nil
 }
 
@@ -89,7 +91,23 @@ func (o *defaultNode) RemoveOutput(name string) error {
 			}
 		}
 	}
+	o.rebuildOutputSlice()
 	return nil
+}
+
+type namedOutput struct {
+	name string
+	ch   chan any
+}
+
+// rebuildOutputSlice refreshes the broadcast view of outputs.
+// The caller must hold outputMu for writing.
+func (o *defaultNode) rebuildOutputSlice() {
+	outputs := make([]namedOutput, 0, len(o.outputs))
+	for name, ch := range o.outputs {
+		outputs = append(outputs, namedOutput{name: name, ch: ch})
+	}
+	o.outputSlice = outputs
 }
 
 func (o *defaultNode) GetName() string {
@@ -139,10 +157,15 @@ func (o *defaultNode) BroadcastCustomized(val any, broadcastFunc func(val any)) 
 func (o *defaultNode) doBroadcast(val any) {
 	o.outputMu.RLock()
 	defer o.outputMu.RUnlock()
-	last := len(o.outputs) - 1
-	i := 0
+	outputs := o.outputSlice
+	if len(outputs) == 0 {
+		return
+	}
+	last := len(outputs) - 1
 	var valCopy any
-	for name, out := range o.outputs {
+	done := o.ctx.Done()
+	for i, output := range outputs {
+		out := output.ch
 		// Only copy tuples except the last one(copy previous one may change val, so copy the last) when there are many outputs to save one copy time
 		if i != last {
 			switch vt := val.(type) {
@@ -172,7 +195,6 @@ func (o *defaultNode) doBroadcast(val any) {
 		} else {
 			valCopy = val
 		}
-		i++
 		// Fallback to set the context when sending out so that all children have the same parent ctx
 		// If has set ctx in the node impl, do not override it
 		if vt, ok := valCopy.(xsql.HasTracerCtx); ok && vt.GetTracerCtx() == nil {
@@ -183,7 +205,7 @@ func (o *defaultNode) doBroadcast(val any) {
 			select {
 			case out <- valCopy:
 				continue
-			case <-o.ctx.Done():
+			case <-done:
 				return
 			}
 		}
@@ -193,13 +215,13 @@ func (o *defaultNode) doBroadcast(val any) {
 			select {
 			case out <- valCopy:
 				break forlabel
-			case <-o.ctx.Done():
+			case <-done:
 				return
 			default:
 				// read the oldest to drop.
 				oldest := <-out
 				// record the error and stop propagating to avoid infinite loop
-				o.onErrorOpt(o.ctx, fmt.Errorf("buffer full, drop message %v from %s to %s", xsql.GetId(oldest), o.name, name), false)
+				o.onErrorOpt(o.ctx, fmt.Errorf("buffer full, drop message %v from %s to %s", xsql.GetId(oldest), o.name, output.name), false)
 			}
 		}
 	}
@@ -334,7 +356,7 @@ func (o *defaultNode) onProcessStart(ctx api.StreamContext, val any) {
 	o.statManager.IncTotalRecordsIn()
 	o.statManager.ProcessTimeStart()
 	// Source just pass nil val so that no trace. The trace will start after extracting trace id
-	if val != nil {
+	if val != nil && ctx.IsTraceEnabled() {
 		traced, spanCtx, span := tracenode.TraceInput(ctx, val, o.name)
 		if traced {
 			tracenode.RecordRowOrCollection(val, span)
