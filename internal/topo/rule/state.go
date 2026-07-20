@@ -82,26 +82,30 @@ func (s *State) SetRule(r *def.Rule) {
 	s.Rule = r
 }
 
-// ValidateAndRun tries to set up the rule in an atomic way
-// It is the only way to update the state rule.
-// 1. validate the new rule
-// 2. set the state rule property and create the new topo
-// 3. stop and clean the old topo if any
-// 4. run the new topo
-// Notice that, the return err is VALIDATION error only. Run error is async and checked from rule status
-// Topo side effect: 1.This function will create and store a new topo if no validation error
-// 2. If there is validation error, this function will destroy the new topo
+// ValidateAndRun plans and applies newRule while holding the rule lifecycle
+// lock. It is intended for callers that have no durable persistence step.
+// Planning errors leave the current Rule, topology, and run state unchanged.
+// Runtime activation errors are reported asynchronously through rule status.
 func (s *State) ValidateAndRun(newRule *def.Rule) error {
+	return s.ValidateAndRunWithCommit(newRule, nil)
+}
+
+// ValidateAndRunWithCommit plans newRule without changing the current runtime,
+// invokes commit while holding the rule lifecycle lock, and applies the planned
+// rule only after commit succeeds. A validation or commit error leaves Rule,
+// topology, and run state unchanged. A successful commit is authoritative;
+// later runtime activation errors do not roll it back.
+func (s *State) ValidateAndRunWithCommit(newRule *def.Rule, commit func() error) error {
 	s.ruleLock.Lock()
 	defer s.ruleLock.Unlock()
-	return s.doValidateAndRun(newRule)
+	return s.doValidateAndRun(newRule, commit)
 }
 
 func (s *State) Bootstrap() error {
 	s.ruleLock.Lock()
 	defer s.ruleLock.Unlock()
 	s.Rule.Triggered = true
-	return s.doValidateAndRun(s.Rule)
+	return s.doValidateAndRun(s.Rule, nil)
 }
 
 // Start run start or add the start action to queue

@@ -15,6 +15,7 @@
 package rule
 
 import (
+	"errors"
 	"regexp"
 	"sync"
 	"testing"
@@ -139,6 +140,70 @@ func TestAPIs(t *testing.T) {
 	em = "{\n  \"status\": \"running\",\n  \"message\": \"\",\n  \"lastStartTimestamp\": 0,\n  \"lastStopTimestamp\": 0,\n  \"nextStartTimestamp\": 0,\n  \"source_demo_0_records_in_total\": 0,\n  \"source_demo_0_records_out_total\": 0,\n  \"source_demo_0_messages_processed_total\": 0,\n  \"source_demo_0_process_latency_us\": 0,\n  \"source_demo_0_buffer_length\": 0,\n  \"source_demo_0_last_invocation\": 0,\n  \"source_demo_0_exceptions_total\": 0,\n  \"source_demo_0_last_exception\": \"\",\n  \"source_demo_0_last_exception_time\": 0,\n  \"source_demo_0_connection_status\": 1,\n  \"source_demo_0_connection_last_connected_time\": 1,\n  \"source_demo_0_connection_last_disconnected_time\": 0,\n  \"source_demo_0_connection_last_disconnected_message\": \"\",\n  \"source_demo_0_connection_last_try_time\": 0,\n  \"op_2_filter_0_records_in_total\": 0,\n  \"op_2_filter_0_records_out_total\": 0,\n  \"op_2_filter_0_messages_processed_total\": 0,\n  \"op_2_filter_0_process_latency_us\": 0,\n  \"op_2_filter_0_buffer_length\": 0,\n  \"op_2_filter_0_last_invocation\": 0,\n  \"op_2_filter_0_exceptions_total\": 0,\n  \"op_2_filter_0_last_exception\": \"\",\n  \"op_2_filter_0_last_exception_time\": 0,\n  \"op_3_project_0_records_in_total\": 0,\n  \"op_3_project_0_records_out_total\": 0,\n  \"op_3_project_0_messages_processed_total\": 0,\n  \"op_3_project_0_process_latency_us\": 0,\n  \"op_3_project_0_buffer_length\": 0,\n  \"op_3_project_0_last_invocation\": 0,\n  \"op_3_project_0_exceptions_total\": 0,\n  \"op_3_project_0_last_exception\": \"\",\n  \"op_3_project_0_last_exception_time\": 0,\n  \"op_logToMemory_0_0_transform_0_records_in_total\": 0,\n  \"op_logToMemory_0_0_transform_0_records_out_total\": 0,\n  \"op_logToMemory_0_0_transform_0_messages_processed_total\": 0,\n  \"op_logToMemory_0_0_transform_0_process_latency_us\": 0,\n  \"op_logToMemory_0_0_transform_0_buffer_length\": 0,\n  \"op_logToMemory_0_0_transform_0_last_invocation\": 0,\n  \"op_logToMemory_0_0_transform_0_exceptions_total\": 0,\n  \"op_logToMemory_0_0_transform_0_last_exception\": \"\",\n  \"op_logToMemory_0_0_transform_0_last_exception_time\": 0,\n  \"op_logToMemory_0_1_encode_0_records_in_total\": 0,\n  \"op_logToMemory_0_1_encode_0_records_out_total\": 0,\n  \"op_logToMemory_0_1_encode_0_messages_processed_total\": 0,\n  \"op_logToMemory_0_1_encode_0_process_latency_us\": 0,\n  \"op_logToMemory_0_1_encode_0_buffer_length\": 0,\n  \"op_logToMemory_0_1_encode_0_last_invocation\": 0,\n  \"op_logToMemory_0_1_encode_0_exceptions_total\": 0,\n  \"op_logToMemory_0_1_encode_0_last_exception\": \"\",\n  \"op_logToMemory_0_1_encode_0_last_exception_time\": 0,\n  \"sink_logToMemory_0_0_records_in_total\": 0,\n  \"sink_logToMemory_0_0_records_out_total\": 0,\n  \"sink_logToMemory_0_0_messages_processed_total\": 0,\n  \"sink_logToMemory_0_0_process_latency_us\": 0,\n  \"sink_logToMemory_0_0_buffer_length\": 0,\n  \"sink_logToMemory_0_0_last_invocation\": 0,\n  \"sink_logToMemory_0_0_exceptions_total\": 0,\n  \"sink_logToMemory_0_0_last_exception\": \"\",\n  \"sink_logToMemory_0_0_last_exception_time\": 0,\n  \"sink_logToMemory_0_0_connection_status\": 1,\n  \"sink_logToMemory_0_0_connection_last_connected_time\": 1,\n  \"sink_logToMemory_0_0_connection_last_disconnected_time\": 0,\n  \"sink_logToMemory_0_0_connection_last_disconnected_message\": \"\",\n  \"sink_logToMemory_0_0_connection_last_try_time\": 0\n}"
 	assert.Equal(t, em, rsm)
 	st.Delete()
+}
+
+func TestValidateAndRunCommitBoundary(t *testing.T) {
+	sp := processor.NewStreamProcessor()
+	_, err := sp.ExecStmt(`CREATE STREAM updateCommitDemo () WITH (FORMAT="JSON", TYPE="memory", DATASOURCE="test")`)
+	require.NoError(t, err)
+	defer sp.ExecStmt(`DROP STREAM updateCommitDemo`)
+
+	oldRule := def.GetDefaultRule("updateCommitBoundary", "select * from updateCommitDemo")
+	oldRule.Triggered = true
+	st := NewState(oldRule, func(string, bool) {})
+	require.NoError(t, st.ValidateAndRun(oldRule))
+	defer st.Delete()
+	require.Equal(t, machine.Running, st.GetState())
+	oldTopology := st.topology
+	require.NotNil(t, oldTopology)
+
+	t.Run("planning failure skips commit", func(t *testing.T) {
+		commitCalled := false
+		invalidRule := def.GetDefaultRule(oldRule.Id, "select * from streamThatDoesNotExist")
+		invalidRule.Triggered = true
+		err := st.ValidateAndRunWithCommit(invalidRule, func() error {
+			commitCalled = true
+			return nil
+		})
+		require.Error(t, err)
+		require.False(t, commitCalled)
+		require.Same(t, oldRule, st.Rule)
+		require.Same(t, oldTopology, st.topology)
+		require.Equal(t, machine.Running, st.GetState())
+	})
+
+	t.Run("commit failure preserves current runtime", func(t *testing.T) {
+		candidate := def.GetDefaultRule(oldRule.Id, "select * from updateCommitDemo where true")
+		candidate.Triggered = false
+		expectedErr := errors.New("commit failed")
+		err := st.ValidateAndRunWithCommit(candidate, func() error {
+			// The candidate has been planned, but the current runtime remains
+			// authoritative until this callback succeeds.
+			require.Same(t, oldRule, st.Rule)
+			require.Same(t, oldTopology, st.topology)
+			require.Equal(t, machine.Running, st.GetState())
+			return expectedErr
+		})
+		require.ErrorIs(t, err, expectedErr)
+		require.Same(t, oldRule, st.Rule)
+		require.Same(t, oldTopology, st.topology)
+		require.Equal(t, machine.Running, st.GetState())
+	})
+
+	t.Run("successful commit applies candidate", func(t *testing.T) {
+		candidate := def.GetDefaultRule(oldRule.Id, "select * from updateCommitDemo where true")
+		candidate.Triggered = false
+		err := st.ValidateAndRunWithCommit(candidate, func() error {
+			require.Same(t, oldRule, st.Rule)
+			require.Same(t, oldTopology, st.topology)
+			require.Equal(t, machine.Running, st.GetState())
+			return nil
+		})
+		require.NoError(t, err)
+		require.Same(t, candidate, st.Rule)
+		require.Nil(t, st.topology)
+		require.Equal(t, machine.Stopped, st.GetState())
+	})
 }
 
 func TestStateTransit(t *testing.T) {

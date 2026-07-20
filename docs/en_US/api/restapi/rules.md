@@ -102,8 +102,16 @@ Example response when using slice mode:
 
 ## upsert a rule
 
-The API accepts a JSON content and upsert a rule which means if the rule is not existed, create it; otherwise, update
-it. If update fails, the original rule will continue running.
+The API accepts JSON content and upserts a rule: if the rule does not exist, it is created; otherwise, it is updated.
+
+For an existing persistent rule, validation and persistence are the update transaction boundary. eKuiper plans the
+candidate rule without replacing the current runtime. If JSON parsing, topology planning, or persistence fails, the
+request returns an error and the existing rule definition, topology, and run state remain unchanged. After persistence
+succeeds, the new definition becomes authoritative and eKuiper switches the runtime to it. A runtime activation failure
+after that point does not restore the old definition; the request remains committed and the failure is reported as
+`stopped by error` through the rule status API.
+
+The `temp` property cannot be changed by an update. Delete and recreate the rule to change whether it is persistent.
 
 ```shell
 PUT http://localhost:9081/rules/{id}

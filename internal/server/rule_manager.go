@@ -1,4 +1,4 @@
-// Copyright 2021-2025 EMQ Technologies Co., Ltd.
+// Copyright 2021-2026 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -182,6 +182,10 @@ func (rr *RuleRegistry) RecoverRule(r *def.Rule) string {
 // UpsertRule validates the new rule, then update the db, then restart the rule
 // The entire operation is protected by a lock to ensure atomic version checking.
 func (rr *RuleRegistry) UpsertRule(ruleId, ruleJson string) error {
+	return rr.upsertRule(ruleId, ruleJson, ruleProcessor.ExecUpsert)
+}
+
+func (rr *RuleRegistry) upsertRule(ruleId, ruleJson string, persist func(string, string) error) error {
 	ruleJson = replace.ReplaceRuleJson(ruleJson, conf.IsTesting)
 	// Validate the rule json (can be done outside lock - no state change)
 	r, err := ruleProcessor.GetRuleByJson(ruleId, ruleJson)
@@ -197,37 +201,34 @@ func (rr *RuleRegistry) UpsertRule(ruleId, ruleJson string) error {
 	rs, isUpdate := rr.internal[ruleId]
 	if !isUpdate { // if not exist, create it
 		rs = rule.NewState(r, func(id string, b bool) {
-			err = rr.updateTrigger(id, b)
-			if err != nil {
-				conf.Log.Warnf("update trigger error: %v", err)
+			if e := rr.updateTrigger(id, b); e != nil {
+				conf.Log.Warnf("update trigger error: %v", e)
 			}
 		})
 	} else {
 		// Version check is now atomic with the rest of the operation
-		rule := rs.GetRule()
-		if !processor.CanReplace(rule.Version, r.Version) {
-			return fmt.Errorf("rule %s already exists with version (%s), new version (%s) is lower", ruleId, rule.Version, r.Version)
+		currentRule := rs.GetRule()
+		if currentRule.Temp != r.Temp {
+			return fmt.Errorf("rule %s cannot change temp from %t to %t; delete and recreate the rule", ruleId, currentRule.Temp, r.Temp)
+		}
+		if !processor.CanReplace(currentRule.Version, r.Version) {
+			return fmt.Errorf("rule %s already exists with version (%s), new version (%s) is lower", ruleId, currentRule.Version, r.Version)
 		}
 	}
-	err = rs.ValidateAndRun(r)
+	commit := func() error {
+		if r.Temp {
+			return nil
+		}
+		return persist(r.Id, ruleJson)
+	}
+	err = rs.ValidateAndRunWithCommit(r, commit)
 	if err != nil {
 		return err
 	}
-	if !r.Temp {
-		// Persist directly - we already hold the lock
-		err = ruleProcessor.ExecUpsert(r.Id, ruleJson)
-		if err == nil {
-			rr.internal[r.Id] = rs
-		}
-	} else if !isUpdate {
-		// Temp rule, just register in memory
+	if !isUpdate {
 		rr.internal[r.Id] = rs
 	}
-	if err != nil {
-		// rollback clean up
-		rs.Delete()
-	}
-	return err
+	return nil
 }
 
 func (rr *RuleRegistry) DeleteRule(name string) error {

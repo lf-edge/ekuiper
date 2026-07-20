@@ -1,4 +1,4 @@
-// Copyright 2024-2025 EMQ Technologies Co., Ltd.
+// Copyright 2024-2026 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,12 +15,17 @@
 package server
 
 import (
+	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
+	"github.com/lf-edge/ekuiper/v2/internal/processor"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/rule"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/rule/machine"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 )
 
@@ -93,4 +98,136 @@ func TestCoverage(t *testing.T) {
 	// The error message depends on the KV store implementation, usually "Item ... already exists"
 	// But let's just assert error for now
 	assert.Equal(t, "dupRule", id)
+}
+
+func TestUpsertPersistenceFailureIsNoOp(t *testing.T) {
+	sp := processor.NewStreamProcessor()
+	_, err := sp.ExecStmt(`CREATE STREAM updateTransactionDemo () WITH (FORMAT="JSON", TYPE="memory", DATASOURCE="test")`)
+	require.NoError(t, err)
+	defer sp.ExecStmt(`DROP STREAM updateTransactionDemo`)
+
+	tests := []struct {
+		name       string
+		id         string
+		oldTrigger bool
+		newTrigger bool
+		oldState   machine.RunState
+	}{
+		{name: "running rule", id: "persistFailureRunning", oldTrigger: true, newTrigger: false, oldState: machine.Running},
+		{name: "stopped rule", id: "persistFailureStopped", oldTrigger: false, newTrigger: true, oldState: machine.Stopped},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rr := &RuleRegistry{internal: make(map[string]*rule.State)}
+			oldJSON := fmt.Sprintf(`{"id":%q,"triggered":%t,"sql":"select * from updateTransactionDemo","actions":[{"log":{}}]}`, tt.id, tt.oldTrigger)
+			newJSON := fmt.Sprintf(`{"id":%q,"triggered":%t,"sql":"select * from updateTransactionDemo where true","actions":[{"log":{}}]}`, tt.id, tt.newTrigger)
+			_, err := rr.CreateRule(tt.id, oldJSON)
+			require.NoError(t, err)
+			defer rr.DeleteRule(tt.id)
+
+			rs, ok := rr.load(tt.id)
+			require.True(t, ok)
+			oldRule := rs.GetRule()
+			oldTopo, oldTopoErr := rs.GetPlainTopology()
+			storedBefore, err := ruleProcessor.GetRuleJson(tt.id)
+			require.NoError(t, err)
+
+			err = rr.upsertRule(tt.id, newJSON, func(string, string) error {
+				return errors.New("mock persistence failure")
+			})
+			require.EqualError(t, err, "mock persistence failure")
+			require.Same(t, oldRule, rs.GetRule())
+			require.Equal(t, tt.oldState, rs.GetState())
+			currentTopo, currentTopoErr := rs.GetPlainTopology()
+			if oldTopoErr == nil {
+				require.NoError(t, currentTopoErr)
+				require.Same(t, oldTopo, currentTopo)
+			} else {
+				require.Error(t, currentTopoErr)
+			}
+			storedAfter, err := ruleProcessor.GetRuleJson(tt.id)
+			require.NoError(t, err)
+			require.Equal(t, storedBefore, storedAfter)
+		})
+	}
+}
+
+func TestConcurrentUpsertContinuesAfterPersistenceFailure(t *testing.T) {
+	sp := processor.NewStreamProcessor()
+	_, err := sp.ExecStmt(`CREATE STREAM updateConcurrentDemo () WITH (FORMAT="JSON", TYPE="memory", DATASOURCE="test")`)
+	require.NoError(t, err)
+	defer sp.ExecStmt(`DROP STREAM updateConcurrentDemo`)
+
+	const ruleID = "concurrentPersistFailure"
+	rr := &RuleRegistry{internal: make(map[string]*rule.State)}
+	oldJSON := fmt.Sprintf(`{"id":%q,"version":"1.0.0","triggered":false,"sql":"select * from updateConcurrentDemo","actions":[{"log":{}}]}`, ruleID)
+	_, err = rr.CreateRule(ruleID, oldJSON)
+	require.NoError(t, err)
+	defer rr.DeleteRule(ruleID)
+
+	highJSON := fmt.Sprintf(`{"id":%q,"version":"3.0.0","triggered":false,"sql":"select * from updateConcurrentDemo where true","actions":[{"log":{}}]}`, ruleID)
+	lowerJSON := fmt.Sprintf(`{"id":%q,"version":"2.0.0","triggered":false,"sql":"select * from updateConcurrentDemo where true","actions":[{"log":{}}]}`, ruleID)
+	highCommitStarted := make(chan struct{})
+	allowHighCommitFailure := make(chan struct{})
+	highResult := make(chan error, 1)
+	go func() {
+		highResult <- rr.upsertRule(ruleID, highJSON, func(string, string) error {
+			close(highCommitStarted)
+			<-allowHighCommitFailure
+			return errors.New("mock high-version persistence failure")
+		})
+	}()
+	<-highCommitStarted
+
+	lowerStarted := make(chan struct{})
+	lowerResult := make(chan error, 1)
+	go func() {
+		close(lowerStarted)
+		lowerResult <- rr.upsertRule(ruleID, lowerJSON, ruleProcessor.ExecUpsert)
+	}()
+	<-lowerStarted
+	close(allowHighCommitFailure)
+
+	require.EqualError(t, <-highResult, "mock high-version persistence failure")
+	require.NoError(t, <-lowerResult)
+	rs, ok := rr.load(ruleID)
+	require.True(t, ok)
+	require.Equal(t, "2.0.0", rs.GetRule().Version)
+	storedRule, err := ruleProcessor.GetRuleById(ruleID)
+	require.NoError(t, err)
+	require.Equal(t, "2.0.0", storedRule.Version)
+}
+
+func TestUpsertRejectsTempModeChange(t *testing.T) {
+	sp := processor.NewStreamProcessor()
+	_, err := sp.ExecStmt(`CREATE STREAM updateTempDemo () WITH (FORMAT="JSON", TYPE="memory", DATASOURCE="test")`)
+	require.NoError(t, err)
+	defer sp.ExecStmt(`DROP STREAM updateTempDemo`)
+
+	tests := []struct {
+		name    string
+		id      string
+		oldTemp bool
+		newTemp bool
+	}{
+		{name: "persistent to temporary", id: "persistToTemp", oldTemp: false, newTemp: true},
+		{name: "temporary to persistent", id: "tempToPersist", oldTemp: true, newTemp: false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rr := &RuleRegistry{internal: make(map[string]*rule.State)}
+			oldJSON := fmt.Sprintf(`{"id":%q,"temp":%t,"sql":"select * from updateTempDemo","actions":[{"log":{}}]}`, tt.id, tt.oldTemp)
+			newJSON := fmt.Sprintf(`{"id":%q,"temp":%t,"sql":"select * from updateTempDemo where true","actions":[{"log":{}}]}`, tt.id, tt.newTemp)
+			_, err := rr.CreateRule(tt.id, oldJSON)
+			require.NoError(t, err)
+			defer rr.DeleteRule(tt.id)
+
+			rs, ok := rr.load(tt.id)
+			require.True(t, ok)
+			oldRule := rs.GetRule()
+			err = rr.UpsertRule(tt.id, newJSON)
+			require.EqualError(t, err, fmt.Sprintf("rule %s cannot change temp from %t to %t; delete and recreate the rule", tt.id, tt.oldTemp, tt.newTemp))
+			require.Same(t, oldRule, rs.GetRule())
+		})
+	}
 }

@@ -14,29 +14,30 @@ import (
 
 const EOFMessage = "done"
 
-func (s *State) doValidateAndRun(newRule *def.Rule) (err error) {
+func (s *State) doValidateAndRun(newRule *def.Rule, commit func() error) error {
 	if newRule == nil {
 		return errors.New("new rule is nil")
 	}
-	// Try plan with the new json. If err, revert to old rule
-	oldRule := s.Rule
-	s.Rule = newRule
-	defer func() {
-		if err != nil {
-			s.Rule = oldRule
-		}
-	}()
-	// validateRule only check plan is valid, topology shouldn't be changed before ruleState stop
-	tp, err := s.validate()
+	// Planning may allocate and attach topology resources, but it must not
+	// replace the current rule or topology before the durable commit succeeds.
+	tp, err := s.validate(newRule)
 	if err != nil {
 		return err
 	}
-	// stop the old run
-	if s.topology != nil {
-		s.doStop(machine.Stopped, "stopped by update")
+	if commit != nil {
+		if err := infra.SafeRun(commit); err != nil {
+			tp.Cancel()
+			return err
+		}
 	}
-	// start new rule
+
+	// Persistence is the commit point. Runtime activation errors after this
+	// point are reported through rule status and do not restore the old rule.
+	s.Rule = newRule
 	if newRule.Triggered {
+		if s.topology != nil {
+			s.doStop(machine.Stopped, "stopped by update")
+		}
 		s.topology = tp
 		panicOrError := infra.SafeRun(func() error {
 			// Start the rule which runs async
@@ -46,18 +47,16 @@ func (s *State) doValidateAndRun(newRule *def.Rule) (err error) {
 			s.logger.Errorf("Rule %s start failed: %s", s.Rule.Id, panicOrError)
 		}
 	} else {
-		// Discard the temp topo
+		// The candidate topology was created only for validation. Discard it
+		// and transition both running and already-stopped rules to Stopped.
 		tp.Cancel()
+		s.doStop(machine.Stopped, "stopped by update")
 	}
 	return nil
 }
 
 // If validate error, the return tp is clean up and set to nil
-func (s *State) validate() (tp *topo.Topo, err error) {
-	// Do validation
-	if s.topology != nil {
-		s.logger.Warn("topology is already exist, should not happen")
-	}
+func (s *State) validate(rule *def.Rule) (tp *topo.Topo, err error) {
 	defer func() { // clean topo if error happens
 		if err != nil && tp != nil {
 			tp.Cancel()
@@ -65,7 +64,7 @@ func (s *State) validate() (tp *topo.Topo, err error) {
 		}
 	}()
 	err = infra.SafeRun(func() error {
-		tp, err = planner.Plan(s.Rule)
+		tp, err = planner.Plan(rule)
 		return err
 	})
 	if err != nil {
