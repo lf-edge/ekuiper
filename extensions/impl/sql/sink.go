@@ -18,7 +18,6 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
-	"regexp"
 	"strings"
 	"time"
 
@@ -34,10 +33,6 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	"github.com/lf-edge/ekuiper/v2/pkg/model"
 )
-
-// validIdentifierPattern matches standard SQL identifiers:
-// must start with a letter or underscore, followed by letters, digits, or underscores.
-var validIdentifierPattern = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
 
 const (
 	LblInsert = "insert"
@@ -102,36 +97,29 @@ func quoteSQLString(s string) string {
 // quoteIdentifier wraps a SQL identifier in dialect-appropriate quotes and escapes
 // embedded quote characters. This prevents SQL injection through attacker-controlled
 // column/table names.
-func quoteIdentifier(driver, identifier string) string {
-	q := identifierQuoteChar(driver)
+func (c *sqlSinkConfig) quoteIdentifier(identifier string) string {
+	q := c.identifierQuoteChar()
 	return q + strings.ReplaceAll(identifier, q, q+q) + q
 }
 
 // quoteTableName splits a possibly schema-qualified table name (e.g. "public.events")
 // by dot and quotes each component with the dialect-appropriate quote character.
-func quoteTableName(driver, table string) string {
+func (c *sqlSinkConfig) quoteTableName(table string) string {
 	parts := strings.Split(table, ".")
 	for i, p := range parts {
-		parts[i] = quoteIdentifier(driver, p)
+		parts[i] = c.quoteIdentifier(p)
 	}
 	return strings.Join(parts, ".")
 }
 
-// identifierQuoteChar returns the SQL identifier quoting character for a given driver.
-func identifierQuoteChar(driver string) string {
-	switch driver {
+// identifierQuoteChar returns the SQL identifier quoting character for the configured driver.
+func (c *sqlSinkConfig) identifierQuoteChar() string {
+	switch strings.ToLower(c.driver) {
 	case "mysql":
 		return "`"
-	case "sqlserver", "mssql":
-		return "\""
 	default:
 		return "\""
 	}
-}
-
-// isValidIdentifier checks whether the given name is a safe SQL identifier.
-func isValidIdentifier(name string) bool {
-	return validIdentifierPattern.MatchString(name)
 }
 
 func (s *SQLSinkConnector) Ping(ctx api.StreamContext, props map[string]any) error {
@@ -165,11 +153,9 @@ func (s *SQLSinkConnector) Provision(ctx api.StreamContext, configs map[string]a
 	if c.RowKindField != "" && c.KeyField == "" {
 		return fmt.Errorf("keyField is required when rowKindField is set")
 	}
-	driver, err := client.ParseDriver(c.DBUrl)
-	if err != nil {
+	if c.driver, err = client.ParseDriver(c.DBUrl); err != nil {
 		return fmt.Errorf("failed to parse sql driver from dburl: %v", err)
 	}
-	c.driver = driver
 	s.config = c
 	s.props = configs
 	return nil
@@ -218,19 +204,18 @@ func (s *SQLSinkConnector) Collect(ctx api.StreamContext, item api.MessageTuple)
 func (s *SQLSinkConnector) collect(ctx api.StreamContext, item map[string]any) (err error) {
 	if len(s.config.RowKindField) < 1 {
 		keys := s.extractKeys(item)
-		if len(keys) == 0 {
-			ctx.GetLogger().Warn("no valid columns found in incoming message, skipping")
-			return nil
-		}
-		var values []string = nil
+		var values []string
 		var vars string
 		vars, err = s.config.buildInsertSql(ctx, item, keys)
 		if err != nil {
 			return err
 		}
 		values = append(values, vars)
-		sqlStr := buildInsertSQL(s.config.driver, s.config.Table, keys, values)
-		return s.writeToDB(ctx, sqlStr)
+		if len(keys) > 0 {
+			sqlStr := buildInsertSQL(s.config, s.config.Table, keys, values)
+			return s.writeToDB(ctx, sqlStr)
+		}
+		return nil
 	}
 	return s.save(ctx, s.config.Table, item)
 }
@@ -250,11 +235,7 @@ func (s *SQLSinkConnector) collectList(ctx api.StreamContext, items []map[string
 		return nil
 	}
 	keys := s.extractKeys(items[0])
-	if len(keys) == 0 {
-		ctx.GetLogger().Warn("no valid columns found in incoming message, skipping")
-		return nil
-	}
-	var values []string = nil
+	var values []string
 	var vars string
 	if len(s.config.RowKindField) < 1 {
 		for _, mapData := range items {
@@ -264,8 +245,11 @@ func (s *SQLSinkConnector) collectList(ctx api.StreamContext, items []map[string
 			}
 			values = append(values, vars)
 		}
-		sqlStr := buildInsertSQL(s.config.driver, s.config.Table, keys, values)
-		return s.writeToDB(ctx, sqlStr)
+		if len(keys) > 0 {
+			sqlStr := buildInsertSQL(s.config, s.config.Table, keys, values)
+			return s.writeToDB(ctx, sqlStr)
+		}
+		return nil
 	}
 	for _, el := range items {
 		err := s.save(ctx, s.config.Table, el)
@@ -293,16 +277,14 @@ func (s *SQLSinkConnector) save(ctx api.StreamContext, table string, data map[st
 	var sqlStr string
 	switch rowkind {
 	case ast.RowkindInsert:
-		if len(keys) == 0 {
-			ctx.GetLogger().Warn("no valid columns found in incoming message, skipping")
-			return nil
-		}
 		vars, err := s.config.buildInsertSql(ctx, data, keys)
 		if err != nil {
 			return err
 		}
 		values := []string{vars}
-		sqlStr = buildInsertSQL(s.config.driver, table, keys, values)
+		if len(keys) > 0 {
+			sqlStr = buildInsertSQL(s.config, table, keys, values)
+		}
 	case ast.RowkindUpdate:
 		keyval, ok := data[s.config.KeyField]
 		if !ok {
@@ -312,29 +294,29 @@ func (s *SQLSinkConnector) save(ctx api.StreamContext, table string, data map[st
 		if err != nil {
 			return err
 		}
-		drv := s.config.driver
-		sqlStr = fmt.Sprintf("UPDATE %s SET ", quoteTableName(drv, table))
+		cfg := s.config
+		sqlStr = fmt.Sprintf("UPDATE %s SET ", cfg.quoteTableName(table))
 		for i, key := range keys {
 			if i != 0 {
 				sqlStr += ","
 			}
-			sqlStr += fmt.Sprintf("%s=%s", quoteIdentifier(drv, key), vals[i])
+			sqlStr += fmt.Sprintf("%s=%s", cfg.quoteIdentifier(key), vals[i])
 		}
 		if ksv, ok := keyval.(string); ok {
-			sqlStr += fmt.Sprintf(" WHERE %s = %s;", quoteIdentifier(drv, s.config.KeyField), quoteSQLString(ksv))
+			sqlStr += fmt.Sprintf(" WHERE %s = %s;", cfg.quoteIdentifier(s.config.KeyField), quoteSQLString(ksv))
 		} else {
-			sqlStr += fmt.Sprintf(" WHERE %s = %v;", quoteIdentifier(drv, s.config.KeyField), keyval)
+			sqlStr += fmt.Sprintf(" WHERE %s = %v;", cfg.quoteIdentifier(s.config.KeyField), keyval)
 		}
 	case ast.RowkindDelete:
 		keyval, ok := data[s.config.KeyField]
 		if !ok {
 			return fmt.Errorf("field %s does not exist in data %v", s.config.KeyField, data)
 		}
-		drv := s.config.driver
+		cfg := s.config
 		if ksv, ok := keyval.(string); ok {
-			sqlStr = fmt.Sprintf("DELETE FROM %s WHERE %s = %s;", quoteTableName(drv, table), quoteIdentifier(drv, s.config.KeyField), quoteSQLString(ksv))
+			sqlStr = fmt.Sprintf("DELETE FROM %s WHERE %s = %s;", cfg.quoteTableName(table), cfg.quoteIdentifier(s.config.KeyField), quoteSQLString(ksv))
 		} else {
-			sqlStr = fmt.Sprintf("DELETE FROM %s WHERE %s = %v;", quoteTableName(drv, table), quoteIdentifier(drv, s.config.KeyField), keyval)
+			sqlStr = fmt.Sprintf("DELETE FROM %s WHERE %s = %v;", cfg.quoteTableName(table), cfg.quoteIdentifier(s.config.KeyField), keyval)
 		}
 	default:
 		return fmt.Errorf("invalid rowkind %s", rowkind)
@@ -376,19 +358,17 @@ func (s *SQLSinkConnector) extractKeys(item map[string]any) []string {
 	}
 	keys := make([]string, 0, len(item))
 	for k := range item {
-		if isValidIdentifier(k) {
-			keys = append(keys, k)
-		}
+		keys = append(keys, k)
 	}
 	return keys
 }
 
-func buildInsertSQL(driver, table string, keys []string, values []string) string {
+func buildInsertSQL(c *sqlSinkConfig, table string, keys []string, values []string) string {
 	quotedKeys := make([]string, len(keys))
 	for i, k := range keys {
-		quotedKeys[i] = quoteIdentifier(driver, k)
+		quotedKeys[i] = c.quoteIdentifier(k)
 	}
-	sql := fmt.Sprintf("INSERT INTO %s (%s) values ", quoteTableName(driver, table), strings.Join(quotedKeys, ",")) + strings.Join(values, ",") + ";"
+	sql := fmt.Sprintf("INSERT INTO %s (%s) values ", c.quoteTableName(table), strings.Join(quotedKeys, ",")) + strings.Join(values, ",") + ";"
 	return sql
 }
 
