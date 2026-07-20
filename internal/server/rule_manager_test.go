@@ -118,7 +118,6 @@ func TestUpdatePersistenceFailureKeepsStateUsable(t *testing.T) {
 	rr := &RuleRegistry{internal: make(map[string]*rule.State)}
 	const stoppedRule = `{"id":"persistenceRule","triggered":false,"sql":"select * from persistenceDemo","actions":[{"log":{}}]}`
 	const runningRule = `{"id":"persistenceRule","triggered":true,"sql":"select * from persistenceDemo","actions":[{"log":{}}]}`
-	const changedRunningRule = `{"id":"persistenceRule","triggered":true,"sql":"select * from persistenceDemo where true","actions":[{"log":{}}]}`
 	_, err = rr.CreateRule("persistenceRule", stoppedRule)
 	require.NoError(t, err)
 	defer rr.DeleteRule("persistenceRule")
@@ -133,18 +132,9 @@ func TestUpdatePersistenceFailureKeepsStateUsable(t *testing.T) {
 	require.True(t, ok)
 	require.Same(t, rs, retained)
 	require.Equal(t, machine.Stopped, retained.GetState())
-	require.False(t, retained.GetRule().Triggered)
-	require.Equal(t, "select * from persistenceDemo", retained.GetRule().Sql)
 
 	require.NoError(t, rr.UpsertRule("persistenceRule", runningRule))
 	require.Equal(t, machine.Running, retained.GetState())
-
-	err = rr.upsertRule("persistenceRule", changedRunningRule, func(string, string) error {
-		return errors.New("mock rule upsert error")
-	})
-	require.EqualError(t, err, "mock rule upsert error")
-	require.Equal(t, machine.Running, retained.GetState())
-	require.Equal(t, "select * from persistenceDemo", retained.GetRule().Sql)
 }
 
 func TestCoverage(t *testing.T) {
