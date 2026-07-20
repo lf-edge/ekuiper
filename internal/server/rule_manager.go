@@ -220,6 +220,7 @@ func (rr *RuleRegistry) upsertRule(ruleId, ruleJson string, persist func(string,
 
 	// do upsert.
 	rs, isUpdate := rr.internal[ruleId]
+	var previousRule *def.Rule
 	if !isUpdate { // if not exist, create it
 		rs = rule.NewState(r, func(id string, b bool) {
 			err = rr.updateTrigger(id, b)
@@ -229,9 +230,9 @@ func (rr *RuleRegistry) upsertRule(ruleId, ruleJson string, persist func(string,
 		})
 	} else {
 		// Version check is now atomic with the rest of the operation
-		rule := rs.GetRule()
-		if !processor.CanReplace(rule.Version, r.Version) {
-			return fmt.Errorf("rule %s already exists with version (%s), new version (%s) is lower", ruleId, rule.Version, r.Version)
+		previousRule = rs.GetRule()
+		if !processor.CanReplace(previousRule.Version, r.Version) {
+			return fmt.Errorf("rule %s already exists with version (%s), new version (%s) is lower", ruleId, previousRule.Version, r.Version)
 		}
 	}
 	err = rs.ValidateAndRun(r)
@@ -249,11 +250,14 @@ func (rr *RuleRegistry) upsertRule(ruleId, ruleJson string, persist func(string,
 		rr.internal[r.Id] = rs
 	}
 	if err != nil {
-		// A newly created state is not registered and can be invalidated. An
-		// existing state remains in the registry, so only stop its topology;
-		// marking it deleted would make all later operations return NOT_FOUND.
+		// A newly created state is not registered and can be invalidated. Restore
+		// an existing state to the last persisted rule so runtime and storage do
+		// not diverge after a failed update.
 		if isUpdate {
-			rs.StopWithLastWill("stopped by persistence failure")
+			if rollbackErr := rs.ValidateAndRun(previousRule); rollbackErr != nil {
+				conf.Log.Errorf("failed to roll back rule %s after persistence failure: %v", ruleId, rollbackErr)
+				rs.StopWithLastWill("stopped by persistence and rollback failure")
+			}
 		} else {
 			rs.Delete()
 		}
