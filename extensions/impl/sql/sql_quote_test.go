@@ -19,6 +19,30 @@ import (
 	"testing"
 )
 
+func TestSplitDblink(t *testing.T) {
+	tests := []struct {
+		input      string
+		wantID     string
+		wantDblink string
+	}{
+		{"events", "events", ""},
+		{"events@remote", "events", "@remote"},
+		{"events@remote.db", "events", "@remote.db"},
+		{`"MixedCase"@remote`, `"MixedCase"`, "@remote"},
+		{"public.events@remote", "public.events", "@remote"},
+		{"a@b.c@d", "a", "@b.c@d"},
+		{`"a@b".c`, `"a@b".c`, ""},
+		{`"a"@b.c`, `"a"`, "@b.c"},
+	}
+	for _, tt := range tests {
+		idPart, dblink := splitDblink(tt.input)
+		if idPart != tt.wantID || dblink != tt.wantDblink {
+			t.Errorf("splitDblink(%q) = (%q, %q), want (%q, %q)",
+				tt.input, idPart, dblink, tt.wantID, tt.wantDblink)
+		}
+	}
+}
+
 func TestIdentifierQuoteChar(t *testing.T) {
 	tests := []struct {
 		driver string
@@ -109,7 +133,7 @@ func TestQuoteIdentifier(t *testing.T) {
 		// PostgreSQL/SQLite double-quote quoting with case normalization
 		{"postgres", "a", `"a"`},
 		{"sqlite", "my_column", `"my_column"`},
-		{"postgres", `a"b`, `"a""b"`}, // embedded double-quote doubled
+		{"postgres", `a"b`, `"a""b"`},      // embedded double-quote doubled
 		{"postgres", "Events", `"events"`}, // folded to lowercase per PG unquoted rules
 		{"postgres", "MY_TABLE", `"my_table"`},
 
@@ -117,6 +141,12 @@ func TestQuoteIdentifier(t *testing.T) {
 		{"oracle", "events", `"EVENTS"`},
 		{"oracle", "MixedCase", `"MIXEDCASE"`},
 		{"godror", "events", `"EVENTS"`},
+
+		// Already-quoted identifiers — preserved as-is, no case normalization.
+		// This respects the operator's explicit casing choice (e.g. Oracle "MixedCase").
+		{"oracle", `"MixedCase"`, `"MixedCase"`},
+		{"postgres", `"MixedCase"`, `"MixedCase"`},
+		{"mysql", "`MixedCase`", "`MixedCase`"},
 
 		// SQL injection payloads — metacharacters become part of quoted identifier;
 		// PostgreSQL lowercases per its unquoted-identifier rules, but the injection
@@ -169,6 +199,18 @@ func TestQuoteTableName(t *testing.T) {
 
 		// Oracle schema-qualified — uppercased
 		{"oracle", "myschema.mytable", `"MYSCHEMA"."MYTABLE"`},
+
+		// Oracle dblink syntax — @dblink preserved unquoted after quoted identifier
+		{"oracle", "events@remote", `"EVENTS"@remote`},
+		{"oracle", "myschema.mytable@remote", `"MYSCHEMA"."MYTABLE"@remote`},
+
+		// Already-quoted table names — preserved as-is
+		{"oracle", `"MixedCase"`, `"MixedCase"`},
+		{"postgres", `"MyTable"`, `"MyTable"`},
+		{"mysql", "`MyTable`", "`MyTable`"},
+
+		// Already-quoted with dblink
+		{"oracle", `"MixedCase"@remote`, `"MixedCase"@remote`},
 
 		// Multi-level qualified (catalog.schema.table)
 		{"postgres", "catalog.schema.table", `"catalog"."schema"."table"`},
@@ -226,6 +268,22 @@ func TestBuildInsertSQL(t *testing.T) {
 			keys:   []string{"col_a", "col_b"},
 			values: []string{"('x','y')"},
 			want:   `INSERT INTO "MY_TABLE" ("COL_A","COL_B") values ('x','y');`,
+		},
+		{
+			name:   "oracle already-quoted table preserved",
+			driver: "oracle",
+			table:  `"MixedCase"`,
+			keys:   []string{"a"},
+			values: []string{"('x')"},
+			want:   `INSERT INTO "MixedCase" ("A") values ('x');`,
+		},
+		{
+			name:   "oracle dblink table",
+			driver: "oracle",
+			table:  "events@remote",
+			keys:   []string{"a"},
+			values: []string{"('x')"},
+			want:   `INSERT INTO "EVENTS"@remote ("A") values ('x');`,
 		},
 		{
 			name:   "postgres schema-qualified table",
@@ -316,6 +374,20 @@ func TestBuildUpdateSQL(t *testing.T) {
 			keyField: "col_a",
 		},
 		{
+			name:     "oracle dblink update",
+			driver:   "oracle",
+			table:    "events@remote",
+			keys:     []string{"col_a"},
+			keyField: "col_a",
+		},
+		{
+			name:     "oracle already-quoted update",
+			driver:   "oracle",
+			table:    `"MixedCase"`,
+			keys:     []string{"col_a"},
+			keyField: "col_a",
+		},
+		{
 			name:     "mymysql backtick",
 			driver:   "mymysql",
 			table:    "t",
@@ -380,6 +452,18 @@ func TestBuildDeleteSQL(t *testing.T) {
 			name:     "oracle uppercase normalization",
 			driver:   "oracle",
 			table:    "my_table",
+			keyField: "row_id",
+		},
+		{
+			name:     "oracle dblink delete",
+			driver:   "oracle",
+			table:    "events@remote",
+			keyField: "row_id",
+		},
+		{
+			name:     "oracle already-quoted delete",
+			driver:   "oracle",
+			table:    `"MixedCase"`,
 			keyField: "row_id",
 		},
 		{

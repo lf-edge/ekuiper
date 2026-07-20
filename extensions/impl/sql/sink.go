@@ -97,22 +97,50 @@ func quoteSQLString(s string) string {
 // quoteIdentifier wraps a SQL identifier in dialect-appropriate quotes and escapes
 // embedded quote characters. It also normalizes identifier case according to the
 // database's unquoted case-folding rules so that the quoted form matches what the
-// database would have stored for an unquoted identifier. This prevents SQL injection
-// through attacker-controlled column/table names.
+// database would have stored for an unquoted identifier. If the identifier is already
+// quoted with the correct dialect quote character, it is preserved as-is to respect
+// the operator's explicit casing choice (e.g. Oracle "MixedCase"). This prevents
+// SQL injection through attacker-controlled column/table names.
 func (c *sqlSinkConfig) quoteIdentifier(identifier string) string {
 	q := c.identifierQuoteChar()
+	// If already quoted with this dialect's quote character, preserve as-is.
+	if len(identifier) >= 2 && identifier[0] == q[0] && identifier[len(identifier)-1] == q[0] {
+		return identifier
+	}
 	normalized := c.normalizeIdentifier(identifier)
 	return q + strings.ReplaceAll(normalized, q, q+q) + q
 }
 
 // quoteTableName splits a possibly schema-qualified table name (e.g. "public.events")
 // by dot and quotes each component with the dialect-appropriate quote character.
+// It also recognizes and preserves Oracle dblink syntax (table@remote), keeping the
+// @dblink suffix unquoted after the quoted identifier.
 func (c *sqlSinkConfig) quoteTableName(table string) string {
-	parts := strings.Split(table, ".")
+	// Parse out Oracle dblink suffix (first @ not inside quotes).
+	idPart, dblink := splitDblink(table)
+
+	parts := strings.Split(idPart, ".")
 	for i, p := range parts {
 		parts[i] = c.quoteIdentifier(p)
 	}
-	return strings.Join(parts, ".")
+	return strings.Join(parts, ".") + dblink
+}
+
+// splitDblink separates an Oracle table reference into the identifier part and the
+// @dblink suffix. It finds the first @ that is not inside double quotes.
+func splitDblink(s string) (identifier, dblink string) {
+	inQuote := false
+	for i := 0; i < len(s); i++ {
+		switch s[i] {
+		case '"':
+			inQuote = !inQuote
+		case '@':
+			if !inQuote {
+				return s[:i], s[i:]
+			}
+		}
+	}
+	return s, ""
 }
 
 // identifierQuoteChar returns the SQL identifier quoting character for the configured driver.
