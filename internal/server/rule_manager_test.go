@@ -16,6 +16,7 @@ package server
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -106,6 +107,34 @@ func TestStartLoadedRules(t *testing.T) {
 	cancel()
 	startLoadedRules(ctx, rr, []string{"canceledLoaded"})
 	require.Equal(t, machine.Loaded, canceled.GetState())
+}
+
+func TestUpdatePersistenceFailureKeepsStateUsable(t *testing.T) {
+	sp := processor.NewStreamProcessor()
+	_, err := sp.ExecStmt(`CREATE STREAM persistenceDemo () WITH (FORMAT="JSON", TYPE="memory", DATASOURCE="test")`)
+	require.NoError(t, err)
+	defer sp.ExecStmt(`DROP STREAM persistenceDemo`)
+
+	rr := &RuleRegistry{internal: make(map[string]*rule.State)}
+	const stoppedRule = `{"id":"persistenceRule","triggered":false,"sql":"select * from persistenceDemo","actions":[{"log":{}}]}`
+	const runningRule = `{"id":"persistenceRule","triggered":true,"sql":"select * from persistenceDemo","actions":[{"log":{}}]}`
+	_, err = rr.CreateRule("persistenceRule", stoppedRule)
+	require.NoError(t, err)
+	defer rr.DeleteRule("persistenceRule")
+
+	rs, ok := rr.load("persistenceRule")
+	require.True(t, ok)
+	err = rr.upsertRule("persistenceRule", runningRule, func(string, string) error {
+		return errors.New("mock rule upsert error")
+	})
+	require.EqualError(t, err, "mock rule upsert error")
+	retained, ok := rr.load("persistenceRule")
+	require.True(t, ok)
+	require.Same(t, rs, retained)
+	require.Equal(t, machine.Stopped, retained.GetState())
+
+	require.NoError(t, rr.UpsertRule("persistenceRule", runningRule))
+	require.Equal(t, machine.Running, retained.GetState())
 }
 
 func TestCoverage(t *testing.T) {

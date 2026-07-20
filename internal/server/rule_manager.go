@@ -203,6 +203,10 @@ func (rr *RuleRegistry) LoadRule(r *def.Rule) string {
 // UpsertRule validates the new rule, then update the db, then restart the rule
 // The entire operation is protected by a lock to ensure atomic version checking.
 func (rr *RuleRegistry) UpsertRule(ruleId, ruleJson string) error {
+	return rr.upsertRule(ruleId, ruleJson, ruleProcessor.ExecUpsert)
+}
+
+func (rr *RuleRegistry) upsertRule(ruleId, ruleJson string, persist func(string, string) error) error {
 	ruleJson = replace.ReplaceRuleJson(ruleJson, conf.IsTesting)
 	// Validate the rule json (can be done outside lock - no state change)
 	r, err := ruleProcessor.GetRuleByJson(ruleId, ruleJson)
@@ -236,7 +240,7 @@ func (rr *RuleRegistry) UpsertRule(ruleId, ruleJson string) error {
 	}
 	if !r.Temp {
 		// Persist directly - we already hold the lock
-		err = ruleProcessor.ExecUpsert(r.Id, ruleJson)
+		err = persist(r.Id, ruleJson)
 		if err == nil {
 			rr.internal[r.Id] = rs
 		}
@@ -245,8 +249,14 @@ func (rr *RuleRegistry) UpsertRule(ruleId, ruleJson string) error {
 		rr.internal[r.Id] = rs
 	}
 	if err != nil {
-		// rollback clean up
-		rs.Delete()
+		// A newly created state is not registered and can be invalidated. An
+		// existing state remains in the registry, so only stop its topology;
+		// marking it deleted would make all later operations return NOT_FOUND.
+		if isUpdate {
+			rs.StopWithLastWill("stopped by persistence failure")
+		} else {
+			rs.Delete()
+		}
 	}
 	return err
 }

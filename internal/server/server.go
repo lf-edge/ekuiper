@@ -98,9 +98,13 @@ func startLoadedRules(ctx context.Context, rr *RuleRegistry, names []string) {
 	}
 }
 
-// startRestService binds the REST socket before returning, then serves it in
-// the background. Callers may start deferred work only after this succeeds.
+// startRestService initializes REST management dependencies, binds the socket
+// before returning, then serves it in the background. Callers may start
+// deferred work only after this succeeds.
 func startRestService(srvRest *http.Server) (net.Listener, error) {
+	// Configuration endpoints read managers without synchronization, so all
+	// managers must be registered before the listener accepts requests.
+	InitConfManagers()
 	ln, err := newNetListener(srvRest.Addr, logger)
 	if err != nil {
 		return nil, err
@@ -348,9 +352,6 @@ func StartUp(Version string) {
 		logger.Infof("start service %s", k)
 		v.serve()
 	}
-	// Register conf managers
-	InitConfManagers()
-
 	// Startup message
 	restHttpType := "http"
 	if conf.Config.Basic.RestTls != nil {

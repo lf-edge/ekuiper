@@ -209,10 +209,21 @@ func TestRunScheduleRuleChecker(t *testing.T) {
 func TestRestAvailableWithLoadedRules(t *testing.T) {
 	loaded := rule.NewLoadedState(def.GetDefaultRule("restLoaded", "select * from demo"), func(string, bool) {})
 	defer loaded.Delete()
+	originalManagers := managers
+	managers = make(map[string]ConfManager)
+	t.Cleanup(func() { managers = originalManagers })
 
 	srv := &http.Server{
 		Addr: "127.0.0.1:0",
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			for name, component := range components {
+				if _, exportsConfig := component.(confExporter); exportsConfig {
+					if _, registered := managers[name]; !registered {
+						w.WriteHeader(http.StatusServiceUnavailable)
+						return
+					}
+				}
+			}
 			w.WriteHeader(http.StatusOK)
 		}),
 	}

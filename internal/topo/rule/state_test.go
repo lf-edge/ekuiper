@@ -425,6 +425,20 @@ func TestLoadedStateLifecycle(t *testing.T) {
 		require.Same(t, topology, st.topology)
 	})
 
+	t.Run("disabled update prevents deferred start", func(t *testing.T) {
+		st := NewLoadedState(def.GetDefaultRule("loadedDisable", "select * from loadedDemo"), func(string, bool) {})
+		defer st.Delete()
+		updated := def.GetDefaultRule("loadedDisable", "select * from loadedDemo")
+		updated.Triggered = false
+		require.NoError(t, st.ValidateAndRun(updated))
+		require.Equal(t, machine.Stopped, st.GetState())
+		require.Nil(t, st.topology)
+
+		require.NoError(t, st.StartIfLoaded())
+		require.Equal(t, machine.Stopped, st.GetState())
+		require.Nil(t, st.topology)
+	})
+
 	t.Run("scheduled rule waits for patrol", func(t *testing.T) {
 		r := def.GetDefaultRule("loadedSchedule", "select * from loadedDemo")
 		r.Options.Cron = "* * * * *"

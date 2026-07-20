@@ -31,12 +31,11 @@ func (s *State) doValidateAndRun(newRule *def.Rule) (err error) {
 	if err != nil {
 		return err
 	}
-	// stop the old run
-	if s.topology != nil {
-		s.doStop(machine.Stopped, "stopped by update")
-	}
-	// start new rule
 	if newRule.Triggered {
+		// Stop the old run before starting the replacement.
+		if s.topology != nil {
+			s.doStop(machine.Stopped, "stopped by update")
+		}
 		s.topology = tp
 		panicOrError := infra.SafeRun(func() error {
 			// Start the rule which runs async
@@ -46,8 +45,10 @@ func (s *State) doValidateAndRun(newRule *def.Rule) (err error) {
 			s.logger.Errorf("Rule %s start failed: %s", s.Rule.Id, panicOrError)
 		}
 	} else {
-		// Discard the temp topo
+		// Discard the validation topology and use the normal stop path for
+		// both running rules and loaded rules that have not been planned yet.
 		tp.Cancel()
+		s.doStop(machine.Stopped, "stopped by update")
 	}
 	return nil
 }
