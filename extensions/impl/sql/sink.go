@@ -95,11 +95,14 @@ func quoteSQLString(s string) string {
 }
 
 // quoteIdentifier wraps a SQL identifier in dialect-appropriate quotes and escapes
-// embedded quote characters. This prevents SQL injection through attacker-controlled
-// column/table names.
+// embedded quote characters. It also normalizes identifier case according to the
+// database's unquoted case-folding rules so that the quoted form matches what the
+// database would have stored for an unquoted identifier. This prevents SQL injection
+// through attacker-controlled column/table names.
 func (c *sqlSinkConfig) quoteIdentifier(identifier string) string {
 	q := c.identifierQuoteChar()
-	return q + strings.ReplaceAll(identifier, q, q+q) + q
+	normalized := c.normalizeIdentifier(identifier)
+	return q + strings.ReplaceAll(normalized, q, q+q) + q
 }
 
 // quoteTableName splits a possibly schema-qualified table name (e.g. "public.events")
@@ -115,10 +118,25 @@ func (c *sqlSinkConfig) quoteTableName(table string) string {
 // identifierQuoteChar returns the SQL identifier quoting character for the configured driver.
 func (c *sqlSinkConfig) identifierQuoteChar() string {
 	switch strings.ToLower(c.driver) {
-	case "mysql":
+	case "mysql", "mymysql", "hive", "spanner":
 		return "`"
 	default:
 		return "\""
+	}
+}
+
+// normalizeIdentifier normalizes an identifier's case to match the database's
+// unquoted-identifier case-folding rules. This preserves backward compatibility
+// now that we quote identifiers (quoted identifiers are case-sensitive in most
+// databases, whereas unquoted identifiers are not).
+func (c *sqlSinkConfig) normalizeIdentifier(name string) string {
+	switch strings.ToLower(c.driver) {
+	case "oracle", "godror":
+		return strings.ToUpper(name)
+	case "postgres", "pgx":
+		return strings.ToLower(name)
+	default:
+		return name
 	}
 }
 

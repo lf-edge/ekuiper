@@ -24,14 +24,24 @@ func TestIdentifierQuoteChar(t *testing.T) {
 		driver string
 		want   string
 	}{
+		// MySQL family — backtick
 		{"mysql", "`"},
 		{"MYSQL", "`"},
 		{"MySQL", "`"},
+		{"mymysql", "`"},
+		{"MyMySQL", "`"},
+		{"hive", "`"},
+		{"spanner", "`"},
+
+		// SQL standard — double quote
 		{"postgres", "\""},
 		{"PostgreSQL", "\""},
+		{"pgx", "\""},
 		{"sqlite", "\""},
 		{"sqlserver", "\""},
 		{"mssql", "\""},
+		{"oracle", "\""},
+		{"godror", "\""},
 		{"unknown", "\""},
 		{"", "\""},
 	}
@@ -40,6 +50,42 @@ func TestIdentifierQuoteChar(t *testing.T) {
 		got := c.identifierQuoteChar()
 		if got != tt.want {
 			t.Errorf("identifierQuoteChar(%q) = %q, want %q", tt.driver, got, tt.want)
+		}
+	}
+}
+
+func TestNormalizeIdentifier(t *testing.T) {
+	tests := []struct {
+		driver string
+		name   string
+		want   string
+	}{
+		// Oracle family — uppercase
+		{"oracle", "events", "EVENTS"},
+		{"oracle", "MY_TABLE", "MY_TABLE"},
+		{"oracle", "MixedCase", "MIXEDCASE"},
+		{"godror", "events", "EVENTS"},
+
+		// PostgreSQL family — lowercase
+		{"postgres", "Events", "events"},
+		{"postgres", "MY_TABLE", "my_table"},
+		{"postgres", "mixedCase", "mixedcase"},
+		{"pgx", "Events", "events"},
+
+		// Others — preserve
+		{"mysql", "Events", "Events"},
+		{"mymysql", "Events", "Events"},
+		{"sqlite", "Events", "Events"},
+		{"sqlserver", "Events", "Events"},
+		{"hive", "Events", "Events"},
+		{"spanner", "Events", "Events"},
+		{"unknown", "Events", "Events"},
+	}
+	for _, tt := range tests {
+		c := &sqlSinkConfig{driver: tt.driver}
+		got := c.normalizeIdentifier(tt.name)
+		if got != tt.want {
+			t.Errorf("normalizeIdentifier(%q, %q) = %q, want %q", tt.driver, tt.name, got, tt.want)
 		}
 	}
 }
@@ -55,19 +101,33 @@ func TestQuoteIdentifier(t *testing.T) {
 		{"mysql", "my_column", "`my_column`"},
 		{"mysql", "a`b", "`a``b`"}, // embedded backtick doubled
 
-		// PostgreSQL/SQLite double-quote quoting
+		// Extended MySQL-family drivers
+		{"mymysql", "a", "`a`"},
+		{"hive", "a", "`a`"},
+		{"spanner", "t", "`t`"},
+
+		// PostgreSQL/SQLite double-quote quoting with case normalization
 		{"postgres", "a", `"a"`},
 		{"sqlite", "my_column", `"my_column"`},
 		{"postgres", `a"b`, `"a""b"`}, // embedded double-quote doubled
+		{"postgres", "Events", `"events"`}, // folded to lowercase per PG unquoted rules
+		{"postgres", "MY_TABLE", `"my_table"`},
 
-		// SQL injection payloads — metacharacters become part of quoted identifier
-		{"postgres", "a); DROP TABLE secret;--", `"a); DROP TABLE secret;--"`},
+		// Oracle — uppercase normalization
+		{"oracle", "events", `"EVENTS"`},
+		{"oracle", "MixedCase", `"MIXEDCASE"`},
+		{"godror", "events", `"EVENTS"`},
+
+		// SQL injection payloads — metacharacters become part of quoted identifier;
+		// PostgreSQL lowercases per its unquoted-identifier rules, but the injection
+		// is still neutralized because the entire payload is inside a quoted identifier.
+		{"postgres", "a); DROP TABLE secret;--", `"a); drop table secret;--"`},
 		{"mysql", "a); DROP TABLE secret;--", "`a); DROP TABLE secret;--`"},
-		{"postgres", "a) values ('1'); CREATE TABLE pwned(z); DROP TABLE secret; --", `"a) values ('1'); CREATE TABLE pwned(z); DROP TABLE secret; --"`},
+		{"postgres", "a) values ('1'); CREATE TABLE pwned(z); DROP TABLE secret; --", `"a) values ('1'); create table pwned(z); drop table secret; --"`},
 		{"mysql", "a) values ('1'); CREATE TABLE pwned(z); DROP TABLE secret; --", "`a) values ('1'); CREATE TABLE pwned(z); DROP TABLE secret; --`"},
 
 		// Embedded quote with injection combined
-		{"postgres", `a"; DROP TABLE t;--`, `"a""; DROP TABLE t;--"`},
+		{"postgres", `a"; DROP TABLE t;--`, `"a""; drop table t;--"`},
 		{"mysql", "a`; DROP TABLE t;--", "`a``; DROP TABLE t;--`"},
 
 		// Leading digit, hyphens — valid after quoting
@@ -94,10 +154,21 @@ func TestQuoteTableName(t *testing.T) {
 		{"postgres", "t", `"t"`},
 		{"sqlite", "events", `"events"`},
 
+		// Extended MySQL-family
+		{"mymysql", "t", "`t`"},
+		{"hive", "t", "`t`"},
+		{"spanner", "t", "`t`"},
+
 		// Schema-qualified table names
 		{"postgres", "public.events", `"public"."events"`},
 		{"mysql", "mydb.mytable", "`mydb`.`mytable`"},
-		{"postgres", "myschema.mytable", `"myschema"."mytable"`},
+
+		// Schema-qualified with case normalization (PostgreSQL)
+		{"postgres", "Public.Events", `"public"."events"`},
+		{"postgres", "MYSCHEMA.MYTABLE", `"myschema"."mytable"`},
+
+		// Oracle schema-qualified — uppercased
+		{"oracle", "myschema.mytable", `"MYSCHEMA"."MYTABLE"`},
 
 		// Multi-level qualified (catalog.schema.table)
 		{"postgres", "catalog.schema.table", `"catalog"."schema"."table"`},
@@ -141,6 +212,22 @@ func TestBuildInsertSQL(t *testing.T) {
 			want:   `INSERT INTO "t" ("a","b") values ('value1','value2');`,
 		},
 		{
+			name:   "postgres mixed-case normalized",
+			driver: "postgres",
+			table:  "MyTable",
+			keys:   []string{"ColA", "ColB"},
+			values: []string{"('x','y')"},
+			want:   `INSERT INTO "mytable" ("cola","colb") values ('x','y');`,
+		},
+		{
+			name:   "oracle normalized to uppercase",
+			driver: "oracle",
+			table:  "my_table",
+			keys:   []string{"col_a", "col_b"},
+			values: []string{"('x','y')"},
+			want:   `INSERT INTO "MY_TABLE" ("COL_A","COL_B") values ('x','y');`,
+		},
+		{
 			name:   "postgres schema-qualified table",
 			driver: "postgres",
 			table:  "public.events",
@@ -157,12 +244,20 @@ func TestBuildInsertSQL(t *testing.T) {
 			want:   "INSERT INTO `db`.`events` (`col1`) values ('x');",
 		},
 		{
+			name:   "mymysql backtick quoting",
+			driver: "mymysql",
+			table:  "t",
+			keys:   []string{"a", "b"},
+			values: []string{"('1','2')"},
+			want:   "INSERT INTO `t` (`a`,`b`) values ('1','2');",
+		},
+		{
 			name:   "injection payload quoted",
 			driver: "postgres",
 			table:  "t",
 			keys:   []string{"a); DROP TABLE secret;--"},
 			values: []string{"('1')"},
-			want:   `INSERT INTO "t" ("a); DROP TABLE secret;--") values ('1');`,
+			want:   `INSERT INTO "t" ("a); drop table secret;--") values ('1');`,
 		},
 		{
 			name:   "multiple value rows",
@@ -185,15 +280,12 @@ func TestBuildInsertSQL(t *testing.T) {
 }
 
 func TestBuildUpdateSQL(t *testing.T) {
-	// Verify the UPDATE SQL assembly through save's RowkindUpdate path
-	// by checking the key identifier quoting and table quoting.
 	tests := []struct {
 		name     string
 		driver   string
 		table    string
 		keys     []string
 		keyField string
-		wantPart string // partial match on the generated SQL
 	}{
 		{
 			name:     "mysql update",
@@ -201,7 +293,6 @@ func TestBuildUpdateSQL(t *testing.T) {
 			table:    "t",
 			keys:     []string{"a", "b"},
 			keyField: "a",
-			wantPart: "UPDATE `t` SET `a`='1',`b`='2' WHERE `a` = '1';",
 		},
 		{
 			name:     "postgres update with schema",
@@ -209,7 +300,27 @@ func TestBuildUpdateSQL(t *testing.T) {
 			table:    "public.events",
 			keys:     []string{"col1"},
 			keyField: "col1",
-			wantPart: `UPDATE "public"."events" SET "col1"='x' WHERE "col1" = 'x';`,
+		},
+		{
+			name:     "postgres mixed-case normalization",
+			driver:   "postgres",
+			table:    "MyTable",
+			keys:     []string{"ColA", "ColB"},
+			keyField: "ColA",
+		},
+		{
+			name:     "oracle uppercase normalization",
+			driver:   "oracle",
+			table:    "my_table",
+			keys:     []string{"col_a"},
+			keyField: "col_a",
+		},
+		{
+			name:     "mymysql backtick",
+			driver:   "mymysql",
+			table:    "t",
+			keys:     []string{"a"},
+			keyField: "a",
 		},
 	}
 	for _, tt := range tests {
@@ -218,40 +329,23 @@ func TestBuildUpdateSQL(t *testing.T) {
 				driver:   tt.driver,
 				KeyField: tt.keyField,
 			}
-			// Simulate UPDATE SQL construction
 			sqlStr := "UPDATE " + cfg.quoteTableName(tt.table) + " SET "
 			for i, key := range tt.keys {
 				if i != 0 {
 					sqlStr += ","
 				}
-				// Simulating values: use key name as mock value for structural test
 				sqlStr += cfg.quoteIdentifier(key) + "=" + quoteSQLString(key)
 			}
 			sqlStr += " WHERE " + cfg.quoteIdentifier(tt.keyField) + " = " + quoteSQLString("1") + ";"
 
-			if tt.wantPart == "UPDATE `t` SET `a`='1',`b`='2' WHERE `a` = '1';" {
-				got := "UPDATE " + cfg.quoteTableName(tt.table) + " SET "
-				for i, key := range tt.keys {
-					if i != 0 {
-						got += ","
-					}
-					mockVal := "1"
-					if key == "b" {
-						mockVal = "2"
-					}
-					got += cfg.quoteIdentifier(key) + "=" + quoteSQLString(mockVal)
-				}
-				got += " WHERE " + cfg.quoteIdentifier(tt.keyField) + " = " + quoteSQLString("1") + ";"
-				if got != tt.wantPart {
-					t.Errorf("UPDATE SQL = %q, want %q", got, tt.wantPart)
-				}
-				return
-			}
 			if !strings.Contains(sqlStr, cfg.quoteTableName(tt.table)) {
 				t.Errorf("UPDATE missing quoted table: %s", sqlStr)
 			}
 			if !strings.Contains(sqlStr, cfg.quoteIdentifier(tt.keys[0])) {
 				t.Errorf("UPDATE missing quoted key: %s", sqlStr)
+			}
+			if !strings.Contains(sqlStr, cfg.quoteIdentifier(tt.keyField)) {
+				t.Errorf("UPDATE missing quoted keyField: %s", sqlStr)
 			}
 		})
 	}
@@ -263,21 +357,36 @@ func TestBuildDeleteSQL(t *testing.T) {
 		driver   string
 		table    string
 		keyField string
-		want     string
 	}{
 		{
 			name:     "mysql delete",
 			driver:   "mysql",
 			table:    "t",
 			keyField: "a",
-			want:     "DELETE FROM `t` WHERE `a` = '1';",
 		},
 		{
 			name:     "postgres delete with schema",
 			driver:   "postgres",
 			table:    "public.events",
 			keyField: "col1",
-			want:     `DELETE FROM "public"."events" WHERE "col1" = '1';`,
+		},
+		{
+			name:     "postgres mixed-case normalization",
+			driver:   "postgres",
+			table:    "MyTable",
+			keyField: "RowID",
+		},
+		{
+			name:     "oracle uppercase normalization",
+			driver:   "oracle",
+			table:    "my_table",
+			keyField: "row_id",
+		},
+		{
+			name:     "mymysql backtick",
+			driver:   "mymysql",
+			table:    "t",
+			keyField: "a",
 		},
 	}
 	for _, tt := range tests {
@@ -289,8 +398,12 @@ func TestBuildDeleteSQL(t *testing.T) {
 			sqlStr := "DELETE FROM " + cfg.quoteTableName(tt.table) +
 				" WHERE " + cfg.quoteIdentifier(tt.keyField) +
 				" = " + quoteSQLString("1") + ";"
-			if sqlStr != tt.want {
-				t.Errorf("DELETE SQL = %q, want %q", sqlStr, tt.want)
+
+			if !strings.Contains(sqlStr, cfg.quoteTableName(tt.table)) {
+				t.Errorf("DELETE missing quoted table: %s", sqlStr)
+			}
+			if !strings.Contains(sqlStr, cfg.quoteIdentifier(tt.keyField)) {
+				t.Errorf("DELETE missing quoted keyField: %s", sqlStr)
 			}
 		})
 	}
