@@ -42,6 +42,14 @@ Other common sink properties are supported. Please refer to the [sink common pro
 
 You can check the connectivity of the corresponding sink endpoint in advance through the API: [Connectivity Check](../../../api/restapi/connection.md#connectivity-check)
 
+### Dynamic field names
+
+When `fields` is not configured, the SQL sink derives column names from the result map keys (from the first row for a batch). Each derived name must match `[A-Za-z_][A-Za-z0-9_]*`: it must start with an ASCII letter or underscore and may then contain only ASCII letters, digits, or underscores. This restriction also applies to keys named by `rowkindField` when they are included in the generated columns.
+
+If a derived name does not match this format, the affected write is rejected before SQL is executed. The sink does not silently drop or automatically quote the invalid key.
+
+Explicitly configured `table`, `fields`, and `keyField` values are passed to the generated SQL unchanged so that database-specific identifier syntax remains supported. Each configured `fields` entry is also used to look up the value in the result map, so the map key must exactly match the configured entry and the entry must use syntax accepted by the target database.
+
 ## Sample usage
 
 Below is a sample for using sql to get the target data and set to mysql database
