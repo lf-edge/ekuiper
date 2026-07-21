@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
+	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
 
 func TestSafeDynamicFieldName(t *testing.T) {
@@ -101,8 +102,9 @@ func TestExtractKeys(t *testing.T) {
 
 func TestCollectRejectsDynamicIdentifierInjection(t *testing.T) {
 	sink := &SQLSinkConnector{config: &sqlSinkConfig{Table: "events"}}
+	ctx := mockContext.NewMockContext("TestCollectRejectsDynamicIdentifierInjection", "sqlSink")
 	payload := `"x") VALUES ('safe'); DROP TABLE secret;--"`
-	err := sink.collect(nil, map[string]any{payload: "ignored"})
+	err := sink.collect(ctx, map[string]any{payload: "ignored"})
 	if err == nil {
 		t.Fatal("collect() accepted an injectable dynamic field name")
 	}
@@ -112,6 +114,7 @@ func TestCollectRejectsDynamicIdentifierInjection(t *testing.T) {
 }
 
 func TestSaveRejectsDynamicIdentifierInjection(t *testing.T) {
+	ctx := mockContext.NewMockContext("TestSaveRejectsDynamicIdentifierInjection", "sqlSink")
 	payload := `"x") VALUES ('safe'); DROP TABLE secret;--"`
 	for _, rowkind := range []string{ast.RowkindInsert, ast.RowkindUpdate, ast.RowkindDelete} {
 		t.Run(rowkind, func(t *testing.T) {
@@ -120,7 +123,7 @@ func TestSaveRejectsDynamicIdentifierInjection(t *testing.T) {
 				RowKindField: "rowkind",
 				KeyField:     "id",
 			}}
-			err := sink.save(nil, "events", map[string]any{
+			err := sink.save(ctx, "events", map[string]any{
 				"rowkind": rowkind,
 				"id":      1,
 				payload:   "ignored",

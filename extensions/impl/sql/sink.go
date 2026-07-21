@@ -192,7 +192,7 @@ func (s *SQLSinkConnector) Collect(ctx api.StreamContext, item api.MessageTuple)
 	return s.collect(ctx, item.ToMap())
 }
 
-func (s *SQLSinkConnector) collect(ctx api.StreamContext, item map[string]any) (err error) {
+func (s *SQLSinkConnector) collect(ctx api.StreamContext, item map[string]any) error {
 	if len(s.config.RowKindField) < 1 {
 		keys, err := s.extractKeys(item)
 		if err != nil {
@@ -224,7 +224,7 @@ func (s *SQLSinkConnector) CollectList(ctx api.StreamContext, items api.MessageT
 	return s.collectList(ctx, items.ToMaps())
 }
 
-func (s *SQLSinkConnector) collectList(ctx api.StreamContext, items []map[string]any) (err error) {
+func (s *SQLSinkConnector) collectList(ctx api.StreamContext, items []map[string]any) error {
 	if len(items) < 1 {
 		return nil
 	}
