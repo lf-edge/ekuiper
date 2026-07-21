@@ -1,4 +1,4 @@
-// Copyright 2022-2024 EMQ Technologies Co., Ltd.
+// Copyright 2022-2026 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -141,6 +141,21 @@ func TestInternalQuery(t *testing.T) {
 	}
 }
 
+func TestCommonQueryOrderByColumn(t *testing.T) {
+	cfg := &InternalSqlQueryCfg{
+		Table: "table",
+		Limit: 10,
+		store: store.NewIndexFieldWrap(&store.IndexField{
+			IndexFieldName:  "responseTime",
+			IndexFieldValue: 10,
+		}),
+	}
+
+	query, err := NewCommonSqlQuery(cfg).SqlQueryStatement()
+	require.NoError(t, err)
+	require.Equal(t, "select * from table where responseTime > '10' order by responseTime ASC limit 10", query)
+}
+
 func TestGenerateSQLWithMultiIndex(t *testing.T) {
 	testcases := []struct {
 		cfg *InternalSqlQueryCfg
@@ -159,7 +174,7 @@ func TestGenerateSQLWithMultiIndex(t *testing.T) {
 						IndexFieldValue: 2,
 					}),
 			},
-			sql: `select * from t where col1 > '1' AND col2 > '2' order by 'col1' ASC, 'col2' ASC`,
+			sql: `select * from t where col1 > '1' AND col2 > '2' order by col1 ASC, col2 ASC`,
 		},
 		{
 			cfg: &InternalSqlQueryCfg{
@@ -174,7 +189,7 @@ func TestGenerateSQLWithMultiIndex(t *testing.T) {
 						IndexFieldValue: 1,
 					}),
 			},
-			sql: `select * from t where col2 > '2' AND col1 > '1' order by 'col2' ASC, 'col1' ASC`,
+			sql: `select * from t where col2 > '2' AND col1 > '1' order by col2 ASC, col1 ASC`,
 		},
 		{
 			cfg: &InternalSqlQueryCfg{
@@ -190,7 +205,7 @@ func TestGenerateSQLWithMultiIndex(t *testing.T) {
 						IndexFieldValue: 1,
 					}),
 			},
-			sql: `select * from t where col2 > '2' AND col1 > '1' order by 'col2' ASC, 'col1' ASC limit 3`,
+			sql: `select * from t where col2 > '2' AND col1 > '1' order by col2 ASC, col1 ASC limit 3`,
 		},
 		{
 			cfg: &InternalSqlQueryCfg{
