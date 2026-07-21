@@ -1,4 +1,4 @@
-// Copyright 2024-2025 EMQ Technologies Co., Ltd.
+// Copyright 2024-2026 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -95,31 +95,56 @@ func quoteSQLString(s string) string {
 }
 
 // quoteIdentifier wraps a SQL identifier in dialect-appropriate quotes and escapes
-// embedded quote characters. It also normalizes identifier case according to the
-// database's unquoted case-folding rules so that the quoted form matches what the
-// database would have stored for an unquoted identifier. If the identifier is already
-// quoted with the correct dialect quote character, it is preserved as-is to respect
-// the operator's explicit casing choice (e.g. Oracle "MixedCase"). This prevents
-// SQL injection through attacker-controlled column/table names.
+// embedded quote characters. It also normalizes unquoted identifiers to match the
+// database's case-folding rules. Already quoted identifiers are preserved only when
+// they parse as exactly one valid quoted identifier; malformed quoted input is
+// requoted as ordinary identifier content.
 func (c *sqlSinkConfig) quoteIdentifier(identifier string) string {
 	q := c.identifierQuoteChar()
-	// If already quoted with this dialect's quote character, preserve as-is.
-	if len(identifier) >= 2 && identifier[0] == q[0] && identifier[len(identifier)-1] == q[0] {
-		return identifier
+	if content, ok := parseQuotedIdentifier(identifier, q[0]); ok {
+		return quoteRawIdentifierContent(content, q)
 	}
 	normalized := c.normalizeIdentifier(identifier)
-	return q + strings.ReplaceAll(normalized, q, q+q) + q
+	return quoteRawIdentifierContent(normalized, q)
+}
+
+func quoteRawIdentifierContent(identifier, q string) string {
+	return q + strings.ReplaceAll(identifier, q, q+q) + q
+}
+
+func parseQuotedIdentifier(identifier string, q byte) (string, bool) {
+	if len(identifier) < 2 || identifier[0] != q || identifier[len(identifier)-1] != q {
+		return "", false
+	}
+	var b strings.Builder
+	for i := 1; i < len(identifier)-1; {
+		if identifier[i] != q {
+			b.WriteByte(identifier[i])
+			i++
+			continue
+		}
+		if i+1 < len(identifier)-1 && identifier[i+1] == q {
+			b.WriteByte(q)
+			i += 2
+			continue
+		}
+		return "", false
+	}
+	return b.String(), true
 }
 
 // quoteTableName splits a possibly schema-qualified table name (e.g. "public.events")
-// by dot and quotes each component with the dialect-appropriate quote character.
-// It also recognizes and preserves Oracle dblink syntax (table@remote), keeping the
-// @dblink suffix unquoted after the quoted identifier.
+// by dots outside quoted identifiers and quotes each component with the
+// dialect-appropriate quote character. Oracle dblink syntax is recognized only for
+// Oracle drivers, also outside quoted identifiers.
 func (c *sqlSinkConfig) quoteTableName(table string) string {
-	// Parse out Oracle dblink suffix (first @ not inside quotes).
-	idPart, dblink := splitDblink(table)
+	q := c.identifierQuoteChar()
+	idPart, dblink := table, ""
+	if c.isOracleDriver() {
+		idPart, dblink = splitDblink(table, q[0])
+	}
 
-	parts := strings.Split(idPart, ".")
+	parts := splitOutsideQuote(idPart, '.', q[0])
 	for i, p := range parts {
 		parts[i] = c.quoteIdentifier(p)
 	}
@@ -127,29 +152,85 @@ func (c *sqlSinkConfig) quoteTableName(table string) string {
 }
 
 // splitDblink separates an Oracle table reference into the identifier part and the
-// @dblink suffix. It finds the first @ that is not inside double quotes.
-func splitDblink(s string) (identifier, dblink string) {
-	inQuote := false
-	for i := 0; i < len(s); i++ {
-		switch s[i] {
-		case '"':
-			inQuote = !inQuote
-		case '@':
-			if !inQuote {
-				return s[:i], s[i:]
-			}
-		}
+// @dblink suffix. It finds the first @ that is not inside quoted identifiers.
+func splitDblink(s string, q byte) (identifier, dblink string) {
+	if i := indexOutsideQuote(s, '@', q); i >= 0 {
+		return s[:i], s[i:]
 	}
 	return s, ""
+}
+
+func splitOutsideQuote(s string, sep, q byte) []string {
+	var parts []string
+	start := 0
+	inQuote := false
+	for i := 0; i < len(s); i++ {
+		if s[i] == q {
+			if !inQuote && i == start {
+				inQuote = true
+				continue
+			}
+			if inQuote && i+1 < len(s) && s[i+1] == q {
+				i++
+				continue
+			}
+			if inQuote {
+				inQuote = false
+			}
+			continue
+		}
+		if s[i] == sep && !inQuote {
+			parts = append(parts, s[start:i])
+			start = i + 1
+		}
+	}
+	return append(parts, s[start:])
+}
+
+func indexOutsideQuote(s string, sep, q byte) int {
+	inQuote := false
+	componentStart := 0
+	for i := 0; i < len(s); i++ {
+		if s[i] == q {
+			if !inQuote && i == componentStart {
+				inQuote = true
+				continue
+			}
+			if inQuote && i+1 < len(s) && s[i+1] == q {
+				i++
+				continue
+			}
+			if inQuote {
+				inQuote = false
+			}
+			continue
+		}
+		if s[i] == sep && !inQuote {
+			return i
+		}
+		if s[i] == '.' && !inQuote {
+			componentStart = i + 1
+		}
+	}
+	return -1
 }
 
 // identifierQuoteChar returns the SQL identifier quoting character for the configured driver.
 func (c *sqlSinkConfig) identifierQuoteChar() string {
 	switch strings.ToLower(c.driver) {
-	case "mysql", "mymysql", "hive", "spanner":
+	case "mysql", "mymysql", "hive", "spanner", "impala":
 		return "`"
 	default:
 		return "\""
+	}
+}
+
+func (c *sqlSinkConfig) isOracleDriver() bool {
+	switch strings.ToLower(c.driver) {
+	case "oracle", "godror":
+		return true
+	default:
+		return false
 	}
 }
 
@@ -340,30 +421,13 @@ func (s *SQLSinkConnector) save(ctx api.StreamContext, table string, data map[st
 		if err != nil {
 			return err
 		}
-		cfg := s.config
-		sqlStr = fmt.Sprintf("UPDATE %s SET ", cfg.quoteTableName(table))
-		for i, key := range keys {
-			if i != 0 {
-				sqlStr += ","
-			}
-			sqlStr += fmt.Sprintf("%s=%s", cfg.quoteIdentifier(key), vals[i])
-		}
-		if ksv, ok := keyval.(string); ok {
-			sqlStr += fmt.Sprintf(" WHERE %s = %s;", cfg.quoteIdentifier(s.config.KeyField), quoteSQLString(ksv))
-		} else {
-			sqlStr += fmt.Sprintf(" WHERE %s = %v;", cfg.quoteIdentifier(s.config.KeyField), keyval)
-		}
+		sqlStr = buildUpdateSQL(s.config, table, keys, vals, s.config.KeyField, keyval)
 	case ast.RowkindDelete:
 		keyval, ok := data[s.config.KeyField]
 		if !ok {
 			return fmt.Errorf("field %s does not exist in data %v", s.config.KeyField, data)
 		}
-		cfg := s.config
-		if ksv, ok := keyval.(string); ok {
-			sqlStr = fmt.Sprintf("DELETE FROM %s WHERE %s = %s;", cfg.quoteTableName(table), cfg.quoteIdentifier(s.config.KeyField), quoteSQLString(ksv))
-		} else {
-			sqlStr = fmt.Sprintf("DELETE FROM %s WHERE %s = %v;", cfg.quoteTableName(table), cfg.quoteIdentifier(s.config.KeyField), keyval)
-		}
+		sqlStr = buildDeleteSQL(s.config, table, s.config.KeyField, keyval)
 	default:
 		return fmt.Errorf("invalid rowkind %s", rowkind)
 	}
@@ -416,6 +480,29 @@ func buildInsertSQL(c *sqlSinkConfig, table string, keys []string, values []stri
 	}
 	sql := fmt.Sprintf("INSERT INTO %s (%s) values ", c.quoteTableName(table), strings.Join(quotedKeys, ",")) + strings.Join(values, ",") + ";"
 	return sql
+}
+
+func buildUpdateSQL(c *sqlSinkConfig, table string, keys []string, vals []string, keyField string, keyval any) string {
+	sqlStr := fmt.Sprintf("UPDATE %s SET ", c.quoteTableName(table))
+	for i, key := range keys {
+		if i != 0 {
+			sqlStr += ","
+		}
+		sqlStr += fmt.Sprintf("%s=%s", c.quoteIdentifier(key), vals[i])
+	}
+	sqlStr += fmt.Sprintf(" WHERE %s = %s;", c.quoteIdentifier(keyField), quoteSQLValue(keyval))
+	return sqlStr
+}
+
+func buildDeleteSQL(c *sqlSinkConfig, table string, keyField string, keyval any) string {
+	return fmt.Sprintf("DELETE FROM %s WHERE %s = %s;", c.quoteTableName(table), c.quoteIdentifier(keyField), quoteSQLValue(keyval))
+}
+
+func quoteSQLValue(v any) string {
+	if s, ok := v.(string); ok {
+		return quoteSQLString(s)
+	}
+	return fmt.Sprintf("%v", v)
 }
 
 func GetSink() api.Sink {
