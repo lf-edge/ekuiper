@@ -54,7 +54,6 @@ type sqlSinkConfig struct {
 	Fields       []string `json:"fields"`
 	RowKindField string   `json:"rowKindField"`
 	KeyField     string   `json:"keyField"`
-	driver       string
 }
 
 func (c *sqlSinkConfig) buildInsertSql(ctx api.StreamContext, mapData map[string]interface{}, keys []string) (string, error) {
@@ -94,159 +93,27 @@ func quoteSQLString(s string) string {
 	return "'" + strings.ReplaceAll(s, "'", "''") + "'"
 }
 
-// quoteIdentifier wraps a SQL identifier in dialect-appropriate quotes and escapes
-// embedded quote characters. It also normalizes unquoted identifiers to match the
-// database's case-folding rules. Already quoted identifiers are preserved only when
-// they parse as exactly one valid quoted identifier; malformed quoted input is
-// requoted as ordinary identifier content.
-func (c *sqlSinkConfig) quoteIdentifier(identifier string) string {
-	q := c.identifierQuoteChar()
-	if content, ok := parseQuotedIdentifier(identifier, q[0]); ok {
-		return quoteRawIdentifierContent(content, q)
-	}
-	normalized := c.normalizeIdentifier(identifier)
-	return quoteRawIdentifierContent(normalized, q)
-}
-
-func quoteRawIdentifierContent(identifier, q string) string {
-	return q + strings.ReplaceAll(identifier, q, q+q) + q
-}
-
-func parseQuotedIdentifier(identifier string, q byte) (string, bool) {
-	if len(identifier) < 2 || identifier[0] != q || identifier[len(identifier)-1] != q {
-		return "", false
-	}
-	var b strings.Builder
-	for i := 1; i < len(identifier)-1; {
-		if identifier[i] != q {
-			b.WriteByte(identifier[i])
-			i++
-			continue
-		}
-		if i+1 < len(identifier)-1 && identifier[i+1] == q {
-			b.WriteByte(q)
-			i += 2
-			continue
-		}
-		return "", false
-	}
-	return b.String(), true
-}
-
-// quoteTableName splits a possibly schema-qualified table name (e.g. "public.events")
-// by dots outside quoted identifiers and quotes each component with the
-// dialect-appropriate quote character. Oracle dblink syntax is recognized only for
-// Oracle drivers, also outside quoted identifiers.
-func (c *sqlSinkConfig) quoteTableName(table string) string {
-	q := c.identifierQuoteChar()
-	idPart, dblink := table, ""
-	if c.isOracleDriver() {
-		idPart, dblink = splitDblink(table, q[0])
-	}
-
-	parts := splitOutsideQuote(idPart, '.', q[0])
-	for i, p := range parts {
-		parts[i] = c.quoteIdentifier(p)
-	}
-	return strings.Join(parts, ".") + dblink
-}
-
-// splitDblink separates an Oracle table reference into the identifier part and the
-// @dblink suffix. It finds the first @ that is not inside quoted identifiers.
-func splitDblink(s string, q byte) (identifier, dblink string) {
-	if i := indexOutsideQuote(s, '@', q); i >= 0 {
-		return s[:i], s[i:]
-	}
-	return s, ""
-}
-
-func splitOutsideQuote(s string, sep, q byte) []string {
-	var parts []string
-	start := 0
-	inQuote := false
-	for i := 0; i < len(s); i++ {
-		if s[i] == q {
-			if !inQuote && i == start {
-				inQuote = true
-				continue
-			}
-			if inQuote && i+1 < len(s) && s[i+1] == q {
-				i++
-				continue
-			}
-			if inQuote {
-				inQuote = false
-			}
-			continue
-		}
-		if s[i] == sep && !inQuote {
-			parts = append(parts, s[start:i])
-			start = i + 1
-		}
-	}
-	return append(parts, s[start:])
-}
-
-func indexOutsideQuote(s string, sep, q byte) int {
-	inQuote := false
-	componentStart := 0
-	for i := 0; i < len(s); i++ {
-		if s[i] == q {
-			if !inQuote && i == componentStart {
-				inQuote = true
-				continue
-			}
-			if inQuote && i+1 < len(s) && s[i+1] == q {
-				i++
-				continue
-			}
-			if inQuote {
-				inQuote = false
-			}
-			continue
-		}
-		if s[i] == sep && !inQuote {
-			return i
-		}
-		if s[i] == '.' && !inQuote {
-			componentStart = i + 1
-		}
-	}
-	return -1
-}
-
-// identifierQuoteChar returns the SQL identifier quoting character for the configured driver.
-func (c *sqlSinkConfig) identifierQuoteChar() string {
-	switch strings.ToLower(c.driver) {
-	case "mysql", "mymysql", "hive", "spanner", "impala":
-		return "`"
-	default:
-		return "\""
-	}
-}
-
-func (c *sqlSinkConfig) isOracleDriver() bool {
-	switch strings.ToLower(c.driver) {
-	case "oracle", "godror":
-		return true
-	default:
+// isSafeDynamicFieldName recognizes dynamic message keys that cannot alter SQL syntax.
+// Explicitly configured identifiers are trusted SQL configuration and retain their
+// existing database-specific syntax.
+func isSafeDynamicFieldName(identifier string) bool {
+	if len(identifier) == 0 || !isIdentifierStart(identifier[0]) {
 		return false
 	}
+	for i := 1; i < len(identifier); i++ {
+		if !isIdentifierPart(identifier[i]) {
+			return false
+		}
+	}
+	return true
 }
 
-// normalizeIdentifier normalizes an identifier's case to match the database's
-// unquoted-identifier case-folding rules. This preserves backward compatibility
-// now that we quote identifiers (quoted identifiers are case-sensitive in most
-// databases, whereas unquoted identifiers are not).
-func (c *sqlSinkConfig) normalizeIdentifier(name string) string {
-	switch strings.ToLower(c.driver) {
-	case "oracle", "godror":
-		return strings.ToUpper(name)
-	case "postgres", "pgx":
-		return strings.ToLower(name)
-	default:
-		return name
-	}
+func isIdentifierStart(c byte) bool {
+	return c == '_' || c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z'
+}
+
+func isIdentifierPart(c byte) bool {
+	return isIdentifierStart(c) || c >= '0' && c <= '9'
 }
 
 func (s *SQLSinkConnector) Ping(ctx api.StreamContext, props map[string]any) error {
@@ -279,9 +146,6 @@ func (s *SQLSinkConnector) Provision(ctx api.StreamContext, configs map[string]a
 	}
 	if c.RowKindField != "" && c.KeyField == "" {
 		return fmt.Errorf("keyField is required when rowKindField is set")
-	}
-	if c.driver, err = client.ParseDriver(c.DBUrl); err != nil {
-		return fmt.Errorf("failed to parse sql driver from dburl: %v", err)
 	}
 	s.config = c
 	s.props = configs
@@ -330,7 +194,10 @@ func (s *SQLSinkConnector) Collect(ctx api.StreamContext, item api.MessageTuple)
 
 func (s *SQLSinkConnector) collect(ctx api.StreamContext, item map[string]any) (err error) {
 	if len(s.config.RowKindField) < 1 {
-		keys := s.extractKeys(item)
+		keys, err := s.extractKeys(item)
+		if err != nil {
+			return err
+		}
 		var values []string
 		var vars string
 		vars, err = s.config.buildInsertSql(ctx, item, keys)
@@ -339,7 +206,7 @@ func (s *SQLSinkConnector) collect(ctx api.StreamContext, item map[string]any) (
 		}
 		values = append(values, vars)
 		if len(keys) > 0 {
-			sqlStr := buildInsertSQL(s.config, s.config.Table, keys, values)
+			sqlStr := buildInsertSQL(s.config.Table, keys, values)
 			return s.writeToDB(ctx, sqlStr)
 		}
 		return nil
@@ -361,7 +228,10 @@ func (s *SQLSinkConnector) collectList(ctx api.StreamContext, items []map[string
 	if len(items) < 1 {
 		return nil
 	}
-	keys := s.extractKeys(items[0])
+	keys, err := s.extractKeys(items[0])
+	if err != nil {
+		return err
+	}
 	var values []string
 	var vars string
 	if len(s.config.RowKindField) < 1 {
@@ -373,7 +243,7 @@ func (s *SQLSinkConnector) collectList(ctx api.StreamContext, items []map[string
 			values = append(values, vars)
 		}
 		if len(keys) > 0 {
-			sqlStr := buildInsertSQL(s.config, s.config.Table, keys, values)
+			sqlStr := buildInsertSQL(s.config.Table, keys, values)
 			return s.writeToDB(ctx, sqlStr)
 		}
 		return nil
@@ -400,7 +270,10 @@ func (s *SQLSinkConnector) save(ctx api.StreamContext, table string, data map[st
 			return fmt.Errorf("invalid rowkind %s", rowkind)
 		}
 	}
-	keys := s.extractKeys(data)
+	keys, err := s.extractKeys(data)
+	if err != nil {
+		return err
+	}
 	var sqlStr string
 	switch rowkind {
 	case ast.RowkindInsert:
@@ -410,7 +283,7 @@ func (s *SQLSinkConnector) save(ctx api.StreamContext, table string, data map[st
 		}
 		values := []string{vars}
 		if len(keys) > 0 {
-			sqlStr = buildInsertSQL(s.config, table, keys, values)
+			sqlStr = buildInsertSQL(table, keys, values)
 		}
 	case ast.RowkindUpdate:
 		keyval, ok := data[s.config.KeyField]
@@ -421,13 +294,13 @@ func (s *SQLSinkConnector) save(ctx api.StreamContext, table string, data map[st
 		if err != nil {
 			return err
 		}
-		sqlStr = buildUpdateSQL(s.config, table, keys, vals, s.config.KeyField, keyval)
+		sqlStr = buildUpdateSQL(table, keys, vals, s.config.KeyField, keyval)
 	case ast.RowkindDelete:
 		keyval, ok := data[s.config.KeyField]
 		if !ok {
 			return fmt.Errorf("field %s does not exist in data %v", s.config.KeyField, data)
 		}
-		sqlStr = buildDeleteSQL(s.config, table, s.config.KeyField, keyval)
+		sqlStr = buildDeleteSQL(table, s.config.KeyField, keyval)
 	default:
 		return fmt.Errorf("invalid rowkind %s", rowkind)
 	}
@@ -462,40 +335,39 @@ func (s *SQLSinkConnector) writeToDB(ctx api.StreamContext, sqlStr string) error
 	return nil
 }
 
-func (s *SQLSinkConnector) extractKeys(item map[string]any) []string {
+func (s *SQLSinkConnector) extractKeys(item map[string]any) ([]string, error) {
 	if len(s.config.Fields) > 0 {
-		return s.config.Fields
+		return s.config.Fields, nil
 	}
 	keys := make([]string, 0, len(item))
 	for k := range item {
+		if !isSafeDynamicFieldName(k) {
+			return nil, fmt.Errorf("invalid dynamic field name %q: expected [A-Za-z_][A-Za-z0-9_]*", k)
+		}
 		keys = append(keys, k)
 	}
-	return keys
+	return keys, nil
 }
 
-func buildInsertSQL(c *sqlSinkConfig, table string, keys []string, values []string) string {
-	quotedKeys := make([]string, len(keys))
-	for i, k := range keys {
-		quotedKeys[i] = c.quoteIdentifier(k)
-	}
-	sql := fmt.Sprintf("INSERT INTO %s (%s) values ", c.quoteTableName(table), strings.Join(quotedKeys, ",")) + strings.Join(values, ",") + ";"
+func buildInsertSQL(table string, keys []string, values []string) string {
+	sql := fmt.Sprintf("INSERT INTO %s (%s) values ", table, strings.Join(keys, ",")) + strings.Join(values, ",") + ";"
 	return sql
 }
 
-func buildUpdateSQL(c *sqlSinkConfig, table string, keys []string, vals []string, keyField string, keyval any) string {
-	sqlStr := fmt.Sprintf("UPDATE %s SET ", c.quoteTableName(table))
+func buildUpdateSQL(table string, keys []string, vals []string, keyField string, keyval any) string {
+	sqlStr := fmt.Sprintf("UPDATE %s SET ", table)
 	for i, key := range keys {
 		if i != 0 {
 			sqlStr += ","
 		}
-		sqlStr += fmt.Sprintf("%s=%s", c.quoteIdentifier(key), vals[i])
+		sqlStr += fmt.Sprintf("%s=%s", key, vals[i])
 	}
-	sqlStr += fmt.Sprintf(" WHERE %s = %s;", c.quoteIdentifier(keyField), quoteSQLValue(keyval))
+	sqlStr += fmt.Sprintf(" WHERE %s = %s;", keyField, quoteSQLValue(keyval))
 	return sqlStr
 }
 
-func buildDeleteSQL(c *sqlSinkConfig, table string, keyField string, keyval any) string {
-	return fmt.Sprintf("DELETE FROM %s WHERE %s = %s;", c.quoteTableName(table), c.quoteIdentifier(keyField), quoteSQLValue(keyval))
+func buildDeleteSQL(table string, keyField string, keyval any) string {
+	return fmt.Sprintf("DELETE FROM %s WHERE %s = %s;", table, keyField, quoteSQLValue(keyval))
 }
 
 func quoteSQLValue(v any) string {
