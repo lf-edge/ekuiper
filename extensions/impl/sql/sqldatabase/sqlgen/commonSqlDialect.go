@@ -1,4 +1,4 @@
-// Copyright 2022-2024 EMQ Technologies Co., Ltd.
+// Copyright 2022-2026 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -26,8 +26,8 @@ type CommonQueryGenerator struct {
 	*InternalSqlQueryCfg
 }
 
-func (q *CommonQueryGenerator) quoteIdentifier(identifier string) string {
-	return "'" + identifier + "'"
+func (q *CommonQueryGenerator) quoteValue(value string) string {
+	return "'" + value + "'"
 }
 
 func (q *CommonQueryGenerator) getSelect() string {
@@ -35,11 +35,11 @@ func (q *CommonQueryGenerator) getSelect() string {
 }
 
 func (q *CommonQueryGenerator) getCondition() (string, error) {
-	return getCondition(q.InternalSqlQueryCfg, q.quoteIdentifier)
+	return getCondition(q.InternalSqlQueryCfg, q.quoteValue)
 }
 
 func (q *CommonQueryGenerator) getOrderby() string {
-	return getOrderBy(q.InternalSqlQueryCfg, q.quoteIdentifier)
+	return getOrderBy(q.InternalSqlQueryCfg)
 }
 
 func (q *CommonQueryGenerator) getLimit() string {
@@ -96,13 +96,13 @@ func (q *OracleQueryGenerate) UpdateMaxIndexValue(row map[string]interface{}) {
 	q.CommonQueryGenerator.UpdateMaxIndexValue(row)
 }
 
-func getCondition(cfg *InternalSqlQueryCfg, quoteIdentifier func(string) string) (string, error) {
+func getCondition(cfg *InternalSqlQueryCfg, quoteValue func(string) string) (string, error) {
 	fieldlist := cfg.store.GetFieldList()
 	if len(fieldlist) > 0 {
 		b := bytes.NewBufferString("where")
 		index := 0
 		for _, w := range fieldlist {
-			condition, err := buildSingleIndexCondition(w, quoteIdentifier)
+			condition, err := buildSingleIndexCondition(w, quoteValue)
 			if err != nil {
 				return "", err
 			}
@@ -119,7 +119,7 @@ func getCondition(cfg *InternalSqlQueryCfg, quoteIdentifier func(string) string)
 	return "", nil
 }
 
-func buildSingleIndexCondition(w *store.IndexField, quoteIdentifier func(string) string) (string, error) {
+func buildSingleIndexCondition(w *store.IndexField, quoteValue func(string) string) (string, error) {
 	var val string
 	if w.IndexFieldDataType == DATETIME_TYPE && w.IndexFieldDateTimeFormat != "" {
 		t, err := cast.InterfaceToTime(w.IndexFieldValue, w.IndexFieldDateTimeFormat)
@@ -135,16 +135,16 @@ func buildSingleIndexCondition(w *store.IndexField, quoteIdentifier func(string)
 	} else {
 		val = fmt.Sprintf("%v", w.IndexFieldValue)
 	}
-	return w.IndexFieldName + " > " + quoteIdentifier(val), nil
+	return w.IndexFieldName + " > " + quoteValue(val), nil
 }
 
-func getOrderBy(cfg *InternalSqlQueryCfg, quoteIdentifier func(string) string) string {
+func getOrderBy(cfg *InternalSqlQueryCfg) string {
 	fieldList := cfg.store.GetFieldList()
 	if len(fieldList) > 0 {
 		b := bytes.NewBufferString("order by")
 		for i, w := range fieldList {
 			b.WriteString(" ")
-			orderBy := buildSingleOrderBy(w, quoteIdentifier)
+			orderBy := buildSingleOrderBy(w)
 			b.WriteString(orderBy)
 			if i < len(fieldList)-1 {
 				b.WriteString(",")
@@ -155,8 +155,8 @@ func getOrderBy(cfg *InternalSqlQueryCfg, quoteIdentifier func(string) string) s
 	return ""
 }
 
-func buildSingleOrderBy(w *store.IndexField, quoteIdentifier func(string) string) string {
-	return quoteIdentifier(w.IndexFieldName) + " ASC"
+func buildSingleOrderBy(w *store.IndexField) string {
+	return w.IndexFieldName + " ASC"
 }
 
 func updateMaxIndexValue(cfg *InternalSqlQueryCfg, row map[string]interface{}) {
