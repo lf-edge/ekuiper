@@ -1,4 +1,4 @@
-// Copyright 2024-2025 EMQ Technologies Co., Ltd.
+// Copyright 2024-2026 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -93,6 +93,29 @@ func quoteSQLString(s string) string {
 	return "'" + strings.ReplaceAll(s, "'", "''") + "'"
 }
 
+// isSafeDynamicFieldName recognizes dynamic message keys that cannot alter SQL syntax.
+// Explicitly configured identifiers are trusted SQL configuration and retain their
+// existing database-specific syntax.
+func isSafeDynamicFieldName(identifier string) bool {
+	if len(identifier) == 0 || !isIdentifierStart(identifier[0]) {
+		return false
+	}
+	for i := 1; i < len(identifier); i++ {
+		if !isIdentifierPart(identifier[i]) {
+			return false
+		}
+	}
+	return true
+}
+
+func isIdentifierStart(c byte) bool {
+	return c == '_' || c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z'
+}
+
+func isIdentifierPart(c byte) bool {
+	return isIdentifierStart(c) || c >= '0' && c <= '9'
+}
+
 func (s *SQLSinkConnector) Ping(ctx api.StreamContext, props map[string]any) error {
 	cli := &client.SQLConnection{}
 	err := cli.Provision(ctx, "test", props)
@@ -171,15 +194,18 @@ func (s *SQLSinkConnector) Collect(ctx api.StreamContext, item api.MessageTuple)
 
 func (s *SQLSinkConnector) collect(ctx api.StreamContext, item map[string]any) (err error) {
 	if len(s.config.RowKindField) < 1 {
-		keys := s.extractKeys(item)
-		var values []string = nil
+		keys, err := s.extractKeys(item)
+		if err != nil {
+			return err
+		}
+		var values []string
 		var vars string
 		vars, err = s.config.buildInsertSql(ctx, item, keys)
 		if err != nil {
 			return err
 		}
 		values = append(values, vars)
-		if keys != nil {
+		if len(keys) > 0 {
 			sqlStr := buildInsertSQL(s.config.Table, keys, values)
 			return s.writeToDB(ctx, sqlStr)
 		}
@@ -202,8 +228,11 @@ func (s *SQLSinkConnector) collectList(ctx api.StreamContext, items []map[string
 	if len(items) < 1 {
 		return nil
 	}
-	keys := s.extractKeys(items[0])
-	var values []string = nil
+	keys, err := s.extractKeys(items[0])
+	if err != nil {
+		return err
+	}
+	var values []string
 	var vars string
 	if len(s.config.RowKindField) < 1 {
 		for _, mapData := range items {
@@ -213,7 +242,7 @@ func (s *SQLSinkConnector) collectList(ctx api.StreamContext, items []map[string
 			}
 			values = append(values, vars)
 		}
-		if keys != nil {
+		if len(keys) > 0 {
 			sqlStr := buildInsertSQL(s.config.Table, keys, values)
 			return s.writeToDB(ctx, sqlStr)
 		}
@@ -241,7 +270,10 @@ func (s *SQLSinkConnector) save(ctx api.StreamContext, table string, data map[st
 			return fmt.Errorf("invalid rowkind %s", rowkind)
 		}
 	}
-	keys := s.extractKeys(data)
+	keys, err := s.extractKeys(data)
+	if err != nil {
+		return err
+	}
 	var sqlStr string
 	switch rowkind {
 	case ast.RowkindInsert:
@@ -250,7 +282,7 @@ func (s *SQLSinkConnector) save(ctx api.StreamContext, table string, data map[st
 			return err
 		}
 		values := []string{vars}
-		if keys != nil {
+		if len(keys) > 0 {
 			sqlStr = buildInsertSQL(table, keys, values)
 		}
 	case ast.RowkindUpdate:
@@ -262,28 +294,13 @@ func (s *SQLSinkConnector) save(ctx api.StreamContext, table string, data map[st
 		if err != nil {
 			return err
 		}
-		sqlStr = fmt.Sprintf("UPDATE %s SET ", table)
-		for i, key := range keys {
-			if i != 0 {
-				sqlStr += ","
-			}
-			sqlStr += fmt.Sprintf("%s=%s", key, vals[i])
-		}
-		if ksv, ok := keyval.(string); ok {
-			sqlStr += fmt.Sprintf(" WHERE %s = %s;", s.config.KeyField, quoteSQLString(ksv))
-		} else {
-			sqlStr += fmt.Sprintf(" WHERE %s = %v;", s.config.KeyField, keyval)
-		}
+		sqlStr = buildUpdateSQL(table, keys, vals, s.config.KeyField, keyval)
 	case ast.RowkindDelete:
 		keyval, ok := data[s.config.KeyField]
 		if !ok {
 			return fmt.Errorf("field %s does not exist in data %v", s.config.KeyField, data)
 		}
-		if ksv, ok := keyval.(string); ok {
-			sqlStr = fmt.Sprintf("DELETE FROM %s WHERE %s = %s;", table, s.config.KeyField, quoteSQLString(ksv))
-		} else {
-			sqlStr = fmt.Sprintf("DELETE FROM %s WHERE %s = %v;", table, s.config.KeyField, keyval)
-		}
+		sqlStr = buildDeleteSQL(table, s.config.KeyField, keyval)
 	default:
 		return fmt.Errorf("invalid rowkind %s", rowkind)
 	}
@@ -318,20 +335,46 @@ func (s *SQLSinkConnector) writeToDB(ctx api.StreamContext, sqlStr string) error
 	return nil
 }
 
-func (s *SQLSinkConnector) extractKeys(item map[string]any) []string {
+func (s *SQLSinkConnector) extractKeys(item map[string]any) ([]string, error) {
 	if len(s.config.Fields) > 0 {
-		return s.config.Fields
+		return s.config.Fields, nil
 	}
 	keys := make([]string, 0, len(item))
 	for k := range item {
+		if !isSafeDynamicFieldName(k) {
+			return nil, fmt.Errorf("invalid dynamic field name %q: expected [A-Za-z_][A-Za-z0-9_]*", k)
+		}
 		keys = append(keys, k)
 	}
-	return keys
+	return keys, nil
 }
 
 func buildInsertSQL(table string, keys []string, values []string) string {
 	sql := fmt.Sprintf("INSERT INTO %s (%s) values ", table, strings.Join(keys, ",")) + strings.Join(values, ",") + ";"
 	return sql
+}
+
+func buildUpdateSQL(table string, keys []string, vals []string, keyField string, keyval any) string {
+	sqlStr := fmt.Sprintf("UPDATE %s SET ", table)
+	for i, key := range keys {
+		if i != 0 {
+			sqlStr += ","
+		}
+		sqlStr += fmt.Sprintf("%s=%s", key, vals[i])
+	}
+	if ksv, ok := keyval.(string); ok {
+		sqlStr += fmt.Sprintf(" WHERE %s = %s;", keyField, quoteSQLString(ksv))
+	} else {
+		sqlStr += fmt.Sprintf(" WHERE %s = %v;", keyField, keyval)
+	}
+	return sqlStr
+}
+
+func buildDeleteSQL(table string, keyField string, keyval any) string {
+	if ksv, ok := keyval.(string); ok {
+		return fmt.Sprintf("DELETE FROM %s WHERE %s = %s;", table, keyField, quoteSQLString(ksv))
+	}
+	return fmt.Sprintf("DELETE FROM %s WHERE %s = %v;", table, keyField, keyval)
 }
 
 func GetSink() api.Sink {
