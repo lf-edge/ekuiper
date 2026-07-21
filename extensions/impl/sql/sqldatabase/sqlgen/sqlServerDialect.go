@@ -1,4 +1,4 @@
-// Copyright 2022-2024 EMQ Technologies Co., Ltd.
+// Copyright 2022-2026 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,8 +22,8 @@ type SqlServerQueryGenerator struct {
 	*InternalSqlQueryCfg
 }
 
-func (q *SqlServerQueryGenerator) quoteIdentifier(identifier string) string {
-	return "'" + identifier + "'"
+func (q *SqlServerQueryGenerator) quoteValue(value string) string {
+	return "'" + value + "'"
 }
 
 func (q *SqlServerQueryGenerator) getSelect() string {
@@ -35,13 +35,11 @@ func (q *SqlServerQueryGenerator) getSelect() string {
 }
 
 func (q *SqlServerQueryGenerator) getCondition() (string, error) {
-	return getCondition(q.InternalSqlQueryCfg, q.quoteIdentifier)
+	return getCondition(q.InternalSqlQueryCfg, q.quoteValue)
 }
 
 func (q *SqlServerQueryGenerator) getOrderby() string {
-	return getOrderBy(q.InternalSqlQueryCfg, func(s string) string {
-		return s
-	})
+	return getOrderBy(q.InternalSqlQueryCfg)
 }
 
 func NewSqlServerQuery(cfg *InternalSqlQueryCfg) SqlQueryGenerator {
