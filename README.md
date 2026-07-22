@@ -200,3 +200,7 @@ constraint. Please refer to [features](docs/en_US/operation/compile/features.md)
 ## Open source license
 
 [Apache 2.0](LICENSE)
+
+## Powered by
+
+[![JetBrains logo.](https://resources.jetbrains.com/storage/products/company/brand/logos/jetbrains.svg)](https://jb.gg/OpenSource)
