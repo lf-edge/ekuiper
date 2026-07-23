@@ -540,6 +540,27 @@ func TestPlanError(t *testing.T) {
 	}
 }
 
+func TestPlanMemorySourceInSliceMode(t *testing.T) {
+	kv, err := store.GetKV("stream")
+	require.NoError(t, err)
+
+	const streamName = "sliceMemorySource"
+	stream, err := json.Marshal(&xsql.StreamInfo{
+		StreamType: ast.TypeStream,
+		Statement:  `CREATE STREAM sliceMemorySource (id BIGINT) WITH (DATASOURCE="sliceMemorySource", FORMAT="json", TYPE="memory");`,
+	})
+	require.NoError(t, err)
+	require.NoError(t, kv.Set(streamName, string(stream)))
+	t.Cleanup(func() {
+		require.NoError(t, kv.Delete(streamName))
+	})
+
+	rule := def.GetDefaultRule("sliceMemorySourceRule", "SELECT id FROM "+streamName)
+	rule.Options.Experiment.UseSliceTuple = true
+	_, _, err = PlanSQLWithSourcesAndSinks(rule, nil)
+	require.EqualError(t, err, "slice tuple mode does not support memory source")
+}
+
 func TestPlanLookup(t *testing.T) {
 	ctx := mockContext.NewMockContext("Test", "test")
 	t.Run("undefined source", func(t *testing.T) {

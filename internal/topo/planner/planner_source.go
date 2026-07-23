@@ -35,7 +35,8 @@ import (
 
 func transformSourceNode(ctx api.StreamContext, t *DataSourcePlan, mockSourcesProp map[string]map[string]any, ruleId string, options *def.RuleOption, index int) (node.DataSourceNode, []node.OperatorNode, int, error) {
 	isSchemaless := t.isSchemaless
-	if t.streamFields == nil && options.Experiment != nil && options.Experiment.UseSliceTuple {
+	isSliceMode := options.Experiment != nil && options.Experiment.UseSliceTuple
+	if t.streamFields == nil && isSliceMode {
 		return nil, nil, 0, errors.New("slice tuple mode does not support wildcard/schemaless")
 	}
 	emitterName := t.name
@@ -54,6 +55,9 @@ func transformSourceNode(ctx api.StreamContext, t *DataSourcePlan, mockSourcesPr
 			strType = "file"
 		}
 		t.streamStmt.Options.TYPE = strType
+	}
+	if strType == "memory" && isSliceMode {
+		return nil, nil, 0, errors.New("slice tuple mode does not support memory source")
 	}
 	si, err := io.Source(strType)
 	if err != nil {
