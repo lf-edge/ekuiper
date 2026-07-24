@@ -2,6 +2,7 @@ package replace
 
 import (
 	"encoding/json"
+	"strings"
 	"time"
 
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
@@ -176,12 +177,19 @@ type ReplacePropsConfig struct {
 	DisableReplaceDuration bool
 }
 
-var passwordDict = map[string]struct{}{
-	"password":      {},
-	"pass":          {},
-	"token":         {},
-	"access_token":  {},
-	"refresh_token": {},
+// IsSensitiveKey reports whether key contains a known sensitive substring.
+func IsSensitiveKey(key string) bool {
+	key = strings.ToLower(key)
+	sensitivePatterns := []string{
+		"password", "pass", "token", "access_token", "refresh_token",
+		"secret", "key", "credential", "auth",
+	}
+	for _, pattern := range sensitivePatterns {
+		if strings.Contains(key, pattern) {
+			return true
+		}
+	}
+	return false
 }
 
 func HidePassword(props map[string]any) map[string]any {
@@ -191,10 +199,23 @@ func HidePassword(props map[string]any) map[string]any {
 func hide(props map[string]any) map[string]any {
 	result := make(map[string]any, len(props))
 	for k, v := range props {
-		if _, ok := passwordDict[k]; ok {
+		if IsSensitiveKey(k) {
 			result[k] = "*"
 		} else if vm, isMap := v.(map[string]any); isMap {
 			result[k] = hide(vm)
+		} else {
+			result[k] = v
+		}
+	}
+	return result
+}
+
+// HidePasswordString is like HidePassword but for map[string]string.
+func HidePasswordString(props map[string]string) map[string]string {
+	result := make(map[string]string, len(props))
+	for k, v := range props {
+		if IsSensitiveKey(k) {
+			result[k] = "***"
 		} else {
 			result[k] = v
 		}

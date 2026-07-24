@@ -29,10 +29,11 @@
 package conf
 
 import (
-	"fmt"
 	"os"
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 
 	"github.com/lf-edge/ekuiper/v2/pkg/model"
 )
@@ -169,14 +170,57 @@ func createExpectedRandomConfigMap() map[string]interface{} {
 
 func TestPrintable(t *testing.T) {
 	bef := map[string]interface{}{
-		"password": "password",
-		"Password": "password",
+		"password":     "password",
+		"Password":     "password",
+		"saslPassword": "password",
+		"token":        "abc123",
+		"username":     "user",
+		"server":       "127.0.0.1",
 		"optional": map[string]interface{}{
 			"password": "password",
 			"Password": "password",
+			"token":    "nested_token",
 		},
 	}
 	after := Printable(bef)
 
-	_, _ = fmt.Printf("after %v", after)
+	assert.Equal(t, "*", after["password"])
+	assert.Equal(t, "*", after["Password"])
+	assert.Equal(t, "*", after["saslPassword"])
+	assert.Equal(t, "*", after["token"])
+	assert.Equal(t, "user", after["username"])
+	assert.Equal(t, "127.0.0.1", after["server"])
+	opt := after["optional"].(map[string]interface{})
+	assert.Equal(t, "*", opt["password"])
+	assert.Equal(t, "*", opt["Password"])
+	assert.Equal(t, "*", opt["token"])
+}
+
+func TestIsSensitiveKey(t *testing.T) {
+	tests := []struct {
+		key  string
+		want bool
+	}{
+		{"password", true},
+		{"PASSWORD", true},
+		{"saslPassword", true},
+		{"token", true},
+		{"access_token", true},
+		{"refresh_token", true},
+		{"secret", true},
+		{"private_key", true},
+		{"aes_key", true},
+		{"credential", true},
+		{"username", false},
+		{"server", false},
+		{"port", false},
+		{"url", false},
+		{"topic", false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.key, func(t *testing.T) {
+			got := isSensitiveKey(tt.key)
+			assert.Equal(t, tt.want, got)
+		})
+	}
 }

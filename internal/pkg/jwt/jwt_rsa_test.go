@@ -15,10 +15,20 @@
 package jwt
 
 import (
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
 	"fmt"
+	"os"
+	"path/filepath"
 	"testing"
+	"time"
 
+	gojwt "github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
 )
 
 var (
@@ -26,12 +36,45 @@ var (
 	badFormatToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmb28iOiJiYXIiLCJleHAiOjE1MDAwLCJpc3MiOiJ0ZXN0In0"
 )
 
-func genToken(signKeyName, issuer string, aud []string) string {
-	tkStr, _ := CreateToken(signKeyName, issuer, aud)
+func genTokenWithKey(t *testing.T, key *rsa.PrivateKey, issuer string, aud []string) string {
+	t.Helper()
+	tk := &Token{}
+	tk.Issuer = issuer
+	tk.Audience = aud
+	tk.ExpiresAt = gojwt.NewNumericDate(time.Now().Add(10 * time.Minute))
+	token := gojwt.NewWithClaims(gojwt.SigningMethodRS256, tk)
+	tkStr, err := token.SignedString(key)
+	if err != nil {
+		t.Fatalf("failed to sign test token: %v", err)
+	}
 	return tkStr
 }
 
+func configurePublicKey(t *testing.T, issuer string, publicKey *rsa.PublicKey) {
+	t.Helper()
+	baseDir := t.TempDir()
+	t.Setenv(conf.KuiperBaseKey, baseDir)
+	keyDir := filepath.Join(baseDir, "etc", RSAKeyDir)
+	if err := os.MkdirAll(keyDir, 0o755); err != nil {
+		t.Fatalf("failed to create test key directory: %v", err)
+	}
+	keyBytes, err := x509.MarshalPKIXPublicKey(publicKey)
+	if err != nil {
+		t.Fatalf("failed to marshal test public key: %v", err)
+	}
+	publicKeyPEM := pem.EncodeToMemory(&pem.Block{Type: "PUBLIC KEY", Bytes: keyBytes})
+	if err := os.WriteFile(filepath.Join(keyDir, issuer), publicKeyPEM, 0o644); err != nil {
+		t.Fatalf("failed to write test public key: %v", err)
+	}
+}
+
 func TestParseToken(t *testing.T) {
+	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		t.Fatalf("failed to generate test key: %v", err)
+	}
+	configurePublicKey(t, "test_issuer", &privateKey.PublicKey)
+
 	type args struct {
 		th string
 	}
@@ -43,7 +86,7 @@ func TestParseToken(t *testing.T) {
 		{
 			name: "pass: have issuer public key",
 			args: args{
-				th: genToken("sample_key", "sample_key.pub", []string{"eKuiper"}),
+				th: genTokenWithKey(t, privateKey, "test_issuer", []string{"eKuiper"}),
 			},
 			wantErr: false,
 		},
@@ -57,14 +100,14 @@ func TestParseToken(t *testing.T) {
 		{
 			name: "fail: token sign error",
 			args: args{
-				th: genToken("sample_key", "sample_key.pub", []string{"eKuiper"}) + "badSign",
+				th: genTokenWithKey(t, privateKey, "test_issuer", []string{"eKuiper"}) + "badSign",
 			},
 			wantErr: true,
 		},
 		{
 			name: "fail: do not have issuer's public key",
 			args: args{
-				th: genToken("sample_key", "notexist.pub", []string{"eKuiper"}),
+				th: genTokenWithKey(t, privateKey, "notexist.pub", []string{"eKuiper"}),
 			},
 			wantErr: true,
 		},

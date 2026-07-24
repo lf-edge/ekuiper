@@ -287,17 +287,29 @@ func TestHidePassword(t *testing.T) {
 			name: "all password variants",
 			input: map[string]any{
 				"password":      "pwd",
+				"Password":      "pwd",
+				"saslPassword":  "pwd",
 				"pass":          "p",
 				"token":         "t",
 				"access_token":  "at",
 				"refresh_token": "rt",
+				"private_key":   "key",
+				"AES_KEY":       "key",
+				"credential":    "credential",
+				"auth":          "auth",
 			},
 			expected: map[string]any{
 				"password":      "*",
+				"Password":      "*",
+				"saslPassword":  "*",
 				"pass":          "*",
 				"token":         "*",
 				"access_token":  "*",
 				"refresh_token": "*",
+				"private_key":   "*",
+				"AES_KEY":       "*",
+				"credential":    "*",
+				"auth":          "*",
 			},
 		},
 	}
@@ -308,4 +320,23 @@ func TestHidePassword(t *testing.T) {
 			require.Equal(t, tt.expected, result)
 		})
 	}
+}
+
+func TestHidePasswordString(t *testing.T) {
+	input := map[string]string{
+		"Password":     "pwd",
+		"saslPassword": "pwd",
+		"access_token": "token",
+		"private_key":  "key",
+		"username":     "user",
+	}
+	expected := map[string]string{
+		"Password":     "***",
+		"saslPassword": "***",
+		"access_token": "***",
+		"private_key":  "***",
+		"username":     "user",
+	}
+
+	require.Equal(t, expected, HidePasswordString(input))
 }

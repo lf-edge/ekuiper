@@ -91,6 +91,31 @@ Each action can define its own properties. There are several common properties:
 | compression          | string:  ""                          | Sets the data compression algorithm. Only effective when the sink is of a type that sends bytecode. Supported compression methods are "zlib", "gzip", "flate", "zstd".                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | encryption           | string:  ""                          | Sets the data encryption algorithm. Only effective when the sink is of a type that sends bytecode. Currently, only the AES algorithm is supported.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 
+### AES encryption key
+
+When a sink uses `"encryption": "aes"`, configure `basic.aesKey` in
+`etc/kuiper.yaml`. The value must be a base64-encoded AES key whose decoded
+length is 16, 24, or 32 bytes. Generate a 32-byte key with:
+
+```bash
+openssl rand -base64 32
+```
+
+Then provide it through configuration:
+
+```yaml
+basic:
+  aesKey: <base64-encoded-key>
+```
+
+Alternatively, set the `KUIPER__BASIC__AESKEY` environment variable. For Helm,
+set `kuiperConfig.basic.aesKey` in a private values file or inject the
+environment variable from a Kubernetes Secret.
+
+The distribution no longer provides a default AES key. Before upgrading,
+ensure every deployment with an AES-encrypted sink supplies its own key;
+otherwise those rules fail with `AES Key is not defined`.
+
 ### Dynamic properties
 
 In the sink, it is common to fetch a property value from the result data to achieve dynamic output. For example, to write data into a dynamic topic of mqtt. The dynamic properties will be parsed as a [data template](./data_template.md). In below example, the sink topic is gotten from the selected topic using data template.

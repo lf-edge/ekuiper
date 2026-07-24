@@ -19,7 +19,37 @@ import (
 	"testing"
 
 	"github.com/edgexfoundry/go-mod-messaging/v4/pkg/types"
+	"github.com/stretchr/testify/assert"
+
+	"github.com/lf-edge/ekuiper/v2/pkg/replace"
 )
+
+func TestPrintConfSensitiveKeys(t *testing.T) {
+	tests := []struct {
+		key         string
+		isSensitive bool
+	}{
+		{"password", true},
+		{"Password", true},
+		{"PASS", true},
+		{"token", true},
+		{"access_token", true},
+		{"refresh_token", true},
+		{"secret", true},
+		{"clientid", false},
+		{"username", false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.key, func(t *testing.T) {
+			got := replace.HidePasswordString(map[string]string{tt.key: "value"})
+			if tt.isSensitive {
+				assert.Equal(t, "***", got[tt.key])
+			} else {
+				assert.Equal(t, "value", got[tt.key])
+			}
+		})
+	}
+}
 
 func TestEdgex_CfgValidate(t *testing.T) {
 	tests := []struct {
