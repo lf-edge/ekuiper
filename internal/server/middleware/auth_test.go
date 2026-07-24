@@ -15,21 +15,64 @@
 package middleware
 
 import (
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"reflect"
 	"testing"
+	"time"
 
+	gojwt "github.com/golang-jwt/jwt/v5"
+
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/jwt"
 )
 
-func genToken(signKeyName, issuer string, aud []string) string {
-	tkStr, _ := jwt.CreateToken(signKeyName, issuer, aud)
+func genTokenWithKey(t *testing.T, privateKey *rsa.PrivateKey, issuer string, aud []string) string {
+	t.Helper()
+	tk := &jwt.Token{}
+	tk.Issuer = issuer
+	tk.Audience = aud
+	tk.ExpiresAt = gojwt.NewNumericDate(time.Now().Add(10 * time.Minute))
+	token := gojwt.NewWithClaims(gojwt.SigningMethodRS256, tk)
+	tkStr, err := token.SignedString(privateKey)
+	if err != nil {
+		t.Fatalf("failed to sign test token: %v", err)
+	}
 	return tkStr
 }
 
+func configurePublicKey(t *testing.T, issuer string, publicKey *rsa.PublicKey) {
+	t.Helper()
+	baseDir := t.TempDir()
+	t.Setenv(conf.KuiperBaseKey, baseDir)
+	keyDir := filepath.Join(baseDir, "etc", jwt.RSAKeyDir)
+	if err := os.MkdirAll(keyDir, 0o755); err != nil {
+		t.Fatalf("failed to create test key directory: %v", err)
+	}
+	keyBytes, err := x509.MarshalPKIXPublicKey(publicKey)
+	if err != nil {
+		t.Fatalf("failed to marshal test public key: %v", err)
+	}
+	publicKeyPEM := pem.EncodeToMemory(&pem.Block{Type: "PUBLIC KEY", Bytes: keyBytes})
+	if err := os.WriteFile(filepath.Join(keyDir, issuer), publicKeyPEM, 0o644); err != nil {
+		t.Fatalf("failed to write test public key: %v", err)
+	}
+}
+
 func Test_AUTH(t *testing.T) {
+	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		t.Fatalf("failed to generate test key: %v", err)
+	}
+	configurePublicKey(t, "test_issuer", &privateKey.PublicKey)
+
 	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
@@ -48,7 +91,7 @@ func Test_AUTH(t *testing.T) {
 	}{
 		{
 			name:     "token right",
-			args:     args{th: genToken("sample_key", "sample_key.pub", []string{"neuron", "eKuiper"})},
+			args:     args{th: genTokenWithKey(t, privateKey, "test_issuer", []string{"neuron", "eKuiper"})},
 			req:      httptest.NewRequest(http.MethodGet, "http://127.0.0.1:9081/streams", nil),
 			res:      httptest.NewRecorder(),
 			wantCode: 200,
@@ -56,7 +99,7 @@ func Test_AUTH(t *testing.T) {
 
 		{
 			name:     "audience not right",
-			args:     args{th: genToken("sample_key", "sample_key.pub", []string{"Neuron"})},
+			args:     args{th: genTokenWithKey(t, privateKey, "test_issuer", []string{"Neuron"})},
 			req:      httptest.NewRequest(http.MethodGet, "http://127.0.0.1:9081/streams", nil),
 			res:      httptest.NewRecorder(),
 			wantCode: 401,

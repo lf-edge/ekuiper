@@ -92,6 +92,30 @@
 | compression          | string:  ""                        | 设置数据压缩算法。仅当 sink 为发送字节码的类型时生效。支持的压缩方法有"zlib","gzip","flate",zstd"。                                                                                                                                                                                                                                                                                                           |
 | encryption           | string:  ""                        | 设置数据加密算法。仅当 sink 为发送字节码的类型时生效。当前仅支持 AES 算法。                                                                                                                                                                                                                                                                                                                                  |
 
+### AES 加密密钥
+
+当 sink 使用 `"encryption": "aes"` 时，必须在 `etc/kuiper.yaml` 中配置
+`basic.aesKey`。该值必须是 Base64 编码的 AES 密钥，解码后的长度应为 16、24
+或 32 字节。可以使用以下命令生成 32 字节密钥：
+
+```bash
+openssl rand -base64 32
+```
+
+然后通过配置文件提供：
+
+```yaml
+basic:
+  aesKey: <base64-encoded-key>
+```
+
+也可以设置环境变量 `KUIPER__BASIC__AESKEY`。使用 Helm 时，应在私有 values
+文件中设置 `kuiperConfig.basic.aesKey`，或通过 Kubernetes Secret 注入上述
+环境变量。
+
+发行包不再提供默认 AES 密钥。升级前，请确保所有使用 AES 加密 sink 的部署
+都已配置自己的密钥，否则相关规则会返回 `AES Key is not defined`。
+
 ### 动态属性
 
 有些情况下，用户需要按照数据把结果发送到不同的目标中。例如，根据收到的数据，把计算结果发到不同的 mqtt 主题中。使用基于[数据模板](./data_template.md)格式的动态属性，可以实现这样的功能。在以下的例子中，目标的 topic 属性是一个数据模板格式的字符串从而在运行时会将消息发送到动态的主题中。

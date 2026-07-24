@@ -31,7 +31,11 @@ func TestNewEncryptOp(t *testing.T) {
 	assert.Error(t, err)
 	assert.Equal(t, "get encryptor non fail with error: encryptor 'non' is not supported", err.Error())
 	if conf.Config != nil {
+		originalKey := conf.Config.AesKey
 		conf.Config.AesKey = nil
+		t.Cleanup(func() {
+			conf.Config.AesKey = originalKey
+		})
 	}
 	_, err = NewEncryptOp("test", &def.RuleOption{}, "aes", nil)
 	assert.Error(t, err)
@@ -40,6 +44,11 @@ func TestNewEncryptOp(t *testing.T) {
 
 func TestEncryptOp_Exec(t *testing.T) {
 	conf.InitConf()
+	originalKey := conf.Config.AesKey
+	conf.Config.AesKey = []byte("0123456789abcdef0123456789abcdef")
+	t.Cleanup(func() {
+		conf.Config.AesKey = originalKey
+	})
 	op, err := NewEncryptOp("test", &def.RuleOption{BufferLength: 10, SendError: true}, "aes", nil)
 	assert.NoError(t, err)
 	op.tool = &MockEncryptor{}

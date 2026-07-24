@@ -681,6 +681,11 @@ func TestFileSinkReopen(t *testing.T) {
 // Test single file writing and flush by close
 func TestFileCompressAndEncrypt(t *testing.T) {
 	conf.InitConf()
+	originalKey := conf.Config.AesKey
+	conf.Config.AesKey = []byte("0123456789abcdef0123456789abcdef")
+	t.Cleanup(func() {
+		conf.Config.AesKey = originalKey
+	})
 	tests := []struct {
 		name       string
 		ft         FileType

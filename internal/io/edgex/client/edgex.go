@@ -16,7 +16,6 @@ package client
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/edgexfoundry/go-mod-messaging/v4/messaging"
 	"github.com/edgexfoundry/go-mod-messaging/v4/pkg/types"
@@ -25,6 +24,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
+	"github.com/lf-edge/ekuiper/v2/pkg/replace"
 )
 
 type Client struct {
@@ -105,15 +105,7 @@ type EdgexConf struct {
 
 // Modify the copied conf to print no password.
 func printConf(mbconf types.MessageBusConfig) {
-	printableOptional := make(map[string]string)
-	for k, v := range mbconf.Optional {
-		if strings.EqualFold(k, "password") {
-			printableOptional[k] = "*"
-		} else {
-			printableOptional[k] = v
-		}
-	}
-	mbconf.Optional = printableOptional
+	mbconf.Optional = replace.HidePasswordString(mbconf.Optional)
 	conf.Log.Infof("Use configuration for edgex messagebus %v", mbconf)
 }
 
