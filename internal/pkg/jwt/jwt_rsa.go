@@ -15,42 +15,14 @@
 package jwt
 
 import (
-	"crypto/rsa"
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 )
 
-const ExpireTimeMinutes = 10
-
 type Token struct {
 	jwt.RegisteredClaims
-}
-
-// CreateToken Only for tests
-func CreateToken(signKeyName, issuer string, aud []string) (string, error) {
-	tk := &Token{}
-	tk.Issuer = issuer
-	tk.Audience = aud
-	tk.ExpiresAt = jwt.NewNumericDate(time.Now().Add(time.Duration(ExpireTimeMinutes) * time.Minute))
-	token := jwt.NewWithClaims(jwt.GetSigningMethod("RS256"), tk)
-	signKey, err := GetPrivateKeyWithKeyName(signKeyName)
-	if err != nil {
-		return "", err
-	}
-	return token.SignedString(signKey)
-}
-
-// CreateTokenWithKey creates a token with the provided private key (for tests)
-func CreateTokenWithKey(signKey *rsa.PrivateKey, issuer string, aud []string) (string, error) {
-	tk := &Token{}
-	tk.Issuer = issuer
-	tk.Audience = aud
-	tk.ExpiresAt = jwt.NewNumericDate(time.Now().Add(time.Duration(ExpireTimeMinutes) * time.Minute))
-	token := jwt.NewWithClaims(jwt.GetSigningMethod("RS256"), tk)
-	return token.SignedString(signKey)
 }
 
 func ParseToken(th string) (*Token, error) {

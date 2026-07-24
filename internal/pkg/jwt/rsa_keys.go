@@ -24,56 +24,15 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
-	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
-)
-
-var (
-	privateKeyRepository = make(map[string]*rsa.PrivateKey)
-	publicKeyRepository  = make(map[string]*rsa.PublicKey)
-	repositoryLock       syncx.Mutex
 )
 
 const RSAKeyDir = "mgmt"
 
-func GetPrivateKeyWithKeyName(keyName string) (*rsa.PrivateKey, error) {
-	repositoryLock.Lock()
-	defer repositoryLock.Unlock()
-
-	key, ok := privateKeyRepository[keyName]
-	if ok {
-		return key, nil
-	}
-
-	privateKey, err := privateKeyFromFile(keyName)
-	if err != nil {
-		return nil, err
-	}
-
-	privateKeyRepository[keyName] = privateKey
-
-	return privateKey, nil
-}
-
 func GetPublicKey(keyName string) (*rsa.PublicKey, error) {
-	repositoryLock.Lock()
-	pubKey, ok := publicKeyRepository[keyName]
-	repositoryLock.Unlock()
-	if ok {
-		return pubKey, nil
-	}
-
-	// Do not hold the repository lock while accessing the filesystem.
 	return publicKeyFromFile(keyName)
 }
 
-// SetPublicKey sets a public key in the in-memory cache (for tests)
-func SetPublicKey(keyName string, pubKey *rsa.PublicKey) {
-	repositoryLock.Lock()
-	defer repositoryLock.Unlock()
-	publicKeyRepository[keyName] = pubKey
-}
-
-func insensitiveGetFilePath(prikeyName string) (string, error) {
+func insensitiveGetFilePath(keyName string) (string, error) {
 	confDir, err := conf.GetConfLoc()
 	if nil != err {
 		return "", err
@@ -87,28 +46,12 @@ func insensitiveGetFilePath(prikeyName string) (string, error) {
 
 	for _, entry := range dirEntries {
 		fileName := entry.Name()
-		if strings.EqualFold(fileName, prikeyName) {
+		if strings.EqualFold(fileName, keyName) {
 			filePath := path.Join(dir, fileName)
 			return filePath, nil
 		}
 	}
-	return "", fmt.Errorf("not found target key file %s in /etc/%s", prikeyName, RSAKeyDir)
-}
-
-func privateKeyFromFile(keyName string) (*rsa.PrivateKey, error) {
-	keyPath, err := insensitiveGetFilePath(keyName)
-	if err != nil {
-		return nil, err
-	}
-	keyBytes, err := os.ReadFile(keyPath)
-	if err != nil {
-		return nil, err
-	}
-	signKey, err := jwt.ParseRSAPrivateKeyFromPEM(keyBytes)
-	if err != nil {
-		return nil, err
-	}
-	return signKey, nil
+	return "", fmt.Errorf("not found target key file %s in /etc/%s", keyName, RSAKeyDir)
 }
 
 func publicKeyFromFile(keyName string) (*rsa.PublicKey, error) {
