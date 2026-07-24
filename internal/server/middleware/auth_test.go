@@ -15,6 +15,8 @@
 package middleware
 
 import (
+	"crypto/rand"
+	"crypto/rsa"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -24,8 +26,22 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/jwt"
 )
 
-func genToken(signKeyName, issuer string, aud []string) string {
-	tkStr, _ := jwt.CreateToken(signKeyName, issuer, aud)
+var testPrivateKey *rsa.PrivateKey
+
+func genTokenWithEphemeralKey(t *testing.T, issuer string, aud []string) string {
+	t.Helper()
+
+	if testPrivateKey == nil {
+		var err error
+		testPrivateKey, err = rsa.GenerateKey(rand.Reader, 2048)
+		if err != nil {
+			t.Fatalf("failed to generate test key: %v", err)
+		}
+		// Store the key so ParseToken can find it
+		jwt.SetPublicKey(issuer, &testPrivateKey.PublicKey)
+	}
+
+	tkStr, _ := jwt.CreateTokenWithKey(testPrivateKey, issuer, aud)
 	return tkStr
 }
 
@@ -48,7 +64,7 @@ func Test_AUTH(t *testing.T) {
 	}{
 		{
 			name:     "token right",
-			args:     args{th: genToken("sample_key", "sample_key.pub", []string{"neuron", "eKuiper"})},
+			args:     args{th: genTokenWithEphemeralKey(t, "test_issuer", []string{"neuron", "eKuiper"})},
 			req:      httptest.NewRequest(http.MethodGet, "http://127.0.0.1:9081/streams", nil),
 			res:      httptest.NewRecorder(),
 			wantCode: 200,
@@ -56,7 +72,7 @@ func Test_AUTH(t *testing.T) {
 
 		{
 			name:     "audience not right",
-			args:     args{th: genToken("sample_key", "sample_key.pub", []string{"Neuron"})},
+			args:     args{th: genTokenWithEphemeralKey(t, "test_issuer", []string{"Neuron"})},
 			req:      httptest.NewRequest(http.MethodGet, "http://127.0.0.1:9081/streams", nil),
 			res:      httptest.NewRecorder(),
 			wantCode: 401,

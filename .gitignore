@@ -12,7 +12,6 @@
 
 # Project-local glide cache, RE: https://github.com/Masterminds/glide/issues/736
 .glide/
-
 data/*
 log/*
 plugins/sources/*
@@ -46,3 +45,7 @@ pycache
 fix_cve.md
 ekuiper240b5.csv
 tmp
+
+# Management keys (never commit private keys)
+etc/mgmt/sample_key
+etc/mgmt/sample_key.pub

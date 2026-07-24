@@ -15,6 +15,8 @@
 package jwt
 
 import (
+	"crypto/rand"
+	"crypto/rsa"
 	"fmt"
 	"testing"
 
@@ -31,7 +33,31 @@ func genToken(signKeyName, issuer string, aud []string) string {
 	return tkStr
 }
 
+func genTokenWithKey(key *rsa.PrivateKey, issuer string, aud []string) string {
+	tkStr, _ := CreateTokenWithKey(key, issuer, aud)
+	return tkStr
+}
+
 func TestParseToken(t *testing.T) {
+	// Generate a test key pair
+	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		t.Fatalf("failed to generate test key: %v", err)
+	}
+
+	// Store the key so ParseToken can find it
+	repositoryLock.Lock()
+	privateKeyRepository["test_issuer"] = privateKey
+	publicKeyRepository["test_issuer"] = &privateKey.PublicKey
+	repositoryLock.Unlock()
+
+	defer func() {
+		repositoryLock.Lock()
+		delete(privateKeyRepository, "test_issuer")
+		delete(publicKeyRepository, "test_issuer")
+		repositoryLock.Unlock()
+	}()
+
 	type args struct {
 		th string
 	}
@@ -43,7 +69,7 @@ func TestParseToken(t *testing.T) {
 		{
 			name: "pass: have issuer public key",
 			args: args{
-				th: genToken("sample_key", "sample_key.pub", []string{"eKuiper"}),
+				th: genTokenWithKey(privateKey, "test_issuer", []string{"eKuiper"}),
 			},
 			wantErr: false,
 		},
@@ -57,14 +83,14 @@ func TestParseToken(t *testing.T) {
 		{
 			name: "fail: token sign error",
 			args: args{
-				th: genToken("sample_key", "sample_key.pub", []string{"eKuiper"}) + "badSign",
+				th: genTokenWithKey(privateKey, "test_issuer", []string{"eKuiper"}) + "badSign",
 			},
 			wantErr: true,
 		},
 		{
 			name: "fail: do not have issuer's public key",
 			args: args{
-				th: genToken("sample_key", "notexist.pub", []string{"eKuiper"}),
+				th: genTokenWithKey(privateKey, "notexist.pub", []string{"eKuiper"}),
 			},
 			wantErr: true,
 		},

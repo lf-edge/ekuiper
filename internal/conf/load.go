@@ -40,6 +40,7 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/replace"
 )
 
 var LoadConfigCache map[string]map[string]interface{}
@@ -134,12 +135,26 @@ func process(configMap map[string]interface{}, env map[string]string, prefix str
 		handle(configMap, keys, value)
 		printableK := strings.Join(keys, ".")
 		printableV := value
-		if strings.Contains(strings.ToLower(printableK), "password") || strings.Contains(strings.ToLower(printableK), "kuiper_props") {
-			printableV = "*"
+		if isSensitiveKey(printableK) || strings.Contains(strings.ToLower(printableK), "kuiper_props") {
+			printableV = "***"
 		}
 		Log.Infof("Set config '%s.%s' to '%s' by environment variable", strings.ToLower(prefix), printableK, printableV)
 	}
 	return nil
+}
+
+func isSensitiveKey(key string) bool {
+	lowerKey := strings.ToLower(key)
+	sensitivePatterns := []string{
+		"password", "pass", "token", "access_token", "refresh_token",
+		"secret", "key", "credential", "auth",
+	}
+	for _, pattern := range sensitivePatterns {
+		if strings.Contains(lowerKey, pattern) {
+			return true
+		}
+	}
+	return false
 }
 
 func handle(conf map[string]interface{}, keysLeft []string, val string) {
@@ -319,17 +334,5 @@ func extractNamesFromElement(jsonMap map[string]interface{}) []string {
 }
 
 func Printable(m map[string]interface{}) map[string]interface{} {
-	printableMap := make(map[string]interface{})
-	for k, v := range m {
-		if strings.ToLower(k) == "password" {
-			printableMap[k] = "***"
-		} else {
-			if vm, ok := v.(map[string]interface{}); ok {
-				printableMap[k] = Printable(vm)
-			} else {
-				printableMap[k] = v
-			}
-		}
-	}
-	return printableMap
+	return replace.HidePassword(m)
 }

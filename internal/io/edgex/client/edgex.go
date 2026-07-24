@@ -106,9 +106,13 @@ type EdgexConf struct {
 // Modify the copied conf to print no password.
 func printConf(mbconf types.MessageBusConfig) {
 	printableOptional := make(map[string]string)
+	sensitiveKeys := map[string]bool{
+		"password": true, "pass": true, "token": true,
+		"access_token": true, "refresh_token": true, "secret": true,
+	}
 	for k, v := range mbconf.Optional {
-		if strings.EqualFold(k, "password") {
-			printableOptional[k] = "*"
+		if sensitiveKeys[strings.ToLower(k)] {
+			printableOptional[k] = "***"
 		} else {
 			printableOptional[k] = v
 		}

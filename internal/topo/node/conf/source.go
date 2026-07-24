@@ -21,6 +21,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
+	"github.com/lf-edge/ekuiper/v2/pkg/replace"
 )
 
 // GetSourceConf unifies all properties set in different locations
@@ -97,17 +98,5 @@ func GetSourceConf(sourceType string, options *ast.Options) map[string]interface
 }
 
 func printable(m map[string]interface{}) map[string]interface{} {
-	printableMap := make(map[string]interface{})
-	for k, v := range m {
-		if strings.EqualFold(k, "password") {
-			printableMap[k] = "*"
-		} else {
-			if vm, ok := v.(map[string]interface{}); ok {
-				printableMap[k] = printable(vm)
-			} else {
-				printableMap[k] = v
-			}
-		}
-	}
-	return printableMap
+	return replace.HidePassword(m)
 }

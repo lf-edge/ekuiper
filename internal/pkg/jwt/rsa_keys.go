@@ -29,6 +29,7 @@ import (
 
 var (
 	privateKeyRepository = make(map[string]*rsa.PrivateKey)
+	publicKeyRepository  = make(map[string]*rsa.PublicKey)
 	repositoryLock       syncx.Mutex
 )
 
@@ -54,12 +55,28 @@ func GetPrivateKeyWithKeyName(keyName string) (*rsa.PrivateKey, error) {
 }
 
 func GetPublicKey(keyName string) (*rsa.PublicKey, error) {
+	repositoryLock.Lock()
+	defer repositoryLock.Unlock()
+
+	// Check in-memory cache first
+	if pubKey, ok := publicKeyRepository[keyName]; ok {
+		return pubKey, nil
+	}
+
+	// Fall back to file
 	publicKey, err := publicKeyFromFile(keyName)
 	if err != nil {
 		return nil, err
 	}
 
 	return publicKey, nil
+}
+
+// SetPublicKey sets a public key in the in-memory cache (for tests)
+func SetPublicKey(keyName string, pubKey *rsa.PublicKey) {
+	repositoryLock.Lock()
+	defer repositoryLock.Unlock()
+	publicKeyRepository[keyName] = pubKey
 }
 
 func insensitiveGetFilePath(prikeyName string) (string, error) {
