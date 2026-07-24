@@ -15,8 +15,14 @@
 ARG GO_VERSION
 FROM golang:$GO_VERSION-alpine AS builder
 
-RUN apk add gcc make git libc-dev zip curl jq bash binutils-gold pkgconfig zeromq-dev
+# NOTE: `duckdb-dev` is currently only available from Alpine `edge/testing`.
+# This base image is used for CI/plugin build scenarios, so we temporarily
+# accept the instability trade-off. Prefer switching to a stable repository
+# once `duckdb-dev` is available there.
 
-RUN mkdir /lib64 && ln -s /lib/libc.musl-x86_64.so.1 /lib64/ld-linux-x86-64.so.2
-
-RUN git config --global --add safe.directory '*'
+RUN echo "http://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories \
+    && apk update \
+    && apk add gcc make git libc-dev zip curl jq bash binutils-gold pkgconfig zeromq-dev duckdb-dev g++ \
+    && rm -rf /var/cache/apk/* \
+    && mkdir /lib64 && ln -s /lib/libc.musl-x86_64.so.1 /lib64/ld-linux-x86-64.so.2 \
+    && git config --global --add safe.directory '*'
