@@ -15,6 +15,7 @@
 package jwt
 
 import (
+	"crypto/rsa"
 	"errors"
 	"fmt"
 	"time"
@@ -39,6 +40,16 @@ func CreateToken(signKeyName, issuer string, aud []string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	return token.SignedString(signKey)
+}
+
+// CreateTokenWithKey creates a token with the provided private key (for tests)
+func CreateTokenWithKey(signKey *rsa.PrivateKey, issuer string, aud []string) (string, error) {
+	tk := &Token{}
+	tk.Issuer = issuer
+	tk.Audience = aud
+	tk.ExpiresAt = jwt.NewNumericDate(time.Now().Add(time.Duration(ExpireTimeMinutes) * time.Minute))
+	token := jwt.NewWithClaims(jwt.GetSigningMethod("RS256"), tk)
 	return token.SignedString(signKey)
 }
 

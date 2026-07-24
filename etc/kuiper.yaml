@@ -64,7 +64,7 @@ basic:
   # enableOpenZiti indicates whether to enable OpenZiti for eKuiper REST service. Currently, it is only supported to work with EdgeX secure mode.
   enableOpenZiti: false
   # AES Key, base64 encoded
-  aesKey: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3
+  ## aesKey: your_base64_encoded_aes_key
   gracefulShutdownTimeout: 10s
   connection:
     backoffMaxElapsedDuration: 3m
@@ -128,7 +128,7 @@ store:
   redis:
     host: localhost
     port: 6379
-    password: kuiper
+    ## password: your_redis_password
     #Timeout
     timeout: 1s
   sqlite:
