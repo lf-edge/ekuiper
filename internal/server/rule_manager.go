@@ -36,6 +36,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 	"github.com/lf-edge/ekuiper/v2/pkg/replace"
 	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
+	"github.com/lf-edge/ekuiper/v2/pkg/validate"
 )
 
 // Rule storage includes kv and in memory registry
@@ -230,6 +231,9 @@ func (rr *RuleRegistry) UpsertRule(ruleId, ruleJson string) error {
 }
 
 func (rr *RuleRegistry) DeleteRule(name string) error {
+	if err := validate.ValidateID(name); err != nil {
+		return err
+	}
 	// lock registry and db. rs level has its own lock
 	rs, err := rr.delete(name)
 	if rs != nil {

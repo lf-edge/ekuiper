@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/pingcap/failpoint"
@@ -153,4 +154,49 @@ func TestReplaceConfigurations(t *testing.T) {
 	}, replaceConfigurations("sources.kafka.kafka1", map[string]any{
 		"saslPassword": "123",
 	}))
+}
+
+// TestYamlImportMaliciousRuleID covers the reporter's real attack entry point:
+// YAML import feeds the rules map key directly into registry.DeleteRule and
+// registry.CreateRule. A malicious key must not reach the file deletion logic
+// in deleteRuleData, so the sentinel file placed at the traversed path survives.
+func TestYamlImportMaliciousRuleID(t *testing.T) {
+	conf.InitConf()
+	conf.IsTesting = true
+	connection.InitConnectionManager4Test()
+	for _, v := range components {
+		v.register()
+	}
+	InitConfManagers()
+
+	dataLoc, err := conf.GetDataLoc()
+	require.NoError(t, err)
+
+	// The map key used as the rule id; with the "rule_" prefix it resolves to a
+	// path inside the data location that deleteRuleData would os.RemoveAll.
+	maliciousKey := "../../malicious_yaml_target"
+	targetPath := filepath.Join(dataLoc, "rule_"+maliciousKey)
+	require.NoError(t, os.MkdirAll(targetPath, 0o755))
+	sentinel := filepath.Join(targetPath, "sentinel.txt")
+	require.NoError(t, os.WriteFile(sentinel, []byte("sentinel"), 0o644))
+	defer os.RemoveAll(targetPath)
+
+	yamlContent := []byte(`rules:
+  ../../malicious_yaml_target:
+    sql: SELECT * FROM demo
+    actions:
+      - log: {}
+`)
+	err = importFromByte(yamlContent)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "invalid characters")
+
+	// The sentinel must survive the import attempt: no file deletion occurred.
+	data, statErr := os.ReadFile(sentinel)
+	require.NoError(t, statErr)
+	require.Equal(t, "sentinel", string(data))
+
+	// No malicious rule should have been registered.
+	_, ok := registry.load(maliciousKey)
+	require.False(t, ok)
 }

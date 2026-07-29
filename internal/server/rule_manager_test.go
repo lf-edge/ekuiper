@@ -15,10 +15,14 @@
 package server
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/rule"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
@@ -52,6 +56,89 @@ func TestErrors(t *testing.T) {
 	registry.register("test", rule.NewState(def.GetDefaultRule("testErrors", "select * from demo"), func(string, bool) {}))
 	err = registry.StartRule("test")
 	assert.EqualError(t, err, "fail to get stream demo, please check if stream is created")
+}
+
+// TestDeleteRuleValidateID ensures that DeleteRule rejects invalid rule ids (path
+// traversal, special characters, empty) before any registry, DB or filesystem
+// mutation happens.
+func TestDeleteRuleValidateID(t *testing.T) {
+	invalidIDs := []string{
+		"../../target",
+		"..",
+		"foo/bar",
+		"a.b",
+		"a b",
+	}
+	for _, id := range invalidIDs {
+		err := registry.DeleteRule(id)
+		require.Error(t, err, "expected validation error for id %q", id)
+	}
+	// Empty id has its own message but must still be rejected.
+	require.Error(t, registry.DeleteRule(""))
+
+	// A path traversal id must report invalid characters.
+	err := registry.DeleteRule("../../target")
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "invalid characters")
+
+	// The rejected id must not have mutated the in-memory registry.
+	_, ok := registry.load("../../target")
+	require.False(t, ok)
+}
+
+// TestDeleteRuleMaliciousIDNoSideEffect reproduces the reporter's attack vector:
+// a malicious rule id reaching deleteRuleData, which joins the id onto the data
+// location and calls os.RemoveAll. The fix must reject the id before any
+// filesystem operation, so the sentinel file survives.
+func TestDeleteRuleMaliciousIDNoSideEffect(t *testing.T) {
+	dataLoc, err := conf.GetDataLoc()
+	require.NoError(t, err)
+
+	// "rule_" + this id traverses one level (the ".." cancels "rule_.."), so
+	// deleteRuleData would resolve to dataLoc/<sentinelDir> without validation.
+	maliciousName := "../../malicious_delete_target"
+	targetPath := filepath.Join(dataLoc, "rule_"+maliciousName)
+	require.NoError(t, os.MkdirAll(targetPath, 0o755))
+	sentinel := filepath.Join(targetPath, "sentinel.txt")
+	require.NoError(t, os.WriteFile(sentinel, []byte("sentinel"), 0o644))
+	defer os.RemoveAll(targetPath)
+
+	err = registry.DeleteRule(maliciousName)
+	require.Error(t, err)
+
+	// The sentinel must be intact: no filesystem side effect occurred.
+	data, statErr := os.ReadFile(sentinel)
+	require.NoError(t, statErr)
+	require.Equal(t, "sentinel", string(data))
+}
+
+// TestDeleteRuleValidID ensures that the new validation does not break the
+// normal deletion path for well-formed ids, including the original "not found"
+// semantics for absent rules.
+func TestDeleteRuleValidID(t *testing.T) {
+	streamSQL := `CREATE STREAM valid_delete_stream () WITH (DATASOURCE="valid_delete_stream", TYPE="mqtt")`
+	_, err := streamProcessor.ExecStreamSql(streamSQL)
+	require.NoError(t, err)
+	defer streamProcessor.DropStream("valid_delete_stream", ast.TypeStream)
+
+	ruleID := "valid_delete_rule"
+	ruleJson := `{"trigger":false,"id":"valid_delete_rule","sql":"select * from valid_delete_stream","actions":[{"log":{}}]}`
+	_, err = registry.CreateRule(ruleID, ruleJson)
+	require.NoError(t, err)
+	_, ok := registry.load(ruleID)
+	require.True(t, ok)
+
+	// A valid id must pass validation and delete the rule from registry and DB.
+	require.NoError(t, registry.DeleteRule(ruleID))
+	_, ok = registry.load(ruleID)
+	require.False(t, ok)
+	_, err = ruleProcessor.GetRuleById(ruleID)
+	require.Error(t, err) // gone from KV/DB as well
+
+	// Deleting a non-existent rule keeps the original "not found" semantics.
+	err = registry.DeleteRule(ruleID)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "not found")
 }
 
 func TestCoverage(t *testing.T) {
