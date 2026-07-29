@@ -129,7 +129,7 @@ func (fw *fileWriter) Close(ctx api.StreamContext) error {
 		if w, ok := fw.Writer.(io.Closer); ok {
 			e := w.Close()
 			if e != nil {
-				ctx.GetLogger().Errorf("file sink fails to close compress/encrypt writer with error %s.", err)
+				ctx.GetLogger().Errorf("file sink fails to close compress/encrypt writer with error %s.", e)
 			}
 		}
 		err = fw.fileBuffer.Flush()

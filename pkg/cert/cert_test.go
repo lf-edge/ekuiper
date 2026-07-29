@@ -15,7 +15,9 @@
 package cert
 
 import (
+	"bytes"
 	"crypto/tls"
+	"encoding/base64"
 	"fmt"
 	"testing"
 
@@ -220,4 +222,35 @@ func TestGenOptions(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, tc.options, opt)
 	}
+}
+
+// TestBuildCertDecryptError is a regression test for a bug where the error
+// returned by decryptor.Decrypt(cpb) was checked against the stale `err`
+// variable instead of `e`, causing decryption failures to be silently
+// ignored. The undecrypted bytes were then passed to tls.X509KeyPair,
+// surfacing as a misleading "private key does not match" error.
+func TestBuildCertDecryptError(t *testing.T) {
+	ctx := mockContext.NewMockContext("gentls", "op1")
+
+	// valid 32-byte AES-256 key so that the decryptor is constructed and we
+	// actually reach decryptor.Decrypt (rather than failing at GetDecryptorWithKey)
+	keyB64 := base64.StdEncoding.EncodeToString(bytes.Repeat([]byte{0x01}, 32))
+
+	// short garbage cert/key bytes: AES-GCM Decrypt rejects them with
+	// "ciphertext too short" (nonce is 12 bytes).
+	certB64 := base64.StdEncoding.EncodeToString([]byte("short"))
+
+	props := map[string]any{
+		"certificationRaw": certB64,
+		"privateKeyRaw":    certB64,
+		"decrypt": map[string]any{
+			"algorithm": "aes",
+			"key":       keyB64,
+		},
+	}
+
+	_, err := GenTLSConfig(ctx, props)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "decrypt certificate failed",
+		"decryption failure must be surfaced, not masked by a later X509KeyPair error")
 }

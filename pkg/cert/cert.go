@@ -136,6 +136,9 @@ func buildCert(ctx api.StreamContext, opts *model.TlsConfigurationOptions, keys 
 	)
 	if len(opts.CertFile) > 0 || len(opts.KeyFile) > 0 {
 		cpb, kpb, err = certLoader(ctx, opts.CertFile, opts.KeyFile)
+		if err != nil {
+			return tls.Certificate{}, err
+		}
 	} else {
 		cpb, kpb = keys.RawCertBytes, keys.RawKeyBytes
 	}
@@ -152,12 +155,12 @@ func buildCert(ctx api.StreamContext, opts *model.TlsConfigurationOptions, keys 
 			return tls.Certificate{}, e
 		}
 		cpb, e = decryptor.Decrypt(cpb)
-		if err != nil {
-			return tls.Certificate{}, e
+		if e != nil {
+			return tls.Certificate{}, fmt.Errorf("decrypt certificate failed: %w", e)
 		}
 		kpb, e = decryptor.Decrypt(kpb)
 		if e != nil {
-			return tls.Certificate{}, e
+			return tls.Certificate{}, fmt.Errorf("decrypt private key failed: %w", e)
 		}
 	}
 	return tls.X509KeyPair(cpb, kpb)
