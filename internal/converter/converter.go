@@ -50,6 +50,9 @@ func init() {
 	modules.RegisterWriterConverter(message.FormatJson, func(ctx api.StreamContext, _ string, schema map[string]*ast.JsonStreamField, props map[string]any) (message.ConvertWriter, error) {
 		return json.NewFastJsonConverter(schema, props), nil
 	})
+	modules.RegisterWriterConverter(message.FormatUrlEncoded, func(ctx api.StreamContext, _ string, _ map[string]*ast.JsonStreamField, props map[string]any) (message.ConvertWriter, error) {
+		return urlencoded.NewWriter(ctx, props)
+	})
 }
 
 func GetOrCreateConverter(ctx api.StreamContext, format string, schemaId string, schemaFields map[string]*ast.JsonStreamField, props map[string]any) (c message.Converter, err error) {

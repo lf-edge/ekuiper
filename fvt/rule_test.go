@@ -15,8 +15,11 @@
 package fvt
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"sort"
 	"testing"
@@ -28,6 +31,7 @@ import (
 	"github.com/mochi-mqtt/server/v2/packets"
 	"github.com/stretchr/testify/suite"
 
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/io/memory/pubsub"
 	"github.com/lf-edge/ekuiper/v2/internal/server"
 	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
@@ -712,6 +716,80 @@ func (s *RuleTestSuite) TestDataTemplateArrayDecode() {
 		{"v": float64(2)},
 	}
 	s.assertRecvMemTupleList(subCh, expected)
+}
+
+// TestBatchDataTemplateJSON verifies the complete bytes-sink pipeline:
+// Batch -> Transform (RawTuple) -> JSON Writer -> REST.
+func (s *RuleTestSuite) TestBatchDataTemplateJSON() {
+	const (
+		ruleID     = "ruleBatchDataTemplate"
+		streamName = "simBatchDataTemplate"
+	)
+	client.DeleteRule(ruleID)
+	client.DeleteStream(streamName)
+	defer client.DeleteRule(ruleID)
+	defer client.DeleteStream(streamName)
+	privateNetEnabled := conf.Config.Basic.EnablePrivateNet
+	conf.Config.Basic.EnablePrivateNet = true
+	defer func() {
+		conf.Config.Basic.EnablePrivateNet = privateNetEnabled
+	}()
+
+	received := make(chan []byte, 1)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, _ := io.ReadAll(r.Body)
+		received <- body
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer server.Close()
+
+	conf := map[string]any{
+		"data": []map[string]any{
+			{"id": float64(1), "temperature": float64(20)},
+			{"id": float64(2), "temperature": float64(30)},
+		},
+		"interval": "10ms",
+		"loop":     false,
+	}
+	resp, err := client.CreateConf("sources/simulator/confKeys/"+streamName, conf)
+	s.Require().NoError(err)
+	s.Require().Equal(http.StatusOK, resp.StatusCode)
+
+	streamSQL := fmt.Sprintf(`{"sql":"CREATE STREAM %s() WITH (TYPE=\"simulator\", CONF_KEY=\"%s\")"}`, streamName, streamName)
+	resp, err = client.CreateStream(streamSQL)
+	s.Require().NoError(err)
+	s.Require().Equal(http.StatusCreated, resp.StatusCode)
+
+	ruleSQL := fmt.Sprintf(`{
+		"id": %q,
+		"sql": "SELECT * FROM %s",
+		"actions": [{
+			"rest": {
+				"url": %q,
+				"method": "POST",
+				"bodyType": "json",
+				"format": "json",
+				"batchSize": 2,
+				"sendSingle": true,
+				"dataTemplate": "{\"deviceId\":{{.id}},\"value\":{{.temperature}}}"
+			}
+		}]
+	}`, ruleID, streamName, server.URL)
+	resp, err = client.CreateRule(ruleSQL)
+	s.Require().NoError(err)
+	s.Require().Equal(http.StatusCreated, resp.StatusCode)
+
+	select {
+	case body := <-received:
+		var actual []map[string]any
+		s.Require().NoError(json.Unmarshal(body, &actual), "REST body: %s", body)
+		s.Require().Equal([]map[string]any{
+			{"deviceId": float64(1), "value": float64(20)},
+			{"deviceId": float64(2), "value": float64(30)},
+		}, actual)
+	case <-time.After(5 * time.Second):
+		s.Fail("timed out waiting for batched REST request")
+	}
 }
 
 func (s *RuleTestSuite) assertRecvMemTupleList(subCh chan any, expect []map[string]any) {

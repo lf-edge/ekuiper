@@ -257,6 +257,88 @@ Golang 还内置提供了一些函数，用户可以参考[更多 Golang 内置�
   {"device_id": "1", "description": [ "fine" , "fine" , "high" ]}
 ```
 
+## `sendSingle`、批量、`dataTemplate` 与 `format` 的关系
+
+这些属性分别控制 sink 处理过程中的不同阶段：
+
+| 属性 | 职责 |
+|------|------|
+| `sendSingle` | 控制 `dataTemplate` 的输入粒度。值为 `false` 时，模板接收当前的映射数组；值为 `true` 时，eKuiper 遍历数组并对每个映射分别执行一次模板。 |
+| `dataTemplate` | 转换 `sendSingle` 选出的每个输入。在批量模式下，模板应描述一个批次元素，而不是完整批次。模板输出被视为已经编码的数据，不会再次编码。用户需要负责保证输出符合 `format`。 |
+| `format` | 控制普通数据的编码方式；启用批量处理后，还控制如何将多个转换结果组织为一个批次。JSON Writer 会添加逗号和外层数组，Delimited Writer 会添加换行符，URL-encoded Writer 会在模板结果之间添加 `&`。 |
+| `batchSize` / `lingerInterval` | 控制何时将转换后的元素发送到 sink。批量处理不会把累计完成的批次暴露给 `dataTemplate`，也不会改变模板输入。 |
+
+实际处理顺序为：
+
+```text
+输入数组
+  -> sendSingle 保留数组或逐条遍历映射
+  -> dataTemplate 转换每个选中的输入
+  -> format Writer 组织转换结果
+  -> batchSize 或 lingerInterval 触发发送
+```
+
+> **启用批量处理时，`dataTemplate` 必须描述一个批次元素。** 模板不应生成批次的外层数组、元素之间的分隔符或批次边界。对于逐条处理的模板，应设置 `sendSingle=true`，使模板每次接收一个映射。批次触发发送时，由格式 Writer 组合这些转换后的元素。
+
+### 示例：逐条转换后发送一个 JSON 批次
+
+假设输入包含以下两条记录：
+
+```json
+[{"id":1,"temperature":20},{"id":2,"temperature":30}]
+```
+
+使用 `sendSingle=true` 让模板逐条执行，并使用 `format=json` 将转换后的 JSON 值组织为一个数组：
+
+```json
+{
+  "batchSize": 100,
+  "sendSingle": true,
+  "format": "json",
+  "dataTemplate": "{\"deviceId\":{{.id}},\"value\":{{.temperature}}}"
+}
+```
+
+两次模板执行分别产生：
+
+```json
+{"deviceId":1,"value":20}
+{"deviceId":2,"value":30}
+```
+
+JSON Batch Writer 不会再次编码这些值，只添加逗号和外层数组。当批次触发发送时，sink 收到一条消息：
+
+```json
+[{"deviceId":1,"value":20},{"deviceId":2,"value":30}]
+```
+
+### 错误预期：把模板输入当成累计完成的批次
+
+设置 `sendSingle=false` 时，模板接收的是当前输入数组，而不是 `batchSize` 或 `lingerInterval` 已累计的所有记录。例如：
+
+```json
+{
+  "batchSize": 100,
+  "sendSingle": false,
+  "format": "json",
+  "dataTemplate": "{{toJson .}}"
+}
+```
+
+如果两次模板执行分别返回 `[1,2]` 和 `[3,4]`，Writer 会把每个结果视为一个批次元素，不会将它们合并为 `[1,2,3,4]`，因此最终结果是嵌套数组：
+
+```json
+[[1,2],[3,4]]
+```
+
+Batch Writer 不会展开模板输出。当 `format=json` 时，每次模板执行都必须产生一个合法的 JSON 值。eKuiper 会将模板输出视为配置格式的数据；格式错误或不兼容属于模板配置错误。如需逐条转换后再组成批次，应设置 `sendSingle=true`，并按单条记录编写模板。
+
+> **重要提示：** 同时使用批量处理与 `dataTemplate` 时，`format` 只负责选择 Writer 及其批量结构，不会解析或校验模板产生的已编码数据。因此，设置 `format=json` 并不能保证最终消息一定是合法 JSON。模板作者必须保证每次输出都符合配置格式，并且能够按照该格式的批量结构组合。
+
+### 示例：不使用数据模板
+
+省略 `dataTemplate` 时，选出的结构化数据尚未编码，Writer 使用 `format` 编码每个数据项并构造批次。因此，在这种情况下，`format` 同时控制编码和批量结构。
+
 ## 使用 AI 辅助生成
 
 eKuiper 的模板语法与 Go 语言相同，因此可以方便地通过 AI 辅助生成数据模版。例如上文的数据遍历的示例，我们可以使用如下提示词来辅助生成数据模版：

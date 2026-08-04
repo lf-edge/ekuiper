@@ -44,7 +44,16 @@ type ConvertWriter interface {
 	// New init a new container "file" in buffer
 	New(ctx api.StreamContext) error
 	Write(ctx api.StreamContext, d any) error
+	// Flush returns the completed data. The returned bytes must remain valid
+	// after subsequent calls to New and Write.
 	Flush(ctx api.StreamContext) ([]byte, error)
+}
+
+// RawConvertWriter writes an item that has already been encoded, typically by
+// a sink data template. Implementations may add format-specific batch framing,
+// but must not encode the item again.
+type RawConvertWriter interface {
+	WriteRaw(ctx api.StreamContext, raw []byte) error
 }
 
 // PartialDecoder decodes a field partially

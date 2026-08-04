@@ -93,6 +93,12 @@ func NewTransformOp(name string, rOpt *def.RuleOption, sc *SinkConf, templates [
 	return o, nil
 }
 
+// IsRawOutput reports whether this transform emits pre-encoded RawTuple data.
+// The sink planner uses this to select the batch writer mode before execution.
+func (t *TransformOp) IsRawOutput() bool {
+	return !t.isSliceMode && t.dt != nil && t.isTextFormat && t.dataField == "" && len(t.fields) == 0 && len(t.excludeFields) == 0
+}
+
 func (t *TransformOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 	t.prepareExec(ctx, errCh, "op")
 	go func() {

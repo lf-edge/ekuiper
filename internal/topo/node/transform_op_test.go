@@ -280,6 +280,33 @@ func TestValidateTrans(t *testing.T) {
 	require.EqualError(t, err, "slice tuple mode do not support sink dataField yet")
 }
 
+func TestTransformOutputMode(t *testing.T) {
+	tests := []struct {
+		name      string
+		conf      *SinkConf
+		sliceMode bool
+		raw       bool
+	}{
+		{name: "no template", conf: &SinkConf{Format: "json"}},
+		{name: "JSON template", conf: &SinkConf{Format: "json", DataTemplate: "{{.}}"}, raw: true},
+		{name: "JSON template in slice mode", conf: &SinkConf{Format: "json", DataTemplate: "{{.}}"}, sliceMode: true},
+		{name: "custom template", conf: &SinkConf{Format: "custom", DataTemplate: "{{.}}"}},
+		{name: "template with fields", conf: &SinkConf{Format: "json", DataTemplate: "{{.}}", Fields: []string{"a"}}},
+		{name: "template with data field", conf: &SinkConf{Format: "json", DataTemplate: "{{.}}", DataField: "data"}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			options := &def.RuleOption{}
+			if tt.sliceMode {
+				options.Experiment = &def.ExpOpts{UseSliceTuple: true}
+			}
+			op, err := NewTransformOp("test", options, tt.conf, nil)
+			require.NoError(t, err)
+			require.Equal(t, tt.raw, op.IsRawOutput())
+		})
+	}
+}
+
 var commonSliceCases = []any{
 	&xsql.SliceTuple{SourceContent: model.SliceVal{1, 2}, Timestamp: time.UnixMilli(0)},
 	&xsql.SliceTuple{SourceContent: make(model.SliceVal, 2), Timestamp: time.UnixMilli(0)},

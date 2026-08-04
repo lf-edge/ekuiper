@@ -20,6 +20,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/converter/json"
+	"github.com/lf-edge/ekuiper/v2/pkg/message"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
 
@@ -79,4 +80,36 @@ func TestWrite(t *testing.T) {
 			require.Equal(t, tt.result, string(r))
 		})
 	}
+}
+
+func TestWriteRawTuple(t *testing.T) {
+	ctx := mockContext.NewMockContext("test", "op1")
+	w, err := NewStackWriter(ctx, json.NewFastJsonConverter(nil, nil))
+	require.NoError(t, err)
+	require.NoError(t, w.New(ctx))
+	rawWriter, ok := w.(message.RawConvertWriter)
+	require.True(t, ok)
+	require.NoError(t, rawWriter.WriteRaw(ctx, []byte(`{"id":1}`)))
+	require.NoError(t, rawWriter.WriteRaw(ctx, []byte(`{"id":2}`)))
+	r, err := w.Flush(ctx)
+	require.NoError(t, err)
+	require.Equal(t, `{"id":1}{"id":2}`, string(r))
+}
+
+func TestWriterFlushOwnership(t *testing.T) {
+	ctx := mockContext.NewMockContext("test", "op1")
+	w, err := NewStackWriter(ctx, json.NewFastJsonConverter(nil, nil))
+	require.NoError(t, err)
+	rawWriter := w.(message.RawConvertWriter)
+	require.NoError(t, w.New(ctx))
+	require.NoError(t, rawWriter.WriteRaw(ctx, []byte(`{"id":1}`)))
+	first, err := w.Flush(ctx)
+	require.NoError(t, err)
+	firstSnapshot := append([]byte(nil), first...)
+
+	require.NoError(t, w.New(ctx))
+	require.NoError(t, rawWriter.WriteRaw(ctx, []byte(`{"id":2}`)))
+	_, err = w.Flush(ctx)
+	require.NoError(t, err)
+	require.Equal(t, firstSnapshot, first)
 }

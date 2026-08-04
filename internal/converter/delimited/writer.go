@@ -28,6 +28,7 @@ type CsvWriter struct {
 	converter *Converter
 	buffer    *bytes.Buffer
 	header    string
+	headerSet bool
 }
 
 func NewCsvWriter(_ api.StreamContext, props map[string]any) (message.ConvertWriter, error) {
@@ -48,6 +49,7 @@ func (w *CsvWriter) New(ctx api.StreamContext) error {
 	ctx.GetLogger().Debugf("new csv writer")
 	w.buffer.Reset()
 	w.header = ""
+	w.headerSet = false
 	return nil
 }
 
@@ -57,16 +59,34 @@ func (w *CsvWriter) Write(ctx api.StreamContext, d any) error {
 	if err != nil {
 		return err
 	}
-	if w.header == "" {
+	if !w.headerSet {
+		if w.buffer.Len() > 0 {
+			w.buffer.WriteString("\n")
+		}
 		w.header = strings.Join(w.converter.Cols, w.converter.Delimiter)
 		w.buffer.WriteString(w.header)
+		w.headerSet = true
 	}
 	w.buffer.WriteString("\n")
 	w.buffer.Write(result)
 	return nil
 }
 
+func (w *CsvWriter) WriteRaw(ctx api.StreamContext, raw []byte) error {
+	ctx.GetLogger().Debugf("csv writer write raw")
+	if w.buffer.Len() > 0 {
+		w.buffer.WriteString("\n")
+	}
+	w.buffer.Write(raw)
+	return nil
+}
+
 func (w *CsvWriter) Flush(ctx api.StreamContext) ([]byte, error) {
 	ctx.GetLogger().Debugf("csv writer flush")
-	return w.buffer.Bytes(), nil
+	result := w.buffer.Bytes()
+	// Transfer ownership of the completed buffer to the caller.
+	w.buffer = bytes.NewBuffer(nil)
+	return result, nil
 }
+
+var _ message.RawConvertWriter = &CsvWriter{}

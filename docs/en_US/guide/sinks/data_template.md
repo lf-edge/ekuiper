@@ -263,6 +263,102 @@ In addition, the template is still applied to each record in the slice. Therefor
   {"device_id": "1", "description": [ "fine" , "fine" , "high" ]}
 ```
 
+## Relationship between `sendSingle`, batching, `dataTemplate`, and `format`
+
+These properties control different stages of sink processing:
+
+| Property | Responsibility |
+|----------|----------------|
+| `sendSingle` | Controls the input granularity of `dataTemplate`. When `false`, the template receives the current array of maps. When `true`, eKuiper iterates the array and invokes the template once for each map. |
+| `dataTemplate` | Transforms each input selected by `sendSingle`. In batch mode, write the template for one batch element, not for the completed batch. Its output is considered already encoded and is not encoded again. The user is responsible for producing data that conforms to `format`. |
+| `format` | Controls normal data encoding and, when batching is enabled, how transformed results are framed into one batch. The JSON writer adds commas and an outer array, the delimited writer adds newlines, and the URL-encoded writer adds `&` between template results. |
+| `batchSize` / `lingerInterval` | Controls when transformed elements are flushed to the sink. Batching does not expose the accumulated batch to `dataTemplate` and does not change its input. |
+
+The effective processing order is:
+
+```text
+input array
+  -> sendSingle keeps the array or iterates its maps
+  -> dataTemplate transforms each selected input
+  -> format writer frames transformed results
+  -> batchSize or lingerInterval triggers a flush
+```
+
+> **When batching is enabled, `dataTemplate` must describe one batch element.** It must not generate the outer batch
+> array, separators between elements, or any batch boundary. For record-oriented templates, use `sendSingle=true` so
+> that the template receives one map at a time. The format writer combines the transformed elements when the batch is
+> flushed.
+
+### Example: transform each record and send one JSON batch
+
+Given these two records:
+
+```json
+[{"id":1,"temperature":20},{"id":2,"temperature":30}]
+```
+
+Use `sendSingle=true` to invoke the template once per record and `format=json` to frame the transformed JSON values as
+one array:
+
+```json
+{
+  "batchSize": 100,
+  "sendSingle": true,
+  "format": "json",
+  "dataTemplate": "{\"deviceId\":{{.id}},\"value\":{{.temperature}}}"
+}
+```
+
+The two template invocations produce:
+
+```json
+{"deviceId":1,"value":20}
+{"deviceId":2,"value":30}
+```
+
+The JSON batch writer does not encode these values again. It adds the comma and outer array, producing one sink message
+when the batch is flushed:
+
+```json
+[{"deviceId":1,"value":20},{"deviceId":2,"value":30}]
+```
+
+### Incorrect expectation: treating the template input as the completed batch
+
+With `sendSingle=false`, the template receives the current input array, not the records accumulated by `batchSize` or
+`lingerInterval`. For example:
+
+```json
+{
+  "batchSize": 100,
+  "sendSingle": false,
+  "format": "json",
+  "dataTemplate": "{{toJson .}}"
+}
+```
+
+If one invocation returns `[1,2]` and another returns `[3,4]`, the writer treats each result as one batch element. It
+does not merge them into `[1,2,3,4]`; the final result is a nested array:
+
+```json
+[[1,2],[3,4]]
+```
+
+The batch writer does not flatten template output. When `format=json`, every template invocation must produce one valid
+JSON value. eKuiper treats template output as belonging to the configured format; malformed or incompatible output is a
+template configuration error. To transform individual records for a batch, use `sendSingle=true` and write the template
+for one record.
+
+> **Important:** When batching is combined with `dataTemplate`, `format` only selects the writer and its batch framing.
+> It does not parse or validate the pre-encoded template output. Consequently, setting `format=json` cannot guarantee
+> that the final message is valid JSON. The template author must ensure that every output is valid for the configured
+> format and can be combined using that format's batch framing.
+
+### Example: no data template
+
+If `dataTemplate` is omitted, the selected structured data is not pre-encoded. The writer uses `format` to encode each
+item and to construct the batch. Thus, `format` controls both encoding and batch framing in this case.
+
 ## AI-assisted generation
 
 eKuiper's template syntax is the same as the Go language, so it is easy to generate data templates with AI assistance. For example, in the data traversal example above, we can use the following hints to assist in generating data templates:

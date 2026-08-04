@@ -1043,3 +1043,19 @@ func TestSliceWrite(t *testing.T) {
 		})
 	}
 }
+
+func TestWriterFlushOwnership(t *testing.T) {
+	ctx := mockContext.NewMockContext("test", "op1")
+	w := NewFastJsonConverter(nil, nil)
+	require.NoError(t, w.New(ctx))
+	require.NoError(t, w.WriteRaw(ctx, []byte(`{"id":1}`)))
+	first, err := w.Flush(ctx)
+	require.NoError(t, err)
+	firstSnapshot := append([]byte(nil), first...)
+
+	require.NoError(t, w.New(ctx))
+	require.NoError(t, w.WriteRaw(ctx, []byte(`{"id":2}`)))
+	_, err = w.Flush(ctx)
+	require.NoError(t, err)
+	require.Equal(t, firstSnapshot, first)
+}

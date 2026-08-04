@@ -60,10 +60,25 @@ func (f *FastJsonConverter) Write(ctx api.StreamContext, d any) error {
 	return nil
 }
 
+func (f *FastJsonConverter) WriteRaw(_ api.StreamContext, raw []byte) error {
+	if !f.isNew {
+		f.buffer.WriteString(",")
+	}
+	f.buffer.Write(raw)
+	f.isNew = false
+	return nil
+}
+
 func (f *FastJsonConverter) Flush(_ api.StreamContext) ([]byte, error) {
 	f.buffer.WriteString("]")
-	return f.buffer.Bytes(), nil
+	result := f.buffer.Bytes()
+	// Transfer ownership of the completed buffer to the caller so that New and
+	// Write cannot mutate the returned data.
+	f.buffer = bytes.Buffer{}
+	return result, nil
 }
+
+var _ message.RawConvertWriter = &FastJsonConverter{}
 
 type FastJsonConverterConf struct {
 	UseInt64        bool              `json:"useInt64ForWholeNumber"`

@@ -36,15 +36,34 @@ import (
 type BatchWriterOp struct {
 	*defaultSinkNode
 	writer message.ConvertWriter
+	// rawWriter is set by the planner for transforms that always emit RawTuple.
+	// A nil value means this operator handles structured data through writer.
+	rawWriter message.RawConvertWriter
 	// save lastRow to get the props
 	lastRow any
 }
 
-func NewBatchWriterOp(ctx api.StreamContext, name string, rOpt *def.RuleOption, schema map[string]*ast.JsonStreamField, sc *SinkConf) (*BatchWriterOp, error) {
+func NewBatchWriterOp(ctx api.StreamContext, name string, rOpt *def.RuleOption, schema map[string]*ast.JsonStreamField, sc *SinkConf, writeRaw bool) (*BatchWriterOp, error) {
 	nctx := ctx.(*context.DefaultContext).WithOpId(name)
 	c, err := converter.GetConvertWriter(nctx, sc.Format, sc.SchemaId, schema, nil)
 	if err != nil {
 		return nil, err
+	}
+	var rawWriter message.RawConvertWriter
+	if writeRaw {
+		if rw, ok := c.(message.RawConvertWriter); ok {
+			rawWriter = rw
+		} else {
+			conv, err := converter.GetOrCreateConverter(nctx, sc.Format, sc.SchemaId, schema, nil)
+			if err != nil {
+				return nil, err
+			}
+			c, err = converter.NewStackWriter(nctx, conv)
+			if err != nil {
+				return nil, err
+			}
+			rawWriter = c.(message.RawConvertWriter)
+		}
 	}
 	err = c.New(nctx)
 	if err != nil {
@@ -53,11 +72,13 @@ func NewBatchWriterOp(ctx api.StreamContext, name string, rOpt *def.RuleOption, 
 	return &BatchWriterOp{
 		defaultSinkNode: newDefaultSinkNode(name, rOpt),
 		writer:          c,
+		rawWriter:       rawWriter,
 	}, nil
 }
 
-// Exec decode op receives map/[]map and converts it to bytes.
-// If receiving bytes, just return it.
+// Exec receives map/[]map and converts it to bytes. RawTuple input is already
+// encoded by transformOp; the writer adds only the framing required by the
+// configured batch format and does not encode the item again.
 func (o *BatchWriterOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 	o.prepareExec(ctx, errCh, "op")
 	go func() {
@@ -124,6 +145,23 @@ func (o *BatchWriterOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 						e := o.writer.Write(ctx, dt.ToMaps())
 						if e != nil {
 							o.onError(ctx, e)
+						}
+						o.onProcessEnd(ctx)
+						o.lastRow = dt
+						count++
+					case api.RawTuple:
+						// A data template may produce an already encoded item. Its format is
+						// the user's responsibility; the writer only applies batch framing.
+						o.onProcessStart(ctx, data)
+						if o.rawWriter == nil {
+							o.onError(ctx, fmt.Errorf("batch writer is not planned for raw data"))
+							o.onProcessEnd(ctx)
+							break
+						}
+						if e := o.rawWriter.WriteRaw(ctx, dt.Raw()); e != nil {
+							o.onError(ctx, e)
+							o.onProcessEnd(ctx)
+							break
 						}
 						o.onProcessEnd(ctx)
 						o.lastRow = dt
