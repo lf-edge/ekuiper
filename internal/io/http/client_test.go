@@ -294,7 +294,9 @@ func TestOAuthClientCredentials(t *testing.T) {
 
 	// 4. Send Data (Verifies Token Usage)
 	data, _ := json.Marshal(map[string]interface{}{"data": 123})
-	resp, err := c.Send(ctx, "json", "POST", c.config.Url, c.parsedHeaders, nil, "", data)
+	state := c.oauthRuntimeState()
+	require.NotNil(t, state)
+	resp, err := c.Send(ctx, "json", "POST", c.config.Url, state.headers, nil, "", data)
 	require.NoError(t, err)
 	defer resp.Body.Close()
 	require.Equal(t, http.StatusOK, resp.StatusCode)

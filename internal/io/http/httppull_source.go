@@ -15,6 +15,7 @@
 package http
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
@@ -100,12 +101,14 @@ func (hps *HttpPullSource) doPull(ctx api.StreamContext) ([]map[string]any, erro
 func (hps *HttpPullSource) doPullInternal(ctx api.StreamContext, c *ClientConf, lastMD5 string) ([]map[string]any, string, error) {
 	// if auth is set, the auth is handled by the client connect
 	headers := c.config.Headers
-	if c.accessConf != nil {
-		headers = c.parsedHeaders
-	}
 	newBody := c.config.Body
 	if c.accessConf != nil {
-		newBody = c.parsedBody
+		state := c.oauthRuntimeState()
+		if state == nil {
+			return nil, "", fmt.Errorf("OAuth token is not initialized")
+		}
+		headers = state.headers
+		newBody = state.body
 	}
 	var err error
 	newUrl := c.config.Url

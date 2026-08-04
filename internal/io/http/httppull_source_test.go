@@ -29,8 +29,9 @@ import (
 )
 
 type Response struct {
-	Message string `json:"message"`
-	Code    int    `json:"code"`
+	Message     string `json:"message"`
+	Code        int    `json:"code"`
+	AccessToken string `json:"access_token,omitempty"`
 }
 
 func handleCodeErr(w http.ResponseWriter, r *http.Request) {
@@ -87,8 +88,9 @@ func handleErr(w http.ResponseWriter, r *http.Request) {
 
 func handleAuth(w http.ResponseWriter, r *http.Request) {
 	resp := Response{
-		Message: "auth",
-		Code:    200,
+		Message:     "auth",
+		Code:        200,
+		AccessToken: "auth",
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
@@ -97,8 +99,9 @@ func handleAuth(w http.ResponseWriter, r *http.Request) {
 
 func handleRefresh(w http.ResponseWriter, r *http.Request) {
 	resp := Response{
-		Message: "refresh",
-		Code:    200,
+		Message:     "refresh",
+		Code:        200,
+		AccessToken: "refresh",
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)

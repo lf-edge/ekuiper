@@ -15,6 +15,8 @@
 package http
 
 import (
+	"fmt"
+
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
@@ -40,6 +42,9 @@ func (hls *HttpLookupSource) Close(ctx api.StreamContext) error {
 }
 
 func (hls *HttpLookupSource) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) error {
+	if err := hls.Conn(ctx); err != nil {
+		return err
+	}
 	sch(api.ConnectionConnected, "")
 	return nil
 }
@@ -99,12 +104,14 @@ var _ api.LookupSource = &HttpLookupSource{}
 
 func doPull(ctx api.StreamContext, c *ClientConf, lastMD5 string) ([]map[string]any, string, error) {
 	headers := c.config.Headers
-	if c.accessConf != nil {
-		headers = c.parsedHeaders
-	}
 	newBody := c.config.Body
 	if c.accessConf != nil {
-		newBody = c.parsedBody
+		state := c.oauthRuntimeState()
+		if state == nil {
+			return nil, "", fmt.Errorf("OAuth token is not initialized")
+		}
+		headers = state.headers
+		newBody = state.body
 	}
 	resp, err := c.Send(ctx, c.config.BodyType, c.config.Method, c.config.Url, headers, nil, "", []byte(newBody))
 	if err != nil {

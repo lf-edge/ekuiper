@@ -792,6 +792,115 @@ func (s *RuleTestSuite) TestBatchDataTemplateJSON() {
 	}
 }
 
+func (s *RuleTestSuite) TestRestSinkOAuthAndRowHeaderTemplates() {
+	const (
+		streamID = "restOAuthHeaderStream"
+		ruleID   = "restOAuthHeaderRule"
+		confKey  = "restOAuthHeaderSource"
+	)
+	client.DeleteRule(ruleID)
+	client.DeleteStream(streamID)
+	defer client.DeleteRule(ruleID)
+	defer client.DeleteStream(streamID)
+	originalEnablePrivateNet := conf.Config.Basic.EnablePrivateNet
+	conf.Config.Basic.EnablePrivateNet = true
+	defer func() {
+		conf.Config.Basic.EnablePrivateNet = originalEnablePrivateNet
+	}()
+
+	type receivedRequest struct {
+		authorization string
+		rowHeader     string
+	}
+	received := make(chan receivedRequest, 1)
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/token":
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"access_token": "e2e-token",
+				"expires_in":   3600,
+			})
+		case "/target":
+			request := receivedRequest{
+				authorization: r.Header.Get("Authorization"),
+				rowHeader:     r.Header.Get("X-Row"),
+			}
+			select {
+			case received <- request:
+			default:
+			}
+			if request.authorization != "Bearer e2e-token" {
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+			}
+			w.WriteHeader(http.StatusOK)
+		default:
+			w.WriteHeader(http.StatusNotFound)
+		}
+	}))
+	defer ts.Close()
+
+	resp, err := client.CreateConf("sources/simulator/confKeys/"+confKey, map[string]any{
+		"data": []map[string]any{
+			{"row_value": "row-value", "number": float64(42)},
+		},
+		"interval": "10ms",
+		"loop":     false,
+	})
+	s.Require().NoError(err)
+	s.Require().Equal(http.StatusOK, resp.StatusCode)
+
+	streamSQL, err := json.Marshal(map[string]string{
+		"sql": fmt.Sprintf(`CREATE STREAM %s() WITH (TYPE="simulator", CONF_KEY="%s")`, streamID, confKey),
+	})
+	s.Require().NoError(err)
+	resp, err = client.CreateStream(string(streamSQL))
+	s.Require().NoError(err)
+	streamResponse, err := GetResponseText(resp)
+	s.Require().NoError(err)
+	s.Require().Equal(http.StatusCreated, resp.StatusCode, streamResponse)
+
+	rule, err := json.Marshal(map[string]any{
+		"id":  ruleID,
+		"sql": fmt.Sprintf("SELECT row_value, number FROM %s", streamID),
+		"actions": []map[string]any{
+			{
+				"rest": map[string]any{
+					"url":    ts.URL + "/target",
+					"method": http.MethodPost,
+					"headers": map[string]string{
+						"Authorization": "Bearer {{.access_token}}",
+						"Content-Type":  "application/json",
+						"X-Row":         `{{index . 0 "row_value"}}`,
+					},
+					"oauth": map[string]any{
+						"access": map[string]any{
+							"url":    ts.URL + "/token",
+							"body":   `{"grant_type":"client_credentials"}`,
+							"expire": "3600",
+						},
+					},
+				},
+			},
+		},
+	})
+	s.Require().NoError(err)
+	resp, err = client.CreateRule(string(rule))
+	s.Require().NoError(err)
+	ruleResponse, err := GetResponseText(resp)
+	s.Require().NoError(err)
+	s.Require().Equal(http.StatusCreated, resp.StatusCode, ruleResponse)
+
+	select {
+	case request := <-received:
+		s.Require().Equal("Bearer e2e-token", request.authorization)
+		s.Require().Equal("row-value", request.rowHeader)
+	case <-time.After(10 * time.Second):
+		s.Fail("timed out waiting for the first REST request")
+	}
+}
+
 func (s *RuleTestSuite) assertRecvMemTupleList(subCh chan any, expect []map[string]any) {
 	d := <-subCh
 	mt, ok := d.([]pubsub.MemTuple)

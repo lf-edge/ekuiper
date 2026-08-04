@@ -92,6 +92,10 @@ func SinkToComp(tp *topo.Topo, sinkType string, sinkName string, props map[strin
 	if err := s.Provision(tp.GetContext(), props); err != nil {
 		return nil, err
 	}
+	// Some sinks consume sink-specific properties before the common transform
+	// planning below. Keep the complete configuration for a possible resend
+	// sink, which must be provisioned exactly like the primary sink.
+	resendProps := copyProps(props)
 	tp.GetContext().GetLogger().Infof("provision sink %s with props %+v", sinkName, props)
 	// consume common conf in sink itself, swallow and not pass it to common conf
 	if pc, ok := s.(model.PropsConsumer); ok {
@@ -131,12 +135,12 @@ func SinkToComp(tp *topo.Topo, sinkType string, sinkName string, props map[strin
 		s, _ := io.Sink(sinkType)
 		// TODO currently, the destination prop must be named topic
 		if commonConf.ResendDestination != "" {
-			props["topic"] = commonConf.ResendDestination
+			resendProps["topic"] = commonConf.ResendDestination
 		}
-		if err = s.Provision(tp.GetContext(), props); err != nil {
+		if err = s.Provision(tp.GetContext(), resendProps); err != nil {
 			return nil, err
 		}
-		tp.GetContext().GetLogger().Infof("provision sink %s with props %+v", sinkName, props)
+		tp.GetContext().GetLogger().Infof("provision sink %s with props %+v", sinkName, resendProps)
 
 		cacheOp, err := node.NewCacheOp(tp.GetContext(), fmt.Sprintf("%s_cache", sinkName), rule.Options, &commonConf.SinkConf)
 		if err != nil {

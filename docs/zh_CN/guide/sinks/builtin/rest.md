@@ -43,6 +43,8 @@ REST 服务通常需要特定的数据格式。 这可以由公共目标属性 `
 
 使用 OAuth 风格鉴权的示例:
 
+OAuth Header 模板仅支持简单占位符 <code v-pre>{{.access_token}}</code>、<code v-pre>{{.refresh_token}}</code>、<code v-pre>{{.token_type}}</code>、<code v-pre>{{.id_token}}</code> 和 <code v-pre>{{.expires_in}}</code>，字段名必须与 token 接口返回的 JSON 字段完全一致。其他占位符，例如 <code v-pre>{{.message}}</code>、<code v-pre>{{.scope}}</code> 和 <code v-pre>{{.custom_token}}</code>，只会根据规则输出求值，不能读取 token 响应字段。因此，token 接口必须返回 Header 配置所使用的受支持字段名。单个 Header 不能同时包含 OAuth 占位符和规则输出模板，但不同 Header 可以分别使用 OAuth 和规则输出模板。
+
 ```json
 {
   "id": "ruleFollowBack",
