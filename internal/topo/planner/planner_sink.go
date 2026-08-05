@@ -30,29 +30,57 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/model"
 )
 
+const SinkEnable = "enable"
+
 // SinkPlanner is the planner for sink node. It transforms logical sink plan to multiple physical nodes.
 // It will split the sink plan into multiple sink nodes according to its sink configurations.
 
 func buildActions(tp *topo.Topo, rule *def.Rule, inputs []node.Emitter, streamCount int, schema map[string]*ast.JsonStreamField) error {
+	enabledCount := 0
 	for i, m := range rule.Actions {
 		for name, action := range m {
 			props, ok := action.(map[string]any)
 			if !ok {
 				return fmt.Errorf("expect map[string]interface{} type for the action properties, but found %v", action)
 			}
-			props, err := conf.OverwriteByConnectionConf(name, props)
+			props = copyProps(props)
+			enabled, err := isSinkEnabled(props)
+			if err != nil {
+				return err
+			}
+			if !enabled {
+				continue
+			}
+			enabledCount++
+			delete(props, SinkEnable)
+			props, err = conf.OverwriteByConnectionConf(name, props)
 			if err != nil {
 				return err
 			}
 			sinkName := fmt.Sprintf("%s_%d", name, i)
-			cn, err := SinkToComp(tp, name, sinkName, copyProps(props), rule, streamCount, schema)
+			cn, err := SinkToComp(tp, name, sinkName, props, rule, streamCount, schema)
 			if err != nil {
 				return err
 			}
 			PlanSinkOps(tp, inputs, cn)
 		}
 	}
+	if enabledCount == 0 {
+		return fmt.Errorf("rule has no enabled sink actions")
+	}
 	return nil
+}
+
+func isSinkEnabled(props map[string]any) (bool, error) {
+	raw, ok := props[SinkEnable]
+	if !ok {
+		return true, nil
+	}
+	enabled, ok := raw.(bool)
+	if !ok {
+		return false, fmt.Errorf("sink enable must be bool, but found %v", raw)
+	}
+	return enabled, nil
 }
 
 func copyProps(raw map[string]any) map[string]any {

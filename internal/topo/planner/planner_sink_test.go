@@ -258,6 +258,36 @@ func TestSinkPlan(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "disabled sink is skipped",
+			rule: &def.Rule{
+				Actions: []map[string]any{
+					{
+						"noexist": map[string]any{
+							"enable": false,
+						},
+					},
+					{
+						"log": map[string]any{},
+					},
+				},
+				Options: defaultOption,
+			},
+			topo: &def.PrintableTopo{
+				Sources: []string{"source_src1"},
+				Edges: map[string][]any{
+					"source_src1": {
+						"op_log_1_0_transform",
+					},
+					"op_log_1_0_transform": {
+						"op_log_1_1_encode",
+					},
+					"op_log_1_1_encode": {
+						"sink_log_1",
+					},
+				},
+			},
+		},
 	}
 	for _, c := range tc {
 		t.Run(c.name, func(t *testing.T) {
@@ -348,6 +378,34 @@ func TestSinkPlanError(t *testing.T) {
 				Options: defaultOption,
 			},
 			err: "template: sink:1: unexpected <.> in operand",
+		},
+		{
+			name: "all sinks disabled",
+			rule: &def.Rule{
+				Actions: []map[string]any{
+					{
+						"noexist": map[string]any{
+							"enable": false,
+						},
+					},
+				},
+				Options: defaultOption,
+			},
+			err: "rule has no enabled sink actions",
+		},
+		{
+			name: "invalid sink enable",
+			rule: &def.Rule{
+				Actions: []map[string]any{
+					{
+						"log": map[string]any{
+							"enable": "false",
+						},
+					},
+				},
+				Options: defaultOption,
+			},
+			err: "sink enable must be bool, but found false",
 		},
 	}
 	for _, c := range tc {

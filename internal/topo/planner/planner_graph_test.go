@@ -727,6 +727,69 @@ func TestPlannerGraphWithStream(t *testing.T) {
 			err: nil,
 		},
 		{
+			name: "disabled graph sink is skipped",
+			graph: `{
+    "nodes": {
+      "demo": {
+        "type": "source",
+        "nodeType": "mqtt",
+        "props": {
+          "sourceType": "stream",
+          "sourceName": "src1"
+        }
+      },
+      "disabled": {
+        "type": "sink",
+        "nodeType": "noexist",
+        "props": {
+          "enable": false
+        }
+      },
+      "log": {
+        "type": "sink",
+        "nodeType": "log",
+        "props": {}
+      }
+    },
+    "topo": {
+      "sources": ["demo"],
+      "edges": {
+        "demo": ["disabled", "log"]
+      }
+    }
+}`,
+			err: nil,
+		},
+		{
+			name: "all graph sinks disabled",
+			graph: `{
+    "nodes": {
+      "demo": {
+        "type": "source",
+        "nodeType": "mqtt",
+        "props": {
+          "sourceType": "stream",
+          "sourceName": "src1"
+        }
+      },
+      "disabled": {
+        "type": "sink",
+        "nodeType": "noexist",
+        "props": {
+          "enable": false
+        }
+      }
+    },
+    "topo": {
+      "sources": ["demo"],
+      "edges": {
+        "demo": ["disabled"]
+      }
+    }
+}`,
+			err: fmt.Errorf("rule has no enabled sink actions"),
+		},
+		{
 			name: "stream type wrong",
 			graph: `{
     "nodes": {
