@@ -127,7 +127,7 @@ func (s *RuletestTestSuite) TestRuletestMockSourceUnnestKeepProjectedFields() {
 }
 
 func (s *RuletestTestSuite) TestAccCollectChargeCycle() {
-	streamName := "arr_test_data"
+	streamName := "test_stream"
 	ruleID := "rule_acc_collect_charge"
 
 	_, _ = client.DeleteStream(streamName)
@@ -138,39 +138,39 @@ func (s *RuletestTestSuite) TestAccCollectChargeCycle() {
 		_, _ = client.DeleteStream(streamName)
 	})
 
-	streamSQL := fmt.Sprintf(`{"sql":"CREATE STREAM %s (online_status STRING, charge_status STRING, soc BIGINT, ts BIGINT) WITH (DATASOURCE=\"%s\", FORMAT=\"json\", TYPE=\"mqtt\")"}`, streamName, streamName)
+	streamSQL := fmt.Sprintf(`{"sql":"CREATE STREAM %s (field_a STRING, field_b STRING, metric BIGINT, et BIGINT) WITH (DATASOURCE=\"%s\", FORMAT=\"json\", TYPE=\"mqtt\")"}`, streamName, streamName)
 	resp, err := client.CreateStream(streamSQL)
 	s.Require().NoError(err)
 	s.Require().Equal(http.StatusCreated, resp.StatusCode)
 
 	ruleDef := fmt.Sprintf(`{
   "id": "%s",
-  "sql": "SELECT CASE WHEN online_status = 'power_on' AND lag(online_status) != 'power_on' THEN ts END AS power_on_flag, CASE WHEN charge_status = 'charging' AND lag(charge_status) != 'charging' THEN ts END AS charge_start_flag, CASE WHEN charge_status != 'charging' AND lag(charge_status) = 'charging' THEN ts END AS charge_end_flag, CASE WHEN mod(soc,10) = 0 AND mod(lag(soc),10) != 0 THEN OBJECT_CONSTRUCT('soc', soc, 'ts', ts) END AS mod_10_obj, acc_collect(mod_10_obj, latest(charge_start_flag) > 0, charge_start_flag > 0) AS acc_collected FROM %s WHERE charge_end_flag > 0",
+  "sql": "SELECT CASE WHEN field_a = 'val_on' AND lag(field_a) != 'val_on' THEN et END AS flag_a, CASE WHEN field_b = 'val_x' AND lag(field_b) != 'val_x' THEN et END AS flag_b, CASE WHEN field_b != 'val_x' AND lag(field_b) = 'val_x' THEN et END AS flag_c, CASE WHEN mod(metric,10) = 0 AND mod(lag(metric),10) != 0 THEN OBJECT_CONSTRUCT('metric', metric, 'et', et) END AS trigger_obj, acc_collect(trigger_obj, latest(flag_b) > 0, flag_b > 0) AS acc_collected FROM %s WHERE flag_c > 0",
   "mockSource": {
     "%s": {
       "loop": false,
       "interval": "10ms",
       "data": [
-        {"online_status":"power_down","charge_status":"discharging","soc":49,"ts":1754100100},
-        {"online_status":"power_on","charge_status":"charging","soc":49,"ts":1754100100},
-        {"online_status":"power_on","charge_status":"charging","soc":50,"ts":1754100101},
-        {"online_status":"power_on","charge_status":"charging","soc":51,"ts":1754100102},
-        {"online_status":"power_on","charge_status":"charging","soc":55,"ts":1754100103},
-        {"online_status":"power_on","charge_status":"charging","soc":59,"ts":1754100104},
-        {"online_status":"power_on","charge_status":"charging","soc":60,"ts":1754100105},
-        {"online_status":"power_on","charge_status":"charging","soc":61,"ts":1754100106},
-        {"online_status":"power_on","charge_status":"discharging","soc":60,"ts":1754100107},
-        {"online_status":"power_on","charge_status":"discharging","soc":40,"ts":1754100108},
-        {"online_status":"power_on","charge_status":"discharging","soc":20,"ts":1754100109},
-        {"online_status":"power_on","charge_status":"charging","soc":25,"ts":1754100110},
-        {"online_status":"power_on","charge_status":"charging","soc":29,"ts":1754100111},
-        {"online_status":"power_on","charge_status":"charging","soc":30,"ts":1754100112},
-        {"online_status":"power_on","charge_status":"charging","soc":31,"ts":1754100113},
-        {"online_status":"power_on","charge_status":"charging","soc":35,"ts":1754100114},
-        {"online_status":"power_on","charge_status":"charging","soc":39,"ts":1754100115},
-        {"online_status":"power_on","charge_status":"charging","soc":40,"ts":1754100116},
-        {"online_status":"power_on","charge_status":"charging","soc":41,"ts":1754100117},
-        {"online_status":"power_down","charge_status":"discharging","soc":41,"ts":1754100118}
+        {"field_a":"val_off","field_b":"val_y","metric":49,"et":1754100100},
+        {"field_a":"val_on","field_b":"val_x","metric":49,"et":1754100100},
+        {"field_a":"val_on","field_b":"val_x","metric":50,"et":1754100101},
+        {"field_a":"val_on","field_b":"val_x","metric":51,"et":1754100102},
+        {"field_a":"val_on","field_b":"val_x","metric":55,"et":1754100103},
+        {"field_a":"val_on","field_b":"val_x","metric":59,"et":1754100104},
+        {"field_a":"val_on","field_b":"val_x","metric":60,"et":1754100105},
+        {"field_a":"val_on","field_b":"val_x","metric":61,"et":1754100106},
+        {"field_a":"val_on","field_b":"val_y","metric":60,"et":1754100107},
+        {"field_a":"val_on","field_b":"val_y","metric":40,"et":1754100108},
+        {"field_a":"val_on","field_b":"val_y","metric":20,"et":1754100109},
+        {"field_a":"val_on","field_b":"val_x","metric":25,"et":1754100110},
+        {"field_a":"val_on","field_b":"val_x","metric":29,"et":1754100111},
+        {"field_a":"val_on","field_b":"val_x","metric":30,"et":1754100112},
+        {"field_a":"val_on","field_b":"val_x","metric":31,"et":1754100113},
+        {"field_a":"val_on","field_b":"val_x","metric":35,"et":1754100114},
+        {"field_a":"val_on","field_b":"val_x","metric":39,"et":1754100115},
+        {"field_a":"val_on","field_b":"val_x","metric":40,"et":1754100116},
+        {"field_a":"val_on","field_b":"val_x","metric":41,"et":1754100117},
+        {"field_a":"val_off","field_b":"val_y","metric":41,"et":1754100118}
       ]
     }
   },
@@ -231,7 +231,7 @@ func (s *RuletestTestSuite) TestAccCollectChargeCycle() {
 	}
 
 	// Basic sanity checks
-	s.Require().NotEmpty(results, "should have at least one output (charge cycle end)")
+	s.Require().NotEmpty(results, "should have at least one output (cycle end)")
 	for _, r := range results {
 		s.Require().NotEmpty(r["acc_collected"], "acc_collected should not be empty")
 	}
