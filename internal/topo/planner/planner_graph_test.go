@@ -742,7 +742,7 @@ func TestPlannerGraphWithStream(t *testing.T) {
         "type": "sink",
         "nodeType": "noexist",
         "props": {
-          "enable": false
+          "disable": true
         }
       },
       "log": {
@@ -776,7 +776,7 @@ func TestPlannerGraphWithStream(t *testing.T) {
         "type": "sink",
         "nodeType": "noexist",
         "props": {
-          "enable": false
+          "disable": true
         }
       }
     },
@@ -787,7 +787,7 @@ func TestPlannerGraphWithStream(t *testing.T) {
       }
     }
 }`,
-			err: fmt.Errorf("rule has no enabled sink actions"),
+			err: fmt.Errorf("rule has no active sink actions"),
 		},
 		{
 			name: "stream type wrong",

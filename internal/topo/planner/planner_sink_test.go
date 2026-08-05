@@ -264,7 +264,7 @@ func TestSinkPlan(t *testing.T) {
 				Actions: []map[string]any{
 					{
 						"noexist": map[string]any{
-							"enable": false,
+							"disable": true,
 						},
 					},
 					{
@@ -385,27 +385,27 @@ func TestSinkPlanError(t *testing.T) {
 				Actions: []map[string]any{
 					{
 						"noexist": map[string]any{
-							"enable": false,
+							"disable": true,
 						},
 					},
 				},
 				Options: defaultOption,
 			},
-			err: "rule has no enabled sink actions",
+			err: "rule has no active sink actions",
 		},
 		{
-			name: "invalid sink enable",
+			name: "invalid sink disable",
 			rule: &def.Rule{
 				Actions: []map[string]any{
 					{
 						"log": map[string]any{
-							"enable": "false",
+							"disable": "true",
 						},
 					},
 				},
 				Options: defaultOption,
 			},
-			err: "sink enable must be bool, but found false",
+			err: "sink disable must be bool, but found true",
 		},
 	}
 	for _, c := range tc {
