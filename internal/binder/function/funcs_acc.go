@@ -124,6 +124,23 @@ func registerGlobalAggFunc() {
 			return nil
 		},
 	}
+	builtins["acc_collect"] = builtinFunc{
+		fType: ast.FuncTypeScalar,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			status, err := handleAccFunc(ctx, args, accCollectFunc{})
+			if err != nil {
+				return err, false
+			}
+			return status.Value.([]interface{}), true
+		},
+		val: func(ctx api.FunctionContext, args []ast.Expr) error {
+			argsLen := len(args)
+			if argsLen != 1 && argsLen != 3 {
+				return fmt.Errorf("Expect 1/3 arguments but found %d.", argsLen)
+			}
+			return nil
+		},
+	}
 }
 
 func handleAccFunc(ctx api.FunctionContext, args []interface{}, accFunc accFunc) (*accStatus, error) {
@@ -392,6 +409,31 @@ func (a accAvgFunc) accFuncExec(ctx api.FunctionContext, value interface{}, vali
 
 func (a accAvgFunc) accReset(status *accStatus) {
 	status.Value = nil
+}
+
+type accCollectFunc struct{}
+
+func (a accCollectFunc) accFuncExec(ctx api.FunctionContext, value interface{}, validData bool, partitionKey string, status *accStatus, skipStatusSave bool) {
+	if status.Value == nil {
+		status.Value = []interface{}{}
+	}
+	collected := status.Value.([]interface{})
+	if !validData {
+		return
+	}
+	if value != nil {
+		collected = append(collected, value)
+		status.Value = collected
+	}
+	if !skipStatusSave {
+		if err := ctx.PutState(partitionKey, status); err != nil {
+			status.Err = err
+		}
+	}
+}
+
+func (a accCollectFunc) accReset(status *accStatus) {
+	status.Value = []interface{}{}
 }
 
 type accAvgStatus struct {
