@@ -271,3 +271,49 @@ func TestAccumulateAgg(t *testing.T) {
 		require.Equal(t, test.result, result)
 	}
 }
+
+func TestAccCollectFuncDirect(t *testing.T) {
+	contextLogger := conf.Log.WithField("rule", "testExec")
+	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+	tempStore, _ := state.CreateStore("mockRule0", def.AtMostOnce)
+	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
+
+	cf := accCollectFunc{}
+
+	// Test accReset
+	t.Run("accReset", func(t *testing.T) {
+		s := &accStatus{Value: int64(42)}
+		cf.accReset(s)
+		require.Equal(t, []interface{}{}, s.Value)
+	})
+
+	// Test accFuncExec with nil Value (defense-in-depth guard)
+	t.Run("accFuncExec_nilValue", func(t *testing.T) {
+		s := &accStatus{Value: nil}
+		cf.accFuncExec(fctx, int64(1), true, "k1", s, true)
+		require.Equal(t, []interface{}{int64(1)}, s.Value)
+		require.Nil(t, s.Err)
+	})
+
+	// Test accFuncExec with nil value arg (should skip)
+	t.Run("accFuncExec_nilArg", func(t *testing.T) {
+		s := &accStatus{Value: []interface{}{int64(1)}}
+		cf.accFuncExec(fctx, nil, true, "k2", s, true)
+		require.Equal(t, []interface{}{int64(1)}, s.Value)
+	})
+
+	// Test accFuncExec with validData=false and skipStatusSave=true
+	t.Run("accFuncExec_invalidData_skipSave", func(t *testing.T) {
+		s := &accStatus{Value: []interface{}{int64(1)}}
+		cf.accFuncExec(fctx, int64(2), false, "k3", s, true)
+		require.Equal(t, []interface{}{int64(1)}, s.Value)
+	})
+
+	// Test accFuncExec with skipStatusSave=false (PutState path)
+	t.Run("accFuncExec_withSave", func(t *testing.T) {
+		s := &accStatus{Value: []interface{}{int64(1)}}
+		cf.accFuncExec(fctx, int64(2), true, "k4", s, false)
+		require.Equal(t, []interface{}{int64(1), int64(2)}, s.Value)
+		require.Nil(t, s.Err)
+	})
+}
