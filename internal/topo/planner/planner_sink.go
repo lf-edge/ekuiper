@@ -59,7 +59,7 @@ func buildActions(tp *topo.Topo, rule *def.Rule, inputs []node.Emitter, streamCo
 				return err
 			}
 			sinkName := fmt.Sprintf("%s_%d", name, i)
-			cn, err := SinkToComp(tp, name, sinkName, copyProps(props), rule, streamCount, schema)
+			cn, err := SinkToComp(tp, name, sinkName, props, rule, streamCount, schema)
 			if err != nil {
 				return err
 			}
