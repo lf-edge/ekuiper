@@ -113,8 +113,7 @@ func PlanByGraph(rule *def.Rule) (*topo.Topo, error) {
 			if _, ok := ruleGraph.Topo.Edges[nodeName]; ok {
 				return nil, fmt.Errorf("sink %s has edge", nodeName)
 			}
-			props := copyProps(gn.Props)
-			disabled, err := isSinkDisabled(props)
+			disabled, err := isSinkDisabled(gn.Props)
 			if err != nil {
 				return nil, err
 			}
@@ -122,8 +121,7 @@ func PlanByGraph(rule *def.Rule) (*topo.Topo, error) {
 				disabledSinks[nodeName] = true
 				continue
 			}
-			delete(props, sinkDisableKey)
-			cn, err := SinkToComp(tp, gn.NodeType, nodeName, props, rule, len(sourceNames), nil)
+			cn, err := SinkToComp(tp, gn.NodeType, nodeName, copyProps(gn.Props), rule, len(sourceNames), nil)
 			if err != nil {
 				return nil, err
 			}

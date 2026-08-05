@@ -46,7 +46,6 @@ func buildActions(tp *topo.Topo, rule *def.Rule, inputs []node.Emitter, streamCo
 			if !ok {
 				return fmt.Errorf("expect map[string]interface{} type for the action properties, but found %v", action)
 			}
-			props = copyProps(props)
 			disabled, err := isSinkDisabled(props)
 			if err != nil {
 				return err
@@ -55,13 +54,12 @@ func buildActions(tp *topo.Topo, rule *def.Rule, inputs []node.Emitter, streamCo
 				continue
 			}
 			enabledCount++
-			delete(props, sinkDisableKey)
 			props, err = conf.OverwriteByConnectionConf(name, props)
 			if err != nil {
 				return err
 			}
 			sinkName := fmt.Sprintf("%s_%d", name, i)
-			cn, err := SinkToComp(tp, name, sinkName, props, rule, streamCount, schema)
+			cn, err := SinkToComp(tp, name, sinkName, copyProps(props), rule, streamCount, schema)
 			if err != nil {
 				return err
 			}
