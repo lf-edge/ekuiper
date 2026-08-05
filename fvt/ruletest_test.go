@@ -125,3 +125,114 @@ func (s *RuletestTestSuite) TestRuletestMockSourceUnnestKeepProjectedFields() {
 	_, hasK := got["k"]
 	s.Require().True(hasK)
 }
+
+func (s *RuletestTestSuite) TestAccCollectChargeCycle() {
+	streamName := "arr_test_data"
+	ruleID := "rule_acc_collect_charge"
+
+	_, _ = client.DeleteStream(streamName)
+	_, _ = client.Delete(fmt.Sprintf("ruletest/%s", ruleID))
+
+	s.T().Cleanup(func() {
+		_, _ = client.Delete(fmt.Sprintf("ruletest/%s", ruleID))
+		_, _ = client.DeleteStream(streamName)
+	})
+
+	streamSQL := fmt.Sprintf(`{"sql":"CREATE STREAM %s (online_status STRING, charge_status STRING, soc BIGINT, ts BIGINT) WITH (DATASOURCE=\"%s\", FORMAT=\"json\", TYPE=\"mqtt\")"}`, streamName, streamName)
+	resp, err := client.CreateStream(streamSQL)
+	s.Require().NoError(err)
+	s.Require().Equal(http.StatusCreated, resp.StatusCode)
+
+	ruleDef := fmt.Sprintf(`{
+  "id": "%s",
+  "sql": "SELECT CASE WHEN online_status = 'power_on' AND lag(online_status) != 'power_on' THEN ts END AS power_on_flag, CASE WHEN charge_status = 'charging' AND lag(charge_status) != 'charging' THEN ts END AS charge_start_flag, CASE WHEN charge_status != 'charging' AND lag(charge_status) = 'charging' THEN ts END AS charge_end_flag, CASE WHEN mod(soc,10) = 0 AND mod(lag(soc),10) != 0 THEN OBJECT_CONSTRUCT('soc', soc, 'ts', ts) END AS mod_10_obj, acc_collect(mod_10_obj, latest(charge_start_flag) > 0, charge_start_flag > 0) AS acc_collected FROM %s WHERE charge_end_flag > 0",
+  "mockSource": {
+    "%s": {
+      "loop": false,
+      "interval": "10ms",
+      "data": [
+        {"online_status":"power_down","charge_status":"discharging","soc":49,"ts":1754100100},
+        {"online_status":"power_on","charge_status":"charging","soc":49,"ts":1754100100},
+        {"online_status":"power_on","charge_status":"charging","soc":50,"ts":1754100101},
+        {"online_status":"power_on","charge_status":"charging","soc":51,"ts":1754100102},
+        {"online_status":"power_on","charge_status":"charging","soc":55,"ts":1754100103},
+        {"online_status":"power_on","charge_status":"charging","soc":59,"ts":1754100104},
+        {"online_status":"power_on","charge_status":"charging","soc":60,"ts":1754100105},
+        {"online_status":"power_on","charge_status":"charging","soc":61,"ts":1754100106},
+        {"online_status":"power_on","charge_status":"discharging","soc":60,"ts":1754100107},
+        {"online_status":"power_on","charge_status":"discharging","soc":40,"ts":1754100108},
+        {"online_status":"power_on","charge_status":"discharging","soc":20,"ts":1754100109},
+        {"online_status":"power_on","charge_status":"charging","soc":25,"ts":1754100110},
+        {"online_status":"power_on","charge_status":"charging","soc":29,"ts":1754100111},
+        {"online_status":"power_on","charge_status":"charging","soc":30,"ts":1754100112},
+        {"online_status":"power_on","charge_status":"charging","soc":31,"ts":1754100113},
+        {"online_status":"power_on","charge_status":"charging","soc":35,"ts":1754100114},
+        {"online_status":"power_on","charge_status":"charging","soc":39,"ts":1754100115},
+        {"online_status":"power_on","charge_status":"charging","soc":40,"ts":1754100116},
+        {"online_status":"power_on","charge_status":"charging","soc":41,"ts":1754100117},
+        {"online_status":"power_down","charge_status":"discharging","soc":41,"ts":1754100118}
+      ]
+    }
+  },
+  "sinkProps": {
+    "sendSingle": true
+  }
+}`, ruleID, streamName, streamName)
+
+	resp, err = client.Post("ruletest", ruleDef)
+	s.Require().NoError(err)
+	s.Require().Equal(http.StatusOK, resp.StatusCode)
+
+	result, err := GetResponseResultMap(resp)
+	s.Require().NoError(err)
+	s.Require().Equal(ruleID, result["id"])
+	port, ok := result["port"].(float64)
+	s.Require().True(ok)
+
+	sseURL := fmt.Sprintf("http://127.0.0.1:%d/test/%s", int(port), ruleID)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, sseURL, nil)
+	s.Require().NoError(err)
+	req.Header.Set("Accept", "text/event-stream")
+	sseResp, err := http.DefaultClient.Do(req)
+	s.Require().NoError(err)
+	s.Require().Equal(http.StatusOK, sseResp.StatusCode)
+	defer sseResp.Body.Close()
+
+	resp, err = client.Post(fmt.Sprintf("ruletest/%s/start", ruleID), "any")
+	s.Require().NoError(err)
+	s.Require().Equal(http.StatusOK, resp.StatusCode)
+
+	scanner := bufio.NewScanner(sseResp.Body)
+	var results []map[string]any
+	for scanner.Scan() {
+		line := scanner.Text()
+		if !strings.HasPrefix(line, "data: ") {
+			continue
+		}
+		payload := strings.TrimPrefix(line, "data: ")
+		s.T().Logf("SSE output: %s", payload)
+		var got map[string]any
+		s.Require().NoError(json.Unmarshal([]byte(payload), &got))
+		results = append(results, got)
+	}
+	// scanner exits when SSE stream is closed (context deadline / no more data); this is expected
+	if scanner.Err() != nil {
+		s.T().Logf("scanner stopped (expected after data consumed): %v", scanner.Err())
+	}
+
+	// For now, log results since we're observing actual output
+	s.T().Logf("Total results: %d", len(results))
+	for i, r := range results {
+		formatted, _ := json.MarshalIndent(r, "", "  ")
+		s.T().Logf("Result[%d]: %s", i, string(formatted))
+	}
+
+	// Basic sanity checks
+	s.Require().NotEmpty(results, "should have at least one output (charge cycle end)")
+	for _, r := range results {
+		s.Require().NotEmpty(r["acc_collected"], "acc_collected should not be empty")
+	}
+}
