@@ -110,6 +110,9 @@ func PlanByGraph(rule *def.Rule) (*topo.Topo, error) {
 		case "source": // handled above,
 			continue
 		case "sink":
+			if _, ok := ruleGraph.Topo.Edges[nodeName]; ok {
+				return nil, fmt.Errorf("sink %s has edge", nodeName)
+			}
 			props := copyProps(gn.Props)
 			disabled, err := isSinkDisabled(props)
 			if err != nil {
@@ -119,10 +122,7 @@ func PlanByGraph(rule *def.Rule) (*topo.Topo, error) {
 				disabledSinks[nodeName] = true
 				continue
 			}
-			delete(props, SinkDisable)
-			if _, ok := ruleGraph.Topo.Edges[nodeName]; ok {
-				return nil, fmt.Errorf("sink %s has edge", nodeName)
-			}
+			delete(props, sinkDisableKey)
 			cn, err := SinkToComp(tp, gn.NodeType, nodeName, props, rule, len(sourceNames), nil)
 			if err != nil {
 				return nil, err
@@ -268,7 +268,7 @@ func PlanByGraph(rule *def.Rule) (*topo.Topo, error) {
 		}
 	}
 	if len(sinks) == 0 {
-		return nil, fmt.Errorf("rule has no active sink actions")
+		return nil, errNoActiveSinkActions
 	}
 
 	// validate source node
@@ -279,24 +279,16 @@ func PlanByGraph(rule *def.Rule) (*topo.Topo, error) {
 	}
 
 	// reverse edges, value is a 2-dim array. Only switch node will have the second dim
+	activeEdges, err := pruneDisabledSinkEdges(ruleGraph.Topo.Edges, ruleGraph.Nodes, disabledSinks)
+	if err != nil {
+		return nil, err
+	}
 	reversedEdges := make(map[string][][]string)
 	rclone := make(map[string][]string)
-	for fromNode, toNodes := range ruleGraph.Topo.Edges {
-		if _, ok := ruleGraph.Nodes[fromNode]; !ok {
-			return nil, fmt.Errorf("node %s is not defined", fromNode)
-		}
-		if disabledSinks[fromNode] {
-			continue
-		}
+	for fromNode, toNodes := range activeEdges {
 		for i, toNode := range toNodes {
 			switch tn := toNode.(type) {
 			case string:
-				if _, ok := ruleGraph.Nodes[tn]; !ok {
-					return nil, fmt.Errorf("node %s is not defined", tn)
-				}
-				if disabledSinks[tn] {
-					continue
-				}
 				if _, ok := reversedEdges[tn]; !ok {
 					reversedEdges[tn] = make([][]string, 1)
 				}
@@ -308,12 +300,6 @@ func PlanByGraph(rule *def.Rule) (*topo.Topo, error) {
 					if !ok { // never happen
 						return nil, fmt.Errorf("invalid edge toNode %v", toNode)
 					}
-					if _, ok := ruleGraph.Nodes[tnn]; !ok {
-						return nil, fmt.Errorf("node %s is not defined", tnn)
-					}
-					if disabledSinks[tnn] {
-						continue
-					}
 					for len(reversedEdges[tnn]) <= i {
 						reversedEdges[tnn] = append(reversedEdges[tnn], []string{})
 					}
@@ -324,9 +310,9 @@ func PlanByGraph(rule *def.Rule) (*topo.Topo, error) {
 		}
 	}
 	// sort the nodes by topological order
-	nodesInOrder := make([]string, len(ruleGraph.Nodes))
+	nodesInOrder := make([]string, len(ruleGraph.Nodes)-len(disabledSinks))
 	i := 0
-	genNodesInOrder(ruleGraph.Topo.Sources, ruleGraph.Topo.Edges, rclone, nodesInOrder, i)
+	genNodesInOrder(ruleGraph.Topo.Sources, activeEdges, rclone, nodesInOrder, i)
 
 	// validate the typo
 	// the map is to record the output for each node
@@ -403,9 +389,6 @@ func PlanByGraph(rule *def.Rule) (*topo.Topo, error) {
 	}
 	// add the linkages
 	for nodeName, fromNodes := range reversedEdges {
-		if disabledSinks[nodeName] {
-			continue
-		}
 		totalLen := 0
 		for _, fromNode := range fromNodes {
 			totalLen += len(fromNode)
@@ -443,6 +426,47 @@ func PlanByGraph(rule *def.Rule) (*topo.Topo, error) {
 		}
 	}
 	return tp, nil
+}
+
+func pruneDisabledSinkEdges(edges map[string][]interface{}, nodes map[string]*def.GraphNode, disabledSinks map[string]bool) (map[string][]interface{}, error) {
+	pruned := make(map[string][]interface{}, len(edges))
+	for fromNode, toNodes := range edges {
+		if _, ok := nodes[fromNode]; !ok {
+			return nil, fmt.Errorf("node %s is not defined", fromNode)
+		}
+		if disabledSinks[fromNode] {
+			continue
+		}
+		for _, toNode := range toNodes {
+			switch tn := toNode.(type) {
+			case string:
+				if _, ok := nodes[tn]; !ok {
+					return nil, fmt.Errorf("node %s is not defined", tn)
+				}
+				if disabledSinks[tn] {
+					continue
+				}
+				pruned[fromNode] = append(pruned[fromNode], tn)
+			case []interface{}:
+				group := make([]interface{}, 0, len(tn))
+				for _, tni := range tn {
+					tnn, ok := tni.(string)
+					if !ok {
+						return nil, fmt.Errorf("invalid edge toNode %v", toNode)
+					}
+					if _, ok := nodes[tnn]; !ok {
+						return nil, fmt.Errorf("node %s is not defined", tnn)
+					}
+					if disabledSinks[tnn] {
+						continue
+					}
+					group = append(group, tnn)
+				}
+				pruned[fromNode] = append(pruned[fromNode], group)
+			}
+		}
+	}
+	return pruned, nil
 }
 
 func genNodesInOrder(toNodes []string, edges map[string][]interface{}, flatReversedEdges map[string][]string, nodesInOrder []string, i int) int {

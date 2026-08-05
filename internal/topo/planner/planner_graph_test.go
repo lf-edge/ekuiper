@@ -757,8 +757,43 @@ func TestPlannerGraphWithStream(t *testing.T) {
         "demo": ["disabled", "log"]
       }
     }
-}`,
+		}`,
 			err: nil,
+		},
+		{
+			name: "disabled graph sink cannot have edge",
+			graph: `{
+    "nodes": {
+      "demo": {
+        "type": "source",
+        "nodeType": "mqtt",
+        "props": {
+          "sourceType": "stream",
+          "sourceName": "src1"
+        }
+      },
+      "disabled": {
+        "type": "sink",
+        "nodeType": "noexist",
+        "props": {
+          "disable": true
+        }
+      },
+      "log": {
+        "type": "sink",
+        "nodeType": "log",
+        "props": {}
+      }
+    },
+    "topo": {
+      "sources": ["demo"],
+      "edges": {
+        "demo": ["disabled"],
+        "disabled": ["log"]
+      }
+    }
+}`,
+			err: fmt.Errorf("sink disabled has edge"),
 		},
 		{
 			name: "all graph sinks disabled",
