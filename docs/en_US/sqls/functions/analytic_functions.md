@@ -397,6 +397,22 @@ acc_avg(a)
 
 The results are: 1 1.5 2
 
+### ACC_COLLECT
+
+```text
+acc_collect(expr)
+```
+
+The acc_collect function collects non-nil expression results into an array, preserving insertion order.
+
+Example 1: Collect values using acc_collect
+
+```text
+acc_collect(a)
+```
+
+The results are: [1] [1,2] [1,2,3]
+
 ### ACC function with conditions
 
 ACC function can define the starting point and reset point of cumulative calculation by accepting additional expression parameters. The specific usage is as follows
