@@ -235,4 +235,24 @@ func (s *RuletestTestSuite) TestAccCollectChargeCycle() {
 	for _, r := range results {
 		s.Require().NotEmpty(r["acc_collected"], "acc_collected should not be empty")
 	}
+
+	// Assert concrete expected output
+	s.Require().Len(results, 2, "should have exactly 2 charge cycle outputs")
+
+	// Cycle 1: charge ends at ts=1754100107
+	s.Require().Equal(float64(1754100107), results[0]["flag_c"])
+	expectedCollected1 := []interface{}{
+		map[string]interface{}{"metric": float64(50), "et": float64(1754100101)},
+		map[string]interface{}{"metric": float64(60), "et": float64(1754100105)},
+		map[string]interface{}{"metric": float64(60), "et": float64(1754100107)},
+	}
+	s.Require().Equal(expectedCollected1, results[0]["acc_collected"])
+
+	// Cycle 2: charge ends at ts=1754100118
+	s.Require().Equal(float64(1754100118), results[1]["flag_c"])
+	expectedCollected2 := []interface{}{
+		map[string]interface{}{"metric": float64(30), "et": float64(1754100112)},
+		map[string]interface{}{"metric": float64(40), "et": float64(1754100116)},
+	}
+	s.Require().Equal(expectedCollected2, results[1]["acc_collected"])
 }
