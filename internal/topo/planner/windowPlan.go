@@ -30,6 +30,7 @@ type WindowPlan struct {
 	emitCondition    ast.Expr
 	triggerCondition ast.Expr
 	condition        ast.Expr
+	collectCondition ast.Expr // in-window collect filter, represent an inner WHERE filter
 	wtype            ast.WindowType
 	delay            int64
 	length           int
@@ -59,6 +60,10 @@ func (p *WindowPlan) GetBeginCondition() ast.Expr {
 	return p.beginCondition
 }
 
+func (p *WindowPlan) GetCollectCondition() ast.Expr {
+	return p.collectCondition
+}
+
 func (p *WindowPlan) GetSingleCondition() ast.Expr {
 	return p.singleCondition
 }
@@ -78,6 +83,11 @@ func (p *WindowPlan) BuildExplainInfo() {
 	if p.condition != nil {
 		info += ", condition:" + p.condition.String()
 	}
+
+	if p.collectCondition != nil {
+		info += ", collectCondition: " + p.collectCondition.String()
+	}
+
 	if len(p.stateFuncs) != 0 {
 		info += ", stateFuncs:[ "
 		for _, stateFunc := range p.stateFuncs {
@@ -96,14 +106,16 @@ func (p *WindowPlan) PushDownPredicate(condition ast.Expr) (ast.Expr, LogicalPla
 	// before it; otherwise rows that trigger a state change could be filtered
 	// out and the window would never open/close.
 	if p.wtype == ast.COUNT_WINDOW || p.wtype == ast.SLIDING_WINDOW || p.wtype == ast.STATE_WINDOW {
-		return condition, p
+		p.collectCondition = condition
+		return nil, p
 	} else if p.isEventTime {
 		// TODO event time filter, need event window op support
 		//p.condition = combine(condition, p.condition)
 		//// push nil condition won't return any
 		//p.baseLogicalPlan.PushDownPredicate(nil)
 		// return nil, p
-		return condition, p
+		p.collectCondition = condition
+		return nil, p
 	} else {
 		// Presume window condition are only one table related.
 		// TODO window condition validation
@@ -116,22 +128,27 @@ func (p *WindowPlan) PushDownPredicate(condition ast.Expr) (ast.Expr, LogicalPla
 func (p *WindowPlan) PruneColumns(fields []ast.Expr) error {
 	f := getFields(p.condition)
 	f = append(f, getFields(p.triggerCondition)...)
+	f = append(f, getFields(p.collectCondition)...)
 	return p.baseLogicalPlan.PruneColumns(append(fields, f...))
 }
 
 func (p *WindowPlan) ExtractStateFunc() {
 	aliases := make(map[string]ast.Expr)
-	ast.WalkFunc(p.triggerCondition, func(n ast.Node) bool {
-		switch f := n.(type) {
-		case *ast.Call:
-			p.transform(f)
-		case *ast.FieldRef:
-			if f.AliasRef != nil {
-				aliases[f.Name] = f.AliasRef.Expression
+	walkExpr := func(expr ast.Expr) {
+		ast.WalkFunc(expr, func(n ast.Node) bool {
+			switch f := n.(type) {
+			case *ast.Call:
+				p.transform(f)
+			case *ast.FieldRef:
+				if f.AliasRef != nil {
+					aliases[f.Name] = f.AliasRef.Expression
+				}
 			}
-		}
-		return true
-	})
+			return true
+		})
+	}
+	walkExpr(p.triggerCondition)
+	walkExpr(p.collectCondition)
 	for _, ex := range aliases {
 		ast.WalkFunc(ex, func(n ast.Node) bool {
 			switch f := n.(type) {
@@ -172,6 +189,7 @@ func (p *WindowPlan) GenWindowConfig() *node.WindowConfig {
 		CountLength:      p.length,
 		RawInterval:      rawInterval,
 		TimeUnit:         p.timeUnit,
+		CollectCondition: p.collectCondition,
 		TriggerCondition: p.triggerCondition,
 		StateFuncs:       p.stateFuncs,
 	}

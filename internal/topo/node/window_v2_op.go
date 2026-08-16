@@ -204,16 +204,22 @@ func (s *StateWindowOp) exec(ctx api.StreamContext, errCh chan<- error) {
 	}
 }
 
+func (s *StateWindowOp) collectAdd(ctx api.StreamContext, fv *xsql.FunctionValuer, row *xsql.Tuple, status *StateWindowStatus) {
+	if s.windowConfig.CollectCondition == nil || isMatchCondition(ctx, s.windowConfig.CollectCondition, fv, row, s.stateFuncs) {
+		status.Scanner.addTuple(row)
+	}
+}
+
 func (s *StateWindowOp) handleTupleWithBeginEmitCondition(ctx api.StreamContext, fv *xsql.FunctionValuer, row *xsql.Tuple, status *StateWindowStatus) {
 	if !status.OnBegin {
 		canBegin := isMatchCondition(ctx, s.BeginCondition, fv, row, s.stateFuncs)
 		if canBegin {
 			status.StartTime = row.Timestamp
 			status.OnBegin = true
-			status.Scanner.addTuple(row)
+			s.collectAdd(ctx, fv, row, status)
 		}
 	} else {
-		status.Scanner.addTuple(row)
+		s.collectAdd(ctx, fv, row, status)
 		canEmit := isMatchCondition(ctx, s.EmitCondition, fv, row, s.stateFuncs)
 		if canEmit {
 			status.EndTime = row.Timestamp
@@ -230,7 +236,7 @@ func (s *StateWindowOp) handleTupleWithSingleCondition(ctx api.StreamContext, fv
 		if canBegin {
 			status.StartTime = row.Timestamp
 			status.OnBegin = true
-			status.Scanner.addTuple(row)
+			s.collectAdd(ctx, fv, row, status)
 		}
 	} else {
 		canEmit := isMatchCondition(ctx, s.SingleCondition, fv, row, s.stateFuncs)
@@ -239,10 +245,10 @@ func (s *StateWindowOp) handleTupleWithSingleCondition(ctx api.StreamContext, fv
 			s.emit(ctx, status)
 			status.Scanner.gc(InfTime)
 			status.OnBegin = true
-			status.Scanner.addTuple(row)
+			s.collectAdd(ctx, fv, row, status)
 			status.StartTime = row.Timestamp
 		} else {
-			status.Scanner.addTuple(row)
+			s.collectAdd(ctx, fv, row, status)
 		}
 	}
 }
@@ -288,7 +294,7 @@ func (s *SlidingWindowOp) exec(ctx api.StreamContext, errCh chan<- error) {
 				windowEnd := row.Timestamp
 				windowStart := windowEnd.Add(-s.Length)
 				s.scanner.gc(windowStart)
-				s.scanner.addTuple(row)
+				s.collectAdd(ctx, fv, row)
 				sendWindow := true
 				if s.triggerCondition != nil {
 					sendWindow = isMatchCondition(ctx, s.triggerCondition, fv, row, s.stateFuncs)
@@ -311,6 +317,12 @@ func (s *SlidingWindowOp) exec(ctx api.StreamContext, errCh chan<- error) {
 			}
 			s.onProcessEnd(ctx)
 		}
+	}
+}
+
+func (s *SlidingWindowOp) collectAdd(ctx api.StreamContext, fv *xsql.FunctionValuer, row *xsql.Tuple) {
+	if s.windowConfig.CollectCondition == nil || isMatchCondition(ctx, s.windowConfig.CollectCondition, fv, row, s.stateFuncs) {
+		s.scanner.addTuple(row)
 	}
 }
 

@@ -881,11 +881,7 @@ func TestEventWindow(t *testing.T) {
 
 				"op_4_window_0_exceptions_total":  int64(0),
 				"op_4_window_0_records_in_total":  int64(4),
-				"op_4_window_0_records_out_total": int64(5),
-
-				"op_5_filter_0_exceptions_total":  int64(0),
-				"op_5_filter_0_records_in_total":  int64(5),
-				"op_5_filter_0_records_out_total": int64(2),
+				"op_4_window_0_records_out_total": int64(2),
 			},
 		},
 		{
