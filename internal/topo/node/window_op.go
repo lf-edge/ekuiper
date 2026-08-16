@@ -57,6 +57,8 @@ type WindowConfig struct {
 	BeginCondition  ast.Expr
 	EmitCondition   ast.Expr
 
+	CollectCondition ast.Expr
+
 	PartitionExpr *ast.PartitionExpr
 }
 
@@ -366,7 +368,10 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []xs
 			switch d := data.(type) {
 			case xsql.EventRow:
 				o.handleTraceIngestTuple(ctx, d)
-				inputs = append(inputs, d)
+
+				if o.collectConditionMatch(ctx, d) {
+					inputs = append(inputs, d)
+				}
 				switch o.window.Type {
 				case ast.NOT_WINDOW:
 					inputs = o.scan(inputs, d.GetTimestamp(), ctx, o.window.Length+o.window.Delay, true)
@@ -728,6 +733,15 @@ func (o *WindowOperator) scan(inputs []xsql.EventRow, triggerTime time.Time, ctx
 	}
 	log.Debugf("window %s triggered for %d tuples", o.name, len(inputs))
 
+	if o.window.CollectCondition != nil && len(rowContent) == 0 {
+		// A collect filter only buffers matching rows; a window that ended up
+		// empty must not be emitted, otherwise previously-filtered empty
+		// windows would flow downstream since the FilterPlan is eliminated.
+		log.Debugf("window %s collect filter produced an empty window, skip emitting", o.name)
+		o.triggerTime = triggerTime
+		return inputs
+	}
+
 	o.Broadcast(results)
 	o.onSend(ctx, results)
 
@@ -752,6 +766,31 @@ func (o *WindowOperator) calDelta(triggerTime time.Time, log api.Logger) time.Du
 		}
 	}
 	return delta
+}
+
+func (o *WindowOperator) collectConditionMatch(ctx api.StreamContext, d xsql.EventRow) bool {
+	if o.window.CollectCondition == nil {
+		return true
+	}
+
+	log := ctx.GetLogger()
+	fv, _ := xsql.NewFunctionValuersForOp(ctx)
+	ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(d, fv)}
+	result := ve.Eval(o.window.CollectCondition)
+
+	if result == nil {
+		return false
+	}
+
+	switch v := result.(type) {
+	case error:
+		log.Errorf("window %s collect condition error: %v", o.name, v)
+		return false
+	case bool:
+		return v
+	default:
+		return false
+	}
 }
 
 func (o *WindowOperator) isMatchCondition(ctx api.StreamContext, d xsql.EventRow) bool {
