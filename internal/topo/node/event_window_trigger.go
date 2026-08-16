@@ -190,7 +190,10 @@ func (o *WindowOperator) execEventWindow(ctx api.StreamContext, inputs []xsql.Ev
 				if o.window.Type == ast.SLIDING_WINDOW && o.isMatchCondition(ctx, d) {
 					o.triggerTS = append(o.triggerTS, d.GetTimestamp())
 				}
-				inputs = append(inputs, d)
+
+				if o.collectConditionMatch(ctx, d) {
+					inputs = append(inputs, d)
+				}
 				o.span = nil
 				o.onProcessEnd(ctx)
 				_ = ctx.PutState(WindowInputsKey, inputs)
