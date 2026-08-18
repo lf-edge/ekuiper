@@ -212,7 +212,6 @@ func TestCountWindowCollectCondition(t *testing.T) {
 		wt, ok := got.(*xsql.WindowTuples)
 		require.True(t, ok, "expected *xsql.WindowTuples, got %T", got)
 		maps := wt.ToMaps()
-		// Only matching rows (soc % 10 == 0) are buffered: soc=10, soc=20.
 		require.Equal(t, []map[string]any{
 			{"soc": int64(10), "charge_status": "charging"},
 			{"soc": int64(20), "charge_status": "discharging"},
