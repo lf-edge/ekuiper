@@ -369,7 +369,7 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []xs
 			case xsql.EventRow:
 				o.handleTraceIngestTuple(ctx, d)
 
-				if o.collectConditionMatch(ctx, d) {
+				if collectConditionMatch(ctx, d, o.window.CollectCondition, o.name) || o.window.Type != ast.COUNT_WINDOW {
 					inputs = append(inputs, d)
 				}
 				switch o.window.Type {
@@ -418,7 +418,7 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []xs
 					}
 					o.msgCount = 0
 
-					if tl, er := NewTupleList(inputs, o.window.CountLength); er != nil {
+					if tl, er := NewTupleList(ctx, inputs, o.window.CountLength, o.window.CollectCondition); er != nil {
 						log.Error("Found error when trying to ")
 						infra.DrainError(ctx, er, errCh)
 						return
@@ -523,18 +523,20 @@ func (o *WindowOperator) tick(ctx api.StreamContext, inputs []xsql.EventRow, n t
 }
 
 type TupleList struct {
-	tuples []xsql.EventRow
-	index  int // Current index
-	size   int // The size for count window
+	tuples      []xsql.EventRow
+	index       int // Current index
+	size        int // The size for count window
+	ctx         api.StreamContext
+	tupleFilter ast.Expr
 }
 
-func NewTupleList(tuples []xsql.EventRow, windowSize int) (TupleList, error) {
+func NewTupleList(ctx api.StreamContext, tuples []xsql.EventRow, windowSize int, collectCondition ast.Expr) (TupleList, error) {
 	if windowSize <= 0 {
 		return TupleList{}, fmt.Errorf("Window size should not be less than zero.")
 	} else if len(tuples) == 0 {
 		return TupleList{}, fmt.Errorf("The tuples should not be nil or empty.")
 	}
-	tl := TupleList{tuples: tuples, size: windowSize}
+	tl := TupleList{tuples: tuples, size: windowSize, ctx: ctx, tupleFilter: collectCondition}
 	return tl, nil
 }
 
@@ -559,7 +561,9 @@ func (tl *TupleList) nextCountWindow() *xsql.WindowTuples {
 	}
 	subT := tl.tuples[len(tl.tuples)-tl.size : len(tl.tuples)]
 	for _, tuple := range subT {
-		results = results.AddTuple(tuple)
+		if collectConditionMatch(tl.ctx, tuple, tl.tupleFilter, "count window") {
+			results = results.AddTuple(tuple)
+		}
 	}
 	tl.index = tl.index + 1
 	return results
@@ -768,15 +772,15 @@ func (o *WindowOperator) calDelta(triggerTime time.Time, log api.Logger) time.Du
 	return delta
 }
 
-func (o *WindowOperator) collectConditionMatch(ctx api.StreamContext, d xsql.EventRow) bool {
-	if o.window.CollectCondition == nil {
+func collectConditionMatch(ctx api.StreamContext, d xsql.EventRow, collectCondition ast.Expr, name string) bool {
+	if collectCondition == nil {
 		return true
 	}
 
 	log := ctx.GetLogger()
 	fv, _ := xsql.NewFunctionValuersForOp(ctx)
 	ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(d, fv)}
-	result := ve.Eval(o.window.CollectCondition)
+	result := ve.Eval(collectCondition)
 
 	if result == nil {
 		return false
@@ -784,7 +788,7 @@ func (o *WindowOperator) collectConditionMatch(ctx api.StreamContext, d xsql.Eve
 
 	switch v := result.(type) {
 	case error:
-		log.Errorf("window %s collect condition error: %v", o.name, v)
+		log.Errorf("window %s collect condition error: %v", name, v)
 		return false
 	case bool:
 		return v
