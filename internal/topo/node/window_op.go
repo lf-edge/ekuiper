@@ -369,9 +369,10 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []xs
 			case xsql.EventRow:
 				o.handleTraceIngestTuple(ctx, d)
 
-				if collectConditionMatch(ctx, d, o.window.CollectCondition, o.name) || o.window.Type != ast.COUNT_WINDOW {
+				if o.window.Type == ast.COUNT_WINDOW || collectConditionMatch(ctx, d, o.window.CollectCondition, o.name) {
 					inputs = append(inputs, d)
 				}
+
 				switch o.window.Type {
 				case ast.NOT_WINDOW:
 					inputs = o.scan(inputs, d.GetTimestamp(), ctx, o.window.Length+o.window.Delay, true)
