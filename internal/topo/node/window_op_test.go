@@ -128,13 +128,13 @@ func TestTime(t *testing.T) {
 }
 
 func TestNewTupleList(t *testing.T) {
-	_, e := NewTupleList(nil, 0)
+	_, e := NewTupleList(nil, nil, 0, nil)
 	es1 := "Window size should not be less than zero."
 	if !reflect.DeepEqual(es1, e.Error()) {
 		t.Errorf("error mismatch:\n  exp=%s\n  got=%s\n\n", es1, e)
 	}
 
-	_, e = NewTupleList(nil, 2)
+	_, e = NewTupleList(nil, nil, 2, nil)
 	es1 = "The tuples should not be nil or empty."
 	if !reflect.DeepEqual(es1, e.Error()) {
 		t.Errorf("error mismatch:\n  exp=%s\n  got=%s\n\n", es1, e)
