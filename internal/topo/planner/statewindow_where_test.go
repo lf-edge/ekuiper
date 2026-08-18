@@ -214,6 +214,17 @@ func TestCountWindowCollectCondition(t *testing.T) {
 		maps := wt.ToMaps()
 		require.Equal(t, []map[string]any{
 			{"soc": int64(10), "charge_status": "charging"},
+		}, maps)
+	case <-time.After(2 * time.Second):
+		t.Fatal("timed out waiting for window output")
+	}
+
+	select {
+	case got := <-output:
+		wt, ok := got.(*xsql.WindowTuples)
+		require.True(t, ok, "expected *xsql.WindowTuples, got %T", got)
+		maps := wt.ToMaps()
+		require.Equal(t, []map[string]any{
 			{"soc": int64(20), "charge_status": "discharging"},
 		}, maps)
 	case <-time.After(2 * time.Second):
