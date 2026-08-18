@@ -332,6 +332,34 @@ func TestArrayCommonFunctions(t *testing.T) {
 			result: int64(4),
 		},
 		{
+			name: "array_avg",
+			args: []interface{}{
+				[]interface{}{1, 2},
+			},
+			result: float64(1.5),
+		},
+		{
+			name: "array_avg",
+			args: []interface{}{
+				[]interface{}{1, nil, 3.0},
+			},
+			result: float64(2),
+		},
+		{
+			name: "array_avg",
+			args: []interface{}{
+				[]interface{}{nil, nil},
+			},
+			result: nil,
+		},
+		{
+			name: "array_avg",
+			args: []interface{}{
+				[]interface{}{1, "2"},
+			},
+			result: errors.New("cannot convert string(2) to float64"),
+		},
+		{
 			name: "array_min",
 			args: []interface{}{
 				[]interface{}{1, nil, 3},

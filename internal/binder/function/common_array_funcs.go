@@ -117,6 +117,26 @@ func getFirstValidArg(s []interface{}) interface{} {
 	return nil
 }
 
+func average(arr []interface{}) (interface{}, bool) {
+	var total float64
+	var count int
+	for _, v := range arr {
+		if v == nil {
+			continue
+		}
+		value, err := cast.ToFloat64(v, cast.CONVERT_SAMEKIND)
+		if err != nil {
+			return err, false
+		}
+		total += value
+		count++
+	}
+	if count == 0 {
+		return nil, true
+	}
+	return total / float64(count), true
+}
+
 func sliceIntTotal(s []interface{}) (int64, error) {
 	var total int64
 	for _, v := range s {

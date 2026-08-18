@@ -90,6 +90,14 @@ array_max(array)
 
 返回数组中的最大值, 数组元素中的 null 值将被忽略。array 为 nil 时则固定返回 nil。
 
+## ARRAY_AVG
+
+```text
+array_avg(array)
+```
+
+返回数组中数值元素的平均值, 数组元素中的 null 值将被忽略。结果为浮点数；array 为 nil 或不包含有效数值时则固定返回 nil。
+
 ## ARRAY_MIN
 
 ```text

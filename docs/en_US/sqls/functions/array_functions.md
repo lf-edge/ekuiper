@@ -92,6 +92,14 @@ array_max(array)
 
 Returns an element which is greater than or equal to all other elements of the array. The null element will be ignored. When array is nil, nil is returned.
 
+## ARRAY_AVG
+
+```text
+array_avg(array)
+```
+
+Returns the average of the numeric elements in the array. Null elements are ignored. The result is a floating-point number. When array is nil or contains no valid numeric elements, nil is returned.
+
 ## ARRAY_MIN
 
 ```text
