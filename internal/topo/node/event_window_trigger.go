@@ -191,7 +191,12 @@ func (o *WindowOperator) execEventWindow(ctx api.StreamContext, inputs []xsql.Ev
 					o.triggerTS = append(o.triggerTS, d.GetTimestamp())
 				}
 
-				if collectConditionMatch(ctx, d, o.window.CollectCondition, o.name) {
+				filterMatch, err := collectConditionMatch(ctx, d, o.window.CollectCondition, o.name)
+				if err != nil {
+					o.onError(ctx, err)
+				}
+
+				if filterMatch {
 					inputs = append(inputs, d)
 				}
 				o.span = nil
