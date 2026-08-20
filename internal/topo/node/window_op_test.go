@@ -330,7 +330,7 @@ func TestCountWindow(t *testing.T) {
 				if !tt.tuplelist.hasMoreCountWindow() {
 					t.Errorf("%d \n Expect more element, but cannot find more element.", i)
 				}
-				cw := tt.tuplelist.nextCountWindow()
+				cw, _ := tt.tuplelist.nextCountWindow()
 				if !reflect.DeepEqual(tt.winTupleSets[j].Content, cw.Content) {
 					t.Errorf("%d. \nresult mismatch:\n\nexp=%#v\n\ngot=%#v", i, tt.winTupleSets[j], cw) //nolint:govet
 				}
