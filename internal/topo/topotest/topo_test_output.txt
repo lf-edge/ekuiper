@@ -1,0 +1,2158 @@
+=== RUN   TestCheckpoint
+    checkpoint_test.go:27: 
+--- SKIP: TestCheckpoint (0.00s)
+=== RUN   TestTableJoinCheckpoint
+The test bucket for option 0 size is 1.
+
+=== RUN   TestTableJoinCheckpoint/TestCheckpointRule2
+    mock_topo.go:312: file /home/elia/Documenti/ekuiper/data/lookup.json not exist
+    mock_topo.go:469: topo is not created successfully
+--- FAIL: TestTableJoinCheckpoint (0.09s)
+    --- FAIL: TestTableJoinCheckpoint/TestCheckpointRule2 (0.01s)
+=== RUN   TestSharedSourceSchemaless
+=== RUN   TestSharedSourceSchemaless/rule1
+=== RUN   TestSharedSourceSchemaless/rule2
+--- PASS: TestSharedSourceSchemaless (0.15s)
+    --- PASS: TestSharedSourceSchemaless/rule1 (0.07s)
+    --- PASS: TestSharedSourceSchemaless/rule2 (0.07s)
+=== RUN   TestWindowFuncSQL
+=== RUN   TestWindowFuncSQL/TestRowNumber1
+=== RUN   TestWindowFuncSQL/TestRowNumber2
+=== RUN   TestWindowFuncSQL/TestRowNumber1#01
+=== RUN   TestWindowFuncSQL/TestRowNumber2#01
+=== RUN   TestWindowFuncSQL/TestRowNumber1#02
+=== RUN   TestWindowFuncSQL/TestRowNumber2#02
+--- PASS: TestWindowFuncSQL (1.77s)
+    --- PASS: TestWindowFuncSQL/TestRowNumber1 (0.19s)
+    --- PASS: TestWindowFuncSQL/TestRowNumber2 (0.19s)
+    --- PASS: TestWindowFuncSQL/TestRowNumber1#01 (0.24s)
+    --- PASS: TestWindowFuncSQL/TestRowNumber2#01 (0.24s)
+    --- PASS: TestWindowFuncSQL/TestRowNumber1#02 (0.41s)
+    --- PASS: TestWindowFuncSQL/TestRowNumber2#02 (0.41s)
+=== RUN   TestAccAggSQL
+=== RUN   TestAccAggSQL/TestAccAggSql1
+=== RUN   TestAccAggSQL/TestAccAggSql2
+=== RUN   TestAccAggSQL/TestAccAggSql3
+=== RUN   TestAccAggSQL/TestAccAggSql4
+=== RUN   TestAccAggSQL/TestAccAggSql5
+=== RUN   TestAccAggSQL/TestAccAggSql6
+=== RUN   TestAccAggSQL/TestAccAggSql1#01
+=== RUN   TestAccAggSQL/TestAccAggSql2#01
+=== RUN   TestAccAggSQL/TestAccAggSql3#01
+=== RUN   TestAccAggSQL/TestAccAggSql4#01
+=== RUN   TestAccAggSQL/TestAccAggSql5#01
+=== RUN   TestAccAggSQL/TestAccAggSql6#01
+=== RUN   TestAccAggSQL/TestAccAggSql1#02
+=== RUN   TestAccAggSQL/TestAccAggSql2#02
+=== RUN   TestAccAggSQL/TestAccAggSql3#02
+=== RUN   TestAccAggSQL/TestAccAggSql4#02
+=== RUN   TestAccAggSQL/TestAccAggSql5#02
+=== RUN   TestAccAggSQL/TestAccAggSql6#02
+--- PASS: TestAccAggSQL (5.31s)
+    --- PASS: TestAccAggSQL/TestAccAggSql1 (0.19s)
+    --- PASS: TestAccAggSQL/TestAccAggSql2 (0.19s)
+    --- PASS: TestAccAggSQL/TestAccAggSql3 (0.19s)
+    --- PASS: TestAccAggSQL/TestAccAggSql4 (0.19s)
+    --- PASS: TestAccAggSQL/TestAccAggSql5 (0.19s)
+    --- PASS: TestAccAggSQL/TestAccAggSql6 (0.19s)
+    --- PASS: TestAccAggSQL/TestAccAggSql1#01 (0.29s)
+    --- PASS: TestAccAggSQL/TestAccAggSql2#01 (0.24s)
+    --- PASS: TestAccAggSQL/TestAccAggSql3#01 (0.24s)
+    --- PASS: TestAccAggSQL/TestAccAggSql4#01 (0.24s)
+    --- PASS: TestAccAggSQL/TestAccAggSql5#01 (0.29s)
+    --- PASS: TestAccAggSQL/TestAccAggSql6#01 (0.24s)
+    --- PASS: TestAccAggSQL/TestAccAggSql1#02 (0.42s)
+    --- PASS: TestAccAggSQL/TestAccAggSql2#02 (0.41s)
+    --- PASS: TestAccAggSQL/TestAccAggSql3#02 (0.42s)
+    --- PASS: TestAccAggSQL/TestAccAggSql4#02 (0.47s)
+    --- PASS: TestAccAggSQL/TestAccAggSql5#02 (0.42s)
+    --- PASS: TestAccAggSQL/TestAccAggSql6#02 (0.42s)
+=== RUN   TestSRFSQL
+=== RUN   TestSRFSQL/TestSingleSQLRule24
+=== RUN   TestSRFSQL/TestSingleSQLRule18
+=== RUN   TestSRFSQL/TestSingleSQLRule19
+=== RUN   TestSRFSQL/TestSingleSQLRule20
+=== RUN   TestSRFSQL/TestSingleSQLRule21
+=== RUN   TestSRFSQL/TestSingleSQLRule24#01
+=== RUN   TestSRFSQL/TestSingleSQLRule18#01
+=== RUN   TestSRFSQL/TestSingleSQLRule19#01
+=== RUN   TestSRFSQL/TestSingleSQLRule20#01
+=== RUN   TestSRFSQL/TestSingleSQLRule21#01
+=== RUN   TestSRFSQL/TestSingleSQLRule24#02
+=== RUN   TestSRFSQL/TestSingleSQLRule18#02
+=== RUN   TestSRFSQL/TestSingleSQLRule19#02
+=== RUN   TestSRFSQL/TestSingleSQLRule20#02
+=== RUN   TestSRFSQL/TestSingleSQLRule21#02
+--- PASS: TestSRFSQL (1.52s)
+    --- PASS: TestSRFSQL/TestSingleSQLRule24 (0.07s)
+    --- PASS: TestSRFSQL/TestSingleSQLRule18 (0.07s)
+    --- PASS: TestSRFSQL/TestSingleSQLRule19 (0.07s)
+    --- PASS: TestSRFSQL/TestSingleSQLRule20 (0.08s)
+    --- PASS: TestSRFSQL/TestSingleSQLRule21 (0.07s)
+    --- PASS: TestSRFSQL/TestSingleSQLRule24#01 (0.08s)
+    --- PASS: TestSRFSQL/TestSingleSQLRule18#01 (0.13s)
+    --- PASS: TestSRFSQL/TestSingleSQLRule19#01 (0.09s)
+    --- PASS: TestSRFSQL/TestSingleSQLRule20#01 (0.08s)
+    --- PASS: TestSRFSQL/TestSingleSQLRule21#01 (0.08s)
+    --- PASS: TestSRFSQL/TestSingleSQLRule24#02 (0.12s)
+    --- PASS: TestSRFSQL/TestSingleSQLRule18#02 (0.12s)
+    --- PASS: TestSRFSQL/TestSingleSQLRule19#02 (0.12s)
+    --- PASS: TestSRFSQL/TestSingleSQLRule20#02 (0.12s)
+    --- PASS: TestSRFSQL/TestSingleSQLRule21#02 (0.12s)
+=== RUN   TestSingleSQL
+=== RUN   TestSingleSQL/TestAnalyzeFuncAlias1
+=== RUN   TestSingleSQL/TestAnalyzeFuncAlias2
+=== RUN   TestSingleSQL/TestSingleSQLRule0
+=== RUN   TestSingleSQL/TestSingleSQLRule1
+=== RUN   TestSingleSQL/TestSingleSQLRule2
+=== RUN   TestSingleSQL/TestSingleSQLRule3
+=== RUN   TestSingleSQL/TestSingleSQLRule4
+=== RUN   TestSingleSQL/TestSingleSQLRule5
+=== RUN   TestSingleSQL/TestSingleSQLRule6
+=== RUN   TestSingleSQL/TestSingleSQLRule7
+=== RUN   TestSingleSQL/TestSingleSQLRule8
+=== RUN   TestSingleSQL/TestSingleSQLRule9
+=== RUN   TestSingleSQL/TestSingleSQLRule10
+    mock_topo.go:312: file /home/elia/Documenti/ekuiper/data/lookup.json not exist
+    mock_topo.go:91: topo is not created successfully
+=== RUN   TestSingleSQL/TestSingleSQLRule11
+=== RUN   TestSingleSQL/TestSingleSQLRule12
+    mock_topo.go:312: file /home/elia/Documenti/ekuiper/data/lookup.json not exist
+    mock_topo.go:91: topo is not created successfully
+=== RUN   TestSingleSQL/TestChanged13
+=== RUN   TestSingleSQL/TestAliasOrderBy14
+=== RUN   TestSingleSQL/TestSingleSQLRule17
+=== RUN   TestSingleSQL/TestSingleSQLRule16
+=== RUN   TestSingleSQL/TestSingleSQLRule15
+=== RUN   TestSingleSQL/TestLagAlias
+=== RUN   TestSingleSQL/TestLagPartition
+=== RUN   TestSingleSQL/TestAnalyzeFuncAlias1#01
+=== RUN   TestSingleSQL/TestAnalyzeFuncAlias2#01
+=== RUN   TestSingleSQL/TestSingleSQLRule0#01
+=== RUN   TestSingleSQL/TestSingleSQLRule1#01
+=== RUN   TestSingleSQL/TestSingleSQLRule2#01
+=== RUN   TestSingleSQL/TestSingleSQLRule3#01
+=== RUN   TestSingleSQL/TestSingleSQLRule4#01
+=== RUN   TestSingleSQL/TestSingleSQLRule5#01
+=== RUN   TestSingleSQL/TestSingleSQLRule6#01
+=== RUN   TestSingleSQL/TestSingleSQLRule7#01
+=== RUN   TestSingleSQL/TestSingleSQLRule8#01
+=== RUN   TestSingleSQL/TestSingleSQLRule9#01
+=== RUN   TestSingleSQL/TestSingleSQLRule10#01
+    mock_topo.go:312: file /home/elia/Documenti/ekuiper/data/lookup.json not exist
+    mock_topo.go:91: topo is not created successfully
+=== RUN   TestSingleSQL/TestSingleSQLRule11#01
+=== RUN   TestSingleSQL/TestSingleSQLRule12#01
+    mock_topo.go:312: file /home/elia/Documenti/ekuiper/data/lookup.json not exist
+    mock_topo.go:91: topo is not created successfully
+=== RUN   TestSingleSQL/TestChanged13#01
+=== RUN   TestSingleSQL/TestAliasOrderBy14#01
+=== RUN   TestSingleSQL/TestSingleSQLRule17#01
+=== RUN   TestSingleSQL/TestSingleSQLRule16#01
+=== RUN   TestSingleSQL/TestSingleSQLRule15#01
+=== RUN   TestSingleSQL/TestLagAlias#01
+=== RUN   TestSingleSQL/TestLagPartition#01
+=== RUN   TestSingleSQL/TestAnalyzeFuncAlias1#02
+=== RUN   TestSingleSQL/TestAnalyzeFuncAlias2#02
+=== RUN   TestSingleSQL/TestSingleSQLRule0#02
+=== RUN   TestSingleSQL/TestSingleSQLRule1#02
+=== RUN   TestSingleSQL/TestSingleSQLRule2#02
+=== RUN   TestSingleSQL/TestSingleSQLRule3#02
+=== RUN   TestSingleSQL/TestSingleSQLRule4#02
+=== RUN   TestSingleSQL/TestSingleSQLRule5#02
+=== RUN   TestSingleSQL/TestSingleSQLRule6#02
+=== RUN   TestSingleSQL/TestSingleSQLRule7#02
+=== RUN   TestSingleSQL/TestSingleSQLRule8#02
+=== RUN   TestSingleSQL/TestSingleSQLRule9#02
+=== RUN   TestSingleSQL/TestSingleSQLRule10#02
+    mock_topo.go:312: file /home/elia/Documenti/ekuiper/data/lookup.json not exist
+    mock_topo.go:91: topo is not created successfully
+=== RUN   TestSingleSQL/TestSingleSQLRule11#02
+=== RUN   TestSingleSQL/TestSingleSQLRule12#02
+    mock_topo.go:312: file /home/elia/Documenti/ekuiper/data/lookup.json not exist
+    mock_topo.go:91: topo is not created successfully
+=== RUN   TestSingleSQL/TestChanged13#02
+=== RUN   TestSingleSQL/TestAliasOrderBy14#02
+=== RUN   TestSingleSQL/TestSingleSQLRule17#02
+=== RUN   TestSingleSQL/TestSingleSQLRule16#02
+=== RUN   TestSingleSQL/TestSingleSQLRule15#02
+=== RUN   TestSingleSQL/TestLagAlias#02
+=== RUN   TestSingleSQL/TestLagPartition#02
+--- FAIL: TestSingleSQL (17.06s)
+    --- PASS: TestSingleSQL/TestAnalyzeFuncAlias1 (0.19s)
+    --- PASS: TestSingleSQL/TestAnalyzeFuncAlias2 (0.19s)
+    --- PASS: TestSingleSQL/TestSingleSQLRule0 (0.07s)
+    --- PASS: TestSingleSQL/TestSingleSQLRule1 (0.19s)
+    --- PASS: TestSingleSQL/TestSingleSQLRule2 (0.19s)
+    --- PASS: TestSingleSQL/TestSingleSQLRule3 (0.19s)
+    --- PASS: TestSingleSQL/TestSingleSQLRule4 (0.19s)
+    --- PASS: TestSingleSQL/TestSingleSQLRule5 (0.19s)
+    --- PASS: TestSingleSQL/TestSingleSQLRule6 (0.19s)
+    --- PASS: TestSingleSQL/TestSingleSQLRule7 (0.19s)
+    --- PASS: TestSingleSQL/TestSingleSQLRule8 (0.18s)
+    --- PASS: TestSingleSQL/TestSingleSQLRule9 (0.19s)
+    --- FAIL: TestSingleSQL/TestSingleSQLRule10 (0.01s)
+    --- PASS: TestSingleSQL/TestSingleSQLRule11 (0.72s)
+    --- FAIL: TestSingleSQL/TestSingleSQLRule12 (0.01s)
+    --- PASS: TestSingleSQL/TestChanged13 (0.19s)
+    --- PASS: TestSingleSQL/TestAliasOrderBy14 (0.19s)
+    --- PASS: TestSingleSQL/TestSingleSQLRule17 (0.07s)
+    --- PASS: TestSingleSQL/TestSingleSQLRule16 (0.09s)
+    --- PASS: TestSingleSQL/TestSingleSQLRule15 (0.07s)
+    --- PASS: TestSingleSQL/TestLagAlias (0.19s)
+    --- PASS: TestSingleSQL/TestLagPartition (0.19s)
+    --- PASS: TestSingleSQL/TestAnalyzeFuncAlias1#01 (0.29s)
+    --- PASS: TestSingleSQL/TestAnalyzeFuncAlias2#01 (0.24s)
+    --- PASS: TestSingleSQL/TestSingleSQLRule0#01 (0.08s)
+    --- PASS: TestSingleSQL/TestSingleSQLRule1#01 (0.24s)
+    --- PASS: TestSingleSQL/TestSingleSQLRule2#01 (0.25s)
+    --- PASS: TestSingleSQL/TestSingleSQLRule3#01 (0.24s)
+    --- PASS: TestSingleSQL/TestSingleSQLRule4#01 (0.24s)
+    --- PASS: TestSingleSQL/TestSingleSQLRule5#01 (0.24s)
+    --- PASS: TestSingleSQL/TestSingleSQLRule6#01 (0.29s)
+    --- PASS: TestSingleSQL/TestSingleSQLRule7#01 (0.24s)
+    --- PASS: TestSingleSQL/TestSingleSQLRule8#01 (0.24s)
+    --- PASS: TestSingleSQL/TestSingleSQLRule9#01 (0.24s)
+    --- FAIL: TestSingleSQL/TestSingleSQLRule10#01 (0.01s)
+    --- PASS: TestSingleSQL/TestSingleSQLRule11#01 (0.81s)
+    --- FAIL: TestSingleSQL/TestSingleSQLRule12#01 (0.01s)
+    --- PASS: TestSingleSQL/TestChanged13#01 (0.24s)
+    --- PASS: TestSingleSQL/TestAliasOrderBy14#01 (0.24s)
+    --- PASS: TestSingleSQL/TestSingleSQLRule17#01 (0.13s)
+    --- PASS: TestSingleSQL/TestSingleSQLRule16#01 (0.09s)
+    --- PASS: TestSingleSQL/TestSingleSQLRule15#01 (0.08s)
+    --- PASS: TestSingleSQL/TestLagAlias#01 (0.24s)
+    --- PASS: TestSingleSQL/TestLagPartition#01 (0.24s)
+    --- PASS: TestSingleSQL/TestAnalyzeFuncAlias1#02 (0.42s)
+    --- PASS: TestSingleSQL/TestAnalyzeFuncAlias2#02 (0.42s)
+    --- PASS: TestSingleSQL/TestSingleSQLRule0#02 (0.12s)
+    --- PASS: TestSingleSQL/TestSingleSQLRule1#02 (0.46s)
+    --- PASS: TestSingleSQL/TestSingleSQLRule2#02 (0.42s)
+    --- PASS: TestSingleSQL/TestSingleSQLRule3#02 (0.47s)
+    --- PASS: TestSingleSQL/TestSingleSQLRule4#02 (0.42s)
+    --- PASS: TestSingleSQL/TestSingleSQLRule5#02 (0.42s)
+    --- PASS: TestSingleSQL/TestSingleSQLRule6#02 (0.42s)
+    --- PASS: TestSingleSQL/TestSingleSQLRule7#02 (0.41s)
+    --- PASS: TestSingleSQL/TestSingleSQLRule8#02 (0.41s)
+    --- PASS: TestSingleSQL/TestSingleSQLRule9#02 (0.42s)
+    --- FAIL: TestSingleSQL/TestSingleSQLRule10#02 (0.01s)
+    --- PASS: TestSingleSQL/TestSingleSQLRule11#02 (1.12s)
+    --- FAIL: TestSingleSQL/TestSingleSQLRule12#02 (0.01s)
+    --- PASS: TestSingleSQL/TestChanged13#02 (0.46s)
+    --- PASS: TestSingleSQL/TestAliasOrderBy14#02 (0.42s)
+    --- PASS: TestSingleSQL/TestSingleSQLRule17#02 (0.17s)
+    --- PASS: TestSingleSQL/TestSingleSQLRule16#02 (0.12s)
+    --- PASS: TestSingleSQL/TestSingleSQLRule15#02 (0.12s)
+    --- PASS: TestSingleSQL/TestLagAlias#02 (0.42s)
+    --- PASS: TestSingleSQL/TestLagPartition#02 (0.41s)
+=== RUN   TestSingleSQLWithEventTime
+=== RUN   TestSingleSQLWithEventTime/TestSingleSQLRule1
+=== RUN   TestSingleSQLWithEventTime/TestStateFunc
+=== RUN   TestSingleSQLWithEventTime/TestChanged
+=== RUN   TestSingleSQLWithEventTime/TestSingleSQLRule1#01
+    mock_topo.go:185: 
+        	Error Trace:	/home/elia/Documenti/ekuiper/internal/topo/topotest/mock_topo.go:185
+        	Error:      	Not equal: 
+        	            	expected: [][]map[string]interface {}{[]map[string]interface {}{map[string]interface {}{"color":"red", "size":3, "ts":1541152486013, "upper":"RED"}}, []map[string]interface {}{map[string]interface {}{"color":"blue", "size":2, "ts":1541152487632, "upper":"BLUE"}}, []map[string]interface {}{map[string]interface {}{"color":"yellow", "size":4, "ts":1541152488442, "upper":"YELLOW"}}, []map[string]interface {}{map[string]interface {}{"color":"red", "size":1, "ts":1541152489252, "upper":"RED"}}}
+        	            	actual  : [][]map[string]interface {}{[]map[string]interface {}{map[string]interface {}{"color":"red", "size":1, "ts":1541152489252, "upper":"RED"}}}
+        	            	
+        	            	Diff:
+        	            	--- Expected
+        	            	+++ Actual
+        	            	@@ -1,26 +1,2 @@
+        	            	-([][]map[string]interface {}) (len=4) {
+        	            	- ([]map[string]interface {}) (len=1) {
+        	            	-  (map[string]interface {}) (len=4) {
+        	            	-   (string) (len=5) "color": (string) (len=3) "red",
+        	            	-   (string) (len=4) "size": (int) 3,
+        	            	-   (string) (len=2) "ts": (int) 1541152486013,
+        	            	-   (string) (len=5) "upper": (string) (len=3) "RED"
+        	            	-  }
+        	            	- },
+        	            	- ([]map[string]interface {}) (len=1) {
+        	            	-  (map[string]interface {}) (len=4) {
+        	            	-   (string) (len=5) "color": (string) (len=4) "blue",
+        	            	-   (string) (len=4) "size": (int) 2,
+        	            	-   (string) (len=2) "ts": (int) 1541152487632,
+        	            	-   (string) (len=5) "upper": (string) (len=4) "BLUE"
+        	            	-  }
+        	            	- },
+        	            	- ([]map[string]interface {}) (len=1) {
+        	            	-  (map[string]interface {}) (len=4) {
+        	            	-   (string) (len=5) "color": (string) (len=6) "yellow",
+        	            	-   (string) (len=4) "size": (int) 4,
+        	            	-   (string) (len=2) "ts": (int) 1541152488442,
+        	            	-   (string) (len=5) "upper": (string) (len=6) "YELLOW"
+        	            	-  }
+        	            	- },
+        	            	+([][]map[string]interface {}) (len=1) {
+        	            	  ([]map[string]interface {}) (len=1) {
+        	Test:       	TestSingleSQLWithEventTime/TestSingleSQLRule1#01
+    mock_topo.go:187: 
+        	Error Trace:	/home/elia/Documenti/ekuiper/internal/topo/topotest/mock_topo.go:187
+        	Error:      	Received unexpected error:
+        	            	metrics mismatch for sink_memory_0_0_records_in_total:
+        	            	
+        	            	exp=4(int64)
+        	            	
+        	            	got=1(int64)
+        	            	
+        	Test:       	TestSingleSQLWithEventTime/TestSingleSQLRule1#01
+=== RUN   TestSingleSQLWithEventTime/TestStateFunc#01
+    mock_topo.go:185: 
+        	Error Trace:	/home/elia/Documenti/ekuiper/internal/topo/topotest/mock_topo.go:185
+        	Error:      	Not equal: 
+        	            	expected: [][]map[string]interface {}{[]map[string]interface {}{map[string]interface {}{"color":"blue", "et":1541152487632, "lc":0, "lt":0, "size":2, "ts":1541152487632}}, []map[string]interface {}{map[string]interface {}{"color":"red", "et":1541152489252, "lc":1, "lt":1541152487632, "size":1, "ts":1541152489252}}}
+        	            	actual  : [][]map[string]interface {}{[]map[string]interface {}{map[string]interface {}{"color":"red", "et":1541152489252, "lc":1, "lt":1541152487632, "size":1, "ts":1541152489252}}}
+        	            	
+        	            	Diff:
+        	            	--- Expected
+        	            	+++ Actual
+        	            	@@ -1,12 +1,2 @@
+        	            	-([][]map[string]interface {}) (len=2) {
+        	            	- ([]map[string]interface {}) (len=1) {
+        	            	-  (map[string]interface {}) (len=6) {
+        	            	-   (string) (len=5) "color": (string) (len=4) "blue",
+        	            	-   (string) (len=2) "et": (int64) 1541152487632,
+        	            	-   (string) (len=2) "lc": (int) 0,
+        	            	-   (string) (len=2) "lt": (int) 0,
+        	            	-   (string) (len=4) "size": (int) 2,
+        	            	-   (string) (len=2) "ts": (int) 1541152487632
+        	            	-  }
+        	            	- },
+        	            	+([][]map[string]interface {}) (len=1) {
+        	            	  ([]map[string]interface {}) (len=1) {
+        	Test:       	TestSingleSQLWithEventTime/TestStateFunc#01
+    mock_topo.go:187: 
+        	Error Trace:	/home/elia/Documenti/ekuiper/internal/topo/topotest/mock_topo.go:187
+        	Error:      	Received unexpected error:
+        	            	metrics mismatch for sink_memory_0_0_records_in_total:
+        	            	
+        	            	exp=2(int64)
+        	            	
+        	            	got=1(int64)
+        	            	
+        	Test:       	TestSingleSQLWithEventTime/TestStateFunc#01
+=== RUN   TestSingleSQLWithEventTime/TestChanged#01
+    mock_topo.go:185: 
+        	Error Trace:	/home/elia/Documenti/ekuiper/internal/topo/topotest/mock_topo.go:185
+        	Error:      	Not equal: 
+        	            	expected: [][]map[string]interface {}{[]map[string]interface {}{map[string]interface {}{"tt_color":"red", "tt_size":3}}, []map[string]interface {}{map[string]interface {}{"tt_color":"blue", "tt_size":2}}, []map[string]interface {}{map[string]interface {}{"tt_color":"yellow", "tt_size":4}}, []map[string]interface {}{map[string]interface {}{"tt_color":"red", "tt_size":1}}}
+        	            	actual  : [][]map[string]interface {}{[]map[string]interface {}{map[string]interface {}{"tt_color":"red", "tt_size":1}}}
+        	            	
+        	            	Diff:
+        	            	--- Expected
+        	            	+++ Actual
+        	            	@@ -1,20 +1,2 @@
+        	            	-([][]map[string]interface {}) (len=4) {
+        	            	- ([]map[string]interface {}) (len=1) {
+        	            	-  (map[string]interface {}) (len=2) {
+        	            	-   (string) (len=8) "tt_color": (string) (len=3) "red",
+        	            	-   (string) (len=7) "tt_size": (int) 3
+        	            	-  }
+        	            	- },
+        	            	- ([]map[string]interface {}) (len=1) {
+        	            	-  (map[string]interface {}) (len=2) {
+        	            	-   (string) (len=8) "tt_color": (string) (len=4) "blue",
+        	            	-   (string) (len=7) "tt_size": (int) 2
+        	            	-  }
+        	            	- },
+        	            	- ([]map[string]interface {}) (len=1) {
+        	            	-  (map[string]interface {}) (len=2) {
+        	            	-   (string) (len=8) "tt_color": (string) (len=6) "yellow",
+        	            	-   (string) (len=7) "tt_size": (int) 4
+        	            	-  }
+        	            	- },
+        	            	+([][]map[string]interface {}) (len=1) {
+        	            	  ([]map[string]interface {}) (len=1) {
+        	Test:       	TestSingleSQLWithEventTime/TestChanged#01
+    mock_topo.go:187: 
+        	Error Trace:	/home/elia/Documenti/ekuiper/internal/topo/topotest/mock_topo.go:187
+        	Error:      	Received unexpected error:
+        	            	metrics mismatch for source_demoE_0_records_in_total:
+        	            	
+        	            	exp=6(int64)
+        	            	
+        	            	got=1(int64)
+        	            	
+        	Test:       	TestSingleSQLWithEventTime/TestChanged#01
+=== RUN   TestSingleSQLWithEventTime/TestSingleSQLRule1#02
+    mock_topo.go:185: 
+        	Error Trace:	/home/elia/Documenti/ekuiper/internal/topo/topotest/mock_topo.go:185
+        	Error:      	Not equal: 
+        	            	expected: [][]map[string]interface {}{[]map[string]interface {}{map[string]interface {}{"color":"red", "size":3, "ts":1541152486013, "upper":"RED"}}, []map[string]interface {}{map[string]interface {}{"color":"blue", "size":2, "ts":1541152487632, "upper":"BLUE"}}, []map[string]interface {}{map[string]interface {}{"color":"yellow", "size":4, "ts":1541152488442, "upper":"YELLOW"}}, []map[string]interface {}{map[string]interface {}{"color":"red", "size":1, "ts":1541152489252, "upper":"RED"}}}
+        	            	actual  : [][]map[string]interface {}{[]map[string]interface {}{map[string]interface {}{"color":"red", "size":1, "ts":1541152489252, "upper":"RED"}}}
+        	            	
+        	            	Diff:
+        	            	--- Expected
+        	            	+++ Actual
+        	            	@@ -1,26 +1,2 @@
+        	            	-([][]map[string]interface {}) (len=4) {
+        	            	- ([]map[string]interface {}) (len=1) {
+        	            	-  (map[string]interface {}) (len=4) {
+        	            	-   (string) (len=5) "color": (string) (len=3) "red",
+        	            	-   (string) (len=4) "size": (int) 3,
+        	            	-   (string) (len=2) "ts": (int) 1541152486013,
+        	            	-   (string) (len=5) "upper": (string) (len=3) "RED"
+        	            	-  }
+        	            	- },
+        	            	- ([]map[string]interface {}) (len=1) {
+        	            	-  (map[string]interface {}) (len=4) {
+        	            	-   (string) (len=5) "color": (string) (len=4) "blue",
+        	            	-   (string) (len=4) "size": (int) 2,
+        	            	-   (string) (len=2) "ts": (int) 1541152487632,
+        	            	-   (string) (len=5) "upper": (string) (len=4) "BLUE"
+        	            	-  }
+        	            	- },
+        	            	- ([]map[string]interface {}) (len=1) {
+        	            	-  (map[string]interface {}) (len=4) {
+        	            	-   (string) (len=5) "color": (string) (len=6) "yellow",
+        	            	-   (string) (len=4) "size": (int) 4,
+        	            	-   (string) (len=2) "ts": (int) 1541152488442,
+        	            	-   (string) (len=5) "upper": (string) (len=6) "YELLOW"
+        	            	-  }
+        	            	- },
+        	            	+([][]map[string]interface {}) (len=1) {
+        	            	  ([]map[string]interface {}) (len=1) {
+        	Test:       	TestSingleSQLWithEventTime/TestSingleSQLRule1#02
+    mock_topo.go:187: 
+        	Error Trace:	/home/elia/Documenti/ekuiper/internal/topo/topotest/mock_topo.go:187
+        	Error:      	Received unexpected error:
+        	            	metrics mismatch for source_demoE_0_records_out_total:
+        	            	
+        	            	exp=6(int64)
+        	            	
+        	            	got=1(int64)
+        	            	
+        	Test:       	TestSingleSQLWithEventTime/TestSingleSQLRule1#02
+=== RUN   TestSingleSQLWithEventTime/TestStateFunc#02
+    mock_topo.go:185: 
+        	Error Trace:	/home/elia/Documenti/ekuiper/internal/topo/topotest/mock_topo.go:185
+        	Error:      	Not equal: 
+        	            	expected: [][]map[string]interface {}{[]map[string]interface {}{map[string]interface {}{"color":"blue", "et":1541152487632, "lc":0, "lt":0, "size":2, "ts":1541152487632}}, []map[string]interface {}{map[string]interface {}{"color":"red", "et":1541152489252, "lc":1, "lt":1541152487632, "size":1, "ts":1541152489252}}}
+        	            	actual  : [][]map[string]interface {}{[]map[string]interface {}{map[string]interface {}{"color":"red", "et":1541152489252, "lc":1, "lt":1541152487632, "size":1, "ts":1541152489252}}}
+        	            	
+        	            	Diff:
+        	            	--- Expected
+        	            	+++ Actual
+        	            	@@ -1,12 +1,2 @@
+        	            	-([][]map[string]interface {}) (len=2) {
+        	            	- ([]map[string]interface {}) (len=1) {
+        	            	-  (map[string]interface {}) (len=6) {
+        	            	-   (string) (len=5) "color": (string) (len=4) "blue",
+        	            	-   (string) (len=2) "et": (int64) 1541152487632,
+        	            	-   (string) (len=2) "lc": (int) 0,
+        	            	-   (string) (len=2) "lt": (int) 0,
+        	            	-   (string) (len=4) "size": (int) 2,
+        	            	-   (string) (len=2) "ts": (int) 1541152487632
+        	            	-  }
+        	            	- },
+        	            	+([][]map[string]interface {}) (len=1) {
+        	            	  ([]map[string]interface {}) (len=1) {
+        	Test:       	TestSingleSQLWithEventTime/TestStateFunc#02
+    mock_topo.go:187: 
+        	Error Trace:	/home/elia/Documenti/ekuiper/internal/topo/topotest/mock_topo.go:187
+        	Error:      	Received unexpected error:
+        	            	metrics mismatch for source_demoE_0_records_out_total:
+        	            	
+        	            	exp=6(int64)
+        	            	
+        	            	got=1(int64)
+        	            	
+        	Test:       	TestSingleSQLWithEventTime/TestStateFunc#02
+=== RUN   TestSingleSQLWithEventTime/TestChanged#02
+    mock_topo.go:185: 
+        	Error Trace:	/home/elia/Documenti/ekuiper/internal/topo/topotest/mock_topo.go:185
+        	Error:      	Not equal: 
+        	            	expected: [][]map[string]interface {}{[]map[string]interface {}{map[string]interface {}{"tt_color":"red", "tt_size":3}}, []map[string]interface {}{map[string]interface {}{"tt_color":"blue", "tt_size":2}}, []map[string]interface {}{map[string]interface {}{"tt_color":"yellow", "tt_size":4}}, []map[string]interface {}{map[string]interface {}{"tt_color":"red", "tt_size":1}}}
+        	            	actual  : [][]map[string]interface {}{[]map[string]interface {}{map[string]interface {}{"tt_color":"red", "tt_size":1}}}
+        	            	
+        	            	Diff:
+        	            	--- Expected
+        	            	+++ Actual
+        	            	@@ -1,20 +1,2 @@
+        	            	-([][]map[string]interface {}) (len=4) {
+        	            	- ([]map[string]interface {}) (len=1) {
+        	            	-  (map[string]interface {}) (len=2) {
+        	            	-   (string) (len=8) "tt_color": (string) (len=3) "red",
+        	            	-   (string) (len=7) "tt_size": (int) 3
+        	            	-  }
+        	            	- },
+        	            	- ([]map[string]interface {}) (len=1) {
+        	            	-  (map[string]interface {}) (len=2) {
+        	            	-   (string) (len=8) "tt_color": (string) (len=4) "blue",
+        	            	-   (string) (len=7) "tt_size": (int) 2
+        	            	-  }
+        	            	- },
+        	            	- ([]map[string]interface {}) (len=1) {
+        	            	-  (map[string]interface {}) (len=2) {
+        	            	-   (string) (len=8) "tt_color": (string) (len=6) "yellow",
+        	            	-   (string) (len=7) "tt_size": (int) 4
+        	            	-  }
+        	            	- },
+        	            	+([][]map[string]interface {}) (len=1) {
+        	            	  ([]map[string]interface {}) (len=1) {
+        	Test:       	TestSingleSQLWithEventTime/TestChanged#02
+    mock_topo.go:187: 
+        	Error Trace:	/home/elia/Documenti/ekuiper/internal/topo/topotest/mock_topo.go:187
+        	Error:      	Received unexpected error:
+        	            	metrics mismatch for sink_memory_0_0_records_out_total:
+        	            	
+        	            	exp=4(int64)
+        	            	
+        	            	got=1(int64)
+        	            	
+        	Test:       	TestSingleSQLWithEventTime/TestChanged#02
+--- FAIL: TestSingleSQLWithEventTime (5.23s)
+    --- PASS: TestSingleSQLWithEventTime/TestSingleSQLRule1 (0.46s)
+    --- PASS: TestSingleSQLWithEventTime/TestStateFunc (0.46s)
+    --- PASS: TestSingleSQLWithEventTime/TestChanged (0.46s)
+    --- FAIL: TestSingleSQLWithEventTime/TestSingleSQLRule1#01 (0.52s)
+    --- FAIL: TestSingleSQLWithEventTime/TestStateFunc#01 (0.52s)
+    --- FAIL: TestSingleSQLWithEventTime/TestChanged#01 (0.52s)
+    --- FAIL: TestSingleSQLWithEventTime/TestSingleSQLRule1#02 (0.78s)
+    --- FAIL: TestSingleSQLWithEventTime/TestStateFunc#02 (0.73s)
+    --- FAIL: TestSingleSQLWithEventTime/TestChanged#02 (0.73s)
+=== RUN   TestSingleSQLError
+=== RUN   TestSingleSQLError/TestSingleSQLErrorRule1
+=== RUN   TestSingleSQLError/TestSingleSQLErrorRule2
+=== RUN   TestSingleSQLError/TestSingleSQLErrorRule3
+--- PASS: TestSingleSQLError (0.68s)
+    --- PASS: TestSingleSQLError/TestSingleSQLErrorRule1 (0.19s)
+    --- PASS: TestSingleSQLError/TestSingleSQLErrorRule2 (0.24s)
+    --- PASS: TestSingleSQLError/TestSingleSQLErrorRule3 (0.19s)
+=== RUN   TestSingleSQLOmitError
+=== RUN   TestSingleSQLOmitError/TestSingleSQLErrorRule1
+=== RUN   TestSingleSQLOmitError/TestSingleSQLErrorRule2
+--- PASS: TestSingleSQLOmitError (0.45s)
+    --- PASS: TestSingleSQLOmitError/TestSingleSQLErrorRule1 (0.19s)
+    --- PASS: TestSingleSQLOmitError/TestSingleSQLErrorRule2 (0.19s)
+=== RUN   TestSingleSQLForBinary
+=== RUN   TestSingleSQLForBinary/TestSingleSQLRule1
+=== RUN   TestSingleSQLForBinary/TestSingleSQLRule1#01
+=== RUN   TestSingleSQLForBinary/TestSingleSQLRule1#02
+--- PASS: TestSingleSQLForBinary (1.00s)
+    --- PASS: TestSingleSQLForBinary/TestSingleSQLRule1 (0.11s)
+    --- PASS: TestSingleSQLForBinary/TestSingleSQLRule1#01 (0.26s)
+    --- PASS: TestSingleSQLForBinary/TestSingleSQLRule1#02 (0.56s)
+=== RUN   TestWindowSQL
+=== RUN   TestWindowSQL/TestHoppingWindowSQL1
+=== RUN   TestWindowSQL/TestHoppingWindowSQL2
+=== RUN   TestWindowSQL/TestHoppingWindowSQL3
+--- PASS: TestWindowSQL (1.45s)
+    --- PASS: TestWindowSQL/TestHoppingWindowSQL1 (0.46s)
+    --- PASS: TestWindowSQL/TestHoppingWindowSQL2 (0.46s)
+    --- PASS: TestWindowSQL/TestHoppingWindowSQL3 (0.46s)
+=== RUN   TestAliasSQL
+=== RUN   TestAliasSQL/TestAliasSQL
+=== RUN   TestAliasSQL/TestAliasSQL1
+=== RUN   TestAliasSQL/TestAliasSQL2
+=== RUN   TestAliasSQL/TestAliasSQL#01
+=== RUN   TestAliasSQL/TestAliasSQL1#01
+=== RUN   TestAliasSQL/TestAliasSQL2#01
+--- PASS: TestAliasSQL (2.14s)
+    --- PASS: TestAliasSQL/TestAliasSQL (0.29s)
+    --- PASS: TestAliasSQL/TestAliasSQL1 (0.29s)
+    --- PASS: TestAliasSQL/TestAliasSQL2 (0.24s)
+    --- PASS: TestAliasSQL/TestAliasSQL#01 (0.42s)
+    --- PASS: TestAliasSQL/TestAliasSQL1#01 (0.42s)
+    --- PASS: TestAliasSQL/TestAliasSQL2#01 (0.42s)
+=== RUN   TestRuleWaitGroup
+--- PASS: TestRuleWaitGroup (0.08s)
+=== RUN   TestRuleDumpState
+--- PASS: TestRuleDumpState (0.08s)
+=== RUN   TestWindow
+=== RUN   TestWindow/TestWindowRule0
+=== RUN   TestWindow/TestWindowRule1
+=== RUN   TestWindow/TestWindowRule2
+=== RUN   TestWindow/TestWindowRule3
+=== RUN   TestWindow/TestWindowRule4
+=== RUN   TestWindow/TestWindowRule5
+=== RUN   TestWindow/TestWindowRule6
+=== RUN   TestWindow/TestWindowRule7
+=== RUN   TestWindow/TestWindowRule8
+=== RUN   TestWindow/TestWindowRule9
+=== RUN   TestWindow/TestCountWindowRule1
+=== RUN   TestWindow/TestWindowRule10
+=== RUN   TestWindow/TestWindowRule11
+    mock_topo.go:312: file /home/elia/Documenti/ekuiper/data/lookup.json not exist
+    mock_topo.go:91: topo is not created successfully
+=== RUN   TestWindow/TestWindowRule12
+=== RUN   TestWindow/TestWindowRule13
+=== RUN   TestWindow/TestSlidingDelay
+=== RUN   TestWindow/TestWindowRule0#01
+=== RUN   TestWindow/TestWindowRule1#01
+=== RUN   TestWindow/TestWindowRule2#01
+=== RUN   TestWindow/TestWindowRule3#01
+=== RUN   TestWindow/TestWindowRule4#01
+=== RUN   TestWindow/TestWindowRule5#01
+    mock_topo.go:185: 
+        	Error Trace:	/home/elia/Documenti/ekuiper/internal/topo/topotest/mock_topo.go:185
+        	Error:      	Not equal: 
+        	            	expected: [][]map[string]interface {}{[]map[string]interface {}{map[string]interface {}{"count":2, "et":1541152487823, "window_end":1541152487823, "ws":1541152486013}}, []map[string]interface {}{map[string]interface {}{"count":3, "et":1541152490000, "window_end":1541152490000, "ws":1541152487932}}, []map[string]interface {}{map[string]interface {}{"count":5, "et":1541152494000, "window_end":1541152494000, "ws":1541152490000}}}
+        	            	actual  : [][]map[string]interface {}{[]map[string]interface {}{map[string]interface {}{"count":5, "et":1541152494000, "window_end":1541152494000, "ws":1541152491682}}}
+        	            	
+        	            	Diff:
+        	            	--- Expected
+        	            	+++ Actual
+        	            	@@ -1,18 +1,2 @@
+        	            	-([][]map[string]interface {}) (len=3) {
+        	            	- ([]map[string]interface {}) (len=1) {
+        	            	-  (map[string]interface {}) (len=4) {
+        	            	-   (string) (len=5) "count": (int) 2,
+        	            	-   (string) (len=2) "et": (int64) 1541152487823,
+        	            	-   (string) (len=10) "window_end": (int64) 1541152487823,
+        	            	-   (string) (len=2) "ws": (int64) 1541152486013
+        	            	-  }
+        	            	- },
+        	            	- ([]map[string]interface {}) (len=1) {
+        	            	-  (map[string]interface {}) (len=4) {
+        	            	-   (string) (len=5) "count": (int) 3,
+        	            	-   (string) (len=2) "et": (int64) 1541152490000,
+        	            	-   (string) (len=10) "window_end": (int64) 1541152490000,
+        	            	-   (string) (len=2) "ws": (int64) 1541152487932
+        	            	-  }
+        	            	- },
+        	            	+([][]map[string]interface {}) (len=1) {
+        	            	  ([]map[string]interface {}) (len=1) {
+        	            	@@ -22,3 +6,3 @@
+        	            	    (string) (len=10) "window_end": (int64) 1541152494000,
+        	            	-   (string) (len=2) "ws": (int64) 1541152490000
+        	            	+   (string) (len=2) "ws": (int64) 1541152491682
+        	            	   }
+        	Test:       	TestWindow/TestWindowRule5#01
+    mock_topo.go:187: 
+        	Error Trace:	/home/elia/Documenti/ekuiper/internal/topo/topotest/mock_topo.go:187
+        	Error:      	Received unexpected error:
+        	            	metrics mismatch for op_2_window_0_records_out_total:
+        	            	
+        	            	exp=3(int64)
+        	            	
+        	            	got=1(int64)
+        	            	
+        	Test:       	TestWindow/TestWindowRule5#01
+=== RUN   TestWindow/TestWindowRule6#01
+=== RUN   TestWindow/TestWindowRule7#01
+=== RUN   TestWindow/TestWindowRule8#01
+=== RUN   TestWindow/TestWindowRule9#01
+=== RUN   TestWindow/TestCountWindowRule1#01
+=== RUN   TestWindow/TestWindowRule10#01
+=== RUN   TestWindow/TestWindowRule11#01
+    mock_topo.go:312: file /home/elia/Documenti/ekuiper/data/lookup.json not exist
+    mock_topo.go:91: topo is not created successfully
+=== RUN   TestWindow/TestWindowRule12#01
+=== RUN   TestWindow/TestWindowRule13#01
+=== RUN   TestWindow/TestSlidingDelay#01
+=== RUN   TestWindow/TestWindowRule0#02
+=== RUN   TestWindow/TestWindowRule1#02
+=== RUN   TestWindow/TestWindowRule2#02
+=== RUN   TestWindow/TestWindowRule3#02
+=== RUN   TestWindow/TestWindowRule4#02
+=== RUN   TestWindow/TestWindowRule5#02
+    mock_topo.go:185: 
+        	Error Trace:	/home/elia/Documenti/ekuiper/internal/topo/topotest/mock_topo.go:185
+        	Error:      	Not equal: 
+        	            	expected: [][]map[string]interface {}{[]map[string]interface {}{map[string]interface {}{"count":2, "et":1541152487823, "window_end":1541152487823, "ws":1541152486013}}, []map[string]interface {}{map[string]interface {}{"count":3, "et":1541152490000, "window_end":1541152490000, "ws":1541152487932}}, []map[string]interface {}{map[string]interface {}{"count":5, "et":1541152494000, "window_end":1541152494000, "ws":1541152490000}}}
+        	            	actual  : [][]map[string]interface {}{[]map[string]interface {}{map[string]interface {}{"count":5, "et":1541152494000, "window_end":1541152494000, "ws":1541152491682}}}
+        	            	
+        	            	Diff:
+        	            	--- Expected
+        	            	+++ Actual
+        	            	@@ -1,18 +1,2 @@
+        	            	-([][]map[string]interface {}) (len=3) {
+        	            	- ([]map[string]interface {}) (len=1) {
+        	            	-  (map[string]interface {}) (len=4) {
+        	            	-   (string) (len=5) "count": (int) 2,
+        	            	-   (string) (len=2) "et": (int64) 1541152487823,
+        	            	-   (string) (len=10) "window_end": (int64) 1541152487823,
+        	            	-   (string) (len=2) "ws": (int64) 1541152486013
+        	            	-  }
+        	            	- },
+        	            	- ([]map[string]interface {}) (len=1) {
+        	            	-  (map[string]interface {}) (len=4) {
+        	            	-   (string) (len=5) "count": (int) 3,
+        	            	-   (string) (len=2) "et": (int64) 1541152490000,
+        	            	-   (string) (len=10) "window_end": (int64) 1541152490000,
+        	            	-   (string) (len=2) "ws": (int64) 1541152487932
+        	            	-  }
+        	            	- },
+        	            	+([][]map[string]interface {}) (len=1) {
+        	            	  ([]map[string]interface {}) (len=1) {
+        	            	@@ -22,3 +6,3 @@
+        	            	    (string) (len=10) "window_end": (int64) 1541152494000,
+        	            	-   (string) (len=2) "ws": (int64) 1541152490000
+        	            	+   (string) (len=2) "ws": (int64) 1541152491682
+        	            	   }
+        	Test:       	TestWindow/TestWindowRule5#02
+    mock_topo.go:187: 
+        	Error Trace:	/home/elia/Documenti/ekuiper/internal/topo/topotest/mock_topo.go:187
+        	Error:      	Received unexpected error:
+        	            	metrics mismatch for sink_memory_0_0_records_out_total:
+        	            	
+        	            	exp=3(int64)
+        	            	
+        	            	got=1(int64)
+        	            	
+        	Test:       	TestWindow/TestWindowRule5#02
+=== RUN   TestWindow/TestWindowRule6#02
+=== RUN   TestWindow/TestWindowRule7#02
+=== RUN   TestWindow/TestWindowRule8#02
+=== RUN   TestWindow/TestWindowRule9#02
+=== RUN   TestWindow/TestCountWindowRule1#02
+=== RUN   TestWindow/TestWindowRule10#02
+=== RUN   TestWindow/TestWindowRule11#02
+    mock_topo.go:312: file /home/elia/Documenti/ekuiper/data/lookup.json not exist
+    mock_topo.go:91: topo is not created successfully
+=== RUN   TestWindow/TestWindowRule12#02
+=== RUN   TestWindow/TestWindowRule13#02
+=== RUN   TestWindow/TestSlidingDelay#02
+=== RUN   TestWindow/TestWindowRule0#03
+=== RUN   TestWindow/TestWindowRule3#03
+=== RUN   TestWindow/TestWindowRule4#03
+=== RUN   TestWindow/TestWindowRule6#03
+=== RUN   TestWindow/TestWindowRule10#03
+=== RUN   TestWindow/TestWindowRule13#03
+=== RUN   TestWindow/TestSlidingDelay#03
+--- FAIL: TestWindow (29.64s)
+    --- PASS: TestWindow/TestWindowRule0 (0.24s)
+    --- PASS: TestWindow/TestWindowRule1 (0.25s)
+    --- PASS: TestWindow/TestWindowRule2 (0.25s)
+    --- PASS: TestWindow/TestWindowRule3 (0.33s)
+    --- PASS: TestWindow/TestWindowRule4 (0.24s)
+    --- PASS: TestWindow/TestWindowRule5 (0.50s)
+    --- PASS: TestWindow/TestWindowRule6 (0.33s)
+    --- PASS: TestWindow/TestWindowRule7 (0.25s)
+    --- PASS: TestWindow/TestWindowRule8 (0.25s)
+    --- PASS: TestWindow/TestWindowRule9 (0.24s)
+    --- PASS: TestWindow/TestCountWindowRule1 (0.24s)
+    --- PASS: TestWindow/TestWindowRule10 (0.25s)
+    --- FAIL: TestWindow/TestWindowRule11 (0.01s)
+    --- PASS: TestWindow/TestWindowRule12 (0.24s)
+    --- PASS: TestWindow/TestWindowRule13 (0.24s)
+    --- PASS: TestWindow/TestSlidingDelay (0.24s)
+    --- PASS: TestWindow/TestWindowRule0#01 (0.39s)
+    --- PASS: TestWindow/TestWindowRule1#01 (0.40s)
+    --- PASS: TestWindow/TestWindowRule2#01 (0.45s)
+    --- PASS: TestWindow/TestWindowRule3#01 (0.68s)
+    --- PASS: TestWindow/TestWindowRule4#01 (0.39s)
+    --- FAIL: TestWindow/TestWindowRule5#01 (0.82s)
+    --- PASS: TestWindow/TestWindowRule6#01 (0.63s)
+    --- PASS: TestWindow/TestWindowRule7#01 (0.45s)
+    --- PASS: TestWindow/TestWindowRule8#01 (0.40s)
+    --- PASS: TestWindow/TestWindowRule9#01 (0.40s)
+    --- PASS: TestWindow/TestCountWindowRule1#01 (0.39s)
+    --- PASS: TestWindow/TestWindowRule10#01 (0.39s)
+    --- FAIL: TestWindow/TestWindowRule11#01 (0.01s)
+    --- PASS: TestWindow/TestWindowRule12#01 (0.40s)
+    --- PASS: TestWindow/TestWindowRule13#01 (0.40s)
+    --- PASS: TestWindow/TestSlidingDelay#01 (0.39s)
+    --- PASS: TestWindow/TestWindowRule0#02 (0.92s)
+    --- PASS: TestWindow/TestWindowRule1#02 (0.92s)
+    --- PASS: TestWindow/TestWindowRule2#02 (0.92s)
+    --- PASS: TestWindow/TestWindowRule3#02 (1.74s)
+    --- PASS: TestWindow/TestWindowRule4#02 (0.92s)
+    --- FAIL: TestWindow/TestWindowRule5#02 (2.02s)
+    --- PASS: TestWindow/TestWindowRule6#02 (1.69s)
+    --- PASS: TestWindow/TestWindowRule7#02 (0.92s)
+    --- PASS: TestWindow/TestWindowRule8#02 (0.97s)
+    --- PASS: TestWindow/TestWindowRule9#02 (0.92s)
+    --- PASS: TestWindow/TestCountWindowRule1#02 (0.92s)
+    --- PASS: TestWindow/TestWindowRule10#02 (0.92s)
+    --- FAIL: TestWindow/TestWindowRule11#02 (0.01s)
+    --- PASS: TestWindow/TestWindowRule12#02 (0.93s)
+    --- PASS: TestWindow/TestWindowRule13#02 (0.92s)
+    --- PASS: TestWindow/TestSlidingDelay#02 (0.92s)
+    --- PASS: TestWindow/TestWindowRule0#03 (0.24s)
+    --- PASS: TestWindow/TestWindowRule3#03 (0.34s)
+    --- PASS: TestWindow/TestWindowRule4#03 (0.24s)
+    --- PASS: TestWindow/TestWindowRule6#03 (0.34s)
+    --- PASS: TestWindow/TestWindowRule10#03 (0.24s)
+    --- PASS: TestWindow/TestWindowRule13#03 (0.24s)
+    --- PASS: TestWindow/TestSlidingDelay#03 (0.24s)
+=== RUN   TestEventWindow
+=== RUN   TestEventWindow/TestEventWindowDelayRule0
+=== RUN   TestEventWindow/TestEventWindowRule1
+=== RUN   TestEventWindow/TestEventWindowRule0
+=== RUN   TestEventWindow/TestEventWindowRule2
+=== RUN   TestEventWindow/TestEventWindowRule3
+=== RUN   TestEventWindow/TestEventWindowRule4
+=== RUN   TestEventWindow/TestEventWindowRule5
+=== RUN   TestEventWindow/TestEventWindowRule6
+=== RUN   TestEventWindow/TestEventWindowRule7
+=== RUN   TestEventWindow/TestEventWindowRule8
+=== RUN   TestEventWindow/TestEventWindowRule9
+=== RUN   TestEventWindow/TestEventWindowCondition10
+=== RUN   TestEventWindow/TestSlidingWindowInterval11
+=== RUN   TestEventWindow/TestSlidingWindowInterval12
+=== RUN   TestEventWindow/TestTUMBLINGWindowInterval13
+=== RUN   TestEventWindow/TestTUMBLINGWindowInterval14
+=== RUN   TestEventWindow/TestEventWindowDelayRule0#01
+    mock_topo.go:185: 
+        	Error Trace:	/home/elia/Documenti/ekuiper/internal/topo/topotest/mock_topo.go:185
+        	Error:      	Not equal: 
+        	            	expected: [][]map[string]interface {}{[]map[string]interface {}{map[string]interface {}{"size":3}, map[string]interface {}{"size":1}}}
+        	            	actual  : [][]map[string]interface {}{}
+        	            	
+        	            	Diff:
+        	            	--- Expected
+        	            	+++ Actual
+        	            	@@ -1,10 +1,2 @@
+        	            	-([][]map[string]interface {}) (len=1) {
+        	            	- ([]map[string]interface {}) (len=2) {
+        	            	-  (map[string]interface {}) (len=1) {
+        	            	-   (string) (len=4) "size": (int) 3
+        	            	-  },
+        	            	-  (map[string]interface {}) (len=1) {
+        	            	-   (string) (len=4) "size": (int) 1
+        	            	-  }
+        	            	- }
+        	            	+([][]map[string]interface {}) {
+        	            	 }
+        	Test:       	TestEventWindow/TestEventWindowDelayRule0#01
+    mock_topo.go:187: 
+        	Error Trace:	/home/elia/Documenti/ekuiper/internal/topo/topotest/mock_topo.go:187
+        	Error:      	Received unexpected error:
+        	            	metrics mismatch for op_4_window_0_records_out_total:
+        	            	
+        	            	exp=1(int64)
+        	            	
+        	            	got=0(int64)
+        	            	
+        	Test:       	TestEventWindow/TestEventWindowDelayRule0#01
+=== RUN   TestEventWindow/TestEventWindowRule1#01
+    mock_topo.go:185: 
+        	Error Trace:	/home/elia/Documenti/ekuiper/internal/topo/topotest/mock_topo.go:185
+        	Error:      	Not equal: 
+        	            	expected: [][]map[string]interface {}{[]map[string]interface {}{map[string]interface {}{"count":1, "et":1541152487000, "lc":0, "lt":0}}, []map[string]interface {}{map[string]interface {}{"count":2, "et":1541152488000, "lc":1, "lt":1541152487000}}, []map[string]interface {}{map[string]interface {}{"count":2, "et":1541152489000, "lc":2, "lt":1541152488000}}, []map[string]interface {}{map[string]interface {}{"count":2, "et":1541152490000, "lc":3, "lt":1541152489000}}}
+        	            	actual  : [][]map[string]interface {}{[]map[string]interface {}{map[string]interface {}{"count":1, "et":1541152487000, "lc":2, "lt":1541152488000}}, []map[string]interface {}{map[string]interface {}{"count":2, "et":1541152488000, "lc":3, "lt":1541152487000}}}
+        	            	
+        	            	Diff:
+        	            	--- Expected
+        	            	+++ Actual
+        	            	@@ -1,2 +1,2 @@
+        	            	-([][]map[string]interface {}) (len=4) {
+        	            	+([][]map[string]interface {}) (len=2) {
+        	            	  ([]map[string]interface {}) (len=1) {
+        	            	@@ -5,18 +5,2 @@
+        	            	    (string) (len=2) "et": (int64) 1541152487000,
+        	            	-   (string) (len=2) "lc": (int) 0,
+        	            	-   (string) (len=2) "lt": (int) 0
+        	            	-  }
+        	            	- },
+        	            	- ([]map[string]interface {}) (len=1) {
+        	            	-  (map[string]interface {}) (len=4) {
+        	            	-   (string) (len=5) "count": (int) 2,
+        	            	-   (string) (len=2) "et": (int64) 1541152488000,
+        	            	-   (string) (len=2) "lc": (int) 1,
+        	            	-   (string) (len=2) "lt": (int64) 1541152487000
+        	            	-  }
+        	            	- },
+        	            	- ([]map[string]interface {}) (len=1) {
+        	            	-  (map[string]interface {}) (len=4) {
+        	            	-   (string) (len=5) "count": (int) 2,
+        	            	-   (string) (len=2) "et": (int64) 1541152489000,
+        	            	    (string) (len=2) "lc": (int) 2,
+        	            	@@ -28,5 +12,5 @@
+        	            	    (string) (len=5) "count": (int) 2,
+        	            	-   (string) (len=2) "et": (int64) 1541152490000,
+        	            	+   (string) (len=2) "et": (int64) 1541152488000,
+        	            	    (string) (len=2) "lc": (int) 3,
+        	            	-   (string) (len=2) "lt": (int64) 1541152489000
+        	            	+   (string) (len=2) "lt": (int64) 1541152487000
+        	            	   }
+        	Test:       	TestEventWindow/TestEventWindowRule1#01
+    mock_topo.go:187: 
+        	Error Trace:	/home/elia/Documenti/ekuiper/internal/topo/topotest/mock_topo.go:187
+        	Error:      	Received unexpected error:
+        	            	metrics mismatch for source_demoE_0_records_out_total:
+        	            	
+        	            	exp=6(int64)
+        	            	
+        	            	got=1(int64)
+        	            	
+        	Test:       	TestEventWindow/TestEventWindowRule1#01
+=== RUN   TestEventWindow/TestEventWindowRule0#01
+    mock_topo.go:185: 
+        	Error Trace:	/home/elia/Documenti/ekuiper/internal/topo/topotest/mock_topo.go:185
+        	Error:      	Not equal: 
+        	            	expected: [][]map[string]interface {}{[]map[string]interface {}{map[string]interface {}{"count":1, "et":1541152487000}}, []map[string]interface {}{map[string]interface {}{"count":2, "et":1541152490000}}}
+        	            	actual  : [][]map[string]interface {}{[]map[string]interface {}{map[string]interface {}{"count":1, "et":1541152490000}}}
+        	            	
+        	            	Diff:
+        	            	--- Expected
+        	            	+++ Actual
+        	            	@@ -1,2 +1,2 @@
+        	            	-([][]map[string]interface {}) (len=2) {
+        	            	+([][]map[string]interface {}) (len=1) {
+        	            	  ([]map[string]interface {}) (len=1) {
+        	            	@@ -4,8 +4,2 @@
+        	            	    (string) (len=5) "count": (int) 1,
+        	            	-   (string) (len=2) "et": (int64) 1541152487000
+        	            	-  }
+        	            	- },
+        	            	- ([]map[string]interface {}) (len=1) {
+        	            	-  (map[string]interface {}) (len=2) {
+        	            	-   (string) (len=5) "count": (int) 2,
+        	            	    (string) (len=2) "et": (int64) 1541152490000
+        	Test:       	TestEventWindow/TestEventWindowRule0#01
+    mock_topo.go:187: 
+        	Error Trace:	/home/elia/Documenti/ekuiper/internal/topo/topotest/mock_topo.go:187
+        	Error:      	Received unexpected error:
+        	            	metrics mismatch for sink_memory_0_0_records_in_total:
+        	            	
+        	            	exp=2(int64)
+        	            	
+        	            	got=1(int64)
+        	            	
+        	Test:       	TestEventWindow/TestEventWindowRule0#01
+=== RUN   TestEventWindow/TestEventWindowRule2#01
+    mock_topo.go:185: 
+        	Error Trace:	/home/elia/Documenti/ekuiper/internal/topo/topotest/mock_topo.go:185
+        	Error:      	Not equal: 
+        	            	expected: [][]map[string]interface {}{[]map[string]interface {}{map[string]interface {}{"color":"red", "ts":1541152486013, "window_end":1541152487000, "window_start":1541152486013}}, []map[string]interface {}{map[string]interface {}{"color":"yellow", "ts":1541152488442, "window_end":1541152489000, "window_start":1541152488000}}}
+        	            	actual  : [][]map[string]interface {}{[]map[string]interface {}{map[string]interface {}{"color":"red", "ts":1541152486013, "window_end":1541152487000, "window_start":1541152489252}}}
+        	            	
+        	            	Diff:
+        	            	--- Expected
+        	            	+++ Actual
+        	            	@@ -1,2 +1,2 @@
+        	            	-([][]map[string]interface {}) (len=2) {
+        	            	+([][]map[string]interface {}) (len=1) {
+        	            	  ([]map[string]interface {}) (len=1) {
+        	            	@@ -6,11 +6,3 @@
+        	            	    (string) (len=10) "window_end": (int64) 1541152487000,
+        	            	-   (string) (len=12) "window_start": (int64) 1541152486013
+        	            	-  }
+        	            	- },
+        	            	- ([]map[string]interface {}) (len=1) {
+        	            	-  (map[string]interface {}) (len=4) {
+        	            	-   (string) (len=5) "color": (string) (len=6) "yellow",
+        	            	-   (string) (len=2) "ts": (int) 1541152488442,
+        	            	-   (string) (len=10) "window_end": (int64) 1541152489000,
+        	            	-   (string) (len=12) "window_start": (int64) 1541152488000
+        	            	+   (string) (len=12) "window_start": (int64) 1541152489252
+        	            	   }
+        	Test:       	TestEventWindow/TestEventWindowRule2#01
+    mock_topo.go:187: 
+        	Error Trace:	/home/elia/Documenti/ekuiper/internal/topo/topotest/mock_topo.go:187
+        	Error:      	Received unexpected error:
+        	            	metrics mismatch for sink_memory_0_0_records_out_total:
+        	            	
+        	            	exp=2(int64)
+        	            	
+        	            	got=1(int64)
+        	            	
+        	Test:       	TestEventWindow/TestEventWindowRule2#01
+=== RUN   TestEventWindow/TestEventWindowRule3#01
+    mock_topo.go:185: 
+        	Error Trace:	/home/elia/Documenti/ekuiper/internal/topo/topotest/mock_topo.go:185
+        	Error:      	Not equal: 
+        	            	expected: [][]map[string]interface {}{[]map[string]interface {}{map[string]interface {}{"color":"red", "temp":25.5, "ts":1541152486013}}, []map[string]interface {}{map[string]interface {}{"color":"red", "temp":25.5, "ts":1541152486013}}, []map[string]interface {}{map[string]interface {}{"color":"blue", "temp":28.1, "ts":1541152487632}}, []map[string]interface {}{map[string]interface {}{"color":"blue", "temp":28.1, "ts":1541152487632}, map[string]interface {}{"color":"yellow", "temp":27.4, "ts":1541152488442}}, []map[string]interface {}{map[string]interface {}{"color":"yellow", "temp":27.4, "ts":1541152488442}, map[string]interface {}{"color":"red", "temp":25.5, "ts":1541152489252}}}
+        	            	actual  : [][]map[string]interface {}{[]map[string]interface {}{map[string]interface {}{"color":"blue", "temp":28.1, "ts":1541152487632}}, []map[string]interface {}{map[string]interface {}{"color":"red", "temp":25.5, "ts":1541152489252}}}
+        	            	
+        	            	Diff:
+        	            	--- Expected
+        	            	+++ Actual
+        	            	@@ -1,16 +1,2 @@
+        	            	-([][]map[string]interface {}) (len=5) {
+        	            	- ([]map[string]interface {}) (len=1) {
+        	            	-  (map[string]interface {}) (len=3) {
+        	            	-   (string) (len=5) "color": (string) (len=3) "red",
+        	            	-   (string) (len=4) "temp": (float64) 25.5,
+        	            	-   (string) (len=2) "ts": (int) 1541152486013
+        	            	-  }
+        	            	- },
+        	            	- ([]map[string]interface {}) (len=1) {
+        	            	-  (map[string]interface {}) (len=3) {
+        	            	-   (string) (len=5) "color": (string) (len=3) "red",
+        	            	-   (string) (len=4) "temp": (float64) 25.5,
+        	            	-   (string) (len=2) "ts": (int) 1541152486013
+        	            	-  }
+        	            	- },
+        	            	+([][]map[string]interface {}) (len=2) {
+        	            	  ([]map[string]interface {}) (len=1) {
+        	            	@@ -22,20 +8,3 @@
+        	            	  },
+        	            	- ([]map[string]interface {}) (len=2) {
+        	            	-  (map[string]interface {}) (len=3) {
+        	            	-   (string) (len=5) "color": (string) (len=4) "blue",
+        	            	-   (string) (len=4) "temp": (float64) 28.1,
+        	            	-   (string) (len=2) "ts": (int) 1541152487632
+        	            	-  },
+        	            	-  (map[string]interface {}) (len=3) {
+        	            	-   (string) (len=5) "color": (string) (len=6) "yellow",
+        	            	-   (string) (len=4) "temp": (float64) 27.4,
+        	            	-   (string) (len=2) "ts": (int) 1541152488442
+        	            	-  }
+        	            	- },
+        	            	- ([]map[string]interface {}) (len=2) {
+        	            	-  (map[string]interface {}) (len=3) {
+        	            	-   (string) (len=5) "color": (string) (len=6) "yellow",
+        	            	-   (string) (len=4) "temp": (float64) 27.4,
+        	            	-   (string) (len=2) "ts": (int) 1541152488442
+        	            	-  },
+        	            	+ ([]map[string]interface {}) (len=1) {
+        	            	   (map[string]interface {}) (len=3) {
+        	Test:       	TestEventWindow/TestEventWindowRule3#01
+    mock_topo.go:187: 
+        	Error Trace:	/home/elia/Documenti/ekuiper/internal/topo/topotest/mock_topo.go:187
+        	Error:      	Received unexpected error:
+        	            	metrics mismatch for source_demo1E_0_records_out_total:
+        	            	
+        	            	exp=6(int64)
+        	            	
+        	            	got=1(int64)
+        	            	
+        	Test:       	TestEventWindow/TestEventWindowRule3#01
+=== RUN   TestEventWindow/TestEventWindowRule4#01
+    mock_topo.go:185: 
+        	Error Trace:	/home/elia/Documenti/ekuiper/internal/topo/topotest/mock_topo.go:185
+        	Error:      	Not equal: 
+        	            	expected: [][]map[string]interface {}{[]map[string]interface {}{map[string]interface {}{"color":"red", "we":1541152486013, "ws":1541152484013}}, []map[string]interface {}{map[string]interface {}{"color":"blue", "we":1541152487632, "ws":1541152485632}, map[string]interface {}{"color":"red", "we":1541152487632, "ws":1541152485632}}, []map[string]interface {}{map[string]interface {}{"color":"blue", "we":1541152489252, "ws":1541152487252}, map[string]interface {}{"color":"red", "we":1541152489252, "ws":1541152487252}, map[string]interface {}{"color":"yellow", "we":1541152489252, "ws":1541152487252}}}
+        	            	actual  : [][]map[string]interface {}{[]map[string]interface {}{map[string]interface {}{"color":"blue", "we":1541152489252, "ws":1541152487252}, map[string]interface {}{"color":"red", "we":1541152489252, "ws":1541152487252}}}
+        	            	
+        	            	Diff:
+        	            	--- Expected
+        	            	+++ Actual
+        	            	@@ -1,22 +1,3 @@
+        	            	-([][]map[string]interface {}) (len=3) {
+        	            	- ([]map[string]interface {}) (len=1) {
+        	            	-  (map[string]interface {}) (len=3) {
+        	            	-   (string) (len=5) "color": (string) (len=3) "red",
+        	            	-   (string) (len=2) "we": (int64) 1541152486013,
+        	            	-   (string) (len=2) "ws": (int64) 1541152484013
+        	            	-  }
+        	            	- },
+        	            	+([][]map[string]interface {}) (len=1) {
+        	            	  ([]map[string]interface {}) (len=2) {
+        	            	-  (map[string]interface {}) (len=3) {
+        	            	-   (string) (len=5) "color": (string) (len=4) "blue",
+        	            	-   (string) (len=2) "we": (int64) 1541152487632,
+        	            	-   (string) (len=2) "ws": (int64) 1541152485632
+        	            	-  },
+        	            	-  (map[string]interface {}) (len=3) {
+        	            	-   (string) (len=5) "color": (string) (len=3) "red",
+        	            	-   (string) (len=2) "we": (int64) 1541152487632,
+        	            	-   (string) (len=2) "ws": (int64) 1541152485632
+        	            	-  }
+        	            	- },
+        	            	- ([]map[string]interface {}) (len=3) {
+        	            	   (map[string]interface {}) (len=3) {
+        	            	@@ -30,7 +11,2 @@
+        	            	    (string) (len=2) "ws": (int64) 1541152487252
+        	            	-  },
+        	            	-  (map[string]interface {}) (len=3) {
+        	            	-   (string) (len=5) "color": (string) (len=6) "yellow",
+        	            	-   (string) (len=2) "we": (int64) 1541152489252,
+        	            	-   (string) (len=2) "ws": (int64) 1541152487252
+        	            	   }
+        	Test:       	TestEventWindow/TestEventWindowRule4#01
+    mock_topo.go:187: 
+        	Error Trace:	/home/elia/Documenti/ekuiper/internal/topo/topotest/mock_topo.go:187
+        	Error:      	Received unexpected error:
+        	            	metrics mismatch for source_demoE_0_records_in_total:
+        	            	
+        	            	exp=6(int64)
+        	            	
+        	            	got=1(int64)
+        	            	
+        	Test:       	TestEventWindow/TestEventWindowRule4#01
+=== RUN   TestEventWindow/TestEventWindowRule5#01
+    mock_topo.go:185: 
+        	Error Trace:	/home/elia/Documenti/ekuiper/internal/topo/topotest/mock_topo.go:185
+        	Error:      	Not equal: 
+        	            	expected: [][]map[string]interface {}{[]map[string]interface {}{map[string]interface {}{"temp":25.5}}, []map[string]interface {}{map[string]interface {}{"temp":28.1}, map[string]interface {}{"temp":27.4}, map[string]interface {}{"temp":25.5}}, []map[string]interface {}{map[string]interface {}{"temp":26.2}, map[string]interface {}{"temp":26.8}, map[string]interface {}{"temp":28.9}, map[string]interface {}{"temp":29.1}, map[string]interface {}{"temp":32.2}}, []map[string]interface {}{map[string]interface {}{"temp":30.9}}}
+        	            	actual  : [][]map[string]interface {}{[]map[string]interface {}{map[string]interface {}{"temp":26.2}, map[string]interface {}{"temp":26.8}, map[string]interface {}{"temp":28.9}, map[string]interface {}{"temp":29.1}}, []map[string]interface {}{map[string]interface {}{"temp":30.9}}}
+        	            	
+        	            	Diff:
+        	            	--- Expected
+        	            	+++ Actual
+        	            	@@ -1,19 +1,3 @@
+        	            	-([][]map[string]interface {}) (len=4) {
+        	            	- ([]map[string]interface {}) (len=1) {
+        	            	-  (map[string]interface {}) (len=1) {
+        	            	-   (string) (len=4) "temp": (float64) 25.5
+        	            	-  }
+        	            	- },
+        	            	- ([]map[string]interface {}) (len=3) {
+        	            	-  (map[string]interface {}) (len=1) {
+        	            	-   (string) (len=4) "temp": (float64) 28.1
+        	            	-  },
+        	            	-  (map[string]interface {}) (len=1) {
+        	            	-   (string) (len=4) "temp": (float64) 27.4
+        	            	-  },
+        	            	-  (map[string]interface {}) (len=1) {
+        	            	-   (string) (len=4) "temp": (float64) 25.5
+        	            	-  }
+        	            	- },
+        	            	- ([]map[string]interface {}) (len=5) {
+        	            	+([][]map[string]interface {}) (len=2) {
+        	            	+ ([]map[string]interface {}) (len=4) {
+        	            	   (map[string]interface {}) (len=1) {
+        	            	@@ -29,5 +13,2 @@
+        	            	    (string) (len=4) "temp": (float64) 29.1
+        	            	-  },
+        	            	-  (map[string]interface {}) (len=1) {
+        	            	-   (string) (len=4) "temp": (float64) 32.2
+        	            	   }
+        	Test:       	TestEventWindow/TestEventWindowRule5#01
+    mock_topo.go:187: 
+        	Error Trace:	/home/elia/Documenti/ekuiper/internal/topo/topotest/mock_topo.go:187
+        	Error:      	Received unexpected error:
+        	            	metrics mismatch for op_4_window_0_records_out_total:
+        	            	
+        	            	exp=4(int64)
+        	            	
+        	            	got=2(int64)
+        	            	
+        	Test:       	TestEventWindow/TestEventWindowRule5#01
+=== RUN   TestEventWindow/TestEventWindowRule6#01
+    mock_topo.go:185: 
+        	Error Trace:	/home/elia/Documenti/ekuiper/internal/topo/topotest/mock_topo.go:185
+        	Error:      	Not equal: 
+        	            	expected: [][]map[string]interface {}{[]map[string]interface {}{map[string]interface {}{"c":1, "m":25.5}}, []map[string]interface {}{map[string]interface {}{"c":1, "m":25.5}}, []map[string]interface {}{map[string]interface {}{"c":1, "m":25.5}}, []map[string]interface {}{map[string]interface {}{"c":1, "m":28.1}}, []map[string]interface {}{map[string]interface {}{"c":1, "m":28.1}}, []map[string]interface {}{map[string]interface {}{"c":2, "m":28.1}}, []map[string]interface {}{map[string]interface {}{"c":2, "m":28.1}}, []map[string]interface {}{map[string]interface {}{"c":2, "m":27.4}}, []map[string]interface {}{map[string]interface {}{"c":2, "m":27.4}}}
+        	            	actual  : [][]map[string]interface {}{[]map[string]interface {}{map[string]interface {}{"c":1, "m":28.1}}, []map[string]interface {}{map[string]interface {}{"c":1, "m":25.5}}, []map[string]interface {}{map[string]interface {}{"c":1, "m":25.5}}}
+        	            	
+        	            	Diff:
+        	            	--- Expected
+        	            	+++ Actual
+        	            	@@ -1,2 +1,2 @@
+        	            	-([][]map[string]interface {}) (len=9) {
+        	            	+([][]map[string]interface {}) (len=3) {
+        	            	  ([]map[string]interface {}) (len=1) {
+        	            	@@ -4,3 +4,3 @@
+        	            	    (string) (len=1) "c": (int) 1,
+        	            	-   (string) (len=1) "m": (float64) 25.5
+        	            	+   (string) (len=1) "m": (float64) 28.1
+        	            	   }
+        	            	@@ -18,38 +18,2 @@
+        	            	   }
+        	            	- },
+        	            	- ([]map[string]interface {}) (len=1) {
+        	            	-  (map[string]interface {}) (len=2) {
+        	            	-   (string) (len=1) "c": (int) 1,
+        	            	-   (string) (len=1) "m": (float64) 28.1
+        	            	-  }
+        	            	- },
+        	            	- ([]map[string]interface {}) (len=1) {
+        	            	-  (map[string]interface {}) (len=2) {
+        	            	-   (string) (len=1) "c": (int) 1,
+        	            	-   (string) (len=1) "m": (float64) 28.1
+        	            	-  }
+        	            	- },
+        	            	- ([]map[string]interface {}) (len=1) {
+        	            	-  (map[string]interface {}) (len=2) {
+        	            	-   (string) (len=1) "c": (int) 2,
+        	            	-   (string) (len=1) "m": (float64) 28.1
+        	            	-  }
+        	            	- },
+        	            	- ([]map[string]interface {}) (len=1) {
+        	            	-  (map[string]interface {}) (len=2) {
+        	            	-   (string) (len=1) "c": (int) 2,
+        	            	-   (string) (len=1) "m": (float64) 28.1
+        	            	-  }
+        	            	- },
+        	            	- ([]map[string]interface {}) (len=1) {
+        	            	-  (map[string]interface {}) (len=2) {
+        	            	-   (string) (len=1) "c": (int) 2,
+        	            	-   (string) (len=1) "m": (float64) 27.4
+        	            	-  }
+        	            	- },
+        	            	- ([]map[string]interface {}) (len=1) {
+        	            	-  (map[string]interface {}) (len=2) {
+        	            	-   (string) (len=1) "c": (int) 2,
+        	            	-   (string) (len=1) "m": (float64) 27.4
+        	            	-  }
+        	            	  }
+        	Test:       	TestEventWindow/TestEventWindowRule6#01
+    mock_topo.go:187: 
+        	Error Trace:	/home/elia/Documenti/ekuiper/internal/topo/topotest/mock_topo.go:187
+        	Error:      	Received unexpected error:
+        	            	metrics mismatch for source_demoE_0_records_in_total:
+        	            	
+        	            	exp=6(int64)
+        	            	
+        	            	got=1(int64)
+        	            	
+        	Test:       	TestEventWindow/TestEventWindowRule6#01
+=== RUN   TestEventWindow/TestEventWindowRule7#01
+    mock_topo.go:185: 
+        	Error Trace:	/home/elia/Documenti/ekuiper/internal/topo/topotest/mock_topo.go:185
+        	Error:      	Not equal: 
+        	            	expected: [][]map[string]interface {}{[]map[string]interface {}{map[string]interface {}{"error":"error in preprocessor: field color type mismatch: cannot convert int(2) to string"}}, []map[string]interface {}{map[string]interface {}{"color":"red", "size":3, "ts":1541152486013}}, []map[string]interface {}{map[string]interface {}{"color":"red", "size":3, "ts":1541152486013}}, []map[string]interface {}{map[string]interface {}{"color":"yellow", "size":4, "ts":1541152488442}}, []map[string]interface {}{map[string]interface {}{"color":"yellow", "size":4, "ts":1541152488442}, map[string]interface {}{"color":"red", "size":1, "ts":1541152489252}}, []map[string]interface {}{map[string]interface {}{"color":"red", "size":1, "ts":1541152489252}}}
+        	            	actual  : [][]map[string]interface {}{[]map[string]interface {}{map[string]interface {}{"color":"red", "size":3, "ts":1541152486013}}, []map[string]interface {}{map[string]interface {}{"color":"red", "size":3, "ts":1541152486013}}, []map[string]interface {}{}, []map[string]interface {}{}, []map[string]interface {}{}}
+        	            	
+        	            	Diff:
+        	            	--- Expected
+        	            	+++ Actual
+        	            	@@ -1,7 +1,2 @@
+        	            	-([][]map[string]interface {}) (len=6) {
+        	            	- ([]map[string]interface {}) (len=1) {
+        	            	-  (map[string]interface {}) (len=1) {
+        	            	-   (string) (len=5) "error": (string) (len=81) "error in preprocessor: field color type mismatch: cannot convert int(2) to string"
+        	            	-  }
+        	            	- },
+        	            	+([][]map[string]interface {}) (len=5) {
+        	            	  ([]map[string]interface {}) (len=1) {
+        	            	@@ -20,27 +15,7 @@
+        	            	  },
+        	            	- ([]map[string]interface {}) (len=1) {
+        	            	-  (map[string]interface {}) (len=3) {
+        	            	-   (string) (len=5) "color": (string) (len=6) "yellow",
+        	            	-   (string) (len=4) "size": (int64) 4,
+        	            	-   (string) (len=2) "ts": (int64) 1541152488442
+        	            	-  }
+        	            	+ ([]map[string]interface {}) {
+        	            	  },
+        	            	- ([]map[string]interface {}) (len=2) {
+        	            	-  (map[string]interface {}) (len=3) {
+        	            	-   (string) (len=5) "color": (string) (len=6) "yellow",
+        	            	-   (string) (len=4) "size": (int64) 4,
+        	            	-   (string) (len=2) "ts": (int64) 1541152488442
+        	            	-  },
+        	            	-  (map[string]interface {}) (len=3) {
+        	            	-   (string) (len=5) "color": (string) (len=3) "red",
+        	            	-   (string) (len=4) "size": (int64) 1,
+        	            	-   (string) (len=2) "ts": (int64) 1541152489252
+        	            	-  }
+        	            	+ ([]map[string]interface {}) {
+        	            	  },
+        	            	- ([]map[string]interface {}) (len=1) {
+        	            	-  (map[string]interface {}) (len=3) {
+        	            	-   (string) (len=5) "color": (string) (len=3) "red",
+        	            	-   (string) (len=4) "size": (int64) 1,
+        	            	-   (string) (len=2) "ts": (int64) 1541152489252
+        	            	-  }
+        	            	+ ([]map[string]interface {}) {
+        	            	  }
+        	Test:       	TestEventWindow/TestEventWindowRule7#01
+    mock_topo.go:187: 
+        	Error Trace:	/home/elia/Documenti/ekuiper/internal/topo/topotest/mock_topo.go:187
+        	Error:      	Received unexpected error:
+        	            	metrics mismatch for sink_memory_0_0_records_in_total:
+        	            	
+        	            	exp=6(int64)
+        	            	
+        	            	got=5(int64)
+        	            	
+        	Test:       	TestEventWindow/TestEventWindowRule7#01
+=== RUN   TestEventWindow/TestEventWindowRule8#01
+    mock_topo.go:185: 
+        	Error Trace:	/home/elia/Documenti/ekuiper/internal/topo/topotest/mock_topo.go:185
+        	Error:      	Not equal: 
+        	            	expected: [][]map[string]interface {}{[]map[string]interface {}{map[string]interface {}{"temp":25.5, "window_end":1541152487013, "window_start":1541152486013}}, []map[string]interface {}{map[string]interface {}{"temp":28.1, "window_end":1541152490000, "window_start":1541152487932}, map[string]interface {}{"temp":27.4, "window_end":1541152490000, "window_start":1541152487932}, map[string]interface {}{"temp":25.5, "window_end":1541152490000, "window_start":1541152487932}}, []map[string]interface {}{map[string]interface {}{"temp":26.2, "window_end":1541152494000, "window_start":1541152490000}, map[string]interface {}{"temp":26.8, "window_end":1541152494000, "window_start":1541152490000}, map[string]interface {}{"temp":28.9, "window_end":1541152494000, "window_start":1541152490000}, map[string]interface {}{"temp":29.1, "window_end":1541152494000, "window_start":1541152490000}, map[string]interface {}{"temp":32.2, "window_end":1541152494000, "window_start":1541152490000}}, []map[string]interface {}{map[string]interface {}{"temp":30.9, "window_end":1541152495112, "window_start":1541152494000}}}
+        	            	actual  : [][]map[string]interface {}{[]map[string]interface {}{map[string]interface {}{"temp":26.2, "window_end":1541152493492, "window_start":1541152490062}, map[string]interface {}{"temp":26.8, "window_end":1541152493492, "window_start":1541152490062}, map[string]interface {}{"temp":28.9, "window_end":1541152493492, "window_start":1541152490062}, map[string]interface {}{"temp":29.1, "window_end":1541152493492, "window_start":1541152490062}}, []map[string]interface {}{map[string]interface {}{"temp":30.9, "window_end":1541152495112, "window_start":1541152494112}}}
+        	            	
+        	            	Diff:
+        	            	--- Expected
+        	            	+++ Actual
+        	            	@@ -1,31 +1,7 @@
+        	            	-([][]map[string]interface {}) (len=4) {
+        	            	- ([]map[string]interface {}) (len=1) {
+        	            	-  (map[string]interface {}) (len=3) {
+        	            	-   (string) (len=4) "temp": (float64) 25.5,
+        	            	-   (string) (len=10) "window_end": (int64) 1541152487013,
+        	            	-   (string) (len=12) "window_start": (int64) 1541152486013
+        	            	-  }
+        	            	- },
+        	            	- ([]map[string]interface {}) (len=3) {
+        	            	-  (map[string]interface {}) (len=3) {
+        	            	-   (string) (len=4) "temp": (float64) 28.1,
+        	            	-   (string) (len=10) "window_end": (int64) 1541152490000,
+        	            	-   (string) (len=12) "window_start": (int64) 1541152487932
+        	            	-  },
+        	            	-  (map[string]interface {}) (len=3) {
+        	            	-   (string) (len=4) "temp": (float64) 27.4,
+        	            	-   (string) (len=10) "window_end": (int64) 1541152490000,
+        	            	-   (string) (len=12) "window_start": (int64) 1541152487932
+        	            	-  },
+        	            	-  (map[string]interface {}) (len=3) {
+        	            	-   (string) (len=4) "temp": (float64) 25.5,
+        	            	-   (string) (len=10) "window_end": (int64) 1541152490000,
+        	            	-   (string) (len=12) "window_start": (int64) 1541152487932
+        	            	-  }
+        	            	- },
+        	            	- ([]map[string]interface {}) (len=5) {
+        	            	+([][]map[string]interface {}) (len=2) {
+        	            	+ ([]map[string]interface {}) (len=4) {
+        	            	   (map[string]interface {}) (len=3) {
+        	            	    (string) (len=4) "temp": (float64) 26.2,
+        	            	-   (string) (len=10) "window_end": (int64) 1541152494000,
+        	            	-   (string) (len=12) "window_start": (int64) 1541152490000
+        	            	+   (string) (len=10) "window_end": (int64) 1541152493492,
+        	            	+   (string) (len=12) "window_start": (int64) 1541152490062
+        	            	   },
+        	            	@@ -33,4 +9,4 @@
+        	            	    (string) (len=4) "temp": (float64) 26.8,
+        	            	-   (string) (len=10) "window_end": (int64) 1541152494000,
+        	            	-   (string) (len=12) "window_start": (int64) 1541152490000
+        	            	+   (string) (len=10) "window_end": (int64) 1541152493492,
+        	            	+   (string) (len=12) "window_start": (int64) 1541152490062
+        	            	   },
+        	            	@@ -38,4 +14,4 @@
+        	            	    (string) (len=4) "temp": (float64) 28.9,
+        	            	-   (string) (len=10) "window_end": (int64) 1541152494000,
+        	            	-   (string) (len=12) "window_start": (int64) 1541152490000
+        	            	+   (string) (len=10) "window_end": (int64) 1541152493492,
+        	            	+   (string) (len=12) "window_start": (int64) 1541152490062
+        	            	   },
+        	            	@@ -43,9 +19,4 @@
+        	            	    (string) (len=4) "temp": (float64) 29.1,
+        	            	-   (string) (len=10) "window_end": (int64) 1541152494000,
+        	            	-   (string) (len=12) "window_start": (int64) 1541152490000
+        	            	-  },
+        	            	-  (map[string]interface {}) (len=3) {
+        	            	-   (string) (len=4) "temp": (float64) 32.2,
+        	            	-   (string) (len=10) "window_end": (int64) 1541152494000,
+        	            	-   (string) (len=12) "window_start": (int64) 1541152490000
+        	            	+   (string) (len=10) "window_end": (int64) 1541152493492,
+        	            	+   (string) (len=12) "window_start": (int64) 1541152490062
+        	            	   }
+        	            	@@ -56,3 +27,3 @@
+        	            	    (string) (len=10) "window_end": (int64) 1541152495112,
+        	            	-   (string) (len=12) "window_start": (int64) 1541152494000
+        	            	+   (string) (len=12) "window_start": (int64) 1541152494112
+        	            	   }
+        	Test:       	TestEventWindow/TestEventWindowRule8#01
+    mock_topo.go:187: 
+        	Error Trace:	/home/elia/Documenti/ekuiper/internal/topo/topotest/mock_topo.go:187
+        	Error:      	Received unexpected error:
+        	            	metrics mismatch for op_4_window_0_records_in_total:
+        	            	
+        	            	exp=10(int64)
+        	            	
+        	            	got=1(int64)
+        	            	
+        	Test:       	TestEventWindow/TestEventWindowRule8#01
+=== RUN   TestEventWindow/TestEventWindowRule9#01
+    mock_topo.go:185: 
+        	Error Trace:	/home/elia/Documenti/ekuiper/internal/topo/topotest/mock_topo.go:185
+        	Error:      	Not equal: 
+        	            	expected: [][]map[string]interface {}{[]map[string]interface {}{map[string]interface {}{"color":"red", "window_end":1541152487000, "window_start":1541152485013}}, []map[string]interface {}{map[string]interface {}{"color":"red", "window_end":1541152488000, "window_start":1541152486000}, map[string]interface {}{"color":"blue", "window_end":1541152488000, "window_start":1541152486000}}, []map[string]interface {}{map[string]interface {}{"color":"blue", "window_end":1541152489000, "window_start":1541152487000}, map[string]interface {}{"color":"yellow", "window_end":1541152489000, "window_start":1541152487000}}, []map[string]interface {}{map[string]interface {}{"color":"yellow", "window_end":1541152490000, "window_start":1541152488000}, map[string]interface {}{"color":"red", "window_end":1541152490000, "window_start":1541152488000}}, []map[string]interface {}{map[string]interface {}{"color":"red", "window_end":1541152491000, "window_start":1541152489000}}}
+        	            	actual  : [][]map[string]interface {}{[]map[string]interface {}{map[string]interface {}{"color":"red", "window_end":1541152487000, "window_start":1541152488252}}, []map[string]interface {}{map[string]interface {}{"color":"red", "window_end":1541152488000, "window_start":1541152486000}, map[string]interface {}{"color":"blue", "window_end":1541152488000, "window_start":1541152486000}}, []map[string]interface {}{map[string]interface {}{"color":"blue", "window_end":1541152489000, "window_start":1541152487000}}, []map[string]interface {}{map[string]interface {}{"color":"red", "window_end":1541152490000, "window_start":1541152488000}}, []map[string]interface {}{map[string]interface {}{"color":"red", "window_end":1541152491000, "window_start":1541152489000}}}
+        	            	
+        	            	Diff:
+        	            	--- Expected
+        	            	+++ Actual
+        	            	@@ -5,3 +5,3 @@
+        	            	    (string) (len=10) "window_end": (int64) 1541152487000,
+        	            	-   (string) (len=12) "window_start": (int64) 1541152485013
+        	            	+   (string) (len=12) "window_start": (int64) 1541152488252
+        	            	   }
+        	            	@@ -20,3 +20,3 @@
+        	            	  },
+        	            	- ([]map[string]interface {}) (len=2) {
+        	            	+ ([]map[string]interface {}) (len=1) {
+        	            	   (map[string]interface {}) (len=3) {
+        	            	@@ -25,15 +25,5 @@
+        	            	    (string) (len=12) "window_start": (int64) 1541152487000
+        	            	-  },
+        	            	-  (map[string]interface {}) (len=3) {
+        	            	-   (string) (len=5) "color": (string) (len=6) "yellow",
+        	            	-   (string) (len=10) "window_end": (int64) 1541152489000,
+        	            	-   (string) (len=12) "window_start": (int64) 1541152487000
+        	            	   }
+        	            	  },
+        	            	- ([]map[string]interface {}) (len=2) {
+        	            	-  (map[string]interface {}) (len=3) {
+        	            	-   (string) (len=5) "color": (string) (len=6) "yellow",
+        	            	-   (string) (len=10) "window_end": (int64) 1541152490000,
+        	            	-   (string) (len=12) "window_start": (int64) 1541152488000
+        	            	-  },
+        	            	+ ([]map[string]interface {}) (len=1) {
+        	            	   (map[string]interface {}) (len=3) {
+        	Test:       	TestEventWindow/TestEventWindowRule9#01
+    mock_topo.go:187: 
+        	Error Trace:	/home/elia/Documenti/ekuiper/internal/topo/topotest/mock_topo.go:187
+        	Error:      	Received unexpected error:
+        	            	metrics mismatch for source_demoE_0_records_in_total:
+        	            	
+        	            	exp=6(int64)
+        	            	
+        	            	got=1(int64)
+        	            	
+        	Test:       	TestEventWindow/TestEventWindowRule9#01
+=== RUN   TestEventWindow/TestEventWindowCondition10#01
+    mock_topo.go:185: 
+        	Error Trace:	/home/elia/Documenti/ekuiper/internal/topo/topotest/mock_topo.go:185
+        	Error:      	Not equal: 
+        	            	expected: [][]map[string]interface {}{[]map[string]interface {}{map[string]interface {}{"color":"red"}}}
+        	            	actual  : [][]map[string]interface {}{}
+        	            	
+        	            	Diff:
+        	            	--- Expected
+        	            	+++ Actual
+        	            	@@ -1,7 +1,2 @@
+        	            	-([][]map[string]interface {}) (len=1) {
+        	            	- ([]map[string]interface {}) (len=1) {
+        	            	-  (map[string]interface {}) (len=1) {
+        	            	-   (string) (len=5) "color": (string) (len=3) "red"
+        	            	-  }
+        	            	- }
+        	            	+([][]map[string]interface {}) {
+        	            	 }
+        	Test:       	TestEventWindow/TestEventWindowCondition10#01
+    mock_topo.go:187: 
+        	Error Trace:	/home/elia/Documenti/ekuiper/internal/topo/topotest/mock_topo.go:187
+        	Error:      	Received unexpected error:
+        	            	metrics mismatch for op_3_watermark_0_records_in_total:
+        	            	
+        	            	exp=6(int64)
+        	            	
+        	            	got=1(int64)
+        	            	
+        	Test:       	TestEventWindow/TestEventWindowCondition10#01
+=== RUN   TestEventWindow/TestSlidingWindowInterval11#01
+=== RUN   TestEventWindow/TestSlidingWindowInterval12#01
+=== RUN   TestEventWindow/TestTUMBLINGWindowInterval13#01
+=== RUN   TestEventWindow/TestTUMBLINGWindowInterval14#01
+=== RUN   TestEventWindow/TestEventWindowDelayRule0#02
+    mock_topo.go:185: 
+        	Error Trace:	/home/elia/Documenti/ekuiper/internal/topo/topotest/mock_topo.go:185
+        	Error:      	Not equal: 
+        	            	expected: [][]map[string]interface {}{[]map[string]interface {}{map[string]interface {}{"size":3}, map[string]interface {}{"size":1}}}
+        	            	actual  : [][]map[string]interface {}{}
+        	            	
+        	            	Diff:
+        	            	--- Expected
+        	            	+++ Actual
+        	            	@@ -1,10 +1,2 @@
+        	            	-([][]map[string]interface {}) (len=1) {
+        	            	- ([]map[string]interface {}) (len=2) {
+        	            	-  (map[string]interface {}) (len=1) {
+        	            	-   (string) (len=4) "size": (int) 3
+        	            	-  },
+        	            	-  (map[string]interface {}) (len=1) {
+        	            	-   (string) (len=4) "size": (int) 1
+        	            	-  }
+        	            	- }
+        	            	+([][]map[string]interface {}) {
+        	            	 }
+        	Test:       	TestEventWindow/TestEventWindowDelayRule0#02
+    mock_topo.go:187: 
+        	Error Trace:	/home/elia/Documenti/ekuiper/internal/topo/topotest/mock_topo.go:187
+        	Error:      	Received unexpected error:
+        	            	metrics mismatch for op_3_watermark_0_records_in_total:
+        	            	
+        	            	exp=6(int64)
+        	            	
+        	            	got=1(int64)
+        	            	
+        	Test:       	TestEventWindow/TestEventWindowDelayRule0#02
+=== RUN   TestEventWindow/TestEventWindowRule1#02
+    mock_topo.go:185: 
+        	Error Trace:	/home/elia/Documenti/ekuiper/internal/topo/topotest/mock_topo.go:185
+        	Error:      	Not equal: 
+        	            	expected: [][]map[string]interface {}{[]map[string]interface {}{map[string]interface {}{"count":1, "et":1541152487000, "lc":0, "lt":0}}, []map[string]interface {}{map[string]interface {}{"count":2, "et":1541152488000, "lc":1, "lt":1541152487000}}, []map[string]interface {}{map[string]interface {}{"count":2, "et":1541152489000, "lc":2, "lt":1541152488000}}, []map[string]interface {}{map[string]interface {}{"count":2, "et":1541152490000, "lc":3, "lt":1541152489000}}}
+        	            	actual  : [][]map[string]interface {}{[]map[string]interface {}{map[string]interface {}{"count":1, "et":1541152487000, "lc":2, "lt":1541152488000}}, []map[string]interface {}{map[string]interface {}{"count":2, "et":1541152488000, "lc":3, "lt":1541152487000}}}
+        	            	
+        	            	Diff:
+        	            	--- Expected
+        	            	+++ Actual
+        	            	@@ -1,2 +1,2 @@
+        	            	-([][]map[string]interface {}) (len=4) {
+        	            	+([][]map[string]interface {}) (len=2) {
+        	            	  ([]map[string]interface {}) (len=1) {
+        	            	@@ -5,18 +5,2 @@
+        	            	    (string) (len=2) "et": (int64) 1541152487000,
+        	            	-   (string) (len=2) "lc": (int) 0,
+        	            	-   (string) (len=2) "lt": (int) 0
+        	            	-  }
+        	            	- },
+        	            	- ([]map[string]interface {}) (len=1) {
+        	            	-  (map[string]interface {}) (len=4) {
+        	            	-   (string) (len=5) "count": (int) 2,
+        	            	-   (string) (len=2) "et": (int64) 1541152488000,
+        	            	-   (string) (len=2) "lc": (int) 1,
+        	            	-   (string) (len=2) "lt": (int64) 1541152487000
+        	            	-  }
+        	            	- },
+        	            	- ([]map[string]interface {}) (len=1) {
+        	            	-  (map[string]interface {}) (len=4) {
+        	            	-   (string) (len=5) "count": (int) 2,
+        	            	-   (string) (len=2) "et": (int64) 1541152489000,
+        	            	    (string) (len=2) "lc": (int) 2,
+        	            	@@ -28,5 +12,5 @@
+        	            	    (string) (len=5) "count": (int) 2,
+        	            	-   (string) (len=2) "et": (int64) 1541152490000,
+        	            	+   (string) (len=2) "et": (int64) 1541152488000,
+        	            	    (string) (len=2) "lc": (int) 3,
+        	            	-   (string) (len=2) "lt": (int64) 1541152489000
+        	            	+   (string) (len=2) "lt": (int64) 1541152487000
+        	            	   }
+        	Test:       	TestEventWindow/TestEventWindowRule1#02
+    mock_topo.go:187: 
+        	Error Trace:	/home/elia/Documenti/ekuiper/internal/topo/topotest/mock_topo.go:187
+        	Error:      	Received unexpected error:
+        	            	metrics mismatch for sink_memory_0_0_records_in_total:
+        	            	
+        	            	exp=4(int64)
+        	            	
+        	            	got=2(int64)
+        	            	
+        	Test:       	TestEventWindow/TestEventWindowRule1#02
+=== RUN   TestEventWindow/TestEventWindowRule0#02
+    mock_topo.go:185: 
+        	Error Trace:	/home/elia/Documenti/ekuiper/internal/topo/topotest/mock_topo.go:185
+        	Error:      	Not equal: 
+        	            	expected: [][]map[string]interface {}{[]map[string]interface {}{map[string]interface {}{"count":1, "et":1541152487000}}, []map[string]interface {}{map[string]interface {}{"count":2, "et":1541152490000}}}
+        	            	actual  : [][]map[string]interface {}{[]map[string]interface {}{map[string]interface {}{"count":1, "et":1541152490000}}}
+        	            	
+        	            	Diff:
+        	            	--- Expected
+        	            	+++ Actual
+        	            	@@ -1,2 +1,2 @@
+        	            	-([][]map[string]interface {}) (len=2) {
+        	            	+([][]map[string]interface {}) (len=1) {
+        	            	  ([]map[string]interface {}) (len=1) {
+        	            	@@ -4,8 +4,2 @@
+        	            	    (string) (len=5) "count": (int) 1,
+        	            	-   (string) (len=2) "et": (int64) 1541152487000
+        	            	-  }
+        	            	- },
+        	            	- ([]map[string]interface {}) (len=1) {
+        	            	-  (map[string]interface {}) (len=2) {
+        	            	-   (string) (len=5) "count": (int) 2,
+        	            	    (string) (len=2) "et": (int64) 1541152490000
+        	Test:       	TestEventWindow/TestEventWindowRule0#02
+    mock_topo.go:187: 
+        	Error Trace:	/home/elia/Documenti/ekuiper/internal/topo/topotest/mock_topo.go:187
+        	Error:      	Received unexpected error:
+        	            	metrics mismatch for source_demoE_0_records_out_total:
+        	            	
+        	            	exp=6(int64)
+        	            	
+        	            	got=1(int64)
+        	            	
+        	Test:       	TestEventWindow/TestEventWindowRule0#02
+=== RUN   TestEventWindow/TestEventWindowRule2#02
+    mock_topo.go:185: 
+        	Error Trace:	/home/elia/Documenti/ekuiper/internal/topo/topotest/mock_topo.go:185
+        	Error:      	Not equal: 
+        	            	expected: [][]map[string]interface {}{[]map[string]interface {}{map[string]interface {}{"color":"red", "ts":1541152486013, "window_end":1541152487000, "window_start":1541152486013}}, []map[string]interface {}{map[string]interface {}{"color":"yellow", "ts":1541152488442, "window_end":1541152489000, "window_start":1541152488000}}}
+        	            	actual  : [][]map[string]interface {}{[]map[string]interface {}{map[string]interface {}{"color":"red", "ts":1541152486013, "window_end":1541152487000, "window_start":1541152489252}}}
+        	            	
+        	            	Diff:
+        	            	--- Expected
+        	            	+++ Actual
+        	            	@@ -1,2 +1,2 @@
+        	            	-([][]map[string]interface {}) (len=2) {
+        	            	+([][]map[string]interface {}) (len=1) {
+        	            	  ([]map[string]interface {}) (len=1) {
+        	            	@@ -6,11 +6,3 @@
+        	            	    (string) (len=10) "window_end": (int64) 1541152487000,
+        	            	-   (string) (len=12) "window_start": (int64) 1541152486013
+        	            	-  }
+        	            	- },
+        	            	- ([]map[string]interface {}) (len=1) {
+        	            	-  (map[string]interface {}) (len=4) {
+        	            	-   (string) (len=5) "color": (string) (len=6) "yellow",
+        	            	-   (string) (len=2) "ts": (int) 1541152488442,
+        	            	-   (string) (len=10) "window_end": (int64) 1541152489000,
+        	            	-   (string) (len=12) "window_start": (int64) 1541152488000
+        	            	+   (string) (len=12) "window_start": (int64) 1541152489252
+        	            	   }
+        	Test:       	TestEventWindow/TestEventWindowRule2#02
+    mock_topo.go:187: 
+        	Error Trace:	/home/elia/Documenti/ekuiper/internal/topo/topotest/mock_topo.go:187
+        	Error:      	Received unexpected error:
+        	            	metrics mismatch for sink_memory_0_0_records_out_total:
+        	            	
+        	            	exp=2(int64)
+        	            	
+        	            	got=1(int64)
+        	            	
+        	Test:       	TestEventWindow/TestEventWindowRule2#02
+=== RUN   TestEventWindow/TestEventWindowRule3#02
+    mock_topo.go:185: 
+        	Error Trace:	/home/elia/Documenti/ekuiper/internal/topo/topotest/mock_topo.go:185
+        	Error:      	Not equal: 
+        	            	expected: [][]map[string]interface {}{[]map[string]interface {}{map[string]interface {}{"color":"red", "temp":25.5, "ts":1541152486013}}, []map[string]interface {}{map[string]interface {}{"color":"red", "temp":25.5, "ts":1541152486013}}, []map[string]interface {}{map[string]interface {}{"color":"blue", "temp":28.1, "ts":1541152487632}}, []map[string]interface {}{map[string]interface {}{"color":"blue", "temp":28.1, "ts":1541152487632}, map[string]interface {}{"color":"yellow", "temp":27.4, "ts":1541152488442}}, []map[string]interface {}{map[string]interface {}{"color":"yellow", "temp":27.4, "ts":1541152488442}, map[string]interface {}{"color":"red", "temp":25.5, "ts":1541152489252}}}
+        	            	actual  : [][]map[string]interface {}{[]map[string]interface {}{map[string]interface {}{"color":"blue", "temp":28.1, "ts":1541152487632}}, []map[string]interface {}{map[string]interface {}{"color":"red", "temp":25.5, "ts":1541152489252}}}
+        	            	
+        	            	Diff:
+        	            	--- Expected
+        	            	+++ Actual
+        	            	@@ -1,16 +1,2 @@
+        	            	-([][]map[string]interface {}) (len=5) {
+        	            	- ([]map[string]interface {}) (len=1) {
+        	            	-  (map[string]interface {}) (len=3) {
+        	            	-   (string) (len=5) "color": (string) (len=3) "red",
+        	            	-   (string) (len=4) "temp": (float64) 25.5,
+        	            	-   (string) (len=2) "ts": (int) 1541152486013
+        	            	-  }
+        	            	- },
+        	            	- ([]map[string]interface {}) (len=1) {
+        	            	-  (map[string]interface {}) (len=3) {
+        	            	-   (string) (len=5) "color": (string) (len=3) "red",
+        	            	-   (string) (len=4) "temp": (float64) 25.5,
+        	            	-   (string) (len=2) "ts": (int) 1541152486013
+        	            	-  }
+        	            	- },
+        	            	+([][]map[string]interface {}) (len=2) {
+        	            	  ([]map[string]interface {}) (len=1) {
+        	            	@@ -22,20 +8,3 @@
+        	            	  },
+        	            	- ([]map[string]interface {}) (len=2) {
+        	            	-  (map[string]interface {}) (len=3) {
+        	            	-   (string) (len=5) "color": (string) (len=4) "blue",
+        	            	-   (string) (len=4) "temp": (float64) 28.1,
+        	            	-   (string) (len=2) "ts": (int) 1541152487632
+        	            	-  },
+        	            	-  (map[string]interface {}) (len=3) {
+        	            	-   (string) (len=5) "color": (string) (len=6) "yellow",
+        	            	-   (string) (len=4) "temp": (float64) 27.4,
+        	            	-   (string) (len=2) "ts": (int) 1541152488442
+        	            	-  }
+        	            	- },
+        	            	- ([]map[string]interface {}) (len=2) {
+        	            	-  (map[string]interface {}) (len=3) {
+        	            	-   (string) (len=5) "color": (string) (len=6) "yellow",
+        	            	-   (string) (len=4) "temp": (float64) 27.4,
+        	            	-   (string) (len=2) "ts": (int) 1541152488442
+        	            	-  },
+        	            	+ ([]map[string]interface {}) (len=1) {
+        	            	   (map[string]interface {}) (len=3) {
+        	Test:       	TestEventWindow/TestEventWindowRule3#02
+    mock_topo.go:187: 
+        	Error Trace:	/home/elia/Documenti/ekuiper/internal/topo/topotest/mock_topo.go:187
+        	Error:      	Received unexpected error:
+        	            	metrics mismatch for source_demo1E_0_records_in_total:
+        	            	
+        	            	exp=6(int64)
+        	            	
+        	            	got=1(int64)
+        	            	
+        	Test:       	TestEventWindow/TestEventWindowRule3#02
+=== RUN   TestEventWindow/TestEventWindowRule4#02
+    mock_topo.go:185: 
+        	Error Trace:	/home/elia/Documenti/ekuiper/internal/topo/topotest/mock_topo.go:185
+        	Error:      	Not equal: 
+        	            	expected: [][]map[string]interface {}{[]map[string]interface {}{map[string]interface {}{"color":"red", "we":1541152486013, "ws":1541152484013}}, []map[string]interface {}{map[string]interface {}{"color":"blue", "we":1541152487632, "ws":1541152485632}, map[string]interface {}{"color":"red", "we":1541152487632, "ws":1541152485632}}, []map[string]interface {}{map[string]interface {}{"color":"blue", "we":1541152489252, "ws":1541152487252}, map[string]interface {}{"color":"red", "we":1541152489252, "ws":1541152487252}, map[string]interface {}{"color":"yellow", "we":1541152489252, "ws":1541152487252}}}
+        	            	actual  : [][]map[string]interface {}{[]map[string]interface {}{map[string]interface {}{"color":"blue", "we":1541152489252, "ws":1541152487252}, map[string]interface {}{"color":"red", "we":1541152489252, "ws":1541152487252}}}
+        	            	
+        	            	Diff:
+        	            	--- Expected
+        	            	+++ Actual
+        	            	@@ -1,22 +1,3 @@
+        	            	-([][]map[string]interface {}) (len=3) {
+        	            	- ([]map[string]interface {}) (len=1) {
+        	            	-  (map[string]interface {}) (len=3) {
+        	            	-   (string) (len=5) "color": (string) (len=3) "red",
+        	            	-   (string) (len=2) "we": (int64) 1541152486013,
+        	            	-   (string) (len=2) "ws": (int64) 1541152484013
+        	            	-  }
+        	            	- },
+        	            	+([][]map[string]interface {}) (len=1) {
+        	            	  ([]map[string]interface {}) (len=2) {
+        	            	-  (map[string]interface {}) (len=3) {
+        	            	-   (string) (len=5) "color": (string) (len=4) "blue",
+        	            	-   (string) (len=2) "we": (int64) 1541152487632,
+        	            	-   (string) (len=2) "ws": (int64) 1541152485632
+        	            	-  },
+        	            	-  (map[string]interface {}) (len=3) {
+        	            	-   (string) (len=5) "color": (string) (len=3) "red",
+        	            	-   (string) (len=2) "we": (int64) 1541152487632,
+        	            	-   (string) (len=2) "ws": (int64) 1541152485632
+        	            	-  }
+        	            	- },
+        	            	- ([]map[string]interface {}) (len=3) {
+        	            	   (map[string]interface {}) (len=3) {
+        	            	@@ -30,7 +11,2 @@
+        	            	    (string) (len=2) "ws": (int64) 1541152487252
+        	            	-  },
+        	            	-  (map[string]interface {}) (len=3) {
+        	            	-   (string) (len=5) "color": (string) (len=6) "yellow",
+        	            	-   (string) (len=2) "we": (int64) 1541152489252,
+        	            	-   (string) (len=2) "ws": (int64) 1541152487252
+        	            	   }
+        	Test:       	TestEventWindow/TestEventWindowRule4#02
+    mock_topo.go:187: 
+        	Error Trace:	/home/elia/Documenti/ekuiper/internal/topo/topotest/mock_topo.go:187
+        	Error:      	Received unexpected error:
+        	            	metrics mismatch for source_demoE_0_records_out_total:
+        	            	
+        	            	exp=6(int64)
+        	            	
+        	            	got=1(int64)
+        	            	
+        	Test:       	TestEventWindow/TestEventWindowRule4#02
+=== RUN   TestEventWindow/TestEventWindowRule5#02
+    mock_topo.go:185: 
+        	Error Trace:	/home/elia/Documenti/ekuiper/internal/topo/topotest/mock_topo.go:185
+        	Error:      	Not equal: 
+        	            	expected: [][]map[string]interface {}{[]map[string]interface {}{map[string]interface {}{"temp":25.5}}, []map[string]interface {}{map[string]interface {}{"temp":28.1}, map[string]interface {}{"temp":27.4}, map[string]interface {}{"temp":25.5}}, []map[string]interface {}{map[string]interface {}{"temp":26.2}, map[string]interface {}{"temp":26.8}, map[string]interface {}{"temp":28.9}, map[string]interface {}{"temp":29.1}, map[string]interface {}{"temp":32.2}}, []map[string]interface {}{map[string]interface {}{"temp":30.9}}}
+        	            	actual  : [][]map[string]interface {}{[]map[string]interface {}{map[string]interface {}{"temp":26.2}, map[string]interface {}{"temp":26.8}, map[string]interface {}{"temp":28.9}, map[string]interface {}{"temp":29.1}}, []map[string]interface {}{map[string]interface {}{"temp":30.9}}}
+        	            	
+        	            	Diff:
+        	            	--- Expected
+        	            	+++ Actual
+        	            	@@ -1,19 +1,3 @@
+        	            	-([][]map[string]interface {}) (len=4) {
+        	            	- ([]map[string]interface {}) (len=1) {
+        	            	-  (map[string]interface {}) (len=1) {
+        	            	-   (string) (len=4) "temp": (float64) 25.5
+        	            	-  }
+        	            	- },
+        	            	- ([]map[string]interface {}) (len=3) {
+        	            	-  (map[string]interface {}) (len=1) {
+        	            	-   (string) (len=4) "temp": (float64) 28.1
+        	            	-  },
+        	            	-  (map[string]interface {}) (len=1) {
+        	            	-   (string) (len=4) "temp": (float64) 27.4
+        	            	-  },
+        	            	-  (map[string]interface {}) (len=1) {
+        	            	-   (string) (len=4) "temp": (float64) 25.5
+        	            	-  }
+        	            	- },
+        	            	- ([]map[string]interface {}) (len=5) {
+        	            	+([][]map[string]interface {}) (len=2) {
+        	            	+ ([]map[string]interface {}) (len=4) {
+        	            	   (map[string]interface {}) (len=1) {
+        	            	@@ -29,5 +13,2 @@
+        	            	    (string) (len=4) "temp": (float64) 29.1
+        	            	-  },
+        	            	-  (map[string]interface {}) (len=1) {
+        	            	-   (string) (len=4) "temp": (float64) 32.2
+        	            	   }
+        	Test:       	TestEventWindow/TestEventWindowRule5#02
+    mock_topo.go:187: 
+        	Error Trace:	/home/elia/Documenti/ekuiper/internal/topo/topotest/mock_topo.go:187
+        	Error:      	Received unexpected error:
+        	            	metrics mismatch for source_sessionDemoE_0_records_out_total:
+        	            	
+        	            	exp=12(int64)
+        	            	
+        	            	got=1(int64)
+        	            	
+        	Test:       	TestEventWindow/TestEventWindowRule5#02
+=== RUN   TestEventWindow/TestEventWindowRule6#02
+    mock_topo.go:185: 
+        	Error Trace:	/home/elia/Documenti/ekuiper/internal/topo/topotest/mock_topo.go:185
+        	Error:      	Not equal: 
+        	            	expected: [][]map[string]interface {}{[]map[string]interface {}{map[string]interface {}{"c":1, "m":25.5}}, []map[string]interface {}{map[string]interface {}{"c":1, "m":25.5}}, []map[string]interface {}{map[string]interface {}{"c":1, "m":25.5}}, []map[string]interface {}{map[string]interface {}{"c":1, "m":28.1}}, []map[string]interface {}{map[string]interface {}{"c":1, "m":28.1}}, []map[string]interface {}{map[string]interface {}{"c":2, "m":28.1}}, []map[string]interface {}{map[string]interface {}{"c":2, "m":28.1}}, []map[string]interface {}{map[string]interface {}{"c":2, "m":27.4}}, []map[string]interface {}{map[string]interface {}{"c":2, "m":27.4}}}
+        	            	actual  : [][]map[string]interface {}{[]map[string]interface {}{map[string]interface {}{"c":1, "m":28.1}}, []map[string]interface {}{map[string]interface {}{"c":1, "m":25.5}}, []map[string]interface {}{map[string]interface {}{"c":1, "m":25.5}}}
+        	            	
+        	            	Diff:
+        	            	--- Expected
+        	            	+++ Actual
+        	            	@@ -1,2 +1,2 @@
+        	            	-([][]map[string]interface {}) (len=9) {
+        	            	+([][]map[string]interface {}) (len=3) {
+        	            	  ([]map[string]interface {}) (len=1) {
+        	            	@@ -4,3 +4,3 @@
+        	            	    (string) (len=1) "c": (int) 1,
+        	            	-   (string) (len=1) "m": (float64) 25.5
+        	            	+   (string) (len=1) "m": (float64) 28.1
+        	            	   }
+        	            	@@ -18,38 +18,2 @@
+        	            	   }
+        	            	- },
+        	            	- ([]map[string]interface {}) (len=1) {
+        	            	-  (map[string]interface {}) (len=2) {
+        	            	-   (string) (len=1) "c": (int) 1,
+        	            	-   (string) (len=1) "m": (float64) 28.1
+        	            	-  }
+        	            	- },
+        	            	- ([]map[string]interface {}) (len=1) {
+        	            	-  (map[string]interface {}) (len=2) {
+        	            	-   (string) (len=1) "c": (int) 1,
+        	            	-   (string) (len=1) "m": (float64) 28.1
+        	            	-  }
+        	            	- },
+        	            	- ([]map[string]interface {}) (len=1) {
+        	            	-  (map[string]interface {}) (len=2) {
+        	            	-   (string) (len=1) "c": (int) 2,
+        	            	-   (string) (len=1) "m": (float64) 28.1
+        	            	-  }
+        	            	- },
+        	            	- ([]map[string]interface {}) (len=1) {
+        	            	-  (map[string]interface {}) (len=2) {
+        	            	-   (string) (len=1) "c": (int) 2,
+        	            	-   (string) (len=1) "m": (float64) 28.1
+        	            	-  }
+        	            	- },
+        	            	- ([]map[string]interface {}) (len=1) {
+        	            	-  (map[string]interface {}) (len=2) {
+        	            	-   (string) (len=1) "c": (int) 2,
+        	            	-   (string) (len=1) "m": (float64) 27.4
+        	            	-  }
+        	            	- },
+        	            	- ([]map[string]interface {}) (len=1) {
+        	            	-  (map[string]interface {}) (len=2) {
+        	            	-   (string) (len=1) "c": (int) 2,
+        	            	-   (string) (len=1) "m": (float64) 27.4
+        	            	-  }
+        	            	  }
+        	Test:       	TestEventWindow/TestEventWindowRule6#02
+    mock_topo.go:187: 
+        	Error Trace:	/home/elia/Documenti/ekuiper/internal/topo/topotest/mock_topo.go:187
+        	Error:      	Received unexpected error:
+        	            	metrics mismatch for source_demoE_0_records_in_total:
+        	            	
+        	            	exp=6(int64)
+        	            	
+        	            	got=1(int64)
+        	            	
+        	Test:       	TestEventWindow/TestEventWindowRule6#02
+=== RUN   TestEventWindow/TestEventWindowRule7#02
+    mock_topo.go:185: 
+        	Error Trace:	/home/elia/Documenti/ekuiper/internal/topo/topotest/mock_topo.go:185
+        	Error:      	Not equal: 
+        	            	expected: [][]map[string]interface {}{[]map[string]interface {}{map[string]interface {}{"error":"error in preprocessor: field color type mismatch: cannot convert int(2) to string"}}, []map[string]interface {}{map[string]interface {}{"color":"red", "size":3, "ts":1541152486013}}, []map[string]interface {}{map[string]interface {}{"color":"red", "size":3, "ts":1541152486013}}, []map[string]interface {}{map[string]interface {}{"color":"yellow", "size":4, "ts":1541152488442}}, []map[string]interface {}{map[string]interface {}{"color":"yellow", "size":4, "ts":1541152488442}, map[string]interface {}{"color":"red", "size":1, "ts":1541152489252}}, []map[string]interface {}{map[string]interface {}{"color":"red", "size":1, "ts":1541152489252}}}
+        	            	actual  : [][]map[string]interface {}{[]map[string]interface {}{map[string]interface {}{"color":"red", "size":3, "ts":1541152486013}}, []map[string]interface {}{map[string]interface {}{"color":"red", "size":3, "ts":1541152486013}}, []map[string]interface {}{}, []map[string]interface {}{}, []map[string]interface {}{}}
+        	            	
+        	            	Diff:
+        	            	--- Expected
+        	            	+++ Actual
+        	            	@@ -1,7 +1,2 @@
+        	            	-([][]map[string]interface {}) (len=6) {
+        	            	- ([]map[string]interface {}) (len=1) {
+        	            	-  (map[string]interface {}) (len=1) {
+        	            	-   (string) (len=5) "error": (string) (len=81) "error in preprocessor: field color type mismatch: cannot convert int(2) to string"
+        	            	-  }
+        	            	- },
+        	            	+([][]map[string]interface {}) (len=5) {
+        	            	  ([]map[string]interface {}) (len=1) {
+        	            	@@ -20,27 +15,7 @@
+        	            	  },
+        	            	- ([]map[string]interface {}) (len=1) {
+        	            	-  (map[string]interface {}) (len=3) {
+        	            	-   (string) (len=5) "color": (string) (len=6) "yellow",
+        	            	-   (string) (len=4) "size": (int64) 4,
+        	            	-   (string) (len=2) "ts": (int64) 1541152488442
+        	            	-  }
+        	            	+ ([]map[string]interface {}) {
+        	            	  },
+        	            	- ([]map[string]interface {}) (len=2) {
+        	            	-  (map[string]interface {}) (len=3) {
+        	            	-   (string) (len=5) "color": (string) (len=6) "yellow",
+        	            	-   (string) (len=4) "size": (int64) 4,
+        	            	-   (string) (len=2) "ts": (int64) 1541152488442
+        	            	-  },
+        	            	-  (map[string]interface {}) (len=3) {
+        	            	-   (string) (len=5) "color": (string) (len=3) "red",
+        	            	-   (string) (len=4) "size": (int64) 1,
+        	            	-   (string) (len=2) "ts": (int64) 1541152489252
+        	            	-  }
+        	            	+ ([]map[string]interface {}) {
+        	            	  },
+        	            	- ([]map[string]interface {}) (len=1) {
+        	            	-  (map[string]interface {}) (len=3) {
+        	            	-   (string) (len=5) "color": (string) (len=3) "red",
+        	            	-   (string) (len=4) "size": (int64) 1,
+        	            	-   (string) (len=2) "ts": (int64) 1541152489252
+        	            	-  }
+        	            	+ ([]map[string]interface {}) {
+        	            	  }
+        	Test:       	TestEventWindow/TestEventWindowRule7#02
+    mock_topo.go:187: 
+        	Error Trace:	/home/elia/Documenti/ekuiper/internal/topo/topotest/mock_topo.go:187
+        	Error:      	Received unexpected error:
+        	            	metrics mismatch for source_demoErr_0_records_in_total:
+        	            	
+        	            	exp=6(int64)
+        	            	
+        	            	got=1(int64)
+        	            	
+        	Test:       	TestEventWindow/TestEventWindowRule7#02
+=== RUN   TestEventWindow/TestEventWindowRule8#02
+    mock_topo.go:185: 
+        	Error Trace:	/home/elia/Documenti/ekuiper/internal/topo/topotest/mock_topo.go:185
+        	Error:      	Not equal: 
+        	            	expected: [][]map[string]interface {}{[]map[string]interface {}{map[string]interface {}{"temp":25.5, "window_end":1541152487013, "window_start":1541152486013}}, []map[string]interface {}{map[string]interface {}{"temp":28.1, "window_end":1541152490000, "window_start":1541152487932}, map[string]interface {}{"temp":27.4, "window_end":1541152490000, "window_start":1541152487932}, map[string]interface {}{"temp":25.5, "window_end":1541152490000, "window_start":1541152487932}}, []map[string]interface {}{map[string]interface {}{"temp":26.2, "window_end":1541152494000, "window_start":1541152490000}, map[string]interface {}{"temp":26.8, "window_end":1541152494000, "window_start":1541152490000}, map[string]interface {}{"temp":28.9, "window_end":1541152494000, "window_start":1541152490000}, map[string]interface {}{"temp":29.1, "window_end":1541152494000, "window_start":1541152490000}, map[string]interface {}{"temp":32.2, "window_end":1541152494000, "window_start":1541152490000}}, []map[string]interface {}{map[string]interface {}{"temp":30.9, "window_end":1541152495112, "window_start":1541152494000}}}
+        	            	actual  : [][]map[string]interface {}{[]map[string]interface {}{map[string]interface {}{"temp":26.2, "window_end":1541152493492, "window_start":1541152490062}, map[string]interface {}{"temp":26.8, "window_end":1541152493492, "window_start":1541152490062}, map[string]interface {}{"temp":28.9, "window_end":1541152493492, "window_start":1541152490062}, map[string]interface {}{"temp":29.1, "window_end":1541152493492, "window_start":1541152490062}}, []map[string]interface {}{map[string]interface {}{"temp":30.9, "window_end":1541152495112, "window_start":1541152494112}}}
+        	            	
+        	            	Diff:
+        	            	--- Expected
+        	            	+++ Actual
+        	            	@@ -1,31 +1,7 @@
+        	            	-([][]map[string]interface {}) (len=4) {
+        	            	- ([]map[string]interface {}) (len=1) {
+        	            	-  (map[string]interface {}) (len=3) {
+        	            	-   (string) (len=4) "temp": (float64) 25.5,
+        	            	-   (string) (len=10) "window_end": (int64) 1541152487013,
+        	            	-   (string) (len=12) "window_start": (int64) 1541152486013
+        	            	-  }
+        	            	- },
+        	            	- ([]map[string]interface {}) (len=3) {
+        	            	-  (map[string]interface {}) (len=3) {
+        	            	-   (string) (len=4) "temp": (float64) 28.1,
+        	            	-   (string) (len=10) "window_end": (int64) 1541152490000,
+        	            	-   (string) (len=12) "window_start": (int64) 1541152487932
+        	            	-  },
+        	            	-  (map[string]interface {}) (len=3) {
+        	            	-   (string) (len=4) "temp": (float64) 27.4,
+        	            	-   (string) (len=10) "window_end": (int64) 1541152490000,
+        	            	-   (string) (len=12) "window_start": (int64) 1541152487932
+        	            	-  },
+        	            	-  (map[string]interface {}) (len=3) {
+        	            	-   (string) (len=4) "temp": (float64) 25.5,
+        	            	-   (string) (len=10) "window_end": (int64) 1541152490000,
+        	            	-   (string) (len=12) "window_start": (int64) 1541152487932
+        	            	-  }
+        	            	- },
+        	            	- ([]map[string]interface {}) (len=5) {
+        	            	+([][]map[string]interface {}) (len=2) {
+        	            	+ ([]map[string]interface {}) (len=4) {
+        	            	   (map[string]interface {}) (len=3) {
+        	            	    (string) (len=4) "temp": (float64) 26.2,
+        	            	-   (string) (len=10) "window_end": (int64) 1541152494000,
+        	            	-   (string) (len=12) "window_start": (int64) 1541152490000
+        	            	+   (string) (len=10) "window_end": (int64) 1541152493492,
+        	            	+   (string) (len=12) "window_start": (int64) 1541152490062
+        	            	   },
+        	            	@@ -33,4 +9,4 @@
+        	            	    (string) (len=4) "temp": (float64) 26.8,
+        	            	-   (string) (len=10) "window_end": (int64) 1541152494000,
+        	            	-   (string) (len=12) "window_start": (int64) 1541152490000
+        	            	+   (string) (len=10) "window_end": (int64) 1541152493492,
+        	            	+   (string) (len=12) "window_start": (int64) 1541152490062
+        	            	   },
+        	            	@@ -38,4 +14,4 @@
+        	            	    (string) (len=4) "temp": (float64) 28.9,
+        	            	-   (string) (len=10) "window_end": (int64) 1541152494000,
+        	            	-   (string) (len=12) "window_start": (int64) 1541152490000
+        	            	+   (string) (len=10) "window_end": (int64) 1541152493492,
+        	            	+   (string) (len=12) "window_start": (int64) 1541152490062
+        	            	   },
+        	            	@@ -43,9 +19,4 @@
+        	            	    (string) (len=4) "temp": (float64) 29.1,
+        	            	-   (string) (len=10) "window_end": (int64) 1541152494000,
+        	            	-   (string) (len=12) "window_start": (int64) 1541152490000
+        	            	-  },
+        	            	-  (map[string]interface {}) (len=3) {
+        	            	-   (string) (len=4) "temp": (float64) 32.2,
+        	            	-   (string) (len=10) "window_end": (int64) 1541152494000,
+        	            	-   (string) (len=12) "window_start": (int64) 1541152490000
+        	            	+   (string) (len=10) "window_end": (int64) 1541152493492,
+        	            	+   (string) (len=12) "window_start": (int64) 1541152490062
+        	            	   }
+        	            	@@ -56,3 +27,3 @@
+        	            	    (string) (len=10) "window_end": (int64) 1541152495112,
+        	            	-   (string) (len=12) "window_start": (int64) 1541152494000
+        	            	+   (string) (len=12) "window_start": (int64) 1541152494112
+        	            	   }
+        	Test:       	TestEventWindow/TestEventWindowRule8#02
+    mock_topo.go:187: 
+        	Error Trace:	/home/elia/Documenti/ekuiper/internal/topo/topotest/mock_topo.go:187
+        	Error:      	Received unexpected error:
+        	            	metrics mismatch for sink_memory_0_0_records_in_total:
+        	            	
+        	            	exp=4(int64)
+        	            	
+        	            	got=2(int64)
+        	            	
+        	Test:       	TestEventWindow/TestEventWindowRule8#02
+=== RUN   TestEventWindow/TestEventWindowRule9#02
+    mock_topo.go:185: 
+        	Error Trace:	/home/elia/Documenti/ekuiper/internal/topo/topotest/mock_topo.go:185
+        	Error:      	Not equal: 
+        	            	expected: [][]map[string]interface {}{[]map[string]interface {}{map[string]interface {}{"color":"red", "window_end":1541152487000, "window_start":1541152485013}}, []map[string]interface {}{map[string]interface {}{"color":"red", "window_end":1541152488000, "window_start":1541152486000}, map[string]interface {}{"color":"blue", "window_end":1541152488000, "window_start":1541152486000}}, []map[string]interface {}{map[string]interface {}{"color":"blue", "window_end":1541152489000, "window_start":1541152487000}, map[string]interface {}{"color":"yellow", "window_end":1541152489000, "window_start":1541152487000}}, []map[string]interface {}{map[string]interface {}{"color":"yellow", "window_end":1541152490000, "window_start":1541152488000}, map[string]interface {}{"color":"red", "window_end":1541152490000, "window_start":1541152488000}}, []map[string]interface {}{map[string]interface {}{"color":"red", "window_end":1541152491000, "window_start":1541152489000}}}
+        	            	actual  : [][]map[string]interface {}{[]map[string]interface {}{map[string]interface {}{"color":"red", "window_end":1541152487000, "window_start":1541152488252}}, []map[string]interface {}{map[string]interface {}{"color":"red", "window_end":1541152488000, "window_start":1541152486000}, map[string]interface {}{"color":"blue", "window_end":1541152488000, "window_start":1541152486000}}, []map[string]interface {}{map[string]interface {}{"color":"blue", "window_end":1541152489000, "window_start":1541152487000}}, []map[string]interface {}{map[string]interface {}{"color":"red", "window_end":1541152490000, "window_start":1541152488000}}, []map[string]interface {}{map[string]interface {}{"color":"red", "window_end":1541152491000, "window_start":1541152489000}}}
+        	            	
+        	            	Diff:
+        	            	--- Expected
+        	            	+++ Actual
+        	            	@@ -5,3 +5,3 @@
+        	            	    (string) (len=10) "window_end": (int64) 1541152487000,
+        	            	-   (string) (len=12) "window_start": (int64) 1541152485013
+        	            	+   (string) (len=12) "window_start": (int64) 1541152488252
+        	            	   }
+        	            	@@ -20,3 +20,3 @@
+        	            	  },
+        	            	- ([]map[string]interface {}) (len=2) {
+        	            	+ ([]map[string]interface {}) (len=1) {
+        	            	   (map[string]interface {}) (len=3) {
+        	            	@@ -25,15 +25,5 @@
+        	            	    (string) (len=12) "window_start": (int64) 1541152487000
+        	            	-  },
+        	            	-  (map[string]interface {}) (len=3) {
+        	            	-   (string) (len=5) "color": (string) (len=6) "yellow",
+        	            	-   (string) (len=10) "window_end": (int64) 1541152489000,
+        	            	-   (string) (len=12) "window_start": (int64) 1541152487000
+        	            	   }
+        	            	  },
+        	            	- ([]map[string]interface {}) (len=2) {
+        	            	-  (map[string]interface {}) (len=3) {
+        	            	-   (string) (len=5) "color": (string) (len=6) "yellow",
+        	            	-   (string) (len=10) "window_end": (int64) 1541152490000,
+        	            	-   (string) (len=12) "window_start": (int64) 1541152488000
+        	            	-  },
+        	            	+ ([]map[string]interface {}) (len=1) {
+        	            	   (map[string]interface {}) (len=3) {
+        	Test:       	TestEventWindow/TestEventWindowRule9#02
+    mock_topo.go:187: 
+        	Error Trace:	/home/elia/Documenti/ekuiper/internal/topo/topotest/mock_topo.go:187
+        	Error:      	Received unexpected error:
+        	            	metrics mismatch for source_demoE_0_records_in_total:
+        	            	
+        	            	exp=6(int64)
+        	            	
+        	            	got=1(int64)
+        	            	
+        	Test:       	TestEventWindow/TestEventWindowRule9#02
+=== RUN   TestEventWindow/TestEventWindowCondition10#02
+    mock_topo.go:185: 
+        	Error Trace:	/home/elia/Documenti/ekuiper/internal/topo/topotest/mock_topo.go:185
+        	Error:      	Not equal: 
+        	            	expected: [][]map[string]interface {}{[]map[string]interface {}{map[string]interface {}{"color":"red"}}}
+        	            	actual  : [][]map[string]interface {}{}
+        	            	
+        	            	Diff:
+        	            	--- Expected
+        	            	+++ Actual
+        	            	@@ -1,7 +1,2 @@
+        	            	-([][]map[string]interface {}) (len=1) {
+        	            	- ([]map[string]interface {}) (len=1) {
+        	            	-  (map[string]interface {}) (len=1) {
+        	            	-   (string) (len=5) "color": (string) (len=3) "red"
+        	            	-  }
+        	            	- }
+        	            	+([][]map[string]interface {}) {
+        	            	 }
+        	Test:       	TestEventWindow/TestEventWindowCondition10#02
+    mock_topo.go:187: 
+        	Error Trace:	/home/elia/Documenti/ekuiper/internal/topo/topotest/mock_topo.go:187
+        	Error:      	Received unexpected error:
+        	            	metrics mismatch for op_3_watermark_0_records_in_total:
+        	            	
+        	            	exp=6(int64)
+        	            	
+        	            	got=1(int64)
+        	            	
+        	Test:       	TestEventWindow/TestEventWindowCondition10#02
+=== RUN   TestEventWindow/TestSlidingWindowInterval11#02
+=== RUN   TestEventWindow/TestSlidingWindowInterval12#02
+=== RUN   TestEventWindow/TestTUMBLINGWindowInterval13#02
+=== RUN   TestEventWindow/TestTUMBLINGWindowInterval14#02
+--- FAIL: TestEventWindow (32.96s)
+    --- PASS: TestEventWindow/TestEventWindowDelayRule0 (0.52s)
+    --- PASS: TestEventWindow/TestEventWindowRule1 (0.49s)
+    --- PASS: TestEventWindow/TestEventWindowRule0 (0.49s)
+    --- PASS: TestEventWindow/TestEventWindowRule2 (0.49s)
+    --- PASS: TestEventWindow/TestEventWindowRule3 (0.59s)
+    --- PASS: TestEventWindow/TestEventWindowRule4 (0.49s)
+    --- PASS: TestEventWindow/TestEventWindowRule5 (0.58s)
+    --- PASS: TestEventWindow/TestEventWindowRule6 (0.59s)
+    --- PASS: TestEventWindow/TestEventWindowRule7 (0.35s)
+    --- PASS: TestEventWindow/TestEventWindowRule8 (0.58s)
+    --- PASS: TestEventWindow/TestEventWindowRule9 (0.49s)
+    --- PASS: TestEventWindow/TestEventWindowCondition10 (0.49s)
+    --- PASS: TestEventWindow/TestSlidingWindowInterval11 (0.15s)
+    --- PASS: TestEventWindow/TestSlidingWindowInterval12 (0.15s)
+    --- PASS: TestEventWindow/TestTUMBLINGWindowInterval13 (0.15s)
+    --- PASS: TestEventWindow/TestTUMBLINGWindowInterval14 (0.23s)
+    --- FAIL: TestEventWindow/TestEventWindowDelayRule0#01 (0.61s)
+    --- FAIL: TestEventWindow/TestEventWindowRule1#01 (0.61s)
+    --- FAIL: TestEventWindow/TestEventWindowRule0#01 (0.61s)
+    --- FAIL: TestEventWindow/TestEventWindowRule2#01 (0.61s)
+    --- FAIL: TestEventWindow/TestEventWindowRule3#01 (0.82s)
+    --- FAIL: TestEventWindow/TestEventWindowRule4#01 (0.61s)
+    --- FAIL: TestEventWindow/TestEventWindowRule5#01 (0.86s)
+    --- FAIL: TestEventWindow/TestEventWindowRule6#01 (0.82s)
+    --- FAIL: TestEventWindow/TestEventWindowRule7#01 (0.52s)
+    --- FAIL: TestEventWindow/TestEventWindowRule8#01 (0.82s)
+    --- FAIL: TestEventWindow/TestEventWindowRule9#01 (0.61s)
+    --- FAIL: TestEventWindow/TestEventWindowCondition10#01 (0.61s)
+    --- PASS: TestEventWindow/TestSlidingWindowInterval11#01 (0.26s)
+    --- PASS: TestEventWindow/TestSlidingWindowInterval12#01 (0.21s)
+    --- PASS: TestEventWindow/TestTUMBLINGWindowInterval13#01 (0.21s)
+    --- PASS: TestEventWindow/TestTUMBLINGWindowInterval14#01 (0.35s)
+    --- FAIL: TestEventWindow/TestEventWindowDelayRule0#02 (1.03s)
+    --- FAIL: TestEventWindow/TestEventWindowRule1#02 (1.03s)
+    --- FAIL: TestEventWindow/TestEventWindowRule0#02 (1.03s)
+    --- FAIL: TestEventWindow/TestEventWindowRule2#02 (1.09s)
+    --- FAIL: TestEventWindow/TestEventWindowRule3#02 (1.66s)
+    --- FAIL: TestEventWindow/TestEventWindowRule4#02 (1.03s)
+    --- FAIL: TestEventWindow/TestEventWindowRule5#02 (1.66s)
+    --- FAIL: TestEventWindow/TestEventWindowRule6#02 (1.67s)
+    --- FAIL: TestEventWindow/TestEventWindowRule7#02 (0.89s)
+    --- FAIL: TestEventWindow/TestEventWindowRule8#02 (1.66s)
+    --- FAIL: TestEventWindow/TestEventWindowRule9#02 (1.03s)
+    --- FAIL: TestEventWindow/TestEventWindowCondition10#02 (1.03s)
+    --- PASS: TestEventWindow/TestSlidingWindowInterval11#02 (0.42s)
+    --- PASS: TestEventWindow/TestSlidingWindowInterval12#02 (0.42s)
+    --- PASS: TestEventWindow/TestTUMBLINGWindowInterval13#02 (0.42s)
+    --- PASS: TestEventWindow/TestTUMBLINGWindowInterval14#02 (0.77s)
+=== RUN   TestWindowError
+=== RUN   TestWindowError/TestWindowErrorRule1
+=== RUN   TestWindowError/TestWindowErrorRule2
+=== RUN   TestWindowError/TestWindowErrorRule3
+=== RUN   TestWindowError/TestWindowErrorRule4
+=== RUN   TestWindowError/TestWindowErrorRule5
+--- PASS: TestWindowError (1.03s)
+    --- PASS: TestWindowError/TestWindowErrorRule1 (0.19s)
+    --- PASS: TestWindowError/TestWindowErrorRule2 (0.20s)
+    --- PASS: TestWindowError/TestWindowErrorRule3 (0.22s)
+    --- PASS: TestWindowError/TestWindowErrorRule4 (0.19s)
+    --- PASS: TestWindowError/TestWindowErrorRule5 (0.20s)
+=== RUN   TestEventSlidingWindow
+=== RUN   TestEventSlidingWindow/TestEventWindowRuleDelay
+    mock_topo.go:185: 
+        	Error Trace:	/home/elia/Documenti/ekuiper/internal/topo/topotest/mock_topo.go:185
+        	Error:      	Not equal: 
+        	            	expected: [][]map[string]interface {}{[]map[string]interface {}{map[string]interface {}{"color":"red"}}}
+        	            	actual  : [][]map[string]interface {}{}
+        	            	
+        	            	Diff:
+        	            	--- Expected
+        	            	+++ Actual
+        	            	@@ -1,7 +1,2 @@
+        	            	-([][]map[string]interface {}) (len=1) {
+        	            	- ([]map[string]interface {}) (len=1) {
+        	            	-  (map[string]interface {}) (len=1) {
+        	            	-   (string) (len=5) "color": (string) (len=3) "red"
+        	            	-  }
+        	            	- }
+        	            	+([][]map[string]interface {}) {
+        	            	 }
+        	Test:       	TestEventSlidingWindow/TestEventWindowRuleDelay
+    mock_topo.go:187: 
+        	Error Trace:	/home/elia/Documenti/ekuiper/internal/topo/topotest/mock_topo.go:187
+        	Error:      	Received unexpected error:
+        	            	metrics mismatch for source_demoE_0_records_in_total:
+        	            	
+        	            	exp=6(int64)
+        	            	
+        	            	got=1(int64)
+        	            	
+        	Test:       	TestEventSlidingWindow/TestEventWindowRuleDelay
+=== RUN   TestEventSlidingWindow/TestEventWindowRuleDelay#01
+    mock_topo.go:185: 
+        	Error Trace:	/home/elia/Documenti/ekuiper/internal/topo/topotest/mock_topo.go:185
+        	Error:      	Not equal: 
+        	            	expected: [][]map[string]interface {}{[]map[string]interface {}{map[string]interface {}{"color":"red"}}}
+        	            	actual  : [][]map[string]interface {}{}
+        	            	
+        	            	Diff:
+        	            	--- Expected
+        	            	+++ Actual
+        	            	@@ -1,7 +1,2 @@
+        	            	-([][]map[string]interface {}) (len=1) {
+        	            	- ([]map[string]interface {}) (len=1) {
+        	            	-  (map[string]interface {}) (len=1) {
+        	            	-   (string) (len=5) "color": (string) (len=3) "red"
+        	            	-  }
+        	            	- }
+        	            	+([][]map[string]interface {}) {
+        	            	 }
+        	Test:       	TestEventSlidingWindow/TestEventWindowRuleDelay#01
+    mock_topo.go:187: 
+        	Error Trace:	/home/elia/Documenti/ekuiper/internal/topo/topotest/mock_topo.go:187
+        	Error:      	Received unexpected error:
+        	            	metrics mismatch for source_demoE_0_records_in_total:
+        	            	
+        	            	exp=6(int64)
+        	            	
+        	            	got=1(int64)
+        	            	
+        	Test:       	TestEventSlidingWindow/TestEventWindowRuleDelay#01
+=== RUN   TestEventSlidingWindow/TestEventWindowRuleDelay#02
+--- FAIL: TestEventSlidingWindow (2.31s)
+    --- FAIL: TestEventSlidingWindow/TestEventWindowRuleDelay (0.61s)
+    --- FAIL: TestEventSlidingWindow/TestEventWindowRuleDelay#01 (1.08s)
+    --- PASS: TestEventSlidingWindow/TestEventWindowRuleDelay#02 (0.50s)
+FAIL
+exit status 1
+FAIL	github.com/lf-edge/ekuiper/v2/internal/topo/topotest	102.975s

@@ -164,7 +164,7 @@ func TestStateWindowWhereAfterRuntime(t *testing.T) {
 
 // TestCountWindowCollectCondition verifies that a WHERE on a count window acts
 // as an in-window collect filter: counting semantics (msgCount) still see every
-// row while only matching rows are buffered and emitted.
+// row, while the emitted window is narrowed to the matching rows only
 func TestCountWindowCollectCondition(t *testing.T) {
 	setupVehicleStatusStream(t)
 
