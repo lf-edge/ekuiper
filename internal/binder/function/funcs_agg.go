@@ -423,6 +423,6 @@ func median[T Number](nums []T) interface{} {
 	if n%2 == 1 {
 		return nums[n/2]
 	} else {
-		return float64((nums[n/2-1])+(nums[n/2])) / 2
+		return float64(nums[n/2-1]+nums[n/2]) / 2
 	}
 }

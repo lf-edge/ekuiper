@@ -220,7 +220,6 @@ func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, option
 
 	if t.name != emitterName && !emitterOpAdded {
 		ops = append(ops, Transform(&operator.EmitterOp{Emitter: string(emitterName)}, fmt.Sprintf("%d_emitter", index), options))
-		index++
 	}
 
 	if t.streamStmt.Options.SHARED && !t.inRuleTest {

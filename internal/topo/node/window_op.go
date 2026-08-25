@@ -714,7 +714,7 @@ func (o *WindowOperator) scan(inputs []xsql.EventRow, triggerTime time.Time, ctx
 	case ast.TUMBLING_WINDOW, ast.SESSION_WINDOW:
 		windowStart = o.triggerTime.UnixMilli()
 	case ast.HOPPING_WINDOW:
-		windowStart = (o.triggerTime.Add(-o.window.Interval)).UnixMilli()
+		windowStart = o.triggerTime.Add(-o.window.Interval).UnixMilli()
 	case ast.SLIDING_WINDOW:
 		windowStart = triggerTime.Add(-length).UnixMilli()
 	}

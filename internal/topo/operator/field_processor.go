@@ -87,32 +87,32 @@ func (p *defaultFieldProcessor) validateAndConvertField(sf *ast.JsonStreamField,
 	v := reflect.ValueOf(t)
 	jtype := v.Kind()
 	switch sf.Type {
-	case (ast.BIGINT).String():
+	case ast.BIGINT.String():
 		if jtype == reflect.Int64 {
 			return t, nil
 		}
 
 		return cast.ToInt64(t, cast.CONVERT_SAMEKIND)
-	case (ast.FLOAT).String():
+	case ast.FLOAT.String():
 		if jtype == reflect.Float64 {
 			return t, nil
 		}
 		return cast.ToFloat64(t, cast.CONVERT_SAMEKIND)
-	case (ast.BOOLEAN).String():
+	case ast.BOOLEAN.String():
 		if jtype == reflect.Bool {
 			return t, nil
 		}
 		return cast.ToBool(t, cast.CONVERT_SAMEKIND)
-	case (ast.STRINGS).String():
+	case ast.STRINGS.String():
 		if jtype == reflect.String {
 			return t, nil
 		}
 		return cast.ToString(t, cast.CONVERT_SAMEKIND)
-	case (ast.DATETIME).String():
+	case ast.DATETIME.String():
 		return cast.InterfaceToTime(t, p.timestampFormat)
-	case (ast.BYTEA).String():
+	case ast.BYTEA.String():
 		return cast.ToByteA(t, cast.CONVERT_SAMEKIND)
-	case (ast.ARRAY).String():
+	case ast.ARRAY.String():
 		if t == nil {
 			return []interface{}(nil), nil
 		} else if jtype == reflect.Slice {
@@ -133,7 +133,7 @@ func (p *defaultFieldProcessor) validateAndConvertField(sf *ast.JsonStreamField,
 		} else {
 			return nil, fmt.Errorf("expect array but got %v", t)
 		}
-	case (ast.STRUCT).String():
+	case ast.STRUCT.String():
 		var (
 			nextJ map[string]interface{}
 			ok    bool

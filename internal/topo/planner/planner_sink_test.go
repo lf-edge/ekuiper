@@ -629,10 +629,14 @@ func TestSinkSchema(t *testing.T) {
 // MockHasFieldsSink implements api.Sink and model.SinkInfoNode
 type MockHasFieldsSink struct{}
 
-func (m *MockHasFieldsSink) Open(ctx api.StreamContext) error                           { return nil }
-func (m *MockHasFieldsSink) Close(ctx api.StreamContext) error                          { return nil }
-func (m *MockHasFieldsSink) Configure(props map[string]interface{}) error               { return nil }
+func (m *MockHasFieldsSink) Open(ctx api.StreamContext) error { return nil }
+
+func (m *MockHasFieldsSink) Close(ctx api.StreamContext) error { return nil }
+
+func (m *MockHasFieldsSink) Configure(props map[string]interface{}) error { return nil }
+
 func (m *MockHasFieldsSink) Collect(ctx api.StreamContext, item api.MessageTuple) error { return nil }
+
 func (m *MockHasFieldsSink) CollectList(ctx api.StreamContext, items api.MessageTupleList) error {
 	return nil
 }
