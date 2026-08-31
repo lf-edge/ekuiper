@@ -107,7 +107,7 @@ func convertValue(v any, dt string) (any, error) {
 		}
 		// float64 -> float32 silently yields +/-Inf when the magnitude is out of
 		// range; reject that instead of writing a bogus infinity.
-		if !math.IsInf(f, 0) && math.IsInf(float64(float32(f)), 0) {
+		if math.IsInf(float64(float32(f)), 0) {
 			return nil, fmt.Errorf("value %v overflows FLOAT range", f)
 		}
 		return float32(f), nil

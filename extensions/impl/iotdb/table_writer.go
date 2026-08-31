@@ -32,20 +32,9 @@ type tableWriter struct {
 func (w *tableWriter) connect(ctx api.StreamContext, conf *iotdbConfig) error {
 	w.conf = conf
 
-	host, port, err := splitAddr(conf.Addr)
+	poolConfig, err := conf.newPoolConfig()
 	if err != nil {
 		return err
-	}
-
-	poolConfig := &client.PoolConfig{
-		Host:     host,
-		Port:     port,
-		UserName: conf.Username,
-		Password: conf.Password,
-		Database: conf.Database,
-	}
-	if len(conf.NodeUrls) > 0 {
-		poolConfig.NodeUrls = conf.NodeUrls
 	}
 
 	pool := client.NewTableSessionPool(poolConfig, conf.PoolSize, int(conf.Timeout), 60000, false)

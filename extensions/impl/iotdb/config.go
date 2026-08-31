@@ -17,7 +17,10 @@ package iotdb
 import (
 	"fmt"
 	"net"
+	"regexp"
 	"strings"
+
+	"github.com/apache/iotdb-client-go/v2/client"
 )
 
 const (
@@ -47,6 +50,8 @@ var supportedCategories = map[string]struct{}{
 	categoryField:     {},
 	categoryAttribute: {},
 }
+
+var iotdbIdentifierPattern = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
 
 // iotdbConfig is the configuration for the IoTDB sink.
 type iotdbConfig struct {
@@ -91,6 +96,9 @@ func (c *iotdbConfig) applyDefaults() {
 	}
 	if c.Password == "" {
 		c.Password = "root"
+	}
+	if c.Model == "" {
+		c.Model = modelTree
 	}
 	if c.BatchSize <= 0 {
 		c.BatchSize = 10
@@ -143,6 +151,9 @@ func (c *iotdbConfig) validate() error {
 		if c.Database == "" {
 			return fmt.Errorf("database name cannot be empty after stripping 'root.' prefix")
 		}
+		if !iotdbIdentifierPattern.MatchString(c.Database) {
+			return fmt.Errorf("database %q is not a valid identifier; expected [A-Za-z_][A-Za-z0-9_]*", c.Database)
+		}
 		if c.Table == "" {
 			return fmt.Errorf("table is required when model is %q", modelTable)
 		}
@@ -159,6 +170,28 @@ func (c *iotdbConfig) validate() error {
 		}
 	}
 	return nil
+}
+
+// newPoolConfig builds the common client pool configuration. In cluster mode,
+// NodeUrls is authoritative and Addr does not need to be parsed.
+func (c *iotdbConfig) newPoolConfig() (*client.PoolConfig, error) {
+	conf := &client.PoolConfig{
+		NodeUrls: c.NodeUrls,
+		UserName: c.Username,
+		Password: c.Password,
+		Database: c.Database,
+	}
+	if len(c.NodeUrls) > 0 {
+		return conf, nil
+	}
+
+	host, port, err := splitAddr(c.Addr)
+	if err != nil {
+		return nil, err
+	}
+	conf.Host = host
+	conf.Port = port
+	return conf, nil
 }
 
 // splitAddr parses an "host:port" string into its parts. It uses

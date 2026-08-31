@@ -15,10 +15,13 @@
 package iotdb
 
 import (
+	"encoding/binary"
+	"math"
 	"testing"
 
 	"github.com/apache/iotdb-client-go/v2/client"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
@@ -33,7 +36,6 @@ func TestConfig(t *testing.T) {
 		{
 			name: "valid tree model with defaults",
 			conf: map[string]interface{}{
-				"model":        "tree",
 				"device":       "root.sg.d1",
 				"measurements": []interface{}{"temperature", "humidity"},
 				"dataTypes":    []interface{}{"FLOAT", "INT32"},
@@ -106,11 +108,6 @@ func TestConfig(t *testing.T) {
 				Timeout:      3000,
 				PoolSize:     5,
 			},
-		},
-		{
-			name:  "model missing",
-			conf:  map[string]interface{}{},
-			error: `model must be either "tree" or "table"`,
 		},
 		{
 			name: "invalid model value",
@@ -253,6 +250,18 @@ func TestConfig(t *testing.T) {
 			error: "database name cannot be empty after stripping 'root.' prefix",
 		},
 		{
+			name: "table model rejects unsafe database identifier",
+			conf: map[string]interface{}{
+				"model":            "table",
+				"database":         "db1; DROP DATABASE db2",
+				"table":            "t1",
+				"measurements":     []interface{}{"v"},
+				"dataTypes":        []interface{}{"INT32"},
+				"columnCategories": []interface{}{"FIELD"},
+			},
+			error: `database "db1; DROP DATABASE db2" is not a valid identifier; expected [A-Za-z_][A-Za-z0-9_]*`,
+		},
+		{
 			name: "unmarshal error",
 			conf: map[string]interface{}{
 				"addr": 12,
@@ -324,6 +333,7 @@ func TestApplyDefaults(t *testing.T) {
 	assert.Equal(t, "127.0.0.1:6667", c.Addr)
 	assert.Equal(t, "root", c.Username)
 	assert.Equal(t, "root", c.Password)
+	assert.Equal(t, modelTree, c.Model)
 	assert.Equal(t, 10, c.BatchSize)
 	assert.Equal(t, int64(5000), c.Timeout)
 	assert.Equal(t, 3, c.PoolSize)
@@ -333,6 +343,7 @@ func TestApplyDefaults(t *testing.T) {
 		Addr:      "1.2.3.4:6667",
 		Username:  "u",
 		Password:  "p",
+		Model:     modelTable,
 		BatchSize: 50,
 		Timeout:   1000,
 		PoolSize:  10,
@@ -341,6 +352,7 @@ func TestApplyDefaults(t *testing.T) {
 	assert.Equal(t, "1.2.3.4:6667", c2.Addr)
 	assert.Equal(t, "u", c2.Username)
 	assert.Equal(t, "p", c2.Password)
+	assert.Equal(t, modelTable, c2.Model)
 	assert.Equal(t, 50, c2.BatchSize)
 	assert.Equal(t, int64(1000), c2.Timeout)
 	assert.Equal(t, 10, c2.PoolSize)
@@ -352,6 +364,11 @@ func TestSplitAddr(t *testing.T) {
 	assert.Equal(t, "192.168.1.1", host)
 	assert.Equal(t, "6667", port)
 
+	host, port, err = splitAddr("[::1]:6667")
+	assert.NoError(t, err)
+	assert.Equal(t, "::1", host)
+	assert.Equal(t, "6667", port)
+
 	_, _, err = splitAddr("invalid")
 	assert.Error(t, err)
 
@@ -360,6 +377,28 @@ func TestSplitAddr(t *testing.T) {
 
 	_, _, err = splitAddr("host:")
 	assert.Error(t, err)
+}
+
+func TestNewPoolConfig(t *testing.T) {
+	t.Run("single node parses addr", func(t *testing.T) {
+		conf := &iotdbConfig{Addr: "[::1]:6667", Username: "u", Password: "p", Database: "db1"}
+		got, err := conf.newPoolConfig()
+		require.NoError(t, err)
+		assert.Equal(t, "::1", got.Host)
+		assert.Equal(t, "6667", got.Port)
+		assert.Equal(t, "u", got.UserName)
+		assert.Equal(t, "p", got.Password)
+		assert.Equal(t, "db1", got.Database)
+	})
+
+	t.Run("nodeUrls overrides invalid addr", func(t *testing.T) {
+		conf := &iotdbConfig{Addr: "not-an-address", NodeUrls: []string{"node1:6667", "node2:6667"}}
+		got, err := conf.newPoolConfig()
+		require.NoError(t, err)
+		assert.Empty(t, got.Host)
+		assert.Empty(t, got.Port)
+		assert.Equal(t, conf.NodeUrls, got.NodeUrls)
+	})
 }
 
 func TestToTSDataType(t *testing.T) {
@@ -436,6 +475,9 @@ func TestConvertValue(t *testing.T) {
 		{"unsupported type", 1, "UNKNOWN", nil, true},
 		{"invalid bool source", "notabool", "BOOLEAN", nil, true},
 		{"int32 overflow errors", int64(1) << 40, "INT32", nil, true},
+		{"finite float overflow errors", math.MaxFloat64, "FLOAT", nil, true},
+		{"positive infinity errors", math.Inf(1), "FLOAT", nil, true},
+		{"negative infinity errors", math.Inf(-1), "FLOAT", nil, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -553,4 +595,51 @@ func TestNextTimestamp(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Greater(t, t2, t1)
 	assert.Greater(t, t3, t2)
+}
+
+func TestFillTablet(t *testing.T) {
+	conf := &iotdbConfig{
+		Measurements: []string{"temperature", "count", "label"},
+		DataTypes:    []string{"FLOAT", "INT32", "TEXT"},
+		TsFieldName:  "ts",
+	}
+	schemas, err := buildMeasurementSchemas(conf.Measurements, conf.DataTypes)
+	require.NoError(t, err)
+
+	rows := []map[string]any{
+		{"ts": 1000, "temperature": "1.5", "count": "2", "label": "first"},
+		{"count": 3, "label": "second"},
+		{"temperature": 4.5},
+	}
+	tablet, err := client.NewTablet("root.sg.d1", schemas, len(rows))
+	require.NoError(t, err)
+
+	lastAuto := int64(1 << 62)
+	autoStart := lastAuto
+	require.NoError(t, fillTablet(tablet, rows, conf, &lastAuto))
+
+	assert.Equal(t, len(rows), tablet.RowSize)
+	assert.Equal(t, []int64{1000, autoStart + 1, autoStart + 2}, decodeTimestamps(tablet.GetTimestampBytes()))
+	assert.Equal(t, autoStart+2, lastAuto)
+
+	expected := [][]any{
+		{float32(1.5), int32(2), "first"},
+		{nil, int32(3), "second"},
+		{float32(4.5), nil, nil},
+	}
+	for rowIdx := range expected {
+		for colIdx := range expected[rowIdx] {
+			got, err := tablet.GetValueAt(colIdx, rowIdx)
+			require.NoError(t, err)
+			assert.Equal(t, expected[rowIdx][colIdx], got)
+		}
+	}
+}
+
+func decodeTimestamps(data []byte) []int64 {
+	timestamps := make([]int64, len(data)/8)
+	for i := range timestamps {
+		timestamps[i] = int64(binary.BigEndian.Uint64(data[i*8 : (i+1)*8]))
+	}
+	return timestamps
 }

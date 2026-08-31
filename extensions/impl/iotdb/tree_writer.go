@@ -35,19 +35,9 @@ type treeWriter struct {
 func (w *treeWriter) connect(ctx api.StreamContext, conf *iotdbConfig) error {
 	w.conf = conf
 
-	host, port, err := splitAddr(conf.Addr)
+	poolConfig, err := conf.newPoolConfig()
 	if err != nil {
 		return err
-	}
-
-	poolConfig := &client.PoolConfig{
-		Host:     host,
-		Port:     port,
-		UserName: conf.Username,
-		Password: conf.Password,
-	}
-	if len(conf.NodeUrls) > 0 {
-		poolConfig.NodeUrls = conf.NodeUrls
 	}
 
 	pool := client.NewSessionPool(poolConfig, conf.PoolSize, int(conf.Timeout), 60000, false)
@@ -58,6 +48,7 @@ func (w *treeWriter) connect(ctx api.StreamContext, conf *iotdbConfig) error {
 	if err != nil {
 		return fmt.Errorf("failed to get iotdb session: %w", err)
 	}
+	// SessionPool sessions require PutBack; PooledTableSession.Close does this internally.
 	w.pool.PutBack(session)
 
 	ctx.GetLogger().Infof("iotdb tree writer connected to %s", conf.Addr)
