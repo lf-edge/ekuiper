@@ -20,7 +20,6 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
-	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	"github.com/lf-edge/ekuiper/v2/pkg/model"
 )
 
@@ -86,7 +85,7 @@ func (s *iotdbSink) collect(ctx api.StreamContext, data any) error {
 	}
 	if err := s.writer.write(ctx, maps); err != nil {
 		ctx.GetLogger().Errorf("iotdb sink write error: %v", err)
-		return errorx.NewIOErr(fmt.Sprintf("iotdb sink fails to send out the data: %v", err))
+		return err
 	}
 	ctx.GetLogger().Debug("insert data into iotdb success")
 	return nil

@@ -50,7 +50,7 @@ Data mapping properties:
 |---------------|----------|---------------|--------------------------------------------------------------------------------------------------------------------------|
 | measurements  | false    | []            | List of measurement / column names.                                                                                      |
 | dataTypes     | false    | []            | IoTDB data types corresponding to `measurements` one-to-one: `INT32`, `INT64`, `FLOAT`, `DOUBLE`, `BOOLEAN`, `TEXT`, `STRING`, `TIMESTAMP`. |
-| tsFieldName   | true     | ""            | The field name of the timestamp (in milliseconds). If not set, the current time will be used.                            |
+| tsFieldName   | true     | ""            | The field name of the timestamp (in milliseconds). If not set, the current time will be used; when set, every row must contain this field. |
 | batchSize     | true     | 10            | The number of rows per tablet write.                                                                                     |
 
 Other common sink properties including batch settings are supported. Please refer to

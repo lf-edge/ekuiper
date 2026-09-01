@@ -19,11 +19,22 @@ import (
 
 	"github.com/apache/iotdb-client-go/v2/client"
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+
+	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 )
+
+type tableSessionProvider interface {
+	GetSession() (client.ITableSession, error)
+}
+
+type tableSessionPool interface {
+	tableSessionProvider
+	Close()
+}
 
 // tableWriter writes data using the IoTDB table model via TableSessionPool.
 type tableWriter struct {
-	pool *client.TableSessionPool
+	pool tableSessionPool
 	conf *iotdbConfig
 	// lastAuto is the monotonic cursor for auto-generated timestamps.
 	lastAuto int64
@@ -32,34 +43,33 @@ type tableWriter struct {
 func (w *tableWriter) connect(ctx api.StreamContext, conf *iotdbConfig) error {
 	w.conf = conf
 
-	poolConfig, err := conf.newPoolConfig()
+	// Bootstrap without a database because the client selects PoolConfig.Database
+	// during OpenSession, before CREATE DATABASE can run.
+	bootstrapConfig, err := conf.newPoolConfig("")
 	if err != nil {
 		return err
 	}
+	bootstrapPool := client.NewTableSessionPool(bootstrapConfig, conf.PoolSize, int(conf.Timeout), 60000, false)
+	if err := ensureDatabase(&bootstrapPool, conf.Database); err != nil {
+		bootstrapPool.Close()
+		return err
+	}
+	bootstrapPool.Close()
+	ctx.GetLogger().Infof("iotdb table writer: database %q ensured", conf.Database)
 
+	poolConfig, err := conf.newPoolConfig(conf.Database)
+	if err != nil {
+		return err
+	}
 	pool := client.NewTableSessionPool(poolConfig, conf.PoolSize, int(conf.Timeout), 60000, false)
-	w.pool = &pool
-
-	// 自动创建数据库（table dialect 下的 CREATE DATABASE）
-	autoSession, err := w.pool.GetSession()
+	session, err := pool.GetSession()
 	if err != nil {
-		return fmt.Errorf("failed to get iotdb table session for database creation: %w", err)
-	}
-	createDBSQL := fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s", conf.Database)
-	if err := autoSession.ExecuteNonQueryStatement(createDBSQL); err != nil {
-		// 数据库可能已存在，记录 warning 但不阻断连接
-		ctx.GetLogger().Warnf("iotdb table writer: auto-create database %q failed (may already exist): %v", conf.Database, err)
-	} else {
-		ctx.GetLogger().Infof("iotdb table writer: database %q ensured", conf.Database)
-	}
-	autoSession.Close()
-
-	// test connection by acquiring and closing a session
-	session, err := w.pool.GetSession()
-	if err != nil {
+		pool.Close()
 		return fmt.Errorf("failed to get iotdb table session: %w", err)
 	}
-	session.Close()
+	// PooledTableSession.Close returns the wrapper's session to the table pool.
+	_ = session.Close()
+	w.pool = &pool
 
 	ctx.GetLogger().Infof("iotdb table writer connected to %s (database=%s)", conf.Addr, conf.Database)
 	return nil
@@ -103,17 +113,39 @@ func (w *tableWriter) write(ctx api.StreamContext, data []map[string]any) error 
 		if err := fillTablet(tablet, chunk, w.conf, &w.lastAuto); err != nil {
 			return err
 		}
-
-		session, err := w.pool.GetSession()
-		if err != nil {
-			return fmt.Errorf("failed to get iotdb table session: %w", err)
+		if err := tablet.Sort(); err != nil {
+			return fmt.Errorf("sort relational tablet: %w", err)
 		}
-		if err := session.Insert(tablet); err != nil {
-			session.Close()
-			return fmt.Errorf("insert relational tablet: %w", err)
+		if err := insertRelationalTablet(w.pool, tablet); err != nil {
+			return err
 		}
-		session.Close()
 		logger.Debugf("iotdb table writer inserted %d rows", tablet.RowSize)
+	}
+	return nil
+}
+
+func ensureDatabase(pool tableSessionProvider, database string) error {
+	session, err := pool.GetSession()
+	if err != nil {
+		return fmt.Errorf("failed to get iotdb table session for database creation: %w", err)
+	}
+	defer session.Close()
+
+	if err := session.ExecuteNonQueryStatement(fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s", database)); err != nil {
+		return fmt.Errorf("create iotdb database %q: %w", database, err)
+	}
+	return nil
+}
+
+func insertRelationalTablet(pool tableSessionProvider, tablet *client.Tablet) error {
+	session, err := pool.GetSession()
+	if err != nil {
+		return errorx.NewIOErr(fmt.Sprintf("failed to get iotdb table session: %v", err))
+	}
+	defer session.Close()
+
+	if err := session.Insert(tablet); err != nil {
+		return errorx.NewIOErr(fmt.Sprintf("insert relational tablet: %v", err))
 	}
 	return nil
 }

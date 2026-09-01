@@ -50,7 +50,7 @@ go build -trimpath --buildmode=plugin -o plugins/sinks/Iotdb.so extensions/sinks
 |--------------|----------|--------|----------------------------------------------------------------------------------------------------------------|
 | measurements | 否       | []     | 测点/列名列表。                                                                                                |
 | dataTypes    | 否       | []     | 与 `measurements` 一一对应的数据类型列表：`INT32`、`INT64`、`FLOAT`、`DOUBLE`、`BOOLEAN`、`TEXT`、`STRING`、`TIMESTAMP`。 |
-| tsFieldName  | 是       | ""     | 时间戳字段名（毫秒级）。若为空则使用当前时间。                                                                 |
+| tsFieldName  | 是       | ""     | 时间戳字段名（毫秒级）。若为空则使用当前时间；配置后每一行都必须包含该字段。                                      |
 | batchSize    | 是       | 10     | 单次 tablet 写入行数。                                                                                         |
 
 其他通用的 sink 属性也支持，包括批量设置等，请参阅[公共属性](../overview.md#公共属性)。

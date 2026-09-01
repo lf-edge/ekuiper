@@ -196,8 +196,8 @@
       "control": "text",
       "type": "string",
       "hint": {
-        "en_US": "Optional. Field name from the incoming row that carries the millisecond timestamp. If empty, the current time is used.",
-        "zh_CN": "可选。用于提取毫秒级时间戳的输入字段名。若为空则使用当前时间。"
+        "en_US": "Optional. Field name from the incoming row that carries the millisecond timestamp. If empty, the current time is used; when set, every row must contain this field.",
+        "zh_CN": "可选。用于提取毫秒级时间戳的输入字段名。若为空则使用当前时间；配置后每一行都必须包含该字段。"
       },
       "label": {
         "en_US": "Timestamp Field Name",

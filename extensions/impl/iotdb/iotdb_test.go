@@ -16,15 +16,87 @@ package iotdb
 
 import (
 	"encoding/binary"
+	"errors"
 	"math"
 	"testing"
 
 	"github.com/apache/iotdb-client-go/v2/client"
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
+
+type fakeWriter struct {
+	connectErr   error
+	writeErr     error
+	closeErr     error
+	connectCalls int
+	writeCalls   int
+	closeCalls   int
+	written      []map[string]any
+}
+
+func (w *fakeWriter) connect(api.StreamContext, *iotdbConfig) error {
+	w.connectCalls++
+	return w.connectErr
+}
+
+func (w *fakeWriter) write(_ api.StreamContext, data []map[string]any) error {
+	w.writeCalls++
+	w.written = data
+	return w.writeErr
+}
+
+func (w *fakeWriter) close() error {
+	w.closeCalls++
+	return w.closeErr
+}
+
+type fakeTableSessionPool struct {
+	session  client.ITableSession
+	getErr   error
+	getCalls int
+	closed   bool
+}
+
+func (p *fakeTableSessionPool) GetSession() (client.ITableSession, error) {
+	p.getCalls++
+	return p.session, p.getErr
+}
+
+func (p *fakeTableSessionPool) Close() {
+	p.closed = true
+}
+
+type fakeTableSession struct {
+	insertErr  error
+	executeErr error
+	inserted   *client.Tablet
+	statements []string
+	closeCalls int
+}
+
+func (s *fakeTableSession) Insert(tablet *client.Tablet) error {
+	s.inserted = tablet
+	return s.insertErr
+}
+
+func (s *fakeTableSession) ExecuteNonQueryStatement(statement string) error {
+	s.statements = append(s.statements, statement)
+	return s.executeErr
+}
+
+func (s *fakeTableSession) ExecuteQueryStatement(string, *int64) (*client.SessionDataSet, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (s *fakeTableSession) Close() error {
+	s.closeCalls++
+	return nil
+}
 
 func TestConfig(t *testing.T) {
 	tests := []struct {
@@ -382,22 +454,95 @@ func TestSplitAddr(t *testing.T) {
 func TestNewPoolConfig(t *testing.T) {
 	t.Run("single node parses addr", func(t *testing.T) {
 		conf := &iotdbConfig{Addr: "[::1]:6667", Username: "u", Password: "p", Database: "db1"}
-		got, err := conf.newPoolConfig()
+		got, err := conf.newPoolConfig(conf.Database)
 		require.NoError(t, err)
 		assert.Equal(t, "::1", got.Host)
 		assert.Equal(t, "6667", got.Port)
 		assert.Equal(t, "u", got.UserName)
 		assert.Equal(t, "p", got.Password)
 		assert.Equal(t, "db1", got.Database)
+
+		bootstrap, err := conf.newPoolConfig("")
+		require.NoError(t, err)
+		assert.Empty(t, bootstrap.Database)
 	})
 
 	t.Run("nodeUrls overrides invalid addr", func(t *testing.T) {
 		conf := &iotdbConfig{Addr: "not-an-address", NodeUrls: []string{"node1:6667", "node2:6667"}}
-		got, err := conf.newPoolConfig()
+		got, err := conf.newPoolConfig("")
 		require.NoError(t, err)
 		assert.Empty(t, got.Host)
 		assert.Empty(t, got.Port)
 		assert.Equal(t, conf.NodeUrls, got.NodeUrls)
+	})
+}
+
+func TestSinkConnect(t *testing.T) {
+	ctx := mockContext.NewMockContext("rule", "op")
+
+	t.Run("success", func(t *testing.T) {
+		w := &fakeWriter{}
+		s := &iotdbSink{writer: w}
+		var status, message string
+		err := s.Connect(ctx, func(gotStatus, gotMessage string) {
+			status, message = gotStatus, gotMessage
+		})
+		require.NoError(t, err)
+		assert.Equal(t, 1, w.connectCalls)
+		assert.Equal(t, api.ConnectionConnected, status)
+		assert.Empty(t, message)
+	})
+
+	t.Run("failure", func(t *testing.T) {
+		connectErr := errors.New("connect failed")
+		w := &fakeWriter{connectErr: connectErr}
+		s := &iotdbSink{writer: w}
+		var status, message string
+		err := s.Connect(ctx, func(gotStatus, gotMessage string) {
+			status, message = gotStatus, gotMessage
+		})
+		assert.ErrorIs(t, err, connectErr)
+		assert.Equal(t, 1, w.connectCalls)
+		assert.Equal(t, api.ConnectionDisconnected, status)
+		assert.Equal(t, connectErr.Error(), message)
+	})
+}
+
+func TestSinkCollectErrorClassification(t *testing.T) {
+	ctx := mockContext.NewMockContext("rule", "op")
+
+	t.Run("empty batch is a no-op", func(t *testing.T) {
+		w := &fakeWriter{}
+		s := &iotdbSink{writer: w}
+		require.NoError(t, s.collect(ctx, []map[string]any{}))
+		assert.Zero(t, w.writeCalls)
+	})
+
+	t.Run("success forwards rows", func(t *testing.T) {
+		w := &fakeWriter{}
+		s := &iotdbSink{writer: w}
+		row := map[string]any{"value": 1}
+		require.NoError(t, s.collect(ctx, row))
+		assert.Equal(t, 1, w.writeCalls)
+		assert.Equal(t, []map[string]any{row}, w.written)
+	})
+
+	t.Run("conversion error remains non-IO", func(t *testing.T) {
+		conversionErr := errors.New("conversion failed")
+		w := &fakeWriter{writeErr: conversionErr}
+		s := &iotdbSink{writer: w}
+		err := s.collect(ctx, map[string]any{"value": "bad"})
+		assert.ErrorIs(t, err, conversionErr)
+		assert.False(t, errorx.IsIOError(err))
+	})
+
+	t.Run("insert error remains IO", func(t *testing.T) {
+		insertErr := errorx.NewIOErr("insert failed")
+		w := &fakeWriter{writeErr: insertErr}
+		s := &iotdbSink{writer: w}
+		err := s.collect(ctx, map[string]any{"value": 1})
+		assert.Equal(t, insertErr, err)
+		assert.True(t, errorx.IsIOError(err))
 	})
 }
 
@@ -511,6 +656,95 @@ func TestBuildMeasurementSchemas(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestEnsureDatabase(t *testing.T) {
+	t.Run("executes create before using target database", func(t *testing.T) {
+		session := &fakeTableSession{}
+		pool := &fakeTableSessionPool{session: session}
+		require.NoError(t, ensureDatabase(pool, "db1"))
+		assert.Equal(t, []string{"CREATE DATABASE IF NOT EXISTS db1"}, session.statements)
+		assert.Equal(t, 1, session.closeCalls)
+	})
+
+	t.Run("get session failure is returned", func(t *testing.T) {
+		pool := &fakeTableSessionPool{getErr: errors.New("dial failed")}
+		err := ensureDatabase(pool, "db1")
+		assert.EqualError(t, err, "failed to get iotdb table session for database creation: dial failed")
+	})
+
+	t.Run("create failure is returned", func(t *testing.T) {
+		session := &fakeTableSession{executeErr: errors.New("permission denied")}
+		pool := &fakeTableSessionPool{session: session}
+		err := ensureDatabase(pool, "db1")
+		assert.EqualError(t, err, `create iotdb database "db1": permission denied`)
+		assert.Equal(t, 1, session.closeCalls)
+	})
+}
+
+func TestInsertRelationalTablet(t *testing.T) {
+	tablet, err := client.NewRelationalTablet(
+		"t1",
+		[]*client.MeasurementSchema{{Measurement: "value", DataType: client.INT32}},
+		[]client.ColumnCategory{client.FIELD},
+		1,
+	)
+	require.NoError(t, err)
+
+	t.Run("success closes session", func(t *testing.T) {
+		session := &fakeTableSession{}
+		pool := &fakeTableSessionPool{session: session}
+		require.NoError(t, insertRelationalTablet(pool, tablet))
+		assert.Same(t, tablet, session.inserted)
+		assert.Equal(t, 1, session.closeCalls)
+	})
+
+	t.Run("get session failure is IO", func(t *testing.T) {
+		pool := &fakeTableSessionPool{getErr: errors.New("pool exhausted")}
+		err := insertRelationalTablet(pool, tablet)
+		assert.True(t, errorx.IsIOError(err))
+		assert.Contains(t, err.Error(), "failed to get iotdb table session")
+	})
+
+	t.Run("insert failure is IO and closes session", func(t *testing.T) {
+		session := &fakeTableSession{insertErr: errors.New("connection reset")}
+		pool := &fakeTableSessionPool{session: session}
+		err := insertRelationalTablet(pool, tablet)
+		assert.True(t, errorx.IsIOError(err))
+		assert.Contains(t, err.Error(), "insert relational tablet")
+		assert.Equal(t, 1, session.closeCalls)
+	})
+}
+
+func TestTableWriterSortsTablet(t *testing.T) {
+	session := &fakeTableSession{}
+	pool := &fakeTableSessionPool{session: session}
+	w := &tableWriter{
+		pool: pool,
+		conf: &iotdbConfig{
+			Database:         "db1",
+			Table:            "t1",
+			Measurements:     []string{"value"},
+			DataTypes:        []string{"INT32"},
+			ColumnCategories: []string{"FIELD"},
+			TsFieldName:      "ts",
+			BatchSize:        10,
+		},
+	}
+	rows := []map[string]any{
+		{"ts": 30, "value": 3},
+		{"ts": 10, "value": 1},
+		{"ts": 20, "value": 2},
+	}
+
+	require.NoError(t, w.write(mockContext.NewMockContext("rule", "op"), rows))
+	require.NotNil(t, session.inserted)
+	assert.Equal(t, []int64{10, 20, 30}, decodeTimestamps(session.inserted.GetTimestampBytes()))
+	for row, expected := range []int32{1, 2, 3} {
+		value, err := session.inserted.GetValueAt(0, row)
+		require.NoError(t, err)
+		assert.Equal(t, expected, value)
+	}
+}
+
 func TestExtractTimestamp(t *testing.T) {
 	// when tsFieldName is empty, returns current time (>0)
 	ts, err := extractTimestamp(map[string]any{}, "")
@@ -522,10 +756,10 @@ func TestExtractTimestamp(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, int64(12345), ts)
 
-	// when tsFieldName is set but missing, falls back to current time
+	// when tsFieldName is set but missing, returns an error
 	ts, err = extractTimestamp(map[string]any{}, "ts")
-	assert.NoError(t, err)
-	assert.Greater(t, ts, int64(0))
+	assert.Error(t, err)
+	assert.Zero(t, ts)
 
 	// when ts value is invalid, returns error
 	_, err = extractTimestamp(map[string]any{"ts": "not-a-number"}, "ts")
@@ -607,20 +841,19 @@ func TestFillTablet(t *testing.T) {
 	require.NoError(t, err)
 
 	rows := []map[string]any{
-		{"ts": 1000, "temperature": "1.5", "count": "2", "label": "first"},
-		{"count": 3, "label": "second"},
-		{"temperature": 4.5},
+		{"ts": 1002, "temperature": "1.5", "count": "2", "label": "first"},
+		{"ts": 1000, "count": 3, "label": "second"},
+		{"ts": 1001, "temperature": 4.5},
 	}
 	tablet, err := client.NewTablet("root.sg.d1", schemas, len(rows))
 	require.NoError(t, err)
 
-	lastAuto := int64(1 << 62)
-	autoStart := lastAuto
+	lastAuto := int64(0)
 	require.NoError(t, fillTablet(tablet, rows, conf, &lastAuto))
 
 	assert.Equal(t, len(rows), tablet.RowSize)
-	assert.Equal(t, []int64{1000, autoStart + 1, autoStart + 2}, decodeTimestamps(tablet.GetTimestampBytes()))
-	assert.Equal(t, autoStart+2, lastAuto)
+	assert.Equal(t, []int64{1002, 1000, 1001}, decodeTimestamps(tablet.GetTimestampBytes()))
+	assert.Equal(t, int64(0), lastAuto)
 
 	expected := [][]any{
 		{float32(1.5), int32(2), "first"},
@@ -634,6 +867,44 @@ func TestFillTablet(t *testing.T) {
 			assert.Equal(t, expected[rowIdx][colIdx], got)
 		}
 	}
+}
+
+func TestFillTabletRejectsMissingTimestamp(t *testing.T) {
+	conf := &iotdbConfig{
+		Measurements: []string{"value"},
+		DataTypes:    []string{"INT32"},
+		TsFieldName:  "ts",
+	}
+	schemas, err := buildMeasurementSchemas(conf.Measurements, conf.DataTypes)
+	require.NoError(t, err)
+	tablet, err := client.NewTablet("root.sg.d1", schemas, 1)
+	require.NoError(t, err)
+
+	err = fillTablet(tablet, []map[string]any{{"value": 1}}, conf, new(int64))
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), `timestamp field "ts" is missing`)
+	assert.Zero(t, tablet.RowSize)
+}
+
+func TestFillTabletAutoTimestampsIncrease(t *testing.T) {
+	conf := &iotdbConfig{
+		Measurements: []string{"value"},
+		DataTypes:    []string{"INT32"},
+	}
+	schemas, err := buildMeasurementSchemas(conf.Measurements, conf.DataTypes)
+	require.NoError(t, err)
+	tablet, err := client.NewTablet("root.sg.d1", schemas, 3)
+	require.NoError(t, err)
+
+	var lastAuto int64
+	require.NoError(t, fillTablet(tablet, []map[string]any{
+		{"value": 1}, {"value": 2}, {"value": 3},
+	}, conf, &lastAuto))
+	timestamps := decodeTimestamps(tablet.GetTimestampBytes())
+	assert.Len(t, timestamps, 3)
+	assert.Less(t, timestamps[0], timestamps[1])
+	assert.Less(t, timestamps[1], timestamps[2])
+	assert.Equal(t, timestamps[2], lastAuto)
 }
 
 func decodeTimestamps(data []byte) []int64 {

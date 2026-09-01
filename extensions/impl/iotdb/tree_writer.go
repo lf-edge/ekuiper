@@ -22,6 +22,7 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 )
 
 // treeWriter writes data using the IoTDB tree model via SessionPool.
@@ -35,7 +36,7 @@ type treeWriter struct {
 func (w *treeWriter) connect(ctx api.StreamContext, conf *iotdbConfig) error {
 	w.conf = conf
 
-	poolConfig, err := conf.newPoolConfig()
+	poolConfig, err := conf.newPoolConfig("")
 	if err != nil {
 		return err
 	}
@@ -46,9 +47,9 @@ func (w *treeWriter) connect(ctx api.StreamContext, conf *iotdbConfig) error {
 	// test connection by acquiring and releasing a session
 	session, err := w.pool.GetSession()
 	if err != nil {
-		return fmt.Errorf("failed to get iotdb session: %w", err)
+		return errorx.NewIOErr(fmt.Sprintf("failed to get iotdb session: %v", err))
 	}
-	// SessionPool sessions require PutBack; PooledTableSession.Close does this internally.
+	// SessionPool exposes Session values, so PutBack returns this connection to the pool.
 	w.pool.PutBack(session)
 
 	ctx.GetLogger().Infof("iotdb tree writer connected to %s", conf.Addr)
@@ -63,7 +64,7 @@ func (w *treeWriter) write(ctx api.StreamContext, data []map[string]any) error {
 
 	session, err := w.pool.GetSession()
 	if err != nil {
-		return fmt.Errorf("failed to get iotdb session: %w", err)
+		return errorx.NewIOErr(fmt.Sprintf("failed to get iotdb session: %v", err))
 	}
 	defer w.pool.PutBack(session)
 
@@ -95,11 +96,11 @@ func (w *treeWriter) write(ctx api.StreamContext, data []map[string]any) error {
 
 		if w.conf.IsAligned {
 			if err := session.InsertAlignedTablet(tablet, false); err != nil {
-				return fmt.Errorf("insert aligned tablet: %w", err)
+				return errorx.NewIOErr(fmt.Sprintf("insert aligned tablet: %v", err))
 			}
 		} else {
 			if err := session.InsertTablet(tablet, false); err != nil {
-				return fmt.Errorf("insert tablet: %w", err)
+				return errorx.NewIOErr(fmt.Sprintf("insert tablet: %v", err))
 			}
 		}
 
@@ -115,15 +116,15 @@ func (w *treeWriter) close() error {
 	return nil
 }
 
-// extractTimestamp returns the timestamp for the given row. If tsFieldName is
-// empty or missing, the current time in milliseconds is returned.
+// extractTimestamp returns the configured timestamp, or the current time when
+// no timestamp field is configured. A configured but missing field is invalid.
 func extractTimestamp(row map[string]any, tsFieldName string) (int64, error) {
 	if tsFieldName == "" {
 		return time.Now().UnixMilli(), nil
 	}
 	v, ok := row[tsFieldName]
 	if !ok {
-		return time.Now().UnixMilli(), nil
+		return 0, fmt.Errorf("timestamp field %q is missing", tsFieldName)
 	}
 	ts, err := cast.ToInt64(v, cast.CONVERT_ALL)
 	if err != nil {

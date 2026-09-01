@@ -146,7 +146,6 @@ func (c *iotdbConfig) validate() error {
 		if c.Database == "" {
 			return fmt.Errorf("database is required when model is %q", modelTable)
 		}
-		// 表模型的 database 不需要 root. 前缀，自动去除
 		c.Database = strings.TrimPrefix(strings.TrimSpace(c.Database), "root.")
 		if c.Database == "" {
 			return fmt.Errorf("database name cannot be empty after stripping 'root.' prefix")
@@ -174,12 +173,12 @@ func (c *iotdbConfig) validate() error {
 
 // newPoolConfig builds the common client pool configuration. In cluster mode,
 // NodeUrls is authoritative and Addr does not need to be parsed.
-func (c *iotdbConfig) newPoolConfig() (*client.PoolConfig, error) {
+func (c *iotdbConfig) newPoolConfig(database string) (*client.PoolConfig, error) {
 	conf := &client.PoolConfig{
 		NodeUrls: c.NodeUrls,
 		UserName: c.Username,
 		Password: c.Password,
-		Database: c.Database,
+		Database: database,
 	}
 	if len(c.NodeUrls) > 0 {
 		return conf, nil

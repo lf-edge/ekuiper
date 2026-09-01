@@ -136,20 +136,19 @@ func convertValue(v any, dt string) (any, error) {
 
 // nextTimestamp resolves the timestamp for a single row.
 //
-// An explicit timestamp supplied via tsFieldName is used as-is. An
-// auto-generated timestamp (field absent or tsFieldName empty) is forced to
-// strictly increase within a writer via lastAuto, so that multiple rows in one
-// batch do not collapse onto the same millisecond and overwrite each other in
-// IoTDB (where (device/table, timestamp) is the primary key).
+// An explicit timestamp supplied via tsFieldName is used as-is. When a
+// timestamp field is configured it must be present in every row. An
+// auto-generated timestamp (tsFieldName empty) is forced to strictly increase
+// within a writer via lastAuto, so that multiple rows in one batch do not
+// collapse onto the same millisecond and overwrite each other in IoTDB (where
+// (device/table, timestamp) is the primary key).
 func nextTimestamp(row map[string]any, tsFieldName string, lastAuto *int64) (int64, error) {
-	if tsFieldName != "" {
-		if _, ok := row[tsFieldName]; ok {
-			return extractTimestamp(row, tsFieldName)
-		}
-	}
 	ts, err := extractTimestamp(row, tsFieldName)
 	if err != nil {
 		return 0, err
+	}
+	if tsFieldName != "" {
+		return ts, nil
 	}
 	if ts <= *lastAuto {
 		ts = *lastAuto + 1
