@@ -4,6 +4,23 @@ This guide covers important breaking changes and migration steps when upgrading 
 
 ## Breaking Changes
 
+### Checkpoint format in v2.5
+
+eKuiper v2.5 writes checkpoint state in a versioned snapshot format. It can
+restore checkpoints written by earlier releases, but v2.4 and earlier cannot
+restore a checkpoint after v2.5 has successfully replaced it.
+
+Before upgrading, back up the data directory if rollback must preserve rule
+progress. To roll back after v2.5 has written a checkpoint, restore that backup,
+or delete and recreate the affected rule so that it starts from the source
+position configured for a new rule.
+
+Custom rewindable sources must also return a gob-serializable offset from
+`GetOffset`. The offset must represent the tuple most recently accepted by the
+ingest callback and remain unchanged until that callback returns. If
+`GetOffset` returns an error, eKuiper rejects checkpoints until a later ingest
+callback obtains a valid offset.
+
 ### SQLite Database Format
 
 eKuiper 2.x uses a different storage format for streams and tables in the SQLite database (`sqliteKV.db`). This means:

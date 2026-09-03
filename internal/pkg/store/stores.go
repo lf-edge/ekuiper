@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2026 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -137,14 +137,22 @@ func (s *stores) GetTS(table string) (kv.Tskv, error) {
 	return tts, nil
 }
 
-func (s *stores) DropTS(table string) {
+func (s *stores) DropTS(table string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	if tts, contains := s.ts[table]; contains {
-		_ = tts.Drop()
+		if err := tts.Drop(); err != nil {
+			return err
+		}
 		delete(s.ts, table)
+		return nil
 	}
+	tts, err := s.tsBuilder.CreateTs(table)
+	if err != nil {
+		return err
+	}
+	return tts.Drop()
 }
 
 func GetKV(table string) (kv.KeyValue, error) {
@@ -166,14 +174,12 @@ func GetTS(table string) (kv.Tskv, error) {
 
 func DropTS(table string) error {
 	if checkpointStores != nil {
-		checkpointStores.DropTS(table)
-		return nil
+		return checkpointStores.DropTS(table)
 	}
 	if globalStores == nil {
 		return fmt.Errorf("global stores are not initialized")
 	}
-	globalStores.DropTS(table)
-	return nil
+	return globalStores.DropTS(table)
 }
 
 func DropKV(table string) error {

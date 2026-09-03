@@ -1,4 +1,4 @@
-// Copyright 2022-2025 EMQ Technologies Co., Ltd.
+// Copyright 2022-2026 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/checkpoint"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/transform"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
@@ -64,13 +65,17 @@ type DefaultContext struct {
 	isTraceEnabled *atomic.Bool
 	strategy       *TraceStrategyWrapper
 	// Only initialized after withMeta set
-	store    api.Store
-	state    *sync.Map
-	snapshot map[string]interface{}
-	mu       syncx.Mutex
+	store       api.Store
+	state       *sync.Map
+	checkpoints *checkpointSnapshots
 	// cache
 	tpReg sync.Map
 	jpReg sync.Map
+}
+
+type checkpointSnapshots struct {
+	mu     syncx.Mutex
+	states map[int64][]byte
 }
 
 func RuleBackground(ruleName string) *DefaultContext {
@@ -234,13 +239,16 @@ func (c *DefaultContext) WithMeta(ruleId string, opId string, store api.Store) a
 		c.GetLogger().Warnf("Initialize context store error for %s: %s", opId, err)
 	}
 	return &DefaultContext{
-		ruleId:         ruleId,
-		opId:           opId,
-		runId:          c.runId,
-		instanceId:     c.instanceId,
-		ctx:            c.ctx,
-		store:          store,
-		state:          s,
+		ruleId:     ruleId,
+		opId:       opId,
+		runId:      c.runId,
+		instanceId: c.instanceId,
+		ctx:        c.ctx,
+		store:      store,
+		state:      s,
+		checkpoints: &checkpointSnapshots{
+			states: make(map[int64][]byte),
+		},
 		tpReg:          sync.Map{},
 		jpReg:          sync.Map{},
 		isTraceEnabled: c.isTraceEnabled,
@@ -255,7 +263,9 @@ func (c *DefaultContext) WithInstance(instanceId int) api.StreamContext {
 		ruleId:         c.ruleId,
 		opId:           c.opId,
 		ctx:            c.ctx,
+		store:          c.store,
 		state:          c.state,
+		checkpoints:    c.checkpoints,
 		isTraceEnabled: c.isTraceEnabled,
 		strategy:       c.strategy,
 	}
@@ -268,7 +278,9 @@ func (c *DefaultContext) WithRuleId(ruleId string) api.StreamContext {
 		ruleId:         ruleId,
 		opId:           c.opId,
 		ctx:            c.ctx,
+		store:          c.store,
 		state:          c.state,
+		checkpoints:    c.checkpoints,
 		isTraceEnabled: c.isTraceEnabled,
 		strategy:       c.strategy,
 	}
@@ -281,7 +293,9 @@ func (c *DefaultContext) WithOpId(opId string) api.StreamContext {
 		ruleId:         c.ruleId,
 		opId:           opId,
 		ctx:            c.ctx,
+		store:          c.store,
 		state:          c.state,
+		checkpoints:    c.checkpoints,
 		isTraceEnabled: c.isTraceEnabled,
 		strategy:       c.strategy,
 	}
@@ -294,7 +308,9 @@ func (c *DefaultContext) WithRun(runId int) api.StreamContext {
 		ruleId:         c.ruleId,
 		opId:           c.opId,
 		ctx:            c.ctx,
+		store:          c.store,
 		state:          c.state,
+		checkpoints:    c.checkpoints,
 		isTraceEnabled: c.isTraceEnabled,
 		strategy:       c.strategy,
 	}
@@ -308,7 +324,9 @@ func (c *DefaultContext) WithCancel() (api.StreamContext, context.CancelFunc) {
 		instanceId:     c.instanceId,
 		runId:          c.runId,
 		ctx:            ctx,
+		store:          c.store,
 		state:          c.state,
+		checkpoints:    c.checkpoints,
 		isTraceEnabled: c.isTraceEnabled,
 		strategy:       c.strategy,
 	}, cancel
@@ -373,27 +391,44 @@ func (c *DefaultContext) DeleteState(key string) error {
 	return nil
 }
 
-func (c *DefaultContext) Snapshot() error {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	c.snapshot = cast.SyncMapToMap(c.state)
+func (c *DefaultContext) Snapshot(checkpointID int64) error {
+	snapshot, err := checkpoint.EncodeState(c.GetAllState())
+	if err != nil {
+		return err
+	}
+	if c.checkpoints == nil {
+		return fmt.Errorf("checkpoint context is not initialized")
+	}
+	c.checkpoints.mu.Lock()
+	defer c.checkpoints.mu.Unlock()
+	if _, ok := c.checkpoints.states[checkpointID]; ok {
+		return fmt.Errorf("snapshot for checkpoint %d already exists", checkpointID)
+	}
+	c.checkpoints.states[checkpointID] = snapshot
 	return nil
 }
 
-func (c *DefaultContext) SaveState(checkpointId int64) error {
-	if c.store != nil {
-		c.mu.Lock()
-		snap := c.snapshot
-		c.snapshot = nil
-		c.mu.Unlock()
-		if snap != nil {
-			err := c.store.SaveState(checkpointId, c.opId, snap)
-			if err != nil {
-				return err
-			}
-		}
+func (c *DefaultContext) SaveSnapshot(checkpointID int64) error {
+	if c.store == nil {
+		return nil
 	}
-	return nil
+	if c.checkpoints == nil {
+		return fmt.Errorf("checkpoint context is not initialized")
+	}
+	c.checkpoints.mu.Lock()
+	snapshot, ok := c.checkpoints.states[checkpointID]
+	if ok {
+		delete(c.checkpoints.states, checkpointID)
+	}
+	c.checkpoints.mu.Unlock()
+	if !ok {
+		return fmt.Errorf("snapshot for checkpoint %d does not exist", checkpointID)
+	}
+	store, ok := c.store.(checkpoint.FrozenStateStore)
+	if !ok {
+		return fmt.Errorf("checkpoint store %T does not support frozen state", c.store)
+	}
+	return store.SaveFrozenState(checkpointID, c.opId, snapshot)
 }
 
 func (c *DefaultContext) EnableTracer(enabled bool) {

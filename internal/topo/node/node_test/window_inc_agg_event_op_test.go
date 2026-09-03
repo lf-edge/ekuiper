@@ -550,6 +550,69 @@ func TestTestIncEventSlidingWindowState(t *testing.T) {
 	op2.Close()
 }
 
+func TestIncEventSlidingWindowRestoreFromDecodedState(t *testing.T) {
+	conf.IsTesting = true
+	incPlan := buildIncAggPlan(t, "select count(*) from stream group by slidingWindow(ss,10,1)")
+	options := &def.RuleOption{
+		BufferLength: 16,
+		IsEventTime:  true,
+	}
+	config := &node.WindowConfig{
+		Type:   incPlan.WType,
+		Length: time.Second,
+		Delay:  time.Second,
+	}
+	base := time.Unix(4_000, 0)
+
+	ctx, cancel := newIncAggTestContext("event_sliding_decode", "op")
+	op, input, _, _ := startIncAggTestOperator(t, incPlan, config, options, ctx)
+	input <- &xsql.Tuple{
+		Message:   map[string]any{"a": int64(1)},
+		Timestamp: base,
+	}
+	waitForIncAggProcessed(t, op, 1)
+	waitForIncAggState(t, op, ctx, func(value any) bool {
+		state, ok := value.(node.SlidingWindowIncAggEventOpState)
+		return ok && len(state.CurrWindowList) == 1 && len(state.EmitList) == 1
+	})
+	frozen := freezeIncAggState(t, ctx)
+	stopIncAggOperator(t, ctx, cancel)
+
+	restoredCtx, restoredCancel := decodedIncAggContext(t, frozen, "event_sliding_decode", "op")
+	restoredOp, err := node.NewWindowIncAggOp(
+		"checkpoint_test",
+		config,
+		incPlan.Dimensions,
+		incPlan.IncAggFuncs,
+		options,
+	)
+	require.NoError(t, err)
+	sliding, ok := restoredOp.WindowExec.(*node.SlidingWindowIncAggEventOp)
+	require.True(t, ok)
+	require.NoError(t, sliding.RestoreFromState(restoredCtx))
+
+	restoredInput, _ := restoredOp.GetInput()
+	restoredOutput := make(chan any, 4)
+	require.NoError(t, restoredOp.AddOutput(restoredOutput, "output"))
+	restoredErrCh := make(chan error, 2)
+	restoredOp.Exec(restoredCtx, restoredErrCh)
+	restoredInput <- &xsql.Tuple{
+		Message:   map[string]any{"a": int64(2)},
+		Timestamp: base.Add(500 * time.Millisecond),
+	}
+	waitForIncAggProcessed(t, restoredOp, 1)
+	waitForIncAggState(t, restoredOp, restoredCtx, func(value any) bool {
+		state, ok := value.(node.SlidingWindowIncAggEventOpState)
+		return ok && len(state.CurrWindowList) == 2 && len(state.EmitList) == 2
+	})
+	restoredInput <- &xsql.WatermarkTuple{Timestamp: base.Add(2 * time.Second)}
+	first := receiveIncAggWindow(t, restoredOutput, restoredErrCh)
+	require.Equal(t, int64(2), first.ToMaps()[0]["inc_agg_col_1"])
+	second := receiveIncAggWindow(t, restoredOutput, restoredErrCh)
+	require.Equal(t, int64(2), second.ToMaps()[0]["inc_agg_col_1"])
+	stopIncAggOperator(t, restoredCtx, restoredCancel)
+}
+
 func TestIncEventCountWindowState(t *testing.T) {
 	conf.IsTesting = true
 	o := &def.RuleOption{
