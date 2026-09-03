@@ -161,6 +161,25 @@ func registerGlobalAggFunc() {
 			return nil
 		},
 	}
+	builtins["acc_min_by"] = builtinFunc{
+		fType: ast.FuncTypeScalar,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			status, err := handleAccMinBy(ctx, args)
+			if err != nil {
+				return err, false
+			}
+			if status.Value == nil {
+				return nil, true
+			}
+			return status.Value.(*accMinByStatus).Value, true
+		},
+		val: func(_ api.FunctionContext, args []ast.Expr) error {
+			if len(args) != 2 && len(args) != 4 {
+				return fmt.Errorf("Expect 2/4 arguments but found %d.", len(args))
+			}
+			return nil
+		},
+	}
 	builtins["acc_map_agg"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
@@ -241,6 +260,79 @@ func accMaxByWithCond(ctx api.FunctionContext, value, by interface{}, begin, res
 	}
 	if status.HasBegin {
 		accMaxByExec(ctx, value, by, valid, key, status, true)
+	}
+	if reset {
+		status.HasBegin = false
+	}
+	if status.Err == nil {
+		if err := ctx.PutState(key, status); err != nil {
+			status.Err = err
+		}
+	}
+}
+
+// accMinByStatus keeps the latest value when compare values are equal.
+type accMinByStatus struct {
+	Value interface{}
+	By    float64
+}
+
+func handleAccMinBy(ctx api.FunctionContext, args []interface{}) (*accStatus, error) {
+	if len(args) != 4 && len(args) != 6 {
+		return nil, fmt.Errorf("wrong args length for acc_min_by: %d", len(args))
+	}
+	valid, key, status, err := extractAccStatus(ctx, args)
+	if err != nil {
+		return nil, err
+	}
+	if len(args) == 6 {
+		begin, ok1 := args[2].(bool)
+		reset, ok2 := args[3].(bool)
+		if !ok1 || !ok2 {
+			return nil, fmt.Errorf("acc_min_by conditions should be boolean")
+		}
+		accMinByWithCond(ctx, args[0], args[1], begin, reset, valid, key, status)
+	} else {
+		accMinByExec(ctx, args[0], args[1], valid, key, status, false)
+	}
+	if status.Err != nil {
+		return nil, status.Err
+	}
+	return status, nil
+}
+
+func accMinByExec(ctx api.FunctionContext, value, by interface{}, valid bool, key string, status *accStatus, skip bool) {
+	if !valid || by == nil {
+		return
+	}
+	b, err := cast.ToFloat64(by, cast.CONVERT_SAMEKIND)
+	if err != nil {
+		status.Err = fmt.Errorf("acc_min_by compare_value should be number: %w", err)
+		return
+	}
+	if math.IsNaN(b) {
+		return
+	}
+	current, ok := status.Value.(*accMinByStatus)
+	if !ok || math.IsNaN(current.By) || b <= current.By {
+		status.Value = &accMinByStatus{Value: value, By: b}
+	}
+	if !skip {
+		if err := ctx.PutState(key, status); err != nil {
+			status.Err = err
+		}
+	}
+}
+
+func accMinByWithCond(ctx api.FunctionContext, value, by interface{}, begin, reset, valid bool, key string, status *accStatus) {
+	if !status.HasBegin {
+		status.Value = nil
+	}
+	if begin && !status.HasBegin {
+		status.HasBegin = true
+	}
+	if status.HasBegin {
+		accMinByExec(ctx, value, by, valid, key, status, true)
 	}
 	if reset {
 		status.HasBegin = false

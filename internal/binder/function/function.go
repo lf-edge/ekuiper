@@ -81,6 +81,7 @@ var analyticFuncs = map[string]struct{}{
 	"acc_count":   {},
 	"acc_collect": {},
 	"acc_max_by":  {},
+	"acc_min_by":  {},
 	"acc_map_agg": {},
 }
 

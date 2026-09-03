@@ -411,6 +411,20 @@ acc_max_by(value, compare_value)
 acc_max_by(ts, temp) over (partition by soc)
 ```
 
+### ACC_MIN_BY
+
+```text
+acc_min_by(value, compare_value)
+```
+
+`acc_min_by` 累计比较 `compare_value`，返回其最小值对应的 `value`。当 `compare_value` 相等时，使用最新一条数据对应的 `value`。当没有有效的 `compare_value` 时，返回 `nil`。
+
+示例：获取累计最低温度对应的采集时间。
+
+```text
+acc_min_by(ts, temp) over (partition by soc)
+```
+
 ### ACC_MAP_AGG
 
 ```text

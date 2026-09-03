@@ -427,6 +427,20 @@ Example: get the collection timestamp associated with the cumulative maximum tem
 acc_max_by(ts, temp) over (partition by soc)
 ```
 
+### ACC_MIN_BY
+
+```text
+acc_min_by(value, compare_value)
+```
+
+The `acc_min_by` function cumulatively compares `compare_value` and returns the `value` associated with its smallest value. If `compare_value` is equal, the `value` from the latest event is used. It returns `nil` when there is no valid `compare_value`.
+
+Example: get the collection timestamp associated with the cumulative minimum temperature.
+
+```text
+acc_min_by(ts, temp) over (partition by soc)
+```
+
 ### ACC_MAP_AGG
 
 ```text
