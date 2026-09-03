@@ -4,8 +4,9 @@ Thank you for considering contributing to the eKuiper project. Your involvement 
 
 ## Table of Contents
 - [How to Contribute](#how-to-contribute)
-  - [Reporting Bugs](#reporting-bugs)
-  - [Code and Documentation Contributions](#code-and-documentation-contributions)
+  - [Reporting Security Vulnerabilities](#reporting-security-vulnerabilities)
+  - [Reporting Bugs](#did-you-find-a-bug)
+  - [Code and Documentation Contributions](#code-and-doc-contribution)
 - [Community Promotion](#community-promotion)
 - [Roles and Responsibilities](#roles-and-responsibilities)
   - [Contributor](#contributor)
@@ -17,8 +18,13 @@ Thank you for considering contributing to the eKuiper project. Your involvement 
 
 We're really glad you're reading this, because we need volunteer developers to help this project come to fruition.
 
+## Reporting security vulnerabilities
+
+Do **not** open a public GitHub issue for a security vulnerability. Report it privately as described in [SECURITY.md](./SECURITY.md). For actively exploited vulnerabilities or other severe security incidents, use the emergency contact in that file.
+
 ## Did you find a bug?
 
+- If the bug is a **security vulnerability**, stop here and follow [SECURITY.md](./SECURITY.md) instead of filing a public issue.
 - **Ensure the bug was not already reported** by searching on GitHub
   under [Issues](https://github.com/lf-edge/ekuiper/issues).
 - If you're unable to find an open issue addressing the

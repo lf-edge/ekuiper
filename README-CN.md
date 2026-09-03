@@ -80,7 +80,7 @@ eKuiper 可以运行在各类物联网的边缘使用场景中，比如，
 - [Reddit](https://www.reddit.com/r/emqx/)
 - [Facebook](https://www.facebook.com/emqxmqtt)
 
-欢迎你将任何 bug、问题和功能请求提交到 [lf-edge/ekuiper](https://github.com/lf-edge/ekuiper/issues)。
+欢迎你将任何 bug、问题和功能请求提交到 [lf-edge/ekuiper](https://github.com/lf-edge/ekuiper/issues)。**安全漏洞请不要开公开 Issue**，请按 [SECURITY.md](./SECURITY.md) 通过私有渠道报告。
 
 ### 会议
 
@@ -93,6 +93,10 @@ eKuiper 可以运行在各类物联网的边缘使用场景中，比如，
 ### 贡献
 
 感谢您的贡献！请参阅 [CONTRIBUTING.md](./docs/zh_CN/CONTRIBUTING.md) 获取详细信息。
+
+### 安全
+
+请通过私有渠道报告安全漏洞，不要开公开 GitHub Issue。详见 [SECURITY.md](./SECURITY.md)。
 
 ## 性能测试结果
 

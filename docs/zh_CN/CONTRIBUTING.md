@@ -2,8 +2,13 @@
 
 很高兴你能读到这篇文章，欢迎加入项目社区，帮助项目成长。
 
+## 报告安全漏洞
+
+请**不要**为安全漏洞开公开 GitHub Issue。请按 [SECURITY.md](../../SECURITY.md) 通过私有渠道报告。如果漏洞正在被利用，或其他严重安全事故，请使用该文件中的紧急联系方式。
+
 ## 发现 bug ？
 
+- 如果该问题是**安全漏洞**，请不要开公开 Issue，改按 [SECURITY.md](../../SECURITY.md) 报告。
 - **通过在 GitHub 的 [Issues](https://github.com/lf-edge/ekuiper/issues) 下搜索，确保该错误尚未被报告**。
 - 如果你找不到解决该问题的公开问题，[开一个新的 Issue](https://github.com/lf-edge/ekuiper/issues/new)。请确保**标题和清晰的描述**，尽可能多的相关信息，以及**代码样本**或**可执行的测试案例**，以明确问题。
 
