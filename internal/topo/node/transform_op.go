@@ -1,4 +1,4 @@
-// Copyright 2024-2025 EMQ Technologies Co., Ltd.
+// Copyright 2024-2026 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -224,11 +224,15 @@ func toSinkTuple(_, spanCtx api.StreamContext, bs any, props map[string]string) 
 	case []byte:
 		return &xsql.RawTuple{Ctx: spanCtx, Rawdata: bt, Props: props, Timestamp: timex.GetNow()}
 	case map[string]any:
-		return &xsql.Tuple{Ctx: spanCtx, Message: bt, Timestamp: timex.GetNow(), Props: props}
+		tuple := &xsql.Tuple{Message: bt, Timestamp: timex.GetNow(), Props: props}
+		tuple.SetTracerCtx(spanCtx)
+		return tuple
 	case []map[string]any:
 		tuples := make([]api.MessageTuple, 0, len(bt))
 		for _, m := range bt {
-			tuples = append(tuples, &xsql.Tuple{Ctx: spanCtx, Message: m, Timestamp: timex.GetNow()})
+			tuple := &xsql.Tuple{Message: m, Timestamp: timex.GetNow()}
+			tuple.SetTracerCtx(spanCtx)
+			tuples = append(tuples, tuple)
 		}
 		return &xsql.TransformedTupleList{Ctx: spanCtx, Content: tuples, Maps: bt, Props: props}
 	default:

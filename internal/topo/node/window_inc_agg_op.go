@@ -1,4 +1,4 @@
-// Copyright 2024-2025 EMQ Technologies Co., Ltd.
+// Copyright 2024-2026 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/gob"
 	"fmt"
+	"sort"
 	"sync"
 	"time"
 
@@ -47,7 +48,10 @@ func init() {
 	gob.Register(CountWindowIncAggOpState{})
 	gob.Register(TumblingWindowIncAggOpState{})
 	gob.Register(SlidingWindowIncAggOpState{})
+	gob.Register(HoppingWindowIncAggOpState{})
+	gob.Register(HoppingWindowIncAggEventOpState{})
 	gob.Register(SlidingWindowIncAggEventOpState{})
+	gob.Register(CountWindowIncAggEventOpState{})
 }
 
 type WindowIncAggOperator struct {
@@ -373,14 +377,14 @@ func (co *CountWindowIncAggOp) emit(ctx api.StreamContext, errCh chan<- error) {
 
 type TumblingWindowIncAggOp struct {
 	*WindowIncAggOperator
-	ticker     *clock.Ticker
 	FirstTimer *clock.Timer
 	Interval   time.Duration
 	TumblingWindowIncAggOpState
 }
 
 type TumblingWindowIncAggOpState struct {
-	CurrWindow *IncAggWindow
+	CurrWindow      *IncAggWindow
+	NextTriggerTime time.Time
 }
 
 func NewTumblingWindowIncAggOp(o *WindowIncAggOperator) *TumblingWindowIncAggOp {
@@ -419,64 +423,20 @@ func (to *TumblingWindowIncAggOp) exec(ctx api.StreamContext, errCh chan<- error
 		return
 	}
 	defer func() {
-		if to.ticker != nil {
-			to.ticker.Stop()
+		if to.FirstTimer != nil {
+			to.FirstTimer.Stop()
 		}
 	}()
-	now := timex.GetNow()
-	if !EnableAlignWindow {
-		to.ticker = timex.GetTicker(to.Interval)
-	} else {
-		_, to.FirstTimer = getFirstTimer(ctx, to.windowConfig.RawInterval, to.windowConfig.TimeUnit)
-		if to.FirstTimer != nil {
-			to.markFirstTimerCreated()
-		}
-		if to.CurrWindow == nil {
-			to.CurrWindow = newIncAggWindow(ctx, now)
-		}
+	if err := to.restoreTimer(ctx, errCh); err != nil {
+		errCh <- err
+		return
 	}
 	fv, _ := xsql.NewFunctionValuersForOp(ctx)
-	if to.FirstTimer != nil {
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case done := <-to.putStateReqCh:
-				to.PutState(ctx)
-				done <- nil
-			case done := <-to.restoreReqCh:
-				done <- to.RestoreFromState(ctx)
-			case now := <-to.FirstTimer.C:
-				to.FirstTimer.Stop()
-				to.FirstTimer = nil
-				if to.CurrWindow != nil {
-					to.emit(ctx, errCh, now)
-				}
-				to.ticker = timex.GetTicker(to.Interval)
-				to.PutState(ctx)
-				goto outer
-			case input := <-to.input:
-				now := timex.GetNow()
-				data, processed := to.commonIngest(ctx, input)
-				if processed {
-					continue
-				}
-				to.onProcessStart(ctx, input)
-				switch row := data.(type) {
-				case *xsql.Tuple:
-					if to.CurrWindow == nil {
-						to.CurrWindow = newIncAggWindow(ctx, now)
-					}
-					name := calDimension(fv, to.Dimensions, row)
-					incAggCal(ctx, name, row, to.CurrWindow, to.aggFields)
-				}
-				to.PutState(ctx)
-				to.onProcessEnd(ctx)
-			}
-		}
-	}
-outer:
 	for {
+		var timerC <-chan time.Time
+		if to.FirstTimer != nil {
+			timerC = to.FirstTimer.C
+		}
 		select {
 		case <-ctx.Done():
 			return
@@ -484,7 +444,11 @@ outer:
 			to.PutState(ctx)
 			done <- nil
 		case done := <-to.restoreReqCh:
-			done <- to.RestoreFromState(ctx)
+			err := to.RestoreFromState(ctx)
+			if err == nil {
+				err = to.restoreTimer(ctx, errCh)
+			}
+			done <- err
 		case input := <-to.input:
 			now := timex.GetNow()
 			data, processed := to.commonIngest(ctx, input)
@@ -502,12 +466,60 @@ outer:
 			}
 			to.PutState(ctx)
 			to.onProcessEnd(ctx)
-		case now := <-to.ticker.C:
-			if to.CurrWindow != nil {
-				to.emit(ctx, errCh, now)
-			}
-			to.PutState(ctx)
+		case <-timerC:
+			to.fireTimer(ctx, errCh, timex.GetNow())
 		}
+	}
+}
+
+func (to *TumblingWindowIncAggOp) restoreTimer(ctx api.StreamContext, errCh chan<- error) error {
+	if to.Interval <= 0 {
+		return fmt.Errorf("invalid tumbling window interval %v", to.Interval)
+	}
+	if to.FirstTimer != nil {
+		to.FirstTimer.Stop()
+		to.FirstTimer = nil
+	}
+	now := timex.GetNow()
+	if to.NextTriggerTime.IsZero() {
+		if EnableAlignWindow {
+			to.NextTriggerTime = getAlignedWindowEndTime(now, to.windowConfig.RawInterval, to.windowConfig.TimeUnit)
+			if to.CurrWindow == nil {
+				to.CurrWindow = newIncAggWindow(ctx, now)
+			}
+		} else {
+			to.NextTriggerTime = now.Add(to.Interval)
+		}
+	}
+	if !to.NextTriggerTime.After(now) {
+		to.fireTimer(ctx, errCh, now)
+		return nil
+	}
+	to.scheduleTimer()
+	to.PutState(ctx)
+	return nil
+}
+
+func (to *TumblingWindowIncAggOp) fireTimer(ctx api.StreamContext, errCh chan<- error, now time.Time) {
+	fireAt := to.NextTriggerTime
+	if to.CurrWindow != nil {
+		to.emit(ctx, errCh, fireAt)
+	}
+	if !to.NextTriggerTime.After(now) {
+		missed := now.Sub(to.NextTriggerTime) / to.Interval
+		to.NextTriggerTime = to.NextTriggerTime.Add(missed * to.Interval)
+	}
+	if !to.NextTriggerTime.After(now) {
+		to.NextTriggerTime = to.NextTriggerTime.Add(to.Interval)
+	}
+	to.scheduleTimer()
+	to.PutState(ctx)
+}
+
+func (to *TumblingWindowIncAggOp) scheduleTimer() {
+	to.FirstTimer = timex.GetTimerByTime(to.NextTriggerTime)
+	if EnableAlignWindow {
+		to.markFirstTimerCreated()
 	}
 }
 
@@ -532,16 +544,25 @@ type SlidingWindowIncAggOp struct {
 	triggerCondition ast.Expr
 	Length           time.Duration
 	Delay            time.Duration
-	taskCh           chan *IncAggOpTask
+	delayTimer       *clock.Timer
 	SlidingWindowIncAggOpState
 }
 
 type SlidingWindowIncAggOpState struct {
 	CurrWindowList []*IncAggWindow
+	// Pending is ordered by FireAt and then ID. Processing-time deadlines are
+	// absolute, so downtime counts toward Delay.
+	Pending       []PendingSlidingIncAggTask
+	NextPendingID uint64
 }
 
 type IncAggOpTask struct {
 	window *IncAggWindow
+}
+
+type PendingSlidingIncAggTask struct {
+	ID     uint64
+	FireAt time.Time
 }
 
 func NewSlidingWindowIncAggOp(o *WindowIncAggOperator) *SlidingWindowIncAggOp {
@@ -550,9 +571,9 @@ func NewSlidingWindowIncAggOp(o *WindowIncAggOperator) *SlidingWindowIncAggOp {
 		triggerCondition:     o.windowConfig.TriggerCondition,
 		Length:               o.windowConfig.Length,
 		Delay:                o.windowConfig.Delay,
-		taskCh:               make(chan *IncAggOpTask, 1024),
 	}
 	op.SlidingWindowIncAggOpState.CurrWindowList = make([]*IncAggWindow, 0)
+	op.SlidingWindowIncAggOpState.Pending = make([]PendingSlidingIncAggTask, 0)
 	return op
 }
 
@@ -577,12 +598,20 @@ func (so *SlidingWindowIncAggOp) RestoreFromState(ctx api.StreamContext) error {
 		return fmt.Errorf("not SlidingWindowIncAggOpState")
 	}
 	so.SlidingWindowIncAggOpState = soState
+	if so.delayTimer != nil {
+		so.delayTimer.Stop()
+		so.delayTimer = nil
+	}
+	if so.Pending == nil {
+		so.Pending = make([]PendingSlidingIncAggTask, 0)
+	}
 	for index, window := range so.CurrWindowList {
-		window.GenerateAllFunctionState()
+		window.restoreState(ctx)
 		so.CurrWindowList[index] = window
 	}
-	now := timex.GetNow()
-	so.CurrWindowList = gcIncAggWindow(so.CurrWindowList, so.Length, now)
+	sort.SliceStable(so.Pending, func(i, j int) bool {
+		return pendingSlidingTaskBefore(so.Pending[i], so.Pending[j])
+	})
 	return nil
 }
 
@@ -591,18 +620,40 @@ func (so *SlidingWindowIncAggOp) exec(ctx api.StreamContext, errCh chan<- error)
 		errCh <- err
 		return
 	}
+	so.drainDuePendingTasks(ctx, errCh, timex.GetNow())
+	so.resetPendingTimer()
+	defer func() {
+		if so.delayTimer != nil {
+			so.delayTimer.Stop()
+		}
+	}()
 	fv, _ := xsql.NewFunctionValuersForOp(ctx)
 	for {
+		var delayTimerC <-chan time.Time
+		if so.delayTimer != nil {
+			delayTimerC = so.delayTimer.C
+		}
 		select {
 		case <-ctx.Done():
 			return
 		case done := <-so.putStateReqCh:
+			if so.drainDuePendingTasks(ctx, errCh, timex.GetNow()) {
+				so.resetPendingTimer()
+			}
 			so.PutState(ctx)
 			done <- nil
 		case done := <-so.restoreReqCh:
-			done <- so.RestoreFromState(ctx)
+			err := so.RestoreFromState(ctx)
+			if err == nil {
+				so.drainDuePendingTasks(ctx, errCh, timex.GetNow())
+				so.resetPendingTimer()
+			}
+			done <- err
 		case input := <-so.input:
 			now := timex.GetNow()
+			if so.drainDuePendingTasks(ctx, errCh, now) {
+				so.resetPendingTimer()
+			}
 			data, processed := so.commonIngest(ctx, input)
 			if processed {
 				continue
@@ -610,20 +661,18 @@ func (so *SlidingWindowIncAggOp) exec(ctx api.StreamContext, errCh chan<- error)
 			so.onProcessStart(ctx, input)
 			switch row := data.(type) {
 			case *xsql.Tuple:
-				so.CurrWindowList = gcIncAggWindow(so.CurrWindowList, so.Length+so.Delay, now)
+				so.gcWindows(now)
 				so.appendIncAggWindow(ctx, errCh, fv, row, now)
 				if so.isMatchCondition(ctx, fv, row) {
 					if so.Delay > 0 {
-						t := &IncAggOpTask{}
-						go func(task *IncAggOpTask) {
-							after := timex.After(so.Delay)
-							select {
-							case <-ctx.Done():
-								return
-							case <-after:
-								so.taskCh <- task
-							}
-						}(t)
+						pending := PendingSlidingIncAggTask{
+							ID:     so.NextPendingID,
+							FireAt: now.Add(so.Delay),
+						}
+						so.NextPendingID++
+						if so.insertPendingTask(pending) {
+							so.resetPendingTimer()
+						}
 					} else {
 						so.emit(ctx, errCh, so.CurrWindowList[0], now)
 					}
@@ -631,15 +680,79 @@ func (so *SlidingWindowIncAggOp) exec(ctx api.StreamContext, errCh chan<- error)
 				so.PutState(ctx)
 			}
 			so.onProcessEnd(ctx)
-		case <-so.taskCh:
-			now := timex.GetNow()
-			so.CurrWindowList = gcIncAggWindow(so.CurrWindowList, so.Length+so.Delay, now)
-			if len(so.CurrWindowList) > 0 {
-				so.emit(ctx, errCh, so.CurrWindowList[0], now)
-			}
-			so.PutState(ctx)
+		case <-delayTimerC:
+			so.delayTimer = nil
+			so.drainDuePendingTasks(ctx, errCh, timex.GetNow())
+			so.resetPendingTimer()
 		}
 	}
+}
+
+func (so *SlidingWindowIncAggOp) drainDuePendingTasks(ctx api.StreamContext, errCh chan<- error, now time.Time) bool {
+	drained := false
+	for len(so.Pending) > 0 && !so.Pending[0].FireAt.After(now) {
+		pending := so.Pending[0]
+		so.Pending = so.Pending[1:]
+		so.emitPendingTask(ctx, errCh, pending)
+		drained = true
+	}
+	if drained {
+		so.gcWindows(now)
+		so.PutState(ctx)
+	}
+	return drained
+}
+
+func (so *SlidingWindowIncAggOp) emitPendingTask(ctx api.StreamContext, errCh chan<- error, pending PendingSlidingIncAggTask) {
+	cutoff := pending.FireAt.Add(-so.Delay).Add(-so.Length)
+	for _, window := range so.CurrWindowList {
+		if window.StartTime.After(cutoff) {
+			so.emit(ctx, errCh, window, pending.FireAt)
+			break
+		}
+	}
+}
+
+// insertPendingTask returns true when the earliest deadline changed.
+func (so *SlidingWindowIncAggOp) insertPendingTask(pending PendingSlidingIncAggTask) bool {
+	count := len(so.Pending)
+	if count == 0 || !pendingSlidingTaskBefore(pending, so.Pending[count-1]) {
+		so.Pending = append(so.Pending, pending)
+		return count == 0
+	}
+	index := sort.Search(count, func(i int) bool {
+		return !pendingSlidingTaskBefore(so.Pending[i], pending)
+	})
+	so.Pending = append(so.Pending, PendingSlidingIncAggTask{})
+	copy(so.Pending[index+1:], so.Pending[index:])
+	so.Pending[index] = pending
+	return index == 0
+}
+
+func pendingSlidingTaskBefore(left, right PendingSlidingIncAggTask) bool {
+	if left.FireAt.Equal(right.FireAt) {
+		return left.ID < right.ID
+	}
+	return left.FireAt.Before(right.FireAt)
+}
+
+func (so *SlidingWindowIncAggOp) gcWindows(now time.Time) {
+	gcAt := now
+	if len(so.Pending) > 0 && so.Pending[0].FireAt.Before(gcAt) {
+		gcAt = so.Pending[0].FireAt
+	}
+	so.CurrWindowList = gcIncAggWindow(so.CurrWindowList, so.Length+so.Delay, gcAt)
+}
+
+func (so *SlidingWindowIncAggOp) resetPendingTimer() {
+	if so.delayTimer != nil {
+		so.delayTimer.Stop()
+		so.delayTimer = nil
+	}
+	if len(so.Pending) == 0 {
+		return
+	}
+	so.delayTimer = timex.GetTimerByTime(so.Pending[0].FireAt)
 }
 
 func (so *SlidingWindowIncAggOp) appendIncAggWindow(ctx api.StreamContext, errCh chan<- error, fv *xsql.FunctionValuer, row *xsql.Tuple, now time.Time) {
@@ -692,7 +805,6 @@ func (so *SlidingWindowIncAggOp) isMatchCondition(ctx api.StreamContext, fv *xsq
 type HoppingWindowIncAggOp struct {
 	*WindowIncAggOperator
 	FirstTimer *clock.Timer
-	ticker     *clock.Ticker
 	Length     time.Duration
 	Interval   time.Duration
 	taskCh     chan *IncAggOpTask
@@ -701,6 +813,7 @@ type HoppingWindowIncAggOp struct {
 
 type HoppingWindowIncAggOpState struct {
 	CurrWindowList []*IncAggWindow
+	NextWindowTime time.Time
 }
 
 func NewHoppingWindowIncAggOp(o *WindowIncAggOperator) *HoppingWindowIncAggOp {
@@ -739,19 +852,6 @@ func (ho *HoppingWindowIncAggOp) RestoreFromState(ctx api.StreamContext) error {
 		window.restoreState(ctx)
 		ho.CurrWindowList[index] = window
 	}
-	now := time.Now()
-	ho.CurrWindowList = gcIncAggWindow(ho.CurrWindowList, ho.Length, now)
-	for _, window := range ho.CurrWindowList {
-		go func(restoreWindow *IncAggWindow) {
-			after := timex.After(now.Sub(restoreWindow.StartTime))
-			select {
-			case <-ctx.Done():
-				return
-			case <-after:
-				ho.taskCh <- &IncAggOpTask{window: restoreWindow}
-			}
-		}(window)
-	}
 	return nil
 }
 
@@ -761,23 +861,20 @@ func (ho *HoppingWindowIncAggOp) exec(ctx api.StreamContext, errCh chan<- error)
 		return
 	}
 	defer func() {
-		if ho.ticker != nil {
-			ho.ticker.Stop()
+		if ho.FirstTimer != nil {
+			ho.FirstTimer.Stop()
 		}
 	}()
-	now := timex.GetNow()
-	if !EnableAlignWindow {
-		ho.ticker = timex.GetTicker(ho.Interval)
-		ho.newIncWindow(ctx, now)
-	} else {
-		_, ho.FirstTimer = getFirstTimer(ctx, ho.windowConfig.RawInterval, ho.windowConfig.TimeUnit)
-		if ho.FirstTimer != nil {
-			ho.markFirstTimerCreated()
-		}
-		ho.CurrWindowList = append(ho.CurrWindowList, newIncAggWindow(ctx, now))
+	if err := ho.restoreTimers(ctx, errCh); err != nil {
+		errCh <- err
+		return
 	}
 	fv, _ := xsql.NewFunctionValuersForOp(ctx)
 	for {
+		var timerC <-chan time.Time
+		if ho.FirstTimer != nil {
+			timerC = ho.FirstTimer.C
+		}
 		select {
 		case <-ctx.Done():
 			return
@@ -785,12 +882,13 @@ func (ho *HoppingWindowIncAggOp) exec(ctx api.StreamContext, errCh chan<- error)
 			ho.PutState(ctx)
 			done <- nil
 		case done := <-ho.restoreReqCh:
-			done <- ho.RestoreFromState(ctx)
+			err := ho.RestoreFromState(ctx)
+			if err == nil {
+				err = ho.restoreTimers(ctx, errCh)
+			}
+			done <- err
 		case task := <-ho.taskCh:
-			now := timex.GetNow()
-			ho.emit(ctx, errCh, task.window, now)
-			ho.CurrWindowList = gcIncAggWindow(ho.CurrWindowList, ho.Length, now)
-			ho.PutState(ctx)
+			ho.handleWindowTask(ctx, errCh, task)
 		case input := <-ho.input:
 			now := timex.GetNow()
 			data, processed := ho.commonIngest(ctx, input)
@@ -800,37 +898,14 @@ func (ho *HoppingWindowIncAggOp) exec(ctx api.StreamContext, errCh chan<- error)
 			ho.onProcessStart(ctx, input)
 			switch row := data.(type) {
 			case *xsql.Tuple:
-				ho.CurrWindowList = gcIncAggWindow(ho.CurrWindowList, ho.Length, now)
 				ho.calIncAggWindow(ctx, fv, row, now)
 			}
 			ho.PutState(ctx)
-		default:
-		}
-		if ho.FirstTimer != nil {
-			select {
-			case <-ctx.Done():
-				return
-			case now := <-ho.FirstTimer.C:
-				ho.FirstTimer.Stop()
-				ho.FirstTimer = nil
-				ho.CurrWindowList = gcIncAggWindow(ho.CurrWindowList, ho.Length, now)
-				ho.newIncWindow(ctx, now)
-				ho.CurrWindowList = gcIncAggWindow(ho.CurrWindowList, ho.Length, now)
-				ho.ticker = timex.GetTicker(ho.Interval)
-				ho.PutState(ctx)
-			default:
-			}
-		}
-		if ho.ticker != nil {
-			select {
-			case <-ctx.Done():
-				return
-			case now := <-ho.ticker.C:
-				ho.CurrWindowList = gcIncAggWindow(ho.CurrWindowList, ho.Length, now)
-				ho.newIncWindow(ctx, now)
-				ho.PutState(ctx)
-			default:
-			}
+			ho.onProcessEnd(ctx)
+		case <-timerC:
+			ho.openDueWindows(ctx, timex.GetNow())
+			ho.scheduleWindowTimer()
+			ho.PutState(ctx)
 		}
 	}
 }
@@ -838,15 +913,104 @@ func (ho *HoppingWindowIncAggOp) exec(ctx api.StreamContext, errCh chan<- error)
 func (ho *HoppingWindowIncAggOp) newIncWindow(ctx api.StreamContext, now time.Time) {
 	newWindow := newIncAggWindow(ctx, now)
 	ho.CurrWindowList = append(ho.CurrWindowList, newWindow)
+	ho.scheduleWindowClose(ctx, newWindow, timex.GetNow())
+}
+
+func (ho *HoppingWindowIncAggOp) restoreTimers(ctx api.StreamContext, errCh chan<- error) error {
+	if ho.Length <= 0 || ho.Interval <= 0 {
+		return fmt.Errorf("invalid hopping window length %v or interval %v", ho.Length, ho.Interval)
+	}
+	if ho.FirstTimer != nil {
+		ho.FirstTimer.Stop()
+		ho.FirstTimer = nil
+	}
+	now := timex.GetNow()
+	var lastStart time.Time
+	if len(ho.CurrWindowList) > 0 {
+		lastStart = ho.CurrWindowList[len(ho.CurrWindowList)-1].StartTime
+	}
+	for _, window := range append([]*IncAggWindow(nil), ho.CurrWindowList...) {
+		fireAt := window.StartTime.Add(ho.Length)
+		if !fireAt.After(now) {
+			ho.handleWindowTask(ctx, errCh, &IncAggOpTask{window: window})
+		} else {
+			ho.scheduleWindowClose(ctx, window, now)
+		}
+	}
+	if ho.NextWindowTime.IsZero() {
+		switch {
+		case !lastStart.IsZero():
+			ho.NextWindowTime = lastStart.Add(ho.Interval)
+		case EnableAlignWindow:
+			ho.newIncWindow(ctx, now)
+			ho.NextWindowTime = getAlignedWindowEndTime(now, ho.windowConfig.RawInterval, ho.windowConfig.TimeUnit)
+		default:
+			ho.newIncWindow(ctx, now)
+			ho.NextWindowTime = now.Add(ho.Interval)
+		}
+	}
+	ho.openDueWindows(ctx, now)
+	ho.scheduleWindowTimer()
+	if EnableAlignWindow && ho.FirstTimer != nil {
+		ho.markFirstTimerCreated()
+	}
+	ho.PutState(ctx)
+	return nil
+}
+
+func (ho *HoppingWindowIncAggOp) openDueWindows(ctx api.StreamContext, now time.Time) {
+	activeCutoff := now.Add(-ho.Length)
+	if !ho.NextWindowTime.After(activeCutoff) {
+		missed := activeCutoff.Sub(ho.NextWindowTime) / ho.Interval
+		ho.NextWindowTime = ho.NextWindowTime.Add(missed * ho.Interval)
+		if !ho.NextWindowTime.After(activeCutoff) {
+			ho.NextWindowTime = ho.NextWindowTime.Add(ho.Interval)
+		}
+	}
+	for !ho.NextWindowTime.After(now) {
+		start := ho.NextWindowTime
+		ho.newIncWindow(ctx, start)
+		ho.NextWindowTime = ho.NextWindowTime.Add(ho.Interval)
+	}
+}
+
+func (ho *HoppingWindowIncAggOp) scheduleWindowTimer() {
+	if ho.FirstTimer != nil {
+		ho.FirstTimer.Stop()
+	}
+	ho.FirstTimer = timex.GetTimerByTime(ho.NextWindowTime)
+}
+
+func (ho *HoppingWindowIncAggOp) scheduleWindowClose(ctx api.StreamContext, window *IncAggWindow, now time.Time) {
+	fireAt := window.StartTime.Add(ho.Length)
+	if !fireAt.After(now) {
+		ho.taskCh <- &IncAggOpTask{window: window}
+		return
+	}
+	after := timex.After(fireAt.Sub(now))
 	go func() {
-		after := timex.After(ho.Length)
 		select {
 		case <-ctx.Done():
 			return
 		case <-after:
-			ho.taskCh <- &IncAggOpTask{window: newWindow}
+			select {
+			case <-ctx.Done():
+			case ho.taskCh <- &IncAggOpTask{window: window}:
+			}
 		}
 	}()
+}
+
+func (ho *HoppingWindowIncAggOp) handleWindowTask(ctx api.StreamContext, errCh chan<- error, task *IncAggOpTask) {
+	for index, window := range ho.CurrWindowList {
+		if window != task.window {
+			continue
+		}
+		ho.CurrWindowList = append(ho.CurrWindowList[:index], ho.CurrWindowList[index+1:]...)
+		ho.emit(ctx, errCh, window, window.StartTime.Add(ho.Length))
+		ho.PutState(ctx)
+		return
+	}
 }
 
 func (ho *HoppingWindowIncAggOp) emit(ctx api.StreamContext, errCh chan<- error, window *IncAggWindow, now time.Time) {

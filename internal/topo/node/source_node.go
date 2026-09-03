@@ -1,4 +1,4 @@
-// Copyright 2024-2025 EMQ Technologies Co., Ltd.
+// Copyright 2024-2026 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@ package node
 
 import (
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
@@ -25,6 +26,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/io/memory/pubsub"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/sig"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/checkpoint"
 	topoContext "github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node/tracenode"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
@@ -43,7 +45,15 @@ type SourceNode struct {
 	s         api.Source
 	interval  time.Duration
 	notifySub bool
+
+	checkpointMu  sync.Mutex
+	checkpointErr error
 }
+
+var (
+	_ checkpoint.CheckpointGuard          = (*SourceNode)(nil)
+	_ checkpoint.CheckpointStateValidator = (*SourceNode)(nil)
+)
 
 type sourceConf struct {
 	Interval cast.DurationConf `json:"interval"`
@@ -84,6 +94,8 @@ func (m *SourceNode) Open(ctx api.StreamContext, ctrlCh chan<- error) {
 }
 
 func (m *SourceNode) ingestBytes(ctx api.StreamContext, data []byte, meta map[string]any, ts time.Time) {
+	m.checkpointMu.Lock()
+	defer m.checkpointMu.Unlock()
 	ctx.GetLogger().Debugf("source connector %s receive data %+v", m.name, data)
 	m.onProcessStart(ctx, nil)
 	if meta == nil {
@@ -94,7 +106,7 @@ func (m *SourceNode) ingestBytes(ctx api.StreamContext, data []byte, meta map[st
 	m.Broadcast(tuple)
 	m.onSend(ctx, tuple)
 	m.onProcessEnd(ctx)
-	_ = m.updateState(ctx)
+	m.refreshCheckpointStateAndReport(ctx)
 }
 
 func (m *SourceNode) traceStart(ctx api.StreamContext, meta map[string]any, tuple xsql.HasTracerCtx) {
@@ -138,6 +150,8 @@ func (m *SourceNode) traceStart(ctx api.StreamContext, meta map[string]any, tupl
 }
 
 func (m *SourceNode) ingestAnyTuple(ctx api.StreamContext, data any, meta map[string]any, ts time.Time) {
+	m.checkpointMu.Lock()
+	defer m.checkpointMu.Unlock()
 	ctx.GetLogger().Debugf("source connector %s receive data %+v", m.name, data)
 	m.onProcessStart(ctx, nil)
 	if meta == nil {
@@ -175,7 +189,7 @@ func (m *SourceNode) ingestAnyTuple(ctx api.StreamContext, data any, meta map[st
 		panic(fmt.Sprintf("receive wrong data %v", data))
 	}
 	m.onProcessEnd(ctx)
-	_ = m.updateState(ctx)
+	m.refreshCheckpointStateAndReport(ctx)
 }
 
 func (m *SourceNode) connectionStatusChange(status string, message string) {
@@ -195,7 +209,8 @@ func (m *SourceNode) ingestMap(t map[string]any, meta map[string]any, ts time.Ti
 }
 
 func (m *SourceNode) ingestTuple(t *xsql.Tuple, ts time.Time) {
-	tuple := &xsql.Tuple{Emitter: m.name, Message: t.Message, Timestamp: ts, Metadata: t.Metadata, Ctx: t.Ctx}
+	tuple := &xsql.Tuple{Emitter: m.name, Message: t.Message, Timestamp: ts, Metadata: t.Metadata}
+	tuple.SetTracerCtx(t.GetTracerCtx())
 	// If receiving tuple, its source is still in the system. So continue tracing
 	traced, spanCtx, span := tracenode.TraceInput(m.ctx, tuple, m.name)
 	if traced {
@@ -208,12 +223,28 @@ func (m *SourceNode) ingestTuple(t *xsql.Tuple, ts time.Time) {
 }
 
 func (m *SourceNode) ingestError(ctx api.StreamContext, err error) {
+	m.checkpointMu.Lock()
+	defer m.checkpointMu.Unlock()
 	m.onError(ctx, err)
 }
 
 func (m *SourceNode) ingestEof(ctx api.StreamContext, msg string) {
+	m.checkpointMu.Lock()
+	defer m.checkpointMu.Unlock()
 	ctx.GetLogger().Infof("send out EOF %s", msg)
 	m.Broadcast(xsql.EOFTuple(msg))
+}
+
+func (m *SourceNode) LockCheckpoint() {
+	m.checkpointMu.Lock()
+}
+
+func (m *SourceNode) UnlockCheckpoint() {
+	m.checkpointMu.Unlock()
+}
+
+func (m *SourceNode) CheckpointError() error {
+	return m.checkpointErr
 }
 
 // GetSource only used for test
@@ -248,9 +279,42 @@ func (m *SourceNode) updateState(ctx api.StreamContext) error {
 		if err != nil {
 			return err
 		}
-		return ctx.PutState(OffsetKey, state)
+		if state == nil {
+			return ctx.PutState(OffsetKey, nil)
+		}
+		if _, ok := rw.(checkpoint.ImmutableOffsetProvider); ok {
+			return ctx.PutState(OffsetKey, state)
+		}
+		frozen, err := checkpoint.EncodeState(map[string]interface{}{OffsetKey: state})
+		if err != nil {
+			return err
+		}
+		owned, err := checkpoint.DecodeState(frozen)
+		if err != nil {
+			return err
+		}
+		return ctx.PutState(OffsetKey, owned[OffsetKey])
 	}
 	return nil
+}
+
+func (m *SourceNode) refreshCheckpointState(ctx api.StreamContext) error {
+	err := m.updateState(ctx)
+	if err != nil {
+		m.checkpointErr = fmt.Errorf("update source checkpoint offset: %w", err)
+	} else {
+		m.checkpointErr = nil
+	}
+	return m.checkpointErr
+}
+
+func (m *SourceNode) refreshCheckpointStateAndReport(ctx api.StreamContext) {
+	wasHealthy := m.checkpointErr == nil
+	if err := m.refreshCheckpointState(ctx); err != nil && wasHealthy {
+		// Do not broadcast an error for every tuple. The next checkpoint emits
+		// DEC while the error remains, and a successful offset update clears it.
+		m.onErrorOpt(ctx, err, false)
+	}
 }
 
 // Run Subscribe could be a long-running function

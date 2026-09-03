@@ -1,4 +1,4 @@
-// Copyright 2021-2024 EMQ Technologies Co., Ltd.
+// Copyright 2021-2026 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,9 +22,11 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/lf-edge/ekuiper/v2/internal/topo/checkpoint"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
+	"github.com/lf-edge/ekuiper/v2/pkg/model"
 )
 
 var fivet = []xsql.EventRow{
@@ -53,6 +55,40 @@ var fivet = []xsql.EventRow{
 			"f5": "v5",
 		},
 	},
+}
+
+func TestWindowCheckpointEventRowRoundTrip(t *testing.T) {
+	tuple := &xsql.Tuple{
+		Emitter:   "map-source",
+		Message:   xsql.Message{"id": int64(1)},
+		Timestamp: time.UnixMilli(100),
+	}
+	tuple.SetTracerCtx(context.Background())
+	sliceTuple := &xsql.SliceTuple{
+		SourceContent: model.SliceVal{int64(2), "value"},
+		Timestamp:     time.UnixMilli(200),
+	}
+	live := []xsql.EventRow{tuple, sliceTuple}
+
+	frozen, err := checkpoint.EncodeState(map[string]interface{}{WindowInputsKey: live})
+	require.NoError(t, err)
+	tuple.Message["id"] = int64(99)
+	sliceTuple.SourceContent[0] = int64(99)
+
+	restored, err := checkpoint.DecodeState(frozen)
+	require.NoError(t, err)
+	rows := restored[WindowInputsKey].([]xsql.EventRow)
+	require.Len(t, rows, 2)
+
+	restoredTuple, ok := rows[0].(*xsql.Tuple)
+	require.True(t, ok)
+	require.Nil(t, restoredTuple.GetTracerCtx())
+	require.Equal(t, int64(1), restoredTuple.Message["id"])
+
+	restoredSlice, ok := rows[1].(*xsql.SliceTuple)
+	require.True(t, ok)
+	require.Nil(t, restoredSlice.GetTracerCtx())
+	require.Equal(t, model.SliceVal{int64(2), "value"}, restoredSlice.SourceContent)
 }
 
 func TestTime(t *testing.T) {

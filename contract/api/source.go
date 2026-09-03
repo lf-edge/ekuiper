@@ -1,4 +1,4 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2026 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -61,6 +61,11 @@ type Bounded interface {
 
 // Rewindable is a source feature that allows the source to rewind to a specific offset.
 type Rewindable interface {
+	// GetOffset returns the recovery position for the tuple most recently
+	// accepted by an ingest callback. The returned object graph must remain
+	// stable until that callback returns and must be gob-serializable. An
+	// error prevents checkpoint completion until a later callback returns a
+	// valid offset.
 	GetOffset() (any, error)
 	Rewind(offset any) error
 	ResetOffset(input map[string]any) error

@@ -1,4 +1,4 @@
-// Copyright 2025 EMQ Technologies Co., Ltd.
+// Copyright 2025-2026 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -40,6 +40,8 @@ func init() {
 	gob.Register(time.Time{})
 	gob.Register(&StateWindowStatus{})
 	gob.Register(map[string]*StateWindowStatus{})
+	gob.Register(&SlidingWindowV2State{})
+	gob.Register(&EventSlidingWindowV2State{})
 }
 
 type WindowV2Operator struct {
@@ -165,11 +167,21 @@ func calPartition(fv *xsql.FunctionValuer, partitionExpr *ast.PartitionExpr, row
 
 func (s *StateWindowOp) exec(ctx api.StreamContext, errCh chan<- error) {
 	v, err := ctx.GetState(V2WindowInputsKey)
-	if err == nil && v != nil {
+	if err != nil {
+		infra.DrainError(ctx, err, errCh)
+		return
+	}
+	if v != nil {
 		preStatus, ok := v.(map[string]*StateWindowStatus)
-		if ok {
-			s.status = preStatus
+		if !ok {
+			infra.DrainError(ctx, fmt.Errorf("restore window V2 state %T error, invalid type", v), errCh)
+			return
 		}
+		s.status = preStatus
+	}
+	if err := ctx.PutState(V2WindowInputsKey, s.status); err != nil {
+		infra.DrainError(ctx, err, errCh)
+		return
 	}
 	fv, _ := xsql.NewFunctionValuersForOp(ctx)
 	for {
@@ -198,7 +210,6 @@ func (s *StateWindowOp) exec(ctx api.StreamContext, errCh chan<- error) {
 					s.handleTupleWithSingleCondition(ctx, fv, row, status)
 				}
 			}
-			ctx.PutState(V2WindowInputsKey, s.status)
 			s.onProcessEnd(ctx)
 		}
 	}
@@ -253,7 +264,30 @@ type SlidingWindowOp struct {
 	Length           time.Duration
 	stateFuncs       []*ast.Call
 	triggerCondition ast.Expr
-	delayNotify      chan time.Time
+	state            *SlidingWindowV2State
+	delayNotify      chan uint64
+}
+
+// SlidingWindowV2State is published once and then owned by the operator
+// goroutine. The checkpoint barrier performs the only deep freeze.
+type SlidingWindowV2State struct {
+	Scanner *WindowScanner
+	// Pending is ordered by trigger time. WindowScanner already requires
+	// timestamp-ordered input, so the first item also has the earliest
+	// window start needed by GC.
+	Pending           []PendingSlidingWindow
+	NextPendingID     uint64
+	LatestWindowStart time.Time
+}
+
+type PendingSlidingWindow struct {
+	ID uint64
+	// FireAt is an absolute processing-time deadline, so downtime counts
+	// toward Delay and an overdue window fires immediately after restore.
+	FireAt time.Time
+	// WindowEnd preserves the tuple-timestamp-based range used by the
+	// original execution, independently of the processing clock.
+	WindowEnd time.Time
 }
 
 func NewSlidingWindowOp(o *WindowV2Operator) *SlidingWindowOp {
@@ -263,20 +297,26 @@ func NewSlidingWindowOp(o *WindowV2Operator) *SlidingWindowOp {
 		Length:           o.windowConfig.Length,
 		stateFuncs:       o.windowConfig.StateFuncs,
 		triggerCondition: o.windowConfig.TriggerCondition,
-		delayNotify:      make(chan time.Time, 1024),
+		state: &SlidingWindowV2State{
+			Scanner: o.scanner,
+			Pending: make([]PendingSlidingWindow, 0),
+		},
+		delayNotify: make(chan uint64, 1024),
 	}
 }
 
 func (s *SlidingWindowOp) exec(ctx api.StreamContext, errCh chan<- error) {
+	if err := s.restoreState(ctx); err != nil {
+		infra.DrainError(ctx, err, errCh)
+		return
+	}
 	fv, _ := xsql.NewFunctionValuersForOp(ctx)
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		case delayTs := <-s.delayNotify:
-			windowEnd := delayTs
-			windowStart := delayTs.Add(-s.Delay).Add(-s.Length)
-			s.emitWindow(ctx, windowStart, windowEnd)
+		case pendingID := <-s.delayNotify:
+			s.emitPendingWindow(ctx, pendingID)
 		case input := <-s.input:
 			data, processed := s.commonIngest(ctx, input)
 			if processed {
@@ -287,7 +327,8 @@ func (s *SlidingWindowOp) exec(ctx api.StreamContext, errCh chan<- error) {
 			case *xsql.Tuple:
 				windowEnd := row.Timestamp
 				windowStart := windowEnd.Add(-s.Length)
-				s.scanner.gc(windowStart)
+				s.state.LatestWindowStart = windowStart
+				s.gcScanner()
 				s.scanner.addTuple(row)
 				sendWindow := true
 				if s.triggerCondition != nil {
@@ -295,15 +336,14 @@ func (s *SlidingWindowOp) exec(ctx api.StreamContext, errCh chan<- error) {
 				}
 				if s.Delay > 0 && sendWindow {
 					sendWindow = false
-					go func(ts time.Time) {
-						after := timex.After(s.Delay)
-						select {
-						case <-ctx.Done():
-							return
-						case <-after:
-							s.delayNotify <- ts
-						}
-					}(windowEnd.Add(s.Delay))
+					pending := PendingSlidingWindow{
+						ID:        s.state.NextPendingID,
+						FireAt:    timex.GetNow().Add(s.Delay),
+						WindowEnd: windowEnd.Add(s.Delay),
+					}
+					s.state.NextPendingID++
+					s.state.Pending = append(s.state.Pending, pending)
+					s.schedulePendingWindow(ctx, pending)
 				}
 				if sendWindow {
 					s.emitWindow(ctx, windowStart, windowEnd)
@@ -312,6 +352,86 @@ func (s *SlidingWindowOp) exec(ctx api.StreamContext, errCh chan<- error) {
 			s.onProcessEnd(ctx)
 		}
 	}
+}
+
+func (s *SlidingWindowOp) restoreState(ctx api.StreamContext) error {
+	v, err := ctx.GetState(V2WindowInputsKey)
+	if err != nil {
+		return err
+	}
+	if v != nil {
+		state, ok := v.(*SlidingWindowV2State)
+		if !ok {
+			return fmt.Errorf("restore window V2 sliding state %T error, invalid type", v)
+		}
+		if state.Scanner == nil {
+			state.Scanner = &WindowScanner{Tuples: make([]*xsql.Tuple, 0)}
+		}
+		s.state = state
+		s.scanner = state.Scanner
+	}
+	now := timex.GetNow()
+	pending := append([]PendingSlidingWindow(nil), s.state.Pending...)
+	for _, item := range pending {
+		if item.FireAt.After(now) {
+			s.schedulePendingWindow(ctx, item)
+		} else {
+			s.emitPendingWindow(ctx, item.ID)
+		}
+	}
+	return ctx.PutState(V2WindowInputsKey, s.state)
+}
+
+func (s *SlidingWindowOp) schedulePendingWindow(ctx api.StreamContext, pending PendingSlidingWindow) {
+	after := timex.After(pending.FireAt.Sub(timex.GetNow()))
+	go func() {
+		select {
+		case <-ctx.Done():
+			return
+		case <-after:
+			select {
+			case <-ctx.Done():
+			case s.delayNotify <- pending.ID:
+			}
+		}
+	}()
+}
+
+func (s *SlidingWindowOp) emitPendingWindow(ctx api.StreamContext, pendingID uint64) {
+	if len(s.state.Pending) > 0 && s.state.Pending[0].ID == pendingID {
+		pending := s.state.Pending[0]
+		s.state.Pending = s.state.Pending[1:]
+		s.emitPending(ctx, pending)
+		return
+	}
+	for i, pending := range s.state.Pending {
+		if pending.ID != pendingID {
+			continue
+		}
+		s.state.Pending = append(s.state.Pending[:i], s.state.Pending[i+1:]...)
+		s.emitPending(ctx, pending)
+		break
+	}
+}
+
+func (s *SlidingWindowOp) emitPending(ctx api.StreamContext, pending PendingSlidingWindow) {
+	windowStart := pending.WindowEnd.Add(-s.Delay).Add(-s.Length)
+	s.emitWindow(ctx, windowStart, pending.WindowEnd)
+	s.gcScanner()
+}
+
+func (s *SlidingWindowOp) gcScanner() {
+	gcTime := s.state.LatestWindowStart
+	if gcTime.IsZero() {
+		return
+	}
+	if len(s.state.Pending) > 0 {
+		pendingStart := s.state.Pending[0].WindowEnd.Add(-s.Delay).Add(-s.Length)
+		if pendingStart.Before(gcTime) {
+			gcTime = pendingStart
+		}
+	}
+	s.scanner.gc(gcTime)
 }
 
 func isMatchCondition(ctx api.StreamContext, condition ast.Expr, fv *xsql.FunctionValuer, d *xsql.Tuple, stateFuncs []*ast.Call) bool {
