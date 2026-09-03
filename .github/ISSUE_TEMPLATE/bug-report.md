@@ -8,6 +8,8 @@ labels: Support
 
 <!-- Please use this template while reporting a bug and provide as much info as possible. Thanks!-->
 <!-- 请使用英文描述问题 -->
+<!-- Security vulnerabilities: do not use this public issue form. Report privately via SECURITY.md. -->
+<!-- 安全漏洞请不要使用此公开 Issue，请按 SECURITY.md 通过私有渠道报告。 -->
 
 **Environment**:
 

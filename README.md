@@ -87,6 +87,9 @@ Weekly community meeting at Friday 10:30AM GMT+8:
 ### Contributing
 Thank you for your contribution! Please refer to the [CONTRIBUTING.md](./docs/en_US/CONTRIBUTING.md) for more information.
 
+### Security
+Please report security vulnerabilities privately. Do not open a public GitHub issue. See [SECURITY.md](./SECURITY.md).
+
 ## Performance test result
 
 ### MQTT throughput test

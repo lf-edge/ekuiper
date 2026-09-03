@@ -2,8 +2,13 @@
 
 We're really glad you're reading this, because we need volunteer developers to help this project come to fruition.
 
+## Reporting security vulnerabilities
+
+Do **not** open a public GitHub issue for a security vulnerability. Report it privately as described in [SECURITY.md](../../SECURITY.md). For actively exploited vulnerabilities or other severe security incidents, use the emergency contact in that file.
+
 ## Did you find a bug?
 
+- If the bug is a **security vulnerability**, stop here and follow [SECURITY.md](../../SECURITY.md) instead of filing a public issue.
 - **Ensure the bug was not already reported** by searching on GitHub
   under [Issues](https://github.com/lf-edge/ekuiper/issues).
 - If you're unable to find an open issue addressing the
