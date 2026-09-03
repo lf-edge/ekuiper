@@ -4,6 +4,21 @@
 
 ## 破坏性变更
 
+### v2.5 Checkpoint 格式
+
+eKuiper v2.5 使用带版本号的快照格式写入 checkpoint。v2.5 可以恢复旧版本
+写入的 checkpoint；但 v2.5 成功生成新 checkpoint 后，v2.4 及更早版本不能
+读取该 checkpoint。
+
+如果回滚时需要保留规则处理进度，请在升级前备份数据目录。若 v2.5 已写入
+checkpoint，回滚时应恢复该备份；也可以删除并重新创建受影响的规则，使其从
+新规则配置的 source 位置开始。
+
+自定义 rewindable source 的 `GetOffset` 必须返回可被 gob 序列化的 offset。
+该 offset 必须表示 ingest callback 最近接收的 tuple，并且在 callback 返回前
+保持不变。若 `GetOffset` 返回错误，eKuiper 会拒绝 checkpoint，直到后续
+ingest callback 成功取得有效 offset。
+
 ### SQLite 数据库格式
 
 eKuiper 2.x 在 SQLite 数据库（`sqliteKV.db`）中使用了不同的存储格式。这意味着：

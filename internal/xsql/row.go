@@ -1,4 +1,4 @@
-// Copyright 2022-2025 EMQ Technologies Co., Ltd.
+// Copyright 2022-2026 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -537,7 +537,7 @@ func (t *Tuple) AllProps() map[string]string {
 }
 
 func (t *Tuple) AggregateEval(expr ast.Expr, v CallValuer) []interface{} {
-	return []interface{}{Eval(expr, MultiValuer(t, v, &WildcardValuer{t}))}
+	return []interface{}{Eval(expr, MultiValuer(&transientAliasValuer{}, t, v, &WildcardValuer{t}))}
 }
 
 func (t *Tuple) GetTimestamp() time.Time {
@@ -732,15 +732,21 @@ func (jt *JoinTuple) Pick(allWildcard bool, cols [][]string, wildcardEmitters ma
 }
 
 func (jt *JoinTuple) AggregateEval(expr ast.Expr, v CallValuer) []interface{} {
-	return []interface{}{Eval(expr, MultiValuer(jt, v, &WildcardValuer{jt}))}
+	return []interface{}{Eval(expr, MultiValuer(&transientAliasValuer{}, jt, v, &WildcardValuer{jt}))}
 }
 
 // GroupedTuple implementation
 
 func (s *GroupedTuples) AggregateEval(expr ast.Expr, v CallValuer) []interface{} {
 	var result []interface{}
+	aliases := &transientAliasValuer{}
+	wildcard := &WildcardValuer{}
+	valuers := MultiValuerList{aliases, nil, &WindowRangeValuer{WindowRange: s.WindowRange}, v, wildcard}
 	for _, t := range s.Content {
-		result = append(result, Eval(expr, MultiValuer(t, &WindowRangeValuer{WindowRange: s.WindowRange}, v, &WildcardValuer{t})))
+		aliases.reset()
+		valuers[1] = t
+		wildcard.Data = t
+		result = append(result, Eval(expr, valuers))
 	}
 	return result
 }

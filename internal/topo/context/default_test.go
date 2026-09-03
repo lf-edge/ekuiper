@@ -1,4 +1,4 @@
-// Copyright 2022-2023 EMQ Technologies Co., Ltd.
+// Copyright 2022-2026 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,12 +16,14 @@ package context
 
 import (
 	"context"
+	"encoding/gob"
 	"fmt"
 	"log"
 	"os"
 	"path"
 	"reflect"
 	"runtime/pprof"
+	"sync"
 	"testing"
 	"time"
 
@@ -30,6 +32,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/checkpoint"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/state"
 )
 
@@ -132,15 +135,134 @@ func TestState(t *testing.T) {
 		t.Errorf("%d.Delete state key2 error: %s", i, err)
 		return
 	}
-	err = ctx.Snapshot()
+	err = ctx.Snapshot(1)
 	if err != nil {
 		t.Errorf("%d.Snapshot error: %s", i, err)
 		return
 	}
-	rs := ctx.snapshot
+	rs, err := checkpoint.DecodeState(ctx.checkpoints.states[1])
+	if err != nil {
+		t.Errorf("%d.Decode snapshot error: %s", i, err)
+		return
+	}
 	if !reflect.DeepEqual(s, rs) {
 		t.Errorf("%d.Snapshot\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, s, rs)
 	}
+}
+
+func TestSnapshotIsolationAndCheckpointIDs(t *testing.T) {
+	gob.Register([]int{})
+	cStore := &frozenCaptureStore{}
+	ctx := Background().WithMeta("snapshotRule", "op1", cStore).(*DefaultContext)
+	live := map[string]interface{}{
+		"nested": map[string]interface{}{"value": 1},
+		"slice":  []int{1, 2, 3},
+	}
+	if err := ctx.PutState("mutable", live); err != nil {
+		t.Fatal(err)
+	}
+	if err := ctx.Snapshot(1); err != nil {
+		t.Fatal(err)
+	}
+	if err := ctx.Snapshot(1); err == nil {
+		t.Fatal("duplicate checkpoint ID must fail")
+	}
+
+	live["nested"].(map[string]interface{})["value"] = 2
+	live["slice"].([]int)[0] = 9
+	first, err := checkpoint.DecodeState(ctx.checkpoints.states[1])
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantFirst := map[string]interface{}{
+		"mutable": map[string]interface{}{
+			"nested": map[string]interface{}{"value": 1},
+			"slice":  []int{1, 2, 3},
+		},
+	}
+	if !reflect.DeepEqual(wantFirst, first) {
+		t.Fatalf("first snapshot mismatch: want %#v, got %#v", wantFirst, first)
+	}
+
+	if err := ctx.Snapshot(2); err != nil {
+		t.Fatal(err)
+	}
+	if err := ctx.SaveSnapshot(1); err != nil {
+		t.Fatal(err)
+	}
+	if err := ctx.SaveSnapshot(1); err == nil {
+		t.Fatal("saving an unknown checkpoint ID must fail")
+	}
+	stored, ok := cStore.states.Load(int64(1))
+	if !ok {
+		t.Fatal("frozen state was not saved")
+	}
+	saved, err := checkpoint.DecodeState(stored.([]byte))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(wantFirst, saved) {
+		t.Fatalf("saved snapshot mismatch: want %#v, got %#v", wantFirst, saved)
+	}
+
+	second, err := checkpoint.DecodeState(ctx.checkpoints.states[2])
+	if err != nil {
+		t.Fatal(err)
+	}
+	if reflect.DeepEqual(first, second) {
+		t.Fatal("successive checkpoints must capture distinct state")
+	}
+}
+
+func TestDerivedContextSharesCheckpointLifecycle(t *testing.T) {
+	cStore := &frozenCaptureStore{}
+	base := Background().WithMeta("rule", "op", cStore).(*DefaultContext)
+	derived := base.WithRun(1).WithInstance(2).(*DefaultContext)
+	if err := derived.PutState("count", 42); err != nil {
+		t.Fatal(err)
+	}
+	if err := derived.Snapshot(10); err != nil {
+		t.Fatal(err)
+	}
+	if err := base.SaveSnapshot(10); err != nil {
+		t.Fatal(err)
+	}
+	raw, ok := cStore.states.Load(int64(10))
+	if !ok {
+		t.Fatal("derived context snapshot was not persisted by base context")
+	}
+	saved, err := checkpoint.DecodeState(raw.([]byte))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if saved["count"] != 42 {
+		t.Fatalf("unexpected derived context state: %#v", saved)
+	}
+}
+
+type frozenCaptureStore struct {
+	states sync.Map
+}
+
+func (s *frozenCaptureStore) SaveState(_ int64, _ string, _ map[string]interface{}) error {
+	return nil
+}
+
+func (s *frozenCaptureStore) SaveFrozenState(checkpointID int64, _ string, state []byte) error {
+	s.states.Store(checkpointID, append([]byte(nil), state...))
+	return nil
+}
+
+func (s *frozenCaptureStore) SaveCheckpoint(_ int64) error {
+	return nil
+}
+
+func (s *frozenCaptureStore) GetOpState(_ string) (*sync.Map, error) {
+	return &sync.Map{}, nil
+}
+
+func (s *frozenCaptureStore) Clean() error {
+	return nil
 }
 
 func cleanStateData() {

@@ -184,11 +184,11 @@ func (so *SlidingWindowIncAggEventOp) RestoreFromState(ctx api.StreamContext) er
 	}
 	so.SlidingWindowIncAggEventOpState = soState
 	for index, window := range so.CurrWindowList {
-		window.GenerateAllFunctionState()
+		window.restoreState(ctx)
 		so.CurrWindowList[index] = window
 	}
 	for index, window := range so.EmitList {
-		window.GenerateAllFunctionState()
+		window.restoreState(ctx)
 		so.EmitList[index] = window
 	}
 	return nil

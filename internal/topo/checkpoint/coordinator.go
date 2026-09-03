@@ -1,4 +1,4 @@
-// Copyright 2021-2024 EMQ Technologies Co., Ltd.
+// Copyright 2021-2026 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -32,7 +32,6 @@ import (
 
 type pendingCheckpoint struct {
 	checkpointId   int64
-	isDiscarded    bool
 	notYetAckTasks map[string]bool
 }
 
@@ -46,13 +45,8 @@ func newPendingCheckpoint(checkpointId int64, tasksToWaitFor []Responder) *pendi
 	return pc
 }
 
-func (c *pendingCheckpoint) ack(opId string) bool {
-	if c.isDiscarded {
-		return false
-	}
+func (c *pendingCheckpoint) ack(opId string) {
 	delete(c.notYetAckTasks, opId)
-	// TODO serialize state
-	return true
 }
 
 func (c *pendingCheckpoint) isFullyAck() bool {
@@ -62,10 +56,6 @@ func (c *pendingCheckpoint) isFullyAck() bool {
 func (c *pendingCheckpoint) finalize() *completedCheckpoint {
 	ccp := &completedCheckpoint{checkpointId: c.checkpointId}
 	return ccp
-}
-
-func (c *pendingCheckpoint) dispose(_ bool) {
-	c.isDiscarded = true
 }
 
 type completedCheckpoint struct {
@@ -120,7 +110,9 @@ type Coordinator struct {
 	activated               atomic.Bool
 
 	inForceSaveState     atomic.Bool
+	forceCheckpointID    atomic.Int64
 	forceSaveStateNotify chan any
+	lastCheckpointID     int64
 }
 
 func NewCoordinator(ruleId string, sources []StreamTask, operators []NonSourceTask, sinks []SinkTask, qos def.Qos, store api.Store, interval time.Duration, ctx api.StreamContext) *Coordinator {
@@ -202,8 +194,7 @@ func (c *Coordinator) Activate() error {
 				case s := <-c.signal:
 					switch s.Message {
 					case ForceSaveState:
-						c.inForceSaveState.Store(true)
-						c.saveState(time.Now(), logger)
+						c.forceCheckpointID.Store(c.saveState(time.Now(), logger))
 					case STOP:
 						logger.Infof("Stop checkpoint scheduler")
 						if c.ticker != nil {
@@ -217,19 +208,15 @@ func (c *Coordinator) Activate() error {
 							checkpoint.ack(s.OpId)
 							if checkpoint.isFullyAck() {
 								c.complete(s.CheckpointId)
-								if c.inForceSaveState.Load() {
-									c.FinishForceSaveState()
-								}
+								c.finishForceSaveState(s.CheckpointId)
 							}
 						} else {
 							logger.Debugf("Receive ack from %s for non existing checkpoint %d", s.OpId, s.CheckpointId)
 						}
 					case DEC:
 						logger.Debugf("Receive dec from %s for checkpoint %d, cancel it", s.OpId, s.CheckpointId)
-						c.cancel(s.CheckpointId)
-						if c.inForceSaveState.Load() {
-							c.FinishForceSaveState()
-						}
+						c.cancel(s.CheckpointId, s.OpId)
+						c.finishForceSaveState(s.CheckpointId)
 					}
 				case <-c.ctx.Done():
 					logger.Info("Cancelling coordinator....")
@@ -246,7 +233,7 @@ func (c *Coordinator) Activate() error {
 	return nil
 }
 
-func (c *Coordinator) saveState(n time.Time, logger api.Logger) {
+func (c *Coordinator) saveState(n time.Time, logger api.Logger) int64 {
 	// trigger checkpoint
 	// TODO pose max attempt and min pause check for consequent pendingCheckpoints
 
@@ -254,6 +241,10 @@ func (c *Coordinator) saveState(n time.Time, logger api.Logger) {
 
 	// Create a pending checkpoint
 	checkpointId := cast.TimeToUnixMilli(n)
+	if checkpointId <= c.lastCheckpointID {
+		checkpointId = c.lastCheckpointID + 1
+	}
+	c.lastCheckpointID = checkpointId
 	checkpoint := newPendingCheckpoint(checkpointId, c.tasksToWaitFor)
 	logger.Debugf("Create checkpoint %d", checkpointId)
 	c.pendingCheckpoints.Store(checkpointId, checkpoint)
@@ -261,8 +252,7 @@ func (c *Coordinator) saveState(n time.Time, logger api.Logger) {
 	for _, r := range c.tasksToTrigger {
 		go func(t Responder) {
 			if err := t.TriggerCheckpoint(checkpointId); err != nil {
-				logger.Infof("Fail to trigger checkpoint for source %s with error %v, cancel it", t.GetName(), err)
-				c.cancel(checkpointId)
+				logger.Infof("Fail to trigger checkpoint for source %s with error %v", t.GetName(), err)
 			}
 		}(r)
 	}
@@ -271,6 +261,7 @@ func (c *Coordinator) saveState(n time.Time, logger api.Logger) {
 		c.store.Clean()
 		c.toBeClean = 0
 	}
+	return checkpointId
 }
 
 func (c *Coordinator) Deactivate() error {
@@ -282,25 +273,48 @@ func (c *Coordinator) Deactivate() error {
 }
 
 func (c *Coordinator) ForceSaveState() (chan any, error) {
-	if c.inForceSaveState.Load() {
+	if !c.inForceSaveState.CompareAndSwap(false, true) {
 		return nil, fmt.Errorf("duplicated force save state")
 	}
 	c.signal <- &Signal{Message: ForceSaveState}
 	return c.forceSaveStateNotify, nil
 }
 
-func (c *Coordinator) FinishForceSaveState() {
+func (c *Coordinator) finishForceSaveState(checkpointID int64) {
+	if !c.forceCheckpointID.CompareAndSwap(checkpointID, 0) {
+		return
+	}
 	c.inForceSaveState.Store(false)
 	c.forceSaveStateNotify <- struct{}{}
 }
 
-func (c *Coordinator) cancel(checkpointId int64) {
-	logger := c.ctx.GetLogger()
-	if checkpoint, ok := c.pendingCheckpoints.Load(checkpointId); ok {
-		c.pendingCheckpoints.Delete(checkpointId)
-		checkpoint.(*pendingCheckpoint).dispose(true)
+func (c *Coordinator) cancel(checkpointId int64, _ string) {
+	if _, ok := c.pendingCheckpoints.Load(checkpointId); ok {
+		// Checkpoint IDs are monotonic. Once a checkpoint is canceled, older
+		// in-flight checkpoints are obsolete as well; cancel them together so
+		// the store can use one bounded discard watermark for late snapshots.
+		c.pendingCheckpoints.Range(func(key, _ interface{}) bool {
+			candidate := key.(int64)
+			if candidate <= checkpointId {
+				c.discard(candidate)
+			}
+			return true
+		})
 	} else {
-		logger.Debugf("Cancel for non existing checkpoint %d. Just ignored", checkpointId)
+		c.ctx.GetLogger().Debugf("Cancel for non existing checkpoint %d. Just ignored", checkpointId)
+	}
+}
+
+func (c *Coordinator) discard(checkpointID int64) {
+	if _, ok := c.pendingCheckpoints.Load(checkpointID); ok {
+		c.pendingCheckpoints.Delete(checkpointID)
+		c.discardFrozenState(checkpointID)
+	}
+}
+
+func (c *Coordinator) discardFrozenState(checkpointID int64) {
+	if store, ok := c.store.(FrozenStateDiscarder); ok {
+		store.DiscardFrozenState(checkpointID)
 	}
 }
 
@@ -311,19 +325,16 @@ func (c *Coordinator) complete(checkpointId int64) {
 		err := c.store.SaveCheckpoint(checkpointId)
 		if err != nil {
 			logger.Infof("Cannot save checkpoint %d due to storage error: %v", checkpointId, err)
-			// TODO handle checkpoint error
+			c.cancel(checkpointId, "")
 			return
 		}
 		c.completedCheckpoints.add(ccp.(*pendingCheckpoint).finalize())
 		c.pendingCheckpoints.Delete(checkpointId)
 		// Drop the previous pendingCheckpoints
-		c.pendingCheckpoints.Range(func(a1 interface{}, a2 interface{}) bool {
+		c.pendingCheckpoints.Range(func(a1 interface{}, _ interface{}) bool {
 			cid := a1.(int64)
-			cp := a2.(*pendingCheckpoint)
 			if cid < checkpointId {
-				// TODO revisit how to abort a checkpoint, discard callback
-				cp.isDiscarded = true
-				c.pendingCheckpoints.Delete(cid)
+				c.discard(cid)
 			}
 			return true
 		})
