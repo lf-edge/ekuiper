@@ -284,6 +284,8 @@ func (s *Scanner) ScanString(isSingle bool) (tok ast.Token, lit string) {
 			escape = true
 			nextCh := s.read()
 			if nextCh == '\'' && isSingle {
+				// the escaped quote is consumed here, so the escape is complete
+				escape = false
 				s.buf.WriteRune(nextCh)
 			} else {
 				s.buf.WriteRune(ch)
