@@ -188,7 +188,7 @@ func ToInt8(input interface{}, sn Strictness) (int8, error) {
 		if sn == CONVERT_ALL {
 			v, err := strconv.ParseInt(s, 0, 0)
 			if err == nil {
-				if v > math.MaxInt8 {
+				if v > math.MaxInt8 || v < math.MinInt8 {
 					return 0, fmt.Errorf("value %d is out of int8 range", v)
 				}
 				return int8(v), nil
@@ -243,8 +243,8 @@ func ToInt16(input interface{}, sn Strictness) (int16, error) {
 		if sn == CONVERT_ALL {
 			v, err := strconv.ParseInt(s, 0, 0)
 			if err == nil {
-				if v > math.MaxInt16 {
-					return 0, fmt.Errorf("value %d is out of int32 range", v)
+				if v > math.MaxInt16 || v < math.MinInt16 {
+					return 0, fmt.Errorf("value %d is out of int16 range", v)
 				}
 				return int16(v), nil
 			}
@@ -298,7 +298,7 @@ func ToInt32(input interface{}, sn Strictness) (int32, error) {
 		if sn == CONVERT_ALL {
 			v, err := strconv.ParseInt(s, 0, 0)
 			if err == nil {
-				if v > math.MaxInt32 {
+				if v > math.MaxInt32 || v < math.MinInt32 {
 					return 0, fmt.Errorf("value %d is out of int32 range", v)
 				}
 				return int32(v), nil
@@ -739,6 +739,9 @@ func ToUint32(i interface{}, sn Strictness) (uint32, error) {
 		if sn == CONVERT_ALL {
 			v, err := strconv.ParseUint(s, 0, 64)
 			if err == nil {
+				if v > math.MaxUint32 {
+					return 0, fmt.Errorf("value %d is out of uint32 range", v)
+				}
 				return uint32(v), nil
 			}
 		}
