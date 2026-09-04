@@ -30,6 +30,12 @@ type UnOperation interface {
 	Apply(ctx api.StreamContext, data interface{}, fv *xsql.FunctionValuer, afv *xsql.AggregateFunctionValuer) interface{}
 }
 
+// FinalizableOperation can release buffered rows before an EOF marker is sent
+// downstream. Cancellation is intentionally not treated as finalization.
+type FinalizableOperation interface {
+	Finalize(ctx api.StreamContext, marker interface{}, fv *xsql.FunctionValuer, afv *xsql.AggregateFunctionValuer) interface{}
+}
+
 // UnFunc implements UnOperation as type func (context.Context, interface{})
 type UnFunc func(api.StreamContext, interface{}) interface{}
 
@@ -95,31 +101,39 @@ func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
 
 	fv, afv := xsql.NewFunctionValuersForOp(exeCtx)
 	done := ctx.Done()
+	emitResult := func(result interface{}) {
+		switch val := result.(type) {
+		case nil:
+		case error:
+			o.onError(ctx, val)
+		case []xsql.Row:
+			for _, v := range val {
+				o.Broadcast(v)
+				o.onSend(ctx, v)
+			}
+		default:
+			o.Broadcast(val)
+			o.onSend(ctx, val)
+		}
+	}
 
 	for {
 		select {
 		// process incoming item
 		case item := <-o.input:
-			data, processed := o.commonIngest(ctx, item)
+			data, processed := o.commonIngestWithControl(ctx, item, func(marker interface{}) {
+				if finalizer, ok := o.op.(FinalizableOperation); ok {
+					switch marker.(type) {
+					case xsql.EOFTuple, xsql.BatchEOFTuple:
+						emitResult(finalizer.Finalize(exeCtx, marker, fv, afv))
+					}
+				}
+			})
 			if processed {
 				break
 			}
 			o.onProcessStart(ctx, data)
-			result := o.op.Apply(exeCtx, data, fv, afv)
-			switch val := result.(type) {
-			case nil:
-				// ends, do nothing
-			case error:
-				o.onError(ctx, val)
-			case []xsql.Row:
-				for _, v := range val {
-					o.Broadcast(v)
-					o.onSend(ctx, v)
-				}
-			default:
-				o.Broadcast(val)
-				o.onSend(ctx, val)
-			}
+			emitResult(o.op.Apply(exeCtx, data, fv, afv))
 			o.onProcessEnd(ctx)
 			o.statManager.SetBufferLength(int64(len(o.input)))
 		// is cancelling

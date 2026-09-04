@@ -5,7 +5,7 @@
 分析函数完整使用格式如下，其中 over 子句为可选子句。
 
 ```text
-AnalyticFuncName(<arguments>...) OVER ([PARTITION BY <partition key>] [WHEN <Expression>])
+AnalyticFuncName(<arguments>...) OVER ([PARTITION BY <partition key>] [WHEN <Expression> [UNTIL <Expression>]])
 ```
 
 分析函数的计算是在当前查询输入的所有输入事件上进行的，可以选择限制分析函数只考虑符合 PARTITION BY 子句的事件。
@@ -60,6 +60,26 @@ lag(temperature) OVER (PARTITION BY deviceId)
 ```text
 select lag(Status) as Status, ts - lag(ts, 1, ts, true) OVER (WHEN had_changed(true, statusCode)) as duration from demo
 ```
+
+## LEAD
+
+```text
+lead(expr, [offset], [default value], [ignore null])
+  OVER ([PARTITION BY <partition key>] [WHEN <Expression> [UNTIL <Expression>]])
+```
+
+返回后续输入行中 `expr` 的计算结果。`offset` 默认为 1，`default value` 默认为 nil，`ignore null` 默认为 true，与 `lag` 保持一致。因为结果依赖未来输入，当前行会被缓存，直到找到指定的未来值、`UNTIL` 为 true 或输入结束。
+
+`WHEN` 用于选择未来候选行。`UNTIL` 是 eKuiper 扩展，只能与 `WHEN` 同时使用；系统会先于 `WHEN`，针对每条缓存行独立计算 `UNTIL`。在 `UNTIL` 中，普通字段引用新到达的探测行，`current_row(expr)` 则在被缓存的原始行上计算 `expr`。若 `UNTIL` 为 true，该请求返回默认值。`current_row` 只能在此上下文使用。
+
+```sql
+lead(candidate_t2) OVER (
+  WHEN isNull(b) = false
+  UNTIL ts - current_row(ts) > 5
+)
+```
+
+`UNTIL` 由数据驱动，仅在新输入到达时检查，不会创建处理时间定时器或事件时间水位线。需要定时触发的时间限制属于后续 `WITHIN` 的语义。
 
 ## LATEST
 

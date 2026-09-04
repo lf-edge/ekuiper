@@ -71,6 +71,12 @@ type CallValuer interface {
 	Call(name string, funcId int, args []interface{}) (interface{}, bool)
 }
 
+// CurrentRowEvalValuer evaluates an expression against the origin row of a
+// delayed analytic request. It is intentionally used only by LEAD UNTIL.
+type CurrentRowEvalValuer interface {
+	EvalCurrentRow(expr ast.Expr) interface{}
+}
+
 // FuncValuer can calculate function type value like window_start and window_end
 type FuncValuer interface {
 	FuncValue(key string) (interface{}, bool)
@@ -101,6 +107,44 @@ func (wv *WildcardValuer) Meta(_, _ string) (interface{}, bool) {
 // to find a match.
 func MultiValuer(valuers ...Valuer) Valuer {
 	return MultiValuerList(valuers)
+}
+
+type leadUntilValuer struct {
+	probe   Valuer
+	current *ValuerEval
+}
+
+// NewLeadUntilValuer binds ordinary fields to probe and current_row(expr) to
+// current. Both valuers should include the same FunctionValuer when functions
+// other than current_row are allowed in the expression.
+func NewLeadUntilValuer(probe, current Valuer) Valuer {
+	return &leadUntilValuer{probe: probe, current: &ValuerEval{Valuer: current}}
+}
+
+func (v *leadUntilValuer) Value(key, table string) (interface{}, bool) {
+	return v.probe.Value(key, table)
+}
+
+func (v *leadUntilValuer) Meta(key, table string) (interface{}, bool) {
+	return v.probe.Meta(key, table)
+}
+
+func (v *leadUntilValuer) Call(name string, funcID int, args []interface{}) (interface{}, bool) {
+	if cv, ok := v.probe.(CallValuer); ok {
+		return cv.Call(name, funcID, args)
+	}
+	return nil, false
+}
+
+func (v *leadUntilValuer) FuncValue(key string) (interface{}, bool) {
+	if fv, ok := v.probe.(FuncValuer); ok {
+		return fv.FuncValue(key)
+	}
+	return nil, false
+}
+
+func (v *leadUntilValuer) EvalCurrentRow(expr ast.Expr) interface{} {
+	return v.current.Eval(expr)
 }
 
 // MultiValuerList evaluates against an ordered, reusable list of valuers.
@@ -330,6 +374,15 @@ func (v *ValuerEval) Eval(expr ast.Expr) interface{} {
 		}
 		return &BracketEvalResult{Start: ii, End: ii}
 	case *ast.Call:
+		if et.Name == "current_row" {
+			if len(et.Args) != 1 {
+				return fmt.Errorf("current_row expects exactly one argument")
+			}
+			if cv, ok := v.Valuer.(CurrentRowEvalValuer); ok {
+				return cv.EvalCurrentRow(et.Args[0])
+			}
+			return fmt.Errorf("current_row is only valid inside lead UNTIL")
+		}
 		// The analytic functions are calculated prior to all ops, so just get the cached field value
 		if et.Cached && et.CachedField != "" {
 			var val any

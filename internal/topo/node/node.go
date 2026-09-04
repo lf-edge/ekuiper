@@ -324,6 +324,10 @@ func (o *defaultSinkNode) preprocess(ctx api.StreamContext, item any) (any, bool
 }
 
 func (o *defaultSinkNode) commonIngest(ctx api.StreamContext, item any) (any, bool) {
+	return o.commonIngestWithControl(ctx, item, nil)
+}
+
+func (o *defaultSinkNode) commonIngestWithControl(ctx api.StreamContext, item any, beforeControl func(any)) (any, bool) {
 	ctx.GetLogger().Debugf("op %s_%d receive %v", ctx.GetOpId(), ctx.GetInstanceId(), item)
 	item, processed := o.preprocess(ctx, item)
 	if processed {
@@ -336,6 +340,9 @@ func (o *defaultSinkNode) commonIngest(ctx api.StreamContext, item any) (any, bo
 		}
 		return nil, true
 	case *xsql.WatermarkTuple, xsql.EOFTuple, xsql.BatchEOFTuple:
+		if beforeControl != nil {
+			beforeControl(d)
+		}
 		o.Broadcast(d)
 		return nil, true
 	}

@@ -44,6 +44,19 @@ func TestOutputs(t *testing.T) {
 	assert.Equal(t, "rule.2_test", n.outputSlice[0].name)
 }
 
+func TestCommonIngestCallsHookBeforeEOF(t *testing.T) {
+	ctx := mockContext.NewMockContext("finalize", "op1")
+	n := newDefaultSinkNode("test", &def.RuleOption{})
+	n.ctx = ctx
+	called := false
+	_, processed := n.commonIngestWithControl(ctx, xsql.EOFTuple("done"), func(marker any) {
+		require.Equal(t, xsql.EOFTuple("done"), marker)
+		called = true
+	})
+	require.True(t, processed)
+	require.True(t, called)
+}
+
 func TestMultipleOutputsBroadcast(t *testing.T) {
 	ctx := mockContext.NewMockContext("multi", "op1")
 	n := newDefaultNode("test", &def.RuleOption{})

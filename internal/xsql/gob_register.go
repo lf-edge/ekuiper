@@ -24,6 +24,8 @@ func init() {
 	gob.Register(make(map[string]any))
 	gob.Register(make(map[string][]*Tuple))
 	gob.Register(&Tuple{})
+	gob.Register(&SliceTuple{})
+	gob.Register(&JoinTuple{})
 	gob.Register([]any{})
 	gob.Register(&RawTuple{})
 }

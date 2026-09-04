@@ -1792,13 +1792,26 @@ func (p *Parser) parseOver(c *ast.Call) error {
 					return err
 				}
 				c.WhenExpr = whenExpr
+				untilExpr, err := p.parseUntil()
+				if err != nil {
+					return err
+				}
+				if untilExpr != nil {
+					if c.Name != "lead" {
+						return fmt.Errorf("UNTIL is only supported for LEAD")
+					}
+					if c.WhenExpr == nil {
+						return fmt.Errorf("UNTIL requires WHEN in the same OVER clause")
+					}
+				}
+				c.UntilExpr = untilExpr
 			}
-			if c.Partition != nil || len(c.SortFields) > 0 || c.WhenExpr != nil {
+			if c.Partition != nil || len(c.SortFields) > 0 || c.WhenExpr != nil || c.UntilExpr != nil || c.Name == "lead" {
 				if ttt, _ := p.scanIgnoreWhitespace(); ttt != ast.RPAREN {
 					return fmt.Errorf("Found %q, expect right parentheses after OVER ", ttt)
 				}
 			}
-			if c.Partition == nil && len(c.SortFields) == 0 && c.WhenExpr == nil {
+			if c.Partition == nil && len(c.SortFields) == 0 && c.WhenExpr == nil && c.UntilExpr == nil && c.Name != "lead" {
 				ttt, _ := p.scanIgnoreWhitespace()
 				return fmt.Errorf("Found %q after OVER (, expect partition by or when.", ttt)
 			}
@@ -1842,6 +1855,19 @@ func (p *Parser) parsePartitionBy() (*ast.PartitionExpr, error) {
 
 func (p *Parser) parseWhen() (ast.Expr, error) {
 	if t, _ := p.scanIgnoreWhitespace(); t == ast.WHEN {
+		if exp, err := p.ParseExpr(); err != nil {
+			return nil, err
+		} else {
+			return exp, nil
+		}
+	} else {
+		p.unscan()
+	}
+	return nil, nil
+}
+
+func (p *Parser) parseUntil() (ast.Expr, error) {
+	if t, _ := p.scanIgnoreWhitespace(); t == ast.UNTIL {
 		if exp, err := p.ParseExpr(); err != nil {
 			return nil, err
 		} else {

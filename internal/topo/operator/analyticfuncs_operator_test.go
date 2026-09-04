@@ -15,6 +15,8 @@
 package operator
 
 import (
+	"bytes"
+	"encoding/gob"
 	"fmt"
 	"strconv"
 	"testing"
@@ -227,5 +229,161 @@ func TestAnalyticFuncs(t *testing.T) {
 			}
 			require.Equal(t, tt.result, r)
 		})
+	}
+}
+
+func TestLeadUntilPerOriginRow(t *testing.T) {
+	lead := &ast.Call{
+		Name:        "lead",
+		FuncId:      0,
+		CachedField: "$$a_lead_0",
+		Args:        []ast.Expr{&ast.FieldRef{Name: "candidate"}},
+		WhenExpr: &ast.BinaryExpr{
+			LHS: &ast.FieldRef{Name: "b"},
+			OP:  ast.EQ,
+			RHS: &ast.BooleanLiteral{Val: true},
+		},
+		UntilExpr: &ast.BinaryExpr{
+			LHS: &ast.BinaryExpr{
+				LHS: &ast.FieldRef{Name: "ts"},
+				OP:  ast.SUB,
+				RHS: &ast.Call{Name: "current_row", Args: []ast.Expr{&ast.FieldRef{Name: "ts"}}},
+			},
+			OP:  ast.GT,
+			RHS: &ast.IntegerLiteral{Val: 5},
+		},
+	}
+	tempStore, _ := state.CreateStore("TestLeadUntilPerOriginRow", def.AtMostOnce)
+	ctx := context.WithValue(context.Background(), context.LoggerKey, conf.Log).WithMeta("TestLeadUntilPerOriginRow", "analytic", tempStore)
+	fv, afv := xsql.NewFunctionValuersForOp(ctx)
+	op := &AnalyticFuncsOp{Funcs: []*ast.Call{lead}}
+
+	row := func(ts int64, b bool, candidate int64) *xsql.Tuple {
+		return &xsql.Tuple{Emitter: "test", Message: xsql.Message{"ts": ts, "b": b, "candidate": candidate}}
+	}
+	require.Nil(t, op.Apply(ctx, row(0, false, 100), fv, afv))
+	require.Nil(t, op.Apply(ctx, row(4, false, 200), fv, afv))
+
+	result := op.Apply(ctx, row(6, true, 300), fv, afv)
+	ready := result.([]xsql.Row)
+	require.Len(t, ready, 2)
+	value, ok := ready[0].Value("$$a_lead_0", "")
+	require.True(t, ok)
+	require.Nil(t, value, "the row at ts=0 must expire before matching b")
+	value, ok = ready[1].Value("$$a_lead_0", "")
+	require.True(t, ok)
+	require.Equal(t, int64(300), value, "the same b must resolve the newer row at ts=4")
+
+	result = op.Apply(ctx, row(12, false, 400), fv, afv)
+	ready = result.([]xsql.Row)
+	require.Len(t, ready, 1)
+	value, ok = ready[0].Value("$$a_lead_0", "")
+	require.True(t, ok)
+	require.Nil(t, value, "the b row's own lookup must start after that row")
+
+	result = op.Finalize(ctx, xsql.EOFTuple(""), fv, afv)
+	ready = result.([]xsql.Row)
+	require.Len(t, ready, 1)
+	value, ok = ready[0].Value("$$a_lead_0", "")
+	require.True(t, ok)
+	require.Nil(t, value, "EOF must resolve the remaining tail with the default")
+	stored, err := ctx.GetState(leadOperatorStateKey)
+	require.NoError(t, err)
+	require.Nil(t, stored)
+}
+
+func TestLeadMatchesAtExactUntilBoundary(t *testing.T) {
+	lead := &ast.Call{
+		Name:        "lead",
+		FuncId:      0,
+		CachedField: "$$a_lead_0",
+		Args:        []ast.Expr{&ast.FieldRef{Name: "value"}},
+		WhenExpr:    &ast.FieldRef{Name: "b"},
+		UntilExpr: &ast.BinaryExpr{
+			LHS: &ast.BinaryExpr{
+				LHS: &ast.FieldRef{Name: "ts"},
+				OP:  ast.SUB,
+				RHS: &ast.Call{Name: "current_row", Args: []ast.Expr{&ast.FieldRef{Name: "ts"}}},
+			},
+			OP:  ast.GT,
+			RHS: &ast.IntegerLiteral{Val: 5},
+		},
+	}
+	tempStore, _ := state.CreateStore("TestLeadMatchesAtExactUntilBoundary", def.AtMostOnce)
+	ctx := context.WithValue(context.Background(), context.LoggerKey, conf.Log).WithMeta("TestLeadMatchesAtExactUntilBoundary", "analytic", tempStore)
+	fv, afv := xsql.NewFunctionValuersForOp(ctx)
+	op := &AnalyticFuncsOp{Funcs: []*ast.Call{lead}}
+	require.Nil(t, op.Apply(ctx, &xsql.Tuple{Message: xsql.Message{"ts": int64(0), "b": false, "value": 1}}, fv, afv))
+	result := op.Apply(ctx, &xsql.Tuple{Message: xsql.Message{"ts": int64(5), "b": true, "value": 9}}, fv, afv)
+	ready := result.([]xsql.Row)
+	require.Len(t, ready, 1)
+	value, ok := ready[0].Value("$$a_lead_0", "")
+	require.True(t, ok)
+	require.Equal(t, 9, value)
+}
+
+func TestLeadRestoresPendingRows(t *testing.T) {
+	newCall := func() *ast.Call {
+		return &ast.Call{
+			Name: "lead", FuncId: 0, CachedField: "$$a_lead_0",
+			Args:     []ast.Expr{&ast.FieldRef{Name: "value"}},
+			WhenExpr: &ast.FieldRef{Name: "b"},
+			UntilExpr: &ast.BinaryExpr{
+				LHS: &ast.BinaryExpr{LHS: &ast.FieldRef{Name: "ts"}, OP: ast.SUB, RHS: &ast.Call{
+					Name: "current_row", Args: []ast.Expr{&ast.FieldRef{Name: "ts"}},
+				}},
+				OP: ast.GT, RHS: &ast.IntegerLiteral{Val: 5},
+			},
+		}
+	}
+	tempStore, _ := state.CreateStore("TestLeadRestoresPendingRows", def.AtMostOnce)
+	ctx := context.WithValue(context.Background(), context.LoggerKey, conf.Log).WithMeta("TestLeadRestoresPendingRows", "analytic", tempStore)
+	fv, afv := xsql.NewFunctionValuersForOp(ctx)
+	op := &AnalyticFuncsOp{Funcs: []*ast.Call{newCall()}}
+	require.Nil(t, op.Apply(ctx, &xsql.Tuple{Message: xsql.Message{"ts": int64(0), "b": false, "value": 1}}, fv, afv))
+	require.Nil(t, op.Apply(ctx, &xsql.Tuple{Message: xsql.Message{"ts": int64(4), "b": false, "value": 2}}, fv, afv))
+	stored, err := ctx.GetState(leadOperatorStateKey)
+	require.NoError(t, err)
+	var encoded bytes.Buffer
+	require.NoError(t, gob.NewEncoder(&encoded).Encode(&stored))
+	var decoded interface{}
+	require.NoError(t, gob.NewDecoder(&encoded).Decode(&decoded))
+	require.IsType(t, LeadOperatorState{}, decoded)
+
+	restored := &AnalyticFuncsOp{Funcs: []*ast.Call{newCall()}}
+	result := restored.Apply(ctx, &xsql.Tuple{Message: xsql.Message{"ts": int64(6), "b": true, "value": 3}}, fv, afv)
+	ready := result.([]xsql.Row)
+	require.Len(t, ready, 2)
+	oldValue, _ := ready[0].Value("$$a_lead_0", "")
+	newerValue, _ := ready[1].Value("$$a_lead_0", "")
+	require.Nil(t, oldValue)
+	require.Equal(t, 3, newerValue)
+}
+
+func TestEagerAnalyticAliasFeedsLead(t *testing.T) {
+	latest := &ast.Call{
+		Name: "latest", FuncId: 0, CachedField: "$$a_latest_0", CacheIndex: -1,
+		Args: []ast.Expr{&ast.FieldRef{Name: "ts"}}, WhenExpr: &ast.FieldRef{Name: "eligible"},
+	}
+	alias := &ast.AliasRef{Expression: latest}
+	latest.Cached = true
+	lead := &ast.Call{
+		Name: "lead", FuncId: 1, CachedField: "$$a_lead_1", CacheIndex: -1,
+		Args:     []ast.Expr{&ast.FieldRef{Name: "candidate", StreamName: ast.AliasStream, AliasRef: alias}},
+		WhenExpr: &ast.FieldRef{Name: "b"},
+	}
+	tempStore, _ := state.CreateStore("TestEagerAnalyticAliasFeedsLead", def.AtMostOnce)
+	ctx := context.WithValue(context.Background(), context.LoggerKey, conf.Log).WithMeta("TestEagerAnalyticAliasFeedsLead", "analytic", tempStore)
+	fv, afv := xsql.NewFunctionValuersForOp(ctx)
+	op := &AnalyticFuncsOp{FieldFuncs: []*ast.Call{latest, lead}}
+	require.Nil(t, op.Apply(ctx, &xsql.Tuple{Message: xsql.Message{"ts": int64(2), "eligible": true, "b": false}}, fv, afv))
+	require.Nil(t, op.Apply(ctx, &xsql.Tuple{Message: xsql.Message{"ts": int64(4), "eligible": false, "b": false}}, fv, afv))
+	result := op.Apply(ctx, &xsql.Tuple{Message: xsql.Message{"ts": int64(5), "eligible": false, "b": true}}, fv, afv)
+	ready := result.([]xsql.Row)
+	require.Len(t, ready, 2)
+	for _, resolved := range ready {
+		value, ok := resolved.Value("$$a_lead_1", "")
+		require.True(t, ok)
+		require.Equal(t, int64(2), value)
 	}
 }

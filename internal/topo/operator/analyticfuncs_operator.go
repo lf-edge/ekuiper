@@ -1,4 +1,4 @@
-// Copyright 2022-2025 EMQ Technologies Co., Ltd.
+// Copyright 2022-2026 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,7 +15,9 @@
 package operator
 
 import (
+	"encoding/gob"
 	"fmt"
+	"strings"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
@@ -24,24 +26,80 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/model"
 )
 
+const leadOperatorStateKey = "$$lead_operator_state"
+
+type LeadRequestState struct {
+	Owner      int
+	Remaining  int
+	Default    interface{}
+	IgnoreNull bool
+}
+
+type LeadPendingState struct {
+	Row        xsql.Row
+	Unresolved int
+}
+
+type LeadOperatorState struct {
+	Pending []LeadPendingState
+	Calls   map[int]map[string][]LeadRequestState
+}
+
+func init() {
+	gob.Register(LeadOperatorState{})
+}
+
+type leadRequest struct {
+	owner      *pendingLeadRow
+	origin     xsql.Row
+	remaining  int
+	dft        interface{}
+	ignoreNull bool
+}
+
+type leadCallState struct {
+	partitions map[string][]*leadRequest
+}
+
+type leadDecision struct {
+	request   *leadRequest
+	resolve   bool
+	value     interface{}
+	remaining int
+}
+
+type pendingLeadRow struct {
+	row        xsql.Row
+	unresolved int
+}
+
 type AnalyticFuncsOp struct {
 	Funcs       []*ast.Call
 	FieldFuncs  []*ast.Call
 	transformed bool
+
+	leadStates map[int]*leadCallState
+	pending    []*pendingLeadRow
+}
+
+func setAnalyticValue(input xsql.Row, call *ast.Call, value interface{}) {
+	if iv, ok := input.(model.IndexValuer); ok && call.CacheIndex >= 0 {
+		iv.SetTempByIndex(call.CacheIndex, value)
+	} else {
+		input.Set(call.CachedField, value)
+	}
 }
 
 func (p *AnalyticFuncsOp) evalTupleFunc(calls []*ast.Call, ve *xsql.ValuerEval, input xsql.Row) (xsql.Row, error) {
 	for _, call := range calls {
-		f := call
-		result := ve.Eval(f)
+		if call.Name == "lead" {
+			continue
+		}
+		result := ve.Eval(call)
 		if e, ok := result.(error); ok {
 			return nil, e
 		}
-		if iv, ok := input.(model.IndexValuer); ok {
-			iv.SetTempByIndex(f.CacheIndex, result)
-		} else {
-			input.Set(f.CachedField, result)
-		}
+		setAnalyticValue(input, call, result)
 	}
 	return input, nil
 }
@@ -50,16 +108,14 @@ func (p *AnalyticFuncsOp) evalCollectionFunc(calls []*ast.Call, fv *xsql.Functio
 	err := input.RangeSet(func(_ int, row xsql.Row) (bool, error) {
 		ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(row, &xsql.WindowRangeValuer{WindowRange: input.GetWindowRange()}, fv, &xsql.WildcardValuer{Data: row})}
 		for _, call := range calls {
-			f := call
-			result := ve.Eval(f)
+			if call.Name == "lead" {
+				return false, fmt.Errorf("lead is not supported on collections")
+			}
+			result := ve.Eval(call)
 			if e, ok := result.(error); ok {
 				return false, e
 			}
-			if iv, ok := row.(model.IndexValuer); ok {
-				iv.SetTempByIndex(f.CacheIndex, result)
-			} else {
-				row.Set(f.CachedField, result)
-			}
+			setAnalyticValue(row, call, result)
 		}
 		return true, nil
 	})
@@ -69,55 +125,331 @@ func (p *AnalyticFuncsOp) evalCollectionFunc(calls []*ast.Call, fv *xsql.Functio
 	return input, nil
 }
 
-func (p *AnalyticFuncsOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.FunctionValuer, _ *xsql.AggregateFunctionValuer) (got interface{}) {
-	ctx.GetLogger().Debugf("AnalyticFuncsOp receive: %v", data)
-	if !p.transformed {
-		newF := make([]*ast.Call, len(p.Funcs))
-		for i, f := range p.Funcs {
-			newF[i] = &ast.Call{
-				Name:        f.Name,
-				FuncId:      f.FuncId,
-				FuncType:    f.FuncType,
-				Args:        f.Args,
-				CachedField: f.CachedField,
-				CacheIndex:  f.CacheIndex,
-				Partition:   f.Partition,
-				WhenExpr:    f.WhenExpr,
-			}
+func cloneAnalyticCalls(calls []*ast.Call) []*ast.Call {
+	cloned := make([]*ast.Call, len(calls))
+	for i, f := range calls {
+		cloned[i] = &ast.Call{
+			Name:        f.Name,
+			FuncId:      f.FuncId,
+			FuncType:    f.FuncType,
+			Args:        f.Args,
+			CachedField: f.CachedField,
+			CacheIndex:  f.CacheIndex,
+			Partition:   f.Partition,
+			WhenExpr:    f.WhenExpr,
+			UntilExpr:   f.UntilExpr,
 		}
-		p.Funcs = newF
-		newFF := make([]*ast.Call, len(p.FieldFuncs))
-		for i, f := range p.FieldFuncs {
-			newFF[i] = &ast.Call{
-				Name:        f.Name,
-				FuncId:      f.FuncId,
-				FuncType:    f.FuncType,
-				Args:        f.Args,
-				CachedField: f.CachedField,
-				CacheIndex:  f.CacheIndex,
-				Partition:   f.Partition,
-				WhenExpr:    f.WhenExpr,
-			}
-		}
-		p.FieldFuncs = newFF
-		p.transformed = true
 	}
+	return cloned
+}
+
+func (p *AnalyticFuncsOp) init(ctx api.StreamContext) error {
+	if p.transformed {
+		return nil
+	}
+	p.Funcs = cloneAnalyticCalls(p.Funcs)
+	p.FieldFuncs = cloneAnalyticCalls(p.FieldFuncs)
+	p.leadStates = make(map[int]*leadCallState)
+	p.pending = nil
+	stored, err := ctx.GetState(leadOperatorStateKey)
+	if err != nil {
+		return err
+	}
+	if stored == nil {
+		p.transformed = true
+		return nil
+	}
+	snapshot, ok := stored.(LeadOperatorState)
+	if !ok {
+		return fmt.Errorf("invalid lead operator state %T", stored)
+	}
+	owners := make([]*pendingLeadRow, len(snapshot.Pending))
+	for i, pending := range snapshot.Pending {
+		owners[i] = &pendingLeadRow{row: pending.Row, unresolved: pending.Unresolved}
+		p.pending = append(p.pending, owners[i])
+	}
+	for callID, partitions := range snapshot.Calls {
+		callState := &leadCallState{partitions: make(map[string][]*leadRequest)}
+		for partition, requests := range partitions {
+			for _, request := range requests {
+				if request.Owner < 0 || request.Owner >= len(owners) {
+					return fmt.Errorf("invalid lead owner index %d", request.Owner)
+				}
+				owner := owners[request.Owner]
+				callState.partitions[partition] = append(callState.partitions[partition], &leadRequest{
+					owner: owner, origin: owner.row, remaining: request.Remaining,
+					dft: request.Default, ignoreNull: request.IgnoreNull,
+				})
+			}
+		}
+		p.leadStates[callID] = callState
+	}
+	p.transformed = true
+	return nil
+}
+
+func (p *AnalyticFuncsOp) saveState(ctx api.StreamContext) error {
+	ownerIndexes := make(map[*pendingLeadRow]int, len(p.pending))
+	snapshot := LeadOperatorState{Calls: make(map[int]map[string][]LeadRequestState)}
+	for i, owner := range p.pending {
+		ownerIndexes[owner] = i
+		snapshot.Pending = append(snapshot.Pending, LeadPendingState{Row: owner.row, Unresolved: owner.unresolved})
+	}
+	for callID, state := range p.leadStates {
+		partitions := make(map[string][]LeadRequestState)
+		for partition, requests := range state.partitions {
+			for _, request := range requests {
+				owner, ok := ownerIndexes[request.owner]
+				if !ok {
+					return fmt.Errorf("lead request references an emitted row")
+				}
+				partitions[partition] = append(partitions[partition], LeadRequestState{
+					Owner: owner, Remaining: request.remaining, Default: request.dft, IgnoreNull: request.ignoreNull,
+				})
+			}
+		}
+		snapshot.Calls[callID] = partitions
+	}
+	return ctx.PutState(leadOperatorStateKey, snapshot)
+}
+
+func (p *AnalyticFuncsOp) leadCalls() []*ast.Call {
+	seen := make(map[int]bool)
+	var result []*ast.Call
+	for _, calls := range [][]*ast.Call{p.FieldFuncs, p.Funcs} {
+		for _, call := range calls {
+			if call.Name == "lead" && !seen[call.FuncId] {
+				seen[call.FuncId] = true
+				result = append(result, call)
+			}
+		}
+	}
+	return result
+}
+
+func evalBool(ve *xsql.ValuerEval, expr ast.Expr, clause string) (bool, error) {
+	if expr == nil {
+		return false, nil
+	}
+	value := ve.Eval(expr)
+	if err, ok := value.(error); ok {
+		return false, err
+	}
+	if value == nil {
+		return false, nil
+	}
+	result, ok := value.(bool)
+	if !ok {
+		return false, fmt.Errorf("lead %s expression must return boolean but got %T", clause, value)
+	}
+	return result, nil
+}
+
+func evalPartitionKey(call *ast.Call, ve *xsql.ValuerEval) (string, error) {
+	if call.Partition == nil || len(call.Partition.Exprs) == 0 {
+		return "self", nil
+	}
+	var key strings.Builder
+	for _, expr := range call.Partition.Exprs {
+		value := ve.Eval(expr)
+		if err, ok := value.(error); ok {
+			return "", err
+		}
+		fmt.Fprintf(&key, "%T:%v;", value, value)
+	}
+	return key.String(), nil
+}
+
+func leadOptions(call *ast.Call, originEval *xsql.ValuerEval) (offset int, dft interface{}, ignoreNull bool, err error) {
+	offset = 1
+	ignoreNull = true
+	if len(call.Args) >= 2 {
+		offset = int(call.Args[1].(*ast.IntegerLiteral).Val)
+	}
+	if len(call.Args) >= 3 {
+		dft = originEval.Eval(call.Args[2])
+		if e, ok := dft.(error); ok {
+			return 0, nil, false, e
+		}
+	}
+	if len(call.Args) == 4 {
+		value := originEval.Eval(call.Args[3])
+		if e, ok := value.(error); ok {
+			return 0, nil, false, e
+		}
+		var ok bool
+		ignoreNull, ok = value.(bool)
+		if !ok {
+			return 0, nil, false, fmt.Errorf("the fourth arg of lead must return boolean but got %T", value)
+		}
+	}
+	return offset, dft, ignoreNull, nil
+}
+
+func (p *AnalyticFuncsOp) processLeadCall(call *ast.Call, probe xsql.Row, owner *pendingLeadRow, fv *xsql.FunctionValuer) error {
+	probeValuer := xsql.MultiValuer(probe, fv)
+	probeEval := &xsql.ValuerEval{Valuer: probeValuer}
+	partition, err := evalPartitionKey(call, probeEval)
+	if err != nil {
+		return err
+	}
+	state, ok := p.leadStates[call.FuncId]
+	if !ok {
+		state = &leadCallState{partitions: make(map[string][]*leadRequest)}
+		p.leadStates[call.FuncId] = state
+	}
+
+	when := true
+	if call.WhenExpr != nil {
+		when, err = evalBool(probeEval, call.WhenExpr, "WHEN")
+		if err != nil {
+			return err
+		}
+	}
+	var candidate interface{}
+	if when {
+		candidate = probeEval.Eval(call.Args[0])
+		if e, ok := candidate.(error); ok {
+			return e
+		}
+	}
+
+	waiting := state.partitions[partition]
+	decisions := make([]leadDecision, 0, len(waiting))
+	for _, request := range waiting {
+		expired := false
+		if call.UntilExpr != nil {
+			untilValuer := xsql.NewLeadUntilValuer(probeValuer, xsql.MultiValuer(request.origin, fv))
+			expired, err = evalBool(&xsql.ValuerEval{Valuer: untilValuer}, call.UntilExpr, "UNTIL")
+			if err != nil {
+				return err
+			}
+		}
+		if expired {
+			decisions = append(decisions, leadDecision{request: request, resolve: true, value: request.dft})
+			continue
+		}
+		if when && (!request.ignoreNull || candidate != nil) {
+			remaining := request.remaining - 1
+			if remaining == 0 {
+				decisions = append(decisions, leadDecision{request: request, resolve: true, value: candidate})
+				continue
+			}
+			decisions = append(decisions, leadDecision{request: request, remaining: remaining})
+			continue
+		}
+		decisions = append(decisions, leadDecision{request: request, remaining: request.remaining})
+	}
+
+	offset, dft, ignoreNull, err := leadOptions(call, probeEval)
+	if err != nil {
+		return err
+	}
+	kept := make([]*leadRequest, 0, len(waiting)+1)
+	for _, decision := range decisions {
+		if decision.resolve {
+			setAnalyticValue(decision.request.owner.row, call, decision.value)
+			decision.request.owner.unresolved--
+			continue
+		}
+		decision.request.remaining = decision.remaining
+		kept = append(kept, decision.request)
+	}
+	state.partitions[partition] = append(kept, &leadRequest{
+		owner:      owner,
+		origin:     probe,
+		remaining:  offset,
+		dft:        dft,
+		ignoreNull: ignoreNull,
+	})
+	return nil
+}
+
+func (p *AnalyticFuncsOp) emitReady() []xsql.Row {
+	var ready []xsql.Row
+	for len(p.pending) > 0 && p.pending[0].unresolved == 0 {
+		ready = append(ready, p.pending[0].row)
+		p.pending[0] = nil
+		p.pending = p.pending[1:]
+	}
+	return ready
+}
+
+// Finalize resolves the unresolved tail with each request's default before EOF.
+func (p *AnalyticFuncsOp) Finalize(ctx api.StreamContext, _ interface{}, _ *xsql.FunctionValuer, _ *xsql.AggregateFunctionValuer) interface{} {
+	if err := p.init(ctx); err != nil {
+		return err
+	}
+	for _, call := range p.leadCalls() {
+		state := p.leadStates[call.FuncId]
+		if state == nil {
+			continue
+		}
+		for partition, requests := range state.partitions {
+			for _, request := range requests {
+				setAnalyticValue(request.owner.row, call, request.dft)
+				request.owner.unresolved--
+			}
+			delete(state.partitions, partition)
+		}
+	}
+	for _, owner := range p.pending {
+		if owner.unresolved != 0 {
+			return fmt.Errorf("lead finalize found %d unresolved calls", owner.unresolved)
+		}
+	}
+	ready := p.emitReady()
+	if err := ctx.DeleteState(leadOperatorStateKey); err != nil {
+		return err
+	}
+	return ready
+}
+
+func (p *AnalyticFuncsOp) applyRow(ctx api.StreamContext, input xsql.Row, fv *xsql.FunctionValuer) interface{} {
+	ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(input, fv)}
 	var err error
+	input, err = p.evalTupleFunc(p.FieldFuncs, ve, input)
+	if err != nil {
+		return err
+	}
+	input, err = p.evalTupleFunc(p.Funcs, ve, input)
+	if err != nil {
+		return err
+	}
+
+	leads := p.leadCalls()
+	if len(leads) == 0 {
+		return input
+	}
+	owner := &pendingLeadRow{row: input, unresolved: len(leads)}
+	p.pending = append(p.pending, owner)
+	for _, call := range leads {
+		if err := p.processLeadCall(call, input, owner, fv); err != nil {
+			return err
+		}
+	}
+	ready := p.emitReady()
+	if err := p.saveState(ctx); err != nil {
+		return err
+	}
+	if len(ready) == 0 {
+		return nil
+	}
+	return ready
+}
+
+func (p *AnalyticFuncsOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.FunctionValuer, _ *xsql.AggregateFunctionValuer) interface{} {
+	ctx.GetLogger().Debugf("AnalyticFuncsOp receive: %v", data)
+	if err := p.init(ctx); err != nil {
+		return err
+	}
 	switch input := data.(type) {
 	case error:
 		return input
 	case xsql.Row:
-		ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(input, fv)}
-		input, err = p.evalTupleFunc(p.FieldFuncs, ve, input)
-		if err != nil {
-			return err
-		}
-		input, err = p.evalTupleFunc(p.Funcs, ve, input)
-		if err != nil {
-			return err
-		}
-		data = input
+		return p.applyRow(ctx, input, fv)
 	case xsql.Collection:
+		var err error
 		input, err = p.evalCollectionFunc(p.FieldFuncs, fv, input)
 		if err != nil {
 			return err
@@ -126,9 +458,8 @@ func (p *AnalyticFuncsOp) Apply(ctx api.StreamContext, data interface{}, fv *xsq
 		if err != nil {
 			return err
 		}
-		data = input
+		return input
 	default:
 		return fmt.Errorf("run analytic funcs op error: invalid input %[1]T(%[1]v)", input)
 	}
-	return data
 }

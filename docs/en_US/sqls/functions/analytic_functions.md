@@ -6,7 +6,7 @@ that they are not affected by predicates in WHERE clause.
 Analytic function call format is as below, where `over` clause is optional
 
 ```text
-AnalyticFuncName(<arguments>...) OVER ([PARTITION BY <partition key>] [WHEN <Expression>])
+AnalyticFuncName(<arguments>...) OVER ([PARTITION BY <partition key>] [WHEN <Expression> [UNTIL <Expression>]])
 ```
 
 Analytic function computations are performed over all the input events of the current query input, optionally you can
@@ -66,6 +66,26 @@ status in the same event
 ```text
 select lag(Status) as Status, ts - lag(ts, 1, ts, true) OVER (WHEN had_changed(true, statusCode)) as duration from demo
 ```
+
+## LEAD
+
+```text
+lead(expr, [offset], [default value], [ignore null])
+  OVER ([PARTITION BY <partition key>] [WHEN <Expression> [UNTIL <Expression>]])
+```
+
+Returns the result of `expr` from a later input row. `offset` defaults to 1, `default value` defaults to nil, and `ignore null` defaults to true, matching `lag`. Because the result depends on future input, the current row is buffered until the requested future value is found, `UNTIL` becomes true, or the input ends.
+
+`WHEN` selects future candidate rows. `UNTIL` is an eKuiper extension and is valid only together with `WHEN`; it is evaluated independently for every buffered row before `WHEN`. Within `UNTIL`, ordinary fields refer to the newly arrived probe row and `current_row(expr)` evaluates `expr` against the buffered origin row. If `UNTIL` is true, that request returns its default value. `current_row` is valid only in this context.
+
+```sql
+lead(candidate_t2) OVER (
+  WHEN isNull(b) = false
+  UNTIL ts - current_row(ts) > 5
+)
+```
+
+`UNTIL` is data-driven and is checked only when input arrives. It does not create a processing-time timer or event-time watermark. A timer-driven time limit belongs to future `WITHIN` semantics.
 
 ## LATEST
 
