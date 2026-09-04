@@ -30,6 +30,7 @@ The list of predefined sink plugins:
 - [Image sink](./plugin/image.md): sink to an image file. Only used to handle binary results.
 - [Zero MQ sink](./plugin/zmq.md): sink to Zero MQ.
 - [Kafka sink](./plugin/kafka.md): sink to Kafka.
+- [IoTDB sink](./plugin/iotdb.md): sink to Apache IoTDB, supporting both tree and table models.
 
 ## Updatable Sink
 

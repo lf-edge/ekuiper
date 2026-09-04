@@ -117,6 +117,7 @@ PLUGINS_IN_FULL := \
 	extensions/sinks/kafka \
 	extensions/sinks/image \
 	extensions/sinks/sql   \
+	extensions/sinks/iotdb \
 	extensions/sinks/zmq \
 	extensions/sinks/tdengine3 \
 	extensions/sources/random \

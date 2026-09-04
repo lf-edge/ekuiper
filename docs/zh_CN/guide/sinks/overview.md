@@ -31,6 +31,7 @@
 - [Image sink](./plugin/image.md)：写入一个图像文件。仅用于处理二进制结果。
 - [ZeroMQ sink](./plugin/zmq.md)：输出到 ZeroMQ。
 - [Kafka sink](./plugin/kafka.md)：输出到 Kafka。
+- [IoTDB sink](./plugin/iotdb.md)：写入 Apache IoTDB，同时支持树模型和表模型。
 
 ## 更新
 

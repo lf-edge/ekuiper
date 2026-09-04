@@ -1,0 +1,276 @@
+{
+  "about": {
+    "trial": true,
+    "author": {
+      "name": "Hawkon",
+      "email": "github@mail.hawkon.tech",
+      "company": "Timecho Limited",
+      "website": "https://github.com/Hawkon"
+    },
+    "helpUrl": {
+      "en_US": "https://ekuiper.org/docs/en/latest/guide/sinks/plugin/iotdb.html",
+      "zh_CN": "https://ekuiper.org/docs/zh/latest/guide/sinks/plugin/iotdb.html"
+    },
+    "description": {
+      "en_US": "This is a sink plugin for Apache IoTDB. It writes data into IoTDB using the native Thrift client, and supports both the tree model and the table model.",
+      "zh_CN": "本插件为 Apache IoTDB 的持久化插件，使用原生 Thrift 客户端将分析结果写入 IoTDB，同时支持树模型（Tree Model）和表模型（Table Model）。"
+    }
+  },
+  "libs": [
+    "github.com/apache/iotdb-client-go/v2@v2.0.8"
+  ],
+  "properties": [
+    {
+      "name": "addr",
+      "default": "127.0.0.1:6667",
+      "optional": false,
+      "control": "text",
+      "type": "string",
+      "hint": {
+        "en_US": "IoTDB server address in host:port format.",
+        "zh_CN": "IoTDB 服务端地址，格式为 host:port。"
+      },
+      "label": {
+        "en_US": "Addr",
+        "zh_CN": "地址"
+      }
+    },
+    {
+      "name": "username",
+      "default": "root",
+      "optional": true,
+      "control": "text",
+      "type": "string",
+      "hint": {
+        "en_US": "IoTDB username.",
+        "zh_CN": "IoTDB 用户名。"
+      },
+      "label": {
+        "en_US": "Username",
+        "zh_CN": "用户名"
+      }
+    },
+    {
+      "name": "password",
+      "default": "root",
+      "optional": true,
+      "control": "text",
+      "type": "string",
+      "hint": {
+        "en_US": "IoTDB password.",
+        "zh_CN": "IoTDB 密码。"
+      },
+      "label": {
+        "en_US": "Password",
+        "zh_CN": "密码"
+      }
+    },
+    {
+      "name": "model",
+      "default": "tree",
+      "optional": false,
+      "control": "select",
+      "type": "string",
+      "values": [
+        "tree",
+        "table"
+      ],
+      "hint": {
+        "en_US": "Data model used by IoTDB. Choose 'tree' for the traditional tree model, or 'table' for the relational table model.",
+        "zh_CN": "IoTDB 使用的数据模型。选择 'tree' 表示传统树模型；选择 'table' 表示关系表模型。"
+      },
+      "label": {
+        "en_US": "Model",
+        "zh_CN": "数据模型"
+      }
+    },
+    {
+      "name": "device",
+      "default": "",
+      "optional": true,
+      "control": "text",
+      "type": "string",
+      "hint": {
+        "en_US": "Required when model is 'tree'. The device path, e.g. root.sg1.dev1.",
+        "zh_CN": "当 model 为 'tree' 时必填。设备路径，例如 root.sg1.dev1。"
+      },
+      "label": {
+        "en_US": "Device",
+        "zh_CN": "设备路径"
+      }
+    },
+    {
+      "name": "isAligned",
+      "default": false,
+      "optional": true,
+      "control": "radio",
+      "type": "bool",
+      "hint": {
+        "en_US": "Whether to use aligned timeseries when model is 'tree'.",
+        "zh_CN": "当 model 为 'tree' 时是否使用对齐时间序列。"
+      },
+      "label": {
+        "en_US": "Is Aligned",
+        "zh_CN": "对齐时间序列"
+      }
+    },
+    {
+      "name": "database",
+      "default": "",
+      "optional": true,
+      "control": "text",
+      "type": "string",
+      "hint": {
+        "en_US": "The database name for table model (without root. prefix, e.g. iot_data). The 'root.' prefix is automatically stripped if provided.",
+        "zh_CN": "表模型的数据库名称（不需要 root. 前缀，如 iot_data）。如果提供了 'root.' 前缀会被自动去除。"
+      },
+      "label": {
+        "en_US": "Database",
+        "zh_CN": "数据库"
+      }
+    },
+    {
+      "name": "table",
+      "default": "",
+      "optional": true,
+      "control": "text",
+      "type": "string",
+      "hint": {
+        "en_US": "Required when model is 'table'. The target table name.",
+        "zh_CN": "当 model 为 'table' 时必填。目标表名。"
+      },
+      "label": {
+        "en_US": "Table",
+        "zh_CN": "表名"
+      }
+    },
+    {
+      "name": "measurements",
+      "default": [],
+      "optional": false,
+      "control": "list",
+      "type": "list_string",
+      "hint": {
+        "en_US": "List of measurement / column names to write.",
+        "zh_CN": "要写入的测点名或列名列表。"
+      },
+      "label": {
+        "en_US": "Measurements",
+        "zh_CN": "测点/列名"
+      }
+    },
+    {
+      "name": "dataTypes",
+      "default": [],
+      "optional": false,
+      "control": "list",
+      "type": "list_string",
+      "hint": {
+        "en_US": "List of IoTDB data types matching measurements one-by-one. Allowed: INT32, INT64, FLOAT, DOUBLE, BOOLEAN, TEXT, STRING, TIMESTAMP.",
+        "zh_CN": "与测点一一对应的 IoTDB 数据类型列表。可选值：INT32, INT64, FLOAT, DOUBLE, BOOLEAN, TEXT, STRING, TIMESTAMP。"
+      },
+      "label": {
+        "en_US": "Data Types",
+        "zh_CN": "数据类型"
+      }
+    },
+    {
+      "name": "columnCategories",
+      "default": [],
+      "optional": true,
+      "control": "list",
+      "type": "list_string",
+      "hint": {
+        "en_US": "Required when model is 'table'. Column categories matching measurements. Allowed: TAG, FIELD, ATTRIBUTE.",
+        "zh_CN": "当 model 为 'table' 时必填。与测点一一对应的列类别。可选值：TAG, FIELD, ATTRIBUTE。"
+      },
+      "label": {
+        "en_US": "Column Categories",
+        "zh_CN": "列类别"
+      }
+    },
+    {
+      "name": "tsFieldName",
+      "default": "",
+      "optional": true,
+      "control": "text",
+      "type": "string",
+      "hint": {
+        "en_US": "Optional. Field name from the incoming row that carries the millisecond timestamp. If empty, the current time is used; when set, every row must contain this field.",
+        "zh_CN": "可选。用于提取毫秒级时间戳的输入字段名。若为空则使用当前时间；配置后每一行都必须包含该字段。"
+      },
+      "label": {
+        "en_US": "Timestamp Field Name",
+        "zh_CN": "时间戳字段名"
+      }
+    },
+    {
+      "name": "batchSize",
+      "default": 10,
+      "optional": true,
+      "control": "text",
+      "type": "int",
+      "hint": {
+        "en_US": "Number of rows in a single tablet insert.",
+        "zh_CN": "单次 tablet 写入的行数。"
+      },
+      "label": {
+        "en_US": "Batch Size",
+        "zh_CN": "批处理大小"
+      }
+    },
+    {
+      "name": "timeout",
+      "default": 5000,
+      "optional": true,
+      "control": "text",
+      "type": "int",
+      "hint": {
+        "en_US": "Connection timeout in milliseconds.",
+        "zh_CN": "连接超时时间，单位毫秒。"
+      },
+      "label": {
+        "en_US": "Timeout (ms)",
+        "zh_CN": "连接超时(毫秒)"
+      }
+    },
+    {
+      "name": "poolSize",
+      "default": 3,
+      "optional": true,
+      "control": "text",
+      "type": "int",
+      "hint": {
+        "en_US": "Maximum number of sessions in the connection pool.",
+        "zh_CN": "连接池中的最大 session 数量。"
+      },
+      "label": {
+        "en_US": "Pool Size",
+        "zh_CN": "连接池大小"
+      }
+    },
+    {
+      "name": "nodeUrls",
+      "default": [],
+      "optional": true,
+      "control": "list",
+      "type": "list_string",
+      "hint": {
+        "en_US": "Optional cluster node URLs, e.g. ['host1:port1','host2:port2']. When set, this overrides addr for cluster mode.",
+        "zh_CN": "可选的集群节点列表，例如 ['host1:port1','host2:port2']。设置后将以集群模式连接，覆盖 addr 单机配置。"
+      },
+      "label": {
+        "en_US": "Node URLs",
+        "zh_CN": "集群节点列表"
+      }
+    }
+  ],
+  "node": {
+    "category": "sink",
+    "icon": "iconPath",
+    "label": {
+      "en": "IoTDB",
+      "zh": "IoTDB"
+    }
+  }
+}
