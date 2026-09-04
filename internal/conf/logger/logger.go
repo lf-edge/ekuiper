@@ -15,7 +15,6 @@
 package logger
 
 import (
-	"io"
 	"os"
 	"strings"
 
@@ -40,7 +39,7 @@ func InitLogger() {
 		return
 	}
 	Log = logrus.New()
-	Log.SetOutput(io.Discard)
+	Log.SetOutput(os.Stderr)
 	filenameHook := filename.NewHook()
 	filenameHook.Field = "file"
 	Log.AddHook(filenameHook)
