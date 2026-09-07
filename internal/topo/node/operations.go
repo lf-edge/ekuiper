@@ -36,6 +36,11 @@ type FinalizableOperation interface {
 	Finalize(ctx api.StreamContext, marker interface{}, fv *xsql.FunctionValuer, afv *xsql.AggregateFunctionValuer) interface{}
 }
 
+// WatermarkOperation constrains event-time progress while an operation buffers rows.
+type WatermarkOperation interface {
+	Watermark(ctx api.StreamContext, marker *xsql.WatermarkTuple) (*xsql.WatermarkTuple, error)
+}
+
 // UnFunc implements UnOperation as type func (context.Context, interface{})
 type UnFunc func(api.StreamContext, interface{}) interface{}
 
@@ -121,13 +126,25 @@ func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
 		select {
 		// process incoming item
 		case item := <-o.input:
-			data, processed := o.commonIngestWithControl(ctx, item, func(marker interface{}) {
+			data, processed := o.commonIngestWithControl(ctx, item, func(marker interface{}) bool {
+				if watermark, ok := marker.(*xsql.WatermarkTuple); ok {
+					if handler, ok := o.op.(WatermarkOperation); ok {
+						adjusted, err := handler.Watermark(exeCtx, watermark)
+						if err != nil {
+							o.onError(ctx, err)
+						} else if adjusted != nil {
+							o.Broadcast(adjusted)
+						}
+						return true
+					}
+				}
 				if finalizer, ok := o.op.(FinalizableOperation); ok {
 					switch marker.(type) {
 					case xsql.EOFTuple, xsql.BatchEOFTuple:
 						emitResult(finalizer.Finalize(exeCtx, marker, fv, afv))
 					}
 				}
+				return false
 			})
 			if processed {
 				break

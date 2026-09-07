@@ -18,6 +18,7 @@ import (
 	"encoding/gob"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
@@ -41,8 +42,9 @@ type LeadPendingState struct {
 }
 
 type LeadOperatorState struct {
-	Pending []LeadPendingState
-	Calls   map[int]map[string][]LeadRequestState
+	Pending       []LeadPendingState
+	Calls         map[int]map[string][]LeadRequestState
+	LastWatermark time.Time
 }
 
 func init() {
@@ -78,8 +80,9 @@ type AnalyticFuncsOp struct {
 	FieldFuncs  []*ast.Call
 	transformed bool
 
-	leadStates map[int]*leadCallState
-	pending    []*pendingLeadRow
+	leadStates    map[int]*leadCallState
+	pending       []*pendingLeadRow
+	lastWatermark time.Time
 }
 
 func setAnalyticValue(input xsql.Row, call *ast.Call, value interface{}) {
@@ -163,6 +166,7 @@ func (p *AnalyticFuncsOp) init(ctx api.StreamContext) error {
 	if !ok {
 		return fmt.Errorf("invalid lead operator state %T", stored)
 	}
+	p.lastWatermark = snapshot.LastWatermark
 	owners := make([]*pendingLeadRow, len(snapshot.Pending))
 	for i, pending := range snapshot.Pending {
 		owners[i] = &pendingLeadRow{row: pending.Row, unresolved: pending.Unresolved}
@@ -190,7 +194,7 @@ func (p *AnalyticFuncsOp) init(ctx api.StreamContext) error {
 
 func (p *AnalyticFuncsOp) saveState(ctx api.StreamContext) error {
 	ownerIndexes := make(map[*pendingLeadRow]int, len(p.pending))
-	snapshot := LeadOperatorState{Calls: make(map[int]map[string][]LeadRequestState)}
+	snapshot := LeadOperatorState{Calls: make(map[int]map[string][]LeadRequestState), LastWatermark: p.lastWatermark}
 	for i, owner := range p.pending {
 		ownerIndexes[owner] = i
 		snapshot.Pending = append(snapshot.Pending, LeadPendingState{Row: owner.row, Unresolved: owner.unresolved})
@@ -286,32 +290,18 @@ func leadOptions(call *ast.Call, originEval *xsql.ValuerEval) (offset int, dft i
 	return offset, dft, ignoreNull, nil
 }
 
-func (p *AnalyticFuncsOp) processLeadCall(call *ast.Call, probe xsql.Row, owner *pendingLeadRow, fv *xsql.FunctionValuer) error {
+// prepareLeadCall validates a probe without changing pending requests. All calls
+// for a row must prepare successfully before any of their decisions are committed.
+func (p *AnalyticFuncsOp) prepareLeadCall(call *ast.Call, probe xsql.Row, owner *pendingLeadRow, fv *xsql.FunctionValuer) (func(), error) {
 	probeValuer := xsql.MultiValuer(probe, fv)
 	probeEval := &xsql.ValuerEval{Valuer: probeValuer}
 	partition, err := evalPartitionKey(call, probeEval)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	state, ok := p.leadStates[call.FuncId]
 	if !ok {
 		state = &leadCallState{partitions: make(map[string][]*leadRequest)}
-		p.leadStates[call.FuncId] = state
-	}
-
-	when := true
-	if call.WhenExpr != nil {
-		when, err = evalBool(probeEval, call.WhenExpr, "WHEN")
-		if err != nil {
-			return err
-		}
-	}
-	var candidate interface{}
-	if when {
-		candidate = probeEval.Eval(call.Args[0])
-		if e, ok := candidate.(error); ok {
-			return e
-		}
 	}
 
 	waiting := state.partitions[partition]
@@ -322,47 +312,105 @@ func (p *AnalyticFuncsOp) processLeadCall(call *ast.Call, probe xsql.Row, owner 
 			untilValuer := xsql.NewLeadUntilValuer(probeValuer, xsql.MultiValuer(request.origin, fv))
 			expired, err = evalBool(&xsql.ValuerEval{Valuer: untilValuer}, call.UntilExpr, "UNTIL")
 			if err != nil {
-				return err
+				return nil, err
 			}
 		}
 		if expired {
 			decisions = append(decisions, leadDecision{request: request, resolve: true, value: request.dft})
 			continue
 		}
+		decisions = append(decisions, leadDecision{request: request, remaining: request.remaining})
+	}
+
+	// An expired request must not evaluate WHEN or the candidate expression.
+	var candidate interface{}
+	when, evaluated := true, false
+	for i := range decisions {
+		decision := &decisions[i]
+		if decision.resolve {
+			continue
+		}
+		if !evaluated {
+			if call.WhenExpr != nil {
+				when, err = evalBool(probeEval, call.WhenExpr, "WHEN")
+				if err != nil {
+					return nil, err
+				}
+			}
+			if when {
+				candidate = probeEval.Eval(call.Args[0])
+				if e, ok := candidate.(error); ok {
+					return nil, e
+				}
+			}
+			evaluated = true
+		}
+		request := decision.request
 		if when && (!request.ignoreNull || candidate != nil) {
 			remaining := request.remaining - 1
 			if remaining == 0 {
-				decisions = append(decisions, leadDecision{request: request, resolve: true, value: candidate})
+				*decision = leadDecision{request: request, resolve: true, value: candidate}
 				continue
 			}
-			decisions = append(decisions, leadDecision{request: request, remaining: remaining})
-			continue
+			decision.remaining = remaining
 		}
-		decisions = append(decisions, leadDecision{request: request, remaining: request.remaining})
 	}
 
 	offset, dft, ignoreNull, err := leadOptions(call, probeEval)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	kept := make([]*leadRequest, 0, len(waiting)+1)
-	for _, decision := range decisions {
-		if decision.resolve {
-			setAnalyticValue(decision.request.owner.row, call, decision.value)
-			decision.request.owner.unresolved--
-			continue
+	return func() {
+		p.leadStates[call.FuncId] = state
+		kept := make([]*leadRequest, 0, len(waiting)+1)
+		for _, decision := range decisions {
+			if decision.resolve {
+				setAnalyticValue(decision.request.owner.row, call, decision.value)
+				decision.request.owner.unresolved--
+				continue
+			}
+			decision.request.remaining = decision.remaining
+			kept = append(kept, decision.request)
 		}
-		decision.request.remaining = decision.remaining
-		kept = append(kept, decision.request)
+		state.partitions[partition] = append(kept, &leadRequest{
+			owner:      owner,
+			origin:     probe,
+			remaining:  offset,
+			dft:        dft,
+			ignoreNull: ignoreNull,
+		})
+	}, nil
+}
+
+// Watermark holds downstream event time behind every buffered row. The next
+// upstream watermark can advance it after those rows have been emitted.
+func (p *AnalyticFuncsOp) Watermark(ctx api.StreamContext, marker *xsql.WatermarkTuple) (*xsql.WatermarkTuple, error) {
+	if err := p.init(ctx); err != nil {
+		return nil, err
 	}
-	state.partitions[partition] = append(kept, &leadRequest{
-		owner:      owner,
-		origin:     probe,
-		remaining:  offset,
-		dft:        dft,
-		ignoreNull: ignoreNull,
-	})
-	return nil
+	if len(p.leadCalls()) == 0 {
+		return marker, nil
+	}
+	ts := marker.Timestamp
+	for _, pending := range p.pending {
+		event, ok := pending.row.(xsql.Event)
+		if !ok {
+			// A row without an event timestamp cannot establish a safe watermark.
+			return nil, nil
+		}
+		limit := event.GetTimestamp().Add(-time.Nanosecond)
+		if limit.Before(ts) {
+			ts = limit
+		}
+	}
+	if !p.lastWatermark.IsZero() && !ts.After(p.lastWatermark) {
+		return nil, nil
+	}
+	p.lastWatermark = ts
+	if err := p.saveState(ctx); err != nil {
+		return nil, err
+	}
+	return &xsql.WatermarkTuple{Timestamp: ts}, nil
 }
 
 func (p *AnalyticFuncsOp) emitReady() []xsql.Row {
@@ -399,6 +447,7 @@ func (p *AnalyticFuncsOp) Finalize(ctx api.StreamContext, _ interface{}, _ *xsql
 		}
 	}
 	ready := p.emitReady()
+	p.lastWatermark = time.Time{}
 	if err := ctx.DeleteState(leadOperatorStateKey); err != nil {
 		return err
 	}
@@ -422,11 +471,17 @@ func (p *AnalyticFuncsOp) applyRow(ctx api.StreamContext, input xsql.Row, fv *xs
 		return input
 	}
 	owner := &pendingLeadRow{row: input, unresolved: len(leads)}
-	p.pending = append(p.pending, owner)
+	commits := make([]func(), 0, len(leads))
 	for _, call := range leads {
-		if err := p.processLeadCall(call, input, owner, fv); err != nil {
+		commit, err := p.prepareLeadCall(call, input, owner, fv)
+		if err != nil {
 			return err
 		}
+		commits = append(commits, commit)
+	}
+	p.pending = append(p.pending, owner)
+	for _, commit := range commits {
+		commit()
 	}
 	ready := p.emitReady()
 	if err := p.saveState(ctx); err != nil {

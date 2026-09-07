@@ -87,6 +87,10 @@ lead(candidate_t2) OVER (
 
 `UNTIL` is data-driven and is checked only when input arrives. It does not create a processing-time timer or event-time watermark. A timer-driven time limit belongs to future `WITHIN` semantics.
 
+For event-time rules, `LEAD` holds downstream watermarks behind buffered rows so that windows cannot close before those rows arrive. Watermarks can advance with subsequent input after the rows are released.
+
+`WHEN` and the candidate expression are evaluated only if a pending request still needs a candidate after checking `UNTIL`. If evaluating a probe fails, none of that probe's `LEAD` decisions are committed and the probe is not added to the pending queue; later valid input can continue resolving existing requests.
+
 ## LATEST
 
 ```text

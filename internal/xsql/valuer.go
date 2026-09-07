@@ -110,7 +110,7 @@ func MultiValuer(valuers ...Valuer) Valuer {
 }
 
 type leadUntilValuer struct {
-	probe   Valuer
+	MultiValuerList
 	current *ValuerEval
 }
 
@@ -118,29 +118,7 @@ type leadUntilValuer struct {
 // current. Both valuers should include the same FunctionValuer when functions
 // other than current_row are allowed in the expression.
 func NewLeadUntilValuer(probe, current Valuer) Valuer {
-	return &leadUntilValuer{probe: probe, current: &ValuerEval{Valuer: current}}
-}
-
-func (v *leadUntilValuer) Value(key, table string) (interface{}, bool) {
-	return v.probe.Value(key, table)
-}
-
-func (v *leadUntilValuer) Meta(key, table string) (interface{}, bool) {
-	return v.probe.Meta(key, table)
-}
-
-func (v *leadUntilValuer) Call(name string, funcID int, args []interface{}) (interface{}, bool) {
-	if cv, ok := v.probe.(CallValuer); ok {
-		return cv.Call(name, funcID, args)
-	}
-	return nil, false
-}
-
-func (v *leadUntilValuer) FuncValue(key string) (interface{}, bool) {
-	if fv, ok := v.probe.(FuncValuer); ok {
-		return fv.FuncValue(key)
-	}
-	return nil, false
+	return &leadUntilValuer{MultiValuerList: MultiValuerList{probe}, current: &ValuerEval{Valuer: current}}
 }
 
 func (v *leadUntilValuer) EvalCurrentRow(expr ast.Expr) interface{} {

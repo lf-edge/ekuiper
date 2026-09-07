@@ -49,9 +49,10 @@ func TestCommonIngestCallsHookBeforeEOF(t *testing.T) {
 	n := newDefaultSinkNode("test", &def.RuleOption{})
 	n.ctx = ctx
 	called := false
-	_, processed := n.commonIngestWithControl(ctx, xsql.EOFTuple("done"), func(marker any) {
+	_, processed := n.commonIngestWithControl(ctx, xsql.EOFTuple("done"), func(marker any) bool {
 		require.Equal(t, xsql.EOFTuple("done"), marker)
 		called = true
+		return false
 	})
 	require.True(t, processed)
 	require.True(t, called)
