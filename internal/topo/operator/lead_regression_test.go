@@ -183,6 +183,7 @@ func TestLeadWatermarkRestore(t *testing.T) {
 	wm, err := op.Watermark(ctx, &xsql.WatermarkTuple{Timestamp: base.Add(time.Second)})
 	require.NoError(t, err)
 	require.Equal(t, base.Add(-time.Nanosecond), wm.Timestamp)
+	require.NoError(t, op.Snapshot(ctx))
 	restored := newOp()
 	wm, err = restored.Watermark(ctx, &xsql.WatermarkTuple{Timestamp: base.Add(2 * time.Second)})
 	require.NoError(t, err)

@@ -342,6 +342,7 @@ func TestLeadRestoresPendingRows(t *testing.T) {
 	op := &AnalyticFuncsOp{Funcs: []*ast.Call{newCall()}}
 	require.Nil(t, op.Apply(ctx, &xsql.Tuple{Message: xsql.Message{"ts": int64(0), "b": false, "value": 1}}, fv, afv))
 	require.Nil(t, op.Apply(ctx, &xsql.Tuple{Message: xsql.Message{"ts": int64(4), "b": false, "value": 2}}, fv, afv))
+	require.NoError(t, op.Snapshot(ctx))
 	stored, err := ctx.GetState(leadOperatorStateKey)
 	require.NoError(t, err)
 	var encoded bytes.Buffer

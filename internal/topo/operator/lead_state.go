@@ -65,7 +65,7 @@ func (b *leadBuffer) restore(ctx api.StreamContext) error {
 	}
 	b.lastWatermark = snapshot.LastWatermark
 	for _, pending := range snapshot.Pending {
-		b.pending = append(b.pending, &pendingLeadRow{row: pending.Row, unresolved: pending.Unresolved})
+		b.pending = append(b.pending, &pendingLeadRow{row: pending.Row.Clone(), unresolved: pending.Unresolved})
 	}
 	for callID, partitions := range snapshot.Calls {
 		restored := make(map[string][]*leadRequest)
@@ -90,7 +90,9 @@ func (b *leadBuffer) save(ctx api.StreamContext) error {
 	snapshot := leadSnapshot{Calls: make(map[int]map[string][]leadRequestSnapshot), LastWatermark: b.lastWatermark}
 	for i, owner := range b.pending {
 		ownerIndexes[owner] = i
-		snapshot.Pending = append(snapshot.Pending, leadPendingSnapshot{Row: owner.row, Unresolved: owner.unresolved})
+		// Clone mutable analytic caches; subsequent input must not modify the
+		// checkpoint while it is being saved asynchronously. Source data is immutable.
+		snapshot.Pending = append(snapshot.Pending, leadPendingSnapshot{Row: owner.row.Clone(), Unresolved: owner.unresolved})
 	}
 	for callID, requestsByPartition := range b.requests {
 		partitions := make(map[string][]leadRequestSnapshot)

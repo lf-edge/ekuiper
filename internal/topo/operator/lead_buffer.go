@@ -70,7 +70,7 @@ type leadCallUpdate struct {
 	next      *leadRequest
 }
 
-func (b *leadBuffer) apply(ctx api.StreamContext, row xsql.Row, fv *xsql.FunctionValuer) interface{} {
+func (b *leadBuffer) apply(row xsql.Row, fv *xsql.FunctionValuer) interface{} {
 	owner := &pendingLeadRow{row: row, unresolved: len(b.calls)}
 	updates, err := b.prepare(owner, fv)
 	if err != nil {
@@ -78,9 +78,6 @@ func (b *leadBuffer) apply(ctx api.StreamContext, row xsql.Row, fv *xsql.Functio
 	}
 	b.commit(owner, updates)
 	ready := b.drainReady()
-	if err := b.save(ctx); err != nil {
-		return err
-	}
 	if len(ready) == 0 {
 		return nil
 	}
@@ -222,7 +219,7 @@ func (b *leadBuffer) finalize(ctx api.StreamContext) interface{} {
 
 // Watermark holds downstream event time behind every buffered row. The next
 // upstream watermark can advance it after those rows have been emitted.
-func (b *leadBuffer) watermark(ctx api.StreamContext, marker *xsql.WatermarkTuple) (*xsql.WatermarkTuple, error) {
+func (b *leadBuffer) watermark(marker *xsql.WatermarkTuple) (*xsql.WatermarkTuple, error) {
 	ts := marker.Timestamp
 	for _, pending := range b.pending {
 		event, ok := pending.row.(xsql.Event)
@@ -239,9 +236,6 @@ func (b *leadBuffer) watermark(ctx api.StreamContext, marker *xsql.WatermarkTupl
 		return nil, nil
 	}
 	b.lastWatermark = ts
-	if err := b.save(ctx); err != nil {
-		return nil, err
-	}
 	return &xsql.WatermarkTuple{Timestamp: ts}, nil
 }
 

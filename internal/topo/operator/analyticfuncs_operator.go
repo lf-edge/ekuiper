@@ -115,7 +115,7 @@ func (p *AnalyticFuncsOp) Apply(ctx api.StreamContext, data interface{}, fv *xsq
 			}
 		}
 		if p.lead != nil {
-			return p.lead.apply(ctx, input, fv)
+			return p.lead.apply(input, fv)
 		}
 		return input
 	case xsql.Collection:
@@ -157,5 +157,16 @@ func (p *AnalyticFuncsOp) Watermark(ctx api.StreamContext, marker *xsql.Watermar
 	if p.lead == nil {
 		return marker, nil
 	}
-	return p.lead.watermark(ctx, marker)
+	return p.lead.watermark(marker)
+}
+
+// Snapshot runs on the input loop at an aligned checkpoint boundary.
+func (p *AnalyticFuncsOp) Snapshot(ctx api.StreamContext) error {
+	if err := p.init(ctx); err != nil {
+		return err
+	}
+	if p.lead == nil {
+		return nil
+	}
+	return p.lead.save(ctx)
 }

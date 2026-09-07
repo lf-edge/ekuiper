@@ -41,6 +41,18 @@ type WatermarkOperation interface {
 	Watermark(ctx api.StreamContext, marker *xsql.WatermarkTuple) (*xsql.WatermarkTuple, error)
 }
 
+// SnapshotOperation materializes state only when a checkpoint is triggered.
+type SnapshotOperation interface {
+	Snapshot(ctx api.StreamContext) error
+}
+
+func (o *UnaryOperator) PrepareCheckpoint() error {
+	if op, ok := o.op.(SnapshotOperation); ok {
+		return op.Snapshot(o.ctx)
+	}
+	return nil
+}
+
 // UnFunc implements UnOperation as type func (context.Context, interface{})
 type UnFunc func(api.StreamContext, interface{}) interface{}
 
