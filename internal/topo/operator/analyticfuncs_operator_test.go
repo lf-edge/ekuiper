@@ -346,9 +346,11 @@ func TestLeadRestoresPendingRows(t *testing.T) {
 	require.NoError(t, err)
 	var encoded bytes.Buffer
 	require.NoError(t, gob.NewEncoder(&encoded).Encode(&stored))
+	require.Contains(t, encoded.String(), "github.com/lf-edge/ekuiper/v2/internal/topo/operator.LeadOperatorState", "retain the pre-refactor checkpoint type name")
 	var decoded interface{}
 	require.NoError(t, gob.NewDecoder(&encoded).Decode(&decoded))
-	require.IsType(t, LeadOperatorState{}, decoded)
+	require.IsType(t, leadSnapshot{}, decoded)
+	require.NoError(t, ctx.PutState(leadOperatorStateKey, decoded))
 
 	restored := &AnalyticFuncsOp{Funcs: []*ast.Call{newCall()}}
 	result := restored.Apply(ctx, &xsql.Tuple{Message: xsql.Message{"ts": int64(6), "b": true, "value": 3}}, fv, afv)

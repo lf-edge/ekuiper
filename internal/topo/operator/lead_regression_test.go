@@ -73,6 +73,39 @@ func TestLeadUntilBeforeWhen(t *testing.T) {
 	require.Nil(t, value)
 }
 
+func TestLeadOffsetAndNullProgress(t *testing.T) {
+	store, _ := state.CreateStore(t.Name(), def.AtMostOnce)
+	ctx := context.WithValue(context.Background(), context.LoggerKey, conf.Log).WithMeta(t.Name(), "analytic", store)
+	fv, afv := xsql.NewFunctionValuersForOp(ctx)
+	op := &AnalyticFuncsOp{}
+	for id, ignoreNull := range []bool{true, false} {
+		name := []string{"skip_null", "count_null"}[id]
+		op.Funcs = append(op.Funcs, &ast.Call{Name: "lead", FuncId: id, CacheIndex: -1, CachedField: name, Args: []ast.Expr{
+			&ast.FieldRef{Name: "v"}, &ast.IntegerLiteral{Val: 2}, &ast.IntegerLiteral{Val: -1}, &ast.BooleanLiteral{Val: ignoreNull},
+		}})
+	}
+	row := func(v any) *xsql.Tuple { return &xsql.Tuple{Message: xsql.Message{"v": v}} }
+	for _, value := range []any{1, nil, 3} {
+		require.Nil(t, op.Apply(ctx, row(value), fv, afv))
+	}
+	ready := op.Apply(ctx, row(4), fv, afv).([]xsql.Row)
+	require.Len(t, ready, 2)
+	for i, expected := range [][2]int{{4, 3}, {4, 4}} {
+		for j, name := range []string{"skip_null", "count_null"} {
+			value, _ := ready[i].Value(name, "")
+			require.Equal(t, expected[j], value)
+		}
+	}
+	tail := op.Finalize(ctx, xsql.EOFTuple("done"), fv, afv).([]xsql.Row)
+	require.Len(t, tail, 2)
+	for _, row := range tail {
+		for _, name := range []string{"skip_null", "count_null"} {
+			value, _ := row.Value(name, "")
+			require.Equal(t, int64(-1), value)
+		}
+	}
+}
+
 func TestLeadMultipleCallsErrorRecovery(t *testing.T) {
 	store, _ := state.CreateStore(t.Name(), def.AtMostOnce)
 	ctx := context.WithValue(context.Background(), context.LoggerKey, conf.Log).WithMeta(t.Name(), "analytic", store)
