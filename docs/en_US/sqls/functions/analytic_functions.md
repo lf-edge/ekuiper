@@ -91,6 +91,15 @@ For event-time rules, `LEAD` holds downstream watermarks behind buffered rows so
 
 `WHEN` and the candidate expression are evaluated only if a pending request still needs a candidate after checking `UNTIL`. If evaluating a probe fails, none of that probe's `LEAD` decisions are committed and the probe is not added to the pending queue; later valid input can continue resolving existing requests.
 
+### Best practices
+
+- Prefer an explicit `UNTIL` condition when a future match is not guaranteed, especially with selective `WHEN` conditions. Use `WHEN true` if every future row is a candidate but a stop condition is still needed.
+- Choose a stop condition that keeps the number of pending requests small under the expected input rate. For example, with numeric `ts` values in milliseconds, `UNTIL ts - current_row(ts) > 1000` stops waiting after a probe exceeds one second from the origin. This is a data-driven limit, not a timer or a hard buffer-size limit.
+- Size the wait for each partition using approximately `input rows per second × average wait in seconds`. Even a short time interval can accumulate many requests at high input rates. Prefer simple conditions and verify them at the expected peak load.
+- `UNTIL` is checked only when another row arrives in the same partition. An idle partition cannot expire its requests by itself. Output preserves global input order, so one unresolved early row can also hold back completed rows from other partitions.
+
+Each probe checks the outstanding requests in its partition. Longer queues increase CPU and memory usage; adding `UNTIL` helps only if it actually keeps those queues short. Checkpoint snapshots also grow with the buffered state.
+
 ## LATEST
 
 ```text
