@@ -16,7 +16,6 @@ package operator
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
@@ -261,22 +260,26 @@ func evalPartitionKey(call *ast.Call, ve *xsql.ValuerEval) (string, error) {
 	if call.Partition == nil || len(call.Partition.Exprs) == 0 {
 		return "self", nil
 	}
-	var key strings.Builder
+	values := make([]any, 0, len(call.Partition.Exprs))
 	for _, expr := range call.Partition.Exprs {
 		value := ve.Eval(expr)
 		if err, ok := value.(error); ok {
 			return "", err
 		}
-		fmt.Fprintf(&key, "%T:%v;", value, value)
+		values = append(values, value)
 	}
-	return key.String(), nil
+	return xsql.EncodePartitionKey(values...), nil
 }
 
 func leadOptions(call *ast.Call, originEval *xsql.ValuerEval) (offset int, dft interface{}, ignoreNull bool, err error) {
 	offset = 1
 	ignoreNull = true
 	if len(call.Args) >= 2 {
-		offset = int(call.Args[1].(*ast.IntegerLiteral).Val)
+		literal, ok := call.Args[1].(*ast.IntegerLiteral)
+		if !ok || literal.Val <= 0 || uint64(literal.Val) > uint64(^uint(0)>>1) {
+			return 0, nil, false, fmt.Errorf("the second arg of lead must be a positive integer literal within the supported range")
+		}
+		offset = int(literal.Val)
 	}
 	if len(call.Args) >= 3 {
 		dft = originEval.Eval(call.Args[2])

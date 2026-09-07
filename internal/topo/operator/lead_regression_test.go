@@ -42,6 +42,70 @@ func TestLeadErrorRecovery(t *testing.T) {
 	require.Len(t, op.Apply(ctx, row(4, true), fv, afv), 1, "a malformed row must not permanently block subsequent valid rows")
 }
 
+func TestLeadInvalidOffsetReturnsError(t *testing.T) {
+	for name, offset := range map[string]ast.Expr{
+		"non integer": &ast.StringLiteral{Val: "1"},
+		"zero":        &ast.IntegerLiteral{Val: 0},
+	} {
+		t.Run(name, func(t *testing.T) {
+			store, _ := state.CreateStore(t.Name(), def.AtMostOnce)
+			ctx := context.WithValue(context.Background(), context.LoggerKey, conf.Log).WithMeta(t.Name(), "analytic", store)
+			fv, afv := xsql.NewFunctionValuersForOp(ctx)
+			op := &AnalyticFuncsOp{Funcs: []*ast.Call{{
+				Name: "lead", FuncId: 0, CacheIndex: -1, CachedField: "next",
+				Args: []ast.Expr{&ast.FieldRef{Name: "v"}, offset},
+			}}}
+			result := op.Apply(ctx, &xsql.Tuple{Message: xsql.Message{"v": 1}}, fv, afv)
+			err, ok := result.(error)
+			require.True(t, ok)
+			require.ErrorContains(t, err, "positive integer literal")
+		})
+	}
+}
+
+func TestCloneAnalyticCallsPreservesCallFields(t *testing.T) {
+	original := &ast.Call{
+		Name: "lead", FuncId: 1, FuncType: ast.FuncTypeScalar,
+		Args:        []ast.Expr{&ast.FieldRef{Name: "v"}},
+		CachedField: "next", CacheIndex: 2, Cached: true,
+		Partition:  &ast.PartitionExpr{Exprs: []ast.Expr{&ast.FieldRef{Name: "device"}}},
+		WhenExpr:   &ast.BooleanLiteral{Val: true},
+		UntilExpr:  &ast.BooleanLiteral{Val: false},
+		SortFields: ast.SortFields{{Name: "v", Ascending: true}},
+	}
+	clone := cloneAnalyticCalls([]*ast.Call{original})[0]
+	require.NotSame(t, original, clone)
+	require.False(t, clone.Cached, "the operator copy must execute instead of reading its cache")
+	clone.Cached = original.Cached
+	require.Equal(t, original, clone, "all other current and future call fields must be preserved")
+}
+
+func TestLeadCompositePartitionKeyDoesNotCollide(t *testing.T) {
+	store, _ := state.CreateStore(t.Name(), def.AtMostOnce)
+	ctx := context.WithValue(context.Background(), context.LoggerKey, conf.Log).WithMeta(t.Name(), "analytic", store)
+	fv, afv := xsql.NewFunctionValuersForOp(ctx)
+	call := &ast.Call{
+		Name: "lead", FuncId: 0, CacheIndex: -1, CachedField: "next",
+		Args: []ast.Expr{&ast.FieldRef{Name: "v"}},
+		Partition: &ast.PartitionExpr{Exprs: []ast.Expr{
+			&ast.FieldRef{Name: "p1"}, &ast.FieldRef{Name: "p2"},
+		}},
+	}
+	op := &AnalyticFuncsOp{Funcs: []*ast.Call{call}}
+	row := func(p1, p2 string, v int) *xsql.Tuple {
+		return &xsql.Tuple{Message: xsql.Message{"p1": p1, "p2": p2, "v": v}}
+	}
+
+	// The previous delimiter encoding mapped both composite values to
+	// "string:a;string:b;string:c;" and mixed their pending requests.
+	require.Nil(t, op.Apply(ctx, row("a;string:b", "c", 1), fv, afv))
+	require.Nil(t, op.Apply(ctx, row("a", "b;string:c", 2), fv, afv))
+	ready := op.Apply(ctx, row("a;string:b", "c", 3), fv, afv).([]xsql.Row)
+	require.Len(t, ready, 1)
+	value, _ := ready[0].Value("next", "")
+	require.Equal(t, 3, value)
+}
+
 func TestLeadUntilIndexedProbe(t *testing.T) {
 	store, _ := state.CreateStore("review-index", def.AtMostOnce)
 	ctx := context.WithValue(context.Background(), context.LoggerKey, conf.Log).WithMeta("review-index", "analytic", store)

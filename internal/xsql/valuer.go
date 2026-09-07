@@ -19,6 +19,8 @@ import (
 	"math"
 	"reflect"
 	"regexp"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/lf-edge/ekuiper/v2/internal/binder/function"
@@ -26,6 +28,24 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/model"
 )
+
+// EncodePartitionKey creates an unambiguous key for a typed tuple. Length
+// prefixes keep component boundaries intact even when values contain delimiters.
+// Partition expressions currently use scalar SQL values, for which %v is the
+// established representation used by analytic functions.
+func EncodePartitionKey(values ...any) string {
+	var key strings.Builder
+	for _, value := range values {
+		typ, payload := fmt.Sprintf("%T", value), fmt.Sprintf("%v", value)
+		key.WriteString(strconv.Itoa(len(typ)))
+		key.WriteByte(':')
+		key.WriteString(typ)
+		key.WriteString(strconv.Itoa(len(payload)))
+		key.WriteByte(':')
+		key.WriteString(payload)
+	}
+	return key.String()
+}
 
 var (
 	// implicitValueFuncs is a set of functions that event implicitly passes the value.
@@ -485,6 +505,8 @@ func (v *ValuerEval) Eval(expr ast.Expr) interface{} {
 
 					// analytic func must put the partition key into the args
 					if et.Partition != nil && len(et.Partition.Exprs) > 0 {
+						// TODO: Migrate eager analytic state to EncodePartitionKey with
+						// compatibility for partition keys in existing checkpoints.
 						pk := ""
 						for _, pe := range et.Partition.Exprs {
 							temp := v.Eval(pe)

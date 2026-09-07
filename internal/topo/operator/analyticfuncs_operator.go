@@ -42,18 +42,12 @@ func setAnalyticValue(input xsql.Row, call *ast.Call, value interface{}) {
 
 func cloneAnalyticCalls(calls []*ast.Call) []*ast.Call {
 	cloned := make([]*ast.Call, len(calls))
-	for i, f := range calls {
-		cloned[i] = &ast.Call{
-			Name:        f.Name,
-			FuncId:      f.FuncId,
-			FuncType:    f.FuncType,
-			Args:        f.Args,
-			CachedField: f.CachedField,
-			CacheIndex:  f.CacheIndex,
-			Partition:   f.Partition,
-			WhenExpr:    f.WhenExpr,
-			UntilExpr:   f.UntilExpr,
-		}
+	for i, call := range calls {
+		clone := *call
+		// Planner-owned calls are cached for downstream consumers. The analytic
+		// operator needs an executable copy that calculates and fills that cache.
+		clone.Cached = false
+		cloned[i] = &clone
 	}
 	return cloned
 }
