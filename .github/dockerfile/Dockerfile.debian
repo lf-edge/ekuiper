@@ -17,10 +17,19 @@ FROM debian:bullseye
 
 ARG GO_VERSION
 ARG DEBIAN_FRONTEND="noninteractive"
+ARG DEBIAN_SNAPSHOT="20260831T000000Z"
 
-RUN apt-get update -y \
+## Bullseye reached EOL on 2026-08-31. Pin APT to its final snapshot so that
+## package indexes and package files cannot get out of sync as mirrors retire it.
+RUN printf '%s\n' \
+        "deb [check-valid-until=no] http://snapshot.debian.org/archive/debian/${DEBIAN_SNAPSHOT}/ bullseye main" \
+        "deb [check-valid-until=no] http://snapshot.debian.org/archive/debian/${DEBIAN_SNAPSHOT}/ bullseye-updates main" \
+        "deb [check-valid-until=no] http://snapshot.debian.org/archive/debian-security/${DEBIAN_SNAPSHOT}/ bullseye-security main" \
+        > /etc/apt/sources.list \
+    && apt-get update -y \
     && apt-get install -y make cmake wget git curl procps zip libucl-dev zlib1g-dev \
-    pkg-config libczmq-dev build-essential debhelper jq zip
+        pkg-config libczmq-dev build-essential debhelper jq zip \
+    && rm -rf /var/lib/apt/lists/*
 
 RUN case $(dpkg --print-architecture) in \
         arm|armhf|armv7) \
