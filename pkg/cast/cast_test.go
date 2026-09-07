@@ -283,6 +283,26 @@ func TestToIntResult(t *testing.T) {
 	}
 }
 
+func TestToSmallIntRangeCheck(t *testing.T) {
+	tests := []struct {
+		name string
+		run  func() error
+	}{
+		{"ToInt8 below range", func() error { _, err := ToInt8("-200", CONVERT_ALL); return err }},
+		{"ToInt8 above range", func() error { _, err := ToInt8("200", CONVERT_ALL); return err }},
+		{"ToInt16 below range", func() error { _, err := ToInt16("-40000", CONVERT_ALL); return err }},
+		{"ToInt16 above range", func() error { _, err := ToInt16("40000", CONVERT_ALL); return err }},
+		{"ToInt32 below range", func() error { _, err := ToInt32("-3000000000", CONVERT_ALL); return err }},
+		{"ToInt32 above range", func() error { _, err := ToInt32("3000000000", CONVERT_ALL); return err }},
+		{"ToUint32 above range", func() error { _, err := ToUint32("5000000000", CONVERT_ALL); return err }},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Error(t, tt.run(), "expected an out of range error")
+		})
+	}
+}
+
 func TestToFloatResult(t *testing.T) {
 	tests := []struct {
 		input any
