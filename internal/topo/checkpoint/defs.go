@@ -72,15 +72,6 @@ type CheckpointStateValidator interface {
 	CheckpointError() error
 }
 
-// ImmutableOffsetProvider marks a Rewindable source whose GetOffset result is
-// an immutable object graph. SourceNode may retain that graph directly instead
-// of cloning it on every tuple. Implementations must never mutate any object
-// reachable from an offset after returning it.
-type ImmutableOffsetProvider interface {
-	api.Rewindable
-	CheckpointOffsetIsImmutable()
-}
-
 // CheckpointPreparer materializes operator state at the checkpoint boundary.
 // Non-source tasks are called synchronously by their barrier handler, after
 // alignment and before forwarding the barrier or taking the context snapshot.

@@ -71,6 +71,15 @@ type Rewindable interface {
 	ResetOffset(input map[string]any) error
 }
 
+// ImmutableOffsetProvider marks a Rewindable source whose GetOffset result is
+// an immutable object graph. The checkpoint runtime may retain that graph
+// directly instead of cloning it for every tuple. Implementations must never
+// mutate any object reachable from an offset after returning it.
+type ImmutableOffsetProvider interface {
+	Rewindable
+	CheckpointOffsetIsImmutable()
+}
+
 // LookupSource is a source feature to query the source on demand
 type LookupSource interface {
 	Source

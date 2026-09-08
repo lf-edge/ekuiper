@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/checkpoint"
@@ -71,6 +72,69 @@ func TestResponderSendsDECOnCaptureFailure(t *testing.T) {
 	defer task.mu.Unlock()
 	if task.guardDepth != 0 {
 		t.Fatalf("checkpoint guard was not released: depth %d", task.guardDepth)
+	}
+}
+
+func TestResponderSendsDECOnPrepareFailure(t *testing.T) {
+	ctx := topoContext.Background().WithMeta("rule", "op", &state.MemoryStore{})
+	task := &guardedTask{name: "op", ctx: ctx, prepareErr: errors.New("snapshot failed")}
+	signals := make(chan *checkpoint.Signal, 1)
+	responder := checkpoint.NewResponderExecutor(signals, task)
+
+	if err := responder.TriggerCheckpoint(6); err == nil {
+		t.Fatal("prepare failure must be returned")
+	}
+	signal := receiveSignal(t, signals)
+	if signal.Message != checkpoint.DEC || signal.CheckpointId != 6 || signal.OpId != "op" {
+		t.Fatalf("unexpected signal: %#v", signal)
+	}
+	task.mu.Lock()
+	defer task.mu.Unlock()
+	if task.guardDepth != 0 {
+		t.Fatalf("checkpoint guard was not released: depth %d", task.guardDepth)
+	}
+	if len(task.broadcasts) != 0 {
+		t.Fatalf("barrier must not propagate after prepare failure: %#v", task.broadcasts)
+	}
+}
+
+func TestResponderReleasesGuardBeforeBackpressuredDEC(t *testing.T) {
+	ctx := topoContext.Background().WithMeta("rule", "source", &state.MemoryStore{})
+	task := &guardedTask{name: "source", ctx: ctx, checkpointErr: errors.New("offset unavailable")}
+	signals := make(chan *checkpoint.Signal, 1)
+	signals <- &checkpoint.Signal{Message: checkpoint.ACK}
+	responder := checkpoint.NewResponderExecutor(signals, task)
+	done := make(chan error, 1)
+	go func() {
+		done <- responder.TriggerCheckpoint(7)
+	}()
+
+	require.Eventually(t, func() bool {
+		task.mu.Lock()
+		defer task.mu.Unlock()
+		return len(task.broadcasts) == 1
+	}, time.Second, time.Millisecond)
+	guardAcquired := make(chan struct{})
+	go func() {
+		task.checkpointMu.Lock()
+		close(guardAcquired)
+		task.checkpointMu.Unlock()
+	}()
+	select {
+	case <-guardAcquired:
+	case <-time.After(time.Second):
+		<-signals
+		<-done
+		t.Fatal("checkpoint guard remained held while DEC send was backpressured")
+	}
+
+	<-signals
+	if err := <-done; err == nil {
+		t.Fatal("checkpoint validation failure must be returned")
+	}
+	signal := receiveSignal(t, signals)
+	if signal.Message != checkpoint.DEC || signal.CheckpointId != 7 {
+		t.Fatalf("unexpected signal: %#v", signal)
 	}
 }
 
@@ -157,11 +221,13 @@ type guardedTask struct {
 	name string
 	ctx  api.StreamContext
 
-	mu         sync.Mutex
-	guardDepth int
-	broadcasts []any
+	checkpointMu sync.Mutex
+	mu           sync.Mutex
+	guardDepth   int
+	broadcasts   []any
 
 	checkpointErr error
+	prepareErr    error
 }
 
 type failingFrozenStore struct {
@@ -187,6 +253,7 @@ func (t *guardedTask) GetStreamContext() api.StreamContext {
 func (t *guardedTask) SetQos(_ def.Qos) {}
 
 func (t *guardedTask) LockCheckpoint() {
+	t.checkpointMu.Lock()
 	t.mu.Lock()
 	t.guardDepth++
 	t.mu.Unlock()
@@ -196,6 +263,11 @@ func (t *guardedTask) UnlockCheckpoint() {
 	t.mu.Lock()
 	t.guardDepth--
 	t.mu.Unlock()
+	t.checkpointMu.Unlock()
+}
+
+func (t *guardedTask) PrepareCheckpoint() error {
+	return t.prepareErr
 }
 
 func (t *guardedTask) CheckpointError() error {

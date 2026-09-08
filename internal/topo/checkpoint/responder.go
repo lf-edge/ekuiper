@@ -46,13 +46,32 @@ func (re *ResponderExecutor) TriggerCheckpoint(checkpointId int64) error {
 	ctx := re.task.GetStreamContext()
 	logger := ctx.GetLogger()
 	logger.Debugf("Starting checkpoint %d on task %s", checkpointId, name)
-	if guard, ok := re.task.(CheckpointGuard); ok {
+	var guard CheckpointGuard
+	if g, ok := re.task.(CheckpointGuard); ok {
+		guard = g
 		guard.LockCheckpoint()
-		defer guard.UnlockCheckpoint()
+	}
+	unlockCheckpoint := func() {
+		if guard != nil {
+			guard.UnlockCheckpoint()
+			guard = nil
+		}
+	}
+	sendSignal := func(message Message) {
+		signal := &Signal{
+			Message: message,
+			Barrier: Barrier{CheckpointId: checkpointId, OpId: name},
+		}
+		select {
+		case re.responder <- signal:
+		case <-ctx.Done():
+		}
 	}
 	if preparer, ok := re.task.(CheckpointPreparer); ok {
 		if err := preparer.PrepareCheckpoint(); err != nil {
-			return err
+			unlockCheckpoint()
+			sendSignal(DEC)
+			return fmt.Errorf("task %s cannot prepare checkpoint: %w", name, err)
 		}
 	}
 	// create
@@ -66,30 +85,25 @@ func (re *ResponderExecutor) TriggerCheckpoint(checkpointId int64) error {
 	}
 	if validator, ok := re.task.(CheckpointStateValidator); ok {
 		if checkpointErr := validator.CheckpointError(); checkpointErr != nil {
-			re.responder <- &Signal{
-				Message: DEC,
-				Barrier: Barrier{CheckpointId: checkpointId, OpId: name},
-			}
+			unlockCheckpoint()
+			sendSignal(DEC)
 			return fmt.Errorf("task %s cannot checkpoint: %w", name, checkpointErr)
 		}
 	}
 	sctx, ok := ctx.(StreamCheckpointContext)
 	if !ok {
-		re.responder <- &Signal{
-			Message: DEC,
-			Barrier: Barrier{CheckpointId: checkpointId, OpId: name},
-		}
+		unlockCheckpoint()
+		sendSignal(DEC)
 		return fmt.Errorf("invalid context for checkpoint responder, must be a StreamCheckpointContext")
 	}
 	// Save key state to the global state
 	err := sctx.Snapshot(checkpointId)
 	if err != nil {
-		re.responder <- &Signal{
-			Message: DEC,
-			Barrier: Barrier{CheckpointId: checkpointId, OpId: name},
-		}
+		unlockCheckpoint()
+		sendSignal(DEC)
 		return err
 	}
+	unlockCheckpoint()
 	go func() {
 		state := ACK
 		err := infra.SafeRun(func() error {
@@ -100,11 +114,7 @@ func (re *ResponderExecutor) TriggerCheckpoint(checkpointId int64) error {
 			state = DEC
 		}
 
-		signal := &Signal{
-			Message: state,
-			Barrier: Barrier{CheckpointId: checkpointId, OpId: name},
-		}
-		re.responder <- signal
+		sendSignal(state)
 		logger.Debugf("Complete checkpoint %d on task %s", checkpointId, name)
 	}()
 	return nil

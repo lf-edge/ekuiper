@@ -425,10 +425,14 @@ func (c *DefaultContext) SaveSnapshot(checkpointID int64) error {
 		return fmt.Errorf("snapshot for checkpoint %d does not exist", checkpointID)
 	}
 	store, ok := c.store.(checkpoint.FrozenStateStore)
-	if !ok {
-		return fmt.Errorf("checkpoint store %T does not support frozen state", c.store)
+	if ok {
+		return store.SaveFrozenState(checkpointID, c.opId, snapshot)
 	}
-	return store.SaveFrozenState(checkpointID, c.opId, snapshot)
+	state, err := checkpoint.DecodeState(snapshot)
+	if err != nil {
+		return err
+	}
+	return c.store.SaveState(checkpointID, c.opId, state)
 }
 
 func (c *DefaultContext) EnableTracer(enabled bool) {

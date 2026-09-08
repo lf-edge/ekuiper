@@ -35,7 +35,6 @@ const (
 var InfTime = time.Unix(1<<63-62135596801, 999999999)
 
 func init() {
-	gob.Register([]*xsql.Tuple{})
 	gob.Register(&WindowScanner{})
 	gob.Register(time.Time{})
 	gob.Register(&StateWindowStatus{})
