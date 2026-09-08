@@ -53,6 +53,7 @@ type SourceNode struct {
 var (
 	_ checkpoint.CheckpointGuard          = (*SourceNode)(nil)
 	_ checkpoint.CheckpointStateValidator = (*SourceNode)(nil)
+	_ checkpoint.CheckpointPreparer       = (*SourceNode)(nil)
 )
 
 type sourceConf struct {
@@ -245,6 +246,15 @@ func (m *SourceNode) UnlockCheckpoint() {
 
 func (m *SourceNode) CheckpointError() error {
 	return m.checkpointErr
+}
+
+// PrepareCheckpoint refreshes source-owned state after the ingest boundary is
+// locked. Some sources can advance an offset after their final ingest callback.
+func (m *SourceNode) PrepareCheckpoint() error {
+	if _, ok := m.s.(immutableOffsetProvider); !ok {
+		return nil
+	}
+	return m.refreshCheckpointState(m.ctx)
 }
 
 // GetSource only used for test

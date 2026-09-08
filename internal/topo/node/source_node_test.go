@@ -476,6 +476,19 @@ func TestImmutableSourceOffsetUsesDirectOwnershipTransfer(t *testing.T) {
 	require.Same(t, offset, saved)
 }
 
+func TestSourcePrepareCheckpointRefreshesOffsetWithoutAnotherIngest(t *testing.T) {
+	source := &ImmutableRewindSource{offset: int64(10)}
+	ctx := mockContext.NewMockContext("rule1", "src1")
+	node := &SourceNode{s: source, defaultNode: &defaultNode{ctx: ctx}}
+	require.NoError(t, node.refreshCheckpointState(ctx))
+
+	source.offset = int64(20)
+	require.NoError(t, node.PrepareCheckpoint())
+	saved, err := ctx.GetState(OffsetKey)
+	require.NoError(t, err)
+	require.Equal(t, int64(20), saved)
+}
+
 func BenchmarkSourceOffsetUpdate(b *testing.B) {
 	for _, size := range []int{1, 10_000} {
 		offset := make(map[string]any, size)
