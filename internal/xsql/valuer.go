@@ -19,6 +19,8 @@ import (
 	"math"
 	"reflect"
 	"regexp"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/lf-edge/ekuiper/v2/internal/binder/function"
@@ -26,6 +28,24 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/model"
 )
+
+// EncodePartitionKey creates an unambiguous key for a typed tuple. Length
+// prefixes keep component boundaries intact even when values contain delimiters.
+// Partition expressions currently use scalar SQL values, for which %v is the
+// established representation used by analytic functions.
+func EncodePartitionKey(values ...any) string {
+	var key strings.Builder
+	for _, value := range values {
+		typ, payload := fmt.Sprintf("%T", value), fmt.Sprintf("%v", value)
+		key.WriteString(strconv.Itoa(len(typ)))
+		key.WriteByte(':')
+		key.WriteString(typ)
+		key.WriteString(strconv.Itoa(len(payload)))
+		key.WriteByte(':')
+		key.WriteString(payload)
+	}
+	return key.String()
+}
 
 var (
 	// implicitValueFuncs is a set of functions that event implicitly passes the value.
@@ -71,6 +91,12 @@ type CallValuer interface {
 	Call(name string, funcId int, args []interface{}) (interface{}, bool)
 }
 
+// CurrentRowEvalValuer evaluates an expression against the origin row of a
+// delayed analytic request. It is intentionally used only by LEAD UNTIL.
+type CurrentRowEvalValuer interface {
+	EvalCurrentRow(expr ast.Expr) interface{}
+}
+
 // FuncValuer can calculate function type value like window_start and window_end
 type FuncValuer interface {
 	FuncValue(key string) (interface{}, bool)
@@ -101,6 +127,22 @@ func (wv *WildcardValuer) Meta(_, _ string) (interface{}, bool) {
 // to find a match.
 func MultiValuer(valuers ...Valuer) Valuer {
 	return MultiValuerList(valuers)
+}
+
+type leadUntilValuer struct {
+	MultiValuerList
+	current *ValuerEval
+}
+
+// NewLeadUntilValuer binds ordinary fields to probe and current_row(expr) to
+// current. Both valuers should include the same FunctionValuer when functions
+// other than current_row are allowed in the expression.
+func NewLeadUntilValuer(probe, current Valuer) Valuer {
+	return &leadUntilValuer{MultiValuerList: MultiValuerList{probe}, current: &ValuerEval{Valuer: current}}
+}
+
+func (v *leadUntilValuer) EvalCurrentRow(expr ast.Expr) interface{} {
+	return v.current.Eval(expr)
 }
 
 // MultiValuerList evaluates against an ordered, reusable list of valuers.
@@ -330,6 +372,15 @@ func (v *ValuerEval) Eval(expr ast.Expr) interface{} {
 		}
 		return &BracketEvalResult{Start: ii, End: ii}
 	case *ast.Call:
+		if et.Name == "current_row" {
+			if len(et.Args) != 1 {
+				return fmt.Errorf("current_row expects exactly one argument")
+			}
+			if cv, ok := v.Valuer.(CurrentRowEvalValuer); ok {
+				return cv.EvalCurrentRow(et.Args[0])
+			}
+			return fmt.Errorf("current_row is only valid inside lead UNTIL")
+		}
 		// The analytic functions are calculated prior to all ops, so just get the cached field value
 		if et.Cached && et.CachedField != "" {
 			var val any
@@ -454,6 +505,8 @@ func (v *ValuerEval) Eval(expr ast.Expr) interface{} {
 
 					// analytic func must put the partition key into the args
 					if et.Partition != nil && len(et.Partition.Exprs) > 0 {
+						// TODO: Migrate eager analytic state to EncodePartitionKey with
+						// compatibility for partition keys in existing checkpoints.
 						pk := ""
 						for _, pe := range et.Partition.Exprs {
 							temp := v.Eval(pe)

@@ -56,6 +56,13 @@ type StreamCheckpointContext interface {
 	SaveState(checkpointId int64) error
 }
 
+// CheckpointPreparer materializes operator state at the checkpoint boundary.
+// Non-source tasks are called synchronously by their barrier handler, after
+// alignment and before forwarding the barrier or taking the context snapshot.
+type CheckpointPreparer interface {
+	PrepareCheckpoint() error
+}
+
 type Message int
 
 const (

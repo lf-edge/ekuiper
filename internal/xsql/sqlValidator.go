@@ -23,6 +23,9 @@ import (
 // Validate select statement without context.
 // This is the pre-validation. In planner, there will be a more comprehensive validation after binding
 func Validate(stmt *ast.SelectStatement) error {
+	if err := validateCurrentRowContext(stmt); err != nil {
+		return err
+	}
 	for _, d := range stmt.Dimensions {
 		if HasAggFuncs(d.Expr) {
 			return fmt.Errorf("Not allowed to call aggregate functions in GROUP BY clause: %s.", d.Expr)
@@ -39,6 +42,37 @@ func Validate(stmt *ast.SelectStatement) error {
 		return err
 	}
 	return validateSRFForbidden(stmt)
+}
+
+func validateCurrentRowContext(stmt *ast.SelectStatement) error {
+	allowed := make(map[*ast.Call]struct{})
+	ast.WalkFunc(stmt, func(n ast.Node) bool {
+		call, ok := n.(*ast.Call)
+		if !ok || call.Name != "lead" || call.UntilExpr == nil {
+			return true
+		}
+		ast.WalkFunc(call.UntilExpr, func(un ast.Node) bool {
+			if current, ok := un.(*ast.Call); ok && current.Name == "current_row" {
+				allowed[current] = struct{}{}
+			}
+			return true
+		})
+		return true
+	})
+	var invalid bool
+	ast.WalkFunc(stmt, func(n ast.Node) bool {
+		if call, ok := n.(*ast.Call); ok && call.Name == "current_row" {
+			if _, ok := allowed[call]; !ok {
+				invalid = true
+				return false
+			}
+		}
+		return true
+	})
+	if invalid {
+		return fmt.Errorf("current_row is only valid inside lead UNTIL")
+	}
+	return nil
 }
 
 func validateWindowFunction(stmt *ast.SelectStatement) error {
@@ -182,6 +216,9 @@ func validateExpr(expr ast.Expr, streamName []string) ast.Expr {
 		}
 		if e.WhenExpr != nil {
 			e.WhenExpr = validateExpr(e.WhenExpr, streamName)
+		}
+		if e.UntilExpr != nil {
+			e.UntilExpr = validateExpr(e.UntilExpr, streamName)
 		}
 		return e
 	case *ast.BinaryExpr:

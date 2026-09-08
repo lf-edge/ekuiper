@@ -70,6 +70,7 @@ func init() {
 //}
 
 var analyticFuncs = map[string]struct{}{
+	"lead":        {},
 	"lag":         {},
 	"changed_col": {},
 	"had_changed": {},

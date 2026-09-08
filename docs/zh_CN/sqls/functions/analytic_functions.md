@@ -5,7 +5,7 @@
 分析函数完整使用格式如下，其中 over 子句为可选子句。
 
 ```text
-AnalyticFuncName(<arguments>...) OVER ([PARTITION BY <partition key>] [WHEN <Expression>])
+AnalyticFuncName(<arguments>...) OVER ([PARTITION BY <partition key>] [WHEN <Expression> [UNTIL <Expression>]])
 ```
 
 分析函数的计算是在当前查询输入的所有输入事件上进行的，可以选择限制分析函数只考虑符合 PARTITION BY 子句的事件。
@@ -33,13 +33,14 @@ lag(expr, [offset], [default value], [ignore null])
 **参数说明:**
 
 - `expr`: 要计算的表达式
-- `offset` (可选): 偏移量，即回溯的行数 (默认: 1)
+- `offset` (可选): 向历史回溯的有效值数量（默认: 1）。如果指定了 `WHEN`，所在行须满足该条件；如果 `ignore null` 为 true，值还须不为 null，才会计为有效值。
 - `default value` (可选): 当偏移量处没有值时返回的值 (默认: nil)
 - `ignore null` (可选): 回溯时是否忽略空值 (默认: true)
 
 **行为说明:**
 
-- 如果指定偏移量处没有行存在，则返回默认值
+- 使用 `WHEN` 时，`lag(expr, 1)` 返回最近第 1 个有效值，`lag(expr, 2)` 返回最近第 2 个有效值；不满足 `WHEN` 的行不会消耗 offset。
+- 如果指定偏移量处没有有效值，则返回默认值
 - 如果未指定默认值，则返回 nil
 - 当偏移量和默认值都未指定时，默认使用 偏移量=1 和 默认值=nil
 
@@ -60,6 +61,39 @@ lag(temperature) OVER (PARTITION BY deviceId)
 ```text
 select lag(Status) as Status, ts - lag(ts, 1, ts, true) OVER (WHEN had_changed(true, statusCode)) as duration from demo
 ```
+
+## LEAD
+
+```text
+lead(expr, [offset], [default value], [ignore null])
+  OVER ([PARTITION BY <partition key>] [WHEN <Expression> [UNTIL <Expression>]])
+```
+
+返回后续输入行中 `expr` 的计算结果。`offset` 默认为 1，`default value` 默认为 nil，`ignore null` 默认为 true，与 `lag` 保持一致。offset 统计未来的有效值：如果指定了 `WHEN`，所在行须满足该条件；如果 `ignore null` 为 true，值还须不为 null，才会计为有效值。例如，`lead(expr, 2) OVER (WHEN condition)` 返回未来第 2 个有效值；不满足 `WHEN` 的行不会消耗 offset。因为结果依赖未来输入，当前行会被缓存，直到找到指定的未来值、`UNTIL` 为 true 或输入结束。
+
+`WHEN` 用于选择未来候选行。offset 是成功匹配条件，并不限制 LEAD 最多等待多久或检查多少输入行；`UNTIL` 提供独立的停止等待条件。`UNTIL` 是 eKuiper 扩展，只能与 `WHEN` 同时使用；系统会先于 `WHEN`，针对每条缓存行独立计算 `UNTIL`。在 `UNTIL` 中，普通字段引用新到达的探测行，`current_row(expr)` 则在被缓存的原始行上计算 `expr`。若 `UNTIL` 为 true，该请求返回默认值。`current_row` 只能在此上下文使用。
+
+```sql
+lead(candidate_t2) OVER (
+  WHEN isNull(b) = false
+  UNTIL ts - current_row(ts) > 5
+)
+```
+
+`UNTIL` 由数据驱动，仅在新输入到达时检查，不会创建处理时间定时器或事件时间水位线。需要定时触发的时间限制属于后续 `WITHIN` 的语义。
+
+对于事件时间规则，`LEAD` 会将下游水位线限制在缓存行之前，避免窗口在这些行到达前关闭。缓存行释放后，水位线可随后续输入继续推进。
+
+只有在检查 `UNTIL` 后仍有请求需要候选值时，才计算 `WHEN` 和候选表达式。如果探测行求值失败，该行的所有 `LEAD` 决策都不会提交，也不会将该行加入等待队列；后续有效输入仍可继续完成已有请求。
+
+### 最佳实践
+
+- 当未来匹配不一定出现时，建议显式添加 `UNTIL`，尤其是 `WHEN` 条件较难满足的场景。如果所有后续行都可作为候选，但仍需要终止条件，可以使用 `WHEN true`。
+- 根据预期输入速率配置终止条件，让待处理请求数保持较小。例如，数值字段 `ts` 的单位为毫秒时，`UNTIL ts - current_row(ts) > 1000` 会在探测行超过原始行一秒后终止等待。这是数据驱动的限制，并非定时器或缓存大小的硬上限。
+- 可按每个分区的“每秒输入行数 × 平均等待秒数”估算待处理请求数。输入速率很高时，即使等待时间很短也可能积压大量请求。优先使用简单的条件，并在预期峰值负载下验证。
+- `UNTIL` 只在同一分区有新输入时检查，空闲分区不会自行结束等待。输出保持全局输入顺序，因此较早的未完成行也可能阻塞其他分区已经完成的行。
+
+每条探测行都会检查其分区内尚未完成的请求。等待队列越长，CPU 和内存开销越大；添加 `UNTIL` 只有在实际缩短等待队列时才有帮助。checkpoint 快照开销也会随缓存状态增大。
 
 ## LATEST
 
