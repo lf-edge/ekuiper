@@ -104,6 +104,7 @@ const (
 	FILTER
 	CASE
 	WHEN
+	UNTIL
 	THEN
 	ELSE
 	END
@@ -183,6 +184,7 @@ var Tokens = []string{
 	FILTER:    "FILTER",
 	CASE:      "CASE",
 	WHEN:      "WHEN",
+	UNTIL:     "UNTIL",
 	THEN:      "THEN",
 	ELSE:      "ELSE",
 	END:       "END",

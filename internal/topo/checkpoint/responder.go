@@ -50,6 +50,11 @@ func (re *ResponderExecutor) TriggerCheckpoint(checkpointId int64) error {
 	}
 	name := re.GetName()
 	logger.Debugf("Starting checkpoint %d on task %s", checkpointId, name)
+	if preparer, ok := re.task.(CheckpointPreparer); ok {
+		if err := preparer.PrepareCheckpoint(); err != nil {
+			return err
+		}
+	}
 	// create
 	barrier := &Barrier{
 		CheckpointId: checkpointId,

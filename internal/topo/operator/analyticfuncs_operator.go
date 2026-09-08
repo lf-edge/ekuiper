@@ -1,4 +1,4 @@
-// Copyright 2022-2025 EMQ Technologies Co., Ltd.
+// Copyright 2022-2026 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -25,110 +25,142 @@ import (
 )
 
 type AnalyticFuncsOp struct {
-	Funcs       []*ast.Call
-	FieldFuncs  []*ast.Call
-	transformed bool
+	Funcs      []*ast.Call
+	FieldFuncs []*ast.Call
+
+	initialized bool
+	lead        *leadBuffer
 }
 
-func (p *AnalyticFuncsOp) evalTupleFunc(calls []*ast.Call, ve *xsql.ValuerEval, input xsql.Row) (xsql.Row, error) {
+func setAnalyticValue(input xsql.Row, call *ast.Call, value interface{}) {
+	if iv, ok := input.(model.IndexValuer); ok && call.CacheIndex >= 0 {
+		iv.SetTempByIndex(call.CacheIndex, value)
+	} else {
+		input.Set(call.CachedField, value)
+	}
+}
+
+func cloneAnalyticCalls(calls []*ast.Call) []*ast.Call {
+	cloned := make([]*ast.Call, len(calls))
+	for i, call := range calls {
+		clone := *call
+		// Planner-owned calls are cached for downstream consumers. The analytic
+		// operator needs an executable copy that calculates and fills that cache.
+		clone.Cached = false
+		cloned[i] = &clone
+	}
+	return cloned
+}
+
+func (p *AnalyticFuncsOp) init(ctx api.StreamContext) error {
+	if p.initialized {
+		return nil
+	}
+	var leads []*ast.Call
+	groups := make([][]*ast.Call, 2)
+	seen := make(map[int]bool)
+	// Preserve the existing field-function-before-function evaluation order.
+	for i, calls := range [][]*ast.Call{p.FieldFuncs, p.Funcs} {
+		for _, call := range cloneAnalyticCalls(calls) {
+			if call.Name != "lead" {
+				groups[i] = append(groups[i], call)
+			} else if !seen[call.FuncId] {
+				seen[call.FuncId] = true
+				leads = append(leads, call)
+			}
+		}
+	}
+	if len(leads) > 0 {
+		buffer := &leadBuffer{calls: leads, requests: make(map[int]map[string][]*leadRequest)}
+		if err := buffer.restore(ctx); err != nil {
+			return err
+		}
+		p.lead = buffer
+	}
+	p.FieldFuncs, p.Funcs = groups[0], groups[1]
+	p.initialized = true
+	return nil
+}
+
+func evalImmediate(calls []*ast.Call, ve *xsql.ValuerEval, row xsql.Row) error {
 	for _, call := range calls {
-		f := call
-		result := ve.Eval(f)
-		if e, ok := result.(error); ok {
-			return nil, e
+		result := ve.Eval(call)
+		if err, ok := result.(error); ok {
+			return err
 		}
-		if iv, ok := input.(model.IndexValuer); ok {
-			iv.SetTempByIndex(f.CacheIndex, result)
-		} else {
-			input.Set(f.CachedField, result)
-		}
+		setAnalyticValue(row, call, result)
 	}
-	return input, nil
+	return nil
 }
 
-func (p *AnalyticFuncsOp) evalCollectionFunc(calls []*ast.Call, fv *xsql.FunctionValuer, input xsql.Collection) (xsql.Collection, error) {
-	err := input.RangeSet(func(_ int, row xsql.Row) (bool, error) {
-		ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(row, &xsql.WindowRangeValuer{WindowRange: input.GetWindowRange()}, fv, &xsql.WildcardValuer{Data: row})}
-		for _, call := range calls {
-			f := call
-			result := ve.Eval(f)
-			if e, ok := result.(error); ok {
-				return false, e
-			}
-			if iv, ok := row.(model.IndexValuer); ok {
-				iv.SetTempByIndex(f.CacheIndex, result)
-			} else {
-				row.Set(f.CachedField, result)
-			}
-		}
-		return true, nil
-	})
-	if err != nil {
-		return nil, err
-	}
-	return input, nil
-}
-
-func (p *AnalyticFuncsOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.FunctionValuer, _ *xsql.AggregateFunctionValuer) (got interface{}) {
+func (p *AnalyticFuncsOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.FunctionValuer, _ *xsql.AggregateFunctionValuer) interface{} {
 	ctx.GetLogger().Debugf("AnalyticFuncsOp receive: %v", data)
-	if !p.transformed {
-		newF := make([]*ast.Call, len(p.Funcs))
-		for i, f := range p.Funcs {
-			newF[i] = &ast.Call{
-				Name:        f.Name,
-				FuncId:      f.FuncId,
-				FuncType:    f.FuncType,
-				Args:        f.Args,
-				CachedField: f.CachedField,
-				CacheIndex:  f.CacheIndex,
-				Partition:   f.Partition,
-				WhenExpr:    f.WhenExpr,
-			}
-		}
-		p.Funcs = newF
-		newFF := make([]*ast.Call, len(p.FieldFuncs))
-		for i, f := range p.FieldFuncs {
-			newFF[i] = &ast.Call{
-				Name:        f.Name,
-				FuncId:      f.FuncId,
-				FuncType:    f.FuncType,
-				Args:        f.Args,
-				CachedField: f.CachedField,
-				CacheIndex:  f.CacheIndex,
-				Partition:   f.Partition,
-				WhenExpr:    f.WhenExpr,
-			}
-		}
-		p.FieldFuncs = newFF
-		p.transformed = true
+	if err := p.init(ctx); err != nil {
+		return err
 	}
-	var err error
 	switch input := data.(type) {
 	case error:
 		return input
 	case xsql.Row:
 		ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(input, fv)}
-		input, err = p.evalTupleFunc(p.FieldFuncs, ve, input)
-		if err != nil {
-			return err
+		for _, calls := range [][]*ast.Call{p.FieldFuncs, p.Funcs} {
+			if err := evalImmediate(calls, ve, input); err != nil {
+				return err
+			}
 		}
-		input, err = p.evalTupleFunc(p.Funcs, ve, input)
-		if err != nil {
-			return err
+		if p.lead != nil {
+			return p.lead.apply(input, fv)
 		}
-		data = input
+		return input
 	case xsql.Collection:
-		input, err = p.evalCollectionFunc(p.FieldFuncs, fv, input)
-		if err != nil {
-			return err
+		if p.lead != nil {
+			return fmt.Errorf("lead is not supported on collections")
 		}
-		input, err = p.evalCollectionFunc(p.Funcs, fv, input)
-		if err != nil {
-			return err
+		// Preserve the two passes: field functions over the whole collection,
+		// followed by the remaining functions over the whole collection.
+		for _, calls := range [][]*ast.Call{p.FieldFuncs, p.Funcs} {
+			err := input.RangeSet(func(_ int, row xsql.Row) (bool, error) {
+				ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(row, &xsql.WindowRangeValuer{WindowRange: input.GetWindowRange()}, fv, &xsql.WildcardValuer{Data: row})}
+				err := evalImmediate(calls, ve, row)
+				return err == nil, err
+			})
+			if err != nil {
+				return err
+			}
 		}
-		data = input
+		return input
 	default:
 		return fmt.Errorf("run analytic funcs op error: invalid input %[1]T(%[1]v)", input)
 	}
-	return data
+}
+
+func (p *AnalyticFuncsOp) Finalize(ctx api.StreamContext, _ interface{}, _ *xsql.FunctionValuer, _ *xsql.AggregateFunctionValuer) interface{} {
+	if err := p.init(ctx); err != nil {
+		return err
+	}
+	if p.lead == nil {
+		return nil
+	}
+	return p.lead.finalize(ctx)
+}
+
+func (p *AnalyticFuncsOp) Watermark(ctx api.StreamContext, marker *xsql.WatermarkTuple) (*xsql.WatermarkTuple, error) {
+	if err := p.init(ctx); err != nil {
+		return nil, err
+	}
+	if p.lead == nil {
+		return marker, nil
+	}
+	return p.lead.watermark(marker)
+}
+
+// Snapshot runs on the input loop at an aligned checkpoint boundary.
+func (p *AnalyticFuncsOp) Snapshot(ctx api.StreamContext) error {
+	if err := p.init(ctx); err != nil {
+		return err
+	}
+	if p.lead == nil {
+		return nil
+	}
+	return p.lead.save(ctx)
 }

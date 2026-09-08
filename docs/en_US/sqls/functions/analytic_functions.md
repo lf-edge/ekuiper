@@ -6,7 +6,7 @@ that they are not affected by predicates in WHERE clause.
 Analytic function call format is as below, where `over` clause is optional
 
 ```text
-AnalyticFuncName(<arguments>...) OVER ([PARTITION BY <partition key>] [WHEN <Expression>])
+AnalyticFuncName(<arguments>...) OVER ([PARTITION BY <partition key>] [WHEN <Expression> [UNTIL <Expression>]])
 ```
 
 Analytic function computations are performed over all the input events of the current query input, optionally you can
@@ -38,13 +38,14 @@ Returns the previous result of the expression at the specified offset.
 **Parameters:**
 
 - `expr`: The expression to evaluate
-- `offset` (optional): Number of rows to look back (default: 1)
+- `offset` (optional): Number of qualifying values to look back (default: 1). A value qualifies when its row satisfies `WHEN`, if present, and, if `ignore null` is true, the value is not null.
 - `default_value` (optional): Value returned when no row is found at offset (default: nil)
 - `ignore_null` (optional): Whether to ignore null values when looking back (default: true)
 
 **Behavior:**
 
-- If no row exists at the specified offset, returns the default value
+- With `WHEN`, `lag(expr, 1)` returns the most recent qualifying value and `lag(expr, 2)` returns the second most recent qualifying value. Rows that do not satisfy `WHEN` do not consume the offset.
+- If no qualifying value exists at the specified offset, returns the default value
 - If no default value is specified, returns nil
 - When neither offset nor default value are specified, uses offset=1 and default=nil
 
@@ -66,6 +67,39 @@ status in the same event
 ```text
 select lag(Status) as Status, ts - lag(ts, 1, ts, true) OVER (WHEN had_changed(true, statusCode)) as duration from demo
 ```
+
+## LEAD
+
+```text
+lead(expr, [offset], [default value], [ignore null])
+  OVER ([PARTITION BY <partition key>] [WHEN <Expression> [UNTIL <Expression>]])
+```
+
+Returns the result of `expr` from a later input row. `offset` defaults to 1, `default value` defaults to nil, and `ignore null` defaults to true, matching `lag`. The offset counts qualifying future values: a value qualifies when its row satisfies `WHEN`, if present, and, if `ignore null` is true, the value is not null. For example, `lead(expr, 2) OVER (WHEN condition)` returns the second future qualifying value; rows that do not satisfy `WHEN` do not consume the offset. Because the result depends on future input, the current row is buffered until the requested future value is found, `UNTIL` becomes true, or the input ends.
+
+`WHEN` selects future candidate rows. The offset is a successful-match condition, not a bound on how long or how many input rows LEAD may wait. `UNTIL` provides that separate stop condition. It is an eKuiper extension and is valid only together with `WHEN`; it is evaluated independently for every buffered row before `WHEN`. Within `UNTIL`, ordinary fields refer to the newly arrived probe row and `current_row(expr)` evaluates `expr` against the buffered origin row. If `UNTIL` is true, that request returns its default value. `current_row` is valid only in this context.
+
+```sql
+lead(candidate_t2) OVER (
+  WHEN isNull(b) = false
+  UNTIL ts - current_row(ts) > 5
+)
+```
+
+`UNTIL` is data-driven and is checked only when input arrives. It does not create a processing-time timer or event-time watermark. A timer-driven time limit belongs to future `WITHIN` semantics.
+
+For event-time rules, `LEAD` holds downstream watermarks behind buffered rows so that windows cannot close before those rows arrive. Watermarks can advance with subsequent input after the rows are released.
+
+`WHEN` and the candidate expression are evaluated only if a pending request still needs a candidate after checking `UNTIL`. If evaluating a probe fails, none of that probe's `LEAD` decisions are committed and the probe is not added to the pending queue; later valid input can continue resolving existing requests.
+
+### Best practices
+
+- Prefer an explicit `UNTIL` condition when a future match is not guaranteed, especially with selective `WHEN` conditions. Use `WHEN true` if every future row is a candidate but a stop condition is still needed.
+- Choose a stop condition that keeps the number of pending requests small under the expected input rate. For example, with numeric `ts` values in milliseconds, `UNTIL ts - current_row(ts) > 1000` stops waiting after a probe exceeds one second from the origin. This is a data-driven limit, not a timer or a hard buffer-size limit.
+- Size the wait for each partition using approximately `input rows per second × average wait in seconds`. Even a short time interval can accumulate many requests at high input rates. Prefer simple conditions and verify them at the expected peak load.
+- `UNTIL` is checked only when another row arrives in the same partition. An idle partition cannot expire its requests by itself. Output preserves global input order, so one unresolved early row can also hold back completed rows from other partitions.
+
+Each probe checks the outstanding requests in its partition. Longer queues increase CPU and memory usage; adding `UNTIL` helps only if it actually keeps those queues short. Checkpoint snapshots also grow with the buffered state.
 
 ## LATEST
 

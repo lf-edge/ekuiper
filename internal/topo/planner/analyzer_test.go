@@ -196,6 +196,60 @@ func TestCheckTopoSort(t *testing.T) {
 	require.EqualError(t, err, "unknown field a")
 }
 
+func TestLeadUntilPlan(t *testing.T) {
+	kvStore, err := store.GetKV("stream")
+	require.NoError(t, err)
+	streamSQL := `CREATE STREAM lead_src () WITH (DATASOURCE="lead_src", FORMAT="json");`
+	encoded, err := json.Marshal(&xsql.StreamInfo{StreamType: ast.TypeStream, Statement: streamSQL})
+	require.NoError(t, err)
+	require.NoError(t, kvStore.Set("lead_src", string(encoded)))
+
+	sql := `SELECT latest(ts) OVER (WHEN a < 5 AND isNull(b)) AS candidate_t2 INVISIBLE,
+		lead(candidate_t2) OVER (WHEN isNull(b) = false UNTIL ts - current_row(ts) > 5) AS t2
+		FROM lead_src`
+	stmt, err := xsql.NewParser(strings.NewReader(sql)).Parse()
+	require.NoError(t, err)
+	plan, err := CreateLogicalPlan(stmt, &def.RuleOption{SendError: true}, kvStore)
+	require.NoError(t, err)
+	var analytic *AnalyticFuncsPlan
+	var findAnalytic func(LogicalPlan)
+	findAnalytic = func(current LogicalPlan) {
+		if value, ok := current.(*AnalyticFuncsPlan); ok {
+			analytic = value
+			return
+		}
+		for _, child := range current.Children() {
+			findAnalytic(child)
+		}
+	}
+	findAnalytic(plan)
+	require.NotNil(t, analytic)
+	var leadCall *ast.Call
+	for _, call := range append(analytic.funcs, analytic.fieldFuncs...) {
+		if call.Name == "lead" {
+			leadCall = call
+		}
+	}
+	require.NotNil(t, leadCall)
+	aliasArg, ok := leadCall.Args[0].(*ast.FieldRef)
+	require.True(t, ok)
+	require.NotNil(t, aliasArg.AliasRef)
+	latest, ok := aliasArg.AliasRef.Expression.(*ast.Call)
+	require.True(t, ok)
+	require.Equal(t, "latest", latest.Name)
+	require.True(t, latest.Cached)
+
+	for _, invalid := range []string{
+		`SELECT latest(lead(ts)) FROM lead_src`,
+		`SELECT lead(lead(ts)) FROM lead_src`,
+	} {
+		stmt, err = xsql.NewParser(strings.NewReader(invalid)).Parse()
+		require.NoError(t, err)
+		_, err = CreateLogicalPlan(stmt, &def.RuleOption{SendError: true}, kvStore)
+		require.ErrorContains(t, err, "lead output cannot feed")
+	}
+}
+
 func Test_validation(t *testing.T) {
 	store, err := store.GetKV("stream")
 	if err != nil {
