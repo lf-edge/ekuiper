@@ -38,13 +38,14 @@ Returns the previous result of the expression at the specified offset.
 **Parameters:**
 
 - `expr`: The expression to evaluate
-- `offset` (optional): Number of rows to look back (default: 1)
+- `offset` (optional): Number of qualifying values to look back (default: 1). A value qualifies when its row satisfies `WHEN`, if present, and, if `ignore null` is true, the value is not null.
 - `default_value` (optional): Value returned when no row is found at offset (default: nil)
 - `ignore_null` (optional): Whether to ignore null values when looking back (default: true)
 
 **Behavior:**
 
-- If no row exists at the specified offset, returns the default value
+- With `WHEN`, `lag(expr, 1)` returns the most recent qualifying value and `lag(expr, 2)` returns the second most recent qualifying value. Rows that do not satisfy `WHEN` do not consume the offset.
+- If no qualifying value exists at the specified offset, returns the default value
 - If no default value is specified, returns nil
 - When neither offset nor default value are specified, uses offset=1 and default=nil
 
@@ -74,9 +75,9 @@ lead(expr, [offset], [default value], [ignore null])
   OVER ([PARTITION BY <partition key>] [WHEN <Expression> [UNTIL <Expression>]])
 ```
 
-Returns the result of `expr` from a later input row. `offset` defaults to 1, `default value` defaults to nil, and `ignore null` defaults to true, matching `lag`. Because the result depends on future input, the current row is buffered until the requested future value is found, `UNTIL` becomes true, or the input ends.
+Returns the result of `expr` from a later input row. `offset` defaults to 1, `default value` defaults to nil, and `ignore null` defaults to true, matching `lag`. The offset counts qualifying future values: a value qualifies when its row satisfies `WHEN`, if present, and, if `ignore null` is true, the value is not null. For example, `lead(expr, 2) OVER (WHEN condition)` returns the second future qualifying value; rows that do not satisfy `WHEN` do not consume the offset. Because the result depends on future input, the current row is buffered until the requested future value is found, `UNTIL` becomes true, or the input ends.
 
-`WHEN` selects future candidate rows. `UNTIL` is an eKuiper extension and is valid only together with `WHEN`; it is evaluated independently for every buffered row before `WHEN`. Within `UNTIL`, ordinary fields refer to the newly arrived probe row and `current_row(expr)` evaluates `expr` against the buffered origin row. If `UNTIL` is true, that request returns its default value. `current_row` is valid only in this context.
+`WHEN` selects future candidate rows. The offset is a successful-match condition, not a bound on how long or how many input rows LEAD may wait. `UNTIL` provides that separate stop condition. It is an eKuiper extension and is valid only together with `WHEN`; it is evaluated independently for every buffered row before `WHEN`. Within `UNTIL`, ordinary fields refer to the newly arrived probe row and `current_row(expr)` evaluates `expr` against the buffered origin row. If `UNTIL` is true, that request returns its default value. `current_row` is valid only in this context.
 
 ```sql
 lead(candidate_t2) OVER (

@@ -33,13 +33,14 @@ lag(expr, [offset], [default value], [ignore null])
 **参数说明:**
 
 - `expr`: 要计算的表达式
-- `offset` (可选): 偏移量，即回溯的行数 (默认: 1)
+- `offset` (可选): 向历史回溯的有效值数量（默认: 1）。如果指定了 `WHEN`，所在行须满足该条件；如果 `ignore null` 为 true，值还须不为 null，才会计为有效值。
 - `default value` (可选): 当偏移量处没有值时返回的值 (默认: nil)
 - `ignore null` (可选): 回溯时是否忽略空值 (默认: true)
 
 **行为说明:**
 
-- 如果指定偏移量处没有行存在，则返回默认值
+- 使用 `WHEN` 时，`lag(expr, 1)` 返回最近第 1 个有效值，`lag(expr, 2)` 返回最近第 2 个有效值；不满足 `WHEN` 的行不会消耗 offset。
+- 如果指定偏移量处没有有效值，则返回默认值
 - 如果未指定默认值，则返回 nil
 - 当偏移量和默认值都未指定时，默认使用 偏移量=1 和 默认值=nil
 
@@ -68,9 +69,9 @@ lead(expr, [offset], [default value], [ignore null])
   OVER ([PARTITION BY <partition key>] [WHEN <Expression> [UNTIL <Expression>]])
 ```
 
-返回后续输入行中 `expr` 的计算结果。`offset` 默认为 1，`default value` 默认为 nil，`ignore null` 默认为 true，与 `lag` 保持一致。因为结果依赖未来输入，当前行会被缓存，直到找到指定的未来值、`UNTIL` 为 true 或输入结束。
+返回后续输入行中 `expr` 的计算结果。`offset` 默认为 1，`default value` 默认为 nil，`ignore null` 默认为 true，与 `lag` 保持一致。offset 统计未来的有效值：如果指定了 `WHEN`，所在行须满足该条件；如果 `ignore null` 为 true，值还须不为 null，才会计为有效值。例如，`lead(expr, 2) OVER (WHEN condition)` 返回未来第 2 个有效值；不满足 `WHEN` 的行不会消耗 offset。因为结果依赖未来输入，当前行会被缓存，直到找到指定的未来值、`UNTIL` 为 true 或输入结束。
 
-`WHEN` 用于选择未来候选行。`UNTIL` 是 eKuiper 扩展，只能与 `WHEN` 同时使用；系统会先于 `WHEN`，针对每条缓存行独立计算 `UNTIL`。在 `UNTIL` 中，普通字段引用新到达的探测行，`current_row(expr)` 则在被缓存的原始行上计算 `expr`。若 `UNTIL` 为 true，该请求返回默认值。`current_row` 只能在此上下文使用。
+`WHEN` 用于选择未来候选行。offset 是成功匹配条件，并不限制 LEAD 最多等待多久或检查多少输入行；`UNTIL` 提供独立的停止等待条件。`UNTIL` 是 eKuiper 扩展，只能与 `WHEN` 同时使用；系统会先于 `WHEN`，针对每条缓存行独立计算 `UNTIL`。在 `UNTIL` 中，普通字段引用新到达的探测行，`current_row(expr)` 则在被缓存的原始行上计算 `expr`。若 `UNTIL` 为 true，该请求返回默认值。`current_row` 只能在此上下文使用。
 
 ```sql
 lead(candidate_t2) OVER (
