@@ -240,8 +240,80 @@ func TestDerivedContextSharesCheckpointLifecycle(t *testing.T) {
 	}
 }
 
+func TestSaveSnapshotFallsBackToStoreSaveState(t *testing.T) {
+	cStore := &legacyCaptureStore{}
+	ctx := Background().WithMeta("rule", "op", cStore).(*DefaultContext)
+	live := map[string]interface{}{"nested": map[string]interface{}{"value": 1}}
+	if err := ctx.PutState("mutable", live); err != nil {
+		t.Fatal(err)
+	}
+	if err := ctx.Snapshot(20); err != nil {
+		t.Fatal(err)
+	}
+	live["nested"].(map[string]interface{})["value"] = 99
+	if err := ctx.SaveSnapshot(20); err != nil {
+		t.Fatal(err)
+	}
+	if err := cStore.SaveCheckpoint(20); err != nil {
+		t.Fatal(err)
+	}
+	restored, err := cStore.GetOpState("op")
+	if err != nil {
+		t.Fatal(err)
+	}
+	mutable, ok := restored.Load("mutable")
+	if !ok {
+		t.Fatal("snapshot was not restored through the api.Store lifecycle")
+	}
+	want := map[string]interface{}{"nested": map[string]interface{}{"value": 1}}
+	if !reflect.DeepEqual(want, mutable) {
+		t.Fatalf("fallback snapshot mismatch: want %#v, got %#v", want, mutable)
+	}
+}
+
 type frozenCaptureStore struct {
 	states sync.Map
+}
+
+type legacyCaptureStore struct {
+	mu        sync.Mutex
+	pending   map[int64]map[string]map[string]interface{}
+	committed map[string]map[string]interface{}
+}
+
+func (s *legacyCaptureStore) SaveState(checkpointID int64, opID string, state map[string]interface{}) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.pending == nil {
+		s.pending = make(map[int64]map[string]map[string]interface{})
+	}
+	if s.pending[checkpointID] == nil {
+		s.pending[checkpointID] = make(map[string]map[string]interface{})
+	}
+	s.pending[checkpointID][opID] = state
+	return nil
+}
+
+func (s *legacyCaptureStore) SaveCheckpoint(checkpointID int64) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.committed = s.pending[checkpointID]
+	delete(s.pending, checkpointID)
+	return nil
+}
+
+func (s *legacyCaptureStore) GetOpState(opID string) (*sync.Map, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	result := &sync.Map{}
+	for key, value := range s.committed[opID] {
+		result.Store(key, value)
+	}
+	return result, nil
+}
+
+func (s *legacyCaptureStore) Clean() error {
+	return nil
 }
 
 func (s *frozenCaptureStore) SaveState(_ int64, _ string, _ map[string]interface{}) error {

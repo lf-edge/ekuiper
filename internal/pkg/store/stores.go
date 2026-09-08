@@ -107,7 +107,7 @@ func (s *stores) DropKV(table string) {
 
 	if ks, contains := s.kv[table]; contains {
 		_ = ks.Drop()
-		delete(s.ts, table)
+		delete(s.kv, table)
 	}
 }
 

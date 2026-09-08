@@ -67,6 +67,7 @@ func (h *BarrierTracker) processBarrier(b *Barrier, ctx api.StreamContext) {
 		if c == h.inputCount {
 			err := h.responder.TriggerCheckpoint(b.CheckpointId)
 			if err != nil {
+				delete(h.pendingCheckpoints, b.CheckpointId)
 				logger.Errorf("trigger checkpoint for %s err: %s", h.responder.GetName(), err)
 				return
 			}
@@ -156,20 +157,11 @@ func (h *BarrierAligner) processBarrier(b *Barrier, ctx api.StreamContext) {
 		err := h.responder.TriggerCheckpoint(b.CheckpointId)
 		if err != nil {
 			logger.Errorf("trigger checkpoint for %s err: %s", h.responder.GetName(), err)
+			h.releaseBlocksAndReplay()
 			return
 		}
 
-		h.releaseBlocksAndResetBarriers()
-		// clean up all the buffer
-		var temp []*BufferOrEvent
-		temp = append(temp, h.buffer...)
-		go infra.SafeRun(func() error {
-			for _, d := range temp {
-				h.output <- d
-			}
-			return nil
-		})
-		h.buffer = make([]*BufferOrEvent, 0)
+		h.releaseBlocksAndReplay()
 	}
 }
 
@@ -187,6 +179,21 @@ func (h *BarrierAligner) SetOutput(output chan<- *BufferOrEvent) {
 
 func (h *BarrierAligner) releaseBlocksAndResetBarriers() {
 	h.blockedChannels = make(map[string]bool)
+}
+
+func (h *BarrierAligner) releaseBlocksAndReplay() {
+	h.releaseBlocksAndResetBarriers()
+	temp := append([]*BufferOrEvent(nil), h.buffer...)
+	h.buffer = make([]*BufferOrEvent, 0)
+	if len(temp) == 0 {
+		return
+	}
+	go infra.SafeRun(func() error {
+		for _, d := range temp {
+			h.output <- d
+		}
+		return nil
+	})
 }
 
 func (h *BarrierAligner) beginNewAlignment(barrier *Barrier, ctx api.StreamContext) {

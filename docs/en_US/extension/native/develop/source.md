@@ -161,6 +161,12 @@ If the [rule checkpoint](../../../guide/rules/state_and_fault_tolerance.md#sourc
 
 A typical implementation is to save an `offset` as a field of the source. And update the offset value when reading in new value. Notice that, when implementing GetOffset() will be called by eKuiper system which means the offset value can be accessed by multiple go routines. So a lock is required when read or write the offset.
 
+By default, eKuiper clones the offset returned by `GetOffset` to isolate the
+checkpoint from later source mutations. If the returned object graph is
+immutable after the call, implement `api.ImmutableOffsetProvider` to transfer
+it directly and avoid per-tuple serialization. Every value reachable from the
+offset must remain unchanged after `GetOffset` returns.
+
 ### Bounded Source
 
 Some data sources are bounded, such as files; some data sources are inherently unbounded, but in some scenarios, users

@@ -111,6 +111,7 @@ type Coordinator struct {
 
 	inForceSaveState     atomic.Bool
 	forceCheckpointID    atomic.Int64
+	forceSaveStateMu     sync.Mutex
 	forceSaveStateNotify chan any
 	lastCheckpointID     int64
 }
@@ -152,13 +153,12 @@ func NewCoordinator(ruleId string, sources []StreamTask, operators []NonSourceTa
 		completedCheckpoints: &checkpointStore{
 			maxNum: 3,
 		},
-		ruleId:               ruleId,
-		signal:               signal,
-		baseInterval:         interval,
-		store:                store,
-		ctx:                  ctx,
-		cleanThreshold:       100,
-		forceSaveStateNotify: make(chan any, 2),
+		ruleId:         ruleId,
+		signal:         signal,
+		baseInterval:   interval,
+		store:          store,
+		ctx:            ctx,
+		cleanThreshold: 100,
 	}
 }
 
@@ -200,6 +200,7 @@ func (c *Coordinator) Activate() error {
 						if c.ticker != nil {
 							c.ticker.Stop()
 						}
+						c.abortForceSaveState()
 						return nil
 					case ACK:
 						logger.Debugf("Receive ack from %s for checkpoint %d", s.OpId, s.CheckpointId)
@@ -224,6 +225,7 @@ func (c *Coordinator) Activate() error {
 						c.ticker.Stop()
 						logger.Info("Stop coordinator ticker")
 					}
+					c.abortForceSaveState()
 					return nil
 				}
 			}
@@ -268,24 +270,53 @@ func (c *Coordinator) Deactivate() error {
 	if c.ticker != nil {
 		c.ticker.Stop()
 	}
-	c.signal <- &Signal{Message: STOP}
+	select {
+	case c.signal <- &Signal{Message: STOP}:
+	case <-c.ctx.Done():
+		c.abortForceSaveState()
+	}
 	return nil
 }
 
 func (c *Coordinator) ForceSaveState() (chan any, error) {
+	c.forceSaveStateMu.Lock()
 	if !c.inForceSaveState.CompareAndSwap(false, true) {
+		c.forceSaveStateMu.Unlock()
 		return nil, fmt.Errorf("duplicated force save state")
 	}
-	c.signal <- &Signal{Message: ForceSaveState}
-	return c.forceSaveStateNotify, nil
+	notify := make(chan any)
+	c.forceSaveStateNotify = notify
+	c.forceSaveStateMu.Unlock()
+	select {
+	case c.signal <- &Signal{Message: ForceSaveState}:
+		return notify, nil
+	case <-c.ctx.Done():
+		c.abortForceSaveState()
+		return nil, c.ctx.Err()
+	}
 }
 
 func (c *Coordinator) finishForceSaveState(checkpointID int64) {
 	if !c.forceCheckpointID.CompareAndSwap(checkpointID, 0) {
 		return
 	}
+	c.closeForceSaveStateNotify()
+}
+
+func (c *Coordinator) abortForceSaveState() {
+	c.forceCheckpointID.Store(0)
+	c.closeForceSaveStateNotify()
+}
+
+func (c *Coordinator) closeForceSaveStateNotify() {
+	c.forceSaveStateMu.Lock()
+	notify := c.forceSaveStateNotify
+	c.forceSaveStateNotify = nil
 	c.inForceSaveState.Store(false)
-	c.forceSaveStateNotify <- struct{}{}
+	c.forceSaveStateMu.Unlock()
+	if notify != nil {
+		close(notify)
+	}
 }
 
 func (c *Coordinator) cancel(checkpointId int64, _ string) {

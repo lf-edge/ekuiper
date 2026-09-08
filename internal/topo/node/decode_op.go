@@ -408,12 +408,17 @@ func cloneTuple(d *xsql.Tuple, hint int) *xsql.Tuple {
 	for k, v := range d.Message {
 		m[k] = v
 	}
-	return &xsql.Tuple{
+	result := &xsql.Tuple{
 		Message:   m,
 		Metadata:  d.Metadata,
 		Timestamp: d.Timestamp,
 		Emitter:   d.Emitter,
+		Props:     d.Props,
+
+		AffiliateRow: d.AffiliateRow.Clone(),
 	}
+	result.SetTracerCtx(d.GetTracerCtx())
+	return result
 }
 
 func tupleAppend(d *xsql.Tuple, mv map[string]any) {

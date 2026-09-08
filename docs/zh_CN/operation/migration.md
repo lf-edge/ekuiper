@@ -19,6 +19,10 @@ checkpoint，回滚时应恢复该备份；也可以删除并重新创建受影�
 保持不变。若 `GetOffset` 返回错误，eKuiper 会拒绝 checkpoint，直到后续
 ingest callback 成功取得有效 offset。
 
+自定义 `api.Store` 实现仍可通过 `SaveState` 保持兼容。Store 也可以额外实现
+内部 frozen-state 扩展，直接接收已经编码的快照；这只是优化，并非支持
+checkpoint 的必要条件。
+
 ### SQLite 数据库格式
 
 eKuiper 2.x 在 SQLite 数据库（`sqliteKV.db`）中使用了不同的存储格式。这意味着：
