@@ -91,7 +91,7 @@ func (o *WindowV2Operator) Exec(ctx api.StreamContext, errCh chan<- error) {
 func (o *WindowV2Operator) emitWindow(ctx api.StreamContext, startTime, endTime time.Time) {
 	tuples := o.scanner.scanWindow(startTime, endTime)
 	results := &xsql.WindowTuples{
-		Content: make([]xsql.Row, 0),
+		Content: make([]xsql.Row, 0, len(tuples)),
 	}
 	for _, tuple := range tuples {
 		results.Content = append(results.Content, tuple)
