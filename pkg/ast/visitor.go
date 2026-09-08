@@ -117,6 +117,10 @@ func Walk(v Visitor, node Node) {
 			Walk(v, n.WhenExpr)
 		}
 
+		if n.UntilExpr != nil {
+			Walk(v, n.UntilExpr)
+		}
+
 	case *ParenExpr:
 		Walk(v, n.Expr)
 

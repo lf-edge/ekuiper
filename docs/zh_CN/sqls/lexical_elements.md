@@ -31,7 +31,7 @@ SELECT `a-b`, `hello world`, `中文Chinese` from demo
 **规则 SQL 的保留关键字**：如果您想在规则 SQL 中使用以下关键字，则必须使用反撇号将其括起来。
 
 ```text
-SELECT, FROM, JOIN, LEFT, INNER, ON, WHERE, GROUP, ORDER, HAVING, BY, ASC, DESC, AND, OR, CASE, WHEN, THEN, ELSE, END, IN, NOT, BETWEEN, LIKE, OVER, PARTITION
+SELECT, FROM, JOIN, LEFT, INNER, ON, WHERE, GROUP, ORDER, HAVING, BY, ASC, DESC, AND, OR, CASE, WHEN, UNTIL, THEN, ELSE, END, IN, NOT, BETWEEN, LIKE, OVER, PARTITION
 ```
 
 以下是使用名为 `from` 的流的示例，`from` 是 eKuiper 中的保留关键字。

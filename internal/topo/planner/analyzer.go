@@ -436,6 +436,55 @@ func validate(stmt *ast.SelectStatement) error {
 var stmtCheckers = []validateOptStmt{
 	&aggFuncChecker{},
 	&groupChecker{},
+	&leadDependencyChecker{},
+}
+
+type leadDependencyChecker struct{}
+
+func containsLead(expr ast.Expr, aliases map[*ast.AliasRef]bool) bool {
+	found := false
+	ast.WalkFunc(expr, func(n ast.Node) bool {
+		switch value := n.(type) {
+		case *ast.Call:
+			if value.Name == "lead" {
+				found = true
+				return false
+			}
+		case *ast.FieldRef:
+			if value.AliasRef != nil && !aliases[value.AliasRef] {
+				aliases[value.AliasRef] = true
+				if containsLead(value.AliasRef.Expression, aliases) {
+					found = true
+					return false
+				}
+			}
+		}
+		return !found
+	})
+	return found
+}
+
+func (c *leadDependencyChecker) validate(s *ast.SelectStatement) (err error) {
+	ast.WalkFunc(s, func(n ast.Node) bool {
+		call, ok := n.(*ast.Call)
+		if !ok || !function.IsAnalyticFunc(call.Name) {
+			return true
+		}
+		for _, arg := range call.Args {
+			if containsLead(arg, make(map[*ast.AliasRef]bool)) {
+				err = fmt.Errorf("lead output cannot feed %s in phase 1", call.Name)
+				return false
+			}
+		}
+		for _, condition := range []ast.Expr{call.WhenExpr, call.UntilExpr} {
+			if condition != nil && containsLead(condition, make(map[*ast.AliasRef]bool)) {
+				err = fmt.Errorf("lead output cannot feed %s condition in phase 1", call.Name)
+				return false
+			}
+		}
+		return err == nil
+	})
+	return err
 }
 
 type aggFuncChecker struct{}

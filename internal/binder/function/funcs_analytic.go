@@ -28,6 +28,41 @@ import (
 // registerAnalyticFunc registers the analytic functions
 // The last parameter of the function is always the partition key
 func registerAnalyticFunc() {
+	builtins["lead"] = builtinFunc{
+		fType: ast.FuncTypeScalar,
+		exec: func(_ api.FunctionContext, _ []interface{}) (interface{}, bool) {
+			return fmt.Errorf("lead must be evaluated by the analytic operator"), false
+		},
+		val: func(_ api.FunctionContext, args []ast.Expr) error {
+			if len(args) < 1 || len(args) > 4 {
+				return fmt.Errorf("expect from 1 to 4 args but got %d", len(args))
+			}
+			if len(args) >= 2 {
+				offset, ok := args[1].(*ast.IntegerLiteral)
+				if !ok || offset.Val <= 0 {
+					return fmt.Errorf("the second arg of lead must be a positive integer literal")
+				}
+			}
+			if len(args) == 4 {
+				if ast.IsNumericArg(args[3]) || ast.IsTimeArg(args[3]) || ast.IsStringArg(args[3]) {
+					return ProduceErrInfo(3, "bool")
+				}
+			}
+			return nil
+		},
+	}
+	builtins["current_row"] = builtinFunc{
+		fType: ast.FuncTypeScalar,
+		exec: func(_ api.FunctionContext, _ []interface{}) (interface{}, bool) {
+			return fmt.Errorf("current_row is only valid inside lead UNTIL"), false
+		},
+		val: func(_ api.FunctionContext, args []ast.Expr) error {
+			if len(args) != 1 {
+				return fmt.Errorf("current_row expects exactly one argument")
+			}
+			return nil
+		},
+	}
 	builtins["changed_col"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {

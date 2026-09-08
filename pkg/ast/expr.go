@@ -226,6 +226,7 @@ type Call struct {
 	Cached      bool
 	Partition   *PartitionExpr
 	WhenExpr    Expr
+	UntilExpr   Expr
 
 	// This is used for window functions.
 	SortFields SortFields
@@ -250,7 +251,11 @@ func (c *Call) String() string {
 	if c.WhenExpr != nil {
 		when += ", when:{ " + c.WhenExpr.String() + " }"
 	}
-	return "Call:{ name:" + c.Name + args + when + " }"
+	until := ""
+	if c.UntilExpr != nil {
+		until += ", until:{ " + c.UntilExpr.String() + " }"
+	}
+	return "Call:{ name:" + c.Name + args + when + until + " }"
 }
 
 type PartitionExpr struct {
