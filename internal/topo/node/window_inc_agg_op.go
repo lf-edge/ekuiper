@@ -370,25 +370,6 @@ func (co *CountWindowIncAggOp) setIncAggWindow(ctx api.StreamContext) {
 	}
 }
 
-func (co *CountWindowIncAggOp) incAggCal(ctx api.StreamContext, dimension string, row *xsql.Tuple, incAggWindow *IncAggWindow) {
-	dimensionsRange, ok := incAggWindow.DimensionsIncAggRange[dimension]
-	if !ok {
-		dimensionsRange = newIncAggRange(ctx)
-		incAggWindow.DimensionsIncAggRange[dimension] = dimensionsRange
-	}
-	ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(dimensionsRange.fv, row, &xsql.WildcardValuer{Data: row})}
-	dimensionsRange.LastRow = row
-	for _, aggField := range co.aggFields {
-		vi := ve.Eval(aggField.Expr)
-		colName := aggField.Name
-		if len(aggField.AName) > 0 {
-			colName = aggField.AName
-		}
-		dimensionsRange.Fields[colName] = vi
-	}
-	incAggWindow.markDimensionDirty(dimension)
-}
-
 func (co *CountWindowIncAggOp) emit(ctx api.StreamContext, errCh chan<- error) {
 	results := &xsql.WindowTuples{
 		Content: make([]xsql.Row, 0),
@@ -934,17 +915,17 @@ func (ho *HoppingWindowIncAggOp) exec(ctx api.StreamContext, errCh chan<- error)
 			ho.PutState(ctx)
 			ho.onProcessEnd(ctx)
 		case <-timerC:
-			ho.openDueWindows(ctx, timex.GetNow())
+			ho.openDueWindows(ctx, errCh, timex.GetNow())
 			ho.scheduleWindowTimer()
 			ho.PutState(ctx)
 		}
 	}
 }
 
-func (ho *HoppingWindowIncAggOp) newIncWindow(ctx api.StreamContext, now time.Time) {
+func (ho *HoppingWindowIncAggOp) newIncWindow(ctx api.StreamContext, errCh chan<- error, now time.Time) {
 	newWindow := newIncAggWindow(ctx, now)
 	ho.CurrWindowList = append(ho.CurrWindowList, newWindow)
-	ho.scheduleWindowClose(ctx, newWindow, timex.GetNow())
+	ho.scheduleWindowClose(ctx, errCh, newWindow, timex.GetNow())
 }
 
 func (ho *HoppingWindowIncAggOp) restoreTimers(ctx api.StreamContext, errCh chan<- error) error {
@@ -965,7 +946,7 @@ func (ho *HoppingWindowIncAggOp) restoreTimers(ctx api.StreamContext, errCh chan
 		if !fireAt.After(now) {
 			ho.handleWindowTask(ctx, errCh, &IncAggOpTask{window: window})
 		} else {
-			ho.scheduleWindowClose(ctx, window, now)
+			ho.scheduleWindowClose(ctx, errCh, window, now)
 		}
 	}
 	if ho.NextWindowTime.IsZero() {
@@ -973,14 +954,14 @@ func (ho *HoppingWindowIncAggOp) restoreTimers(ctx api.StreamContext, errCh chan
 		case !lastStart.IsZero():
 			ho.NextWindowTime = lastStart.Add(ho.Interval)
 		case EnableAlignWindow:
-			ho.newIncWindow(ctx, now)
+			ho.newIncWindow(ctx, errCh, now)
 			ho.NextWindowTime = getAlignedWindowEndTime(now, ho.windowConfig.RawInterval, ho.windowConfig.TimeUnit)
 		default:
-			ho.newIncWindow(ctx, now)
+			ho.newIncWindow(ctx, errCh, now)
 			ho.NextWindowTime = now.Add(ho.Interval)
 		}
 	}
-	ho.openDueWindows(ctx, now)
+	ho.openDueWindows(ctx, errCh, now)
 	ho.scheduleWindowTimer()
 	if EnableAlignWindow && ho.FirstTimer != nil {
 		ho.markFirstTimerCreated()
@@ -989,7 +970,7 @@ func (ho *HoppingWindowIncAggOp) restoreTimers(ctx api.StreamContext, errCh chan
 	return nil
 }
 
-func (ho *HoppingWindowIncAggOp) openDueWindows(ctx api.StreamContext, now time.Time) {
+func (ho *HoppingWindowIncAggOp) openDueWindows(ctx api.StreamContext, errCh chan<- error, now time.Time) {
 	activeCutoff := now.Add(-ho.Length)
 	if !ho.NextWindowTime.After(activeCutoff) {
 		missed := activeCutoff.Sub(ho.NextWindowTime) / ho.Interval
@@ -1000,7 +981,7 @@ func (ho *HoppingWindowIncAggOp) openDueWindows(ctx api.StreamContext, now time.
 	}
 	for !ho.NextWindowTime.After(now) {
 		start := ho.NextWindowTime
-		ho.newIncWindow(ctx, start)
+		ho.newIncWindow(ctx, errCh, start)
 		ho.NextWindowTime = ho.NextWindowTime.Add(ho.Interval)
 	}
 }
@@ -1012,10 +993,10 @@ func (ho *HoppingWindowIncAggOp) scheduleWindowTimer() {
 	ho.FirstTimer = timex.GetTimerByTime(ho.NextWindowTime)
 }
 
-func (ho *HoppingWindowIncAggOp) scheduleWindowClose(ctx api.StreamContext, window *IncAggWindow, now time.Time) {
+func (ho *HoppingWindowIncAggOp) scheduleWindowClose(ctx api.StreamContext, errCh chan<- error, window *IncAggWindow, now time.Time) {
 	fireAt := window.StartTime.Add(ho.Length)
 	if !fireAt.After(now) {
-		ho.taskCh <- &IncAggOpTask{window: window}
+		ho.handleWindowTask(ctx, errCh, &IncAggOpTask{window: window})
 		return
 	}
 	after := timex.After(fireAt.Sub(now))

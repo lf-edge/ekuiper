@@ -797,4 +797,4 @@ func (m *ImmutableRewindSource) GetOffset() (any, error) {
 
 func (m *ImmutableRewindSource) CheckpointOffsetIsImmutable() {}
 
-var _ checkpoint.ImmutableOffsetProvider = (*ImmutableRewindSource)(nil)
+var _ immutableOffsetProvider = (*ImmutableRewindSource)(nil)

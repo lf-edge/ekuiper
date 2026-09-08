@@ -282,7 +282,7 @@ func (m *SourceNode) updateState(ctx api.StreamContext) error {
 		if state == nil {
 			return ctx.PutState(OffsetKey, nil)
 		}
-		if _, ok := rw.(checkpoint.ImmutableOffsetProvider); ok {
+		if _, ok := rw.(immutableOffsetProvider); ok {
 			return ctx.PutState(OffsetKey, state)
 		}
 		frozen, err := checkpoint.EncodeState(map[string]interface{}{OffsetKey: state})
@@ -296,6 +296,13 @@ func (m *SourceNode) updateState(ctx api.StreamContext) error {
 		return ctx.PutState(OffsetKey, owned[OffsetKey])
 	}
 	return nil
+}
+
+// immutableOffsetProvider mirrors api.ImmutableOffsetProvider structurally.
+// The contract is released as a separate Go module, so the runtime cannot
+// reference a newly added contract symbol until that module is published.
+type immutableOffsetProvider interface {
+	CheckpointOffsetIsImmutable()
 }
 
 func (m *SourceNode) refreshCheckpointState(ctx api.StreamContext) error {

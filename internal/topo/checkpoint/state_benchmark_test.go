@@ -26,10 +26,6 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 )
 
-func init() {
-	gob.Register([]*xsql.Tuple{})
-}
-
 func BenchmarkCheckpointState(b *testing.B) {
 	for _, tupleCount := range []int{0, 1, 10, 100, 1000, 10000} {
 		state := benchmarkState(tupleCount)

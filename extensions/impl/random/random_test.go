@@ -24,8 +24,6 @@ import (
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
 
-var _ checkpoint.ImmutableOffsetProvider = (*randomSource)(nil)
-
 func TestDedupStateCheckpointRoundTrip(t *testing.T) {
 	live := [][]byte{[]byte("first"), []byte("second")}
 	frozen, err := checkpoint.EncodeState(map[string]interface{}{dedupStateKey: live})

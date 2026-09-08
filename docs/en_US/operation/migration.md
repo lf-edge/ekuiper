@@ -21,6 +21,11 @@ ingest callback and remain unchanged until that callback returns. If
 `GetOffset` returns an error, eKuiper rejects checkpoints until a later ingest
 callback obtains a valid offset.
 
+Custom `api.Store` implementations remain compatible through `SaveState`.
+Stores may additionally implement the internal frozen-state extension to accept
+the already encoded snapshot directly; this is an optimization and is not
+required for checkpoint support.
+
 ### SQLite Database Format
 
 eKuiper 2.x uses a different storage format for streams and tables in the SQLite database (`sqliteKV.db`). This means:
