@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2026 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -27,6 +27,15 @@ func newMemoryStore() *MemoryStore {
 func (s *MemoryStore) SaveState(_ int64, _ string, _ map[string]interface{}) error {
 	// do nothing
 	return nil
+}
+
+func (s *MemoryStore) SaveFrozenState(_ int64, _ string, _ []byte) error {
+	// do nothing
+	return nil
+}
+
+func (s *MemoryStore) DiscardFrozenState(_ int64) {
+	// do nothing
 }
 
 func (s *MemoryStore) SaveCheckpoint(_ int64) error {

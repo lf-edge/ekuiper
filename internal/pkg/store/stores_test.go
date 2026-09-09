@@ -1,4 +1,4 @@
-// Copyright 2023-2026 EMQ Technologies Co., Ltd.
+// Copyright 2026 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,21 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package xsql
+package store
 
 import (
-	"encoding/gob"
-	"time"
+	"testing"
+
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/store/memory"
+	"github.com/lf-edge/ekuiper/v2/pkg/kv"
 )
 
-func init() {
-	gob.Register(time.Time{})
-	gob.Register(make(map[string]any))
-	gob.Register(make(map[string][]*Tuple))
-	gob.Register([]*Tuple{})
-	gob.Register(&Tuple{})
-	gob.Register(&SliceTuple{})
-	gob.Register(&JoinTuple{})
-	gob.Register([]any{})
-	gob.Register(&RawTuple{})
+func TestDropKVRemovesOnlyKVCacheEntry(t *testing.T) {
+	const table = "shared-name"
+	s := &stores{
+		kv: map[string]kv.KeyValue{table: memory.NewMemoryKV()},
+		ts: map[string]kv.Tskv{table: nil},
+	}
+
+	s.DropKV(table)
+	if _, ok := s.kv[table]; ok {
+		t.Fatal("dropped KV remained cached")
+	}
+	if _, ok := s.ts[table]; !ok {
+		t.Fatal("dropping KV removed the unrelated TS cache entry")
+	}
 }

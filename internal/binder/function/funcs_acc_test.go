@@ -1,6 +1,7 @@
 package function
 
 import (
+	"errors"
 	"fmt"
 	"math"
 	"testing"
@@ -9,10 +10,67 @@ import (
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/checkpoint"
 	kctx "github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/state"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 )
+
+func TestAccAvgCheckpointRoundTrip(t *testing.T) {
+	live := &accStatus{
+		Value:    &accAvgStatus{Sum: 12, Count: 3, Avg: 4},
+		HasBegin: true,
+	}
+	frozen, err := checkpoint.EncodeState(map[string]interface{}{"acc_avg": live})
+	require.NoError(t, err)
+
+	live.Value.(*accAvgStatus).Sum = 100
+	live.Value.(*accAvgStatus).Avg = 100
+
+	restored, err := checkpoint.DecodeState(frozen)
+	require.NoError(t, err)
+	status := restored["acc_avg"].(*accStatus)
+	require.True(t, status.HasBegin)
+	require.Equal(t, &accAvgStatus{Sum: 12, Count: 3, Avg: 4}, status.Value)
+}
+
+func TestAccCheckpointOmitsTransientError(t *testing.T) {
+	live := &accStatus{
+		Value:    int64(3),
+		HasBegin: true,
+		err:      errors.New("transient evaluation error"),
+	}
+	frozen, err := checkpoint.EncodeState(map[string]interface{}{"acc_count": live})
+	require.NoError(t, err)
+
+	restored, err := checkpoint.DecodeState(frozen)
+	require.NoError(t, err)
+	status := restored["acc_count"].(*accStatus)
+	require.NoError(t, status.err)
+	require.Equal(t, int64(3), status.Value)
+	require.True(t, status.HasBegin)
+}
+
+func TestAccByAndMapCheckpointRoundTrip(t *testing.T) {
+	tests := map[string]any{
+		"acc_max_by": &accMaxByStatus{Value: "max", By: 12},
+		"acc_min_by": &accMinByStatus{Value: "min", By: 3},
+		"acc_map_agg": &accMapAggStatus{
+			Entries: []accMapEntry{{Key: "key", Value: int64(42)}},
+			Index:   map[string]int{"key": 0},
+		},
+	}
+	for name, value := range tests {
+		t.Run(name, func(t *testing.T) {
+			frozen, err := checkpoint.EncodeState(map[string]interface{}{name: &accStatus{Value: value}})
+			require.NoError(t, err)
+
+			restored, err := checkpoint.DecodeState(frozen)
+			require.NoError(t, err)
+			require.Equal(t, value, restored[name].(*accStatus).Value)
+		})
+	}
+}
 
 func TestAccumulateAggCond(t *testing.T) {
 	tests := []struct {
@@ -547,7 +605,7 @@ func TestAccCollectFuncDirect(t *testing.T) {
 		s := &accStatus{Value: nil}
 		cf.accFuncExec(fctx, int64(1), true, "k1", s, true)
 		require.Equal(t, []interface{}{int64(1)}, s.Value)
-		require.Nil(t, s.Err)
+		require.Nil(t, s.err)
 	})
 
 	// Test accFuncExec with nil value arg (should skip)
@@ -569,6 +627,6 @@ func TestAccCollectFuncDirect(t *testing.T) {
 		s := &accStatus{Value: []interface{}{int64(1)}}
 		cf.accFuncExec(fctx, int64(2), true, "k4", s, false)
 		require.Equal(t, []interface{}{int64(1), int64(2)}, s.Value)
-		require.Nil(t, s.Err)
+		require.Nil(t, s.err)
 	})
 }

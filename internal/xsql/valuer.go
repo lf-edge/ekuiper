@@ -180,10 +180,47 @@ func (a MultiValuerList) AppendAlias(key string, value interface{}) bool {
 func (a MultiValuerList) AliasValue(key string) (interface{}, bool) {
 	for _, valuer := range a {
 		if vv, ok := valuer.(AliasValuer); ok {
-			return vv.AliasValue(key)
+			if value, found := vv.AliasValue(key); found {
+				return value, true
+			}
 		}
 	}
 	return nil, false
+}
+
+// transientAliasValuer keeps expression aliases local to one evaluation. An
+// aggregate may evaluate rows that are still owned by an upstream window, so
+// caching an alias on those rows would mutate state across task boundaries.
+type transientAliasValuer struct {
+	aliases map[string]interface{}
+}
+
+func (v *transientAliasValuer) Value(key, table string) (interface{}, bool) {
+	if table != "" {
+		return nil, false
+	}
+	return v.AliasValue(key)
+}
+
+func (v *transientAliasValuer) Meta(string, string) (interface{}, bool) {
+	return nil, false
+}
+
+func (v *transientAliasValuer) AliasValue(key string) (interface{}, bool) {
+	value, ok := v.aliases[key]
+	return value, ok
+}
+
+func (v *transientAliasValuer) AppendAlias(key string, value interface{}) bool {
+	if v.aliases == nil {
+		v.aliases = make(map[string]interface{})
+	}
+	v.aliases[key] = value
+	return true
+}
+
+func (v *transientAliasValuer) reset() {
+	clear(v.aliases)
 }
 
 func (a MultiValuerList) FuncValue(key string) (interface{}, bool) {

@@ -1,4 +1,4 @@
-// Copyright 2025 EMQ Technologies Co., Ltd.
+// Copyright 2025-2026 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
 package function
 
 import (
+	"encoding/gob"
 	"fmt"
 	"math"
 
@@ -23,6 +24,14 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
+
+func init() {
+	gob.Register(&accStatus{})
+	gob.Register(&accAvgStatus{})
+	gob.Register(&accMaxByStatus{})
+	gob.Register(&accMinByStatus{})
+	gob.Register(&accMapAggStatus{})
+}
 
 func registerGlobalAggFunc() {
 	builtins["acc_avg"] = builtinFunc{
@@ -36,7 +45,7 @@ func registerGlobalAggFunc() {
 			case nil:
 				return float64(0), true
 			default:
-				return status.Value.(*accAvgStatus).avg, true
+				return status.Value.(*accAvgStatus).Avg, true
 			}
 		},
 		val: func(ctx api.FunctionContext, args []ast.Expr) error {
@@ -222,8 +231,8 @@ func handleAccMaxBy(ctx api.FunctionContext, args []interface{}) (*accStatus, er
 	} else {
 		accMaxByExec(ctx, args[0], args[1], valid, key, status, false)
 	}
-	if status.Err != nil {
-		return nil, status.Err
+	if status.err != nil {
+		return nil, status.err
 	}
 	return status, nil
 }
@@ -234,7 +243,7 @@ func accMaxByExec(ctx api.FunctionContext, value, by interface{}, valid bool, ke
 	}
 	b, err := cast.ToFloat64(by, cast.CONVERT_SAMEKIND)
 	if err != nil {
-		status.Err = fmt.Errorf("acc_max_by compare_value should be number: %w", err)
+		status.err = fmt.Errorf("acc_max_by compare_value should be number: %w", err)
 		return
 	}
 	if math.IsNaN(b) {
@@ -246,7 +255,7 @@ func accMaxByExec(ctx api.FunctionContext, value, by interface{}, valid bool, ke
 	}
 	if !skip {
 		if err := ctx.PutState(key, status); err != nil {
-			status.Err = err
+			status.err = err
 		}
 	}
 }
@@ -264,9 +273,9 @@ func accMaxByWithCond(ctx api.FunctionContext, value, by interface{}, begin, res
 	if reset {
 		status.HasBegin = false
 	}
-	if status.Err == nil {
+	if status.err == nil {
 		if err := ctx.PutState(key, status); err != nil {
-			status.Err = err
+			status.err = err
 		}
 	}
 }
@@ -295,8 +304,8 @@ func handleAccMinBy(ctx api.FunctionContext, args []interface{}) (*accStatus, er
 	} else {
 		accMinByExec(ctx, args[0], args[1], valid, key, status, false)
 	}
-	if status.Err != nil {
-		return nil, status.Err
+	if status.err != nil {
+		return nil, status.err
 	}
 	return status, nil
 }
@@ -307,7 +316,7 @@ func accMinByExec(ctx api.FunctionContext, value, by interface{}, valid bool, ke
 	}
 	b, err := cast.ToFloat64(by, cast.CONVERT_SAMEKIND)
 	if err != nil {
-		status.Err = fmt.Errorf("acc_min_by compare_value should be number: %w", err)
+		status.err = fmt.Errorf("acc_min_by compare_value should be number: %w", err)
 		return
 	}
 	if math.IsNaN(b) {
@@ -319,7 +328,7 @@ func accMinByExec(ctx api.FunctionContext, value, by interface{}, valid bool, ke
 	}
 	if !skip {
 		if err := ctx.PutState(key, status); err != nil {
-			status.Err = err
+			status.err = err
 		}
 	}
 }
@@ -337,9 +346,9 @@ func accMinByWithCond(ctx api.FunctionContext, value, by interface{}, begin, res
 	if reset {
 		status.HasBegin = false
 	}
-	if status.Err == nil {
+	if status.err == nil {
 		if err := ctx.PutState(key, status); err != nil {
-			status.Err = err
+			status.err = err
 		}
 	}
 }
@@ -397,8 +406,8 @@ func handleAccMapAgg(ctx api.FunctionContext, args []interface{}) (*accStatus, e
 	} else {
 		accMapAggExec(ctx, args[0], args[1], valid, key, status)
 	}
-	if status.Err != nil {
-		return nil, status.Err
+	if status.err != nil {
+		return nil, status.err
 	}
 	if err := ctx.PutState(key, status); err != nil {
 		return nil, err
@@ -412,7 +421,7 @@ func accMapAggExec(ctx api.FunctionContext, k, value interface{}, valid bool, st
 	}
 	ks, err := cast.ToString(k, cast.CONVERT_ALL)
 	if err != nil {
-		status.Err = fmt.Errorf("acc_map_agg key should be string-convertible: %w", err)
+		status.err = fmt.Errorf("acc_map_agg key should be string-convertible: %w", err)
 		return
 	}
 	s := status.Value.(*accMapAggStatus)
@@ -437,8 +446,8 @@ func handleAccFunc(ctx api.FunctionContext, args []interface{}, accFunc accFunc)
 	}
 	if len(args) == 3 {
 		accFunc.accFuncExec(ctx, args[0], validData, partitionKey, status, false)
-		if status.Err != nil {
-			return nil, status.Err
+		if status.err != nil {
+			return nil, status.err
 		}
 		return status, nil
 	}
@@ -446,8 +455,8 @@ func handleAccFunc(ctx api.FunctionContext, args []interface{}, accFunc accFunc)
 		if err := handleOnCondAccFunc(ctx, args, validData, partitionKey, status, accFunc); err != nil {
 			return nil, err
 		}
-		if status.Err != nil {
-			return nil, status.Err
+		if status.err != nil {
+			return nil, status.err
 		}
 		return status, nil
 	}
@@ -498,7 +507,7 @@ func extractAccStatus(ctx api.FunctionContext, args []interface{}) (validData bo
 	if !ok {
 		return false, "", nil, fmt.Errorf("invalid accumulator state type %T", val)
 	}
-	status.Err = nil
+	status.err = nil
 	return validData, partitionKey, status, nil
 }
 
@@ -516,7 +525,7 @@ func accFuncWithCond(ctx api.FunctionContext, value interface{}, onBegin, onRese
 	}
 	if status.HasBegin {
 		accFunc.accFuncExec(ctx, value, validData, partitionKey, status, true)
-		if status.Err != nil {
+		if status.err != nil {
 			return
 		}
 	}
@@ -526,15 +535,15 @@ func accFuncWithCond(ctx api.FunctionContext, value interface{}, onBegin, onRese
 		}
 	}
 	if err := ctx.PutState(partitionKey, status); err != nil {
-		status.Err = err
+		status.err = err
 		return
 	}
 }
 
 type accStatus struct {
-	Err      error
 	Value    interface{}
 	HasBegin bool
+	err      error
 }
 
 type accFunc interface {
@@ -558,7 +567,7 @@ func (a accCountFunc) accFuncExec(ctx api.FunctionContext, value interface{}, va
 	}
 	if !skipStatusSave {
 		if err := ctx.PutState(partitionKey, status); err != nil {
-			status.Err = err
+			status.err = err
 		}
 	}
 }
@@ -590,12 +599,12 @@ func (a accSumFunc) accFuncExec(ctx api.FunctionContext, value interface{}, vali
 			sum += v
 			status.Value = sum
 		default:
-			status.Err = fmt.Errorf("the value should be number")
+			status.err = fmt.Errorf("the value should be number")
 		}
 	}
 	if !skipStatusSave {
 		if err := ctx.PutState(partitionKey, status); err != nil {
-			status.Err = err
+			status.err = err
 		}
 	}
 }
@@ -626,11 +635,11 @@ func (a accMinFunc) accFuncExec(ctx api.FunctionContext, value interface{}, vali
 		mv = getMin(mv, v)
 		status.Value = mv
 	default:
-		status.Err = fmt.Errorf("the value should be number")
+		status.err = fmt.Errorf("the value should be number")
 	}
 	if !skipStatusSave {
 		if err := ctx.PutState(partitionKey, status); err != nil {
-			status.Err = err
+			status.err = err
 		}
 	}
 }
@@ -661,11 +670,11 @@ func (a accMaxFunc) accFuncExec(ctx api.FunctionContext, value interface{}, vali
 		mv = getMax(mv, v)
 		status.Value = mv
 	default:
-		status.Err = fmt.Errorf("the value should be number")
+		status.err = fmt.Errorf("the value should be number")
 	}
 	if !skipStatusSave {
 		if err := ctx.PutState(partitionKey, status); err != nil {
-			status.Err = err
+			status.err = err
 		}
 	}
 }
@@ -687,26 +696,26 @@ func (a accAvgFunc) accFuncExec(ctx api.FunctionContext, value interface{}, vali
 	}
 	switch v := value.(type) {
 	case int:
-		avgStatus.sum += float64(v)
-		avgStatus.count++
-		avgStatus.avg = avgStatus.sum / float64(avgStatus.count)
+		avgStatus.Sum += float64(v)
+		avgStatus.Count++
+		avgStatus.Avg = avgStatus.Sum / float64(avgStatus.Count)
 		status.Value = avgStatus
 	case int64:
-		avgStatus.sum += float64(v)
-		avgStatus.count++
-		avgStatus.avg = avgStatus.sum / float64(avgStatus.count)
+		avgStatus.Sum += float64(v)
+		avgStatus.Count++
+		avgStatus.Avg = avgStatus.Sum / float64(avgStatus.Count)
 		status.Value = avgStatus
 	case float64:
-		avgStatus.sum += v
-		avgStatus.count++
-		avgStatus.avg = avgStatus.sum / float64(avgStatus.count)
+		avgStatus.Sum += v
+		avgStatus.Count++
+		avgStatus.Avg = avgStatus.Sum / float64(avgStatus.Count)
 		status.Value = avgStatus
 	default:
-		status.Err = fmt.Errorf("the value should be number")
+		status.err = fmt.Errorf("the value should be number")
 	}
 	if !skipStatusSave {
 		if err := ctx.PutState(partitionKey, status); err != nil {
-			status.Err = err
+			status.err = err
 		}
 	}
 }
@@ -731,7 +740,7 @@ func (a accCollectFunc) accFuncExec(ctx api.FunctionContext, value interface{}, 
 	}
 	if !skipStatusSave {
 		if err := ctx.PutState(partitionKey, status); err != nil {
-			status.Err = err
+			status.err = err
 		}
 	}
 }
@@ -741,7 +750,7 @@ func (a accCollectFunc) accReset(status *accStatus) {
 }
 
 type accAvgStatus struct {
-	sum   float64
-	count int64
-	avg   float64
+	Sum   float64
+	Count int64
+	Avg   float64
 }

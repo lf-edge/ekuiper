@@ -24,6 +24,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"sync/atomic"
 	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
@@ -67,7 +68,7 @@ type Source struct {
 	decorator modules.FileStreamDecorator
 	eof       api.EOFIngest
 	// rewind support state
-	rewindMeta *FileDirSourceRewindMeta
+	rewindMeta atomic.Pointer[FileDirSourceRewindMeta]
 }
 
 func (fs *Source) Provision(ctx api.StreamContext, props map[string]any) error {
@@ -155,7 +156,7 @@ func (fs *Source) Provision(ctx api.StreamContext, props map[string]any) error {
 		}
 		fs.decorator = decorator
 	}
-	fs.rewindMeta = &FileDirSourceRewindMeta{}
+	fs.rewindMeta.Store(&FileDirSourceRewindMeta{})
 	return nil
 }
 
@@ -430,15 +431,17 @@ func init() {
 }
 
 func (fs *Source) GetOffset() (any, error) {
-	return fs.rewindMeta, nil
+	return fs.rewindMeta.Load(), nil
 }
+
+func (fs *Source) CheckpointOffsetIsImmutable() {}
 
 func (fs *Source) Rewind(offset any) error {
 	rewindMeta, ok := offset.(*FileDirSourceRewindMeta)
 	if !ok {
 		return fmt.Errorf("fileDirSource rewind failed")
 	}
-	fs.rewindMeta = rewindMeta
+	fs.rewindMeta.Store(rewindMeta)
 	return nil
 }
 
@@ -455,15 +458,25 @@ func (fs *Source) checkFileRead(fileName string) (bool, time.Time, error) {
 		return false, time.Time{}, fmt.Errorf("%s is a directory", fileName)
 	}
 	fTime := fInfo.ModTime()
-	if fTime.After(fs.rewindMeta.LastModifyTime) {
+	rewindMeta := fs.rewindMeta.Load()
+	if rewindMeta == nil || fTime.After(rewindMeta.LastModifyTime) {
 		return true, fTime, nil
 	}
 	return false, time.Time{}, nil
 }
 
 func (fs *Source) updateRewindMeta(_ string, modifyTime time.Time) {
-	if modifyTime.After(fs.rewindMeta.LastModifyTime) {
-		fs.rewindMeta.LastModifyTime = modifyTime
+	for {
+		current := fs.rewindMeta.Load()
+		if current != nil && !modifyTime.After(current.LastModifyTime) {
+			return
+		}
+		// Replace instead of mutating so an offset already retained by a
+		// checkpoint remains immutable while the source advances.
+		next := &FileDirSourceRewindMeta{LastModifyTime: modifyTime}
+		if fs.rewindMeta.CompareAndSwap(current, next) {
+			return
+		}
 	}
 }
 
