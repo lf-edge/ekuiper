@@ -116,9 +116,6 @@ func (o *defaultNode) GetName() string {
 
 func (o *defaultNode) SetQos(qos def.Qos) {
 	o.qos = qos
-	if qos >= def.AtLeastOnce {
-		o.disableBufferFullDiscard = true
-	}
 }
 
 func (o *defaultNode) GetMetrics() []any {

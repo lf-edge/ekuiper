@@ -149,19 +149,27 @@ func TestRuleOptionValidate(t *testing.T) {
 			},
 			e: &def.RuleOption{
 				Qos:                      def.AtLeastOnce,
-				DisableBufferFullDiscard: func() *bool { b := true; return &b }(),
+				DisableBufferFullDiscard: boolPtr(true),
+			},
+		},
+		{
+			s: &def.RuleOption{
+				Qos: def.ExactlyOnce,
+			},
+			e: &def.RuleOption{
+				Qos:                      def.ExactlyOnce,
+				DisableBufferFullDiscard: boolPtr(true),
 			},
 		},
 		{
 			s: &def.RuleOption{
 				Qos:                      def.AtLeastOnce,
-				DisableBufferFullDiscard: func() *bool { b := false; return &b }(),
+				DisableBufferFullDiscard: boolPtr(false),
 			},
 			e: &def.RuleOption{
 				Qos:                      def.AtLeastOnce,
-				DisableBufferFullDiscard: func() *bool { b := false; return &b }(),
+				DisableBufferFullDiscard: boolPtr(false),
 			},
-			err: "invalidDisableBufferFullDiscard:disableBufferFullDiscard must be true when qos is 1 or higher",
 		},
 	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
@@ -177,6 +185,10 @@ func TestRuleOptionValidate(t *testing.T) {
 			}
 		})
 	}
+}
+
+func boolPtr(v bool) *bool {
+	return &v
 }
 
 func TestLoad(t *testing.T) {

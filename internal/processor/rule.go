@@ -169,8 +169,9 @@ func (p *RuleProcessor) GetRuleByJsonValidated(id, ruleJson string) (*def.Rule, 
 		return nil, fmt.Errorf("Parse rule %s error : %s.", ruleJson, err)
 	}
 	if rule.Options == nil {
-		rule.Options = &opt
+		rule.Options = clone(opt)
 	}
+	conf.ApplyRuleOptionDefaults(rule.Options)
 	return rule, nil
 }
 
@@ -221,15 +222,21 @@ func CanReplace(old, new string) bool {
 }
 
 func clone(opt def.RuleOption) *def.RuleOption {
+	var disableBufferFullDiscard *bool
+	if opt.DisableBufferFullDiscard != nil {
+		value := *opt.DisableBufferFullDiscard
+		disableBufferFullDiscard = &value
+	}
 	return &def.RuleOption{
-		IsEventTime:        opt.IsEventTime,
-		LateTol:            opt.LateTol,
-		Concurrency:        opt.Concurrency,
-		BufferLength:       opt.BufferLength,
-		SendMetaToSink:     opt.SendMetaToSink,
-		SendError:          opt.SendError,
-		Qos:                opt.Qos,
-		CheckpointInterval: opt.CheckpointInterval,
+		IsEventTime:              opt.IsEventTime,
+		LateTol:                  opt.LateTol,
+		Concurrency:              opt.Concurrency,
+		BufferLength:             opt.BufferLength,
+		SendMetaToSink:           opt.SendMetaToSink,
+		SendError:                opt.SendError,
+		Qos:                      opt.Qos,
+		CheckpointInterval:       opt.CheckpointInterval,
+		DisableBufferFullDiscard: disableBufferFullDiscard,
 		RestartStrategy: &def.RestartStrategy{
 			Attempts: opt.RestartStrategy.Attempts,
 		},
