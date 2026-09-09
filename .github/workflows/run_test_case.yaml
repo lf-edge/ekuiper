@@ -64,7 +64,13 @@ jobs:
           sudo ./install.sh
 
       - name: Install Merge Tool
-        run: go install github.com/wadey/gocovmerge@latest
+        env:
+          GOWORK: off
+        run: |
+          mkdir -p /tmp/gocovmerge && cd /tmp/gocovmerge
+          go mod init tmpinstall 2>/dev/null || true
+          go get github.com/wadey/gocovmerge@v0.0.0-20160331181800-b5bfa59ec0ad golang.org/x/tools@v0.49.0
+          GOBIN=$HOME/go/bin go install github.com/wadey/gocovmerge
 
       - name: Run test case
         run: |
