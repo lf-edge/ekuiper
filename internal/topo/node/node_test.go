@@ -153,3 +153,24 @@ func BenchmarkBroadcastOutputs(b *testing.B) {
 		})
 	}
 }
+
+func TestSetQosPreservesBufferFullDiscardOption(t *testing.T) {
+	tests := []struct {
+		disableBufferFullDiscard         *bool
+		qos                              def.Qos
+		expectedDisableBufferFullDiscard bool
+	}{
+		{disableBufferFullDiscard: nil, qos: def.AtLeastOnce, expectedDisableBufferFullDiscard: false},
+		{disableBufferFullDiscard: boolPtr(false), qos: def.AtLeastOnce, expectedDisableBufferFullDiscard: false},
+		{disableBufferFullDiscard: boolPtr(true), qos: def.AtLeastOnce, expectedDisableBufferFullDiscard: true},
+	}
+	for _, tt := range tests {
+		n := newDefaultNode("test", &def.RuleOption{DisableBufferFullDiscard: tt.disableBufferFullDiscard})
+		n.SetQos(tt.qos)
+		assert.Equal(t, tt.expectedDisableBufferFullDiscard, n.disableBufferFullDiscard)
+	}
+}
+
+func boolPtr(v bool) *bool {
+	return &v
+}

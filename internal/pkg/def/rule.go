@@ -42,7 +42,7 @@ type RuleOption struct {
 	CronDatetimeRange         []schedule.DatetimeRange `json:"cronDatetimeRange,omitempty" yaml:"cronDatetimeRange,omitempty"`
 	PlanOptimizeStrategy      *PlanOptimizeStrategy    `json:"planOptimizeStrategy,omitempty" yaml:"planOptimizeStrategy,omitempty"`
 	NotifySub                 bool                     `json:"notifySub,omitempty" yaml:"notifySub,omitempty"`
-	DisableBufferFullDiscard  bool                     `json:"disableBufferFullDiscard,omitempty" yaml:"disableBufferFullDiscard,omitempty"`
+	DisableBufferFullDiscard  *bool                    `json:"disableBufferFullDiscard,omitempty" yaml:"disableBufferFullDiscard,omitempty"`
 	EnableSaveStateBeforeStop bool                     `json:"enableSaveStateBeforeStop,omitempty" yaml:"enableSaveStateBeforeStop,omitempty"`
 	ForceExitTimeout          cast.DurationConf        `json:"forceExitTimeout,omitempty" yaml:"forceExitTimeout,omitempty"`
 	Experiment                *ExpOpts                 `json:"experiment,omitempty" yaml:"experiment,omitempty"`

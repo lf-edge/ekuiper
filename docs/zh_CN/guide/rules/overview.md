@@ -158,7 +158,7 @@ eKuiper 已经内置了丰富的 sink connector 类型，如 mqtt、rest 和 fil
 | enableRuleTracer         | bool: false | 指定规则是否开启规则级别的数据追踪                                                                              |
 | planOptimizeStrategy     | 结构体         | 指定规则是否打开对应优化                                                                                   |
 | sendNilField             | bool: false | 指定规则是否输出值为 nil 的列                                                                              |
-| disableBufferFullDiscard | bool: false | 是否开启禁用缓冲区满了以后丢弃数据的行为                                                                           |
+| disableBufferFullDiscard | bool: false | 是否禁止缓冲区满时丢弃最旧数据，并改为施加背压。QoS 为 1 或 2 时，若未配置该选项，其默认值为 `true`。显式配置的 `false` 仍会生效，但拥塞时可能造成数据丢失。                         |
 
 有关 `qos` 和 `checkpointInterval` 的详细信息，请查看[状态和容错](./state_and_fault_tolerance.md)。
 

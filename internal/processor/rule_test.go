@@ -143,14 +143,15 @@ func TestRuleActionParse_Apply(t *testing.T) {
 					},
 				},
 				Options: &def.RuleOption{
-					IsEventTime:        true,
-					LateTol:            cast.DurationConf(time.Second),
-					Concurrency:        1,
-					BufferLength:       10240,
-					SendMetaToSink:     false,
-					Qos:                def.ExactlyOnce,
-					CheckpointInterval: cast.DurationConf(time.Minute),
-					SendError:          false,
+					IsEventTime:              true,
+					LateTol:                  cast.DurationConf(time.Second),
+					Concurrency:              1,
+					BufferLength:             10240,
+					SendMetaToSink:           false,
+					Qos:                      def.ExactlyOnce,
+					CheckpointInterval:       cast.DurationConf(time.Minute),
+					SendError:                false,
+					DisableBufferFullDiscard: boolPtr(true),
 					RestartStrategy: &def.RestartStrategy{
 						Attempts: 0,
 					},
@@ -223,6 +224,48 @@ func TestRuleValidation(t *testing.T) {
 	}
 }
 
+func TestCloneDisableBufferFullDiscard(t *testing.T) {
+	disableBufferFullDiscard := false
+	original := def.RuleOption{
+		DisableBufferFullDiscard: &disableBufferFullDiscard,
+		RestartStrategy:          &def.RestartStrategy{},
+	}
+
+	cloned := clone(original)
+	require.NotNil(t, cloned.DisableBufferFullDiscard)
+	assert.False(t, *cloned.DisableBufferFullDiscard)
+	assert.NotSame(t, original.DisableBufferFullDiscard, cloned.DisableBufferFullDiscard)
+
+	*cloned.DisableBufferFullDiscard = true
+	assert.False(t, *original.DisableBufferFullDiscard)
+}
+
+func TestExplicitBufferFullDiscardWithQoS(t *testing.T) {
+	rule, err := (&RuleProcessor{}).GetRuleByJson("ruleTest", `{
+		"id": "ruleTest",
+		"sql": "SELECT * FROM demo",
+		"actions": [{"log": {}}],
+		"options": {"qos": 1, "disableBufferFullDiscard": false}
+	}`)
+
+	require.NoError(t, err)
+	require.NotNil(t, rule.Options.DisableBufferFullDiscard)
+	assert.False(t, *rule.Options.DisableBufferFullDiscard)
+}
+
+func TestStoredRuleAppliesQoSBufferDefault(t *testing.T) {
+	rule, err := (&RuleProcessor{}).GetRuleByJsonValidated("ruleTest", `{
+		"id": "ruleTest",
+		"sql": "SELECT * FROM demo",
+		"actions": [{"log": {}}],
+		"options": {"qos": 1}
+	}`)
+
+	require.NoError(t, err)
+	require.NotNil(t, rule.Options.DisableBufferFullDiscard)
+	assert.True(t, *rule.Options.DisableBufferFullDiscard)
+}
+
 func TestAllRules(t *testing.T) {
 	expected := map[string]string{
 		"rule1": "{\"id\": \"rule1\",\"sql\": \"SELECT * FROM demo\",\"actions\": [{  \"log\": {}}]}",
@@ -256,4 +299,8 @@ func TestAllRules(t *testing.T) {
 		return
 	}
 	assert.Equal(t, expected, all)
+}
+
+func boolPtr(b bool) *bool {
+	return &b
 }
