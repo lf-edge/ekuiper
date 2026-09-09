@@ -70,7 +70,6 @@ func (s *SQLConnection) Reconnect() error {
 			return nil
 		}
 		_ = s.db.Close()
-		s.db = nil
 	}
 	if err := s.dial(nil); err != nil {
 		return fmt.Errorf("reconnect sql err:%v", err)
