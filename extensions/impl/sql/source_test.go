@@ -29,6 +29,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/extensions/impl/sql/testx"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
+	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 	"github.com/lf-edge/ekuiper/v2/pkg/store"
@@ -155,8 +156,7 @@ func TestSQLConnectionConnect(t *testing.T) {
 	sqlSource.Close(ctx)
 }
 
-func TestSQLConnectionErr(t *testing.T) {
-	connection.InitConnectionManager4Test()
+func TestSQLConnectionNetworkErrorIsRetryable(t *testing.T) {
 	ctx := mockContext.NewMockContext("1", "2")
 	props := map[string]interface{}{
 		"interval": "1s",
@@ -165,11 +165,52 @@ func TestSQLConnectionErr(t *testing.T) {
 			"templateSql": "select a,b from t",
 		},
 	}
-	sqlSource := GetSource()
-	require.NoError(t, sqlSource.Provision(ctx, props))
-	require.Error(t, sqlSource.Connect(ctx, func(status string, message string) {
-		// do nothing
-	}))
+	conn := client.CreateConnection(ctx)
+	require.NoError(t, conn.Provision(ctx, "sql-network-error", props))
+	err := conn.Dial(ctx)
+	require.Error(t, err)
+	require.True(t, errorx.IsIOError(err))
+	require.Nil(t, conn.(*client.SQLConnection).GetDB())
+}
+
+func TestSQLNamedConnectionReconnectAfterStartupFailure(t *testing.T) {
+	connection.InitConnectionManager4Test()
+	ctx := mockContext.NewMockContext("1", "2")
+	port := 33062
+	props := map[string]any{
+		"dburl": fmt.Sprintf("mysql://root:@%v:%v/test", address, port),
+	}
+
+	cw, err := connection.CreateNamedConnection(ctx, "sql-reconnect", "sql", props)
+	require.NoError(t, err)
+
+	// Ensure the first dial observes the unavailable database before it is
+	// started. The connection wrapper must remain retryable instead of caching
+	// the failed result.
+	time.Sleep(200 * time.Millisecond)
+	s, err := testx.SetupEmbeddedMysqlServer(address, port)
+	require.NoError(t, err)
+	defer func() {
+		s.Close()
+		require.NoError(t, connection.DropNameConnection(ctx, "sql-reconnect"))
+	}()
+
+	connected := make(chan error, 1)
+	go func() {
+		conn, err := cw.Wait(ctx)
+		if conn == nil {
+			connected <- err
+			return
+		}
+		connected <- conn.Ping(ctx)
+	}()
+
+	select {
+	case err := <-connected:
+		require.NoError(t, err)
+	case <-time.After(15 * time.Second):
+		t.Fatal("named SQL connection did not reconnect after database recovery")
+	}
 }
 
 func TestSQLSourceRewind(t *testing.T) {

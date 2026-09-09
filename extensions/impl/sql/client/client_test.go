@@ -51,3 +51,29 @@ func TestSQLClient(t *testing.T) {
 	require.NoError(t, conn.Ping(ctx))
 	conn.Close(ctx)
 }
+
+func TestSQLReconnectFailureKeepsDBHandle(t *testing.T) {
+	serverPort := 33063
+	s, err := testx.SetupEmbeddedMysqlServer(address, serverPort)
+	require.NoError(t, err)
+	defer s.Close()
+
+	ctx := mockContext.NewMockContext("1", "2")
+	conn := CreateConnection(ctx)
+	require.NoError(t, conn.Provision(ctx, "test", map[string]any{
+		"dburl": fmt.Sprintf("mysql://root:@%v:%v/test", address, serverPort),
+	}))
+	require.NoError(t, conn.Dial(ctx))
+	sconn := conn.(*SQLConnection)
+
+	// Simulate a runtime disconnect and make the replacement endpoint fail.
+	// The second consumer shares the same SQLConnection instance.
+	_ = sconn.db.Close()
+	sconn.url = fmt.Sprintf("mysql://root:@%v:%v/test", address, serverPort+1)
+
+	require.Error(t, sconn.Reconnect())
+	sharedDB := sconn.GetDB()
+	require.NotNil(t, sharedDB)
+	_, err = sharedDB.Query("select 1")
+	require.Error(t, err)
+}
