@@ -15,6 +15,7 @@
 package xsql
 
 import (
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -50,10 +51,10 @@ func GetStatementFromSql(sql string) (stmt *ast.SelectStatement, err error) {
 	}()
 	parser := NewParser(strings.NewReader(sql))
 	if stmt, err := Language.Parse(parser); err != nil {
-		return nil, fmt.Errorf("Parse SQL %s error: %s.", sql, err)
+		return nil, fmt.Errorf("Parse SQL error (bytes=%d, sha256=%x): %s.", len(sql), sha256.Sum256(cast.StringToBytes(sql)), err)
 	} else {
 		if r, ok := stmt.(*ast.SelectStatement); !ok {
-			return nil, fmt.Errorf("SQL %s is not a select statement.", sql)
+			return nil, fmt.Errorf("SQL is not a select statement (bytes=%d, sha256=%x).", len(sql), sha256.Sum256(cast.StringToBytes(sql)))
 		} else {
 			return r, nil
 		}

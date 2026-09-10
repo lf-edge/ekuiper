@@ -15,6 +15,9 @@
 package processor
 
 import (
+	"crypto/sha256"
+	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -221,6 +224,17 @@ func TestRuleValidation(t *testing.T) {
 			require.EqualError(t, e, tt.err)
 		})
 	}
+}
+
+func TestParseLargeRuleDoesNotIncludeInputInError(t *testing.T) {
+	ruleJSON := `{"id":"cold","sql":"` + strings.Repeat("field,", 50_000) + "\x02" + `"}`
+	p := NewRuleProcessor()
+	_, err := p.GetRuleByJsonValidated("cold", ruleJSON)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), fmt.Sprintf("bytes=%d, sha256=%x", len(ruleJSON), sha256.Sum256([]byte(ruleJSON))))
+	require.Contains(t, err.Error(), "offset=")
+	require.NotContains(t, err.Error(), strings.Repeat("field,", 10))
+	require.Less(t, len(err.Error()), 1024)
 }
 
 func TestAllRules(t *testing.T) {
