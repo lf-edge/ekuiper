@@ -53,6 +53,13 @@ func (n *SwitchNode) AddOutput(output chan interface{}, name string) error {
 	return n.outputNodes[0].AddOutput(output, name)
 }
 
+func (n *SwitchNode) AddOutputWithPolicy(output chan any, name string, disableBufferFullDiscard bool) error {
+	if len(n.outputNodes) == 0 { // should never happen
+		return fmt.Errorf("no output node is available")
+	}
+	return n.outputNodes[0].AddOutputWithPolicy(output, name, disableBufferFullDiscard)
+}
+
 func NewSwitchNode(name string, conf *SwitchConfig, options *def.RuleOption) (*SwitchNode, error) {
 	sn := &SwitchNode{
 		conf: conf,

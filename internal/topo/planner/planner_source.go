@@ -229,7 +229,9 @@ func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, option
 			srcSubtopo.AddSrc(srcConnNode)
 			subInputs := []node.Emitter{srcSubtopo}
 			for _, e := range ops {
-				srcSubtopo.AddOperator(subInputs, e)
+				if err := srcSubtopo.AddOperator(subInputs, e); err != nil {
+					return err
+				}
 				subInputs = []node.Emitter{e}
 			}
 			return nil

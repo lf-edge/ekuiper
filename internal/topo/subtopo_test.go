@@ -54,6 +54,7 @@ func TestSubtopoLC(t *testing.T) {
 	assert.Equal(t, 1, subTopo.OpsCount())
 	// Test linkage
 	assert.Equal(t, 1, len(srcNode.outputs))
+	assert.Equal(t, []bool{true}, srcNode.policies)
 	var tch chan<- any = opNode.ch
 	assert.Equal(t, tch, srcNode.outputs[0])
 	ptopo := &def.PrintableTopo{
@@ -114,6 +115,29 @@ func TestSubtopoLC(t *testing.T) {
 	subTopo2.Close(ctx2)
 	assert.Equal(t, 0, len(subTopo.refRules))
 	assert.Equal(t, 0, len(subTopoPool))
+}
+
+func TestTopoSharedOutputUsesRulePolicy(t *testing.T) {
+	for _, tc := range []struct {
+		name   string
+		policy bool
+	}{
+		{name: "lossy", policy: false},
+		{name: "lossless", policy: true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			tail := &mockOp{name: "tail", ch: make(chan any)}
+			shared := &SrcSubTopo{name: "shared", tail: tail}
+			policy := tc.policy
+			tp, err := NewWithNameAndOptions("rule", &def.RuleOption{DisableBufferFullDiscard: &policy})
+			assert.NoError(t, err)
+
+			output := make(chan any)
+			assert.NoError(t, tp.addOutput(shared, output, "rule.output"))
+			assert.Equal(t, []bool{tc.policy}, tail.policies)
+			assert.Len(t, tail.outputs, 1)
+		})
+	}
 }
 
 func TestGetOrCreateSubTopoDoesNotExposePartialSubTopo(t *testing.T) {
@@ -349,6 +373,7 @@ func TestSubtopoConcurrency(t *testing.T) {
 type mockSrc struct {
 	name      string
 	outputs   []chan<- any
+	policies  []bool
 	sentError atomic.Bool
 }
 
@@ -369,6 +394,12 @@ func (m *mockSrc) SetQos(qos def.Qos) {
 
 func (m *mockSrc) AddOutput(c chan interface{}, s string) error {
 	m.outputs = append(m.outputs, c)
+	return nil
+}
+
+func (m *mockSrc) AddOutputWithPolicy(c chan any, _ string, disableBufferFullDiscard bool) error {
+	m.outputs = append(m.outputs, c)
+	m.policies = append(m.policies, disableBufferFullDiscard)
 	return nil
 }
 
@@ -409,6 +440,7 @@ type mockOp struct {
 	name        string
 	ch          chan any
 	outputs     []chan<- any
+	policies    []bool
 	inputC      int
 	schemaCount int
 }
@@ -422,6 +454,12 @@ func (m *mockOp) RemoveOutput(s string) error {
 
 func (m *mockOp) AddOutput(c chan interface{}, s string) error {
 	m.outputs = append(m.outputs, c)
+	return nil
+}
+
+func (m *mockOp) AddOutputWithPolicy(c chan any, _ string, disableBufferFullDiscard bool) error {
+	m.outputs = append(m.outputs, c)
+	m.policies = append(m.policies, disableBufferFullDiscard)
 	return nil
 }
 

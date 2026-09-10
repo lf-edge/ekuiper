@@ -24,6 +24,9 @@ import (
 
 type Emitter interface {
 	AddOutput(chan any, string) error
+	// AddOutputWithPolicy selects whether this output waits for capacity or
+	// discards the oldest item when its buffer is full.
+	AddOutputWithPolicy(chan any, string, bool) error
 	RemoveOutput(string) error
 }
 

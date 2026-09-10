@@ -26,7 +26,6 @@ import (
 
 	"github.com/gdexlab/go-render/render"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/io/mqtt"
@@ -2631,6 +2630,27 @@ func Test_createLogicalPlan(t *testing.T) {
 	}
 }
 
+func TestCreateLogicalPlanAllowsLosslessSharedStream(t *testing.T) {
+	kv, err := store.GetKV("stream")
+	assert.NoError(t, err)
+	const streamName = "losslessShared"
+	streamInfo, err := json.Marshal(&xsql.StreamInfo{
+		StreamType: ast.TypeStream,
+		Statement:  `CREATE STREAM losslessShared () WITH (DATASOURCE="losslessShared", FORMAT="json", SHARED="true");`,
+	})
+	assert.NoError(t, err)
+	assert.NoError(t, kv.Set(streamName, string(streamInfo)))
+	t.Cleanup(func() { _ = kv.Delete(streamName) })
+
+	stmt, err := xsql.NewParser(strings.NewReader("SELECT * FROM losslessShared")).Parse()
+	assert.NoError(t, err)
+	disableBufferFullDiscard := true
+	_, err = CreateLogicalPlan(stmt, &def.RuleOption{
+		DisableBufferFullDiscard: &disableBufferFullDiscard,
+	}, kv)
+	assert.NoError(t, err)
+}
+
 func Test_createLogicalPlanSchemaless(t *testing.T) {
 	kv, err := store.GetKV("stream")
 	if err != nil {
@@ -4659,22 +4679,4 @@ func TestTransformSourceNode(t *testing.T) {
 			assert.Equal(t, len(tc.ops), len(ops))
 		})
 	}
-}
-
-func TestCheckSharedSourceOption(t *testing.T) {
-	s1 := []*streamInfo{
-		{
-			stmt: &ast.StreamStmt{
-				Name: "s1",
-				Options: &ast.Options{
-					SHARED: true,
-				},
-			},
-		},
-	}
-	b := true
-	r1 := &def.RuleOption{
-		DisableBufferFullDiscard: &b,
-	}
-	require.Error(t, checkSharedSourceOption(s1, r1))
 }

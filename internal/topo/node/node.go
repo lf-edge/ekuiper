@@ -47,7 +47,7 @@ type defaultNode struct {
 	mu          syncx.Mutex
 	qos         def.Qos
 	outputMu    syncx.RWMutex
-	outputs     map[string]chan any
+	outputs     map[string]namedOutput
 	outputSlice []namedOutput
 	opsWg       *sync.WaitGroup
 	// tracing state
@@ -64,7 +64,7 @@ func newDefaultNode(name string, options *def.RuleOption) *defaultNode {
 	}
 	return &defaultNode{
 		name:                     name,
-		outputs:                  make(map[string]chan any),
+		outputs:                  make(map[string]namedOutput),
 		concurrency:              c,
 		sendError:                options.SendError,
 		disableBufferFullDiscard: options.DisableBufferFullDiscard != nil && *options.DisableBufferFullDiscard,
@@ -72,9 +72,21 @@ func newDefaultNode(name string, options *def.RuleOption) *defaultNode {
 }
 
 func (o *defaultNode) AddOutput(output chan any, name string) error {
+	return o.AddOutputWithPolicy(output, name, o.disableBufferFullDiscard)
+}
+
+func (o *defaultNode) AddOutputWithPolicy(output chan any, name string, disableBufferFullDiscard bool) error {
 	o.outputMu.Lock()
 	defer o.outputMu.Unlock()
-	o.outputs[name] = output
+	if old, ok := o.outputs[name]; ok {
+		close(old.done)
+	}
+	o.outputs[name] = namedOutput{
+		name:                     name,
+		ch:                       output,
+		done:                     make(chan struct{}),
+		disableBufferFullDiscard: disableBufferFullDiscard,
+	}
 	o.rebuildOutputSlice()
 	return nil
 }
@@ -83,8 +95,9 @@ func (o *defaultNode) RemoveOutput(name string) error {
 	o.outputMu.Lock()
 	defer o.outputMu.Unlock()
 	namePre := name + "_"
-	for n := range o.outputs {
+	for n, output := range o.outputs {
 		if strings.HasPrefix(n, namePre) {
+			close(output.done)
 			delete(o.outputs, n)
 			if o.ctx != nil {
 				o.ctx.GetLogger().Infof("Remove output %s from %s", n, o.name)
@@ -96,16 +109,18 @@ func (o *defaultNode) RemoveOutput(name string) error {
 }
 
 type namedOutput struct {
-	name string
-	ch   chan any
+	name                     string
+	ch                       chan any
+	done                     chan struct{}
+	disableBufferFullDiscard bool
 }
 
 // rebuildOutputSlice refreshes the broadcast view of outputs.
 // The caller must hold outputMu for writing.
 func (o *defaultNode) rebuildOutputSlice() {
 	outputs := make([]namedOutput, 0, len(o.outputs))
-	for name, ch := range o.outputs {
-		outputs = append(outputs, namedOutput{name: name, ch: ch})
+	for _, output := range o.outputs {
+		outputs = append(outputs, output)
 	}
 	o.outputSlice = outputs
 }
@@ -156,8 +171,8 @@ func (o *defaultNode) BroadcastCustomized(val any, broadcastFunc func(val any)) 
 
 func (o *defaultNode) doBroadcast(val any) {
 	o.outputMu.RLock()
-	defer o.outputMu.RUnlock()
 	outputs := o.outputSlice
+	o.outputMu.RUnlock()
 	if len(outputs) == 0 {
 		return
 	}
@@ -201,9 +216,11 @@ func (o *defaultNode) doBroadcast(val any) {
 			vt.SetTracerCtx(o.spanCtx)
 		}
 		// wait buffer consume if buffer full
-		if o.disableBufferFullDiscard {
+		if output.disableBufferFullDiscard {
 			select {
 			case out <- valCopy:
+				continue
+			case <-output.done:
 				continue
 			case <-done:
 				return
@@ -215,11 +232,21 @@ func (o *defaultNode) doBroadcast(val any) {
 			select {
 			case out <- valCopy:
 				break forlabel
+			case <-output.done:
+				break forlabel
 			case <-done:
 				return
 			default:
-				// read the oldest to drop.
-				oldest := <-out
+				// Read the oldest to drop. Also observe cancellation because
+				// an unbuffered output may not have an oldest value to read.
+				var oldest any
+				select {
+				case oldest = <-out:
+				case <-output.done:
+					break forlabel
+				case <-done:
+					return
+				}
 				// record the error and stop propagating to avoid infinite loop
 				o.onErrorOpt(o.ctx, fmt.Errorf("buffer full, drop message %v from %s to %s", xsql.GetId(oldest), o.name, output.name), false)
 			}
