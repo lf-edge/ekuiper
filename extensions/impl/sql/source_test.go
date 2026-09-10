@@ -21,6 +21,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/dolthub/go-mysql-server/server"
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/pingcap/failpoint"
 	"github.com/stretchr/testify/require"
@@ -29,6 +30,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/extensions/impl/sql/testx"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
+	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 	"github.com/lf-edge/ekuiper/v2/pkg/store"
@@ -155,8 +157,7 @@ func TestSQLConnectionConnect(t *testing.T) {
 	sqlSource.Close(ctx)
 }
 
-func TestSQLConnectionErr(t *testing.T) {
-	connection.InitConnectionManager4Test()
+func TestSQLConnectionNetworkErrorIsRetryable(t *testing.T) {
 	ctx := mockContext.NewMockContext("1", "2")
 	props := map[string]interface{}{
 		"interval": "1s",
@@ -165,11 +166,52 @@ func TestSQLConnectionErr(t *testing.T) {
 			"templateSql": "select a,b from t",
 		},
 	}
-	sqlSource := GetSource()
-	require.NoError(t, sqlSource.Provision(ctx, props))
-	require.Error(t, sqlSource.Connect(ctx, func(status string, message string) {
-		// do nothing
-	}))
+	conn := client.CreateConnection(ctx)
+	require.NoError(t, conn.Provision(ctx, "sql-network-error", props))
+	err := conn.Dial(ctx)
+	require.Error(t, err)
+	require.True(t, errorx.IsIOError(err))
+	require.Nil(t, conn.(*client.SQLConnection).GetDB())
+}
+
+func TestSQLNamedConnectionReconnectAfterStartupFailure(t *testing.T) {
+	connection.InitConnectionManager4Test()
+	ctx := mockContext.NewMockContext("1", "2")
+	port := 33062
+	props := map[string]any{
+		"dburl": fmt.Sprintf("mysql://root:@%v:%v/test", address, port),
+	}
+
+	cw, err := connection.CreateNamedConnection(ctx, "sql-reconnect", "sql", props)
+	require.NoError(t, err)
+
+	// Ensure the first dial observes the unavailable database before it is
+	// started. The connection wrapper must remain retryable instead of caching
+	// the failed result.
+	time.Sleep(200 * time.Millisecond)
+	s, err := testx.SetupEmbeddedMysqlServer(address, port)
+	require.NoError(t, err)
+	defer func() {
+		s.Close()
+		require.NoError(t, connection.DropNameConnection(ctx, "sql-reconnect"))
+	}()
+
+	connected := make(chan error, 1)
+	go func() {
+		conn, err := cw.Wait(ctx)
+		if conn == nil {
+			connected <- err
+			return
+		}
+		connected <- conn.Ping(ctx)
+	}()
+
+	select {
+	case err := <-connected:
+		require.NoError(t, err)
+	case <-time.After(15 * time.Second):
+		t.Fatal("named SQL connection did not reconnect after database recovery")
+	}
 }
 
 func TestSQLSourceRewind(t *testing.T) {
@@ -269,24 +311,32 @@ func TestSQLReconnect(t *testing.T) {
 	}
 	sqlSource := GetSource()
 	require.NoError(t, sqlSource.Provision(ctx, props))
-	require.Error(t, sqlSource.Connect(ctx, func(status string, message string) {
+
+	// SQL connections now retry initial network failures in the connection
+	// pool. Start the database after Connect begins and verify that Connect
+	// returns once the connection is recovered.
+	serverReady := make(chan struct {
+		server *server.Server
+		err    error
+	}, 1)
+	go func() {
+		time.Sleep(200 * time.Millisecond)
+		s, err := testx.SetupEmbeddedMysqlServer(address, port)
+		serverReady <- struct {
+			server *server.Server
+			err    error
+		}{server: s, err: err}
+	}()
+
+	require.NoError(t, sqlSource.Connect(ctx, func(status string, message string) {
 		// do nothing
 	}))
+	result := <-serverReady
+	require.NoError(t, result.err)
+	defer result.server.Close()
+
 	sqlConnector, ok := sqlSource.(*SQLSourceConnector)
 	require.True(t, ok)
-	sqlConnector.queryData(ctx, time.Now(), func(ctx api.StreamContext, data any, meta map[string]any, ts time.Time) {}, func(ctx api.StreamContext, err error) {})
-	require.True(t, sqlConnector.needReconnect)
-
-	sqlConnector.queryData(ctx, time.Now(), func(ctx api.StreamContext, data any, meta map[string]any, ts time.Time) {}, func(ctx api.StreamContext, err error) {
-		require.Error(t, err)
-	})
-	require.True(t, sqlConnector.needReconnect)
-
-	// start server then reconnect
-	s, err := testx.SetupEmbeddedMysqlServer(address, port)
-	require.NoError(t, err)
-	defer s.Close()
-	sqlConnector.queryData(ctx, time.Now(), func(ctx api.StreamContext, data any, meta map[string]any, ts time.Time) {}, func(ctx api.StreamContext, err error) {})
 	require.False(t, sqlConnector.needReconnect)
 }
 

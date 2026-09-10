@@ -21,6 +21,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
+	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
 
@@ -64,17 +65,16 @@ func (s *SQLConnection) Dial(ctx api.StreamContext) error {
 func (s *SQLConnection) Reconnect() error {
 	s.Lock()
 	defer s.Unlock()
-	if err := s.db.Ping(); err == nil {
-		return nil
+	if s.db != nil {
+		if err := s.db.Ping(); err == nil {
+			return nil
+		}
+		_ = s.db.Close()
 	}
-	oldDB := s.db
-	oldDB.Close()
-	db, err := openDB(s.url)
-	if err != nil {
+	if err := s.dial(nil); err != nil {
 		return fmt.Errorf("reconnect sql err:%v", err)
 	}
-	s.db = db
-	return s.db.Ping()
+	return nil
 }
 
 func (s *SQLConnection) GetDB() *sql.DB {
@@ -106,7 +106,9 @@ func (s *SQLConnection) Close(ctx api.StreamContext) error {
 		return nil
 	}
 	ctx.GetLogger().Infof("close db with url:%v", s.url)
-	s.db.Close()
+	if s.db != nil {
+		_ = s.db.Close()
+	}
 	s.closed = true
 	return nil
 }
@@ -120,6 +122,12 @@ func (s *SQLConnection) dial(ctx api.StreamContext) error {
 	if err != nil {
 		return fmt.Errorf("create connection err:%v", err)
 	}
+	if err := db.Ping(); err != nil {
+		_ = db.Close()
+		// A database URL can be syntactically valid while the database is
+		// temporarily unreachable. Let the connection pool retry this case.
+		return errorx.NewIOErr(fmt.Sprintf("create connection err:%v", err))
+	}
 	s.db = db
-	return s.db.Ping()
+	return nil
 }
