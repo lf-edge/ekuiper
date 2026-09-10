@@ -15,6 +15,7 @@
 package connection
 
 import (
+	stdContext "context"
 	"sync"
 	"sync/atomic"
 
@@ -34,6 +35,28 @@ type ConnWrapper struct {
 	l           syncx.RWMutex
 	readCh      chan struct{}
 	detachCh    chan struct{}
+	cancel      stdContext.CancelFunc
+}
+
+// close cancels pending retries and also closes a connection whose Dial finishes
+// after it has been removed from the pool.
+func (cw *ConnWrapper) close(ctx api.StreamContext) {
+	cw.cancel()
+	cleanup := func() {
+		<-cw.readCh
+		cw.l.RLock()
+		conn := cw.conn
+		cw.l.RUnlock()
+		if conn != nil {
+			conn.Close(ctx)
+		}
+	}
+	select {
+	case <-cw.readCh:
+		cleanup()
+	default:
+		go cleanup()
+	}
 }
 
 func (cw *ConnWrapper) setConn(conn modules.Connection, err error) {
@@ -63,10 +86,12 @@ func (cw *ConnWrapper) IsInitialized() bool {
 }
 
 func newConnWrapper(ctx api.StreamContext, meta *Meta) *ConnWrapper {
+	ctx, cancel := ctx.WithCancel()
 	cw := &ConnWrapper{
 		ID:       meta.ID,
 		readCh:   make(chan struct{}),
 		detachCh: make(chan struct{}),
+		cancel:   cancel,
 	}
 	go func() {
 		conn, err := createConnection(ctx, meta)
