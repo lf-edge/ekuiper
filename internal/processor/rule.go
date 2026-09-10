@@ -171,7 +171,6 @@ func (p *RuleProcessor) GetRuleByJsonValidated(id, ruleJson string) (*def.Rule, 
 	if rule.Options == nil {
 		rule.Options = clone(opt)
 	}
-	conf.ApplyRuleOptionDefaults(rule.Options)
 	return rule, nil
 }
 

@@ -648,6 +648,33 @@ func TestPlannerGraphValidate(t *testing.T) {
 	}
 }
 
+func TestGraphStreamBufferPolicy(t *testing.T) {
+	rule := &def.Rule{
+		Options: &def.RuleOption{Qos: def.AtLeastOnce},
+		Graph: &def.RuleGraph{
+			Topo: &def.PrintableTopo{Sources: []string{"source1"}},
+			Nodes: map[string]*def.GraphNode{
+				"source1": {
+					Type: "source",
+					Props: map[string]any{
+						"bufferFullPolicy": ast.BufferFullPolicyDropOldest,
+					},
+				},
+			},
+		},
+	}
+	streams, err := graphStreamInfos(rule)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := resolveBufferFullPolicy(streams, rule.Options); err != nil {
+		t.Fatal(err)
+	}
+	if rule.Options.DisableBufferFullDiscard == nil || *rule.Options.DisableBufferFullDiscard {
+		t.Fatal("graph stream dropOldest policy was not applied to the rule")
+	}
+}
+
 func TestPlannerGraphWithStream(t *testing.T) {
 	store, err := store.GetKV("stream")
 	if err != nil {

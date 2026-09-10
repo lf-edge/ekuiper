@@ -55,6 +55,7 @@ CREATE STREAM
 | CONF_KEY         | 是  | 如果需要配置其他配置项，请在此处指定 config 键。 更多信息，请参见 [CONF_KEY 配置](#conf_key-配置) 。                                                                                                     |
 | EXTRA            | 是  | 快捷配置，覆盖 CONF_KEY 对应文件中的配置项。 更多信息，请参见 [Extra 配置](#extra-配置) 。                                                                                                            |
 | SHARED           | 是  | 是否在使用该流的规则中共享源的实例                                                                                                                                                       |
+| BUFFER_FULL_POLICY | 是 | 使用该流的规则所采用的缓冲区策略：`block` 表示等待容量并施加背压，`dropOldest` 表示丢弃缓冲区中最旧的数据。同一规则使用的所有流必须解析为相同策略。共享流若要启用 `block`，必须在流定义中配置；未配置时保留历史 `dropOldest` 行为。 |
 | TIMESTAMP        | 是  | 代表该事件时间戳的字段名。如果有设置，则使用此流的规则将采用事件时间；否则将采用处理时间。详情请看[时间戳管理](../../sqls/windows.md#时间戳管理)。                                                                                  |
 | TIMESTAMP_FORMAT | 是  | 字符串和时间格式转换时使用的默认格式。                                                                                                                                                     |
 | VERSION          | 是  | 流的版本号，详情情况[版本控制](#版本控制)。                                                                                                                                                |
@@ -151,6 +152,16 @@ demo (
         ...
     ) WITH (DATASOURCE="test", FORMAT="JSON", KEY="USERID", SHARED="true");
 ```
+
+若要在缓冲区满时施加背压而不是丢弃数据，必须在共享流上配置策略：
+
+```text
+demo (
+        ...
+    ) WITH (DATASOURCE="test", FORMAT="JSON", SHARED="true", BUFFER_FULL_POLICY="block");
+```
+
+该策略同时作用于共享子拓扑及所有引用它的规则。共享流未配置该属性时，eKuiper 保留历史 `dropOldest` 行为。规则级 `disableBufferFullDiscard` 不能为这种共享流启用背压；需要在流定义中配置 `BUFFER_FULL_POLICY`。
 
 使用共享流后，多个规则不再独立。运行时，共享流及其所有下游子规则共同组成一个大的拓扑结构，逻辑上等同于一个大的复合规则。
 功能限制： 由于这种耦合的拓扑结构，部分依赖于规则独立性的功能（例如 Checkpoint）目前无法在共享流的源组件上实现。

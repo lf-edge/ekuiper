@@ -294,19 +294,7 @@ func ValidateRuleOption(option *def.RuleOption) error {
 	if err := schedule.ValidateRanges(option.CronDatetimeRange); err != nil {
 		errs = errors.Join(errs, fmt.Errorf("validate cronDatetimeRange failed, err:%v", err))
 	}
-	ApplyRuleOptionDefaults(option)
-	if option.Qos >= def.AtLeastOnce && !*option.DisableBufferFullDiscard {
-		Log.Warnf("QoS is %d but disableBufferFullDiscard is explicitly set to false; data may be lost during congestion", option.Qos)
-	}
 	return errs
-}
-
-// ApplyRuleOptionDefaults applies defaults that depend on other rule options.
-func ApplyRuleOptionDefaults(option *def.RuleOption) {
-	if option.Qos >= def.AtLeastOnce && option.DisableBufferFullDiscard == nil {
-		disableBufferFullDiscard := true
-		option.DisableBufferFullDiscard = &disableBufferFullDiscard
-	}
 }
 
 func init() {

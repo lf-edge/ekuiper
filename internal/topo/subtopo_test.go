@@ -39,7 +39,7 @@ func TestSubtopoLC(t *testing.T) {
 	opNode := &mockOp{name: "op1", ch: make(chan any)}
 	subTopo, err := GetOrCreateSubTopo(ctx1, "lc", false, func(subTopo *SrcSubTopo) error {
 		subTopo.AddSrc(srcNode)
-		subTopo.AddOperator([]node.Emitter{srcNode}, opNode)
+		subTopo.AddOperator([]node.Emitter{srcNode}, opNode, true)
 		return nil
 	})
 	assert.NoError(t, err)
@@ -233,7 +233,7 @@ func TestSubtopoRunError(t *testing.T) {
 	opNode := &mockOp{name: "op1", ch: make(chan any)}
 	subTopo, err := GetOrCreateSubTopo(ctx0, "re", false, func(subTopo *SrcSubTopo) error {
 		subTopo.AddSrc(srcNode)
-		subTopo.AddOperator([]node.Emitter{srcNode}, opNode)
+		subTopo.AddOperator([]node.Emitter{srcNode}, opNode, true)
 		return nil
 	})
 	assert.NoError(t, err)
@@ -282,7 +282,7 @@ func TestErrorClose(t *testing.T) {
 	opNode := &mockOp{name: "op1", ch: make(chan any)}
 	subTopo, err := GetOrCreateSubTopo(ctx0, "ee", false, func(subTopo *SrcSubTopo) error {
 		subTopo.AddSrc(srcNode)
-		subTopo.AddOperator([]node.Emitter{srcNode}, opNode)
+		subTopo.AddOperator([]node.Emitter{srcNode}, opNode, true)
 		return nil
 	})
 	assert.NoError(t, err)
@@ -351,7 +351,7 @@ func TestSubtopoConcurrency(t *testing.T) {
 	opNode := &mockOp{name: "op1", ch: make(chan any)}
 	subTopo, err := GetOrCreateSubTopo(ctx, "shared", false, func(subTopo *SrcSubTopo) error {
 		subTopo.AddSrc(srcNode)
-		subTopo.AddOperator([]node.Emitter{srcNode}, opNode)
+		subTopo.AddOperator([]node.Emitter{srcNode}, opNode, true)
 		return nil
 	})
 	assert.NoError(t, err)
@@ -536,7 +536,7 @@ func TestCancelReleasesSubtopoRef(t *testing.T) {
 	srcNode := &mockSrc{name: "shared"}
 	opNode := &mockOp{name: "op1", ch: make(chan any)}
 	subTopo.AddSrc(srcNode)
-	subTopo.AddOperator([]node.Emitter{srcNode}, opNode)
+	subTopo.AddOperator([]node.Emitter{srcNode}, opNode, true)
 	assert.Equal(t, 1, subTopo.RefCount(), "setup: rule1 should have 1 ref after GetOrCreateSubTopo")
 
 	// Allocate a topo for rule2 that shares the same connection subtopo.

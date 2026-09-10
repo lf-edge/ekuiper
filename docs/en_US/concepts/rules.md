@@ -43,9 +43,9 @@ Due to this shared structure, rules within the DAG will influence each other. Sp
 
 * **Backpressure Propagation:** Backpressure originating from one rule can propagate backward through the shared source
   component.
-* **Wider Impact:** This backpressure on the shared stream will then affect the performance and processing of **all**
-  other rules connected to that same shared source. A lossless subscriber waits for channel capacity instead of dropping
-  the oldest item. Stopping that subscriber detaches it and releases the wait.
+* **Wider Impact:** When a shared stream configures `BUFFER_FULL_POLICY="block"`, backpressure affects the performance and
+  processing of **all** rules connected to that shared source. Stopping a subscriber detaches it and releases any send
+  waiting for that subscriber's channel.
 
 The shared source side still ignores checkpoint. Lossless shared-stream delivery prevents in-memory channel drops, but
 does not provide checkpoint or source-offset recovery for the shared source component.

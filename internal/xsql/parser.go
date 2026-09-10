@@ -1597,6 +1597,15 @@ func (p *Parser) parseStreamOptions() (*ast.Options, error) {
 							} else {
 								opts.SHARED = val == "TRUE"
 							}
+						case ast.BUFFER_FULL_POLICY:
+							switch strings.ToLower(lit3) {
+							case ast.BufferFullPolicyBlock:
+								opts.BUFFER_FULL_POLICY = ast.BufferFullPolicyBlock
+							case strings.ToLower(ast.BufferFullPolicyDropOldest):
+								opts.BUFFER_FULL_POLICY = ast.BufferFullPolicyDropOldest
+							default:
+								return nil, fmt.Errorf("found %q, expect block/dropOldest value in %s option.", lit3, lit1)
+							}
 						case ast.KIND:
 							val := strings.ToLower(lit3)
 							opts.KIND = val
@@ -1638,7 +1647,7 @@ func (p *Parser) parseStreamOptions() (*ast.Options, error) {
 				}
 				return nil, fmt.Errorf("Parenthesis is not matched in options definition.")
 			} else {
-				return nil, fmt.Errorf("found %q, unknown option keys(DATASOURCE|FORMAT|KEY|CONF_KEY|SHARED|STRICT_VALIDATION|TYPE|TIMESTAMP|TIMESTAMP_FORMAT|RETAIN_SIZE|SCHEMAID|EXTRA|VERSION|TEMP|KIND|DELIMITER).", lit1)
+				return nil, fmt.Errorf("found %q, unknown option keys(DATASOURCE|FORMAT|KEY|CONF_KEY|SHARED|BUFFER_FULL_POLICY|STRICT_VALIDATION|TYPE|TIMESTAMP|TIMESTAMP_FORMAT|RETAIN_SIZE|SCHEMAID|EXTRA|VERSION|TEMP|KIND|DELIMITER).", lit1)
 			}
 		}
 	} else {

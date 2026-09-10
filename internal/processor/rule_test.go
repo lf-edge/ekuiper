@@ -143,15 +143,14 @@ func TestRuleActionParse_Apply(t *testing.T) {
 					},
 				},
 				Options: &def.RuleOption{
-					IsEventTime:              true,
-					LateTol:                  cast.DurationConf(time.Second),
-					Concurrency:              1,
-					BufferLength:             10240,
-					SendMetaToSink:           false,
-					Qos:                      def.ExactlyOnce,
-					CheckpointInterval:       cast.DurationConf(time.Minute),
-					SendError:                false,
-					DisableBufferFullDiscard: boolPtr(true),
+					IsEventTime:        true,
+					LateTol:            cast.DurationConf(time.Second),
+					Concurrency:        1,
+					BufferLength:       10240,
+					SendMetaToSink:     false,
+					Qos:                def.ExactlyOnce,
+					CheckpointInterval: cast.DurationConf(time.Minute),
+					SendError:          false,
 					RestartStrategy: &def.RestartStrategy{
 						Attempts: 0,
 					},
@@ -253,7 +252,7 @@ func TestExplicitBufferFullDiscardWithQoS(t *testing.T) {
 	assert.False(t, *rule.Options.DisableBufferFullDiscard)
 }
 
-func TestStoredRuleAppliesQoSBufferDefault(t *testing.T) {
+func TestStoredRulePreservesOmittedBufferPolicy(t *testing.T) {
 	rule, err := (&RuleProcessor{}).GetRuleByJsonValidated("ruleTest", `{
 		"id": "ruleTest",
 		"sql": "SELECT * FROM demo",
@@ -262,8 +261,7 @@ func TestStoredRuleAppliesQoSBufferDefault(t *testing.T) {
 	}`)
 
 	require.NoError(t, err)
-	require.NotNil(t, rule.Options.DisableBufferFullDiscard)
-	assert.True(t, *rule.Options.DisableBufferFullDiscard)
+	assert.Nil(t, rule.Options.DisableBufferFullDiscard)
 }
 
 func TestAllRules(t *testing.T) {

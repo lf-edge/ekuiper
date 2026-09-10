@@ -148,8 +148,7 @@ func TestRuleOptionValidate(t *testing.T) {
 				Qos: def.AtLeastOnce,
 			},
 			e: &def.RuleOption{
-				Qos:                      def.AtLeastOnce,
-				DisableBufferFullDiscard: boolPtr(true),
+				Qos: def.AtLeastOnce,
 			},
 		},
 		{
@@ -157,8 +156,7 @@ func TestRuleOptionValidate(t *testing.T) {
 				Qos: def.ExactlyOnce,
 			},
 			e: &def.RuleOption{
-				Qos:                      def.ExactlyOnce,
-				DisableBufferFullDiscard: boolPtr(true),
+				Qos: def.ExactlyOnce,
 			},
 		},
 		{

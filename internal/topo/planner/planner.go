@@ -576,6 +576,9 @@ func createLogicalPlanFull(stmt *ast.SelectStatement, opt *def.RuleOption, store
 	if err != nil {
 		return nil, nil, nil, err
 	}
+	if err := resolveBufferFullPolicy(streamStmts, opt); err != nil {
+		return nil, nil, nil, err
+	}
 	rewriteRes := rewriteStmt(stmt, opt)
 
 	for _, sInfo := range streamStmts {
@@ -940,6 +943,64 @@ func createLogicalPlanFull(stmt *ast.SelectStatement, opt *def.RuleOption, store
 
 	lp, err := optimize(p, opt)
 	return lp, analyticFuncs, analyticFieldFuncs, err
+}
+
+func resolveBufferFullPolicy(streams []*streamInfo, opt *def.RuleOption) error {
+	if opt == nil {
+		return errors.New("rule options are required")
+	}
+	rulePolicy := ast.BufferFullPolicyDropOldest
+	if opt.DisableBufferFullDiscard != nil {
+		if *opt.DisableBufferFullDiscard {
+			rulePolicy = ast.BufferFullPolicyBlock
+		}
+	} else if opt.Qos >= def.AtLeastOnce {
+		rulePolicy = ast.BufferFullPolicyBlock
+	}
+
+	resolvedPolicy := ""
+	resolvedStream := ""
+	legacyShared := ""
+	for _, stream := range streams {
+		if stream.stmt.StreamType != ast.TypeStream {
+			continue
+		}
+		policy := stream.stmt.Options.BUFFER_FULL_POLICY
+		if policy != "" {
+			switch strings.ToLower(policy) {
+			case ast.BufferFullPolicyBlock:
+				policy = ast.BufferFullPolicyBlock
+			case strings.ToLower(ast.BufferFullPolicyDropOldest):
+				policy = ast.BufferFullPolicyDropOldest
+			default:
+				return fmt.Errorf("stream %s has invalid buffer full policy %q; expected %s or %s", stream.stmt.Name, policy, ast.BufferFullPolicyBlock, ast.BufferFullPolicyDropOldest)
+			}
+		}
+		if policy == "" {
+			if stream.stmt.Options.SHARED {
+				policy = ast.BufferFullPolicyDropOldest
+				legacyShared = string(stream.stmt.Name)
+			} else {
+				policy = rulePolicy
+			}
+		}
+		if resolvedPolicy != "" && resolvedPolicy != policy {
+			return fmt.Errorf("buffer full policy conflict: stream %s uses %s while stream %s uses %s; all streams in a rule must use the same policy", resolvedStream, resolvedPolicy, stream.stmt.Name, policy)
+		}
+		resolvedPolicy = policy
+		resolvedStream = string(stream.stmt.Name)
+	}
+	if resolvedPolicy == "" {
+		resolvedPolicy = rulePolicy
+	}
+	block := resolvedPolicy == ast.BufferFullPolicyBlock
+	opt.DisableBufferFullDiscard = &block
+	if legacyShared != "" && !block && (opt.Qos >= def.AtLeastOnce || rulePolicy == ast.BufferFullPolicyBlock) {
+		conf.Log.Warnf("shared stream %s has no BUFFER_FULL_POLICY; legacy dropOldest behavior is retained for rule with QoS %d or disableBufferFullDiscard=true; set BUFFER_FULL_POLICY=\"block\" on the stream to enable backpressure", legacyShared, opt.Qos)
+	} else if opt.Qos >= def.AtLeastOnce && !block {
+		conf.Log.Warnf("QoS is %d but the resolved buffer full policy is dropOldest; data may be lost during congestion", opt.Qos)
+	}
+	return nil
 }
 
 // extractSRFMapping extracts the set-returning-function in the field

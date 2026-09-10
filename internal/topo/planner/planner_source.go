@@ -228,8 +228,9 @@ func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, option
 		srcSubtopo, err := topo.GetOrCreateSubTopo(ctx, string(t.name), isSliceRule, func(srcSubtopo *topo.SrcSubTopo) error {
 			srcSubtopo.AddSrc(srcConnNode)
 			subInputs := []node.Emitter{srcSubtopo}
+			disableBufferFullDiscard := options.DisableBufferFullDiscard != nil && *options.DisableBufferFullDiscard
 			for _, e := range ops {
-				if err := srcSubtopo.AddOperator(subInputs, e); err != nil {
+				if err := srcSubtopo.AddOperator(subInputs, e, disableBufferFullDiscard); err != nil {
 					return err
 				}
 				subInputs = []node.Emitter{e}

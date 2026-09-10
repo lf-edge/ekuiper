@@ -2630,25 +2630,80 @@ func Test_createLogicalPlan(t *testing.T) {
 	}
 }
 
-func TestCreateLogicalPlanAllowsLosslessSharedStream(t *testing.T) {
+func TestResolveBufferFullPolicy(t *testing.T) {
+	boolPtr := func(v bool) *bool { return &v }
+	stream := func(name, policy string, shared bool) *streamInfo {
+		return &streamInfo{stmt: &ast.StreamStmt{
+			Name:       ast.StreamName(name),
+			StreamType: ast.TypeStream,
+			Options: &ast.Options{
+				SHARED:             shared,
+				BUFFER_FULL_POLICY: policy,
+			},
+		}}
+	}
+	tests := []struct {
+		name     string
+		streams  []*streamInfo
+		options  *def.RuleOption
+		expected bool
+		err      string
+	}{
+		{name: "qos default", streams: []*streamInfo{stream("s1", "", false)}, options: &def.RuleOption{Qos: def.AtLeastOnce}, expected: true},
+		{name: "legacy shared", streams: []*streamInfo{stream("s1", "", true)}, options: &def.RuleOption{Qos: def.AtLeastOnce}, expected: false},
+		{name: "shared block", streams: []*streamInfo{stream("s1", ast.BufferFullPolicyBlock, true)}, options: &def.RuleOption{Qos: def.AtLeastOnce}, expected: true},
+		{name: "stream overrides qos", streams: []*streamInfo{stream("s1", ast.BufferFullPolicyDropOldest, false)}, options: &def.RuleOption{Qos: def.AtLeastOnce}, expected: false},
+		{name: "matching streams", streams: []*streamInfo{stream("s1", ast.BufferFullPolicyBlock, true), stream("s2", ast.BufferFullPolicyBlock, false)}, options: &def.RuleOption{}, expected: true},
+		{name: "unset stream uses rule fallback", streams: []*streamInfo{stream("s1", ast.BufferFullPolicyBlock, true), stream("s2", "", false)}, options: &def.RuleOption{DisableBufferFullDiscard: boolPtr(true)}, expected: true},
+		{name: "rule fallback conflict", streams: []*streamInfo{stream("s1", ast.BufferFullPolicyBlock, true), stream("s2", "", false)}, options: &def.RuleOption{DisableBufferFullDiscard: boolPtr(false)}, err: "buffer full policy conflict: stream s1 uses block while stream s2 uses dropOldest; all streams in a rule must use the same policy"},
+		{name: "stream conflict", streams: []*streamInfo{stream("s1", ast.BufferFullPolicyBlock, true), stream("s2", ast.BufferFullPolicyDropOldest, false)}, options: &def.RuleOption{}, err: "buffer full policy conflict: stream s1 uses block while stream s2 uses dropOldest; all streams in a rule must use the same policy"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := resolveBufferFullPolicy(tt.streams, tt.options)
+			if tt.err != "" {
+				assert.EqualError(t, err, tt.err)
+				return
+			}
+			assert.NoError(t, err)
+			assert.NotNil(t, tt.options.DisableBufferFullDiscard)
+			assert.Equal(t, tt.expected, *tt.options.DisableBufferFullDiscard)
+		})
+	}
+}
+
+func TestCreateLogicalPlanSharedStreamBufferPolicy(t *testing.T) {
 	kv, err := store.GetKV("stream")
 	assert.NoError(t, err)
-	const streamName = "losslessShared"
-	streamInfo, err := json.Marshal(&xsql.StreamInfo{
-		StreamType: ast.TypeStream,
-		Statement:  `CREATE STREAM losslessShared () WITH (DATASOURCE="losslessShared", FORMAT="json", SHARED="true");`,
-	})
-	assert.NoError(t, err)
-	assert.NoError(t, kv.Set(streamName, string(streamInfo)))
-	t.Cleanup(func() { _ = kv.Delete(streamName) })
+	tests := []struct {
+		name          string
+		streamName    string
+		streamOptions string
+		expectedBlock bool
+	}{
+		{name: "legacy shared stream keeps dropping", streamName: "legacySharedPolicy", streamOptions: `SHARED="true"`, expectedBlock: false},
+		{name: "explicit shared stream blocks", streamName: "blockingSharedPolicy", streamOptions: `SHARED="true", BUFFER_FULL_POLICY="block"`, expectedBlock: true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			streamInfo, err := json.Marshal(&xsql.StreamInfo{
+				StreamType: ast.TypeStream,
+				Statement:  fmt.Sprintf(`CREATE STREAM %s () WITH (DATASOURCE="%s", FORMAT="json", %s);`, tt.streamName, tt.streamName, tt.streamOptions),
+			})
+			assert.NoError(t, err)
+			assert.NoError(t, kv.Set(tt.streamName, string(streamInfo)))
+			t.Cleanup(func() { _ = kv.Delete(tt.streamName) })
 
-	stmt, err := xsql.NewParser(strings.NewReader("SELECT * FROM losslessShared")).Parse()
-	assert.NoError(t, err)
-	disableBufferFullDiscard := true
-	_, err = CreateLogicalPlan(stmt, &def.RuleOption{
-		DisableBufferFullDiscard: &disableBufferFullDiscard,
-	}, kv)
-	assert.NoError(t, err)
+			stmt, err := xsql.NewParser(strings.NewReader("SELECT * FROM " + tt.streamName)).Parse()
+			assert.NoError(t, err)
+			options := &def.RuleOption{Qos: def.AtLeastOnce}
+			_, err = CreateLogicalPlan(stmt, options, kv)
+			assert.NoError(t, err)
+			if assert.NotNil(t, options.DisableBufferFullDiscard) {
+				assert.Equal(t, tt.expectedBlock, *options.DisableBufferFullDiscard)
+			}
+		})
+	}
 }
 
 func Test_createLogicalPlanSchemaless(t *testing.T) {

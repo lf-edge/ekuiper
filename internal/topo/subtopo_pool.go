@@ -150,12 +150,10 @@ func (s *SrcSubTopo) AddSrc(src node.DataSourceNode) *SrcSubTopo {
 }
 
 // AddOperator adds an internal operator to the subtopo.
-func (s *SrcSubTopo) AddOperator(inputs []node.Emitter, operator node.OperatorNode) error {
+func (s *SrcSubTopo) AddOperator(inputs []node.Emitter, operator node.OperatorNode, disableBufferFullDiscard bool) error {
 	ch, name := operator.GetInput()
 	for _, input := range inputs {
-		// Channels inside a shared subtopology must never discard data before
-		// it reaches the per-rule fan-out boundary.
-		if err := input.AddOutputWithPolicy(ch, name, true); err != nil {
+		if err := input.AddOutputWithPolicy(ch, name, disableBufferFullDiscard); err != nil {
 			return err
 		}
 		operator.AddInputCount()
