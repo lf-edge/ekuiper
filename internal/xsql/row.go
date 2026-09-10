@@ -601,6 +601,9 @@ func (jt *JoinTuple) AddTuples(tuples []Row) {
 
 func (jt *JoinTuple) doGetValue(key, table string, isVal bool) (interface{}, bool) {
 	tuples := jt.Tuples
+	if len(tuples) == 0 {
+		return nil, false
+	}
 	if table == "" {
 		if len(tuples) > 1 {
 			for _, tuple := range tuples { // TODO support key without modifier?
