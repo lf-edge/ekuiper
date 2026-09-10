@@ -21,6 +21,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/dolthub/go-mysql-server/server"
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/pingcap/failpoint"
 	"github.com/stretchr/testify/require"
@@ -310,24 +311,32 @@ func TestSQLReconnect(t *testing.T) {
 	}
 	sqlSource := GetSource()
 	require.NoError(t, sqlSource.Provision(ctx, props))
-	require.Error(t, sqlSource.Connect(ctx, func(status string, message string) {
+
+	// SQL connections now retry initial network failures in the connection
+	// pool. Start the database after Connect begins and verify that Connect
+	// returns once the connection is recovered.
+	serverReady := make(chan struct {
+		server *server.Server
+		err    error
+	}, 1)
+	go func() {
+		time.Sleep(200 * time.Millisecond)
+		s, err := testx.SetupEmbeddedMysqlServer(address, port)
+		serverReady <- struct {
+			server *server.Server
+			err    error
+		}{server: s, err: err}
+	}()
+
+	require.NoError(t, sqlSource.Connect(ctx, func(status string, message string) {
 		// do nothing
 	}))
+	result := <-serverReady
+	require.NoError(t, result.err)
+	defer result.server.Close()
+
 	sqlConnector, ok := sqlSource.(*SQLSourceConnector)
 	require.True(t, ok)
-	sqlConnector.queryData(ctx, time.Now(), func(ctx api.StreamContext, data any, meta map[string]any, ts time.Time) {}, func(ctx api.StreamContext, err error) {})
-	require.True(t, sqlConnector.needReconnect)
-
-	sqlConnector.queryData(ctx, time.Now(), func(ctx api.StreamContext, data any, meta map[string]any, ts time.Time) {}, func(ctx api.StreamContext, err error) {
-		require.Error(t, err)
-	})
-	require.True(t, sqlConnector.needReconnect)
-
-	// start server then reconnect
-	s, err := testx.SetupEmbeddedMysqlServer(address, port)
-	require.NoError(t, err)
-	defer s.Close()
-	sqlConnector.queryData(ctx, time.Now(), func(ctx api.StreamContext, data any, meta map[string]any, ts time.Time) {}, func(ctx api.StreamContext, err error) {})
 	require.False(t, sqlConnector.needReconnect)
 }
 
