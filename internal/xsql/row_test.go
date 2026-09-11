@@ -24,6 +24,32 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
+func TestJoinTupleLookupAfterPick(t *testing.T) {
+	jt := &JoinTuple{Tuples: []Row{
+		&Tuple{Emitter: "sensor", Message: Message{"temperature": 20}},
+	}}
+	jt.Set("selected", 1)
+	jt.Pick(false, [][]string{{"selected", ""}}, nil, nil, false)
+	if len(jt.Tuples) != 0 {
+		t.Fatal("projection should retain only the calculated field")
+	}
+	if value, ok := jt.Value("selected", ""); !ok || value != 1 {
+		t.Fatalf("calculated field = %v, %v; want 1, true", value, ok)
+	}
+	for _, table := range []string{"", "sensor"} {
+		t.Run("value/"+table, func(t *testing.T) {
+			if value, ok := jt.Value("temperature", table); ok || value != nil {
+				t.Fatalf("discarded field = %v, %v; want nil, false", value, ok)
+			}
+		})
+		t.Run("metadata/"+table, func(t *testing.T) {
+			if value, ok := jt.Meta("topic", table); ok || value != nil {
+				t.Fatalf("missing metadata = %v, %v; want nil, false", value, ok)
+			}
+		})
+	}
+}
+
 // Row valuer, wildcarder test
 // WindowTuples, JoinTuples, GroupTuples are collectionRow
 func TestCollectionRow(t *testing.T) {
