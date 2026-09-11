@@ -1747,7 +1747,7 @@ func TestWindowSQL(t *testing.T) {
 }
 
 func TestAliasSQL(t *testing.T) {
-	streamList := []string{"demo"}
+	streamList := []string{"demo", "demoE2"}
 	HandleStream(false, streamList, t)
 	tests := []RuleTest{
 		{
@@ -1854,6 +1854,30 @@ func TestAliasSQL(t *testing.T) {
 					{
 						"a": 1,
 						"b": int64(2),
+					},
+				},
+			},
+		},
+		{
+			Name: "TestSchemalessInvisibleRawAliasInAnalytic",
+			Sql: `SELECT temp AS input_temp INVISIBLE,
+				CASE WHEN input_temp > 26 THEN 1 ELSE 0 END AS state_condition INVISIBLE,
+				latest(state_condition, 0) AS state
+				FROM demoE2`,
+			R: [][]map[string]interface{}{
+				{
+					{
+						"state": int64(1),
+					},
+				},
+				{
+					{
+						"state": int64(0),
+					},
+				},
+				{
+					{
+						"state": int64(0),
 					},
 				},
 			},
