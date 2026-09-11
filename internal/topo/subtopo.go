@@ -36,8 +36,9 @@ import (
 
 // SrcSubTopo Implements node.SourceNode
 type SrcSubTopo struct {
-	name        string
-	isSliceMode bool
+	name                     string
+	isSliceMode              bool
+	disableBufferFullDiscard bool
 
 	// creation state
 	source node.DataSourceNode
@@ -154,10 +155,6 @@ func (s *SrcSubTopo) IsSliceMode() bool {
 
 func (s *SrcSubTopo) AddOutput(output chan interface{}, name string) error {
 	return s.tail.AddOutput(output, name)
-}
-
-func (s *SrcSubTopo) AddOutputWithPolicy(output chan any, name string, disableBufferFullDiscard bool) error {
-	return s.tail.AddOutputWithPolicy(output, name, disableBufferFullDiscard)
 }
 
 func (s *SrcSubTopo) RemoveOutput(name string) error {

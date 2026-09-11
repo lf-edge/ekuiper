@@ -32,13 +32,14 @@ var (
 	lock        syncx.Mutex
 )
 
-func GetOrCreateSubTopo(ctx api.StreamContext, name string, isSliceMode bool, init func(*SrcSubTopo) error) (*SrcSubTopo, error) {
+func GetOrCreateSubTopo(ctx api.StreamContext, name string, isSliceMode, disableBufferFullDiscard bool, init func(*SrcSubTopo) error) (*SrcSubTopo, error) {
 	lock.Lock()
 	defer lock.Unlock()
 	ac, ok := subTopoPool[name]
 	if !ok {
 		ac = &SrcSubTopo{
-			name: name,
+			name:                     name,
+			disableBufferFullDiscard: disableBufferFullDiscard,
 			topo: &def.PrintableTopo{
 				Sources: make([]string, 0),
 				Edges:   make(map[string][]any),
@@ -58,10 +59,20 @@ func GetOrCreateSubTopo(ctx api.StreamContext, name string, isSliceMode bool, in
 		subTopoPool[name] = ac
 		ctx.GetLogger().Infof("Create SubTopo %s", name)
 	} else {
+		if ac.disableBufferFullDiscard != disableBufferFullDiscard {
+			return nil, fmt.Errorf("subtopo %s buffer full policy conflict: existing policy is %s, requested policy is %s", name, bufferFullPolicyName(ac.disableBufferFullDiscard), bufferFullPolicyName(disableBufferFullDiscard))
+		}
 		ctx.GetLogger().Infof("Load SubTopo %s", name)
 	}
 	ac.Init(ctx)
 	return ac, nil
+}
+
+func bufferFullPolicyName(disableBufferFullDiscard bool) string {
+	if disableBufferFullDiscard {
+		return "block"
+	}
+	return "dropOldest"
 }
 
 func RemoveSubTopo(name string) {
@@ -150,10 +161,10 @@ func (s *SrcSubTopo) AddSrc(src node.DataSourceNode) *SrcSubTopo {
 }
 
 // AddOperator adds an internal operator to the subtopo.
-func (s *SrcSubTopo) AddOperator(inputs []node.Emitter, operator node.OperatorNode, disableBufferFullDiscard bool) error {
+func (s *SrcSubTopo) AddOperator(inputs []node.Emitter, operator node.OperatorNode) error {
 	ch, name := operator.GetInput()
 	for _, input := range inputs {
-		if err := input.AddOutputWithPolicy(ch, name, disableBufferFullDiscard); err != nil {
+		if err := input.AddOutput(ch, name); err != nil {
 			return err
 		}
 		operator.AddInputCount()

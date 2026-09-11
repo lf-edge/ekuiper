@@ -133,11 +133,12 @@ func TestMultipleOutputsBroadcast(t *testing.T) {
 
 func TestBlockingOutputCanBeRemoved(t *testing.T) {
 	ctx := mockContext.NewMockContext("remove-blocked", "op1")
-	n := newDefaultNode("test", &def.RuleOption{})
+	disableBufferFullDiscard := true
+	n := newDefaultNode("test", &def.RuleOption{DisableBufferFullDiscard: &disableBufferFullDiscard})
 	n.ctx = ctx
 	output := make(chan any, 1)
 	output <- "old"
-	require.NoError(t, n.AddOutputWithPolicy(output, "rule.1_test", true))
+	require.NoError(t, n.AddOutput(output, "rule.1_test"))
 
 	broadcastDone := make(chan struct{})
 	go func() {
@@ -168,40 +169,6 @@ func TestBlockingOutputCanBeRemoved(t *testing.T) {
 		t.Fatal("broadcast did not stop waiting after its output was removed")
 	}
 	require.Equal(t, "old", <-output)
-}
-
-func TestPerOutputBufferFullPolicy(t *testing.T) {
-	ctx := mockContext.NewMockContext("per-output-policy", "op1")
-	n := newDefaultNode("test", &def.RuleOption{})
-	n.ctx = ctx
-	n.isStatManagerHostBySink = true
-	lossyOutput := make(chan any, 1)
-	losslessOutput := make(chan any, 1)
-	lossyOutput <- "old-lossy"
-	losslessOutput <- "old-lossless"
-	require.NoError(t, n.AddOutputWithPolicy(lossyOutput, "lossy", false))
-	require.NoError(t, n.AddOutputWithPolicy(losslessOutput, "lossless", true))
-
-	broadcastDone := make(chan struct{})
-	go func() {
-		n.Broadcast("new")
-		close(broadcastDone)
-	}()
-
-	select {
-	case <-broadcastDone:
-		t.Fatal("broadcast unexpectedly completed while the lossless output was full")
-	case <-time.After(50 * time.Millisecond):
-	}
-	require.Equal(t, "old-lossless", <-losslessOutput)
-
-	select {
-	case <-broadcastDone:
-	case <-time.After(time.Second):
-		t.Fatal("broadcast did not resume after the lossless output had capacity")
-	}
-	require.Equal(t, "new", <-losslessOutput)
-	require.Equal(t, "new", <-lossyOutput)
 }
 
 func BenchmarkBroadcastOutputs(b *testing.B) {

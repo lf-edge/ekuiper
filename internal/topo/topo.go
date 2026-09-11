@@ -274,7 +274,7 @@ func (s *Topo) AddSrc(src node.DataSourceNode) *Topo {
 func (s *Topo) AddSink(inputs []node.Emitter, snk node.DataSinkNode) *Topo {
 	ch, name := snk.GetInput()
 	for _, input := range inputs {
-		err := s.addOutput(input, ch, name)
+		err := input.AddOutput(ch, name)
 		if err != nil {
 			s.ctx.GetLogger().Error(err)
 			return nil
@@ -299,7 +299,7 @@ func (s *Topo) AddOperator(inputs []node.Emitter, operator node.OperatorNode) *T
 	ch, opName := operator.GetInput()
 	for _, input := range inputs {
 		// add rule id to make operator name unique
-		_ = s.addOutput(input, ch, fmt.Sprintf("%s.%d_%s", s.name, s.runId, opName))
+		_ = input.AddOutput(ch, fmt.Sprintf("%s.%d_%s", s.name, s.runId, opName))
 		operator.AddInputCount()
 		switch rt := input.(type) {
 		case node.MergeableTopo:
@@ -311,14 +311,6 @@ func (s *Topo) AddOperator(inputs []node.Emitter, operator node.OperatorNode) *T
 	}
 	s.ops = append(s.ops, operator)
 	return s
-}
-
-func (s *Topo) addOutput(input node.Emitter, output chan any, name string) error {
-	if _, shared := input.(node.MergeableTopo); shared {
-		disableBufferFullDiscard := s.options.DisableBufferFullDiscard != nil && *s.options.DisableBufferFullDiscard
-		return input.AddOutputWithPolicy(output, name, disableBufferFullDiscard)
-	}
-	return input.AddOutput(output, name)
 }
 
 func (s *Topo) addEdge(from node.TopNode, to node.TopNode, toType string) {

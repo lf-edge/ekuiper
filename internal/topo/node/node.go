@@ -72,20 +72,15 @@ func newDefaultNode(name string, options *def.RuleOption) *defaultNode {
 }
 
 func (o *defaultNode) AddOutput(output chan any, name string) error {
-	return o.AddOutputWithPolicy(output, name, o.disableBufferFullDiscard)
-}
-
-func (o *defaultNode) AddOutputWithPolicy(output chan any, name string, disableBufferFullDiscard bool) error {
 	o.outputMu.Lock()
 	defer o.outputMu.Unlock()
 	if old, ok := o.outputs[name]; ok {
 		close(old.done)
 	}
 	o.outputs[name] = namedOutput{
-		name:                     name,
-		ch:                       output,
-		done:                     make(chan struct{}),
-		disableBufferFullDiscard: disableBufferFullDiscard,
+		name: name,
+		ch:   output,
+		done: make(chan struct{}),
 	}
 	o.rebuildOutputSlice()
 	return nil
@@ -109,10 +104,9 @@ func (o *defaultNode) RemoveOutput(name string) error {
 }
 
 type namedOutput struct {
-	name                     string
-	ch                       chan any
-	done                     chan struct{}
-	disableBufferFullDiscard bool
+	name string
+	ch   chan any
+	done chan struct{}
 }
 
 // rebuildOutputSlice refreshes the broadcast view of outputs.
@@ -216,7 +210,7 @@ func (o *defaultNode) doBroadcast(val any) {
 			vt.SetTracerCtx(o.spanCtx)
 		}
 		// wait buffer consume if buffer full
-		if output.disableBufferFullDiscard {
+		if o.disableBufferFullDiscard {
 			select {
 			case out <- valCopy:
 				continue
