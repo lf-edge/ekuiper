@@ -671,8 +671,11 @@ func TestGraphStreamBufferPolicy(t *testing.T) {
 	if err := resolveBufferFullPolicy(streams, rule.Options); err != nil {
 		t.Fatal(err)
 	}
-	if rule.Options.DisableBufferFullDiscard {
+	if rule.Options.BlockOnBufferFull() {
 		t.Fatal("graph stream dropOldest policy was not applied to the rule")
+	}
+	if rule.Options.DisableBufferFullDiscard {
+		t.Fatal("graph stream policy changed the configured legacy rule option")
 	}
 }
 

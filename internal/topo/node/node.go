@@ -67,7 +67,7 @@ func newDefaultNode(name string, options *def.RuleOption) *defaultNode {
 		outputs:                  make(map[string]namedOutput),
 		concurrency:              c,
 		sendError:                options.SendError,
-		disableBufferFullDiscard: options.DisableBufferFullDiscard,
+		disableBufferFullDiscard: options.BlockOnBufferFull(),
 	}
 }
 

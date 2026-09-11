@@ -99,7 +99,7 @@ func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, option
 
 	var ops []node.OperatorNode
 	emitterOpAdded := false
-	disableBufferFullDiscard := options.DisableBufferFullDiscard
+	disableBufferFullDiscard := options.BlockOnBufferFull()
 	// If having unique connection id AND unique sub id for each connection, need to share the sub node; Case 1 is neuron; Case 2 is edgeX
 	needShareCon := hasConId || (hasSubId && conId != "")
 	if !needShareCon {

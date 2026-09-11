@@ -133,7 +133,9 @@ func TestMultipleOutputsBroadcast(t *testing.T) {
 
 func TestBlockingOutputCanBeRemoved(t *testing.T) {
 	ctx := mockContext.NewMockContext("remove-blocked", "op1")
-	n := newDefaultNode("test", &def.RuleOption{DisableBufferFullDiscard: true})
+	options := &def.RuleOption{}
+	options.SetBufferFullPolicy(def.BufferFullPolicyBlock)
+	n := newDefaultNode("test", options)
 	n.ctx = ctx
 	output := make(chan any, 1)
 	output <- "old"
@@ -231,18 +233,20 @@ func BenchmarkBroadcastOutputs(b *testing.B) {
 	}
 }
 
-func TestSetQosPreservesBufferFullDiscardOption(t *testing.T) {
+func TestSetQosPreservesBufferFullPolicy(t *testing.T) {
 	tests := []struct {
-		disableBufferFullDiscard         bool
-		qos                              def.Qos
-		expectedDisableBufferFullDiscard bool
+		policy   def.BufferFullPolicy
+		qos      def.Qos
+		expected bool
 	}{
-		{disableBufferFullDiscard: false, qos: def.AtLeastOnce, expectedDisableBufferFullDiscard: false},
-		{disableBufferFullDiscard: true, qos: def.AtLeastOnce, expectedDisableBufferFullDiscard: true},
+		{policy: def.BufferFullPolicyDropOldest, qos: def.AtLeastOnce, expected: false},
+		{policy: def.BufferFullPolicyBlock, qos: def.AtLeastOnce, expected: true},
 	}
 	for _, tt := range tests {
-		n := newDefaultNode("test", &def.RuleOption{DisableBufferFullDiscard: tt.disableBufferFullDiscard})
+		options := &def.RuleOption{}
+		options.SetBufferFullPolicy(tt.policy)
+		n := newDefaultNode("test", options)
 		n.SetQos(tt.qos)
-		assert.Equal(t, tt.expectedDisableBufferFullDiscard, n.disableBufferFullDiscard)
+		assert.Equal(t, tt.expected, n.disableBufferFullDiscard)
 	}
 }

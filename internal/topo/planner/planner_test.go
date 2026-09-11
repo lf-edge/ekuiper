@@ -2663,13 +2663,18 @@ func TestResolveBufferFullPolicy(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			var configured bool
+			if tt.options != nil {
+				configured = tt.options.DisableBufferFullDiscard
+			}
 			err := resolveBufferFullPolicy(tt.streams, tt.options)
 			if tt.err != "" {
 				assert.EqualError(t, err, tt.err)
 				return
 			}
 			assert.NoError(t, err)
-			assert.Equal(t, tt.expected, tt.options.DisableBufferFullDiscard)
+			assert.Equal(t, tt.expected, tt.options.BlockOnBufferFull())
+			assert.Equal(t, configured, tt.options.DisableBufferFullDiscard)
 		})
 	}
 }
@@ -2701,9 +2706,40 @@ func TestCreateLogicalPlanSharedStreamBufferPolicy(t *testing.T) {
 			options := &def.RuleOption{Qos: def.AtLeastOnce}
 			_, err = CreateLogicalPlan(stmt, options, kv)
 			assert.NoError(t, err)
-			assert.Equal(t, tt.expectedBlock, options.DisableBufferFullDiscard)
+			assert.Equal(t, tt.expectedBlock, options.BlockOnBufferFull())
+			assert.False(t, options.DisableBufferFullDiscard)
 		})
 	}
+}
+
+func TestResolveBufferFullPolicyReplanDoesNotChangeLegacyOption(t *testing.T) {
+	rule := &def.Rule{Options: &def.RuleOption{}}
+	explicitBlock := []*streamInfo{{
+		stmt: &ast.StreamStmt{
+			Name:       "shared",
+			StreamType: ast.TypeStream,
+			Options: &ast.Options{
+				SHARED:             true,
+				BUFFER_FULL_POLICY: ast.BufferFullPolicyBlock,
+			},
+		},
+	}}
+	assert.NoError(t, resolveBufferFullPolicy(explicitBlock, rule.Options))
+	assert.True(t, rule.Options.BlockOnBufferFull())
+	assert.False(t, rule.Options.DisableBufferFullDiscard)
+
+	legacyShared := []*streamInfo{{
+		stmt: &ast.StreamStmt{
+			Name:       "shared",
+			StreamType: ast.TypeStream,
+			Options: &ast.Options{
+				SHARED: true,
+			},
+		},
+	}}
+	assert.NoError(t, resolveBufferFullPolicy(legacyShared, rule.Options))
+	assert.False(t, rule.Options.BlockOnBufferFull())
+	assert.False(t, rule.Options.DisableBufferFullDiscard)
 }
 
 func Test_createLogicalPlanSchemaless(t *testing.T) {

@@ -46,6 +46,25 @@ type RuleOption struct {
 	EnableSaveStateBeforeStop bool                     `json:"enableSaveStateBeforeStop,omitempty" yaml:"enableSaveStateBeforeStop,omitempty"`
 	ForceExitTimeout          cast.DurationConf        `json:"forceExitTimeout,omitempty" yaml:"forceExitTimeout,omitempty"`
 	Experiment                *ExpOpts                 `json:"experiment,omitempty" yaml:"experiment,omitempty"`
+	// bufferFullPolicy is derived from the stream definitions and the legacy
+	// DisableBufferFullDiscard option during planning. It is runtime-only and
+	// must not be persisted as part of the rule configuration.
+	bufferFullPolicy BufferFullPolicy
+}
+
+type BufferFullPolicy uint8
+
+const (
+	BufferFullPolicyDropOldest BufferFullPolicy = iota
+	BufferFullPolicyBlock
+)
+
+func (o *RuleOption) SetBufferFullPolicy(policy BufferFullPolicy) {
+	o.bufferFullPolicy = policy
+}
+
+func (o *RuleOption) BlockOnBufferFull() bool {
+	return o.bufferFullPolicy == BufferFullPolicyBlock
 }
 
 type ExpOpts struct {

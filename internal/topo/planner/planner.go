@@ -986,7 +986,11 @@ func resolveBufferFullPolicy(streams []*streamInfo, opt *def.RuleOption) error {
 	if resolvedPolicy == "" {
 		resolvedPolicy = rulePolicy
 	}
-	opt.DisableBufferFullDiscard = resolvedPolicy == ast.BufferFullPolicyBlock
+	if resolvedPolicy == ast.BufferFullPolicyBlock {
+		opt.SetBufferFullPolicy(def.BufferFullPolicyBlock)
+	} else {
+		opt.SetBufferFullPolicy(def.BufferFullPolicyDropOldest)
+	}
 	return nil
 }
 

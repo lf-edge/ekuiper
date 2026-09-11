@@ -28,6 +28,37 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
+func TestDedupTriggerBlocksWhenBufferFull(t *testing.T) {
+	options := &def.RuleOption{BufferLength: 1}
+	options.SetBufferFullPolicy(def.BufferFullPolicyBlock)
+	n := NewDedupTriggerNode("dedup", options, "", "start", "end", "now", 0)
+	n.ctx = context.NewMockContext("rule", "dedup")
+
+	output := make(chan any, 1)
+	output <- "old"
+	require.NoError(t, n.AddOutput(output, "rule.1_dedup"))
+
+	done := make(chan struct{})
+	go func() {
+		n.Broadcast("new")
+		close(done)
+	}()
+
+	select {
+	case <-done:
+		t.Fatal("dedup trigger broadcast completed while its lossless output was full")
+	case <-time.After(50 * time.Millisecond):
+	}
+
+	require.Equal(t, "old", <-output)
+	select {
+	case <-done:
+	case <-time.After(time.Second):
+		t.Fatal("dedup trigger broadcast remained blocked after output capacity became available")
+	}
+	require.Equal(t, "new", <-output)
+}
+
 func TestDedupTrigger(t *testing.T) {
 	// The test cases are stateful, so we need to run them one by one
 	tests := []struct {
