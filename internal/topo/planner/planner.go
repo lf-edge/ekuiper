@@ -473,6 +473,7 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *def.RuleOption, sources ma
 			TimeUnit:         t.timeUnit,
 			TriggerCondition: t.triggerCondition,
 			BeginCondition:   t.beginCondition,
+			CollectCondition: t.collectCondition,
 			EmitCondition:    t.emitCondition,
 			SingleCondition:  t.singleCondition,
 			PartitionExpr:    t.PartitionExpr,
@@ -793,6 +794,7 @@ func createLogicalPlanFull(stmt *ast.SelectStatement, opt *def.RuleOption, store
 		p.SetChildren(children)
 		children = []LogicalPlan{p}
 	}
+
 	if stmt.Condition != nil {
 		p = FilterPlan{
 			condition: stmt.Condition,

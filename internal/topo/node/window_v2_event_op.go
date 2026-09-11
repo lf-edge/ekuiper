@@ -76,7 +76,7 @@ func (s *EventSlidingWindowOp) exec(ctx api.StreamContext, errCh chan<- error) {
 				s.onProcessStart(ctx, input)
 				windowEnd := tuple.Timestamp
 				windowStart := windowEnd.Add(-s.Length)
-				s.scanner.addTuple(tuple)
+				s.collectAdd(ctx, fv, tuple)
 				sendWindow := true
 				if s.triggerCondition != nil {
 					sendWindow = isMatchCondition(ctx, s.triggerCondition, fv, tuple, s.stateFuncs)
@@ -91,6 +91,12 @@ func (s *EventSlidingWindowOp) exec(ctx api.StreamContext, errCh chan<- error) {
 				s.onProcessEnd(ctx)
 			}
 		}
+	}
+}
+
+func (s *EventSlidingWindowOp) collectAdd(ctx api.StreamContext, fv *xsql.FunctionValuer, row *xsql.Tuple) {
+	if s.windowConfig.CollectCondition == nil || isMatchCondition(ctx, s.windowConfig.CollectCondition, fv, row, s.stateFuncs) {
+		s.scanner.addTuple(row)
 	}
 }
 

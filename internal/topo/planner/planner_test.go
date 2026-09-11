@@ -1923,52 +1923,45 @@ func Test_createLogicalPlan(t *testing.T) {
 						HavingPlan{
 							baseLogicalPlan: baseLogicalPlan{
 								children: []LogicalPlan{
-									FilterPlan{
+									WindowPlan{
 										baseLogicalPlan: baseLogicalPlan{
 											children: []LogicalPlan{
-												WindowPlan{
-													baseLogicalPlan: baseLogicalPlan{
-														children: []LogicalPlan{
-															DataSourcePlan{
-																name:       "src1",
-																isWildCard: true,
-																streamFields: map[string]*ast.JsonStreamField{
-																	"id1": {
-																		Type: "bigint",
-																	},
-																	"temp": {
-																		Type: "bigint",
-																	},
-																	"name": {
-																		Type: "string",
-																	},
-																	"myarray": {
-																		Type: "array",
-																		Items: &ast.JsonStreamField{
-																			Type: "string",
-																		},
-																	},
-																},
-																streamStmt:  streams["src1"],
-																metaFields:  []string{},
-																pruneFields: []string{},
-															}.Init(),
+												DataSourcePlan{
+													name:       "src1",
+													isWildCard: true,
+													streamFields: map[string]*ast.JsonStreamField{
+														"id1": {
+															Type: "bigint",
+														},
+														"temp": {
+															Type: "bigint",
+														},
+														"name": {
+															Type: "string",
+														},
+														"myarray": {
+															Type: "array",
+															Items: &ast.JsonStreamField{
+																Type: "string",
+															},
 														},
 													},
-													condition: nil,
-													wtype:     ast.SLIDING_WINDOW,
-													length:    10,
-													timeUnit:  ast.SS,
-													interval:  0,
-													limit:     0,
+													streamStmt:  streams["src1"],
+													metaFields:  []string{},
+													pruneFields: []string{},
 												}.Init(),
 											},
 										},
-										condition: &ast.BinaryExpr{
+										collectCondition: &ast.BinaryExpr{
 											LHS: &ast.FieldRef{Name: "temp", StreamName: "src1"},
 											OP:  ast.GT,
 											RHS: &ast.IntegerLiteral{Val: 20},
 										},
+										wtype:    ast.SLIDING_WINDOW,
+										length:   10,
+										timeUnit: ast.SS,
+										interval: 0,
+										limit:    0,
 									}.Init(),
 								},
 							},
