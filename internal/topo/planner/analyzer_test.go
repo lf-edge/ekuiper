@@ -204,7 +204,8 @@ func TestLeadUntilPlan(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, kvStore.Set("lead_src", string(encoded)))
 
-	sql := `SELECT latest(ts) OVER (WHEN a < 5 AND isNull(b)) AS candidate_t2 INVISIBLE,
+	sql := `SELECT ts AS input_ts INVISIBLE,
+		latest(input_ts) OVER (WHEN a < 5 AND isNull(b)) AS candidate_t2 INVISIBLE,
 		lead(candidate_t2) OVER (WHEN isNull(b) = false UNTIL ts - current_row(ts) > 5) AS t2
 		FROM lead_src`
 	stmt, err := xsql.NewParser(strings.NewReader(sql)).Parse()
@@ -238,6 +239,14 @@ func TestLeadUntilPlan(t *testing.T) {
 	require.True(t, ok)
 	require.Equal(t, "latest", latest.Name)
 	require.True(t, latest.Cached)
+	inputAlias, ok := latest.Args[0].(*ast.FieldRef)
+	require.True(t, ok)
+	require.True(t, inputAlias.IsAlias())
+	require.NotNil(t, inputAlias.AliasRef)
+	rawInput, ok := inputAlias.AliasRef.Expression.(*ast.FieldRef)
+	require.True(t, ok)
+	require.Equal(t, ast.StreamName("lead_src"), rawInput.StreamName)
+	require.Equal(t, "ts", rawInput.Name)
 
 	for _, invalid := range []string{
 		`SELECT latest(lead(ts)) FROM lead_src`,
@@ -248,6 +257,64 @@ func TestLeadUntilPlan(t *testing.T) {
 		_, err = CreateLogicalPlan(stmt, &def.RuleOption{SendError: true}, kvStore)
 		require.ErrorContains(t, err, "lead output cannot feed")
 	}
+}
+
+func TestSchemalessDirectFieldAliasBinding(t *testing.T) {
+	kvStore, err := store.GetKV("stream")
+	require.NoError(t, err)
+	streamSQL := `CREATE STREAM schemaless_alias_src () WITH (DATASOURCE="schemaless_alias_src", FORMAT="json");`
+	encoded, err := json.Marshal(&xsql.StreamInfo{StreamType: ast.TypeStream, Statement: streamSQL})
+	require.NoError(t, err)
+	require.NoError(t, kvStore.Set("schemaless_alias_src", string(encoded)))
+
+	sql := `SELECT temp AS input_temp INVISIBLE,
+		CASE WHEN input_temp > 26 THEN 1 ELSE 0 END AS state_condition INVISIBLE,
+		latest(state_condition, 0) AS state
+		FROM schemaless_alias_src`
+	stmt, err := xsql.NewParser(strings.NewReader(sql)).Parse()
+	require.NoError(t, err)
+	plan, err := CreateLogicalPlan(stmt, &def.RuleOption{SendError: true}, kvStore)
+	require.NoError(t, err)
+
+	var project *ProjectPlan
+	var findProject func(LogicalPlan)
+	findProject = func(current LogicalPlan) {
+		if value, ok := current.(*ProjectPlan); ok {
+			project = value
+			return
+		}
+		for _, child := range current.Children() {
+			findProject(child)
+		}
+	}
+	findProject(plan)
+	require.NotNil(t, project)
+
+	var conditionAlias *ast.FieldRef
+	for _, field := range project.fields {
+		if field.AName == "state_condition" {
+			conditionAlias, _ = field.Expr.(*ast.FieldRef)
+			break
+		}
+	}
+	require.NotNil(t, conditionAlias)
+	require.True(t, conditionAlias.IsAlias())
+	require.NotNil(t, conditionAlias.AliasRef)
+
+	var inputAlias *ast.FieldRef
+	ast.WalkFunc(conditionAlias.AliasRef.Expression, func(node ast.Node) bool {
+		if field, ok := node.(*ast.FieldRef); ok && field.Name == "input_temp" {
+			inputAlias = field
+		}
+		return true
+	})
+	require.NotNil(t, inputAlias)
+	require.True(t, inputAlias.IsAlias())
+	require.NotNil(t, inputAlias.AliasRef)
+	rawInput, ok := inputAlias.AliasRef.Expression.(*ast.FieldRef)
+	require.True(t, ok)
+	require.Equal(t, ast.StreamName("schemaless_alias_src"), rawInput.StreamName)
+	require.Equal(t, "temp", rawInput.Name)
 }
 
 func Test_validation(t *testing.T) {
