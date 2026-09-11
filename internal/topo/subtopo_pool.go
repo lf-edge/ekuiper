@@ -161,12 +161,9 @@ func (s *SrcSubTopo) AddSrc(src node.DataSourceNode) *SrcSubTopo {
 }
 
 // AddOperator adds an internal operator to the subtopo.
-func (s *SrcSubTopo) AddOperator(inputs []node.Emitter, operator node.OperatorNode) error {
-	ch, name := operator.GetInput()
+func (s *SrcSubTopo) AddOperator(inputs []node.Emitter, operator node.OperatorNode) *SrcSubTopo {
 	for _, input := range inputs {
-		if err := input.AddOutput(ch, name); err != nil {
-			return err
-		}
+		input.AddOutput(operator.GetInput())
 		operator.AddInputCount()
 		switch rt := input.(type) {
 		case node.MergeableTopo:
@@ -177,7 +174,7 @@ func (s *SrcSubTopo) AddOperator(inputs []node.Emitter, operator node.OperatorNo
 	}
 	s.ops = append(s.ops, operator)
 	s.tail = operator
-	return nil
+	return s
 }
 
 func (s *SrcSubTopo) addEdge(from node.TopNode, to node.TopNode, toType string) {

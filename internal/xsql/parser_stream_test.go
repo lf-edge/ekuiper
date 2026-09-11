@@ -111,6 +111,13 @@ func TestParser_ParseCreateStream(t *testing.T) {
 			err:  `found "discard", expect block/dropOldest value in BUFFER_FULL_POLICY option.`,
 		},
 		{
+			s: `CREATE STREAM demo () WITH (DATASOURCE="users", BUFFER_FULL_POLICY="DropOldest");`,
+			stmt: &ast.StreamStmt{
+				Name:    ast.StreamName("demo"),
+				Options: &ast.Options{DATASOURCE: "users", BUFFER_FULL_POLICY: ast.BufferFullPolicyDropOldest},
+			},
+		},
+		{
 			s: `CREATE STREAM demo (
 					ADDRESSES ARRAY(STRUCT(STREET_NAME STRING, NUMBER BIGINT)),
 				) WITH (DATASOURCE="users", FORMAT="JSON", KEY="USERID", STRICT_VALIDATION="FAlse");`,

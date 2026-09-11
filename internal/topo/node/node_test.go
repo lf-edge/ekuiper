@@ -170,6 +170,44 @@ func TestBlockingOutputCanBeRemoved(t *testing.T) {
 	require.Equal(t, "old", <-output)
 }
 
+func TestReplacingOutputCancelsOldEntry(t *testing.T) {
+	n := newDefaultNode("test", &def.RuleOption{})
+	require.NoError(t, n.AddOutput(make(chan any, 1), "same"))
+	oldDone := n.outputs["same"].done
+
+	require.NoError(t, n.AddOutput(make(chan any, 1), "same"))
+	select {
+	case <-oldDone:
+	default:
+		t.Fatal("replacing an output did not cancel the old entry")
+	}
+}
+
+func TestDroppingUnbufferedOutputCanBeRemoved(t *testing.T) {
+	ctx := mockContext.NewMockContext("remove-unbuffered", "op1")
+	n := newDefaultNode("test", &def.RuleOption{})
+	n.ctx = ctx
+	require.NoError(t, n.AddOutput(make(chan any), "rule.1_test"))
+
+	broadcastDone := make(chan struct{})
+	go func() {
+		n.Broadcast("new")
+		close(broadcastDone)
+	}()
+	select {
+	case <-broadcastDone:
+		t.Fatal("broadcast unexpectedly completed with no receiver")
+	case <-time.After(50 * time.Millisecond):
+	}
+
+	require.NoError(t, n.RemoveOutput("rule.1"))
+	select {
+	case <-broadcastDone:
+	case <-time.After(time.Second):
+		t.Fatal("broadcast did not stop waiting after its output was removed")
+	}
+}
+
 func BenchmarkBroadcastOutputs(b *testing.B) {
 	for _, outputCount := range []int{1, 4, 16} {
 		b.Run(fmt.Sprintf("outputs_%d", outputCount), func(b *testing.B) {

@@ -2648,6 +2648,7 @@ func TestResolveBufferFullPolicy(t *testing.T) {
 		expected bool
 		err      string
 	}{
+		{name: "missing rule options", streams: []*streamInfo{stream("s1", "", false)}, options: nil, err: "rule options are required"},
 		{name: "qos keeps legacy default", streams: []*streamInfo{stream("s1", "", false)}, options: &def.RuleOption{Qos: def.AtLeastOnce}, expected: false},
 		{name: "legacy shared", streams: []*streamInfo{stream("s1", "", true)}, options: &def.RuleOption{Qos: def.AtLeastOnce}, expected: false},
 		{name: "shared block", streams: []*streamInfo{stream("s1", ast.BufferFullPolicyBlock, true)}, options: &def.RuleOption{Qos: def.AtLeastOnce}, expected: true},
@@ -2657,6 +2658,7 @@ func TestResolveBufferFullPolicy(t *testing.T) {
 		{name: "unset stream uses rule fallback", streams: []*streamInfo{stream("s1", ast.BufferFullPolicyBlock, true), stream("s2", "", false)}, options: &def.RuleOption{DisableBufferFullDiscard: true}, expected: true},
 		{name: "rule fallback conflict", streams: []*streamInfo{stream("s1", ast.BufferFullPolicyBlock, true), stream("s2", "", false)}, options: &def.RuleOption{}, err: "buffer full policy conflict: stream s1 uses block while stream s2 uses dropOldest; all streams in a rule must use the same policy"},
 		{name: "legacy shared rejects rule block", streams: []*streamInfo{stream("s1", "", true)}, options: &def.RuleOption{DisableBufferFullDiscard: true}, err: "disableBufferFullDiscard can't be enabled with shared stream s1 without BUFFER_FULL_POLICY; configure the policy on the stream instead"},
+		{name: "invalid stream policy", streams: []*streamInfo{stream("s1", "discard", false)}, options: &def.RuleOption{}, err: `stream s1 has invalid buffer full policy "discard"; expected block or dropOldest`},
 		{name: "stream conflict", streams: []*streamInfo{stream("s1", ast.BufferFullPolicyBlock, true), stream("s2", ast.BufferFullPolicyDropOldest, false)}, options: &def.RuleOption{}, err: "buffer full policy conflict: stream s1 uses block while stream s2 uses dropOldest; all streams in a rule must use the same policy"},
 	}
 	for _, tt := range tests {

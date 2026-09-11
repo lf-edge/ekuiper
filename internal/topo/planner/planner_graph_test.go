@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -672,6 +673,83 @@ func TestGraphStreamBufferPolicy(t *testing.T) {
 	}
 	if rule.Options.DisableBufferFullDiscard {
 		t.Fatal("graph stream dropOldest policy was not applied to the rule")
+	}
+}
+
+func TestGraphStreamInfosValidation(t *testing.T) {
+	tests := []struct {
+		name      string
+		sources   []string
+		nodes     map[string]*def.GraphNode
+		wantCount int
+		wantError string
+	}{
+		{
+			name:      "missing source node",
+			sources:   []string{"missing"},
+			nodes:     map[string]*def.GraphNode{},
+			wantError: "source node missing not defined",
+		},
+		{
+			name:    "table is ignored",
+			sources: []string{"table1"},
+			nodes: map[string]*def.GraphNode{
+				"table1": {Props: map[string]any{"sourceType": "table"}},
+			},
+		},
+		{
+			name:    "unsupported source type",
+			sources: []string{"source1"},
+			nodes: map[string]*def.GraphNode{
+				"source1": {Props: map[string]any{"sourceType": "mqtt"}},
+			},
+			wantError: "source type mqtt not supported",
+		},
+		{
+			name:    "invalid source metadata",
+			sources: []string{"source1"},
+			nodes: map[string]*def.GraphNode{
+				"source1": {Props: map[string]any{"sourceType": []string{"stream"}}},
+			},
+			wantError: "parse source source1",
+		},
+		{
+			name:    "invalid inline stream options",
+			sources: []string{"source1"},
+			nodes: map[string]*def.GraphNode{
+				"source1": {Props: map[string]any{"bufferFullPolicy": []string{"block"}}},
+			},
+			wantError: "parse source source1",
+		},
+		{
+			name:    "inline stream",
+			sources: []string{"source1"},
+			nodes: map[string]*def.GraphNode{
+				"source1": {Props: map[string]any{"bufferFullPolicy": ast.BufferFullPolicyBlock}},
+			},
+			wantCount: 1,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rule := &def.Rule{Graph: &def.RuleGraph{
+				Topo:  &def.PrintableTopo{Sources: tt.sources},
+				Nodes: tt.nodes,
+			}}
+			streams, err := graphStreamInfos(rule)
+			if tt.wantError != "" {
+				if err == nil || !strings.Contains(err.Error(), tt.wantError) {
+					t.Fatalf("expected error containing %q, got %v", tt.wantError, err)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(streams) != tt.wantCount {
+				t.Fatalf("expected %d streams, got %d", tt.wantCount, len(streams))
+			}
+		})
 	}
 }
 
