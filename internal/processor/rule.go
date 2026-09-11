@@ -16,6 +16,7 @@ package processor
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -165,8 +166,14 @@ func (p *RuleProcessor) GetRuleByJsonValidated(id, ruleJson string) (*def.Rule, 
 		Options:   clone(opt),
 		Id:        id,
 	}
-	if err := json.Unmarshal(cast.StringToBytes(ruleJson), &rule); err != nil {
-		return nil, fmt.Errorf("Parse rule %s error : %s.", ruleJson, err)
+	ruleBytes := cast.StringToBytes(ruleJson)
+	if err := json.Unmarshal(ruleBytes, &rule); err != nil {
+		fingerprint := fmt.Sprintf("bytes=%d, sha256=%x", len(ruleBytes), sha256.Sum256(ruleBytes))
+		var syntaxErr *json.SyntaxError
+		if errors.As(err, &syntaxErr) {
+			fingerprint += fmt.Sprintf(", offset=%d", syntaxErr.Offset)
+		}
+		return nil, fmt.Errorf("Parse rule %s error (%s): %s.", id, fingerprint, err)
 	}
 	if rule.Options == nil {
 		rule.Options = &opt
