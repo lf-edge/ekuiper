@@ -82,6 +82,7 @@ func decorateStmt(s *ast.SelectStatement, opt *def.RuleOption, isTemp bool) ([]*
 	var (
 		walkErr            error
 		aliasFields        []*ast.Field
+		precedingAliasRefs = make(map[*ast.FieldRef]struct{})
 		analyticFieldFuncs []*ast.Call
 		analyticFuncs      []*ast.Call
 	)
@@ -121,8 +122,13 @@ func decorateStmt(s *ast.SelectStatement, opt *def.RuleOption, isTemp bool) ([]*
 			case *ast.FieldRef:
 				skipBind := false
 				for j := 0; j < i; j++ {
-					if s.Fields[j].AName == nf.Name {
+					if s.Fields[j].AName == nf.Name && (nf.StreamName == "" || nf.StreamName == ast.DefaultStream) {
 						skipBind = true
+						// The alias expression is not available until the next pass.
+						// Remember the reference so direct field aliases in schemaless
+						// streams do not depend on matching a bound stream name.
+						precedingAliasRefs[nf] = struct{}{}
+						break
 					}
 				}
 				if !skipBind {
@@ -163,7 +169,8 @@ func decorateStmt(s *ast.SelectStatement, opt *def.RuleOption, isTemp bool) ([]*
 					ast.WalkFunc(&subF, func(node ast.Node) bool {
 						switch fr := node.(type) {
 						case *ast.FieldRef:
-							if fr.Name == f.AName && fr.StreamName == streamName {
+							_, isPrecedingAlias := precedingAliasRefs[fr]
+							if fr.Name == f.AName && (fr.StreamName == streamName || isPrecedingAlias) {
 								fr.StreamName = ast.AliasStream
 								fr.AliasRef = ar
 							}
