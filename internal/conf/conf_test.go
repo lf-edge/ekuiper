@@ -143,32 +143,6 @@ func TestRuleOptionValidate(t *testing.T) {
 				},
 			},
 		},
-		{
-			s: &def.RuleOption{
-				Qos: def.AtLeastOnce,
-			},
-			e: &def.RuleOption{
-				Qos: def.AtLeastOnce,
-			},
-		},
-		{
-			s: &def.RuleOption{
-				Qos: def.ExactlyOnce,
-			},
-			e: &def.RuleOption{
-				Qos: def.ExactlyOnce,
-			},
-		},
-		{
-			s: &def.RuleOption{
-				Qos:                      def.AtLeastOnce,
-				DisableBufferFullDiscard: boolPtr(false),
-			},
-			e: &def.RuleOption{
-				Qos:                      def.AtLeastOnce,
-				DisableBufferFullDiscard: boolPtr(false),
-			},
-		},
 	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 	for i, tt := range tests {
@@ -183,10 +157,6 @@ func TestRuleOptionValidate(t *testing.T) {
 			}
 		})
 	}
-}
-
-func boolPtr(v bool) *bool {
-	return &v
 }
 
 func TestLoad(t *testing.T) {

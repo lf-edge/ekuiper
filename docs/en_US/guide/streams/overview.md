@@ -166,8 +166,8 @@ demo (
 ```
 
 The stream policy applies to the shared sub-topology and every rule consuming it. If the option is omitted on a shared
-stream, eKuiper retains the legacy `dropOldest` behavior. A rule-level `disableBufferFullDiscard` option cannot enable
-backpressure for such a stream; configure `BUFFER_FULL_POLICY` on the stream instead.
+stream, eKuiper retains the legacy `dropOldest` behavior. A rule-level `disableBufferFullDiscard=true` remains invalid
+for such a stream; configure `BUFFER_FULL_POLICY` on the stream instead. Rule QoS does not implicitly change this policy.
 
 When a shared stream is used, multiple rules are no longer independent. During runtime, the shared stream and all its
 downstream sub-rules collectively form a large topological structure, logically equivalent to a single large composite

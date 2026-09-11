@@ -2631,7 +2631,6 @@ func Test_createLogicalPlan(t *testing.T) {
 }
 
 func TestResolveBufferFullPolicy(t *testing.T) {
-	boolPtr := func(v bool) *bool { return &v }
 	stream := func(name, policy string, shared bool) *streamInfo {
 		return &streamInfo{stmt: &ast.StreamStmt{
 			Name:       ast.StreamName(name),
@@ -2649,13 +2648,15 @@ func TestResolveBufferFullPolicy(t *testing.T) {
 		expected bool
 		err      string
 	}{
-		{name: "qos default", streams: []*streamInfo{stream("s1", "", false)}, options: &def.RuleOption{Qos: def.AtLeastOnce}, expected: true},
+		{name: "qos keeps legacy default", streams: []*streamInfo{stream("s1", "", false)}, options: &def.RuleOption{Qos: def.AtLeastOnce}, expected: false},
 		{name: "legacy shared", streams: []*streamInfo{stream("s1", "", true)}, options: &def.RuleOption{Qos: def.AtLeastOnce}, expected: false},
 		{name: "shared block", streams: []*streamInfo{stream("s1", ast.BufferFullPolicyBlock, true)}, options: &def.RuleOption{Qos: def.AtLeastOnce}, expected: true},
-		{name: "stream overrides qos", streams: []*streamInfo{stream("s1", ast.BufferFullPolicyDropOldest, false)}, options: &def.RuleOption{Qos: def.AtLeastOnce}, expected: false},
+		{name: "shared stream overrides rule block", streams: []*streamInfo{stream("s1", ast.BufferFullPolicyDropOldest, true)}, options: &def.RuleOption{DisableBufferFullDiscard: true}, expected: false},
+		{name: "stream policy with qos", streams: []*streamInfo{stream("s1", ast.BufferFullPolicyDropOldest, false)}, options: &def.RuleOption{Qos: def.AtLeastOnce}, expected: false},
 		{name: "matching streams", streams: []*streamInfo{stream("s1", ast.BufferFullPolicyBlock, true), stream("s2", ast.BufferFullPolicyBlock, false)}, options: &def.RuleOption{}, expected: true},
-		{name: "unset stream uses rule fallback", streams: []*streamInfo{stream("s1", ast.BufferFullPolicyBlock, true), stream("s2", "", false)}, options: &def.RuleOption{DisableBufferFullDiscard: boolPtr(true)}, expected: true},
-		{name: "rule fallback conflict", streams: []*streamInfo{stream("s1", ast.BufferFullPolicyBlock, true), stream("s2", "", false)}, options: &def.RuleOption{DisableBufferFullDiscard: boolPtr(false)}, err: "buffer full policy conflict: stream s1 uses block while stream s2 uses dropOldest; all streams in a rule must use the same policy"},
+		{name: "unset stream uses rule fallback", streams: []*streamInfo{stream("s1", ast.BufferFullPolicyBlock, true), stream("s2", "", false)}, options: &def.RuleOption{DisableBufferFullDiscard: true}, expected: true},
+		{name: "rule fallback conflict", streams: []*streamInfo{stream("s1", ast.BufferFullPolicyBlock, true), stream("s2", "", false)}, options: &def.RuleOption{}, err: "buffer full policy conflict: stream s1 uses block while stream s2 uses dropOldest; all streams in a rule must use the same policy"},
+		{name: "legacy shared rejects rule block", streams: []*streamInfo{stream("s1", "", true)}, options: &def.RuleOption{DisableBufferFullDiscard: true}, err: "disableBufferFullDiscard can't be enabled with shared stream s1 without BUFFER_FULL_POLICY; configure the policy on the stream instead"},
 		{name: "stream conflict", streams: []*streamInfo{stream("s1", ast.BufferFullPolicyBlock, true), stream("s2", ast.BufferFullPolicyDropOldest, false)}, options: &def.RuleOption{}, err: "buffer full policy conflict: stream s1 uses block while stream s2 uses dropOldest; all streams in a rule must use the same policy"},
 	}
 	for _, tt := range tests {
@@ -2666,8 +2667,7 @@ func TestResolveBufferFullPolicy(t *testing.T) {
 				return
 			}
 			assert.NoError(t, err)
-			assert.NotNil(t, tt.options.DisableBufferFullDiscard)
-			assert.Equal(t, tt.expected, *tt.options.DisableBufferFullDiscard)
+			assert.Equal(t, tt.expected, tt.options.DisableBufferFullDiscard)
 		})
 	}
 }
@@ -2699,9 +2699,7 @@ func TestCreateLogicalPlanSharedStreamBufferPolicy(t *testing.T) {
 			options := &def.RuleOption{Qos: def.AtLeastOnce}
 			_, err = CreateLogicalPlan(stmt, options, kv)
 			assert.NoError(t, err)
-			if assert.NotNil(t, options.DisableBufferFullDiscard) {
-				assert.Equal(t, tt.expectedBlock, *options.DisableBufferFullDiscard)
-			}
+			assert.Equal(t, tt.expectedBlock, options.DisableBufferFullDiscard)
 		})
 	}
 }

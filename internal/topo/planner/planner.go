@@ -950,17 +950,12 @@ func resolveBufferFullPolicy(streams []*streamInfo, opt *def.RuleOption) error {
 		return errors.New("rule options are required")
 	}
 	rulePolicy := ast.BufferFullPolicyDropOldest
-	if opt.DisableBufferFullDiscard != nil {
-		if *opt.DisableBufferFullDiscard {
-			rulePolicy = ast.BufferFullPolicyBlock
-		}
-	} else if opt.Qos >= def.AtLeastOnce {
+	if opt.DisableBufferFullDiscard {
 		rulePolicy = ast.BufferFullPolicyBlock
 	}
 
 	resolvedPolicy := ""
 	resolvedStream := ""
-	legacyShared := ""
 	for _, stream := range streams {
 		if stream.stmt.StreamType != ast.TypeStream {
 			continue
@@ -977,12 +972,10 @@ func resolveBufferFullPolicy(streams []*streamInfo, opt *def.RuleOption) error {
 			}
 		}
 		if policy == "" {
-			if stream.stmt.Options.SHARED {
-				policy = ast.BufferFullPolicyDropOldest
-				legacyShared = string(stream.stmt.Name)
-			} else {
-				policy = rulePolicy
+			if stream.stmt.Options.SHARED && opt.DisableBufferFullDiscard {
+				return fmt.Errorf("disableBufferFullDiscard can't be enabled with shared stream %s without BUFFER_FULL_POLICY; configure the policy on the stream instead", stream.stmt.Name)
 			}
+			policy = rulePolicy
 		}
 		if resolvedPolicy != "" && resolvedPolicy != policy {
 			return fmt.Errorf("buffer full policy conflict: stream %s uses %s while stream %s uses %s; all streams in a rule must use the same policy", resolvedStream, resolvedPolicy, stream.stmt.Name, policy)
@@ -993,13 +986,7 @@ func resolveBufferFullPolicy(streams []*streamInfo, opt *def.RuleOption) error {
 	if resolvedPolicy == "" {
 		resolvedPolicy = rulePolicy
 	}
-	block := resolvedPolicy == ast.BufferFullPolicyBlock
-	opt.DisableBufferFullDiscard = &block
-	if legacyShared != "" && !block && (opt.Qos >= def.AtLeastOnce || rulePolicy == ast.BufferFullPolicyBlock) {
-		conf.Log.Warnf("shared stream %s has no BUFFER_FULL_POLICY; legacy dropOldest behavior is retained for rule with QoS %d or disableBufferFullDiscard=true; set BUFFER_FULL_POLICY=\"block\" on the stream to enable backpressure", legacyShared, opt.Qos)
-	} else if opt.Qos >= def.AtLeastOnce && !block {
-		conf.Log.Warnf("QoS is %d but the resolved buffer full policy is dropOldest; data may be lost during congestion", opt.Qos)
-	}
+	opt.DisableBufferFullDiscard = resolvedPolicy == ast.BufferFullPolicyBlock
 	return nil
 }
 

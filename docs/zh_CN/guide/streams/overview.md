@@ -161,7 +161,7 @@ demo (
     ) WITH (DATASOURCE="test", FORMAT="JSON", SHARED="true", BUFFER_FULL_POLICY="block");
 ```
 
-该策略同时作用于共享子拓扑及所有引用它的规则。共享流未配置该属性时，eKuiper 保留历史 `dropOldest` 行为。规则级 `disableBufferFullDiscard` 不能为这种共享流启用背压；需要在流定义中配置 `BUFFER_FULL_POLICY`。
+该策略同时作用于共享子拓扑及所有引用它的规则。共享流未配置该属性时，eKuiper 保留历史 `dropOldest` 行为，规则级 `disableBufferFullDiscard=true` 仍为非法配置；需要在流定义中配置 `BUFFER_FULL_POLICY`。规则 QoS 不会隐式改变该策略。
 
 使用共享流后，多个规则不再独立。运行时，共享流及其所有下游子规则共同组成一个大的拓扑结构，逻辑上等同于一个大的复合规则。
 功能限制： 由于这种耦合的拓扑结构，部分依赖于规则独立性的功能（例如 Checkpoint）目前无法在共享流的源组件上实现。
