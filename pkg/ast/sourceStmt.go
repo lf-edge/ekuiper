@@ -272,19 +272,20 @@ type RecType struct {
 
 // Options The stream AST tree
 type Options struct {
-	DATASOURCE        string `json:"datasource,omitempty"`
-	KEY               string `json:"key,omitempty"`
-	FORMAT            string `json:"format,omitempty"`
-	CONF_KEY          string `json:"confKey,omitempty"`
-	TYPE              string `json:"type,omitempty"`
-	STRICT_VALIDATION bool   `json:"strictValidation,omitempty"`
-	TIMESTAMP         string `json:"timestamp,omitempty"`
-	TIMESTAMP_FORMAT  string `json:"timestampFormat,omitempty"`
-	SHARED            bool   `json:"shared,omitempty"`
-	SCHEMAID          string `json:"schemaid,omitempty"`
-	VERSION           string `json:"version,omitempty"`
-	EXTRA             string `json:"extra,omitempty"`
-	Temp              bool   `json:"temp,omitempty"`
+	DATASOURCE         string `json:"datasource,omitempty"`
+	KEY                string `json:"key,omitempty"`
+	FORMAT             string `json:"format,omitempty"`
+	CONF_KEY           string `json:"confKey,omitempty"`
+	TYPE               string `json:"type,omitempty"`
+	STRICT_VALIDATION  bool   `json:"strictValidation,omitempty"`
+	TIMESTAMP          string `json:"timestamp,omitempty"`
+	TIMESTAMP_FORMAT   string `json:"timestampFormat,omitempty"`
+	SHARED             bool   `json:"shared,omitempty"`
+	BUFFER_FULL_POLICY string `json:"bufferFullPolicy,omitempty"`
+	SCHEMAID           string `json:"schemaid,omitempty"`
+	VERSION            string `json:"version,omitempty"`
+	EXTRA              string `json:"extra,omitempty"`
+	Temp               bool   `json:"temp,omitempty"`
 	// for scan table only
 	RETAIN_SIZE int `json:"retainSize,omitempty"`
 	// for table only, to distinguish lookup & scan
@@ -298,6 +299,11 @@ type Options struct {
 	IsSchemaLess bool                        `json:"-"`
 	StreamName   string                      `json:"-"`
 }
+
+const (
+	BufferFullPolicyBlock      = "block"
+	BufferFullPolicyDropOldest = "dropOldest"
+)
 
 func (o Options) node() {}
 

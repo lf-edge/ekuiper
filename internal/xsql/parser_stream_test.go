@@ -89,19 +89,32 @@ func TestParser_ParseCreateStream(t *testing.T) {
 		{
 			s: `CREATE STREAM demo (
 					USERID BIGINT,
-				) WITH (DATASOURCE="users", FORMAT="JSON", KEY="USERID", STRICT_VALIDATION="true", SHARED="true");`,
+				) WITH (DATASOURCE="users", FORMAT="JSON", KEY="USERID", STRICT_VALIDATION="true", SHARED="true", BUFFER_FULL_POLICY="BLOCK");`,
 			stmt: &ast.StreamStmt{
 				Name: ast.StreamName("demo"),
 				StreamFields: []ast.StreamField{
 					{Name: "USERID", FieldType: &ast.BasicType{Type: ast.BIGINT}},
 				},
 				Options: &ast.Options{
-					DATASOURCE:        "users",
-					FORMAT:            "JSON",
-					KEY:               "USERID",
-					STRICT_VALIDATION: true,
-					SHARED:            true,
+					DATASOURCE:         "users",
+					FORMAT:             "JSON",
+					KEY:                "USERID",
+					STRICT_VALIDATION:  true,
+					SHARED:             true,
+					BUFFER_FULL_POLICY: ast.BufferFullPolicyBlock,
 				},
+			},
+		},
+		{
+			s:    `CREATE STREAM demo () WITH (DATASOURCE="users", BUFFER_FULL_POLICY="discard");`,
+			stmt: nil,
+			err:  `found "discard", expect block/dropOldest value in BUFFER_FULL_POLICY option.`,
+		},
+		{
+			s: `CREATE STREAM demo () WITH (DATASOURCE="users", BUFFER_FULL_POLICY="DropOldest");`,
+			stmt: &ast.StreamStmt{
+				Name:    ast.StreamName("demo"),
+				Options: &ast.Options{DATASOURCE: "users", BUFFER_FULL_POLICY: ast.BufferFullPolicyDropOldest},
 			},
 		},
 		{
@@ -296,7 +309,7 @@ func TestParser_ParseCreateStream(t *testing.T) {
 				StreamFields: nil,
 				Options:      nil,
 			},
-			err: `found "SOURCES", unknown option keys(DATASOURCE|FORMAT|KEY|CONF_KEY|SHARED|STRICT_VALIDATION|TYPE|TIMESTAMP|TIMESTAMP_FORMAT|RETAIN_SIZE|SCHEMAID|EXTRA|VERSION|TEMP|KIND|DELIMITER).`,
+			err: `found "SOURCES", unknown option keys(DATASOURCE|FORMAT|KEY|CONF_KEY|SHARED|BUFFER_FULL_POLICY|STRICT_VALIDATION|TYPE|TIMESTAMP|TIMESTAMP_FORMAT|RETAIN_SIZE|SCHEMAID|EXTRA|VERSION|TEMP|KIND|DELIMITER).`,
 		},
 
 		{

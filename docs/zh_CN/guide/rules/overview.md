@@ -158,7 +158,7 @@ eKuiper 已经内置了丰富的 sink connector 类型，如 mqtt、rest 和 fil
 | enableRuleTracer         | bool: false | 指定规则是否开启规则级别的数据追踪                                                                              |
 | planOptimizeStrategy     | 结构体         | 指定规则是否打开对应优化                                                                                   |
 | sendNilField             | bool: false | 指定规则是否输出值为 nil 的列                                                                              |
-| disableBufferFullDiscard | bool: false | 是否开启禁用缓冲区满了以后丢弃数据的行为                                                                           |
+| disableBufferFullDiscard | bool: false | 用于兼容的规则级缓冲区策略，在非共享流未配置 `BUFFER_FULL_POLICY` 时使用。流策略优先，并且同一规则的所有流必须解析为相同策略。共享流若要启用背压，必须在流定义上配置 `BUFFER_FULL_POLICY="block"`；共享流没有显式策略时仍不支持该规则选项。QoS 不会改变缓冲区策略。 |
 
 有关 `qos` 和 `checkpointInterval` 的详细信息，请查看[状态和容错](./state_and_fault_tolerance.md)。
 

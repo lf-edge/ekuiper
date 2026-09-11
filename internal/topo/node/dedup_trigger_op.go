@@ -49,20 +49,13 @@ func NewDedupTriggerNode(name string, options *def.RuleOption, aliasName string,
 		aname = aliasName
 	}
 	return &DedupTriggerNode{
-		defaultSinkNode: &defaultSinkNode{
-			input: make(chan interface{}, options.BufferLength),
-			defaultNode: &defaultNode{
-				outputs:   make(map[string]chan any),
-				name:      name,
-				sendError: options.SendError,
-			},
-		},
-		aliasName:  aname,
-		startField: startField,
-		endField:   endField,
-		expire:     expire,
-		nowField:   nowField,
-		requests:   make(PriorityQueue, 0),
+		defaultSinkNode: newDefaultSinkNode(name, options),
+		aliasName:       aname,
+		startField:      startField,
+		endField:        endField,
+		expire:          expire,
+		nowField:        nowField,
+		requests:        make(PriorityQueue, 0),
 	}
 }
 

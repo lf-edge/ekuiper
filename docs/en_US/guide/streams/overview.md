@@ -57,6 +57,7 @@ eKuiper allows inserting a default clause next to a type definition. The DEFAULT
 | CONF_KEY         | true     | If additional configuration items are required to be configured, then specify the config key here. Check [Conf_Key Configuration](#conf_key-configuration).                                                                                 |
 | EXTRA            | true     | Quick config to override stream configurations. Check [Extra Configuration](#extra-configuration).                                                                                                                                          |
 | SHARED           | true     | Whether the source instance will be shared across all rules using this stream                                                                                                                                                               |
+| BUFFER_FULL_POLICY | true   | Buffer behavior for rules consuming the stream: `block` waits for capacity and applies backpressure; `dropOldest` discards the oldest buffered item. All streams used by one rule must resolve to the same policy. For a shared stream, `block` must be configured here; when omitted, the legacy `dropOldest` behavior is retained. |
 | TIMESTAMP        | true     | The field to represent the event's timestamp. If specified, the rule will run with event time. Otherwise, it will run with processing time. Please refer to [timestamp management](../../sqls/windows.md#timestamp-management) for details. |
 | TIMESTAMP_FORMAT | true     | The default format to be used when converting string to or from datetime type.                                                                                                                                                              |
 | VERSION          | true     | Version of the stream, check [versioning](#versioning)。                                                                                                                                                                                     |
@@ -155,6 +156,18 @@ demo (
         ...
     ) WITH (DATASOURCE="test", FORMAT="JSON", KEY="USERID", SHARED="true");
 ```
+
+To apply backpressure instead of discarding buffered data, configure the policy on the shared stream:
+
+```text
+demo (
+        ...
+    ) WITH (DATASOURCE="test", FORMAT="JSON", SHARED="true", BUFFER_FULL_POLICY="block");
+```
+
+The stream policy applies to the shared sub-topology and every rule consuming it. If the option is omitted on a shared
+stream, eKuiper retains the legacy `dropOldest` behavior. A rule-level `disableBufferFullDiscard=true` remains invalid
+for such a stream; configure `BUFFER_FULL_POLICY` on the stream instead. Rule QoS does not implicitly change this policy.
 
 When a shared stream is used, multiple rules are no longer independent. During runtime, the shared stream and all its
 downstream sub-rules collectively form a large topological structure, logically equivalent to a single large composite

@@ -131,6 +131,85 @@ func TestMultipleOutputsBroadcast(t *testing.T) {
 	}
 }
 
+func TestBlockingOutputCanBeRemoved(t *testing.T) {
+	ctx := mockContext.NewMockContext("remove-blocked", "op1")
+	options := &def.RuleOption{}
+	options.SetBufferFullPolicy(def.BufferFullPolicyBlock)
+	n := newDefaultNode("test", options)
+	n.ctx = ctx
+	output := make(chan any, 1)
+	output <- "old"
+	require.NoError(t, n.AddOutput(output, "rule.1_test"))
+
+	broadcastDone := make(chan struct{})
+	go func() {
+		n.Broadcast("new")
+		close(broadcastDone)
+	}()
+
+	select {
+	case <-broadcastDone:
+		t.Fatal("broadcast unexpectedly completed while the lossless output was full")
+	case <-time.After(50 * time.Millisecond):
+	}
+
+	removeDone := make(chan error, 1)
+	go func() {
+		removeDone <- n.RemoveOutput("rule.1")
+	}()
+
+	select {
+	case err := <-removeDone:
+		require.NoError(t, err)
+	case <-time.After(time.Second):
+		t.Fatal("removing a blocked output timed out")
+	}
+	select {
+	case <-broadcastDone:
+	case <-time.After(time.Second):
+		t.Fatal("broadcast did not stop waiting after its output was removed")
+	}
+	require.Equal(t, "old", <-output)
+}
+
+func TestReplacingOutputCancelsOldEntry(t *testing.T) {
+	n := newDefaultNode("test", &def.RuleOption{})
+	require.NoError(t, n.AddOutput(make(chan any, 1), "same"))
+	oldDone := n.outputs["same"].done
+
+	require.NoError(t, n.AddOutput(make(chan any, 1), "same"))
+	select {
+	case <-oldDone:
+	default:
+		t.Fatal("replacing an output did not cancel the old entry")
+	}
+}
+
+func TestDroppingUnbufferedOutputCanBeRemoved(t *testing.T) {
+	ctx := mockContext.NewMockContext("remove-unbuffered", "op1")
+	n := newDefaultNode("test", &def.RuleOption{})
+	n.ctx = ctx
+	require.NoError(t, n.AddOutput(make(chan any), "rule.1_test"))
+
+	broadcastDone := make(chan struct{})
+	go func() {
+		n.Broadcast("new")
+		close(broadcastDone)
+	}()
+	select {
+	case <-broadcastDone:
+		t.Fatal("broadcast unexpectedly completed with no receiver")
+	case <-time.After(50 * time.Millisecond):
+	}
+
+	require.NoError(t, n.RemoveOutput("rule.1"))
+	select {
+	case <-broadcastDone:
+	case <-time.After(time.Second):
+		t.Fatal("broadcast did not stop waiting after its output was removed")
+	}
+}
+
 func BenchmarkBroadcastOutputs(b *testing.B) {
 	for _, outputCount := range []int{1, 4, 16} {
 		b.Run(fmt.Sprintf("outputs_%d", outputCount), func(b *testing.B) {
@@ -151,5 +230,23 @@ func BenchmarkBroadcastOutputs(b *testing.B) {
 				}
 			}
 		})
+	}
+}
+
+func TestSetQosPreservesBufferFullPolicy(t *testing.T) {
+	tests := []struct {
+		policy   def.BufferFullPolicy
+		qos      def.Qos
+		expected bool
+	}{
+		{policy: def.BufferFullPolicyDropOldest, qos: def.AtLeastOnce, expected: false},
+		{policy: def.BufferFullPolicyBlock, qos: def.AtLeastOnce, expected: true},
+	}
+	for _, tt := range tests {
+		options := &def.RuleOption{}
+		options.SetBufferFullPolicy(tt.policy)
+		n := newDefaultNode("test", options)
+		n.SetQos(tt.qos)
+		assert.Equal(t, tt.expected, n.disableBufferFullDiscard)
 	}
 }

@@ -26,7 +26,6 @@ import (
 
 	"github.com/gdexlab/go-render/render"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/io/mqtt"
@@ -2631,6 +2630,118 @@ func Test_createLogicalPlan(t *testing.T) {
 	}
 }
 
+func TestResolveBufferFullPolicy(t *testing.T) {
+	stream := func(name, policy string, shared bool) *streamInfo {
+		return &streamInfo{stmt: &ast.StreamStmt{
+			Name:       ast.StreamName(name),
+			StreamType: ast.TypeStream,
+			Options: &ast.Options{
+				SHARED:             shared,
+				BUFFER_FULL_POLICY: policy,
+			},
+		}}
+	}
+	tests := []struct {
+		name     string
+		streams  []*streamInfo
+		options  *def.RuleOption
+		expected bool
+		err      string
+	}{
+		{name: "missing rule options", streams: []*streamInfo{stream("s1", "", false)}, options: nil, err: "rule options are required"},
+		{name: "qos keeps legacy default", streams: []*streamInfo{stream("s1", "", false)}, options: &def.RuleOption{Qos: def.AtLeastOnce}, expected: false},
+		{name: "legacy shared", streams: []*streamInfo{stream("s1", "", true)}, options: &def.RuleOption{Qos: def.AtLeastOnce}, expected: false},
+		{name: "shared block", streams: []*streamInfo{stream("s1", ast.BufferFullPolicyBlock, true)}, options: &def.RuleOption{Qos: def.AtLeastOnce}, expected: true},
+		{name: "shared stream overrides rule block", streams: []*streamInfo{stream("s1", ast.BufferFullPolicyDropOldest, true)}, options: &def.RuleOption{DisableBufferFullDiscard: true}, expected: false},
+		{name: "stream policy with qos", streams: []*streamInfo{stream("s1", ast.BufferFullPolicyDropOldest, false)}, options: &def.RuleOption{Qos: def.AtLeastOnce}, expected: false},
+		{name: "matching streams", streams: []*streamInfo{stream("s1", ast.BufferFullPolicyBlock, true), stream("s2", ast.BufferFullPolicyBlock, false)}, options: &def.RuleOption{}, expected: true},
+		{name: "unset stream uses rule fallback", streams: []*streamInfo{stream("s1", ast.BufferFullPolicyBlock, true), stream("s2", "", false)}, options: &def.RuleOption{DisableBufferFullDiscard: true}, expected: true},
+		{name: "rule fallback conflict", streams: []*streamInfo{stream("s1", ast.BufferFullPolicyBlock, true), stream("s2", "", false)}, options: &def.RuleOption{}, err: "buffer full policy conflict: stream s1 uses block while stream s2 uses dropOldest; all streams in a rule must use the same policy"},
+		{name: "legacy shared rejects rule block", streams: []*streamInfo{stream("s1", "", true)}, options: &def.RuleOption{DisableBufferFullDiscard: true}, err: "disableBufferFullDiscard can't be enabled with shared stream s1 without BUFFER_FULL_POLICY; configure the policy on the stream instead"},
+		{name: "invalid stream policy", streams: []*streamInfo{stream("s1", "discard", false)}, options: &def.RuleOption{}, err: `stream s1 has invalid buffer full policy "discard"; expected block or dropOldest`},
+		{name: "stream conflict", streams: []*streamInfo{stream("s1", ast.BufferFullPolicyBlock, true), stream("s2", ast.BufferFullPolicyDropOldest, false)}, options: &def.RuleOption{}, err: "buffer full policy conflict: stream s1 uses block while stream s2 uses dropOldest; all streams in a rule must use the same policy"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var configured bool
+			if tt.options != nil {
+				configured = tt.options.DisableBufferFullDiscard
+			}
+			err := resolveBufferFullPolicy(tt.streams, tt.options)
+			if tt.err != "" {
+				assert.EqualError(t, err, tt.err)
+				return
+			}
+			assert.NoError(t, err)
+			assert.Equal(t, tt.expected, tt.options.BlockOnBufferFull())
+			assert.Equal(t, configured, tt.options.DisableBufferFullDiscard)
+		})
+	}
+}
+
+func TestCreateLogicalPlanSharedStreamBufferPolicy(t *testing.T) {
+	kv, err := store.GetKV("stream")
+	assert.NoError(t, err)
+	tests := []struct {
+		name          string
+		streamName    string
+		streamOptions string
+		expectedBlock bool
+	}{
+		{name: "legacy shared stream keeps dropping", streamName: "legacySharedPolicy", streamOptions: `SHARED="true"`, expectedBlock: false},
+		{name: "explicit shared stream blocks", streamName: "blockingSharedPolicy", streamOptions: `SHARED="true", BUFFER_FULL_POLICY="block"`, expectedBlock: true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			streamInfo, err := json.Marshal(&xsql.StreamInfo{
+				StreamType: ast.TypeStream,
+				Statement:  fmt.Sprintf(`CREATE STREAM %s () WITH (DATASOURCE="%s", FORMAT="json", %s);`, tt.streamName, tt.streamName, tt.streamOptions),
+			})
+			assert.NoError(t, err)
+			assert.NoError(t, kv.Set(tt.streamName, string(streamInfo)))
+			t.Cleanup(func() { _ = kv.Delete(tt.streamName) })
+
+			stmt, err := xsql.NewParser(strings.NewReader("SELECT * FROM " + tt.streamName)).Parse()
+			assert.NoError(t, err)
+			options := &def.RuleOption{Qos: def.AtLeastOnce}
+			_, err = CreateLogicalPlan(stmt, options, kv)
+			assert.NoError(t, err)
+			assert.Equal(t, tt.expectedBlock, options.BlockOnBufferFull())
+			assert.False(t, options.DisableBufferFullDiscard)
+		})
+	}
+}
+
+func TestResolveBufferFullPolicyReplanDoesNotChangeLegacyOption(t *testing.T) {
+	rule := &def.Rule{Options: &def.RuleOption{}}
+	explicitBlock := []*streamInfo{{
+		stmt: &ast.StreamStmt{
+			Name:       "shared",
+			StreamType: ast.TypeStream,
+			Options: &ast.Options{
+				SHARED:             true,
+				BUFFER_FULL_POLICY: ast.BufferFullPolicyBlock,
+			},
+		},
+	}}
+	assert.NoError(t, resolveBufferFullPolicy(explicitBlock, rule.Options))
+	assert.True(t, rule.Options.BlockOnBufferFull())
+	assert.False(t, rule.Options.DisableBufferFullDiscard)
+
+	legacyShared := []*streamInfo{{
+		stmt: &ast.StreamStmt{
+			Name:       "shared",
+			StreamType: ast.TypeStream,
+			Options: &ast.Options{
+				SHARED: true,
+			},
+		},
+	}}
+	assert.NoError(t, resolveBufferFullPolicy(legacyShared, rule.Options))
+	assert.False(t, rule.Options.BlockOnBufferFull())
+	assert.False(t, rule.Options.DisableBufferFullDiscard)
+}
+
 func Test_createLogicalPlanSchemaless(t *testing.T) {
 	kv, err := store.GetKV("stream")
 	if err != nil {
@@ -4659,21 +4770,4 @@ func TestTransformSourceNode(t *testing.T) {
 			assert.Equal(t, len(tc.ops), len(ops))
 		})
 	}
-}
-
-func TestCheckSharedSourceOption(t *testing.T) {
-	s1 := []*streamInfo{
-		{
-			stmt: &ast.StreamStmt{
-				Name: "s1",
-				Options: &ast.Options{
-					SHARED: true,
-				},
-			},
-		},
-	}
-	r1 := &def.RuleOption{
-		DisableBufferFullDiscard: true,
-	}
-	require.Error(t, checkSharedSourceOption(s1, r1))
 }
