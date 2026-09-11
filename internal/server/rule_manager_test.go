@@ -15,6 +15,8 @@
 package server
 
 import (
+	"crypto/sha256"
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -31,7 +33,7 @@ import (
 func TestErrors(t *testing.T) {
 	// update invalid rule
 	err := registry.UpsertRule("test", "selectabc")
-	assert.EqualError(t, err, "Invalid rule json: Parse rule selectabc error : invalid character 's' looking for beginning of value.")
+	assert.EqualError(t, err, fmt.Sprintf("Invalid rule json: Parse rule test error (bytes=9, sha256=%x, offset=1): invalid character 's' looking for beginning of value.", sha256.Sum256([]byte("selectabc"))))
 	err = registry.UpsertRule("test", `{"id":"test","sql":"SELECT * FROM demo","actions":[{"log":{}}]}`)
 	assert.EqualError(t, err, "fail to get stream demo, please check if stream is created")
 	// delete rule, no id
