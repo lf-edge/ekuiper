@@ -263,12 +263,7 @@ func dropNameConnection(ctx api.StreamContext, selId string) error {
 	if err != nil {
 		return fmt.Errorf("drop connection %s failed, err:%v", selId, err)
 	}
-	if meta.cw.IsInitialized() {
-		conn, err := meta.cw.Wait(ctx)
-		if conn != nil && err == nil {
-			conn.Close(ctx)
-		}
-	}
+	meta.cw.cancelAndClose(ctx)
 	delete(globalConnectionManager.connectionPool, selId)
 	return nil
 }
@@ -367,6 +362,7 @@ func detachConnection(ctx api.StreamContext, conId string) error {
 		if conId != refId {
 			conf.Log.Infof("action=close_connection connId=%s type=%s connectionKey=%s rule=%s op=%s reason=zero_ref", conId, meta.Typ, conId, ctx.GetRuleId(), ctx.GetOpId())
 		}
+		// TODO: cancel pending retries on anonymous connections as well.
 		close(meta.cw.detachCh)
 		conn, err := meta.cw.Wait(ctx)
 		if conn != nil && err == nil {
@@ -397,7 +393,7 @@ func createConnection(connCtx api.StreamContext, meta *Meta) (modules.Connection
 	err = backoff.Retry(func() error {
 		select {
 		case <-connCtx.Done():
-			return nil
+			return backoff.Permanent(connCtx.Err())
 		default:
 		}
 		meta.NotifyStatus(api.ConnectionConnecting, "")
@@ -421,7 +417,10 @@ func createConnection(connCtx api.StreamContext, meta *Meta) (modules.Connection
 			return err
 		}
 		return backoff.Permanent(err)
-	}, NewExponentialBackOff())
+	}, backoff.WithContext(NewExponentialBackOff(), connCtx))
+	if connCtx.Err() != nil {
+		return conn, connCtx.Err()
+	}
 	return conn, err
 }
 
