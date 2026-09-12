@@ -38,24 +38,29 @@ type ConnWrapper struct {
 	cancel      stdContext.CancelFunc
 }
 
-// close cancels pending retries and also closes a connection whose Dial finishes
-// after it has been removed from the pool.
-func (cw *ConnWrapper) close(ctx api.StreamContext) {
+// cancelAndClose cancels pending retries and closes the connection once Dial returns.
+// Dial must honor context cancellation for prompt cleanup; otherwise cleanup waits
+// for the in-flight call to finish.
+func (cw *ConnWrapper) cancelAndClose(ctx api.StreamContext) {
 	cw.cancel()
 	cleanup := func() {
-		<-cw.readCh
 		cw.l.RLock()
 		conn := cw.conn
 		cw.l.RUnlock()
 		if conn != nil {
-			conn.Close(ctx)
+			if err := conn.Close(ctx); err != nil {
+				ctx.GetLogger().Warnf("failed to close connection %s: %v", cw.ID, err)
+			}
 		}
 	}
 	select {
 	case <-cw.readCh:
 		cleanup()
 	default:
-		go cleanup()
+		go func() {
+			<-cw.readCh
+			cleanup()
+		}()
 	}
 }
 
