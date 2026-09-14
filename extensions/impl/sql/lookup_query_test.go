@@ -141,13 +141,15 @@ func TestParamSQLGenRejectsUnsafeIdentifiers(t *testing.T) {
 			"hello world",
 			"a b",
 			"1a",
-			"",
 		} {
 			_, _, err := s.buildGen().buildQuery([]string{"a"}, []string{key}, []any{1})
 			require.Error(t, err, "driver %s key %q", driver, key)
 			require.Contains(t, err.Error(), "invalid lookup key name")
 		}
-		_, _, err := s.buildGen().buildQuery([]string{"a`b"}, []string{"a"}, []any{1})
+		// Empty keys are rejected in every dialect with a dedicated error.
+		_, _, err := s.buildGen().buildQuery([]string{"a"}, []string{""}, []any{1})
+		require.ErrorContains(t, err, "must not be empty")
+		_, _, err = s.buildGen().buildQuery([]string{"a`b"}, []string{"a"}, []any{1})
 		require.Error(t, err)
 	}
 }
@@ -173,6 +175,8 @@ func TestParamSQLGenBacktickQuotedKey(t *testing.T) {
 	// Empty keys/fields are never valid.
 	_, _, err = s.buildGen().buildQuery([]string{"a"}, nil, nil)
 	require.Error(t, err)
+	_, _, err = s.buildGen().buildQuery([]string{"a"}, []string{""}, []any{1})
+	require.ErrorContains(t, err, "must not be empty")
 	_, _, err = s.buildGen().buildQuery([]string{""}, []string{"a"}, []any{1})
 	require.Error(t, err)
 }

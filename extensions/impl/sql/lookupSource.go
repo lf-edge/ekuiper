@@ -194,6 +194,11 @@ func (g paramSQLGen) buildQuery(fields []string, keys []string, values []interfa
 	if len(keys) == 0 {
 		return "", nil, fmt.Errorf("lookup keys must not be empty")
 	}
+	for _, k := range keys {
+		if k == "" {
+			return "", nil, fmt.Errorf("lookup key must not be empty")
+		}
+	}
 	if g.strictKeys {
 		for _, k := range keys {
 			if !isSafeDynamicFieldName(k) {
