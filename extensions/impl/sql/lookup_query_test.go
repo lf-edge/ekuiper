@@ -128,14 +128,17 @@ func TestParamSQLGenValueNeverInlined(t *testing.T) {
 }
 
 func TestParamSQLGenRejectsUnsafeIdentifiers(t *testing.T) {
-	// Same allowlist as sink-side dynamic field names: interpolated
-	// identifiers must match [A-Za-z_][A-Za-z0-9_]*, otherwise error out
-	// instead of inlining hostile text into SQL.
-	for _, driver := range []string{"mysql", "postgres", "sqlserver"} {
+	// Bare-identifier dialects (postgres/sqlserver/oracle/unknown) have no
+	// identifier-escaping mechanism, so keys must match the sink-side
+	// allowlist [A-Za-z_][A-Za-z0-9_]* and anything else errors out instead
+	// of reaching SQL text.
+	for _, driver := range []string{"postgres", "sqlserver", "oracle", "clickhouse"} {
 		s := &SqlLookupSource{driver: driver, table: "t"}
 		for _, key := range []string{
 			"a` = 1 OR `1`=`1",
 			`a"); DROP TABLE t;--`,
+			"device-id",
+			"hello world",
 			"a b",
 			"1a",
 			"",
@@ -147,6 +150,58 @@ func TestParamSQLGenRejectsUnsafeIdentifiers(t *testing.T) {
 		_, _, err := s.buildGen().buildQuery([]string{"a`b"}, []string{"a"}, []any{1})
 		require.Error(t, err)
 	}
+}
+
+func TestParamSQLGenBacktickQuotedKey(t *testing.T) {
+	// Regression: eKuiper backtick-quoted identifiers (lexical.go
+	// ScanBackquoteIdent) arrive with backticks stripped, e.g. a rule joining
+	// ON lookup.`device-id` yields key "device-id". The mysql/sqlite path
+	// must re-quote (escaping embedded backticks) rather than reject.
+	s := &SqlLookupSource{driver: "mysql", table: "device_alarm"}
+	q, args, err := s.buildGen().buildQuery(
+		[]string{"a_info"}, []string{"device_id", "device-id"}, []any{1, 2},
+	)
+	require.NoError(t, err)
+	require.Equal(t, "SELECT a_info FROM device_alarm WHERE `device_id` = ? AND `device-id` = ?", q)
+	require.Equal(t, []any{1, 2}, args)
+
+	q, args, err = s.buildGen().buildQuery([]string{"a"}, []string{"we`ird"}, []any{1})
+	require.NoError(t, err)
+	require.Equal(t, "SELECT a FROM device_alarm WHERE `we``ird` = ?", q)
+	require.Equal(t, []any{1}, args)
+
+	// Empty keys/fields are never valid.
+	_, _, err = s.buildGen().buildQuery([]string{"a"}, nil, nil)
+	require.Error(t, err)
+	_, _, err = s.buildGen().buildQuery([]string{""}, []string{"a"}, []any{1})
+	require.Error(t, err)
+}
+
+// TestParamSQLGenHyphenKeySQLiteRoundTrip proves the backtick-quoted join
+// key scenario end to end: column "device-id" can be looked up by key.
+func TestParamSQLGenHyphenKeySQLiteRoundTrip(t *testing.T) {
+	db, err := sql.Open("sqlite", ":memory:")
+	require.NoError(t, err)
+	defer db.Close()
+
+	_, err = db.Exec("CREATE TABLE t (`device-id` INTEGER, a_info TEXT)")
+	require.NoError(t, err)
+	_, err = db.Exec("INSERT INTO t (`device-id`, a_info) VALUES (?, ?)", 7, "x")
+	require.NoError(t, err)
+
+	s := &SqlLookupSource{driver: "sqlite", table: "t"}
+	q, args, err := s.buildGen().buildQuery([]string{"a_info"}, []string{"device-id"}, []any{7})
+	require.NoError(t, err)
+	require.Equal(t, "SELECT a_info FROM t WHERE `device-id` = ?", q)
+
+	rows, err := db.Query(q, args...)
+	require.NoError(t, err)
+	defer rows.Close()
+	require.True(t, rows.Next(), "expected one matching row for hyphenated key")
+	var info string
+	require.NoError(t, rows.Scan(&info))
+	require.Equal(t, "x", info)
+	require.False(t, rows.Next())
 }
 
 // TestParamSQLGenSQLiteRoundTrip reproduces #4138 end to end without an
