@@ -226,7 +226,11 @@ func bareQuoteID(k string) string     { return k }
 func questionPlaceholder(_ int) string { return "?" }
 func dollarPlaceholder(i int) string   { return fmt.Sprintf("$%d", i) }
 func atPPlaceholder(i int) string      { return fmt.Sprintf("@p%d", i) }
-func colonPlaceholder(i int) string    { return fmt.Sprintf(":%d", i) }
+
+// colonPlaceholder emits :1/:2 positional binds for go-ora/godror. Verified
+// against driver docs only; confirm with a real Oracle instance if possible,
+// as these drivers also accept named binds and behavior may vary by version.
+func colonPlaceholder(i int) string { return fmt.Sprintf(":%d", i) }
 
 func (s *SqlLookupSource) buildGen() sqlQueryGen {
 	switch strings.ToLower(s.driver) {
