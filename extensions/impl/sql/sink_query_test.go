@@ -22,7 +22,6 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-	_ "modernc.org/ql/driver"
 	_ "modernc.org/sqlite"
 
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
@@ -295,83 +294,4 @@ func TestSinkSqliteConnectorMisc(t *testing.T) {
 	require.NoError(t, bare.Provision(ctx, map[string]any{"dburl": dburl, "table": "t"}))
 	require.NoError(t, bare.Close(ctx))
 	require.Error(t, bare.Ping(ctx, map[string]any{"dburl": "", "table": "t"}))
-}
-
-func TestSinkDialectCapabilities(t *testing.T) {
-	ctx := mockContext.NewMockContext("sink_dialect", "op1")
-	// MaxCompute cannot bind: zero-arg inline literals, exactly like before.
-	for _, driver := range []string{"maxcompute", "mc"} {
-		next, inline := sinkDialect(ctx, driver)
-		require.True(t, inline, "driver %s", driver)
-		b := &sqlSinkBinder{next: next, inline: inline}
-		require.Equal(t, "'O''Brien'", b.bind("O'Brien"))
-		require.Equal(t, "7", b.bind(7))
-		require.Empty(t, b.args)
-	}
-	// QL requires numbered binds; everything else binds by default.
-	for driver, want := range map[string]string{
-		"ql": "$1", "cznic": "$1", "cznicql": "$1",
-		"mysql": "?", "postgres": "$1", "sqlserver": "@p1", "oracle": ":1",
-	} {
-		next, inline := sinkDialect(ctx, driver)
-		require.False(t, inline, "driver %s", driver)
-		b := &sqlSinkBinder{next: next, inline: inline}
-		require.Equal(t, want, b.bind(1), "driver %s", driver)
-		require.Equal(t, []any{1}, b.args)
-	}
-}
-
-func TestSinkMaxComputeInlineSnapshot(t *testing.T) {
-	// Byte-identical to the pre-parameterization output: complete SQL text,
-	// zero args, so the MaxCompute Exec path passes the query through.
-	ctx := mockContext.NewMockContext("sink_mc", "op1")
-	next, inline := sinkDialect(ctx, "maxcompute")
-	require.True(t, inline)
-	newBinder := func() *sqlSinkBinder { return &sqlSinkBinder{next: next, inline: inline} }
-
-	cfg := &sqlSinkConfig{}
-	b := newBinder()
-	row, err := cfg.buildInsertRow(ctx, b,
-		map[string]any{"a": 1, "b": "O'Brien"}, []string{"a", "b"})
-	require.NoError(t, err)
-	require.Equal(t, "INSERT INTO t (a,b) values (1,'O''Brien');",
-		buildInsertSQL("t", []string{"a", "b"}, []string{row}))
-	require.Empty(t, b.args)
-
-	b = newBinder()
-	got := buildUpdateSQL("t", []string{"b"}, b,
-		map[string]any{"b": "x"}, "a", 1)
-	require.Equal(t, "UPDATE t SET b='x' WHERE a = 1;", got)
-	require.Empty(t, b.args)
-
-	b = newBinder()
-	got = buildDeleteSQL("t", "a", "O'Brien", b)
-	require.Equal(t, "DELETE FROM t WHERE a = 'O''Brien';", got)
-	require.Empty(t, b.args)
-}
-
-// TestSinkQLBindEndToEnd proves against a real QL engine that $N binds work
-// through database/sql while a bare ? does not, i.e. the old ? default was
-// broken for QL and dollarBind fixes it.
-func TestSinkQLBindEndToEnd(t *testing.T) {
-	db, err := sql.Open("ql-mem", "sink_ql_bind.db")
-	require.NoError(t, err)
-	defer db.Close()
-
-	tx, err := db.Begin()
-	require.NoError(t, err)
-	_, err = tx.Exec("CREATE TABLE t (Qty int, Name string);")
-	require.NoError(t, err)
-	// Numbered binds as emitted by dollarBind.
-	_, err = tx.Exec("INSERT INTO t VALUES ($1, $2), ($3, $4);", 42, "foo", 7, "O'Brien")
-	require.NoError(t, err)
-	require.NoError(t, tx.Commit())
-
-	var name string
-	require.NoError(t, db.QueryRow("SELECT Name FROM t WHERE Qty == $1;", 7).Scan(&name))
-	require.Equal(t, "O'Brien", name)
-
-	// Bare ? is not a valid QL parameter and must fail.
-	_, err = db.Exec("INSERT INTO t VALUES (?, ?);", 1, "x")
-	require.Error(t, err)
 }

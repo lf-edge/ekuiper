@@ -47,10 +47,7 @@ type SQLSinkConnector struct {
 	needReconnect bool
 	// bindNext renders the bind variable for the i-th (1-based) argument of
 	// the current statement, resolved from the driver in Provision.
-	// bindInline selects legacy inline literals for drivers that cannot
-	// bind (see sqlSinkBinder).
-	bindNext   func(i int) string
-	bindInline bool
+	bindNext func(i int) string
 }
 
 type sqlSinkConfig struct {
@@ -82,26 +79,13 @@ func (c *sqlSinkConfig) buildInsertRow(ctx api.StreamContext, b *sqlSinkBinder, 
 // sqlSinkBinder numbers bind variables within a single statement and
 // collects the matching arguments. Values stay Go values; the driver formats
 // time.Time, strings, etc. instead of string-concatenating them into SQL.
-//
-// Some drivers cannot bind at all. The pinned MaxCompute driver mangles any
-// supplied args (its Exec path runs fmt.Sprintf over the query, and Prepare
-// panics), so for those dialects the binder works in inline mode: bind
-// renders the historical literal and appends nothing, yielding a complete
-// SQL string executed with zero args exactly like before.
 type sqlSinkBinder struct {
-	next   func(i int) string
-	inline bool
-	n      int
-	args   []any
+	next func(i int) string
+	n    int
+	args []any
 }
 
 func (b *sqlSinkBinder) bind(v any) string {
-	if b.inline {
-		if s, ok := v.(string); ok {
-			return "'" + strings.ReplaceAll(s, "'", "''") + "'"
-		}
-		return fmt.Sprintf(`%v`, v)
-	}
 	b.n++
 	b.args = append(b.args, v)
 	return b.next(b.n)
@@ -114,33 +98,24 @@ func dollarBind(i int) string { return fmt.Sprintf("$%d", i) }
 func atPBind(i int) string    { return fmt.Sprintf("@p%d", i) }
 func colonBind(i int) string  { return fmt.Sprintf(":%d", i) }
 
-// sinkDialect resolves the placeholder style and binding capability for a
-// driver name as reported by dburl. Drivers fall back to "?" binding; only
-// drivers proven to mangle bound args (MaxCompute) use inline literals.
-func sinkDialect(ctx api.StreamContext, driver string) (next func(i int) string, inline bool) {
+// sinkBinderForDriver resolves the placeholder style for a driver name as
+// reported by dburl. Drivers outside the mapping share the "?" default.
+// MaxCompute and QL are not in the supported matrix and intentionally
+// receive no special handling here.
+func sinkBinderForDriver(ctx api.StreamContext, driver string) func(i int) string {
 	switch strings.ToLower(driver) {
 	case "postgres", "postgresql", "pgx":
-		return dollarBind, false
+		return dollarBind
 	case "sqlserver", "mssql":
-		return atPBind, false
+		return atPBind
 	case "oracle", "godror", "ora", "go-ora":
-		return colonBind, false
-	case "ql", "cznic", "cznicql":
-		// QL parameters require a numeric suffix ($1 or ?1); bare ? is invalid.
-		return dollarBind, false
-	case "maxcompute", "mc":
-		return qmarkBind, true
+		return colonBind
 	case "mysql", "mymysql", "sqlite", "sqlite3":
-		return qmarkBind, false
+		return qmarkBind
 	default:
 		ctx.GetLogger().Warnf("unknown sql driver %q for sink, falling back to \"?\" placeholders", driver)
-		return qmarkBind, false
+		return qmarkBind
 	}
-}
-
-func sinkBinderForDriver(ctx api.StreamContext, driver string) func(i int) string {
-	next, _ := sinkDialect(ctx, driver)
-	return next
 }
 
 // isSafeDynamicFieldName recognizes dynamic message keys that cannot alter SQL syntax.
@@ -203,7 +178,7 @@ func (s *SQLSinkConnector) Provision(ctx api.StreamContext, configs map[string]a
 	}
 	s.config = c
 	s.props = configs
-	s.bindNext, s.bindInline = sinkDialect(ctx, driver)
+	s.bindNext = sinkBinderForDriver(ctx, driver)
 	return nil
 }
 
@@ -255,7 +230,7 @@ func (s *SQLSinkConnector) collect(ctx api.StreamContext, item map[string]any) e
 		if err != nil {
 			return err
 		}
-		b := &sqlSinkBinder{next: s.bindNext, inline: s.bindInline}
+		b := &sqlSinkBinder{next: s.bindNext}
 		row, err := s.config.buildInsertRow(ctx, b, item, keys)
 		if err != nil {
 			return err
@@ -287,7 +262,7 @@ func (s *SQLSinkConnector) collectList(ctx api.StreamContext, items []map[string
 	if err != nil {
 		return err
 	}
-	b := &sqlSinkBinder{next: s.bindNext, inline: s.bindInline}
+	b := &sqlSinkBinder{next: s.bindNext}
 	var values []string
 	if len(s.config.RowKindField) < 1 {
 		for _, mapData := range items {
@@ -331,7 +306,7 @@ func (s *SQLSinkConnector) save(ctx api.StreamContext, table string, data map[st
 	}
 	var sqlStr string
 	var args []any
-	b := &sqlSinkBinder{next: s.bindNext, inline: s.bindInline}
+	b := &sqlSinkBinder{next: s.bindNext}
 	switch rowkind {
 	case ast.RowkindInsert:
 		row, err := s.config.buildInsertRow(ctx, b, data, keys)
