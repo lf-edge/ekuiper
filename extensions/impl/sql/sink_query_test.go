@@ -286,6 +286,9 @@ func TestSinkSqliteConnectorMisc(t *testing.T) {
 		Maps: []map[string]any{{"bad-key": 1, "action": "insert"}},
 	}))
 
+	// Close on a never-provisioned connector must not panic.
+	require.NoError(t, (&SQLSinkConnector{}).Close(ctx))
+
 	// Close without connect; Ping against bad props.
 	bare := &SQLSinkConnector{}
 	require.NoError(t, bare.Provision(ctx, map[string]any{"dburl": dburl, "table": "t"}))

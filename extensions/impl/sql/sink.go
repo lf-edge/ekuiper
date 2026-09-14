@@ -201,7 +201,9 @@ func (s *SQLSinkConnector) Connect(ctx api.StreamContext, sc api.StatusChangeHan
 }
 
 func (s *SQLSinkConnector) Close(ctx api.StreamContext) error {
-	ctx.GetLogger().Infof("Closing sql sink connector url:%v", s.config.DBUrl)
+	if s.config != nil {
+		ctx.GetLogger().Infof("Closing sql sink connector url:%v", s.config.DBUrl)
+	}
 	if s.cw != nil {
 		return connection.DetachConnection(ctx, s.cw.ID)
 	}
