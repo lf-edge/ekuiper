@@ -16,12 +16,16 @@ package sql
 
 import (
 	"database/sql"
+	"fmt"
+	"path/filepath"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 	_ "modernc.org/sqlite"
 
+	"github.com/lf-edge/ekuiper/v2/internal/xsql"
+	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
 
@@ -123,4 +127,168 @@ func TestSinkSQLiteRoundTrip(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, db.QueryRow(`SELECT COUNT(*) FROM t`).Scan(&count))
 	require.Equal(t, 0, count)
+}
+
+func TestSinkBinderForDriver(t *testing.T) {
+	ctx := mockContext.NewMockContext("sink_binder", "op1")
+	for driver, want := range map[string]string{
+		"mysql": "?", "sqlite": "?", "sqlite3": "?", "mymysql": "?",
+		"postgres": "$1", "postgresql": "$1", "pgx": "$1",
+		"sqlserver": "@p1", "mssql": "@p1",
+		"oracle": ":1", "godror": ":1", "ora": ":1",
+		"clickhouse": "?",
+	} {
+		b := &sqlSinkBinder{next: sinkBinderForDriver(ctx, driver)}
+		require.Equal(t, want, b.bind(1), "driver %s", driver)
+	}
+}
+
+func TestSinkProvisionErrs(t *testing.T) {
+	ctx := mockContext.NewMockContext("sink_prov", "op1")
+	s := &SQLSinkConnector{}
+	require.Error(t, s.Provision(ctx, map[string]any{}))
+	require.Error(t, s.Provision(ctx, map[string]any{"dburl": "sqlite:///x.db"}))
+	require.Error(t, s.Provision(ctx, map[string]any{
+		"dburl": "sqlite:///x.db", "table": "t", "rowKindField": "action",
+	}))
+	require.Error(t, s.Provision(ctx, map[string]any{
+		"dburl": "123", "table": "t",
+	}))
+	// Undecodable property types fail struct mapping.
+	require.Error(t, s.Provision(ctx, map[string]any{
+		"dburl": 123, "table": "t",
+	}))
+}
+
+// TestSinkSqliteConnectorEndToEnd drives Provision/Connect/Collect/
+// CollectList/save/Close against a temp-file sqlite database, covering the
+// connector paths that builder-only tests cannot reach.
+func TestSinkSqliteConnectorEndToEnd(t *testing.T) {
+	require.NoError(t, connection.InitConnectionManager4Test())
+	ctx := mockContext.NewMockContext("sink_e2e", "op1")
+	dburl := fmt.Sprintf("sqlite://%s", filepath.Join(t.TempDir(), "e2e.db"))
+
+	newSink := func(props map[string]any) *SQLSinkConnector {
+		s := &SQLSinkConnector{}
+		require.NoError(t, s.Provision(ctx, props))
+		require.NoError(t, s.Connect(ctx, func(string, string) {}))
+		return s
+	}
+
+	s := newSink(map[string]any{"dburl": dburl, "table": "t"})
+	defer s.Close(ctx)
+	_, err := s.conn.GetDB().Exec(`CREATE TABLE t (id INTEGER PRIMARY KEY, note TEXT, ts DATETIME)`)
+	require.NoError(t, err)
+
+	ts := time.Date(2019, 9, 19, 0, 55, 15, 0, time.UTC)
+	require.NoError(t, s.Collect(ctx, &xsql.Tuple{
+		Emitter: "test",
+		Message: map[string]any{"id": 1, "note": "O'Brien", "ts": ts},
+	}))
+	var note string
+	var got time.Time
+	require.NoError(t, s.conn.GetDB().QueryRow(`SELECT note, ts FROM t WHERE id = 1`).Scan(&note, &got))
+	require.Equal(t, "O'Brien", note)
+	require.True(t, got.Equal(ts))
+
+	// Batch insert; the second row misses "note" and must store NULL.
+	require.NoError(t, s.CollectList(ctx, &xsql.TransformedTupleList{
+		Maps: []map[string]any{
+			{"id": 2, "note": "a", "ts": ts},
+			{"id": 3, "ts": ts},
+		},
+	}))
+	var nullNote sql.NullString
+	require.NoError(t, s.conn.GetDB().QueryRow(`SELECT note FROM t WHERE id = 3`).Scan(&nullNote))
+	require.False(t, nullNote.Valid)
+
+	// Unsafe dynamic key without configured fields must fail before touching SQL.
+	require.Error(t, s.collect(ctx, map[string]any{"bad-key": 1}))
+	// Same through the Collect wrapper (covers the exception metric path).
+	require.Error(t, s.Collect(ctx, &xsql.Tuple{Message: map[string]any{"bad-key": 1}}))
+	// Empty item fails in row building.
+	require.Error(t, s.collect(ctx, map[string]any{}))
+
+	// writeToDB error path sets needReconnect; breaking the pooled *sql.DB
+	// makes the next Exec fail, and Reconnect redials the sqlite file.
+	require.NoError(t, s.conn.GetDB().Close())
+	require.Error(t, s.Collect(ctx, &xsql.Tuple{Message: map[string]any{"id": 9}}))
+	require.True(t, s.needReconnect)
+	require.NoError(t, s.Collect(ctx, &xsql.Tuple{Message: map[string]any{"id": 9}}))
+	require.False(t, s.needReconnect)
+
+	// Rowkind paths.
+	s2 := newSink(map[string]any{
+		"dburl": dburl, "table": "t", "fields": []string{"id", "note"},
+		"rowKindField": "action", "keyField": "id",
+	})
+	defer s2.Close(ctx)
+	require.NoError(t, s2.collect(ctx, map[string]any{"id": 10, "note": "n", "action": "insert"}))
+	require.NoError(t, s2.collect(ctx, map[string]any{"id": 10, "note": "u", "action": "update"}))
+	require.NoError(t, s2.conn.GetDB().QueryRow(`SELECT note FROM t WHERE id = 10`).Scan(&note))
+	require.Equal(t, "u", note)
+	require.NoError(t, s2.collect(ctx, map[string]any{"id": 10, "note": "u", "action": "delete"}))
+	var count int
+	require.NoError(t, s2.conn.GetDB().QueryRow(`SELECT COUNT(*) FROM t WHERE id = 10`).Scan(&count))
+	require.Equal(t, 0, count)
+	require.Error(t, s2.collect(ctx, map[string]any{"id": 1, "action": "mock"}))
+	require.Error(t, s2.collect(ctx, map[string]any{"id": 1, "action": 123}))
+	require.Error(t, s2.collect(ctx, map[string]any{"note": "x", "action": "update"}))
+	require.Error(t, s2.collect(ctx, map[string]any{"note": "x", "action": "delete"}))
+
+	require.NoError(t, s.Ping(ctx, map[string]any{"dburl": dburl, "table": "t"}))
+}
+
+func TestSinkSqliteConnectorMisc(t *testing.T) {
+	require.NoError(t, connection.InitConnectionManager4Test())
+	ctx := mockContext.NewMockContext("sink_misc", "op1")
+	dburl := fmt.Sprintf("sqlite://%s", filepath.Join(t.TempDir(), "misc.db"))
+
+	// Consume drops sink-only props.
+	s := &SQLSinkConnector{}
+	props := map[string]any{"fields": []string{"a"}, "table": "t"}
+	s.Consume(props)
+	require.Equal(t, map[string]any{"table": "t"}, props)
+
+	// Close/CollectList on a rowkind sink: batch goes through save per row.
+	s2 := &SQLSinkConnector{}
+	require.NoError(t, s2.Provision(ctx, map[string]any{
+		"dburl": dburl, "table": "t", "fields": []string{"id", "note"},
+		"rowKindField": "action", "keyField": "id",
+	}))
+	require.NoError(t, s2.Connect(ctx, func(string, string) {}))
+	defer s2.Close(ctx)
+	_, err := s2.conn.GetDB().Exec(`CREATE TABLE t (id INTEGER PRIMARY KEY, note TEXT)`)
+	require.NoError(t, err)
+	require.NoError(t, s2.CollectList(ctx, &xsql.TransformedTupleList{
+		Maps: []map[string]any{
+			{"id": 1, "note": "a", "action": "insert"},
+			{"id": 1, "note": "b", "action": "update"},
+			// A bad row must not abort the batch; the error is only logged.
+			{"id": 2, "note": "c", "action": "mock"},
+		},
+	}))
+	var note string
+	require.NoError(t, s2.conn.GetDB().QueryRow(`SELECT note FROM t WHERE id = 1`).Scan(&note))
+	require.Equal(t, "b", note)
+
+	// Empty batch is a no-op.
+	require.NoError(t, s2.CollectList(ctx, &xsql.TransformedTupleList{}))
+
+	// A batch that fails key extraction surfaces the error.
+	s3 := &SQLSinkConnector{}
+	require.NoError(t, s3.Provision(ctx, map[string]any{
+		"dburl": dburl, "table": "t", "rowKindField": "action", "keyField": "id",
+	}))
+	require.NoError(t, s3.Connect(ctx, func(string, string) {}))
+	defer s3.Close(ctx)
+	require.Error(t, s3.CollectList(ctx, &xsql.TransformedTupleList{
+		Maps: []map[string]any{{"bad-key": 1, "action": "insert"}},
+	}))
+
+	// Close without connect; Ping against bad props.
+	bare := &SQLSinkConnector{}
+	require.NoError(t, bare.Provision(ctx, map[string]any{"dburl": dburl, "table": "t"}))
+	require.NoError(t, bare.Close(ctx))
+	require.Error(t, bare.Ping(ctx, map[string]any{"dburl": "", "table": "t"}))
 }
