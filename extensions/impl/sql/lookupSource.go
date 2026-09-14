@@ -219,8 +219,14 @@ func (s *SqlLookupSource) buildGen() sqlQueryGen {
 		return paramSQLGen{table: s.table, quoteID: bareQuoteID, placeholder: atPPlaceholder}
 	case "oracle", "godror", "ora", "go-ora":
 		return paramSQLGen{table: s.table, quoteID: bareQuoteID, placeholder: colonPlaceholder}
-	default:
+	case "mysql", "mymysql", "sqlite", "sqlite3":
 		return paramSQLGen{table: s.table, quoteID: backtickQuoteID, placeholder: questionPlaceholder}
+	default:
+		// Unknown drivers fall back to bare identifiers with "?" placeholders:
+		// backticks are rejected by most dialects, while bare identifiers and
+		// "?" are accepted by the majority (clickhouse, snowflake, presto, ...).
+		conf.Log.Warnf("unknown sql driver %q for lookup source, falling back to \"?\" placeholders", s.driver)
+		return paramSQLGen{table: s.table, quoteID: bareQuoteID, placeholder: questionPlaceholder}
 	}
 }
 

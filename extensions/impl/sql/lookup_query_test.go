@@ -81,6 +81,10 @@ func TestParamSQLGenDialects(t *testing.T) {
 		{"mssql", "SELECT a FROM t WHERE a = @p1 AND b = @p2"},
 		{"oracle", "SELECT a FROM t WHERE a = :1 AND b = :2"},
 		{"godror", "SELECT a FROM t WHERE a = :1 AND b = :2"},
+		{"mymysql", "SELECT a FROM t WHERE `a` = ? AND `b` = ?"},
+		// Unknown drivers fall back to bare identifiers with "?" placeholders.
+		{"clickhouse", "SELECT a FROM t WHERE a = ? AND b = ?"},
+		{"snowflake", "SELECT a FROM t WHERE a = ? AND b = ?"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.driver, func(t *testing.T) {
