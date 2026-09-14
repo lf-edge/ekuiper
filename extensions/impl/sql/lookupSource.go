@@ -112,7 +112,11 @@ func (s *SqlLookupSource) Lookup(ctx api.StreamContext, fields []string, keys []
 	var query string
 	var args []any
 	if s.conf.TemplateSqlQueryCfg == nil {
-		query, args = s.gen.buildQuery(fields, keys, values)
+		var err error
+		query, args, err = s.gen.buildQuery(fields, keys, values)
+		if err != nil {
+			return nil, err
+		}
 	} else {
 		mapValue := make(map[string]any)
 		for index, key := range keys {
@@ -159,7 +163,7 @@ func (s *SqlLookupSource) Lookup(ctx api.StreamContext, fields []string, keys []
 }
 
 type sqlQueryGen interface {
-	buildQuery(fields []string, keys []string, values []interface{}) (string, []any)
+	buildQuery(fields []string, keys []string, values []interface{}) (string, []any, error)
 }
 
 // paramSQLGen builds parameterized lookup queries. Values are passed as
@@ -175,7 +179,20 @@ type paramSQLGen struct {
 	placeholder func(i int) string
 }
 
-func (g paramSQLGen) buildQuery(fields []string, keys []string, values []interface{}) (string, []any) {
+func (g paramSQLGen) buildQuery(fields []string, keys []string, values []interface{}) (string, []any, error) {
+	// Identifiers are interpolated, not bound, so they must be allowlisted
+	// like sink-side dynamic field names. Table is operator-configured and
+	// trusted; keys/fields come from rule text and are validated here.
+	for _, f := range fields {
+		if !isSafeDynamicFieldName(f) {
+			return "", nil, fmt.Errorf("invalid lookup field name %q: expected [A-Za-z_][A-Za-z0-9_]*", f)
+		}
+	}
+	for _, k := range keys {
+		if !isSafeDynamicFieldName(k) {
+			return "", nil, fmt.Errorf("invalid lookup key name %q: expected [A-Za-z_][A-Za-z0-9_]*", k)
+		}
+	}
 	query := "SELECT "
 	if len(fields) == 0 {
 		query += "*"
@@ -200,7 +217,7 @@ func (g paramSQLGen) buildQuery(fields []string, keys []string, values []interfa
 		query += fmt.Sprintf("%s = %s", g.quoteID(k), g.placeholder(len(args)+1))
 		args = append(args, values[i])
 	}
-	return query, args
+	return query, args, nil
 }
 
 func backtickQuoteID(k string) string { return fmt.Sprintf("`%s`", k) }

@@ -27,11 +27,12 @@ import (
 func TestParamSQLGenMySQL(t *testing.T) {
 	s := &SqlLookupSource{driver: "mysql", table: "device_alarm"}
 	ts := time.Date(2019, 9, 19, 0, 55, 15, 0, time.UTC)
-	q, args := s.buildGen().buildQuery(
+	q, args, err := s.buildGen().buildQuery(
 		[]string{"a_info", "a_time"},
 		[]string{"device_id", "a_time"},
 		[]any{123, ts},
 	)
+	require.NoError(t, err)
 	require.Equal(t, "SELECT a_info,a_time FROM device_alarm WHERE `device_id` = ? AND `a_time` = ?", q)
 	require.Equal(t, []any{123, ts}, args)
 }
@@ -39,29 +40,32 @@ func TestParamSQLGenMySQL(t *testing.T) {
 func TestParamSQLGenPostgres(t *testing.T) {
 	s := &SqlLookupSource{driver: "postgres", table: "device_alarm"}
 	ts := time.Date(2019, 9, 19, 0, 55, 15, 0, time.UTC)
-	q, args := s.buildGen().buildQuery(
+	q, args, err := s.buildGen().buildQuery(
 		[]string{"a_info", "a_time"},
 		[]string{"device_id", "a_time"},
 		[]any{123, ts},
 	)
 	// time.Time must be a bound argument, never inlined as
 	// "a_time = 2019-09-19 00:55:15 +0000 UTC"
+	require.NoError(t, err)
 	require.Equal(t, "SELECT a_info,a_time FROM device_alarm WHERE device_id = $1 AND a_time = $2", q)
 	require.Equal(t, []any{123, ts}, args)
 }
 
 func TestParamSQLGenSQLServer(t *testing.T) {
 	s := &SqlLookupSource{driver: "sqlserver", table: "device_alarm"}
-	q, args := s.buildGen().buildQuery(
+	q, args, err := s.buildGen().buildQuery(
 		[]string{"a"}, []string{"a", "b"}, []any{1, "O'Brien"},
 	)
+	require.NoError(t, err)
 	require.Equal(t, "SELECT a FROM device_alarm WHERE a = @p1 AND b = @p2", q)
 	require.Equal(t, []any{1, "O'Brien"}, args)
 }
 
 func TestParamSQLGenNull(t *testing.T) {
 	s := &SqlLookupSource{driver: "mysql", table: "t"}
-	q, args := s.buildGen().buildQuery([]string{"a"}, []string{"a"}, []any{nil})
+	q, args, err := s.buildGen().buildQuery([]string{"a"}, []string{"a"}, []any{nil})
+	require.NoError(t, err)
 	require.Equal(t, "SELECT a FROM t WHERE `a` IS NULL", q)
 	require.Empty(t, args)
 }
@@ -89,7 +93,8 @@ func TestParamSQLGenDialects(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.driver, func(t *testing.T) {
 			s := &SqlLookupSource{driver: tc.driver, table: "t"}
-			q, args := s.buildGen().buildQuery([]string{"a"}, []string{"a", "b"}, []any{1, 2})
+			q, args, err := s.buildGen().buildQuery([]string{"a"}, []string{"a", "b"}, []any{1, 2})
+			require.NoError(t, err)
 			require.Equal(t, tc.want, q)
 			require.Equal(t, []any{1, 2}, args)
 		})
@@ -98,7 +103,8 @@ func TestParamSQLGenDialects(t *testing.T) {
 
 func TestParamSQLGenSelectAllAndMixedNull(t *testing.T) {
 	s := &SqlLookupSource{driver: "postgres", table: "t"}
-	q, args := s.buildGen().buildQuery(nil, []string{"a", "b", "c"}, []any{nil, 1, nil})
+	q, args, err := s.buildGen().buildQuery(nil, []string{"a", "b", "c"}, []any{nil, 1, nil})
+	require.NoError(t, err)
 	require.Equal(t, "SELECT * FROM t WHERE a IS NULL AND b = $1 AND c IS NULL", q)
 	require.Equal(t, []any{1}, args)
 }
@@ -108,15 +114,38 @@ func TestParamSQLGenValueNeverInlined(t *testing.T) {
 	// its Go type. Strings with quotes stay as bound args too.
 	s := &SqlLookupSource{driver: "postgres", table: "device_alarm"}
 	ts := time.Date(2019, 9, 19, 0, 55, 15, 0, time.UTC)
-	q, args := s.buildGen().buildQuery(
+	q, args, err := s.buildGen().buildQuery(
 		[]string{"a_info"}, []string{"device_id", "a_time", "note"}, []any{123, ts, "x'); DROP TABLE device_alarm;--"},
 	)
+	require.NoError(t, err)
 	require.NotContains(t, q, "2019-09-19")
 	require.NotContains(t, q, "DROP TABLE")
 	require.NotContains(t, q, "O'Brien")
 	require.Equal(t, []any{123, ts, "x'); DROP TABLE device_alarm;--"}, args)
 	for _, k := range []string{"device_id", "a_time", "note"} {
 		require.Contains(t, q, k)
+	}
+}
+
+func TestParamSQLGenRejectsUnsafeIdentifiers(t *testing.T) {
+	// Same allowlist as sink-side dynamic field names: interpolated
+	// identifiers must match [A-Za-z_][A-Za-z0-9_]*, otherwise error out
+	// instead of inlining hostile text into SQL.
+	for _, driver := range []string{"mysql", "postgres", "sqlserver"} {
+		s := &SqlLookupSource{driver: driver, table: "t"}
+		for _, key := range []string{
+			"a` = 1 OR `1`=`1",
+			`a"); DROP TABLE t;--`,
+			"a b",
+			"1a",
+			"",
+		} {
+			_, _, err := s.buildGen().buildQuery([]string{"a"}, []string{key}, []any{1})
+			require.Error(t, err, "driver %s key %q", driver, key)
+			require.Contains(t, err.Error(), "invalid lookup key name")
+		}
+		_, _, err := s.buildGen().buildQuery([]string{"a`b"}, []string{"a"}, []any{1})
+		require.Error(t, err)
 	}
 }
 
@@ -135,11 +164,12 @@ func TestParamSQLGenSQLiteRoundTrip(t *testing.T) {
 	require.NoError(t, err)
 
 	s := &SqlLookupSource{driver: "sqlite", table: "device_alarm"}
-	q, args := s.buildGen().buildQuery(
+	q, args, err := s.buildGen().buildQuery(
 		[]string{"a_info", "a_time"},
 		[]string{"device_id", "a_time"},
 		[]any{123, ts},
 	)
+	require.NoError(t, err)
 	require.True(t, strings.HasSuffix(q, "WHERE `device_id` = ? AND `a_time` = ?"))
 
 	rows, err := db.Query(q, args...)
