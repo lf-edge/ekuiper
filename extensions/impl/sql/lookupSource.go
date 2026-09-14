@@ -110,8 +110,13 @@ func (s *SqlLookupSource) Lookup(ctx api.StreamContext, fields []string, keys []
 		}
 	}
 	var query string
+	var args []any
 	if s.conf.TemplateSqlQueryCfg == nil {
-		query = s.gen.buildQuery(fields, keys, values)
+		var err error
+		query, args, err = s.gen.buildQuery(fields, keys, values)
+		if err != nil {
+			return nil, err
+		}
 	} else {
 		mapValue := make(map[string]any)
 		for index, key := range keys {
@@ -123,18 +128,19 @@ func (s *SqlLookupSource) Lookup(ctx api.StreamContext, fields []string, keys []
 		}
 		query = sqlQuery
 	}
-	ctx.GetLogger().Debugf("Query is %s", query)
-	rows, err := s.conn.GetDB().Query(query)
+	ctx.GetLogger().Debugf("Query is %s with args %v", query, args)
+	rows, err := s.conn.GetDB().Query(query, args...)
 	failpoint.Inject("dbErr", func() {
 		err = errors.New("dbErr")
 	})
 	if err != nil {
 		s.needReconnect = true
-		ctx.GetLogger().Errorf("sql look table failed, err:%v, query: %v", err, query)
+		ctx.GetLogger().Errorf("sql look table failed, err:%v, query: %v, args: %v", err, query, args)
 		return nil, err
 	} else {
 		s.needReconnect = false
 	}
+	defer rows.Close()
 	cols, _ := rows.Columns()
 	types, err := rows.ColumnTypes()
 	if err != nil {
@@ -157,12 +163,49 @@ func (s *SqlLookupSource) Lookup(ctx api.StreamContext, fields []string, keys []
 }
 
 type sqlQueryGen interface {
-	buildQuery(fields []string, keys []string, values []interface{}) string
+	buildQuery(fields []string, keys []string, values []interface{}) (string, []any, error)
 }
 
-type defaultSQLGen struct{ table string }
+// paramSQLGen builds parameterized lookup queries. Values are passed as
+// query arguments so the database driver formats time.Time, strings, etc.
+// correctly instead of string-concatenating them into the SQL text.
+// placeholder renders the bind variable for the i-th (1-based) argument,
+// e.g. "?" for mysql/sqlite, "$1" for postgres, "@p1" for sqlserver.
+// quoteID quotes WHERE-clause identifiers; it preserves the historical
+// quoting style per dialect to avoid breaking existing rules. strictKeys
+// enables allowlist validation of keys for dialects without a safe
+// identifier-quoting mechanism (see bareQuoteID).
+type paramSQLGen struct {
+	table       string
+	quoteID     func(string) string
+	placeholder func(i int) string
+	strictKeys  bool
+}
 
-func (g defaultSQLGen) buildQuery(fields []string, keys []string, values []interface{}) string {
+func (g paramSQLGen) buildQuery(fields []string, keys []string, values []interface{}) (string, []any, error) {
+	// The SELECT list was always interpolated raw, so exotic field names
+	// never worked; validate them for a clear error instead of a DB syntax
+	// error. Table is operator-configured and trusted.
+	for _, f := range fields {
+		if !isSafeDynamicFieldName(f) {
+			return "", nil, fmt.Errorf("invalid lookup field name %q: expected [A-Za-z_][A-Za-z0-9_]*", f)
+		}
+	}
+	if len(keys) == 0 {
+		return "", nil, fmt.Errorf("lookup keys must not be empty")
+	}
+	for _, k := range keys {
+		if k == "" {
+			return "", nil, fmt.Errorf("lookup key must not be empty")
+		}
+	}
+	if g.strictKeys {
+		for _, k := range keys {
+			if !isSafeDynamicFieldName(k) {
+				return "", nil, fmt.Errorf("invalid lookup key name %q: expected [A-Za-z_][A-Za-z0-9_]*", k)
+			}
+		}
+	}
 	query := "SELECT "
 	if len(fields) == 0 {
 		query += "*"
@@ -175,55 +218,59 @@ func (g defaultSQLGen) buildQuery(fields []string, keys []string, values []inter
 		}
 	}
 	query += fmt.Sprintf(" FROM %s WHERE ", g.table)
+	args := make([]any, 0, len(keys))
 	for i, k := range keys {
 		if i > 0 {
 			query += " AND "
 		}
-		switch v := values[i].(type) {
-		case string:
-			query += fmt.Sprintf("`%s` = '%s'", k, strings.ReplaceAll(v, "'", "''"))
-		default:
-			query += fmt.Sprintf("`%s` = %v", k, v)
+		if values[i] == nil {
+			query += fmt.Sprintf("%s IS NULL", g.quoteID(k))
+			continue
 		}
+		query += fmt.Sprintf("%s = %s", g.quoteID(k), g.placeholder(len(args)+1))
+		args = append(args, values[i])
 	}
-	return query
+	return query, args, nil
 }
 
-type noQuoteSQLGen struct{ table string }
-
-func (g noQuoteSQLGen) buildQuery(fields []string, keys []string, values []interface{}) string {
-	query := "SELECT "
-	if len(fields) == 0 {
-		query += "*"
-	} else {
-		for i, f := range fields {
-			if i > 0 {
-				query += ","
-			}
-			query += f
-		}
-	}
-	query += fmt.Sprintf(" FROM %s WHERE ", g.table)
-	for i, k := range keys {
-		if i > 0 {
-			query += " AND "
-		}
-		switch v := values[i].(type) {
-		case string:
-			query += fmt.Sprintf("%s = '%s'", k, strings.ReplaceAll(v, "'", "''"))
-		default:
-			query += fmt.Sprintf("%s = %v", k, v)
-		}
-	}
-	return query
+// backtickQuoteID quotes for mysql/sqlite-style dialects. An embedded
+// backtick is escaped by doubling, so any parser-derived name (including
+// eKuiper backtick-quoted identifiers like `device-id`) is safe to inline.
+func backtickQuoteID(k string) string {
+	return "`" + strings.ReplaceAll(k, "`", "``") + "`"
 }
+
+// bareQuoteID emits the identifier unquoted, preserving the historical style
+// for postgres/sqlserver/oracle-style dialects. There is no escaping
+// mechanism for a bare identifier, so keys using this quoter must pass the
+// allowlist check (strictKeys) instead.
+func bareQuoteID(k string) string { return k }
+
+func questionPlaceholder(_ int) string { return "?" }
+func dollarPlaceholder(i int) string   { return fmt.Sprintf("$%d", i) }
+func atPPlaceholder(i int) string      { return fmt.Sprintf("@p%d", i) }
+
+// colonPlaceholder emits :1/:2 positional binds for go-ora/godror. Verified
+// against driver docs only; confirm with a real Oracle instance if possible,
+// as these drivers also accept named binds and behavior may vary by version.
+func colonPlaceholder(i int) string { return fmt.Sprintf(":%d", i) }
 
 func (s *SqlLookupSource) buildGen() sqlQueryGen {
 	switch strings.ToLower(s.driver) {
-	case "sqlserver", "mssql", "postgres":
-		return noQuoteSQLGen{table: s.table}
+	case "postgres", "postgresql", "pgx":
+		return paramSQLGen{table: s.table, quoteID: bareQuoteID, placeholder: dollarPlaceholder, strictKeys: true}
+	case "sqlserver", "mssql":
+		return paramSQLGen{table: s.table, quoteID: bareQuoteID, placeholder: atPPlaceholder, strictKeys: true}
+	case "oracle", "godror", "ora", "go-ora":
+		return paramSQLGen{table: s.table, quoteID: bareQuoteID, placeholder: colonPlaceholder, strictKeys: true}
+	case "mysql", "mymysql", "sqlite", "sqlite3":
+		return paramSQLGen{table: s.table, quoteID: backtickQuoteID, placeholder: questionPlaceholder}
 	default:
-		return defaultSQLGen{table: s.table}
+		// Unknown drivers fall back to bare identifiers with "?" placeholders:
+		// backticks are rejected by most dialects, while bare identifiers and
+		// "?" are accepted by the majority (clickhouse, snowflake, presto, ...).
+		conf.Log.Warnf("unknown sql driver %q for lookup source, falling back to \"?\" placeholders", s.driver)
+		return paramSQLGen{table: s.table, quoteID: bareQuoteID, placeholder: questionPlaceholder, strictKeys: true}
 	}
 }
 
