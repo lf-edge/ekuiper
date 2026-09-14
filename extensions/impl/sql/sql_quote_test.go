@@ -146,28 +146,18 @@ func TestSQLBuildersPreserveConfiguredIdentifiers(t *testing.T) {
 	}{
 		{
 			name: "sqlserver insert",
-			got:  buildInsertSQL("[dbo].[Events]", []string{"[Order]", "[Value]"}, []string{"('1','x')"}),
-			want: "INSERT INTO [dbo].[Events] ([Order],[Value]) values ('1','x');",
+			got:  buildInsertSQL("[dbo].[Events]", []string{"[Order]", "[Value]"}, []string{"(?,?)"}),
+			want: "INSERT INTO [dbo].[Events] ([Order],[Value]) values (?,?);",
 		},
 		{
 			name: "oracle insert",
-			got:  buildInsertSQL(`"MixedCase"@remote`, []string{`"Order"`}, []string{"('x')"}),
-			want: `INSERT INTO "MixedCase"@remote ("Order") values ('x');`,
+			got:  buildInsertSQL(`"MixedCase"@remote`, []string{`"Order"`}, []string{"(?)"}),
+			want: `INSERT INTO "MixedCase"@remote ("Order") values (?);`,
 		},
 		{
 			name: "mysql insert",
-			got:  buildInsertSQL("`audit-log`", []string{"`sensor-value`"}, []string{"('1')"}),
-			want: "INSERT INTO `audit-log` (`sensor-value`) values ('1');",
-		},
-		{
-			name: "sqlserver update",
-			got:  buildUpdateSQL("[dbo].[Events]", []string{"[Value]"}, []string{"'x'"}, "[ID]", "O'Brien"),
-			want: "UPDATE [dbo].[Events] SET [Value]='x' WHERE [ID] = 'O''Brien';",
-		},
-		{
-			name: "sqlserver delete",
-			got:  buildDeleteSQL("[audit.v1]", "[ID]", 7),
-			want: "DELETE FROM [audit.v1] WHERE [ID] = 7;",
+			got:  buildInsertSQL("`audit-log`", []string{"`sensor-value`"}, []string{"(?)"}),
+			want: "INSERT INTO `audit-log` (`sensor-value`) values (?);",
 		},
 	}
 	for _, tt := range tests {
@@ -176,5 +166,36 @@ func TestSQLBuildersPreserveConfiguredIdentifiers(t *testing.T) {
 				t.Errorf("SQL builder = %q, want %q", tt.got, tt.want)
 			}
 		})
+	}
+}
+
+func TestSQLBuildersBindValues(t *testing.T) {
+	// Values must travel as bound arguments, never inlined: a quote in
+	// O'Brien stays in args instead of becoming 'O''Brien' SQL text.
+	b := &sqlSinkBinder{next: qmarkBind}
+	got := buildUpdateSQL("[dbo].[Events]", []string{"[Value]"}, b, map[string]any{"[Value]": "x"}, "[ID]", "O'Brien")
+	if want := "UPDATE [dbo].[Events] SET [Value]=? WHERE [ID] = ?;"; got != want {
+		t.Errorf("SQL builder = %q, want %q", got, want)
+	}
+	if !reflect.DeepEqual(b.args, []any{"x", "O'Brien"}) {
+		t.Errorf("args = %v, want %v", b.args, []any{"x", "O'Brien"})
+	}
+
+	b = &sqlSinkBinder{next: qmarkBind}
+	got = buildDeleteSQL("[audit.v1]", "[ID]", 7, b)
+	if want := "DELETE FROM [audit.v1] WHERE [ID] = ?;"; got != want {
+		t.Errorf("SQL builder = %q, want %q", got, want)
+	}
+	if !reflect.DeepEqual(b.args, []any{7}) {
+		t.Errorf("args = %v, want %v", b.args, []any{7})
+	}
+
+	b = &sqlSinkBinder{next: dollarBind}
+	got = buildDeleteSQL("t", "id", nil, b)
+	if want := "DELETE FROM t WHERE id IS NULL;"; got != want {
+		t.Errorf("SQL builder = %q, want %q", got, want)
+	}
+	if len(b.args) != 0 {
+		t.Errorf("args = %v, want empty", b.args)
 	}
 }

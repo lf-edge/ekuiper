@@ -17,7 +17,6 @@ package sql
 import (
 	"errors"
 	"fmt"
-	"reflect"
 	"strings"
 	"time"
 
@@ -46,6 +45,9 @@ type SQLSinkConnector struct {
 	conn          *client.SQLConnection
 	props         map[string]any
 	needReconnect bool
+	// bindNext renders the bind variable for the i-th (1-based) argument of
+	// the current statement, resolved from the driver in Provision.
+	bindNext func(i int) string
 }
 
 type sqlSinkConfig struct {
@@ -56,41 +58,60 @@ type sqlSinkConfig struct {
 	KeyField     string   `json:"keyField"`
 }
 
-func (c *sqlSinkConfig) buildInsertSql(ctx api.StreamContext, mapData map[string]interface{}, keys []string) (string, error) {
-	vals, err := c.getValuesByKeys(ctx, mapData, keys)
-	if err != nil {
-		return "", err
-	}
-	sqlStr := "(" + strings.Join(vals, ",") + ")"
-	return sqlStr, nil
-}
-
-func (c *sqlSinkConfig) getValuesByKeys(ctx api.StreamContext, mapData map[string]interface{}, keys []string) ([]string, error) {
+func (c *sqlSinkConfig) buildInsertRow(ctx api.StreamContext, b *sqlSinkBinder, mapData map[string]interface{}, keys []string) (string, error) {
 	if len(mapData) == 0 {
-		return nil, fmt.Errorf("data is empty")
+		return "", fmt.Errorf("data is empty")
 	}
-	var vals []string
+	parts := make([]string, 0, len(keys))
 	logger := ctx.GetLogger()
 	for _, k := range keys {
 		v, ok := mapData[k]
 		if ok && v != nil {
-			if reflect.String == reflect.TypeOf(v).Kind() {
-				// Escape single quotes by doubling them (SQL standard) to avoid breaking the literal.
-				vals = append(vals, quoteSQLString(fmt.Sprint(v)))
-			} else {
-				vals = append(vals, fmt.Sprintf(`%v`, v))
-			}
+			parts = append(parts, b.bind(v))
 		} else {
 			logger.Warn("not found field:", k)
-			vals = append(vals, `NULL`)
+			parts = append(parts, `NULL`)
 		}
 	}
-	return vals, nil
+	return "(" + strings.Join(parts, ",") + ")", nil
 }
 
-func quoteSQLString(s string) string {
-	// SQL string literal escaping: ' -> ''.
-	return "'" + strings.ReplaceAll(s, "'", "''") + "'"
+// sqlSinkBinder numbers bind variables within a single statement and
+// collects the matching arguments. Values stay Go values; the driver formats
+// time.Time, strings, etc. instead of string-concatenating them into SQL.
+type sqlSinkBinder struct {
+	next func(i int) string
+	n    int
+	args []any
+}
+
+func (b *sqlSinkBinder) bind(v any) string {
+	b.n++
+	b.args = append(b.args, v)
+	return b.next(b.n)
+}
+
+// TODO: converge with the lookup parameterized-query helpers once #4139 is
+// merged; the placeholder styles are intentionally identical.
+func qmarkBind(_ int) string  { return "?" }
+func dollarBind(i int) string { return fmt.Sprintf("$%d", i) }
+func atPBind(i int) string    { return fmt.Sprintf("@p%d", i) }
+func colonBind(i int) string  { return fmt.Sprintf(":%d", i) }
+
+func sinkBinderForDriver(ctx api.StreamContext, driver string) func(i int) string {
+	switch strings.ToLower(driver) {
+	case "postgres", "postgresql", "pgx":
+		return dollarBind
+	case "sqlserver", "mssql":
+		return atPBind
+	case "oracle", "godror", "ora", "go-ora":
+		return colonBind
+	case "mysql", "mymysql", "sqlite", "sqlite3":
+		return qmarkBind
+	default:
+		ctx.GetLogger().Warnf("unknown sql driver %q for sink, falling back to \"?\" placeholders", driver)
+		return qmarkBind
+	}
 }
 
 // isSafeDynamicFieldName recognizes dynamic message keys that cannot alter SQL syntax.
@@ -147,8 +168,13 @@ func (s *SQLSinkConnector) Provision(ctx api.StreamContext, configs map[string]a
 	if c.RowKindField != "" && c.KeyField == "" {
 		return fmt.Errorf("keyField is required when rowKindField is set")
 	}
+	driver, err := client.ParseDriver(sc.DBUrl)
+	if err != nil {
+		return err
+	}
 	s.config = c
 	s.props = configs
+	s.bindNext = sinkBinderForDriver(ctx, driver)
 	return nil
 }
 
@@ -198,16 +224,14 @@ func (s *SQLSinkConnector) collect(ctx api.StreamContext, item map[string]any) e
 		if err != nil {
 			return err
 		}
-		var values []string
-		var vars string
-		vars, err = s.config.buildInsertSql(ctx, item, keys)
+		b := &sqlSinkBinder{next: s.bindNext}
+		row, err := s.config.buildInsertRow(ctx, b, item, keys)
 		if err != nil {
 			return err
 		}
-		values = append(values, vars)
 		if len(keys) > 0 {
-			sqlStr := buildInsertSQL(s.config.Table, keys, values)
-			return s.writeToDB(ctx, sqlStr)
+			sqlStr := buildInsertSQL(s.config.Table, keys, []string{row})
+			return s.writeToDB(ctx, sqlStr, b.args...)
 		}
 		return nil
 	}
@@ -232,19 +256,19 @@ func (s *SQLSinkConnector) collectList(ctx api.StreamContext, items []map[string
 	if err != nil {
 		return err
 	}
+	b := &sqlSinkBinder{next: s.bindNext}
 	var values []string
-	var vars string
 	if len(s.config.RowKindField) < 1 {
 		for _, mapData := range items {
-			vars, err = s.config.buildInsertSql(ctx, mapData, keys)
+			row, err := s.config.buildInsertRow(ctx, b, mapData, keys)
 			if err != nil {
 				return err
 			}
-			values = append(values, vars)
+			values = append(values, row)
 		}
 		if len(keys) > 0 {
 			sqlStr := buildInsertSQL(s.config.Table, keys, values)
-			return s.writeToDB(ctx, sqlStr)
+			return s.writeToDB(ctx, sqlStr, b.args...)
 		}
 		return nil
 	}
@@ -275,40 +299,40 @@ func (s *SQLSinkConnector) save(ctx api.StreamContext, table string, data map[st
 		return err
 	}
 	var sqlStr string
+	var args []any
+	b := &sqlSinkBinder{next: s.bindNext}
 	switch rowkind {
 	case ast.RowkindInsert:
-		vars, err := s.config.buildInsertSql(ctx, data, keys)
+		row, err := s.config.buildInsertRow(ctx, b, data, keys)
 		if err != nil {
 			return err
 		}
-		values := []string{vars}
 		if len(keys) > 0 {
-			sqlStr = buildInsertSQL(table, keys, values)
+			sqlStr = buildInsertSQL(table, keys, []string{row})
+			args = b.args
 		}
 	case ast.RowkindUpdate:
 		keyval, ok := data[s.config.KeyField]
 		if !ok {
 			return fmt.Errorf("field %s does not exist in data %v", s.config.KeyField, data)
 		}
-		vals, err := s.config.getValuesByKeys(ctx, data, keys)
-		if err != nil {
-			return err
-		}
-		sqlStr = buildUpdateSQL(table, keys, vals, s.config.KeyField, keyval)
+		sqlStr = buildUpdateSQL(table, keys, b, data, s.config.KeyField, keyval)
+		args = b.args
 	case ast.RowkindDelete:
 		keyval, ok := data[s.config.KeyField]
 		if !ok {
 			return fmt.Errorf("field %s does not exist in data %v", s.config.KeyField, data)
 		}
-		sqlStr = buildDeleteSQL(table, s.config.KeyField, keyval)
+		sqlStr = buildDeleteSQL(table, s.config.KeyField, keyval, b)
+		args = b.args
 	default:
 		return fmt.Errorf("invalid rowkind %s", rowkind)
 	}
-	return s.writeToDB(ctx, sqlStr)
+	return s.writeToDB(ctx, sqlStr, args...)
 }
 
-func (s *SQLSinkConnector) writeToDB(ctx api.StreamContext, sqlStr string) error {
-	ctx.GetLogger().Debugf(sqlStr)
+func (s *SQLSinkConnector) writeToDB(ctx api.StreamContext, sqlStr string, args ...any) error {
+	ctx.GetLogger().Debugf("%s with args %v", sqlStr, args)
 	if s.needReconnect {
 		metrics.IOCounter.WithLabelValues(LblSql, metrics.LblSinkIO, LblReconn, ctx.GetRuleId(), ctx.GetOpId()).Inc()
 		err := s.conn.Reconnect()
@@ -317,7 +341,7 @@ func (s *SQLSinkConnector) writeToDB(ctx api.StreamContext, sqlStr string) error
 		}
 	}
 	start := time.Now()
-	r, err := s.conn.GetDB().Exec(sqlStr)
+	r, err := s.conn.GetDB().Exec(sqlStr, args...)
 	failpoint.Inject("dbErr", func() {
 		err = errors.New("dbErr")
 	})
@@ -354,27 +378,35 @@ func buildInsertSQL(table string, keys []string, values []string) string {
 	return sql
 }
 
-func buildUpdateSQL(table string, keys []string, vals []string, keyField string, keyval any) string {
+// buildUpdateSQL renders SET pairs with bind variables and appends the key
+// argument to b. Missing/nil values keep the historical NULL literal in SET;
+// a nil key renders IS NULL in WHERE instead of binding NULL (which matches
+// nothing with =).
+func buildUpdateSQL(table string, keys []string, b *sqlSinkBinder, data map[string]any, keyField string, keyval any) string {
 	sqlStr := fmt.Sprintf("UPDATE %s SET ", table)
 	for i, key := range keys {
 		if i != 0 {
 			sqlStr += ","
 		}
-		sqlStr += fmt.Sprintf("%s=%s", key, vals[i])
+		if v, ok := data[key]; ok && v != nil {
+			sqlStr += fmt.Sprintf("%s=%s", key, b.bind(v))
+		} else {
+			sqlStr += fmt.Sprintf("%s=NULL", key)
+		}
 	}
-	if ksv, ok := keyval.(string); ok {
-		sqlStr += fmt.Sprintf(" WHERE %s = %s;", keyField, quoteSQLString(ksv))
+	if keyval == nil {
+		sqlStr += fmt.Sprintf(" WHERE %s IS NULL;", keyField)
 	} else {
-		sqlStr += fmt.Sprintf(" WHERE %s = %v;", keyField, keyval)
+		sqlStr += fmt.Sprintf(" WHERE %s = %s;", keyField, b.bind(keyval))
 	}
 	return sqlStr
 }
 
-func buildDeleteSQL(table string, keyField string, keyval any) string {
-	if ksv, ok := keyval.(string); ok {
-		return fmt.Sprintf("DELETE FROM %s WHERE %s = %s;", table, keyField, quoteSQLString(ksv))
+func buildDeleteSQL(table string, keyField string, keyval any, b *sqlSinkBinder) string {
+	if keyval == nil {
+		return fmt.Sprintf("DELETE FROM %s WHERE %s IS NULL;", table, keyField)
 	}
-	return fmt.Sprintf("DELETE FROM %s WHERE %s = %v;", table, keyField, keyval)
+	return fmt.Sprintf("DELETE FROM %s WHERE %s = %s;", table, keyField, b.bind(keyval))
 }
 
 func GetSink() api.Sink {
