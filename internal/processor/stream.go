@@ -490,6 +490,9 @@ func printOptions(opts *ast.Options, buff *bytes.Buffer) {
 	if opts.SHARED {
 		buff.WriteString(fmt.Sprintf("SHARED: %v\n", opts.SHARED))
 	}
+	if opts.BUFFER_FULL_POLICY != "" {
+		buff.WriteString(fmt.Sprintf("BUFFER_FULL_POLICY: %s\n", opts.BUFFER_FULL_POLICY))
+	}
 	if opts.STRICT_VALIDATION {
 		buff.WriteString(fmt.Sprintf("STRICT_VALIDATION: %v\n", opts.STRICT_VALIDATION))
 	}

@@ -36,8 +36,9 @@ import (
 
 // SrcSubTopo Implements node.SourceNode
 type SrcSubTopo struct {
-	name        string
-	isSliceMode bool
+	name                     string
+	isSliceMode              bool
+	disableBufferFullDiscard bool
 
 	// creation state
 	source node.DataSourceNode

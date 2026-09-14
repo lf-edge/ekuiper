@@ -272,8 +272,9 @@ func (s *Topo) AddSrc(src node.DataSourceNode) *Topo {
 }
 
 func (s *Topo) AddSink(inputs []node.Emitter, snk node.DataSinkNode) *Topo {
+	ch, name := snk.GetInput()
 	for _, input := range inputs {
-		err := input.AddOutput(snk.GetInput())
+		err := input.AddOutput(ch, name)
 		if err != nil {
 			s.ctx.GetLogger().Error(err)
 			return nil

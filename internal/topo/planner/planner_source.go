@@ -99,6 +99,7 @@ func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, option
 
 	var ops []node.OperatorNode
 	emitterOpAdded := false
+	disableBufferFullDiscard := options.BlockOnBufferFull()
 	// If having unique connection id AND unique sub id for each connection, need to share the sub node; Case 1 is neuron; Case 2 is edgeX
 	needShareCon := hasConId || (hasSubId && conId != "")
 	if !needShareCon {
@@ -120,7 +121,7 @@ func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, option
 			subCtx = subCtx.(*context.DefaultContext).WithRuleId(fmt.Sprintf("$$subtopo_%s", t.name)).WithRun(0)
 		}
 		var connSubtopo *topo.SrcSubTopo
-		connSubtopo, err = topo.GetOrCreateSubTopo(subCtx, selName, false, func(st *topo.SrcSubTopo) error {
+		connSubtopo, err = topo.GetOrCreateSubTopo(subCtx, selName, false, disableBufferFullDiscard, func(st *topo.SrcSubTopo) error {
 			scn, initErr := node.NewSourceNode(ctx, selName, ss, props, options)
 			if initErr != nil {
 				return initErr
@@ -225,7 +226,7 @@ func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, option
 	if t.streamStmt.Options.SHARED && !t.inRuleTest {
 		isSliceRule := options.Experiment != nil && options.Experiment.UseSliceTuple
 		// Create subtopo in the end to avoid errors in the middle
-		srcSubtopo, err := topo.GetOrCreateSubTopo(ctx, string(t.name), isSliceRule, func(srcSubtopo *topo.SrcSubTopo) error {
+		srcSubtopo, err := topo.GetOrCreateSubTopo(ctx, string(t.name), isSliceRule, disableBufferFullDiscard, func(srcSubtopo *topo.SrcSubTopo) error {
 			srcSubtopo.AddSrc(srcConnNode)
 			subInputs := []node.Emitter{srcSubtopo}
 			for _, e := range ops {

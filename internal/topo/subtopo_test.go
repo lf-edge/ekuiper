@@ -37,7 +37,7 @@ func TestSubtopoLC(t *testing.T) {
 	assert.Equal(t, 0, len(subTopoPool))
 	srcNode := &mockSrc{name: "shared"}
 	opNode := &mockOp{name: "op1", ch: make(chan any)}
-	subTopo, err := GetOrCreateSubTopo(ctx1, "lc", false, func(subTopo *SrcSubTopo) error {
+	subTopo, err := GetOrCreateSubTopo(ctx1, "lc", false, true, func(subTopo *SrcSubTopo) error {
 		subTopo.AddSrc(srcNode)
 		subTopo.AddOperator([]node.Emitter{srcNode}, opNode)
 		return nil
@@ -69,7 +69,7 @@ func TestSubtopoLC(t *testing.T) {
 	assert.Equal(t, 1, opNode.schemaCount)
 	// Run another
 	ctx2 := mockContext.NewMockContext("rule2", "abc").WithRun(2)
-	subTopo2, err := GetOrCreateSubTopo(ctx2, "lc", false, nil)
+	subTopo2, err := GetOrCreateSubTopo(ctx2, "lc", false, true, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, subTopo, subTopo2)
 	subTopo.StoreSchema("rule2", "shared", map[string]*ast.JsonStreamField{
@@ -131,7 +131,7 @@ func TestGetOrCreateSubTopoDoesNotExposePartialSubTopo(t *testing.T) {
 	var creatorTopo *SrcSubTopo
 	var creatorErr error
 	go func() {
-		creatorTopo, creatorErr = GetOrCreateSubTopo(ctx1, "initRace", false, func(subTopo *SrcSubTopo) error {
+		creatorTopo, creatorErr = GetOrCreateSubTopo(ctx1, "initRace", false, false, func(subTopo *SrcSubTopo) error {
 			close(initStarted)
 			<-releaseInit
 			subTopo.AddSrc(srcNode)
@@ -149,7 +149,7 @@ func TestGetOrCreateSubTopoDoesNotExposePartialSubTopo(t *testing.T) {
 	var loadedErr error
 	go func() {
 		close(secondStarted)
-		loadedTopo, loadedErr = GetOrCreateSubTopo(ctx2, "initRace", false, func(subTopo *SrcSubTopo) error {
+		loadedTopo, loadedErr = GetOrCreateSubTopo(ctx2, "initRace", false, false, func(subTopo *SrcSubTopo) error {
 			secondInitCalled.Store(true)
 			subTopo.AddSrc(&mockSrc{name: "unexpected"})
 			return nil
@@ -191,7 +191,7 @@ func TestGetOrCreateSubTopoWrapsInitError(t *testing.T) {
 
 	ctx := mockContext.NewMockContext("rule1", "abc").WithRun(1)
 	initErr := errors.New("boom")
-	subTopo, err := GetOrCreateSubTopo(ctx, "badInit", true, func(subTopo *SrcSubTopo) error {
+	subTopo, err := GetOrCreateSubTopo(ctx, "badInit", true, false, func(subTopo *SrcSubTopo) error {
 		return initErr
 	})
 	assert.Nil(t, subTopo)
@@ -201,13 +201,30 @@ func TestGetOrCreateSubTopoWrapsInitError(t *testing.T) {
 	assert.Equal(t, 0, len(subTopoPool))
 }
 
+func TestGetOrCreateSubTopoRejectsBufferPolicyConflict(t *testing.T) {
+	origPool := subTopoPool
+	subTopoPool = make(map[string]*SrcSubTopo)
+	defer func() { subTopoPool = origPool }()
+
+	ctx1 := mockContext.NewMockContext("rule1", "abc").WithRun(1)
+	subTopo, err := GetOrCreateSubTopo(ctx1, "sharedPolicy", false, true, nil)
+	assert.NoError(t, err)
+	assert.NotNil(t, subTopo)
+
+	ctx2 := mockContext.NewMockContext("rule2", "abc").WithRun(1)
+	conflicting, err := GetOrCreateSubTopo(ctx2, "sharedPolicy", false, false, nil)
+	assert.Nil(t, conflicting)
+	assert.EqualError(t, err, "subtopo sharedPolicy buffer full policy conflict: existing policy is block, requested policy is dropOldest")
+	assert.Equal(t, 1, subTopo.RefCount())
+}
+
 // Test when connection fails
 func TestSubtopoRunError(t *testing.T) {
 	ctx0 := mockContext.NewMockContext("rule0", "abc").WithRun(0)
 	assert.Equal(t, 0, len(subTopoPool))
 	srcNode := &mockSrc{name: "src1"}
 	opNode := &mockOp{name: "op1", ch: make(chan any)}
-	subTopo, err := GetOrCreateSubTopo(ctx0, "re", false, func(subTopo *SrcSubTopo) error {
+	subTopo, err := GetOrCreateSubTopo(ctx0, "re", false, true, func(subTopo *SrcSubTopo) error {
 		subTopo.AddSrc(srcNode)
 		subTopo.AddOperator([]node.Emitter{srcNode}, opNode)
 		return nil
@@ -215,7 +232,7 @@ func TestSubtopoRunError(t *testing.T) {
 	assert.NoError(t, err)
 	// create another subtopo
 	ctx1 := mockContext.NewMockContext("rule1", "abc").WithRun(1)
-	subTopo2, err := GetOrCreateSubTopo(ctx1, "re", false, nil)
+	subTopo2, err := GetOrCreateSubTopo(ctx1, "re", false, true, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, subTopo, subTopo2)
 	assert.Equal(t, 1, len(subTopoPool))
@@ -256,7 +273,7 @@ func TestErrorClose(t *testing.T) {
 	assert.Equal(t, 0, len(subTopoPool))
 	srcNode := &mockSrc{name: "src1"}
 	opNode := &mockOp{name: "op1", ch: make(chan any)}
-	subTopo, err := GetOrCreateSubTopo(ctx0, "ee", false, func(subTopo *SrcSubTopo) error {
+	subTopo, err := GetOrCreateSubTopo(ctx0, "ee", false, true, func(subTopo *SrcSubTopo) error {
 		subTopo.AddSrc(srcNode)
 		subTopo.AddOperator([]node.Emitter{srcNode}, opNode)
 		return nil
@@ -291,7 +308,7 @@ func TestSubtopoPrint(t *testing.T) {
 		},
 	}
 	ctx0 := mockContext.NewMockContext("rule0", "abc")
-	subTopo, err := GetOrCreateSubTopo(ctx0, "shared", false, func(subTopo *SrcSubTopo) error {
+	subTopo, err := GetOrCreateSubTopo(ctx0, "shared", false, false, func(subTopo *SrcSubTopo) error {
 		subTopo.AddSrc(&mockSrc{name: "shared"})
 		return nil
 	})
@@ -325,7 +342,7 @@ func TestSubtopoConcurrency(t *testing.T) {
 	assert.Equal(t, 0, len(subTopoPool))
 	srcNode := &mockSrc{name: "shared"}
 	opNode := &mockOp{name: "op1", ch: make(chan any)}
-	subTopo, err := GetOrCreateSubTopo(ctx, "shared", false, func(subTopo *SrcSubTopo) error {
+	subTopo, err := GetOrCreateSubTopo(ctx, "shared", false, true, func(subTopo *SrcSubTopo) error {
 		subTopo.AddSrc(srcNode)
 		subTopo.AddOperator([]node.Emitter{srcNode}, opNode)
 		return nil
@@ -492,7 +509,7 @@ func TestCancelReleasesSubtopoRef(t *testing.T) {
 
 	// Build a shared connection subtopo with a mock source (like the real MQTT case).
 	ctx1 := mockContext.NewMockContext("rule1", "abc").WithRun(1)
-	subTopo, err := GetOrCreateSubTopo(ctx1, "connSubTopo", false, nil)
+	subTopo, err := GetOrCreateSubTopo(ctx1, "connSubTopo", false, true, nil)
 	assert.NoError(t, err)
 
 	srcNode := &mockSrc{name: "shared"}
@@ -508,7 +525,7 @@ func TestCancelReleasesSubtopoRef(t *testing.T) {
 
 	// Manually wire rule2 into the subtopo, as the planner would do.
 	ctx2 := tp.GetContext() // ruleId="rule2", runId=tp.runId
-	subTopo2, _ := GetOrCreateSubTopo(ctx2, "connSubTopo", false, nil)
+	subTopo2, _ := GetOrCreateSubTopo(ctx2, "connSubTopo", false, true, nil)
 	assert.Equal(t, subTopo, subTopo2)
 	assert.Equal(t, 2, subTopo.RefCount(), "rule1 + rule2 should each hold a ref")
 

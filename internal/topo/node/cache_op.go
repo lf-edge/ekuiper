@@ -159,7 +159,7 @@ func (s *CacheOp) send() {
 func (s *CacheOp) doBroadcast(val interface{}) {
 	var out chan<- any
 	for _, output := range s.outputs {
-		out = output
+		out = output.ch
 	}
 	select {
 	case out <- val:

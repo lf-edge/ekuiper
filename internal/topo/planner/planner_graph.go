@@ -55,6 +55,13 @@ func PlanByGraph(rule *def.Rule) (*topo.Topo, error) {
 	if rule.Options != nil && rule.Options.Experiment != nil && rule.Options.Experiment.UseSliceTuple {
 		return nil, errors.New("graph mode does not support slice-tuple mode")
 	}
+	streamInfos, err := graphStreamInfos(rule)
+	if err != nil {
+		return nil, err
+	}
+	if err := resolveBufferFullPolicy(streamInfos, rule.Options); err != nil {
+		return nil, err
+	}
 	tp, err := topo.NewWithNameAndOptions(rule.Id, rule.Options)
 	if err != nil {
 		return nil, err
@@ -417,6 +424,46 @@ func PlanByGraph(rule *def.Rule) (*topo.Topo, error) {
 		}
 	}
 	return tp, nil
+}
+
+func graphStreamInfos(rule *def.Rule) ([]*streamInfo, error) {
+	result := make([]*streamInfo, 0, len(rule.Graph.Topo.Sources))
+	for _, sourceNode := range rule.Graph.Topo.Sources {
+		gn, ok := rule.Graph.Nodes[sourceNode]
+		if !ok {
+			return nil, fmt.Errorf("source node %s not defined", sourceNode)
+		}
+		sourceMeta := &def.SourceMeta{SourceType: "stream"}
+		if err := cast.MapToStruct(gn.Props, sourceMeta); err != nil {
+			return nil, fmt.Errorf("parse source %s with %v error: %w", sourceNode, gn.Props, err)
+		}
+		if sourceMeta.SourceType != "stream" && sourceMeta.SourceType != "table" {
+			return nil, fmt.Errorf("parse source %s with %v error: source type %s not supported", sourceNode, gn.Props, sourceMeta.SourceType)
+		}
+		if sourceMeta.SourceType == "table" {
+			continue
+		}
+		if sourceMeta.SourceName != "" {
+			stmt, err := processor.GetStreamProcessorDataSource(sourceMeta.SourceName)
+			if err != nil {
+				return nil, fmt.Errorf("parse source %s with %v error: fail to get stream %s, please check if stream is created", sourceNode, gn.Props, sourceMeta.SourceName)
+			}
+			if stmt.StreamType == ast.TypeStream {
+				result = append(result, &streamInfo{stmt: stmt})
+			}
+			continue
+		}
+		opts := &ast.Options{}
+		if err := cast.MapToStruct(gn.Props, opts); err != nil {
+			return nil, fmt.Errorf("parse source %s with %v error: %w", sourceNode, gn.Props, err)
+		}
+		result = append(result, &streamInfo{stmt: &ast.StreamStmt{
+			Name:       ast.StreamName(sourceNode),
+			StreamType: ast.TypeStream,
+			Options:    opts,
+		}})
+	}
+	return result, nil
 }
 
 func genNodesInOrder(toNodes []string, edges map[string][]interface{}, flatReversedEdges map[string][]string, nodesInOrder []string, i int) int {

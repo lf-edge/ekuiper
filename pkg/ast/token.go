@@ -225,22 +225,23 @@ const (
 	TABLES     = "TABLES"
 	WITH       = "WITH"
 
-	DATASOURCE        = "DATASOURCE"
-	KEY               = "KEY"
-	FORMAT            = "FORMAT"
-	CONF_KEY          = "CONF_KEY"
-	TYPE              = "TYPE"
-	STRICT_VALIDATION = "STRICT_VALIDATION"
-	TIMESTAMP         = "TIMESTAMP"
-	TIMESTAMP_FORMAT  = "TIMESTAMP_FORMAT"
-	RETAIN_SIZE       = "RETAIN_SIZE"
-	SHARED            = "SHARED"
-	SCHEMAID          = "SCHEMAID"
-	KIND              = "KIND"
-	DELIMITER         = "DELIMITER"
-	VERSION           = "VERSION"
-	EXTRA             = "EXTRA"
-	TEMP              = "TEMP"
+	DATASOURCE         = "DATASOURCE"
+	KEY                = "KEY"
+	FORMAT             = "FORMAT"
+	CONF_KEY           = "CONF_KEY"
+	TYPE               = "TYPE"
+	STRICT_VALIDATION  = "STRICT_VALIDATION"
+	TIMESTAMP          = "TIMESTAMP"
+	TIMESTAMP_FORMAT   = "TIMESTAMP_FORMAT"
+	RETAIN_SIZE        = "RETAIN_SIZE"
+	SHARED             = "SHARED"
+	BUFFER_FULL_POLICY = "BUFFER_FULL_POLICY"
+	SCHEMAID           = "SCHEMAID"
+	KIND               = "KIND"
+	DELIMITER          = "DELIMITER"
+	VERSION            = "VERSION"
+	EXTRA              = "EXTRA"
+	TEMP               = "TEMP"
 
 	XBIGINT   = "BIGINT"
 	XFLOAT    = "FLOAT"
@@ -253,22 +254,23 @@ const (
 )
 
 var StreamTokens = map[string]struct{}{
-	DATASOURCE:        {},
-	KEY:               {},
-	FORMAT:            {},
-	CONF_KEY:          {},
-	TYPE:              {},
-	STRICT_VALIDATION: {},
-	TIMESTAMP:         {},
-	TIMESTAMP_FORMAT:  {},
-	RETAIN_SIZE:       {},
-	SHARED:            {},
-	SCHEMAID:          {},
-	KIND:              {},
-	DELIMITER:         {},
-	VERSION:           {},
-	EXTRA:             {},
-	TEMP:              {},
+	DATASOURCE:         {},
+	KEY:                {},
+	FORMAT:             {},
+	CONF_KEY:           {},
+	TYPE:               {},
+	STRICT_VALIDATION:  {},
+	TIMESTAMP:          {},
+	TIMESTAMP_FORMAT:   {},
+	RETAIN_SIZE:        {},
+	SHARED:             {},
+	BUFFER_FULL_POLICY: {},
+	SCHEMAID:           {},
+	KIND:               {},
+	DELIMITER:          {},
+	VERSION:            {},
+	EXTRA:              {},
+	TEMP:               {},
 }
 
 var StreamDataTypes = map[string]DataType{
