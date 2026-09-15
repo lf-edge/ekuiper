@@ -64,6 +64,7 @@ func (m *msgpackExecutor) InvokeFunction(_ api.FunctionContext, name string, par
 			// block loopback/private/link-local unless Basic.EnablePrivateNet.
 			conn, err := httpx.GetSSRFDialContext(m.timeout)(context.Background(), m.addr.Scheme, m.addr.Host)
 			if err != nil {
+				m.Unlock()
 				return nil, err
 			}
 			rpcCodec := codec.MsgpackSpecRpc.ClientCodec(conn, h)
