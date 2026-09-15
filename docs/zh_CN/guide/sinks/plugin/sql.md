@@ -47,6 +47,10 @@
 
 显式配置的 `table`、`fields` 和 `keyField` 会原样写入生成的 SQL，以继续支持不同数据库的标识符语法。每个 `fields` 配置项同时用于从结果映射中查找值，因此映射 key 必须与配置项完全一致，并且配置项必须使用目标数据库接受的语法。
 
+### 性能说明
+
+写入值以绑定参数而非 SQL 文本拼接的方式发送给数据库。这更安全，也是支持时间戳等类型所必需的，但会轻微改变传输协议：MySQL 在驱动默认配置下每次写入会走 prepare/execute 而不是单条文本 query，多出网络往返。如果写入延迟对部署很关键，可在 MySQL 的 `url` 后追加 `interpolateParams=true`（例如 `mysql://user:test@host/db?parseTime=true&interpolateParams=true`）；驱动会在客户端完成转义并保持参数化调用，恢复单次往返执行。PostgreSQL 的参数化写入固定走扩展协议，没有等价开关。
+
 ## 使用样例
 
 下面是一个获取目标数据并写入 MySQL 数据库的示例

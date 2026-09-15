@@ -50,6 +50,10 @@ If a derived name does not match this format, the affected write is rejected bef
 
 Explicitly configured `table`, `fields`, and `keyField` values are passed to the generated SQL unchanged so that database-specific identifier syntax remains supported. Each configured `fields` entry is also used to look up the value in the result map, so the map key must exactly match the configured entry and the entry must use syntax accepted by the target database.
 
+### Performance note
+
+Values are sent to the database as bound parameters rather than being concatenated into the SQL text. This is safer and required for types such as timestamps, but it changes the wire protocol slightly: MySQL (with default driver settings) executes each write as prepare/execute instead of a single text query, which costs extra round trips. If sink write latency matters in your deployment, append `interpolateParams=true` to a MySQL `url` (for example `mysql://user:test@host/db?parseTime=true&interpolateParams=true`); the driver then escapes values client-side while keeping parameterized calls, restoring single-roundtrip execution. PostgreSQL always uses the extended protocol for parameterized writes and has no equivalent switch.
+
 ## Sample usage
 
 Below is a sample for using sql to get the target data and set to mysql database
