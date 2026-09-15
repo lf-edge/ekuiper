@@ -26,6 +26,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
+	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
 
@@ -312,7 +313,14 @@ func TestChunkRows(t *testing.T) {
 	require.Equal(t, 1, chunkRows(2000, 3000, 5))
 	require.Equal(t, 2000, sinkMaxParams("mssql"))
 	require.Equal(t, 2000, sinkMaxParams("sqlserver"))
-	require.Equal(t, 0, sinkMaxParams("mysql"))
+	require.Equal(t, 65000, sinkMaxParams("postgres"))
+	require.Equal(t, 65000, sinkMaxParams("postgresql"))
+	require.Equal(t, 65000, sinkMaxParams("pgx"))
+	require.Equal(t, 65000, sinkMaxParams("mysql"))
+	require.Equal(t, 65000, sinkMaxParams("mymysql"))
+	require.Equal(t, 32000, sinkMaxParams("sqlite"))
+	require.Equal(t, 32000, sinkMaxParams("sqlite3"))
+	require.Equal(t, 0, sinkMaxParams("clickhouse"))
 }
 
 func TestSinkChunkedBatchEndToEnd(t *testing.T) {
@@ -371,4 +379,33 @@ func TestSinkChunkedTxRollbackEndToEnd(t *testing.T) {
 	}))
 	require.NoError(t, s.conn.GetDB().QueryRow(`SELECT COUNT(*) FROM t`).Scan(&count))
 	require.Equal(t, 3, count)
+}
+
+func TestSinkChunkedBuildErrorEndToEnd(t *testing.T) {
+	require.NoError(t, connection.InitConnectionManager4Test())
+	ctx := mockContext.NewMockContext("sink_tbuilderr", "op1")
+	dburl := fmt.Sprintf("sqlite://%s", filepath.Join(t.TempDir(), "tbuilderr.db"))
+	s := &SQLSinkConnector{}
+	require.NoError(t, s.Provision(ctx, map[string]any{"dburl": dburl, "table": "t"}))
+	require.NoError(t, s.Connect(ctx, func(string, string) {}))
+	defer s.Close(ctx)
+	_, err := s.conn.GetDB().Exec(`CREATE TABLE t (a BIGINT, b BIGINT)`)
+	require.NoError(t, err)
+
+	// Force 2 chunks with a deterministically bad row in the second one.
+	// The build error must surface raw: no reconnect flag, no IO error
+	// (hence no sink retry), and nothing reaches the database.
+	s.maxParams = 4
+	err = s.collectList(ctx, []map[string]any{
+		{"a": 1, "b": 1},
+		{"a": 2, "b": 2},
+		{},
+		{"a": 3, "b": 3},
+	})
+	require.Error(t, err)
+	require.False(t, errorx.IsIOError(err))
+	require.False(t, s.needReconnect)
+	var count int
+	require.NoError(t, s.conn.GetDB().QueryRow(`SELECT COUNT(*) FROM t`).Scan(&count))
+	require.Equal(t, 0, count)
 }

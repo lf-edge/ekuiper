@@ -129,13 +129,24 @@ func sinkBinderForDriver(ctx api.StreamContext, driver string) func(i int) strin
 	}
 }
 
-// sinkMaxParams caps bound parameters per statement. SQL Server rejects
-// statements over 2100 parameters (sp_executesql limit), so batch inserts
-// are chunked below it with margin; other drivers are left unbounded.
+// sinkMaxParams caps bound parameters per statement. Drivers (and the wire
+// protocols beneath them) reject oversized bind counts, while the old inline
+// literals had no such ceiling, so batch inserts are chunked below it:
+//   - SQL Server: 2100 per statement (sp_executesql engine limit).
+//   - PostgreSQL: 65535 (lib/pq rejects more; protocol count is 16-bit).
+//   - MySQL: 65535 (COM_STMT_PREPARE num_params is uint16).
+//   - SQLite: 32766 host variables by default (verified against pinned
+//     modernc.org/sqlite: 32766 binds pass, 40000 fail).
 func sinkMaxParams(driver string) int {
 	switch strings.ToLower(driver) {
 	case "sqlserver", "mssql":
 		return 2000
+	case "postgres", "postgresql", "pgx":
+		return 65000
+	case "mysql", "mymysql":
+		return 65000
+	case "sqlite", "sqlite3":
+		return 32000
 	default:
 		return 0
 	}
@@ -302,26 +313,38 @@ func (s *SQLSinkConnector) collectList(ctx api.StreamContext, items []map[string
 		return err
 	}
 	if len(s.config.RowKindField) < 1 {
+		// Build every statement before touching the database so deterministic
+		// data errors surface here as plain errors: they must not mark the
+		// connection bad nor trigger IO retry.
 		chunks := splitChunks(s.maxParams, len(keys), items)
-		if len(chunks) == 1 {
-			// Fast path: a single statement keeps the historical behavior
-			// (and performance profile) exactly.
+		stmts := make([]builtStmt, 0, len(chunks))
+		for _, chunk := range chunks {
 			b := &sqlSinkBinder{next: s.bindNext, transform: s.bindTransform}
-			values := make([]string, 0, len(chunks[0]))
-			for _, mapData := range chunks[0] {
+			values := make([]string, 0, len(chunk))
+			for _, mapData := range chunk {
 				row, err := s.config.buildInsertRow(ctx, b, mapData, keys)
 				if err != nil {
 					return err
 				}
 				values = append(values, row)
 			}
-			if len(keys) > 0 {
-				sqlStr := buildInsertSQL(s.config.Table, keys, values)
-				return s.writeToDB(ctx, sqlStr, b.args...)
+			if len(keys) == 0 {
+				continue
 			}
+			stmts = append(stmts, builtStmt{buildInsertSQL(s.config.Table, keys, values), b.args})
+		}
+		if len(stmts) == 0 {
 			return nil
 		}
-		return s.writeChunksTx(ctx, chunks, keys)
+		if err := s.ensureConnected(ctx); err != nil {
+			return err
+		}
+		if len(stmts) == 1 {
+			// Fast path: a single statement keeps the historical behavior
+			// (and performance profile) exactly.
+			return s.writeToDB(ctx, stmts[0].sql, stmts[0].args...)
+		}
+		return s.writeStmtsTx(ctx, stmts)
 	}
 	for _, el := range items {
 		err := s.save(ctx, s.config.Table, el)
@@ -344,11 +367,19 @@ func splitChunks(maxParams, numCols int, items []map[string]any) [][]map[string]
 	return chunks
 }
 
-// writeChunksTx executes a multi-chunk batch inside one transaction so a
-// batch stays all-or-nothing like the historical single statement. Any chunk
-// failure rolls everything back and reports an IO error, letting the sink
-// retry replay the whole batch cleanly instead of duplicating committed rows.
-func (s *SQLSinkConnector) writeChunksTx(ctx api.StreamContext, chunks [][]map[string]any, keys []string) error {
+// builtStmt is a fully rendered statement with its bound arguments.
+type builtStmt struct {
+	sql  string
+	args []any
+}
+
+// writeStmtsTx executes prebuilt statements inside one transaction so a
+// multi-chunk batch stays all-or-nothing like the historical single
+// statement. Any failure rolls everything back and reports an IO error,
+// letting the sink retry replay the whole batch cleanly instead of
+// duplicating committed rows. Callers must build (and validate) all
+// statements before calling: only database I/O runs here.
+func (s *SQLSinkConnector) writeStmtsTx(ctx api.StreamContext, stmts []builtStmt) error {
 	tx, err := s.conn.GetDB().Begin()
 	if err != nil {
 		s.needReconnect = true
@@ -361,23 +392,9 @@ func (s *SQLSinkConnector) writeChunksTx(ctx api.StreamContext, chunks [][]map[s
 		}
 	}()
 	start := time.Now()
-	for _, chunk := range chunks {
-		b := &sqlSinkBinder{next: s.bindNext, transform: s.bindTransform}
-		values := make([]string, 0, len(chunk))
-		for _, mapData := range chunk {
-			row, err := s.config.buildInsertRow(ctx, b, mapData, keys)
-			if err != nil {
-				s.needReconnect = true
-				return errorx.NewIOErr(err.Error())
-			}
-			values = append(values, row)
-		}
-		if len(keys) == 0 {
-			continue
-		}
-		sqlStr := buildInsertSQL(s.config.Table, keys, values)
-		ctx.GetLogger().Debugf("%s with args %v", sqlStr, b.args)
-		if _, err := tx.Exec(sqlStr, b.args...); err != nil {
+	for _, st := range stmts {
+		ctx.GetLogger().Debugf("%s with args %v", st.sql, st.args)
+		if _, err := tx.Exec(st.sql, st.args...); err != nil {
 			s.needReconnect = true
 			return errorx.NewIOErr(err.Error())
 		}
@@ -448,14 +465,23 @@ func (s *SQLSinkConnector) save(ctx api.StreamContext, table string, data map[st
 	return s.writeToDB(ctx, sqlStr, args...)
 }
 
-func (s *SQLSinkConnector) writeToDB(ctx api.StreamContext, sqlStr string, args ...any) error {
-	ctx.GetLogger().Debugf("%s with args %v", sqlStr, args)
+// ensureConnected reconnects when a previous write marked the connection
+// bad. It never clears the flag: only a successful Exec or transaction
+// completion does that.
+func (s *SQLSinkConnector) ensureConnected(ctx api.StreamContext) error {
 	if s.needReconnect {
 		metrics.IOCounter.WithLabelValues(LblSql, metrics.LblSinkIO, LblReconn, ctx.GetRuleId(), ctx.GetOpId()).Inc()
-		err := s.conn.Reconnect()
-		if err != nil {
+		if err := s.conn.Reconnect(); err != nil {
 			return errorx.NewIOErr(err.Error())
 		}
+	}
+	return nil
+}
+
+func (s *SQLSinkConnector) writeToDB(ctx api.StreamContext, sqlStr string, args ...any) error {
+	ctx.GetLogger().Debugf("%s with args %v", sqlStr, args)
+	if err := s.ensureConnected(ctx); err != nil {
+		return err
 	}
 	start := time.Now()
 	r, err := s.conn.GetDB().Exec(sqlStr, args...)

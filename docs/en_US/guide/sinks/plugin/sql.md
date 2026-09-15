@@ -52,7 +52,7 @@ Explicitly configured `table`, `fields`, and `keyField` values are passed to the
 
 ### Performance note
 
-Values are sent to the database as bound parameters rather than being concatenated into the SQL text. This is safer and required for types such as timestamps, but it changes the wire protocol slightly: MySQL (with default driver settings) executes each write as prepare/execute instead of a single text query, which costs extra round trips. If sink write latency matters in your deployment, append `interpolateParams=true` to a MySQL `url` (for example `mysql://user:test@host/db?parseTime=true&interpolateParams=true`); the driver then escapes values client-side while keeping parameterized calls, restoring single-roundtrip execution. PostgreSQL always uses the extended protocol for parameterized writes and has no equivalent switch.
+Values are sent to the database as bound parameters rather than being concatenated into the SQL text. If sink write latency matters in a MySQL deployment, append `interpolateParams=true` to the `url` (for example `mysql://user:test@host/db?parseTime=true&interpolateParams=true`); this option is not supported with the BIG5, SJIS, GBK, GB18030 and CP932 character sets or the GB2312_BIN collation.
 
 For backward compatibility with the previous non-Unicode SQL string literal behavior, ordinary Go string values are bound as `VARCHAR` when using SQL Server. Other value types are passed to the driver unchanged. Explicit `NVARCHAR` parameter selection is not currently configurable.
 
