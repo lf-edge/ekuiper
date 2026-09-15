@@ -301,3 +301,39 @@ func TestSinkSqliteConnectorMisc(t *testing.T) {
 	require.NoError(t, bare.Close(ctx))
 	require.Error(t, bare.Ping(ctx, map[string]any{"dburl": "", "table": "t"}))
 }
+
+func TestChunkRows(t *testing.T) {
+	require.Equal(t, 100, chunkRows(0, 10, 100))
+	require.Equal(t, 100, chunkRows(2000, 0, 100))
+	require.Equal(t, 200, chunkRows(2000, 10, 200))
+	require.Equal(t, 40, chunkRows(2000, 50, 100))
+	require.Equal(t, 7, chunkRows(2000, 10, 7))
+	// A single row wider than the limit still goes out alone and loud.
+	require.Equal(t, 1, chunkRows(2000, 3000, 5))
+	require.Equal(t, 2000, sinkMaxParams("mssql"))
+	require.Equal(t, 2000, sinkMaxParams("sqlserver"))
+	require.Equal(t, 0, sinkMaxParams("mysql"))
+}
+
+func TestSinkChunkedBatchEndToEnd(t *testing.T) {
+	require.NoError(t, connection.InitConnectionManager4Test())
+	ctx := mockContext.NewMockContext("sink_chunk", "op1")
+	dburl := fmt.Sprintf("sqlite://%s", filepath.Join(t.TempDir(), "chunk.db"))
+	s := &SQLSinkConnector{}
+	require.NoError(t, s.Provision(ctx, map[string]any{"dburl": dburl, "table": "t"}))
+	require.NoError(t, s.Connect(ctx, func(string, string) {}))
+	defer s.Close(ctx)
+	_, err := s.conn.GetDB().Exec(`CREATE TABLE t (a BIGINT, b BIGINT)`)
+	require.NoError(t, err)
+
+	// Force chunking: 2 columns with a 4-param cap allow 2 rows per Exec.
+	s.maxParams = 4
+	items := make([]map[string]any, 0, 5)
+	for i := 0; i < 5; i++ {
+		items = append(items, map[string]any{"a": i, "b": i})
+	}
+	require.NoError(t, s.collectList(ctx, items))
+	var count int
+	require.NoError(t, s.conn.GetDB().QueryRow(`SELECT COUNT(*) FROM t`).Scan(&count))
+	require.Equal(t, 5, count)
+}

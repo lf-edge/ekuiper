@@ -48,6 +48,9 @@ type SQLSinkConnector struct {
 	// bindNext renders the bind variable for the i-th (1-based) argument of
 	// the current statement, resolved from the driver in Provision.
 	bindNext func(i int) string
+	// maxParams caps bound parameters per statement, resolved from the
+	// driver in Provision. Zero means unbounded.
+	maxParams int
 }
 
 type sqlSinkConfig struct {
@@ -118,6 +121,32 @@ func sinkBinderForDriver(ctx api.StreamContext, driver string) func(i int) strin
 	}
 }
 
+// sinkMaxParams caps bound parameters per statement. SQL Server rejects
+// statements over 2100 parameters (sp_executesql limit), so batch inserts
+// are chunked below it with margin; other drivers are left unbounded.
+func sinkMaxParams(driver string) int {
+	switch strings.ToLower(driver) {
+	case "sqlserver", "mssql":
+		return 2000
+	default:
+		return 0
+	}
+}
+
+// chunkRows returns how many of the remaining rows fit one statement: at most
+// maxParams bound values, using numCols per row as a conservative upper bound
+// (NULLs bind nothing). A non-positive limit means unbounded.
+func chunkRows(maxParams, numCols, remaining int) int {
+	if maxParams <= 0 || numCols <= 0 {
+		return remaining
+	}
+	n := maxParams / numCols
+	if n < 1 {
+		n = 1
+	}
+	return min(n, remaining)
+}
+
 // isSafeDynamicFieldName recognizes dynamic message keys that cannot alter SQL syntax.
 // Explicitly configured identifiers are trusted SQL configuration and retain their
 // existing database-specific syntax.
@@ -179,6 +208,7 @@ func (s *SQLSinkConnector) Provision(ctx api.StreamContext, configs map[string]a
 	s.config = c
 	s.props = configs
 	s.bindNext = sinkBinderForDriver(ctx, driver)
+	s.maxParams = sinkMaxParams(driver)
 	return nil
 }
 
@@ -262,19 +292,25 @@ func (s *SQLSinkConnector) collectList(ctx api.StreamContext, items []map[string
 	if err != nil {
 		return err
 	}
-	b := &sqlSinkBinder{next: s.bindNext}
-	var values []string
 	if len(s.config.RowKindField) < 1 {
-		for _, mapData := range items {
-			row, err := s.config.buildInsertRow(ctx, b, mapData, keys)
-			if err != nil {
-				return err
+		for start := 0; start < len(items); {
+			n := chunkRows(s.maxParams, len(keys), len(items)-start)
+			b := &sqlSinkBinder{next: s.bindNext}
+			values := make([]string, 0, n)
+			for _, mapData := range items[start : start+n] {
+				row, err := s.config.buildInsertRow(ctx, b, mapData, keys)
+				if err != nil {
+					return err
+				}
+				values = append(values, row)
 			}
-			values = append(values, row)
-		}
-		if len(keys) > 0 {
-			sqlStr := buildInsertSQL(s.config.Table, keys, values)
-			return s.writeToDB(ctx, sqlStr, b.args...)
+			if len(keys) > 0 {
+				sqlStr := buildInsertSQL(s.config.Table, keys, values)
+				if err := s.writeToDB(ctx, sqlStr, b.args...); err != nil {
+					return err
+				}
+			}
+			start += n
 		}
 		return nil
 	}
