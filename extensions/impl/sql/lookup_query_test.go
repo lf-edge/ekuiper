@@ -63,11 +63,13 @@ func TestParamSQLGenSQLServer(t *testing.T) {
 }
 
 func TestParamSQLGenNull(t *testing.T) {
-	s := &SqlLookupSource{driver: "mysql", table: "t"}
-	q, args, err := s.buildGen().buildQuery([]string{"a"}, []string{"a"}, []any{nil})
-	require.NoError(t, err)
-	require.Equal(t, "SELECT a FROM t WHERE `a` IS NULL", q)
-	require.Empty(t, args)
+	// A nil lookup key fails loud instead of silently matching rows via
+	// IS NULL on a possibly non-unique key.
+	for _, driver := range []string{"mysql", "postgres"} {
+		s := &SqlLookupSource{driver: driver, table: "t"}
+		_, _, err := s.buildGen().buildQuery([]string{"a"}, []string{"a"}, []any{nil})
+		require.ErrorContains(t, err, "must not be nil", "driver %s", driver)
+	}
 }
 
 func TestParamSQLGenDialects(t *testing.T) {
@@ -101,12 +103,12 @@ func TestParamSQLGenDialects(t *testing.T) {
 	}
 }
 
-func TestParamSQLGenSelectAllAndMixedNull(t *testing.T) {
+func TestParamSQLGenSelectAll(t *testing.T) {
 	s := &SqlLookupSource{driver: "postgres", table: "t"}
-	q, args, err := s.buildGen().buildQuery(nil, []string{"a", "b", "c"}, []any{nil, 1, nil})
+	q, args, err := s.buildGen().buildQuery(nil, []string{"a", "b"}, []any{1, 2})
 	require.NoError(t, err)
-	require.Equal(t, "SELECT * FROM t WHERE a IS NULL AND b = $1 AND c IS NULL", q)
-	require.Equal(t, []any{1}, args)
+	require.Equal(t, "SELECT * FROM t WHERE a = $1 AND b = $2", q)
+	require.Equal(t, []any{1, 2}, args)
 }
 
 func TestParamSQLGenValueNeverInlined(t *testing.T) {

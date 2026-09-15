@@ -224,8 +224,11 @@ func (g paramSQLGen) buildQuery(fields []string, keys []string, values []interfa
 			query += " AND "
 		}
 		if values[i] == nil {
-			query += fmt.Sprintf("%s IS NULL", g.quoteID(k))
-			continue
+			// A nil lookup key used to produce broken SQL; it must fail loud
+			// instead of silently matching rows via IS NULL on a possibly
+			// non-unique key. (The lookup node already skips nil keys before
+			// calling, so this guards direct API use.)
+			return "", nil, fmt.Errorf("lookup key %q must not be nil", k)
 		}
 		query += fmt.Sprintf("%s = %s", g.quoteID(k), g.placeholder(len(args)+1))
 		args = append(args, values[i])
