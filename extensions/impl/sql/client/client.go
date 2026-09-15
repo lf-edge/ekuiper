@@ -37,8 +37,20 @@ func (s *SQLConnection) Provision(ctx api.StreamContext, conId string, props map
 	// dburl is canonical (url is only a compatibility alias): it wins when
 	// both are present so the dialed database always matches the configured
 	// dialect. See SQLConf.resolveDBURL, which applies the same precedence.
-	// An empty dburl counts as absent, mirroring resolveDBURL's len check,
-	// so Ping paths (which bypass resolveDBURL) accept {dburl:"", url:valid}.
+	// An explicitly empty dburl counts as absent, mirroring resolveDBURL's
+	// len check, so Ping paths (which bypass resolveDBURL) accept
+	// {dburl:"", url:valid}. A present but non-string value is a
+	// misconfiguration and fails instead of silently falling back.
+	if v, ok := props["dburl"]; ok && v != nil {
+		if _, ok := v.(string); !ok {
+			return fmt.Errorf("dburl should be defined as string")
+		}
+	}
+	if v, ok := props["url"]; ok && v != nil {
+		if _, ok := v.(string); !ok {
+			return fmt.Errorf("url should be defined as string")
+		}
+	}
 	dburlVal, _ := props["dburl"].(string)
 	urlVal, _ := props["url"].(string)
 	switch {

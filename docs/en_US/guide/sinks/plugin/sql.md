@@ -56,6 +56,8 @@ Values are sent to the database as bound parameters rather than being concatenat
 
 For backward compatibility with the previous non-Unicode SQL string literal behavior, ordinary Go string values are bound as `VARCHAR` when using SQL Server. Other value types are passed to the driver unchanged. Explicit `NVARCHAR` parameter selection is not currently configurable.
 
+Large batches may be split into multiple statements executed in a single transaction; this requires a transactional table engine. Non-transactional engines (such as MyISAM) cannot roll back, so a failed chunk can leave partial rows behind.
+
 ## Sample usage
 
 Below is a sample for using sql to get the target data and set to mysql database

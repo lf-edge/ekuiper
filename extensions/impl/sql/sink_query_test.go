@@ -459,4 +459,15 @@ func TestSQLConnectionPrefersDburl(t *testing.T) {
 		"url":   "sqlite://" + dbPath,
 		"table": "t",
 	}))
+	// A present but mistyped dburl fails instead of silently using url.
+	require.Error(t, s.Ping(ctx, map[string]any{
+		"dburl": 123,
+		"url":   "sqlite://" + dbPath,
+		"table": "t",
+	}))
+	require.Error(t, s.Ping(ctx, map[string]any{
+		"dburl": "sqlite://" + dbPath,
+		"url":   123,
+		"table": "t",
+	}))
 }
