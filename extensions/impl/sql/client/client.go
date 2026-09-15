@@ -34,14 +34,21 @@ type SQLConnection struct {
 }
 
 func (s *SQLConnection) Provision(ctx api.StreamContext, conId string, props map[string]any) error {
-	url, ok := props["url"]
+	// dburl is canonical (url is only a compatibility alias): it wins when
+	// both are present so the dialed database always matches the configured
+	// dialect. See SQLConf.resolveDBURL, which applies the same precedence.
+	dburlRaw, ok := props["dburl"]
 	if !ok {
-		url, ok = props["dburl"]
+		dburlRaw, ok = props["url"]
 		if !ok {
 			return fmt.Errorf("dburl should be defined")
 		}
+	} else if u, ok := props["url"].(string); ok && u != "" {
+		if d, ok := dburlRaw.(string); ok && d != "" && d != u {
+			ctx.GetLogger().Warnf("both dburl and url are set with different values, using dburl")
+		}
 	}
-	dburl, ok := url.(string)
+	dburl, ok := dburlRaw.(string)
 	if !ok || len(dburl) < 1 {
 		return fmt.Errorf("dburl should be defined as string")
 	}

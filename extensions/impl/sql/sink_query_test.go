@@ -438,3 +438,18 @@ func TestSinkSingleWriteReconnectsOnce(t *testing.T) {
 		LblSql, metrics.LblSinkIO, LblReconn, ctx.GetRuleId(), ctx.GetOpId()))
 	require.Equal(t, float64(1), after-before, "single write must reconnect exactly once")
 }
+
+func TestSQLConnectionPrefersDburl(t *testing.T) {
+	ctx := mockContext.NewMockContext("sink_urlwin", "op1")
+	dbPath := filepath.Join(t.TempDir(), "urlwin.db")
+	db, err := sql.Open("sqlite", dbPath)
+	require.NoError(t, err)
+	require.NoError(t, db.Close())
+	// The unreachable url must lose to dburl: Ping dials the sqlite file.
+	s := &SQLSinkConnector{}
+	require.NoError(t, s.Ping(ctx, map[string]any{
+		"dburl": "sqlite://" + dbPath,
+		"url":   "postgres://user:pass@127.0.0.1:1/db",
+		"table": "t",
+	}))
+}
