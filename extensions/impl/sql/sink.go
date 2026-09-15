@@ -293,11 +293,13 @@ func (s *SQLSinkConnector) collectList(ctx api.StreamContext, items []map[string
 		return err
 	}
 	if len(s.config.RowKindField) < 1 {
-		for start := 0; start < len(items); {
-			n := chunkRows(s.maxParams, len(keys), len(items)-start)
+		chunks := splitChunks(s.maxParams, len(keys), items)
+		if len(chunks) == 1 {
+			// Fast path: a single statement keeps the historical behavior
+			// (and performance profile) exactly.
 			b := &sqlSinkBinder{next: s.bindNext}
-			values := make([]string, 0, n)
-			for _, mapData := range items[start : start+n] {
+			values := make([]string, 0, len(chunks[0]))
+			for _, mapData := range chunks[0] {
 				row, err := s.config.buildInsertRow(ctx, b, mapData, keys)
 				if err != nil {
 					return err
@@ -306,13 +308,11 @@ func (s *SQLSinkConnector) collectList(ctx api.StreamContext, items []map[string
 			}
 			if len(keys) > 0 {
 				sqlStr := buildInsertSQL(s.config.Table, keys, values)
-				if err := s.writeToDB(ctx, sqlStr, b.args...); err != nil {
-					return err
-				}
+				return s.writeToDB(ctx, sqlStr, b.args...)
 			}
-			start += n
+			return nil
 		}
-		return nil
+		return s.writeChunksTx(ctx, chunks, keys)
 	}
 	for _, el := range items {
 		err := s.save(ctx, s.config.Table, el)
@@ -320,6 +320,66 @@ func (s *SQLSinkConnector) collectList(ctx api.StreamContext, items []map[string
 			ctx.GetLogger().Error(err)
 		}
 	}
+	return nil
+}
+
+// splitChunks groups items so each chunk fits maxParams bound values (see
+// chunkRows). A non-positive limit yields a single chunk.
+func splitChunks(maxParams, numCols int, items []map[string]any) [][]map[string]any {
+	chunks := make([][]map[string]any, 0, 1)
+	for start := 0; start < len(items); {
+		n := chunkRows(maxParams, numCols, len(items)-start)
+		chunks = append(chunks, items[start:start+n])
+		start += n
+	}
+	return chunks
+}
+
+// writeChunksTx executes a multi-chunk batch inside one transaction so a
+// batch stays all-or-nothing like the historical single statement. Any chunk
+// failure rolls everything back and reports an IO error, letting the sink
+// retry replay the whole batch cleanly instead of duplicating committed rows.
+func (s *SQLSinkConnector) writeChunksTx(ctx api.StreamContext, chunks [][]map[string]any, keys []string) error {
+	tx, err := s.conn.GetDB().Begin()
+	if err != nil {
+		s.needReconnect = true
+		return errorx.NewIOErr(err.Error())
+	}
+	committed := false
+	defer func() {
+		if !committed {
+			_ = tx.Rollback()
+		}
+	}()
+	start := time.Now()
+	for _, chunk := range chunks {
+		b := &sqlSinkBinder{next: s.bindNext}
+		values := make([]string, 0, len(chunk))
+		for _, mapData := range chunk {
+			row, err := s.config.buildInsertRow(ctx, b, mapData, keys)
+			if err != nil {
+				s.needReconnect = true
+				return errorx.NewIOErr(err.Error())
+			}
+			values = append(values, row)
+		}
+		if len(keys) == 0 {
+			continue
+		}
+		sqlStr := buildInsertSQL(s.config.Table, keys, values)
+		ctx.GetLogger().Debugf("%s with args %v", sqlStr, b.args)
+		if _, err := tx.Exec(sqlStr, b.args...); err != nil {
+			s.needReconnect = true
+			return errorx.NewIOErr(err.Error())
+		}
+	}
+	if err := tx.Commit(); err != nil {
+		s.needReconnect = true
+		return errorx.NewIOErr(err.Error())
+	}
+	committed = true
+	metrics.IODurationHist.WithLabelValues(LblSql, metrics.LblSinkIO, ctx.GetRuleId(), ctx.GetOpId()).Observe(float64(time.Since(start).Microseconds()))
+	s.needReconnect = false
 	return nil
 }
 

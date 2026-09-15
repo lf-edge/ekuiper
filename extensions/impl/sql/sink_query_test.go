@@ -337,3 +337,38 @@ func TestSinkChunkedBatchEndToEnd(t *testing.T) {
 	require.NoError(t, s.conn.GetDB().QueryRow(`SELECT COUNT(*) FROM t`).Scan(&count))
 	require.Equal(t, 5, count)
 }
+
+func TestSinkChunkedTxRollbackEndToEnd(t *testing.T) {
+	require.NoError(t, connection.InitConnectionManager4Test())
+	ctx := mockContext.NewMockContext("sink_tchunk", "op1")
+	dburl := fmt.Sprintf("sqlite://%s", filepath.Join(t.TempDir(), "tchunk.db"))
+	s := &SQLSinkConnector{}
+	require.NoError(t, s.Provision(ctx, map[string]any{"dburl": dburl, "table": "t"}))
+	require.NoError(t, s.Connect(ctx, func(string, string) {}))
+	defer s.Close(ctx)
+	_, err := s.conn.GetDB().Exec(`CREATE TABLE t (a BIGINT PRIMARY KEY, b BIGINT)`)
+	require.NoError(t, err)
+
+	// Force 2 chunks (2 columns, 4-param cap): chunk 1 is fully legal, chunk 2
+	// violates the primary key. The whole batch must roll back.
+	s.maxParams = 4
+	err = s.collectList(ctx, []map[string]any{
+		{"a": 1, "b": 1},
+		{"a": 2, "b": 2},
+		{"a": 1, "b": 99},
+		{"a": 3, "b": 3},
+	})
+	require.Error(t, err)
+	var count int
+	require.NoError(t, s.conn.GetDB().QueryRow(`SELECT COUNT(*) FROM t`).Scan(&count))
+	require.Equal(t, 0, count, "chunk 1 rows must have been rolled back")
+
+	// A clean batch through the same tx path commits.
+	require.NoError(t, s.collectList(ctx, []map[string]any{
+		{"a": 1, "b": 1},
+		{"a": 2, "b": 2},
+		{"a": 3, "b": 3},
+	}))
+	require.NoError(t, s.conn.GetDB().QueryRow(`SELECT COUNT(*) FROM t`).Scan(&count))
+	require.Equal(t, 3, count)
+}
