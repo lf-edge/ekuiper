@@ -306,13 +306,19 @@ func TestSinkSqliteConnectorMisc(t *testing.T) {
 }
 
 func TestChunkRows(t *testing.T) {
-	require.Equal(t, 100, chunkRows(0, 10, 100))
-	require.Equal(t, 100, chunkRows(2000, 0, 100))
-	require.Equal(t, 200, chunkRows(2000, 10, 200))
-	require.Equal(t, 40, chunkRows(2000, 50, 100))
-	require.Equal(t, 7, chunkRows(2000, 10, 7))
+	require.Equal(t, 100, chunkRows(0, 0, 10, 100))
+	require.Equal(t, 100, chunkRows(2000, 0, 0, 100))
+	require.Equal(t, 200, chunkRows(2000, 0, 10, 200))
+	require.Equal(t, 40, chunkRows(2000, 0, 50, 100))
+	require.Equal(t, 7, chunkRows(2000, 0, 10, 7))
 	// A single row wider than the limit still goes out alone and loud.
-	require.Equal(t, 1, chunkRows(2000, 3000, 5))
+	require.Equal(t, 1, chunkRows(2000, 0, 3000, 5))
+	// SQL Server row constructors cap at 1000 rows regardless of width.
+	require.Equal(t, 1000, chunkRows(2000, 1000, 1, 1500))
+	require.Equal(t, 40, chunkRows(2000, 1000, 50, 100))
+	require.Equal(t, 1000, sinkMaxRows("mssql"))
+	require.Equal(t, 1000, sinkMaxRows("sqlserver"))
+	require.Equal(t, 0, sinkMaxRows("mysql"))
 	require.Equal(t, 2000, sinkMaxParams("mssql"))
 	require.Equal(t, 2000, sinkMaxParams("sqlserver"))
 	require.Equal(t, 65000, sinkMaxParams("postgres"))

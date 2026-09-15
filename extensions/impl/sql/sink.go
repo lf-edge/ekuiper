@@ -55,6 +55,8 @@ type SQLSinkConnector struct {
 	// maxParams caps bound parameters per statement, resolved from the
 	// driver in Provision. Zero means unbounded.
 	maxParams int
+	// maxRows caps VALUES rows per statement, resolved the same way.
+	maxRows int
 }
 
 type sqlSinkConfig struct {
@@ -153,17 +155,35 @@ func sinkMaxParams(driver string) int {
 }
 
 // chunkRows returns how many of the remaining rows fit one statement: at most
-// maxParams bound values, using numCols per row as a conservative upper bound
-// (NULLs bind nothing). A non-positive limit means unbounded.
-func chunkRows(maxParams, numCols, remaining int) int {
-	if maxParams <= 0 || numCols <= 0 {
-		return remaining
+// maxParams bound values (using numCols per row as a conservative upper
+// bound, since NULLs bind nothing) and at most maxRows rows. Non-positive
+// limits mean unbounded on that dimension.
+func chunkRows(maxParams, maxRows, numCols, remaining int) int {
+	n := remaining
+	if maxParams > 0 && numCols > 0 {
+		if m := maxParams / numCols; m < n {
+			n = m
+		}
 	}
-	n := maxParams / numCols
+	if maxRows > 0 && maxRows < n {
+		n = maxRows
+	}
 	if n < 1 {
 		n = 1
 	}
 	return min(n, remaining)
+}
+
+// sinkMaxRows caps VALUES rows per statement. SQL Server rejects a row
+// constructor above 1000 rows regardless of parameter count, so narrow
+// batches need a row cap on top of the parameter budget.
+func sinkMaxRows(driver string) int {
+	switch strings.ToLower(driver) {
+	case "sqlserver", "mssql":
+		return 1000
+	default:
+		return 0
+	}
 }
 
 // isSafeDynamicFieldName recognizes dynamic message keys that cannot alter SQL syntax.
@@ -229,6 +249,7 @@ func (s *SQLSinkConnector) Provision(ctx api.StreamContext, configs map[string]a
 	s.bindNext = sinkBinderForDriver(ctx, driver)
 	s.bindTransform = sqldriver.TransformerFor(driver)
 	s.maxParams = sinkMaxParams(driver)
+	s.maxRows = sinkMaxRows(driver)
 	return nil
 }
 
@@ -316,7 +337,7 @@ func (s *SQLSinkConnector) collectList(ctx api.StreamContext, items []map[string
 		// Build every statement before touching the database so deterministic
 		// data errors surface here as plain errors: they must not mark the
 		// connection bad nor trigger IO retry.
-		chunks := splitChunks(s.maxParams, len(keys), items)
+		chunks := splitChunks(s.maxParams, s.maxRows, len(keys), items)
 		stmts := make([]builtStmt, 0, len(chunks))
 		for _, chunk := range chunks {
 			b := &sqlSinkBinder{next: s.bindNext, transform: s.bindTransform}
@@ -352,12 +373,12 @@ func (s *SQLSinkConnector) collectList(ctx api.StreamContext, items []map[string
 	return nil
 }
 
-// splitChunks groups items so each chunk fits maxParams bound values (see
-// chunkRows). A non-positive limit yields a single chunk.
-func splitChunks(maxParams, numCols int, items []map[string]any) [][]map[string]any {
+// splitChunks groups items so each chunk fits the parameter and row budgets
+// (see chunkRows). Non-positive limits yield a single chunk.
+func splitChunks(maxParams, maxRows, numCols int, items []map[string]any) [][]map[string]any {
 	chunks := make([][]map[string]any, 0, 1)
 	for start := 0; start < len(items); {
-		n := chunkRows(maxParams, numCols, len(items)-start)
+		n := chunkRows(maxParams, maxRows, numCols, len(items)-start)
 		chunks = append(chunks, items[start:start+n])
 		start += n
 	}
