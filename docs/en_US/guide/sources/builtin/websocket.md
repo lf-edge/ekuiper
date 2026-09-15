@@ -24,6 +24,10 @@ CREATE STREAM demo'() with(CONF_KEY="default", datasource="/api/data", type="web
 
 At this time, eKuiper will act as a websocket client, establish a websocket connection to 127.0.0.1:8080/api/data, and use this connection to receive data as the message source.
 
+::: tip
+For security, websocket client connections to loopback or private network addresses (such as `127.0.0.1`) are blocked by default. To connect to such addresses, set `basic.enablePrivateNet: true` in `etc/kuiper.yaml`. See [global configurations](../../../configuration/global_configurations.md) for details.
+:::
+
 You can check the connectivity of the corresponding sink endpoint in advance through the API: [Connectivity Check](../../../api/restapi/connection.md#connectivity-check)
 
 ## eKuiper serve as websocker server

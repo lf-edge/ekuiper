@@ -17,14 +17,15 @@
 package service
 
 import (
+	"context"
 	"fmt"
-	"net"
 	"net/rpc"
 	"reflect"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/ugorji/go/codec"
 
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/httpx"
 	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
 )
 
@@ -59,8 +60,11 @@ func (m *msgpackExecutor) InvokeFunction(_ api.FunctionContext, name string, par
 			h := &codec.MsgpackHandle{}
 			h.MapType = reflect.TypeOf(map[string]interface{}(nil))
 
-			conn, err := net.Dial(m.addr.Scheme, m.addr.Host)
+			// Same SSRF destination policy as the REST/gRPC executors:
+			// block loopback/private/link-local unless Basic.EnablePrivateNet.
+			conn, err := httpx.GetSSRFDialContext(m.timeout)(context.Background(), m.addr.Scheme, m.addr.Host)
 			if err != nil {
+				m.Unlock()
 				return nil, err
 			}
 			rpcCodec := codec.MsgpackSpecRpc.ClientCodec(conn, h)
