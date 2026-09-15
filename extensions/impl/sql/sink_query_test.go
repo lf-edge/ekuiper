@@ -452,4 +452,11 @@ func TestSQLConnectionPrefersDburl(t *testing.T) {
 		"url":   "postgres://user:pass@127.0.0.1:1/db",
 		"table": "t",
 	}))
+	// An empty dburl counts as absent: the valid compatibility url is used,
+	// mirroring SQLConf.resolveDBURL for normal Provision.
+	require.NoError(t, s.Ping(ctx, map[string]any{
+		"dburl": "",
+		"url":   "sqlite://" + dbPath,
+		"table": "t",
+	}))
 }

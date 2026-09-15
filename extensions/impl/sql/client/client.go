@@ -37,21 +37,21 @@ func (s *SQLConnection) Provision(ctx api.StreamContext, conId string, props map
 	// dburl is canonical (url is only a compatibility alias): it wins when
 	// both are present so the dialed database always matches the configured
 	// dialect. See SQLConf.resolveDBURL, which applies the same precedence.
-	dburlRaw, ok := props["dburl"]
-	if !ok {
-		dburlRaw, ok = props["url"]
-		if !ok {
-			return fmt.Errorf("dburl should be defined")
-		}
-	} else if u, ok := props["url"].(string); ok && u != "" {
-		if d, ok := dburlRaw.(string); ok && d != "" && d != u {
+	// An empty dburl counts as absent, mirroring resolveDBURL's len check,
+	// so Ping paths (which bypass resolveDBURL) accept {dburl:"", url:valid}.
+	dburlVal, _ := props["dburl"].(string)
+	urlVal, _ := props["url"].(string)
+	switch {
+	case dburlVal != "":
+		if urlVal != "" && urlVal != dburlVal {
 			ctx.GetLogger().Warnf("both dburl and url are set with different values, using dburl")
 		}
+	case urlVal != "":
+		dburlVal = urlVal
+	default:
+		return fmt.Errorf("dburl should be defined")
 	}
-	dburl, ok := dburlRaw.(string)
-	if !ok || len(dburl) < 1 {
-		return fmt.Errorf("dburl should be defined as string")
-	}
+	dburl := dburlVal
 	ctx.GetLogger().Infof("create db with url:%v", dburl)
 
 	s.url = dburl
