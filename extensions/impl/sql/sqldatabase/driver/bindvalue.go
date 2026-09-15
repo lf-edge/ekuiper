@@ -23,9 +23,10 @@ import "strings"
 // transformer registered for it.
 var bindTransformers = map[string]func(any) any{}
 
-// RegisterBindTransformer registers a bind-value converter for a driver name
-// as reported by dburl. Called from init() in build-tagged driver files.
-func RegisterBindTransformer(driver string, fn func(any) any) {
+// registerBindTransformer registers a bind-value converter for a driver
+// name as reported by dburl. Called from init() in build-tagged driver
+// files. Unexported so registration can only happen at init time.
+func registerBindTransformer(driver string, fn func(any) any) {
 	bindTransformers[strings.ToLower(driver)] = fn
 }
 

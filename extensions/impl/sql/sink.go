@@ -336,12 +336,9 @@ func (s *SQLSinkConnector) collectList(ctx api.StreamContext, items []map[string
 		if len(stmts) == 0 {
 			return nil
 		}
-		if err := s.ensureConnected(ctx); err != nil {
-			return err
-		}
 		if len(stmts) == 1 {
 			// Fast path: a single statement keeps the historical behavior
-			// (and performance profile) exactly.
+			// (and performance profile) exactly; writeToDB owns reconnect.
 			return s.writeToDB(ctx, stmts[0].sql, stmts[0].args...)
 		}
 		return s.writeStmtsTx(ctx, stmts)
@@ -380,6 +377,9 @@ type builtStmt struct {
 // duplicating committed rows. Callers must build (and validate) all
 // statements before calling: only database I/O runs here.
 func (s *SQLSinkConnector) writeStmtsTx(ctx api.StreamContext, stmts []builtStmt) error {
+	if err := s.ensureConnected(ctx); err != nil {
+		return err
+	}
 	tx, err := s.conn.GetDB().Begin()
 	if err != nil {
 		s.needReconnect = true

@@ -22,8 +22,8 @@ import (
 )
 
 func init() {
-	RegisterBindTransformer("sqlserver", mssqlStringTransformer)
-	RegisterBindTransformer("mssql", mssqlStringTransformer)
+	registerBindTransformer("sqlserver", mssqlStringTransformer)
+	registerBindTransformer("mssql", mssqlStringTransformer)
 }
 
 // mssqlStringTransformer binds ordinary Go strings as VARCHAR, preserving

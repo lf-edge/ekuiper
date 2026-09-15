@@ -21,10 +21,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/stretchr/testify/require"
 	_ "modernc.org/sqlite"
 
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
+	"github.com/lf-edge/ekuiper/v2/metrics"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
@@ -408,4 +410,25 @@ func TestSinkChunkedBuildErrorEndToEnd(t *testing.T) {
 	var count int
 	require.NoError(t, s.conn.GetDB().QueryRow(`SELECT COUNT(*) FROM t`).Scan(&count))
 	require.Equal(t, 0, count)
+}
+
+func TestSinkSingleWriteReconnectsOnce(t *testing.T) {
+	require.NoError(t, connection.InitConnectionManager4Test())
+	ctx := mockContext.NewMockContext("sink_once", "op1")
+	dburl := fmt.Sprintf("sqlite://%s", filepath.Join(t.TempDir(), "once.db"))
+	s := &SQLSinkConnector{}
+	require.NoError(t, s.Provision(ctx, map[string]any{"dburl": dburl, "table": "t"}))
+	require.NoError(t, s.Connect(ctx, func(string, string) {}))
+	defer s.Close(ctx)
+	_, err := s.conn.GetDB().Exec(`CREATE TABLE t (a BIGINT)`)
+	require.NoError(t, err)
+
+	before := testutil.ToFloat64(metrics.IOCounter.WithLabelValues(
+		LblSql, metrics.LblSinkIO, LblReconn, ctx.GetRuleId(), ctx.GetOpId()))
+	s.needReconnect = true
+	require.NoError(t, s.collectList(ctx, []map[string]any{{"a": 1}}))
+	require.False(t, s.needReconnect)
+	after := testutil.ToFloat64(metrics.IOCounter.WithLabelValues(
+		LblSql, metrics.LblSinkIO, LblReconn, ctx.GetRuleId(), ctx.GetOpId()))
+	require.Equal(t, float64(1), after-before, "single write must reconnect exactly once")
 }
