@@ -20,9 +20,18 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/io/memory/pubsub"
+	"github.com/lf-edge/ekuiper/v2/internal/testx"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
+
+func init() {
+	// Client-mode tests dial httptest servers on 127.0.0.1; the SSRF guard
+	// blocks loopback by default, so explicitly allow private networks here.
+	testx.InitEnv("httpserver")
+	conf.Config.Basic.EnablePrivateNet = true
+}
 
 func TestWebsocketClient(t *testing.T) {
 	tc := newTC()
@@ -50,4 +59,19 @@ func TestWebsocketClient(t *testing.T) {
 	tc.sendCh <- data
 	require.Equal(t, data, <-ch)
 	require.NoError(t, wc.Close(ctx))
+}
+
+func TestWebsocketClientBlocksLoopbackWhenPrivateNetDisabled(t *testing.T) {
+	orig := conf.Config.Basic.EnablePrivateNet
+	conf.Config.Basic.EnablePrivateNet = false
+	defer func() { conf.Config.Basic.EnablePrivateNet = orig }()
+	tc := newTC()
+	s := createWServer(tc)
+	defer func() {
+		s.Close()
+	}()
+	wc := NewWebsocketClient("ws", s.URL[len("http://"):], "/ws", nil, nil)
+	err := wc.Connect()
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "in internal network")
 }

@@ -24,6 +24,10 @@ CREATE STREAM demo'() with(CONF_KEY="default", datasource="/api/data", type="web
 
 此时，eKuiper 将作为 websocket 的客户端，向 127.0.0.1:8080/api/data 建立 websocket 连接，并以该连接接收数据作为消息源。
 
+::: tip
+出于安全考虑，默认会拦截对回环或私网地址（如 `127.0.0.1`）的 websocket 客户端连接。如需连接此类地址，请在 `etc/kuiper.yaml` 中设置 `basic.enablePrivateNet: true`。详见[全局配置](../../../configuration/global_configurations.md)。
+:::
+
 ## eKuiper 作为 websocket 服务端
 
 eKuiper 可以作为 websocket 服务端，此时远端的 websocket 客户端可以主动向 eKuiper 发起 websocket 连接，eKuiper 会在该 websocket 连接上接收消息作为消息源。

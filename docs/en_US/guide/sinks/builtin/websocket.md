@@ -24,6 +24,10 @@ Other common sink properties are supported. Please refer to the [sink common pro
 
 When the websocket sink defines both addr and path, eKuiper will act as a websocket client to establish a websocket connection to the remote end and push messages through the connection.
 
+::: tip
+For security, websocket client connections to loopback or private network addresses (such as `127.0.0.1`) are blocked by default. To connect to such addresses, set `basic.enablePrivateNet: true` in `etc/kuiper.yaml`. See [global configurations](../../../configuration/global_configurations.md) for details.
+:::
+
 You can check the connectivity of the corresponding sink endpoint in advance through the API: [Connectivity Check](../../../api/restapi/connection.md#connectivity-check)
 
 ## eKuiper as websocket server
