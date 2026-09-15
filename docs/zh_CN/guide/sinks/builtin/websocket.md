@@ -24,6 +24,10 @@
 
 当 websocket sink 同时定义了 addr 和 path 后，eKuiper 将作为 websocket 客户端向远端建立 websocket 连接，并将消息通过该连接推送。
 
+::: tip
+出于安全考虑，默认会拦截对回环或私网地址（如 `127.0.0.1`）的 websocket 客户端连接。如需连接此类地址，请在 `etc/kuiper.yaml` 中设置 `basic.enablePrivateNet: true`。详见[全局配置](../../../configuration/global_configurations.md)。
+:::
+
 ## eKuiper 作为 websocket 服务端
 
 当 websocket sink 只定义了 path 且 addr 为空时，eKuiper 将作为 websocket 服务端等待远方建立 websocket 连接，并将消息通过该连接推送。
