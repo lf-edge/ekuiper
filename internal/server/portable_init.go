@@ -30,6 +30,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/plugin/portable"
 	"github.com/lf-edge/ekuiper/v2/internal/plugin/portable/runtime"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
+	"github.com/lf-edge/ekuiper/v2/pkg/validate"
 )
 
 var portableManager *portable.Manager
@@ -100,6 +101,10 @@ func portableHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	vars := mux.Vars(r)
 	name := vars["name"]
+	if err := validate.ValidateID(name); err != nil {
+		handleError(w, err, "", logger)
+		return
+	}
 	switch r.Method {
 	case http.MethodDelete:
 		err := portableManager.Delete(name)

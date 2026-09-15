@@ -222,6 +222,9 @@ func (suite *ServerTestSuite) TestRule() {
 }
 
 func (suite *ServerTestSuite) TestImportAndExport() {
+	// Functional tests use repo-relative fixture paths; keep external
+	// access on for them regardless of the global default.
+	allowExternalFileAccess(suite.T(), true)
 	file := "rpc_test_data/import.json"
 	var reply string
 	err := suite.s.Import(file, &reply)
@@ -236,6 +239,7 @@ func (suite *ServerTestSuite) TestImportAndExport() {
 }
 
 func (suite *ServerTestSuite) TestConfiguration() {
+	allowExternalFileAccess(suite.T(), true)
 	importArg := model.ImportDataDesc{
 		FileName: "rpc_test_data/import_configuration.json",
 		Stop:     false,
@@ -260,6 +264,45 @@ func (suite *ServerTestSuite) TestConfiguration() {
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), "export configuration success", reply)
 	os.Remove("rpc_test_data/export_configuration.json")
+}
+
+func (suite *ServerTestSuite) TestImportExportPathTraversal() {
+	allowExternalFileAccess(suite.T(), false)
+	var reply string
+
+	err := suite.s.Import("/etc/passwd", &reply)
+	assert.Error(suite.T(), err)
+	assert.Contains(suite.T(), err.Error(), "file access denied")
+
+	err = suite.s.Export("/tmp/ekuiper_rpc_poc.json", &reply)
+	assert.Error(suite.T(), err)
+	assert.Contains(suite.T(), err.Error(), "file access denied")
+
+	err = suite.s.ImportConfiguration(&model.ImportDataDesc{FileName: "/etc/passwd"}, &reply)
+	assert.Error(suite.T(), err)
+	assert.Contains(suite.T(), err.Error(), "file access denied")
+
+	err = suite.s.ExportConfiguration(&model.ExportDataDesc{FileName: "/tmp/ekuiper_rpc_poc.json"}, &reply)
+	assert.Error(suite.T(), err)
+	assert.Contains(suite.T(), err.Error(), "file access denied")
+
+	// No file must have been created outside the sandbox.
+	_, statErr := os.Stat("/tmp/ekuiper_rpc_poc.json")
+	assert.True(suite.T(), os.IsNotExist(statErr))
+}
+
+// allowExternalFileAccess toggles the global file access switch for the
+// duration of a test and restores it afterwards.
+func allowExternalFileAccess(t *testing.T, allow bool) {
+	t.Helper()
+	if conf.Config == nil {
+		conf.InitConf()
+	}
+	old := conf.Config.Basic.AllowExternalFileAccess
+	conf.Config.Basic.AllowExternalFileAccess = allow
+	t.Cleanup(func() {
+		conf.Config.Basic.AllowExternalFileAccess = old
+	})
 }
 
 func (suite *ServerTestSuite) TearDownTest() {

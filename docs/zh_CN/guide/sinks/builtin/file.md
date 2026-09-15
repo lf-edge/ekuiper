@@ -2,6 +2,11 @@
 
 该 sink 将分析结果保存到指定文件中。指定的文件已存在，结果将会覆盖写入。[文件源](../../sources/builtin/file.md)是反向的连接器可以读取文件 sink 的输出。
 
+::: warning
+出于安全考虑，文件路径默认限制在 eKuiper 数据目录内。数据目录之外的绝对路径（例如 `/tmp/result.txt`）会被拒绝，
+除非在全局配置中将 `allowExternalFileAccess` 设为 `true`。相对路径解析到数据目录下。
+:::
+
 ## 属性
 
 | 属性名称               | 是否可选 | 说明                                                                             |

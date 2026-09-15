@@ -106,6 +106,12 @@ func (fs *Source) Provision(ctx api.StreamContext, props map[string]any) error {
 		}
 		cfg.Path = p
 	}
+	if err := validateFileName(cfg.FileName); err != nil {
+		return err
+	}
+	if _, err := validateFilePath(filepath.Join(cfg.Path, cfg.FileName)); err != nil {
+		return err
+	}
 	fs.file = filepath.Join(cfg.Path, cfg.FileName)
 	fi, err := os.Stat(fs.file)
 	if err != nil {
@@ -134,6 +140,9 @@ func (fs *Source) Provision(ctx api.StreamContext, props map[string]any) error {
 				if err != nil {
 					return fmt.Errorf("invalid moveTo %s: %v", cfg.MoveTo, err)
 				}
+			}
+			if _, err := validateFilePath(cfg.MoveTo); err != nil {
+				return err
 			}
 			fileInfo, err := os.Stat(cfg.MoveTo)
 			if err != nil {
@@ -247,6 +256,12 @@ func (fs *Source) parseFile(ctx api.StreamContext, file string, ingest api.Tuple
 		err error
 		r   io.Reader
 	)
+	// The directory listing may contain a symlink planted after Provision
+	// pointing outside the sandbox; re-validate the runtime path.
+	if _, err := validateFilePath(file); err != nil {
+		ingestError(ctx, err)
+		return
+	}
 	f, err := os.Open(file)
 	if err != nil {
 		ctx.GetLogger().Debugf("prepare file %s error: %v", file, err)
@@ -322,6 +337,10 @@ func (fs *Source) parseFile(ctx api.StreamContext, file string, ingest api.Tuple
 		ctx.GetLogger().Debugf("Remove file %s", file)
 	case 2:
 		targetFile := filepath.Join(fs.config.MoveTo, filepath.Base(file))
+		if _, err := validateFilePath(targetFile); err != nil {
+			ingestError(ctx, err)
+			return
+		}
 		if err := os.Rename(file, targetFile); err != nil {
 			ingestError(ctx, err)
 		}

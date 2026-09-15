@@ -3,12 +3,22 @@ package native
 import (
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 
 	"github.com/lf-edge/ekuiper/v2/internal/plugin"
 )
+
+func containsAny(s string, subs []string) bool {
+	for _, sub := range subs {
+		if strings.Contains(s, sub) {
+			return true
+		}
+	}
+	return false
+}
 
 func TestManager_Register_Security_PathTraversal(t *testing.T) {
 	s := httptest.NewServer(
@@ -40,8 +50,11 @@ func TestManager_Register_Security_PathTraversal(t *testing.T) {
 			err := manager.Register(plugin.SOURCE, p)
 			if tt.wantErr {
 				if assert.Error(t, err) {
-					// Check for the specific validation error
-					assert.Contains(t, err.Error(), "path escapes from parent")
+					// Rejected at name validation (ValidateID) before
+					// reaching download/unzip, or at the sandbox layer.
+					assert.True(t,
+						containsAny(err.Error(), []string{"invalid characters", "path escapes from parent"}),
+						"unexpected error: %v", err)
 				}
 			} else {
 				assert.NoError(t, err)

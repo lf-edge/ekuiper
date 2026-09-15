@@ -681,6 +681,9 @@ func TestFileSinkReopen(t *testing.T) {
 // Test single file writing and flush by close
 func TestFileCompressAndEncrypt(t *testing.T) {
 	conf.InitConf()
+	// Functional tests in this package use tmp dirs; keep external access
+	// on (TestMain does this, but InitConf above resets the config).
+	conf.Config.Basic.AllowExternalFileAccess = true
 	originalKey := conf.Config.AesKey
 	conf.Config.AesKey = []byte("0123456789abcdef0123456789abcdef")
 	t.Cleanup(func() {

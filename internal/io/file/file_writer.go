@@ -46,14 +46,18 @@ type fileWriter struct {
 
 func (m *fileSink) createFileWriter(ctx api.StreamContext, fn string, ft FileType, headers string, compressAlgorithm string, encryption string) (_ *fileWriter, ge error) {
 	ctx.GetLogger().Infof("Create new file writer for %s", fn)
+	// Defense in depth: the caller already validated, but the writer must
+	// never create files outside the sandbox even if a new caller forgets.
+	absFn, err := validateFilePath(fn)
+	if err != nil {
+		return nil, err
+	}
+	fn = absFn
 	fws := &fileWriter{Start: timex.GetNow()}
-	var (
-		f   *os.File
-		err error
-	)
+	var f *os.File
 	Dir := filepath.Dir(fn)
 	if _, err = os.Stat(Dir); os.IsNotExist(err) {
-		if err := os.Mkdir(Dir, 0o777); err != nil {
+		if err := os.MkdirAll(Dir, 0o750); err != nil {
 			return nil, fmt.Errorf("fail to create file %s: %v", fn, err)
 		}
 	}

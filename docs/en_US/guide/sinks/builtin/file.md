@@ -3,6 +3,12 @@
 The sink saves the analysis result to a specified file. It will override if the specified file existed. The [file source](../../sources/builtin/file.md) is the opposite
 connector that can read the file sink’s output.
 
+::: warning
+For security reasons, the file path is restricted to the eKuiper data directory by default. Absolute paths outside
+the data directory (such as `/tmp/result.txt`) are rejected unless `allowExternalFileAccess` is set to `true` in the
+global configuration. Relative paths are resolved against the data directory.
+:::
+
 ## Properties
 
 | Property name      | Optional | Description                                                                                                                                                                                                                                                        |

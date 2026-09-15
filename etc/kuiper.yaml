@@ -83,7 +83,9 @@ basic:
   enableRestAuditLog: false
   # If it is enabled, the rule functions can access the private network.
   enablePrivateNet: false
-  # Allow rule functions to access files outside the eKuiper upload directory.
+  # Allow rule functions to access files outside the allowed directories
+  # (the eKuiper upload directory for file downloads, the data directory
+  # for file sink/source).
   #
   # For security reasons, this is disabled by default.
   # Enable only when trusted external file paths are required.

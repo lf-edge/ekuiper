@@ -94,6 +94,11 @@ func (m *fileSink) Provision(ctx api.StreamContext, props map[string]interface{}
 	if c.Path == "" {
 		return fmt.Errorf("path must be set")
 	}
+	// Fail fast on paths outside the sandbox. The runtime value may be
+	// rendered from a template, so Collect re-validates the final path.
+	if _, err := validateFilePath(c.Path); err != nil {
+		return err
+	}
 	if c.FileType != JSON_TYPE && c.FileType != CSV_TYPE && c.FileType != LINES_TYPE {
 		return fmt.Errorf("fileType must be one of json, csv or lines")
 	}
@@ -174,6 +179,13 @@ func (m *fileSink) Collect(ctx api.StreamContext, tuple api.RawTuple) error {
 			fn = t
 		}
 	}
+	// Re-validate the rendered path: templates are fed by stream data and
+	// could otherwise inject ../ or absolute paths at runtime.
+	absFn, err := validateFilePath(fn)
+	if err != nil {
+		return err
+	}
+	fn = absFn
 	ctx.GetLogger().Debugf("writing to file path %s", fn)
 	fw, item, err := m.GetFws(ctx, fn, item)
 	if err != nil {

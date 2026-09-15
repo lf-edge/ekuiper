@@ -231,7 +231,12 @@ func TestCollectRolling(t *testing.T) {
 				assert.Equal(t, contents, tt.contents[i])
 			}
 			exp := []string{"test_lines-460.log", "test_lines-1810.log"}
-			assert.Equal(t, hook.result, exp)
+			expAbs := make([]string, 0, len(exp))
+			for _, e := range exp {
+				a, _ := filepath.Abs(e)
+				expAbs = append(expAbs, a)
+			}
+			assert.Equal(t, expAbs, hook.result)
 		})
 	}
 }

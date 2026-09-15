@@ -285,7 +285,7 @@ func DownloadFile(folder string, name string, uri string) (string, error) {
 	// Write the body to file
 	_, err = io.Copy(out, src)
 	if err != nil {
-		_ = os.Remove(out.Name())
+		_ = root.Remove(name)
 		return "", err
 	}
 	return out.Name(), nil

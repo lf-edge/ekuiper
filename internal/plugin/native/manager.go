@@ -45,6 +45,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	"github.com/lf-edge/ekuiper/v2/pkg/kv"
 	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
+	"github.com/lf-edge/ekuiper/v2/pkg/validate"
 )
 
 // isSafeArchiveEntry checks if the entry name is safe for extraction
@@ -289,8 +290,8 @@ func (rr *Manager) Register(t plugin2.PluginType, j plugin2.Plugin) error {
 	name, uri, shellParas := j.GetName(), j.GetFile(), j.GetShellParas()
 	// Validation
 	name = strings.Trim(name, " ")
-	if name == "" {
-		return fmt.Errorf("invalid name %s: should not be empty", name)
+	if err := validate.ValidateID(name); err != nil {
+		return err
 	}
 	if !httpx.IsValidUrl(uri) || !strings.HasSuffix(uri, ".zip") {
 		return fmt.Errorf("invalid uri %s", uri)
@@ -397,8 +398,8 @@ func (rr *Manager) RegisterFuncs(name string, functions []string) error {
 
 func (rr *Manager) Delete(t plugin2.PluginType, name string, stop bool) error {
 	name = strings.Trim(name, " ")
-	if name == "" {
-		return fmt.Errorf("invalid name %s: should not be empty", name)
+	if err := validate.ValidateID(name); err != nil {
+		return err
 	}
 	if v, ok := rr.get(t, name); ok && v == DELETED {
 		conf.Log.Debugf("plugin %s is already deleted", name)
