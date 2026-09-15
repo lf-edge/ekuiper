@@ -67,8 +67,9 @@ func TestSinkBinderDialects(t *testing.T) {
 func TestSinkUpdateNilValue(t *testing.T) {
 	// Missing values keep the historical NULL literal in SET.
 	b := &sqlSinkBinder{next: qmarkBind}
-	got := buildUpdateSQL("t", []string{"a", "b"}, b,
+	got, err := buildUpdateSQL("t", []string{"a", "b"}, b,
 		map[string]any{"a": 1}, "a", 1)
+	require.NoError(t, err)
 	require.Equal(t, "UPDATE t SET a=?,b=NULL WHERE a = ?;", got)
 	require.Equal(t, []any{1, 1}, b.args)
 }
@@ -107,7 +108,8 @@ func TestSinkSQLiteRoundTrip(t *testing.T) {
 
 	// update
 	b = &sqlSinkBinder{next: qmarkBind}
-	q = buildUpdateSQL("t", []string{"note"}, b, map[string]any{"note": "x'); DROP TABLE t;--"}, "id", 1)
+	q, err = buildUpdateSQL("t", []string{"note"}, b, map[string]any{"note": "x'); DROP TABLE t;--"}, "id", 1)
+	require.NoError(t, err)
 	require.Equal(t, "UPDATE t SET note=? WHERE id = ?;", q)
 	_, err = db.Exec(q, b.args...)
 	require.NoError(t, err)
@@ -121,7 +123,8 @@ func TestSinkSQLiteRoundTrip(t *testing.T) {
 
 	// delete
 	b = &sqlSinkBinder{next: qmarkBind}
-	q = buildDeleteSQL("t", "id", 1, b)
+	q, err = buildDeleteSQL("t", "id", 1, b)
+	require.NoError(t, err)
 	require.Equal(t, "DELETE FROM t WHERE id = ?;", q)
 	_, err = db.Exec(q, b.args...)
 	require.NoError(t, err)
@@ -235,6 +238,9 @@ func TestSinkSqliteConnectorEndToEnd(t *testing.T) {
 	require.Error(t, s2.collect(ctx, map[string]any{"id": 1, "action": 123}))
 	require.Error(t, s2.collect(ctx, map[string]any{"note": "x", "action": "update"}))
 	require.Error(t, s2.collect(ctx, map[string]any{"note": "x", "action": "delete"}))
+	// Nil WHERE keys fail loud instead of matching rows via IS NULL.
+	require.Error(t, s2.collect(ctx, map[string]any{"id": nil, "note": "x", "action": "update"}))
+	require.Error(t, s2.collect(ctx, map[string]any{"id": nil, "note": "x", "action": "delete"}))
 
 	require.NoError(t, s.Ping(ctx, map[string]any{"dburl": dburl, "table": "t"}))
 }

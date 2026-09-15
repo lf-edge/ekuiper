@@ -322,14 +322,20 @@ func (s *SQLSinkConnector) save(ctx api.StreamContext, table string, data map[st
 		if !ok {
 			return fmt.Errorf("field %s does not exist in data %v", s.config.KeyField, data)
 		}
-		sqlStr = buildUpdateSQL(table, keys, b, data, s.config.KeyField, keyval)
+		sqlStr, err = buildUpdateSQL(table, keys, b, data, s.config.KeyField, keyval)
+		if err != nil {
+			return err
+		}
 		args = b.args
 	case ast.RowkindDelete:
 		keyval, ok := data[s.config.KeyField]
 		if !ok {
 			return fmt.Errorf("field %s does not exist in data %v", s.config.KeyField, data)
 		}
-		sqlStr = buildDeleteSQL(table, s.config.KeyField, keyval, b)
+		sqlStr, err = buildDeleteSQL(table, s.config.KeyField, keyval, b)
+		if err != nil {
+			return err
+		}
 		args = b.args
 	default:
 		return fmt.Errorf("invalid rowkind %s", rowkind)
@@ -385,10 +391,13 @@ func buildInsertSQL(table string, keys []string, values []string) string {
 }
 
 // buildUpdateSQL renders SET pairs with bind variables and appends the key
-// argument to b. Missing/nil values keep the historical NULL literal in SET;
-// a nil key renders IS NULL in WHERE instead of binding NULL (which matches
-// nothing with =).
-func buildUpdateSQL(table string, keys []string, b *sqlSinkBinder, data map[string]any, keyField string, keyval any) string {
+// argument to b. Missing/nil values keep the historical NULL literal in SET.
+// A nil key is rejected: it used to produce broken SQL, and silently
+// matching rows via IS NULL on a possibly non-unique key is worse.
+func buildUpdateSQL(table string, keys []string, b *sqlSinkBinder, data map[string]any, keyField string, keyval any) (string, error) {
+	if keyval == nil {
+		return "", fmt.Errorf("key field %s must not be nil", keyField)
+	}
 	sqlStr := fmt.Sprintf("UPDATE %s SET ", table)
 	for i, key := range keys {
 		if i != 0 {
@@ -400,19 +409,15 @@ func buildUpdateSQL(table string, keys []string, b *sqlSinkBinder, data map[stri
 			sqlStr += fmt.Sprintf("%s=NULL", key)
 		}
 	}
-	if keyval == nil {
-		sqlStr += fmt.Sprintf(" WHERE %s IS NULL;", keyField)
-	} else {
-		sqlStr += fmt.Sprintf(" WHERE %s = %s;", keyField, b.bind(keyval))
-	}
-	return sqlStr
+	sqlStr += fmt.Sprintf(" WHERE %s = %s;", keyField, b.bind(keyval))
+	return sqlStr, nil
 }
 
-func buildDeleteSQL(table string, keyField string, keyval any, b *sqlSinkBinder) string {
+func buildDeleteSQL(table string, keyField string, keyval any, b *sqlSinkBinder) (string, error) {
 	if keyval == nil {
-		return fmt.Sprintf("DELETE FROM %s WHERE %s IS NULL;", table, keyField)
+		return "", fmt.Errorf("key field %s must not be nil", keyField)
 	}
-	return fmt.Sprintf("DELETE FROM %s WHERE %s = %s;", table, keyField, b.bind(keyval))
+	return fmt.Sprintf("DELETE FROM %s WHERE %s = %s;", table, keyField, b.bind(keyval)), nil
 }
 
 func GetSink() api.Sink {

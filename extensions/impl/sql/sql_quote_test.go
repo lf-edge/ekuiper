@@ -21,6 +21,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
@@ -173,7 +175,8 @@ func TestSQLBuildersBindValues(t *testing.T) {
 	// Values must travel as bound arguments, never inlined: a quote in
 	// O'Brien stays in args instead of becoming 'O''Brien' SQL text.
 	b := &sqlSinkBinder{next: qmarkBind}
-	got := buildUpdateSQL("[dbo].[Events]", []string{"[Value]"}, b, map[string]any{"[Value]": "x"}, "[ID]", "O'Brien")
+	got, err := buildUpdateSQL("[dbo].[Events]", []string{"[Value]"}, b, map[string]any{"[Value]": "x"}, "[ID]", "O'Brien")
+	require.NoError(t, err)
 	if want := "UPDATE [dbo].[Events] SET [Value]=? WHERE [ID] = ?;"; got != want {
 		t.Errorf("SQL builder = %q, want %q", got, want)
 	}
@@ -182,7 +185,8 @@ func TestSQLBuildersBindValues(t *testing.T) {
 	}
 
 	b = &sqlSinkBinder{next: qmarkBind}
-	got = buildDeleteSQL("[audit.v1]", "[ID]", 7, b)
+	got, err = buildDeleteSQL("[audit.v1]", "[ID]", 7, b)
+	require.NoError(t, err)
 	if want := "DELETE FROM [audit.v1] WHERE [ID] = ?;"; got != want {
 		t.Errorf("SQL builder = %q, want %q", got, want)
 	}
@@ -190,12 +194,13 @@ func TestSQLBuildersBindValues(t *testing.T) {
 		t.Errorf("args = %v, want %v", b.args, []any{7})
 	}
 
+	// A nil WHERE key is rejected rather than matching rows via IS NULL.
 	b = &sqlSinkBinder{next: dollarBind}
-	got = buildDeleteSQL("t", "id", nil, b)
-	if want := "DELETE FROM t WHERE id IS NULL;"; got != want {
-		t.Errorf("SQL builder = %q, want %q", got, want)
+	if _, err := buildDeleteSQL("t", "id", nil, b); err == nil {
+		t.Errorf("buildDeleteSQL with nil key = nil error, want error")
 	}
-	if len(b.args) != 0 {
-		t.Errorf("args = %v, want empty", b.args)
+	b = &sqlSinkBinder{next: dollarBind}
+	if _, err := buildUpdateSQL("t", []string{"a"}, b, map[string]any{"a": 1}, "id", nil); err == nil {
+		t.Errorf("buildUpdateSQL with nil key = nil error, want error")
 	}
 }
