@@ -17,5 +17,22 @@
 package driver
 
 import (
-	_ "github.com/denisenkom/go-mssqldb" // Microsoft SQL Server
+	// Microsoft SQL Server; the named import also registers the driver.
+	mssql "github.com/denisenkom/go-mssqldb"
 )
+
+func init() {
+	RegisterBindTransformer("sqlserver", mssqlStringTransformer)
+	RegisterBindTransformer("mssql", mssqlStringTransformer)
+}
+
+// mssqlStringTransformer binds ordinary Go strings as VARCHAR, preserving
+// the pre-parameterization non-Unicode literal behavior. Only the exact
+// string type is converted; driver-specific values, valuers and named string
+// types pass through untouched.
+func mssqlStringTransformer(v any) any {
+	if s, ok := v.(string); ok {
+		return mssql.VarChar(s)
+	}
+	return v
+}

@@ -16,12 +16,15 @@ package sql
 
 import (
 	"database/sql"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 	_ "modernc.org/sqlite"
+
+	sqldriver "github.com/lf-edge/ekuiper/v2/extensions/impl/sql/sqldatabase/driver"
 )
 
 func TestParamSQLGenMySQL(t *testing.T) {
@@ -59,7 +62,15 @@ func TestParamSQLGenSQLServer(t *testing.T) {
 	)
 	require.NoError(t, err)
 	require.Equal(t, "SELECT a FROM device_alarm WHERE a = @p1 AND b = @p2", q)
-	require.Equal(t, []any{1, "O'Brien"}, args)
+	require.Equal(t, 1, args[0])
+	// mssql strings travel as mssql.VarChar when the sqlserver driver is
+	// built in (VARCHAR, like the old literal); otherwise plain string.
+	if sqldriver.TransformerFor("sqlserver") == nil {
+		require.Equal(t, "O'Brien", args[1])
+	} else {
+		require.Equal(t, "mssql.VarChar", fmt.Sprintf("%T", args[1]))
+		require.Equal(t, "O'Brien", fmt.Sprintf("%s", args[1]))
+	}
 }
 
 func TestParamSQLGenNull(t *testing.T) {

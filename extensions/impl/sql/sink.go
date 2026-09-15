@@ -24,6 +24,7 @@ import (
 	"github.com/pingcap/failpoint"
 
 	"github.com/lf-edge/ekuiper/v2/extensions/impl/sql/client"
+	sqldriver "github.com/lf-edge/ekuiper/v2/extensions/impl/sql/sqldatabase/driver"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/util"
 	"github.com/lf-edge/ekuiper/v2/metrics"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
@@ -48,6 +49,9 @@ type SQLSinkConnector struct {
 	// bindNext renders the bind variable for the i-th (1-based) argument of
 	// the current statement, resolved from the driver in Provision.
 	bindNext func(i int) string
+	// bindTransform converts values before they are appended as arguments,
+	// resolved from the driver layer in Provision. Nil means passthrough.
+	bindTransform func(any) any
 	// maxParams caps bound parameters per statement, resolved from the
 	// driver in Provision. Zero means unbounded.
 	maxParams int
@@ -83,13 +87,17 @@ func (c *sqlSinkConfig) buildInsertRow(ctx api.StreamContext, b *sqlSinkBinder, 
 // collects the matching arguments. Values stay Go values; the driver formats
 // time.Time, strings, etc. instead of string-concatenating them into SQL.
 type sqlSinkBinder struct {
-	next func(i int) string
-	n    int
-	args []any
+	next      func(i int) string
+	transform func(any) any
+	n         int
+	args      []any
 }
 
 func (b *sqlSinkBinder) bind(v any) string {
 	b.n++
+	if b.transform != nil {
+		v = b.transform(v)
+	}
 	b.args = append(b.args, v)
 	return b.next(b.n)
 }
@@ -208,6 +216,7 @@ func (s *SQLSinkConnector) Provision(ctx api.StreamContext, configs map[string]a
 	s.config = c
 	s.props = configs
 	s.bindNext = sinkBinderForDriver(ctx, driver)
+	s.bindTransform = sqldriver.TransformerFor(driver)
 	s.maxParams = sinkMaxParams(driver)
 	return nil
 }
@@ -260,7 +269,7 @@ func (s *SQLSinkConnector) collect(ctx api.StreamContext, item map[string]any) e
 		if err != nil {
 			return err
 		}
-		b := &sqlSinkBinder{next: s.bindNext}
+		b := &sqlSinkBinder{next: s.bindNext, transform: s.bindTransform}
 		row, err := s.config.buildInsertRow(ctx, b, item, keys)
 		if err != nil {
 			return err
@@ -297,7 +306,7 @@ func (s *SQLSinkConnector) collectList(ctx api.StreamContext, items []map[string
 		if len(chunks) == 1 {
 			// Fast path: a single statement keeps the historical behavior
 			// (and performance profile) exactly.
-			b := &sqlSinkBinder{next: s.bindNext}
+			b := &sqlSinkBinder{next: s.bindNext, transform: s.bindTransform}
 			values := make([]string, 0, len(chunks[0]))
 			for _, mapData := range chunks[0] {
 				row, err := s.config.buildInsertRow(ctx, b, mapData, keys)
@@ -353,7 +362,7 @@ func (s *SQLSinkConnector) writeChunksTx(ctx api.StreamContext, chunks [][]map[s
 	}()
 	start := time.Now()
 	for _, chunk := range chunks {
-		b := &sqlSinkBinder{next: s.bindNext}
+		b := &sqlSinkBinder{next: s.bindNext, transform: s.bindTransform}
 		values := make([]string, 0, len(chunk))
 		for _, mapData := range chunk {
 			row, err := s.config.buildInsertRow(ctx, b, mapData, keys)
@@ -402,7 +411,7 @@ func (s *SQLSinkConnector) save(ctx api.StreamContext, table string, data map[st
 	}
 	var sqlStr string
 	var args []any
-	b := &sqlSinkBinder{next: s.bindNext}
+	b := &sqlSinkBinder{next: s.bindNext, transform: s.bindTransform}
 	switch rowkind {
 	case ast.RowkindInsert:
 		row, err := s.config.buildInsertRow(ctx, b, data, keys)
