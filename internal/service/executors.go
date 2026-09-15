@@ -124,6 +124,18 @@ type grpcExecutor struct {
 	conn *grpc.ClientConn
 }
 
+// grpcSSRFContextDialer enforces the same SSRF destination policy as the REST
+// executor: httpx.GetSSRFDialContext blocks loopback/private/link-local
+// destinations unless Basic.EnablePrivateNet is true. Extracted so the exact
+// dial path used by InvokeFunction is unit testable (grpc.DialContext with
+// WithBlock retries dial errors until the deadline, masking the policy error).
+func grpcSSRFContextDialer(timeout time.Duration) func(context.Context, string) (net.Conn, error) {
+	ssrfDialer := httpx.GetSSRFDialContext(timeout)
+	return func(ctx context.Context, addr string) (net.Conn, error) {
+		return ssrfDialer(ctx, "tcp", addr)
+	}
+}
+
 func (d *grpcExecutor) InvokeFunction(_ api.FunctionContext, name string, params []interface{}) (interface{}, error) {
 	if d.conn == nil {
 		dialCtx, cancel := context.WithTimeout(context.Background(), d.timeout)
@@ -133,14 +145,7 @@ func (d *grpcExecutor) InvokeFunction(_ api.FunctionContext, name string, params
 		)
 		go infra.SafeRun(func() error {
 			defer cancel()
-			// Enforce the same SSRF destination policy as the REST executor.
-			// httpx.GetSSRFDialContext blocks loopback/private/link-local
-			// destinations unless Basic.EnablePrivateNet is true.
-			ssrfDialer := httpx.GetSSRFDialContext(d.timeout)
-			grpcDialer := func(ctx context.Context, addr string) (net.Conn, error) {
-				return ssrfDialer(ctx, "tcp", addr)
-			}
-			conn, e = grpc.DialContext(dialCtx, d.addr.Host, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock(), grpc.WithContextDialer(grpcDialer)) //nolint:staticcheck
+			conn, e = grpc.DialContext(dialCtx, d.addr.Host, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock(), grpc.WithContextDialer(grpcSSRFContextDialer(d.timeout))) //nolint:staticcheck
 			return e
 		})
 
