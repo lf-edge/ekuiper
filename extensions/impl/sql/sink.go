@@ -415,7 +415,11 @@ func (s *SQLSinkConnector) writeStmtsTx(ctx api.StreamContext, stmts []builtStmt
 	start := time.Now()
 	for _, st := range stmts {
 		ctx.GetLogger().Debugf("%s with args %v", st.sql, st.args)
-		if _, err := tx.Exec(st.sql, st.args...); err != nil {
+		_, err := tx.Exec(st.sql, st.args...)
+		failpoint.Inject("dbErr", func() {
+			err = errors.New("dbErr")
+		})
+		if err != nil {
 			s.needReconnect = true
 			return errorx.NewIOErr(err.Error())
 		}
