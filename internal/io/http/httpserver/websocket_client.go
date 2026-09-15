@@ -26,6 +26,7 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
 	"github.com/lf-edge/ekuiper/v2/internal/io/memory/pubsub"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/httpx"
 )
 
 type WebsocketClient struct {
@@ -60,6 +61,9 @@ func (c *WebsocketClient) Connect() error {
 	d := &websocket.Dialer{
 		HandshakeTimeout: 3 * time.Second,
 		TLSClientConfig:  c.tlsConfig,
+		// Same SSRF destination policy as the REST/gRPC executors:
+		// block loopback/private/link-local unless Basic.EnablePrivateNet.
+		NetDialContext: httpx.GetSSRFDialContext(3 * time.Second),
 	}
 	if len(c.addr) < 1 {
 		return fmt.Errorf("addr should be defined")
