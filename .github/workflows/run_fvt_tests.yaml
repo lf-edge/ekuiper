@@ -408,21 +408,27 @@ jobs:
           curl -s -X POST http://127.0.0.1:9081/streams \
             -H 'Content-Type: application/json' \
             -d '{"sql":"CREATE STREAM smoke_in () WITH (DATASOURCE=\"in.lines\", FORMAT=\"json\", TYPE=\"file\", CONF_KEY=\"smoke_in\")"}' -o /dev/null
-          # 1. file sink outside the data dir must be denied
-          body=$(curl -s -w "\n%{http_code}" -X POST http://127.0.0.1:9081/rules \
+          # 1. file sink outside the data dir must be denied with 400
+          resp=$(curl -s -w "\n%{http_code}" -X POST http://127.0.0.1:9081/rules \
             -H 'Content-Type: application/json' \
             -d '{"id":"smoke_deny_sink","sql":"SELECT * FROM smoke_in","actions":[{"file":{"path":"/tmp/smoke_denied.log","fileType":"lines","format":"json","rollingCount":100}}]}')
+          code=$(printf "%s" "$resp" | tail -n 1)
+          body=$(printf "%s" "$resp" | sed '$d')
+          [ "$code" = "400" ] || { echo "sink outside: unexpected status $code: $body"; exit 1; }
           echo "$body" | grep -q "file access denied" || { echo "sink outside not denied: $body"; exit 1; }
-          # 2. file source outside the data dir must be denied
+          # 2. file source outside the data dir must be denied with 400
           curl -s -X PUT http://127.0.0.1:9081/metadata/sources/file/confKeys/smoke_etc \
             -H 'Content-Type: application/json' \
             -d '{"fileType":"lines","path":"/etc"}' -o /dev/null
           curl -s -X POST http://127.0.0.1:9081/streams \
             -H 'Content-Type: application/json' \
             -d '{"sql":"CREATE STREAM smoke_etc () WITH (DATASOURCE=\"passwd\", FORMAT=\"json\", TYPE=\"file\", CONF_KEY=\"smoke_etc\")"}' -o /dev/null
-          body=$(curl -s -w "\n%{http_code}" -X POST http://127.0.0.1:9081/rules \
+          resp=$(curl -s -w "\n%{http_code}" -X POST http://127.0.0.1:9081/rules \
             -H 'Content-Type: application/json' \
             -d '{"id":"smoke_deny_src","sql":"SELECT * FROM smoke_etc","actions":[{"log":{}}]}')
+          code=$(printf "%s" "$resp" | tail -n 1)
+          body=$(printf "%s" "$resp" | sed '$d')
+          [ "$code" = "400" ] || { echo "source outside: unexpected status $code: $body"; exit 1; }
           echo "$body" | grep -q "file access denied" || { echo "source outside not denied: $body"; exit 1; }
           # 3. data-dir relative path must keep working
           code=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://127.0.0.1:9081/rules \

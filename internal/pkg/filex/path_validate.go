@@ -35,13 +35,13 @@ func ExternalFileAccessAllowed() bool {
 // relative paths are resolved against the data directory; when it is on,
 // they resolve against the process working directory (historical behavior)
 // and only absolute paths are returned as-is. It returns the absolute path
-// to use, which may be the canonicalized (symlink-resolved) spelling: the
-// validated canonical identity is deliberately kept as the subsequent-use
-// path instead of dropping it back to the un-resolved spelling, so the same
-// file is never addressed by two different paths downstream. This narrows
-// the symlink-alias surface; it does not eliminate TOCTOU between
-// validation and use, which remains the caller's trust-domain assumption
-// (local write access to the data directory is already fully trusted).
+// to use, which may be the canonicalized (symlink-resolved) spelling.
+// When canonicalization succeeds, callers that use the returned path keep
+// the validated canonical identity instead of reverting to an unresolved
+// spelling. This narrows the symlink-alias surface; it does not eliminate
+// TOCTOU between validation and use, which remains the caller's
+// trust-domain assumption (local write access to the data directory is
+// already fully trusted).
 func ValidateFilePath(p string) (string, error) {
 	if p == "" {
 		return "", fmt.Errorf("path must be set")
