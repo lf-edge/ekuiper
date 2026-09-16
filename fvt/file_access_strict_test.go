@@ -28,6 +28,22 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 )
 
+// cleanupRequest registers deletion of a persistent resource created by
+// this test. The strict and legacy profiles share the same workspace
+// storage, so nothing created here may leak into the next process:
+// failures surface instead of being silently dropped.
+func cleanupRequest(t *testing.T, f func() (*http.Response, error)) {
+	t.Helper()
+	t.Cleanup(func() {
+		resp, err := f()
+		require.NoError(t, err)
+		if resp != nil {
+			defer resp.Body.Close()
+			require.Less(t, resp.StatusCode, 300, "cleanup request failed")
+		}
+	})
+}
+
 // Strict-default file access coverage against the live in-process server.
 // This test must run in its own process WITHOUT the
 // KUIPER__BASIC__ALLOWEXTERNALFILEACCESS override (see the "Run fvt" CI
@@ -52,7 +68,9 @@ func TestFileAccessStrictDefault(t *testing.T) {
 	require.Equal(t, http.StatusCreated, resp.StatusCode)
 	_, err = GetResponseText(resp)
 	require.NoError(t, err)
-	defer client.DeleteStream("fvt_strict_in")
+	cleanupRequest(t, func() (*http.Response, error) {
+		return client.DeleteStream("fvt_strict_in")
+	})
 
 	// 1. file sink outside the data dir must be denied with 400.
 	outside := filepath.Join(t.TempDir(), "fvt_strict.json")
@@ -83,7 +101,12 @@ func TestFileAccessStrictDefault(t *testing.T) {
 	require.Equal(t, http.StatusCreated, resp.StatusCode)
 	_, err = GetResponseText(resp)
 	require.NoError(t, err)
-	defer client.DeleteStream("fvt_strict_etc")
+	cleanupRequest(t, func() (*http.Response, error) {
+		return client.Delete("metadata/sources/file/confKeys/fvt_strict_etc")
+	})
+	cleanupRequest(t, func() (*http.Response, error) {
+		return client.DeleteStream("fvt_strict_etc")
+	})
 	resp, err = client.CreateRule(`{
 		"id": "fvt_strict_deny_src",
 		"sql": "SELECT * FROM fvt_strict_etc",
@@ -106,7 +129,9 @@ func TestFileAccessStrictDefault(t *testing.T) {
 	assert.Equal(t, http.StatusCreated, resp.StatusCode)
 	_, err = GetResponseText(resp)
 	require.NoError(t, err)
-	defer client.DeleteRule("fvt_strict_allow")
+	cleanupRequest(t, func() (*http.Response, error) {
+		return client.DeleteRule("fvt_strict_allow")
+	})
 	require.Eventually(t, func() bool {
 		_, err := os.Stat(outFile)
 		return err == nil
