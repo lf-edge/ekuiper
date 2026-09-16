@@ -17,7 +17,6 @@ package sql
 import (
 	"errors"
 	"fmt"
-	"reflect"
 	"strings"
 	"time"
 
@@ -25,6 +24,7 @@ import (
 	"github.com/pingcap/failpoint"
 
 	"github.com/lf-edge/ekuiper/v2/extensions/impl/sql/client"
+	sqldriver "github.com/lf-edge/ekuiper/v2/extensions/impl/sql/sqldatabase/driver"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/util"
 	"github.com/lf-edge/ekuiper/v2/metrics"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
@@ -46,6 +46,17 @@ type SQLSinkConnector struct {
 	conn          *client.SQLConnection
 	props         map[string]any
 	needReconnect bool
+	// bindNext renders the bind variable for the i-th (1-based) argument of
+	// the current statement, resolved from the driver in Provision.
+	bindNext func(i int) string
+	// bindTransform converts values before they are appended as arguments,
+	// resolved from the driver layer in Provision. Nil means passthrough.
+	bindTransform func(any) any
+	// maxParams caps bound parameters per statement, resolved from the
+	// driver in Provision. Zero means unbounded.
+	maxParams int
+	// maxRows caps VALUES rows per statement, resolved the same way.
+	maxRows int
 }
 
 type sqlSinkConfig struct {
@@ -56,41 +67,123 @@ type sqlSinkConfig struct {
 	KeyField     string   `json:"keyField"`
 }
 
-func (c *sqlSinkConfig) buildInsertSql(ctx api.StreamContext, mapData map[string]interface{}, keys []string) (string, error) {
-	vals, err := c.getValuesByKeys(ctx, mapData, keys)
-	if err != nil {
-		return "", err
-	}
-	sqlStr := "(" + strings.Join(vals, ",") + ")"
-	return sqlStr, nil
-}
-
-func (c *sqlSinkConfig) getValuesByKeys(ctx api.StreamContext, mapData map[string]interface{}, keys []string) ([]string, error) {
+func (c *sqlSinkConfig) buildInsertRow(ctx api.StreamContext, b *sqlSinkBinder, mapData map[string]interface{}, keys []string) (string, error) {
 	if len(mapData) == 0 {
-		return nil, fmt.Errorf("data is empty")
+		return "", fmt.Errorf("data is empty")
 	}
-	var vals []string
+	parts := make([]string, 0, len(keys))
 	logger := ctx.GetLogger()
 	for _, k := range keys {
 		v, ok := mapData[k]
 		if ok && v != nil {
-			if reflect.String == reflect.TypeOf(v).Kind() {
-				// Escape single quotes by doubling them (SQL standard) to avoid breaking the literal.
-				vals = append(vals, quoteSQLString(fmt.Sprint(v)))
-			} else {
-				vals = append(vals, fmt.Sprintf(`%v`, v))
-			}
+			parts = append(parts, b.bind(v))
 		} else {
 			logger.Warn("not found field:", k)
-			vals = append(vals, `NULL`)
+			parts = append(parts, `NULL`)
 		}
 	}
-	return vals, nil
+	return "(" + strings.Join(parts, ",") + ")", nil
 }
 
-func quoteSQLString(s string) string {
-	// SQL string literal escaping: ' -> ''.
-	return "'" + strings.ReplaceAll(s, "'", "''") + "'"
+// sqlSinkBinder numbers bind variables within a single statement and
+// collects the matching arguments. Values stay Go values; the driver formats
+// time.Time, strings, etc. instead of string-concatenating them into SQL.
+type sqlSinkBinder struct {
+	next      func(i int) string
+	transform func(any) any
+	n         int
+	args      []any
+}
+
+func (b *sqlSinkBinder) bind(v any) string {
+	b.n++
+	if b.transform != nil {
+		v = b.transform(v)
+	}
+	b.args = append(b.args, v)
+	return b.next(b.n)
+}
+
+// TODO: converge with the lookup parameterized-query helpers; the
+// placeholder styles are intentionally identical.
+func qmarkBind(_ int) string  { return "?" }
+func dollarBind(i int) string { return fmt.Sprintf("$%d", i) }
+func atPBind(i int) string    { return fmt.Sprintf("@p%d", i) }
+func colonBind(i int) string  { return fmt.Sprintf(":%d", i) }
+
+// sinkBinderForDriver resolves the placeholder style for a driver name as
+// reported by dburl. Drivers outside the mapping share the "?" default.
+// MaxCompute and QL are not in the supported matrix and intentionally
+// receive no special handling here.
+func sinkBinderForDriver(ctx api.StreamContext, driver string) func(i int) string {
+	switch strings.ToLower(driver) {
+	case "postgres", "postgresql", "pgx":
+		return dollarBind
+	case "sqlserver", "mssql":
+		return atPBind
+	case "oracle", "godror", "ora", "go-ora":
+		return colonBind
+	case "mysql", "mymysql", "sqlite", "sqlite3":
+		return qmarkBind
+	default:
+		ctx.GetLogger().Warnf("unknown sql driver %q for sink, falling back to \"?\" placeholders", driver)
+		return qmarkBind
+	}
+}
+
+// sinkMaxParams caps bound parameters per statement. Drivers (and the wire
+// protocols beneath them) reject oversized bind counts, while the old inline
+// literals had no such ceiling, so batch inserts are chunked below it:
+//   - SQL Server: 2100 per statement (sp_executesql engine limit).
+//   - PostgreSQL: 65535 (lib/pq rejects more; protocol count is 16-bit).
+//   - MySQL: 65535 (COM_STMT_PREPARE num_params is uint16).
+//   - SQLite: 32766 host variables by default (verified against pinned
+//     modernc.org/sqlite: 32766 binds pass, 40000 fail).
+func sinkMaxParams(driver string) int {
+	switch strings.ToLower(driver) {
+	case "sqlserver", "mssql":
+		return 2000
+	case "postgres", "postgresql", "pgx":
+		return 65000
+	case "mysql", "mymysql":
+		return 65000
+	case "sqlite", "sqlite3":
+		return 32000
+	default:
+		return 0
+	}
+}
+
+// chunkRows returns how many of the remaining rows fit one statement: at most
+// maxParams bound values (using numCols per row as a conservative upper
+// bound, since NULLs bind nothing) and at most maxRows rows. Non-positive
+// limits mean unbounded on that dimension.
+func chunkRows(maxParams, maxRows, numCols, remaining int) int {
+	n := remaining
+	if maxParams > 0 && numCols > 0 {
+		if m := maxParams / numCols; m < n {
+			n = m
+		}
+	}
+	if maxRows > 0 && maxRows < n {
+		n = maxRows
+	}
+	if n < 1 {
+		n = 1
+	}
+	return min(n, remaining)
+}
+
+// sinkMaxRows caps VALUES rows per statement. SQL Server rejects a row
+// constructor above 1000 rows regardless of parameter count, so narrow
+// batches need a row cap on top of the parameter budget.
+func sinkMaxRows(driver string) int {
+	switch strings.ToLower(driver) {
+	case "sqlserver", "mssql":
+		return 1000
+	default:
+		return 0
+	}
 }
 
 // isSafeDynamicFieldName recognizes dynamic message keys that cannot alter SQL syntax.
@@ -147,8 +240,16 @@ func (s *SQLSinkConnector) Provision(ctx api.StreamContext, configs map[string]a
 	if c.RowKindField != "" && c.KeyField == "" {
 		return fmt.Errorf("keyField is required when rowKindField is set")
 	}
+	driver, err := client.ParseDriver(sc.DBUrl)
+	if err != nil {
+		return err
+	}
 	s.config = c
 	s.props = configs
+	s.bindNext = sinkBinderForDriver(ctx, driver)
+	s.bindTransform = sqldriver.TransformerFor(driver)
+	s.maxParams = sinkMaxParams(driver)
+	s.maxRows = sinkMaxRows(driver)
 	return nil
 }
 
@@ -175,7 +276,9 @@ func (s *SQLSinkConnector) Connect(ctx api.StreamContext, sc api.StatusChangeHan
 }
 
 func (s *SQLSinkConnector) Close(ctx api.StreamContext) error {
-	ctx.GetLogger().Infof("Closing sql sink connector url:%v", s.config.DBUrl)
+	if s.config != nil {
+		ctx.GetLogger().Infof("Closing sql sink connector url:%v", s.config.DBUrl)
+	}
 	if s.cw != nil {
 		return connection.DetachConnection(ctx, s.cw.ID)
 	}
@@ -198,16 +301,14 @@ func (s *SQLSinkConnector) collect(ctx api.StreamContext, item map[string]any) e
 		if err != nil {
 			return err
 		}
-		var values []string
-		var vars string
-		vars, err = s.config.buildInsertSql(ctx, item, keys)
+		b := &sqlSinkBinder{next: s.bindNext, transform: s.bindTransform}
+		row, err := s.config.buildInsertRow(ctx, b, item, keys)
 		if err != nil {
 			return err
 		}
-		values = append(values, vars)
 		if len(keys) > 0 {
-			sqlStr := buildInsertSQL(s.config.Table, keys, values)
-			return s.writeToDB(ctx, sqlStr)
+			sqlStr := buildInsertSQL(s.config.Table, keys, []string{row})
+			return s.writeToDB(ctx, sqlStr, b.args...)
 		}
 		return nil
 	}
@@ -232,21 +333,36 @@ func (s *SQLSinkConnector) collectList(ctx api.StreamContext, items []map[string
 	if err != nil {
 		return err
 	}
-	var values []string
-	var vars string
 	if len(s.config.RowKindField) < 1 {
-		for _, mapData := range items {
-			vars, err = s.config.buildInsertSql(ctx, mapData, keys)
-			if err != nil {
-				return err
+		// Build every statement before touching the database so deterministic
+		// data errors surface here as plain errors: they must not mark the
+		// connection bad nor trigger IO retry.
+		chunks := splitChunks(s.maxParams, s.maxRows, len(keys), items)
+		stmts := make([]builtStmt, 0, len(chunks))
+		for _, chunk := range chunks {
+			b := &sqlSinkBinder{next: s.bindNext, transform: s.bindTransform}
+			values := make([]string, 0, len(chunk))
+			for _, mapData := range chunk {
+				row, err := s.config.buildInsertRow(ctx, b, mapData, keys)
+				if err != nil {
+					return err
+				}
+				values = append(values, row)
 			}
-			values = append(values, vars)
+			if len(keys) == 0 {
+				continue
+			}
+			stmts = append(stmts, builtStmt{buildInsertSQL(s.config.Table, keys, values), b.args})
 		}
-		if len(keys) > 0 {
-			sqlStr := buildInsertSQL(s.config.Table, keys, values)
-			return s.writeToDB(ctx, sqlStr)
+		if len(stmts) == 0 {
+			return nil
 		}
-		return nil
+		if len(stmts) == 1 {
+			// Fast path: a single statement keeps the historical behavior
+			// (and performance profile) exactly; writeToDB owns reconnect.
+			return s.writeToDB(ctx, stmts[0].sql, stmts[0].args...)
+		}
+		return s.writeStmtsTx(ctx, stmts)
 	}
 	for _, el := range items {
 		err := s.save(ctx, s.config.Table, el)
@@ -254,6 +370,67 @@ func (s *SQLSinkConnector) collectList(ctx api.StreamContext, items []map[string
 			ctx.GetLogger().Error(err)
 		}
 	}
+	return nil
+}
+
+// splitChunks groups items so each chunk fits the parameter and row budgets
+// (see chunkRows). Non-positive limits yield a single chunk.
+func splitChunks(maxParams, maxRows, numCols int, items []map[string]any) [][]map[string]any {
+	chunks := make([][]map[string]any, 0, 1)
+	for start := 0; start < len(items); {
+		n := chunkRows(maxParams, maxRows, numCols, len(items)-start)
+		chunks = append(chunks, items[start:start+n])
+		start += n
+	}
+	return chunks
+}
+
+// builtStmt is a fully rendered statement with its bound arguments.
+type builtStmt struct {
+	sql  string
+	args []any
+}
+
+// writeStmtsTx executes prebuilt statements inside one transaction so a
+// multi-chunk batch stays all-or-nothing like the historical single
+// statement. Any failure rolls everything back and reports an IO error,
+// letting the sink retry replay the whole batch cleanly instead of
+// duplicating committed rows. Callers must build (and validate) all
+// statements before calling: only database I/O runs here.
+func (s *SQLSinkConnector) writeStmtsTx(ctx api.StreamContext, stmts []builtStmt) error {
+	if err := s.ensureConnected(ctx); err != nil {
+		return err
+	}
+	tx, err := s.conn.GetDB().Begin()
+	if err != nil {
+		s.needReconnect = true
+		return errorx.NewIOErr(err.Error())
+	}
+	committed := false
+	defer func() {
+		if !committed {
+			_ = tx.Rollback()
+		}
+	}()
+	start := time.Now()
+	for _, st := range stmts {
+		ctx.GetLogger().Debugf("%s with args %v", st.sql, st.args)
+		_, err := tx.Exec(st.sql, st.args...)
+		failpoint.Inject("dbErr", func() {
+			err = errors.New("dbErr")
+		})
+		if err != nil {
+			s.needReconnect = true
+			return errorx.NewIOErr(err.Error())
+		}
+	}
+	if err := tx.Commit(); err != nil {
+		s.needReconnect = true
+		return errorx.NewIOErr(err.Error())
+	}
+	committed = true
+	metrics.IODurationHist.WithLabelValues(LblSql, metrics.LblSinkIO, ctx.GetRuleId(), ctx.GetOpId()).Observe(float64(time.Since(start).Microseconds()))
+	s.needReconnect = false
 	return nil
 }
 
@@ -275,49 +452,64 @@ func (s *SQLSinkConnector) save(ctx api.StreamContext, table string, data map[st
 		return err
 	}
 	var sqlStr string
+	var args []any
+	b := &sqlSinkBinder{next: s.bindNext, transform: s.bindTransform}
 	switch rowkind {
 	case ast.RowkindInsert:
-		vars, err := s.config.buildInsertSql(ctx, data, keys)
+		row, err := s.config.buildInsertRow(ctx, b, data, keys)
 		if err != nil {
 			return err
 		}
-		values := []string{vars}
 		if len(keys) > 0 {
-			sqlStr = buildInsertSQL(table, keys, values)
+			sqlStr = buildInsertSQL(table, keys, []string{row})
+			args = b.args
 		}
 	case ast.RowkindUpdate:
 		keyval, ok := data[s.config.KeyField]
 		if !ok {
 			return fmt.Errorf("field %s does not exist in data %v", s.config.KeyField, data)
 		}
-		vals, err := s.config.getValuesByKeys(ctx, data, keys)
+		sqlStr, err = buildUpdateSQL(table, keys, b, data, s.config.KeyField, keyval)
 		if err != nil {
 			return err
 		}
-		sqlStr = buildUpdateSQL(table, keys, vals, s.config.KeyField, keyval)
+		args = b.args
 	case ast.RowkindDelete:
 		keyval, ok := data[s.config.KeyField]
 		if !ok {
 			return fmt.Errorf("field %s does not exist in data %v", s.config.KeyField, data)
 		}
-		sqlStr = buildDeleteSQL(table, s.config.KeyField, keyval)
+		sqlStr, err = buildDeleteSQL(table, s.config.KeyField, keyval, b)
+		if err != nil {
+			return err
+		}
+		args = b.args
 	default:
 		return fmt.Errorf("invalid rowkind %s", rowkind)
 	}
-	return s.writeToDB(ctx, sqlStr)
+	return s.writeToDB(ctx, sqlStr, args...)
 }
 
-func (s *SQLSinkConnector) writeToDB(ctx api.StreamContext, sqlStr string) error {
-	ctx.GetLogger().Debugf(sqlStr)
+// ensureConnected reconnects when a previous write marked the connection
+// bad. It never clears the flag: only a successful Exec or transaction
+// completion does that.
+func (s *SQLSinkConnector) ensureConnected(ctx api.StreamContext) error {
 	if s.needReconnect {
 		metrics.IOCounter.WithLabelValues(LblSql, metrics.LblSinkIO, LblReconn, ctx.GetRuleId(), ctx.GetOpId()).Inc()
-		err := s.conn.Reconnect()
-		if err != nil {
+		if err := s.conn.Reconnect(); err != nil {
 			return errorx.NewIOErr(err.Error())
 		}
 	}
+	return nil
+}
+
+func (s *SQLSinkConnector) writeToDB(ctx api.StreamContext, sqlStr string, args ...any) error {
+	ctx.GetLogger().Debugf("%s with args %v", sqlStr, args)
+	if err := s.ensureConnected(ctx); err != nil {
+		return err
+	}
 	start := time.Now()
-	r, err := s.conn.GetDB().Exec(sqlStr)
+	r, err := s.conn.GetDB().Exec(sqlStr, args...)
 	failpoint.Inject("dbErr", func() {
 		err = errors.New("dbErr")
 	})
@@ -354,27 +546,34 @@ func buildInsertSQL(table string, keys []string, values []string) string {
 	return sql
 }
 
-func buildUpdateSQL(table string, keys []string, vals []string, keyField string, keyval any) string {
+// buildUpdateSQL renders SET pairs with bind variables and appends the key
+// argument to b. Missing/nil values keep the historical NULL literal in SET.
+// A nil key is rejected: it used to produce broken SQL, and silently
+// matching rows via IS NULL on a possibly non-unique key is worse.
+func buildUpdateSQL(table string, keys []string, b *sqlSinkBinder, data map[string]any, keyField string, keyval any) (string, error) {
+	if keyval == nil {
+		return "", fmt.Errorf("key field %s must not be nil", keyField)
+	}
 	sqlStr := fmt.Sprintf("UPDATE %s SET ", table)
 	for i, key := range keys {
 		if i != 0 {
 			sqlStr += ","
 		}
-		sqlStr += fmt.Sprintf("%s=%s", key, vals[i])
+		if v, ok := data[key]; ok && v != nil {
+			sqlStr += fmt.Sprintf("%s=%s", key, b.bind(v))
+		} else {
+			sqlStr += fmt.Sprintf("%s=NULL", key)
+		}
 	}
-	if ksv, ok := keyval.(string); ok {
-		sqlStr += fmt.Sprintf(" WHERE %s = %s;", keyField, quoteSQLString(ksv))
-	} else {
-		sqlStr += fmt.Sprintf(" WHERE %s = %v;", keyField, keyval)
-	}
-	return sqlStr
+	sqlStr += fmt.Sprintf(" WHERE %s = %s;", keyField, b.bind(keyval))
+	return sqlStr, nil
 }
 
-func buildDeleteSQL(table string, keyField string, keyval any) string {
-	if ksv, ok := keyval.(string); ok {
-		return fmt.Sprintf("DELETE FROM %s WHERE %s = %s;", table, keyField, quoteSQLString(ksv))
+func buildDeleteSQL(table string, keyField string, keyval any, b *sqlSinkBinder) (string, error) {
+	if keyval == nil {
+		return "", fmt.Errorf("key field %s must not be nil", keyField)
 	}
-	return fmt.Sprintf("DELETE FROM %s WHERE %s = %v;", table, keyField, keyval)
+	return fmt.Sprintf("DELETE FROM %s WHERE %s = %s;", table, keyField, b.bind(keyval)), nil
 }
 
 func GetSink() api.Sink {

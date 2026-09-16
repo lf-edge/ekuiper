@@ -34,17 +34,36 @@ type SQLConnection struct {
 }
 
 func (s *SQLConnection) Provision(ctx api.StreamContext, conId string, props map[string]any) error {
-	url, ok := props["url"]
-	if !ok {
-		url, ok = props["dburl"]
-		if !ok {
-			return fmt.Errorf("dburl should be defined")
+	// dburl is canonical (url is only a compatibility alias): it wins when
+	// both are present so the dialed database always matches the configured
+	// dialect. See SQLConf.resolveDBURL, which applies the same precedence.
+	// An explicitly empty dburl counts as absent, mirroring resolveDBURL's
+	// len check, so Ping paths (which bypass resolveDBURL) accept
+	// {dburl:"", url:valid}. A present but non-string value is a
+	// misconfiguration and fails instead of silently falling back.
+	if v, ok := props["dburl"]; ok && v != nil {
+		if _, ok := v.(string); !ok {
+			return fmt.Errorf("dburl should be defined as string")
 		}
 	}
-	dburl, ok := url.(string)
-	if !ok || len(dburl) < 1 {
-		return fmt.Errorf("dburl should be defined as string")
+	if v, ok := props["url"]; ok && v != nil {
+		if _, ok := v.(string); !ok {
+			return fmt.Errorf("url should be defined as string")
+		}
 	}
+	dburlVal, _ := props["dburl"].(string)
+	urlVal, _ := props["url"].(string)
+	switch {
+	case dburlVal != "":
+		if urlVal != "" && urlVal != dburlVal {
+			ctx.GetLogger().Warnf("both dburl and url are set with different values, using dburl")
+		}
+	case urlVal != "":
+		dburlVal = urlVal
+	default:
+		return fmt.Errorf("dburl should be defined")
+	}
+	dburl := dburlVal
 	ctx.GetLogger().Infof("create db with url:%v", dburl)
 
 	s.url = dburl

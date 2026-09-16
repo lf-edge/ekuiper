@@ -86,6 +86,8 @@ template_config:
 | postgres   | postgres://user:pass@localhost/dbname                 |
 | sqlite     | sqlite:/path/to/file.db                               |
 
+用作 lookup 表时，join key 以绑定参数发送。为与之前非 Unicode SQL 字符串字面量行为保持向后兼容，使用 SQL Server 时普通的 Go 字符串值按 `VARCHAR` 绑定。其他类型的值原样传给驱动。目前不支持显式选择 `NVARCHAR` 参数。以上仅适用于生成的 lookup 查询；`templateSql` 渲染的是原始 SQL，需自行处理值转义。
+
 ### internalSqlQueryCfg
 
 * `table`: 要查询的表名

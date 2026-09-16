@@ -21,6 +21,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
@@ -146,28 +148,18 @@ func TestSQLBuildersPreserveConfiguredIdentifiers(t *testing.T) {
 	}{
 		{
 			name: "sqlserver insert",
-			got:  buildInsertSQL("[dbo].[Events]", []string{"[Order]", "[Value]"}, []string{"('1','x')"}),
-			want: "INSERT INTO [dbo].[Events] ([Order],[Value]) values ('1','x');",
+			got:  buildInsertSQL("[dbo].[Events]", []string{"[Order]", "[Value]"}, []string{"(?,?)"}),
+			want: "INSERT INTO [dbo].[Events] ([Order],[Value]) values (?,?);",
 		},
 		{
 			name: "oracle insert",
-			got:  buildInsertSQL(`"MixedCase"@remote`, []string{`"Order"`}, []string{"('x')"}),
-			want: `INSERT INTO "MixedCase"@remote ("Order") values ('x');`,
+			got:  buildInsertSQL(`"MixedCase"@remote`, []string{`"Order"`}, []string{"(?)"}),
+			want: `INSERT INTO "MixedCase"@remote ("Order") values (?);`,
 		},
 		{
 			name: "mysql insert",
-			got:  buildInsertSQL("`audit-log`", []string{"`sensor-value`"}, []string{"('1')"}),
-			want: "INSERT INTO `audit-log` (`sensor-value`) values ('1');",
-		},
-		{
-			name: "sqlserver update",
-			got:  buildUpdateSQL("[dbo].[Events]", []string{"[Value]"}, []string{"'x'"}, "[ID]", "O'Brien"),
-			want: "UPDATE [dbo].[Events] SET [Value]='x' WHERE [ID] = 'O''Brien';",
-		},
-		{
-			name: "sqlserver delete",
-			got:  buildDeleteSQL("[audit.v1]", "[ID]", 7),
-			want: "DELETE FROM [audit.v1] WHERE [ID] = 7;",
+			got:  buildInsertSQL("`audit-log`", []string{"`sensor-value`"}, []string{"(?)"}),
+			want: "INSERT INTO `audit-log` (`sensor-value`) values (?);",
 		},
 	}
 	for _, tt := range tests {
@@ -176,5 +168,39 @@ func TestSQLBuildersPreserveConfiguredIdentifiers(t *testing.T) {
 				t.Errorf("SQL builder = %q, want %q", tt.got, tt.want)
 			}
 		})
+	}
+}
+
+func TestSQLBuildersBindValues(t *testing.T) {
+	// Values must travel as bound arguments, never inlined: a quote in
+	// O'Brien stays in args instead of becoming 'O''Brien' SQL text.
+	b := &sqlSinkBinder{next: qmarkBind}
+	got, err := buildUpdateSQL("[dbo].[Events]", []string{"[Value]"}, b, map[string]any{"[Value]": "x"}, "[ID]", "O'Brien")
+	require.NoError(t, err)
+	if want := "UPDATE [dbo].[Events] SET [Value]=? WHERE [ID] = ?;"; got != want {
+		t.Errorf("SQL builder = %q, want %q", got, want)
+	}
+	if !reflect.DeepEqual(b.args, []any{"x", "O'Brien"}) {
+		t.Errorf("args = %v, want %v", b.args, []any{"x", "O'Brien"})
+	}
+
+	b = &sqlSinkBinder{next: qmarkBind}
+	got, err = buildDeleteSQL("[audit.v1]", "[ID]", 7, b)
+	require.NoError(t, err)
+	if want := "DELETE FROM [audit.v1] WHERE [ID] = ?;"; got != want {
+		t.Errorf("SQL builder = %q, want %q", got, want)
+	}
+	if !reflect.DeepEqual(b.args, []any{7}) {
+		t.Errorf("args = %v, want %v", b.args, []any{7})
+	}
+
+	// A nil WHERE key is rejected rather than matching rows via IS NULL.
+	b = &sqlSinkBinder{next: dollarBind}
+	if _, err := buildDeleteSQL("t", "id", nil, b); err == nil {
+		t.Errorf("buildDeleteSQL with nil key = nil error, want error")
+	}
+	b = &sqlSinkBinder{next: dollarBind}
+	if _, err := buildUpdateSQL("t", []string{"a"}, b, map[string]any{"a": 1}, "id", nil); err == nil {
+		t.Errorf("buildUpdateSQL with nil key = nil error, want error")
 	}
 }

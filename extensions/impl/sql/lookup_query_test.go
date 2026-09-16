@@ -16,12 +16,15 @@ package sql
 
 import (
 	"database/sql"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 	_ "modernc.org/sqlite"
+
+	sqldriver "github.com/lf-edge/ekuiper/v2/extensions/impl/sql/sqldatabase/driver"
 )
 
 func TestParamSQLGenMySQL(t *testing.T) {
@@ -59,15 +62,25 @@ func TestParamSQLGenSQLServer(t *testing.T) {
 	)
 	require.NoError(t, err)
 	require.Equal(t, "SELECT a FROM device_alarm WHERE a = @p1 AND b = @p2", q)
-	require.Equal(t, []any{1, "O'Brien"}, args)
+	require.Equal(t, 1, args[0])
+	// mssql strings travel as mssql.VarChar when the sqlserver driver is
+	// built in (VARCHAR, like the old literal); otherwise plain string.
+	if sqldriver.TransformerFor("sqlserver") == nil {
+		require.Equal(t, "O'Brien", args[1])
+	} else {
+		require.Equal(t, "mssql.VarChar", fmt.Sprintf("%T", args[1]))
+		require.Equal(t, "O'Brien", fmt.Sprintf("%s", args[1]))
+	}
 }
 
 func TestParamSQLGenNull(t *testing.T) {
-	s := &SqlLookupSource{driver: "mysql", table: "t"}
-	q, args, err := s.buildGen().buildQuery([]string{"a"}, []string{"a"}, []any{nil})
-	require.NoError(t, err)
-	require.Equal(t, "SELECT a FROM t WHERE `a` IS NULL", q)
-	require.Empty(t, args)
+	// A nil lookup key fails loud instead of silently matching rows via
+	// IS NULL on a possibly non-unique key.
+	for _, driver := range []string{"mysql", "postgres"} {
+		s := &SqlLookupSource{driver: driver, table: "t"}
+		_, _, err := s.buildGen().buildQuery([]string{"a"}, []string{"a"}, []any{nil})
+		require.ErrorContains(t, err, "must not be nil", "driver %s", driver)
+	}
 }
 
 func TestParamSQLGenDialects(t *testing.T) {
@@ -101,12 +114,12 @@ func TestParamSQLGenDialects(t *testing.T) {
 	}
 }
 
-func TestParamSQLGenSelectAllAndMixedNull(t *testing.T) {
+func TestParamSQLGenSelectAll(t *testing.T) {
 	s := &SqlLookupSource{driver: "postgres", table: "t"}
-	q, args, err := s.buildGen().buildQuery(nil, []string{"a", "b", "c"}, []any{nil, 1, nil})
+	q, args, err := s.buildGen().buildQuery(nil, []string{"a", "b"}, []any{1, 2})
 	require.NoError(t, err)
-	require.Equal(t, "SELECT * FROM t WHERE a IS NULL AND b = $1 AND c IS NULL", q)
-	require.Equal(t, []any{1}, args)
+	require.Equal(t, "SELECT * FROM t WHERE a = $1 AND b = $2", q)
+	require.Equal(t, []any{1, 2}, args)
 }
 
 func TestParamSQLGenValueNeverInlined(t *testing.T) {
