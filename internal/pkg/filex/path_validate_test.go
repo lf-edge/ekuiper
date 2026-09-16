@@ -81,3 +81,47 @@ func TestValidateFilePathSymlinkedBase(t *testing.T) {
 	_, err = ValidateFilePath("evil/secret.txt")
 	assert.ErrorContains(t, err, "file access denied")
 }
+
+// The base data directory itself may not exist yet (absolute path mode
+// performs no existence check) while an ancestor is a symlink. Both sides
+// must still resolve through the same resolver instead of degrading the
+// comparison to non-canonical base vs canonical target.
+func TestValidateFilePathNonexistentSymlinkedBase(t *testing.T) {
+	oldConf := conf.Config
+	conf.Config = nil
+	t.Cleanup(func() { conf.Config = oldConf })
+
+	oldTesting := conf.IsTesting
+	conf.IsTesting = false
+	t.Cleanup(func() { conf.IsTesting = oldTesting })
+
+	oldLoadType := conf.PathConfig.LoadFileType
+	oldDirs := conf.PathConfig.Dirs
+	t.Cleanup(func() {
+		conf.PathConfig.LoadFileType = oldLoadType
+		conf.PathConfig.Dirs = oldDirs
+	})
+
+	realBase := t.TempDir()
+	linkBase := filepath.Join(t.TempDir(), "ekuiper-link")
+	require.NoError(t, os.Symlink(realBase, linkBase))
+
+	// Map the data dir through the symlink without creating it.
+	conf.PathConfig.LoadFileType = "absolute"
+	conf.PathConfig.Dirs = map[string]string{"data": filepath.Join(linkBase, "data")}
+
+	dataDir, err := conf.GetDataLoc()
+	require.NoError(t, err)
+	// The point of this test: the base must NOT exist, otherwise it
+	// silently degrades into the ordinary symlinked-base case above.
+	_, statErr := os.Lstat(dataDir)
+	require.ErrorIs(t, statErr, os.ErrNotExist)
+
+	got, err := ValidateFilePath("foo.log")
+	require.NoError(t, err)
+	assert.Equal(t, filepath.Join(realBase, "data", "foo.log"), got)
+
+	// Escapes through the missing base are still rejected.
+	_, err = ValidateFilePath("../secret.txt")
+	assert.ErrorContains(t, err, "file access denied")
+}

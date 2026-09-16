@@ -46,7 +46,8 @@ basic:
   enableRestAuditLog: false
   # If it is enabled, the rule functions can access the private network.
   enablePrivateNet: false
-  # If it is enabled, APIs can access files outside the data/uploads directory.
+  # 允许访问允许目录之外的文件：文件下载对应 eKuiper 上传目录，
+  # 文件源/目标与 RPC 导入/导出对应数据目录。
   allowExternalFileAccess: false
 ```
 

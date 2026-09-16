@@ -40,6 +40,13 @@ type ServerTestSuite struct {
 
 func (suite *ServerTestSuite) SetupTest() {
 	conf.IsTesting = true
+	if conf.Config == nil {
+		conf.InitConf()
+	}
+	// Unit tests exercise legacy file paths, mirroring the commercial
+	// default of external file access on. Tests asserting denial toggle
+	// the switch explicitly.
+	conf.Config.Basic.AllowExternalFileAccess = true
 	suite.s = new(Server)
 	nativeManager, _ = native.InitManager()
 	portableManager, _ = portable.InitManager()

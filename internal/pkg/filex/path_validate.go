@@ -35,7 +35,13 @@ func ExternalFileAccessAllowed() bool {
 // relative paths are resolved against the data directory; when it is on,
 // they resolve against the process working directory (historical behavior)
 // and only absolute paths are returned as-is. It returns the absolute path
-// to use.
+// to use, which may be the canonicalized (symlink-resolved) spelling: the
+// validated canonical identity is deliberately kept as the subsequent-use
+// path instead of dropping it back to the un-resolved spelling, so the same
+// file is never addressed by two different paths downstream. This narrows
+// the symlink-alias surface; it does not eliminate TOCTOU between
+// validation and use, which remains the caller's trust-domain assumption
+// (local write access to the data directory is already fully trusted).
 func ValidateFilePath(p string) (string, error) {
 	if p == "" {
 		return "", fmt.Errorf("path must be set")
@@ -66,37 +72,40 @@ func ValidateFilePath(p string) (string, error) {
 	if err := CheckUnderDir(absDataDir, abs); err != nil {
 		return "", err
 	}
-	// Symlink re-check: resolve pre-planted symlinks on the existing
-	// portion of the path, so data/<link-to-etc>/x cannot escape.
-	// Both sides must be canonical here: the data directory itself may
-	// live behind a symlink (e.g. /opt/ekuiper-current -> /opt/ekuiper-2.2.0),
-	// and comparing a canonical target against a non-canonical base would
-	// misclassify legitimate files as outside. If either side cannot be
-	// resolved, the lexical gate above stands as the containment.
-	canonicalBase := absDataDir
-	if c, err := filepath.EvalSymlinks(absDataDir); err == nil {
-		canonicalBase = c
+	// Physical containment: base and target go through the same resolver
+	// (canonicalize longest existing prefix, rejoin missing suffix), so
+	// the comparison is always canonical-against-canonical. This keeps
+	// working when the base itself does not exist yet but an ancestor is
+	// a symlink. Either side failing to resolve degrades to the lexical
+	// gate above, never to a wider allowance.
+	canonicalBase, err := resolveSymlinks(absDataDir)
+	if err != nil {
+		return abs, nil
 	}
 	resolved, err := resolveSymlinks(abs)
 	if err != nil {
-		resolved = abs
+		return abs, nil
 	}
-	if resolved != abs {
-		if err := CheckUnderDir(canonicalBase, resolved); err != nil {
-			return "", err
-		}
-		// Return the canonical spelling so the same file is never
-		// addressed by two different paths downstream.
-		return resolved, nil
+	if err := CheckUnderDir(canonicalBase, resolved); err != nil {
+		return "", err
 	}
-	return abs, nil
+	// Return the canonical spelling so the same file is never addressed
+	// by two different paths downstream. This keeps the validated
+	// canonical identity as the subsequent-use path instead of dropping
+	// it back to the un-resolved spelling.
+	return resolved, nil
 }
 
 // ValidateFileName ensures a datasource-style file name cannot escape its
 // base directory on its own (absolute path or .. elements). The caller must
 // additionally validate the joined result with ValidateFilePath.
+// When external file access is allowed, this check is skipped: legacy
+// relative paths are validated as a whole after joining.
 func ValidateFileName(name string) error {
 	if name == "" {
+		return nil
+	}
+	if ExternalFileAccessAllowed() {
 		return nil
 	}
 	if filepath.IsAbs(name) {
