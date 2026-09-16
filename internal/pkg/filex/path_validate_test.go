@@ -23,7 +23,42 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/pkg/model"
 )
+
+func withFlag(t *testing.T, allow bool) {
+	t.Helper()
+	if conf.Config == nil {
+		conf.Config = &model.KuiperConf{}
+	}
+	old := conf.Config.Basic.AllowExternalFileAccess
+	conf.Config.Basic.AllowExternalFileAccess = allow
+	t.Cleanup(func() {
+		conf.Config.Basic.AllowExternalFileAccess = old
+	})
+}
+
+func TestValidateFilePathModes(t *testing.T) {
+	withFlag(t, false)
+
+	_, err := ValidateFilePath("")
+	assert.ErrorContains(t, err, "path must be set")
+
+	assert.False(t, ExternalFileAccessAllowed())
+
+	withFlag(t, true)
+	assert.True(t, ExternalFileAccessAllowed())
+
+	// Flag on: no sandbox, absolute and relative pass through.
+	got, err := ValidateFilePath("/etc/passwd")
+	require.NoError(t, err)
+	assert.True(t, filepath.IsAbs(got))
+
+	got, err = ValidateFilePath("rel/foo.log")
+	require.NoError(t, err)
+	abs, _ := filepath.Abs("rel/foo.log")
+	assert.Equal(t, abs, got)
+}
 
 // The data directory itself may sit behind a symlink (e.g.
 // /opt/ekuiper-current -> /opt/ekuiper-2.2.0). Files addressed through the
@@ -124,4 +159,34 @@ func TestValidateFilePathNonexistentSymlinkedBase(t *testing.T) {
 	// Escapes through the missing base are still rejected.
 	_, err = ValidateFilePath("../secret.txt")
 	assert.ErrorContains(t, err, "file access denied")
+}
+
+func TestValidateFileName(t *testing.T) {
+	withFlag(t, false)
+
+	assert.NoError(t, ValidateFileName(""))
+	assert.NoError(t, ValidateFileName("lookup.json"))
+	assert.NoError(t, ValidateFileName("a/b.json"))
+	assert.ErrorContains(t, ValidateFileName("/etc/passwd"), "absolute path")
+	assert.ErrorContains(t, ValidateFileName(".."), "traversal")
+	assert.ErrorContains(t, ValidateFileName("../secret.json"), "traversal")
+
+	withFlag(t, true)
+	assert.NoError(t, ValidateFileName("../secret.json"))
+	assert.NoError(t, ValidateFileName("/etc/passwd"))
+}
+
+func TestCheckUnderDir(t *testing.T) {
+	base := filepath.Join(string(os.PathSeparator), "data")
+	assert.NoError(t, CheckUnderDir(base, filepath.Join(base, "a.json")))
+	assert.NoError(t, CheckUnderDir(base, base))
+	assert.ErrorContains(t, CheckUnderDir(base, string(os.PathSeparator)), "file access denied")
+	assert.ErrorContains(t, CheckUnderDir(base, filepath.Join(base, "..", "x")), "file access denied")
+}
+
+func TestResolveSymlinksMissing(t *testing.T) {
+	// Nothing exists up to the filesystem root: returned unchanged.
+	got, err := resolveSymlinks(filepath.Join(string(os.PathSeparator), "definitely-not-here-ekuiper-xyz", "f"))
+	require.NoError(t, err)
+	assert.Equal(t, filepath.Join(string(os.PathSeparator), "definitely-not-here-ekuiper-xyz", "f"), got)
 }

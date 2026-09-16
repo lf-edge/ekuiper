@@ -33,7 +33,3 @@ func validateFilePath(p string) (string, error) {
 func validateFileName(name string) error {
 	return filex.ValidateFileName(name)
 }
-
-func checkUnderDir(base, target string) error {
-	return filex.CheckUnderDir(base, target)
-}
