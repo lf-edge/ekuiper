@@ -58,9 +58,11 @@ func TestFileAccessStrictDefault(t *testing.T) {
 	require.NoError(t, err)
 	inFile := filepath.Join(dataDir, "fvt_strict_in.lines")
 	require.NoError(t, os.WriteFile(inFile, []byte("{}\n"), 0o644))
-	defer os.Remove(inFile)
+	// Register fixture removal first so it runs last, after all
+	// rule/stream/confKey cleanups (t.Cleanup is LIFO).
+	t.Cleanup(func() { _ = os.Remove(inFile) })
 	outFile := filepath.Join(dataDir, "fvt_strict_out.log")
-	defer os.Remove(outFile)
+	t.Cleanup(func() { _ = os.Remove(outFile) })
 
 	// Inside data dir: stream + rule creation succeed.
 	resp, err := client.CreateStream(`{"sql": "CREATE STREAM fvt_strict_in () WITH (DATASOURCE=\"fvt_strict_in.lines\", FORMAT=\"json\", TYPE=\"file\")"}`)
