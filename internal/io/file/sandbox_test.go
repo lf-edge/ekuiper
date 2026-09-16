@@ -18,11 +18,14 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/filex"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/model"
 )
@@ -50,6 +53,15 @@ func withRestrictedAccess(t *testing.T) {
 		conf.Config.Basic.AllowExternalFileAccess = old
 	})
 }
+
+func noopIngest(api.StreamContext, any, map[string]any, time.Time) {}
+
+type evilDynamicTuple struct{ raw []byte }
+
+func (e *evilDynamicTuple) Raw() []byte                        { return e.raw }
+func (e *evilDynamicTuple) Replace(b []byte)                   { e.raw = b }
+func (e *evilDynamicTuple) DynamicProps(string) (string, bool) { return "/etc/evil_sink.log", true }
+func (e *evilDynamicTuple) AllProps() map[string]string        { return nil }
 
 func TestSandboxSinkProvision(t *testing.T) {
 	withRestrictedAccess(t)
@@ -164,6 +176,68 @@ func TestSandboxSymlinkEscape(t *testing.T) {
 	require.NoError(t, os.Symlink("/etc", link))
 	t.Cleanup(func() { os.Remove(link) })
 
-	_, err = validateFilePath(filepath.Join("sandbox_link", "passwd"))
+	_, err = filex.ValidateFilePath(filepath.Join("sandbox_link", "passwd"))
 	assert.ErrorContains(t, err, "file access denied")
+}
+
+func TestParseFileDeniesOutside(t *testing.T) {
+	withRestrictedAccess(t)
+	ctx := mockContext.NewMockContext("sandbox", "source")
+	fs := &Source{config: &SourceConfig{FileType: "json"}}
+	var gotErr error
+	fs.parseFile(ctx, "/etc/passwd",
+		noopIngest,
+		func(_ api.StreamContext, err error) { gotErr = err })
+	require.Error(t, gotErr)
+	assert.Contains(t, gotErr.Error(), "file access denied")
+}
+
+func TestParseFileMoveTargetDenied(t *testing.T) {
+	withRestrictedAccess(t)
+	dataDir, err := conf.GetDataLoc()
+	require.NoError(t, err)
+	src := filepath.Join(dataDir, "sandbox_rename_src.json")
+	require.NoError(t, os.WriteFile(src, []byte(`{}`), 0o644))
+	t.Cleanup(func() { os.Remove(src) })
+
+	ctx := mockContext.NewMockContext("sandbox", "source")
+	fs := &Source{config: &SourceConfig{
+		FileType:        "json",
+		ActionAfterRead: 2,
+		MoveTo:          filepath.Join(os.TempDir(), "sandbox_nope_ekuiper"),
+	}}
+	var gotErr error
+	fs.parseFile(ctx, src,
+		noopIngest,
+		func(_ api.StreamContext, err error) { gotErr = err })
+	require.Error(t, gotErr)
+	assert.Contains(t, gotErr.Error(), "file access denied")
+	// The source file must survive: no move happened.
+	_, statErr := os.Stat(src)
+	assert.NoError(t, statErr)
+}
+
+func TestCreateFileWriterDeniesOutside(t *testing.T) {
+	withRestrictedAccess(t)
+	ctx := mockContext.NewMockContext("sandbox", "sink")
+	m := &fileSink{}
+	_, err := m.createFileWriter(ctx, "/etc/sandbox_evil.log", LINES_TYPE, "", "", "")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "file access denied")
+}
+
+func TestSinkCollectDeniesDynamicTraversal(t *testing.T) {
+	withRestrictedAccess(t)
+	ctx := mockContext.NewMockContext("sandbox", "sink")
+	m := &fileSink{}
+	require.NoError(t, m.Provision(ctx, map[string]any{
+		"path":               "sandbox_collect.log",
+		"fileType":           LINES_TYPE,
+		"format":             "json",
+		"rollingCount":       1,
+		"rollingNamePattern": "none",
+	}))
+	err := m.Collect(ctx, &evilDynamicTuple{raw: []byte(`{"a":1}`)})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "file access denied")
 }

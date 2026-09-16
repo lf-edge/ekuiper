@@ -190,3 +190,54 @@ func TestResolveSymlinksMissing(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, filepath.Join(string(os.PathSeparator), "definitely-not-here-ekuiper-xyz", "f"), got)
 }
+
+func TestValidatePathInDir(t *testing.T) {
+	withFlag(t, false)
+	root := t.TempDir()
+	require.NoError(t, os.WriteFile(filepath.Join(root, "a.json"), []byte("{}"), 0o644))
+
+	got, err := ValidatePathInDir(filepath.Join(root, "a.json"), root)
+	require.NoError(t, err)
+	assert.Equal(t, filepath.Join(root, "a.json"), got)
+
+	got, err = ValidatePathInDir("a.json", root)
+	require.NoError(t, err)
+	assert.Equal(t, filepath.Join(root, "a.json"), got)
+
+	_, err = ValidatePathInDir("", root)
+	assert.ErrorContains(t, err, "path must be set")
+
+	_, err = ValidatePathInDir(filepath.Join(root, "..", "x.json"), root)
+	assert.ErrorContains(t, err, "file access denied")
+
+	_, err = ValidatePathInDir("/etc/passwd", root)
+	assert.ErrorContains(t, err, "file access denied")
+
+	withFlag(t, true)
+	got, err = ValidatePathInDir("/etc/passwd", root)
+	require.NoError(t, err)
+	assert.Equal(t, "/etc/passwd", got)
+}
+
+func TestOpenUnderRoot(t *testing.T) {
+	withFlag(t, false)
+	root := t.TempDir()
+	require.NoError(t, os.WriteFile(filepath.Join(root, "ok.txt"), []byte("hello"), 0o644))
+
+	rc, err := OpenUnderRoot(root, "ok.txt")
+	require.NoError(t, err)
+	buf := make([]byte, 5)
+	_, err = rc.Read(buf)
+	require.NoError(t, err)
+	assert.Equal(t, "hello", string(buf))
+	require.NoError(t, rc.Close())
+
+	_, err = OpenUnderRoot(root, filepath.Join("..", "evil.txt"))
+	assert.ErrorContains(t, err, "file access denied")
+
+	_, err = OpenUnderRoot(root, "/etc/passwd")
+	assert.ErrorContains(t, err, "file access denied")
+
+	_, err = OpenUnderRoot(root, "missing.txt")
+	assert.Error(t, err)
+}

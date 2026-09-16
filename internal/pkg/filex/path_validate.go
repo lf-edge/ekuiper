@@ -16,6 +16,7 @@ package filex
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -46,9 +47,8 @@ func ValidateFilePath(p string) (string, error) {
 	if p == "" {
 		return "", fmt.Errorf("path must be set")
 	}
-	clean := filepath.Clean(p)
 	if ExternalFileAccessAllowed() {
-		abs, err := filepath.Abs(clean)
+		abs, err := filepath.Abs(filepath.Clean(p))
 		if err != nil {
 			return "", fmt.Errorf("invalid path %s: %v", p, err)
 		}
@@ -58,42 +58,91 @@ func ValidateFilePath(p string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to get data directory: %v", err)
 	}
-	absDataDir, err := filepath.Abs(dataDir)
-	if err != nil {
-		return "", fmt.Errorf("failed to resolve data directory: %v", err)
+	return ValidatePathInDir(p, dataDir)
+}
+
+// ValidatePathInDir ensures p resolves inside rootDir unless external
+// file access is explicitly allowed (in which case p is returned as an
+// absolute path without containment). It returns the absolute path to
+// use, which may be the canonicalized (symlink-resolved) spelling.
+func ValidatePathInDir(p, rootDir string) (string, error) {
+	if p == "" {
+		return "", fmt.Errorf("path must be set")
 	}
+	if ExternalFileAccessAllowed() {
+		abs, err := filepath.Abs(filepath.Clean(p))
+		if err != nil {
+			return "", fmt.Errorf("invalid path %s: %v", p, err)
+		}
+		return abs, nil
+	}
+	validated, _, err := contain(p, rootDir)
+	return validated, err
+}
+
+// OpenUnderRoot validates p inside rootDir (always enforced, regardless
+// of the external-access switch) and opens it for reading through a
+// sandboxed root. Callers must close the returned file.
+func OpenUnderRoot(rootDir, p string) (io.ReadCloser, error) {
+	validated, canonicalRoot, err := contain(p, rootDir)
+	if err != nil {
+		return nil, err
+	}
+	root, err := os.OpenRoot(canonicalRoot)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open directory %s: %w", canonicalRoot, err)
+	}
+	defer root.Close()
+	rel, err := filepath.Rel(canonicalRoot, validated)
+	if err != nil {
+		return nil, fmt.Errorf("file access denied: cannot resolve path %s", validated)
+	}
+	srcFile, err := root.Open(rel)
+	if err != nil {
+		return nil, err
+	}
+	return srcFile, nil
+}
+
+// contain enforces that p resolves inside rootDir, applying the lexical
+// gate first and then a canonical-against-canonical comparison so a
+// symlinked base or pre-planted symlinks cannot escape or confuse the
+// check. Base and target go through the same resolver; either side
+// failing to resolve degrades to the lexical gate, never to a wider
+// allowance. It returns the validated absolute (canonical when resolved)
+// path and the canonical root for sandboxed access.
+func contain(p, rootDir string) (validated, canonicalRoot string, err error) {
+	absRootDir, err := filepath.Abs(rootDir)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to resolve directory %s: %v", rootDir, err)
+	}
+	clean := filepath.Clean(p)
 	var abs string
 	if filepath.IsAbs(clean) {
 		abs = clean
 	} else {
-		abs = filepath.Join(absDataDir, clean)
+		abs = filepath.Join(absRootDir, clean)
 	}
 	// Lexical gate: lexical target against lexical base.
-	if err := CheckUnderDir(absDataDir, abs); err != nil {
-		return "", err
+	if err := CheckUnderDir(absRootDir, abs); err != nil {
+		return "", "", err
 	}
-	// Physical containment: base and target go through the same resolver
-	// (canonicalize longest existing prefix, rejoin missing suffix), so
-	// the comparison is always canonical-against-canonical. This keeps
-	// working when the base itself does not exist yet but an ancestor is
-	// a symlink. Either side failing to resolve degrades to the lexical
-	// gate above, never to a wider allowance.
-	canonicalBase, err := resolveSymlinks(absDataDir)
+	canonicalBase, err := resolveSymlinks(absRootDir)
 	if err != nil {
-		return abs, nil
+		return abs, absRootDir, nil
 	}
 	resolved, err := resolveSymlinks(abs)
 	if err != nil {
-		return abs, nil
+		return abs, absRootDir, nil
 	}
 	if err := CheckUnderDir(canonicalBase, resolved); err != nil {
-		return "", err
+		return "", "", err
 	}
 	// Return the canonical spelling so the same file is never addressed
 	// by two different paths downstream. This keeps the validated
 	// canonical identity as the subsequent-use path instead of dropping
 	// it back to the un-resolved spelling.
-	return resolved, nil
+	return resolved, canonicalBase, nil
 }
 
 // ValidateFileName ensures a datasource-style file name cannot escape its

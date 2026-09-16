@@ -25,6 +25,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/filex"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 	"github.com/lf-edge/ekuiper/v2/pkg/message"
@@ -96,7 +97,7 @@ func (m *fileSink) Provision(ctx api.StreamContext, props map[string]interface{}
 	}
 	// Fail fast on paths outside the sandbox. The runtime value may be
 	// rendered from a template, so Collect re-validates the final path.
-	if _, err := validateFilePath(c.Path); err != nil {
+	if _, err := filex.ValidateFilePath(c.Path); err != nil {
 		return err
 	}
 	if c.FileType != JSON_TYPE && c.FileType != CSV_TYPE && c.FileType != LINES_TYPE {
@@ -181,7 +182,7 @@ func (m *fileSink) Collect(ctx api.StreamContext, tuple api.RawTuple) error {
 	}
 	// Re-validate the rendered path: templates are fed by stream data and
 	// could otherwise inject ../ or absolute paths at runtime.
-	absFn, err := validateFilePath(fn)
+	absFn, err := filex.ValidateFilePath(fn)
 	if err != nil {
 		return err
 	}

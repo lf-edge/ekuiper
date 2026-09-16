@@ -30,6 +30,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	_ "github.com/lf-edge/ekuiper/v2/internal/io/file/reader"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/filex"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 	"github.com/lf-edge/ekuiper/v2/pkg/model"
@@ -106,10 +107,10 @@ func (fs *Source) Provision(ctx api.StreamContext, props map[string]any) error {
 		}
 		cfg.Path = p
 	}
-	if err := validateFileName(cfg.FileName); err != nil {
+	if err := filex.ValidateFileName(cfg.FileName); err != nil {
 		return err
 	}
-	if _, err := validateFilePath(filepath.Join(cfg.Path, cfg.FileName)); err != nil {
+	if _, err := filex.ValidateFilePath(filepath.Join(cfg.Path, cfg.FileName)); err != nil {
 		return err
 	}
 	fs.file = filepath.Join(cfg.Path, cfg.FileName)
@@ -141,7 +142,7 @@ func (fs *Source) Provision(ctx api.StreamContext, props map[string]any) error {
 					return fmt.Errorf("invalid moveTo %s: %v", cfg.MoveTo, err)
 				}
 			}
-			if _, err := validateFilePath(cfg.MoveTo); err != nil {
+			if _, err := filex.ValidateFilePath(cfg.MoveTo); err != nil {
 				return err
 			}
 			fileInfo, err := os.Stat(cfg.MoveTo)
@@ -258,7 +259,7 @@ func (fs *Source) parseFile(ctx api.StreamContext, file string, ingest api.Tuple
 	)
 	// The directory listing may contain a symlink planted after Provision
 	// pointing outside the sandbox; re-validate the runtime path.
-	if _, err := validateFilePath(file); err != nil {
+	if _, err := filex.ValidateFilePath(file); err != nil {
 		ingestError(ctx, err)
 		return
 	}
@@ -337,7 +338,7 @@ func (fs *Source) parseFile(ctx api.StreamContext, file string, ingest api.Tuple
 		ctx.GetLogger().Debugf("Remove file %s", file)
 	case 2:
 		targetFile := filepath.Join(fs.config.MoveTo, filepath.Base(file))
-		if _, err := validateFilePath(targetFile); err != nil {
+		if _, err := filex.ValidateFilePath(targetFile); err != nil {
 			ingestError(ctx, err)
 			return
 		}

@@ -27,6 +27,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/compressor"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/io/file/writer"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/filex"
 	"github.com/lf-edge/ekuiper/v2/modules/encryptor"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
@@ -48,7 +49,7 @@ func (m *fileSink) createFileWriter(ctx api.StreamContext, fn string, ft FileTyp
 	ctx.GetLogger().Infof("Create new file writer for %s", fn)
 	// Defense in depth: the caller already validated, but the writer must
 	// never create files outside the sandbox even if a new caller forgets.
-	absFn, err := validateFilePath(fn)
+	absFn, err := filex.ValidateFilePath(fn)
 	if err != nil {
 		return nil, err
 	}
