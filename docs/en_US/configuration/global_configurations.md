@@ -63,10 +63,13 @@ is false for security.
 > addresses is blocked by default. If your rules rely on accessing local resources (e.g., local REST services, local
 > files), you MUST set this configuration to `true`.
 
-The configuration item **allowExternalFileAccess** is used to specify whether file access APIs (e.g. file:// URLs in plugins/schemas) can access files outside the `data/uploads` directory. Default is false for security - only files in the uploads directory are accessible. This prevents path traversal attacks.
+The configuration item **allowExternalFileAccess** is used to specify whether file access APIs can access files outside the allowed directories. Default is false for security. This prevents path traversal attacks. When enabled, it grants unrestricted filesystem paths to all of the following:
+- file:// URLs in plugins/schemas (otherwise restricted to the `data/uploads` directory);
+- file source/sink connector paths (otherwise restricted to the data directory; relative paths resolve against it);
+- RPC import/export file arguments (otherwise restricted to the data directory).
 
 > [!WARNING]
-> When `allowExternalFileAccess` is `false` (default), all file:// URL access is restricted to the `data/uploads` directory. Set to `true` only if you need to access files from other locations on the filesystem.
+> When `allowExternalFileAccess` is `false` (default), file:// URL access is restricted to the `data/uploads` directory, and file connector paths and RPC import/export files are restricted to the data directory. The option is all-or-nothing: enabling it for one use case (e.g. uploaded plugin files) also permits unrestricted filesystem paths through the other two. Set to `true` only if you need to access files from other locations on the filesystem.
 
 for debug option in basic following env is valid `KUIPER__BASIC__DEBUG=true` and if used debug value will be set to true.
 

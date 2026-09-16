@@ -31,8 +31,11 @@ func ExternalFileAccessAllowed() bool {
 }
 
 // ValidateFilePath ensures p resolves inside the data directory unless
-// external file access is explicitly allowed. Relative paths are resolved
-// against the data directory. It returns the absolute path to use.
+// external file access is explicitly allowed. When external access is off,
+// relative paths are resolved against the data directory; when it is on,
+// they resolve against the process working directory (historical behavior)
+// and only absolute paths are returned as-is. It returns the absolute path
+// to use.
 func ValidateFilePath(p string) (string, error) {
 	if p == "" {
 		return "", fmt.Errorf("path must be set")
@@ -59,15 +62,32 @@ func ValidateFilePath(p string) (string, error) {
 	} else {
 		abs = filepath.Join(absDataDir, clean)
 	}
+	// Lexical gate: lexical target against lexical base.
 	if err := CheckUnderDir(absDataDir, abs); err != nil {
 		return "", err
 	}
-	// Resolve pre-planted symlinks on the existing portion of the path and
-	// re-check, so data/<link-to-etc>/x cannot escape the sandbox.
-	if resolved, err := resolveSymlinks(abs); err == nil {
-		if err := CheckUnderDir(absDataDir, resolved); err != nil {
+	// Symlink re-check: resolve pre-planted symlinks on the existing
+	// portion of the path, so data/<link-to-etc>/x cannot escape.
+	// Both sides must be canonical here: the data directory itself may
+	// live behind a symlink (e.g. /opt/ekuiper-current -> /opt/ekuiper-2.2.0),
+	// and comparing a canonical target against a non-canonical base would
+	// misclassify legitimate files as outside. If either side cannot be
+	// resolved, the lexical gate above stands as the containment.
+	canonicalBase := absDataDir
+	if c, err := filepath.EvalSymlinks(absDataDir); err == nil {
+		canonicalBase = c
+	}
+	resolved, err := resolveSymlinks(abs)
+	if err != nil {
+		resolved = abs
+	}
+	if resolved != abs {
+		if err := CheckUnderDir(canonicalBase, resolved); err != nil {
 			return "", err
 		}
+		// Return the canonical spelling so the same file is never
+		// addressed by two different paths downstream.
+		return resolved, nil
 	}
 	return abs, nil
 }
