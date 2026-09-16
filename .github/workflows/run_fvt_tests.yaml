@@ -42,7 +42,7 @@ jobs:
       JMETER_VERSION: 5.4.3
       # Legacy FVT exercises external file paths (/tmp, fixtures); run it
       # with the commercial default of external file access on. Default-deny
-      # behavior is covered by fvt_file_access_strict below.
+      # behavior is covered by TestFileAccessStrictDefault in the Go FVT.
       KUIPER__BASIC__ALLOWEXTERNALFILEACCESS: "true"
 
     steps:
@@ -368,20 +368,3 @@ jobs:
           kubectl logs $ekuiper_pod
           exit 1;
         fi
-
-  # Strict-default smoke for file access hardening: runs against the
-  # production default (allowExternalFileAccess=false) and asserts that
-  # outside paths are denied while data-dir paths keep working. Legacy
-  # FVT above runs permissive; this job guards the default.
-  fvt_file_access_strict:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
-        with:
-          go-version: '1.25.4'
-      - name: build kuiper
-        run: make build
-      - name: strict default file access smoke
-        timeout-minutes: 5
-        run: ./test/strict_file_access.sh
