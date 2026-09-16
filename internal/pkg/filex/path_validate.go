@@ -50,13 +50,13 @@ func ValidateFilePath(p string) (string, error) {
 	if externalFileAccessAllowed() {
 		abs, err := filepath.Abs(filepath.Clean(p))
 		if err != nil {
-			return "", fmt.Errorf("invalid path %s: %v", p, err)
+			return "", fmt.Errorf("invalid path %s: %w", p, err)
 		}
 		return abs, nil
 	}
 	dataDir, err := conf.GetDataLoc()
 	if err != nil {
-		return "", fmt.Errorf("failed to get data directory: %v", err)
+		return "", fmt.Errorf("failed to get data directory: %w", err)
 	}
 	validated, _, err := contain(p, dataDir)
 	if err != nil {
@@ -99,7 +99,7 @@ func OpenUnderRoot(rootDir, p string) (io.ReadCloser, error) {
 func contain(p, rootDir string) (validated, canonicalRoot string, err error) {
 	absRootDir, err := filepath.Abs(rootDir)
 	if err != nil {
-		return "", "", fmt.Errorf("failed to resolve directory %s: %v", rootDir, err)
+		return "", "", fmt.Errorf("failed to resolve directory %s: %w", rootDir, err)
 	}
 	clean := filepath.Clean(p)
 	var abs string
