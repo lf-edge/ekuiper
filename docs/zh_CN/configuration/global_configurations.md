@@ -290,20 +290,20 @@ basic:
 
 可配置如下属性：
 
-* name - 数据库文件名。若为空，则设置为默认名字 `sqliteKV.db`。
+- name - 数据库文件名。若为空，则设置为默认名字 `sqliteKV.db`。
 
 ### Redis
 
 可配置如下属性：
 
-* host     - redis 服务器地址。
-* port     - redis 服务器端口。
-* password - redis 服务器密码。若 redis 未配置认证系统，则可不设置密码。
-* timeout  - 连接超时时间。
-* connectionSelector - 重用 etc/connections/connection.yaml 中定义的连接信息, 主要用在 edgex redis 配置了认证系统时
-  * 只适用于 edgex redis 的连接信息
-  * 连接信息中的 server，port 和 password 会覆盖以上定义的 host，port 和 password
-  * [具体信息可参考](../guide/sources/builtin/edgex.md#连接重用)
+- host     - redis 服务器地址。
+- port     - redis 服务器端口。
+- password - redis 服务器密码。若 redis 未配置认证系统，则可不设置密码。
+- timeout  - 连接超时时间。
+- connectionSelector - 重用 etc/connections/connection.yaml 中定义的连接信息, 主要用在 edgex redis 配置了认证系统时
+  - 只适用于 edgex redis 的连接信息
+  - 连接信息中的 server，port 和 password 会覆盖以上定义的 host，port 和 password
+  - [具体信息可参考](../guide/sources/builtin/edgex.md#连接重用)
 
 ### 外部状态
 
@@ -355,15 +355,15 @@ SQL 中的 [get_keyed_state](../sqls/functions/other_functions.md#getkeyedstate)
 
 eKuiper 默认使用 sqlite 来存储一些元信息，同时 eKuiper 也支持使用 FoundationDB 来作为元存储数据，我们可以通过以下步骤实现:
 
-* 确认 eKuiper 所在环境已经安装并启动 FoundationDB，并确认 FoundationDB 所使用的存储 Path. 可参考[官方文档](https://apple.github.io/foundationdb/administration.html#default-cluster-file)
-* 确认 eKuiper 宿主机所使用的 fdb c 语言库的 APIVersion 版本，并将 eKuiper 依赖库替换为相应版本，以 APIVersion 6.2.0 为例，在 eKuiper 主目录执行以下命令:
+- 确认 eKuiper 所在环境已经安装并启动 FoundationDB，并确认 FoundationDB 所使用的存储 Path. 可参考[官方文档](https://apple.github.io/foundationdb/administration.html#default-cluster-file)
+- 确认 eKuiper 宿主机所使用的 fdb c 语言库的 APIVersion 版本，并将 eKuiper 依赖库替换为相应版本，以 APIVersion 6.2.0 为例，在 eKuiper 主目录执行以下命令:
 
 ```shell
 go get github.com/apple/foundationdb/bindings/go@6.2.0
 ```
 
-* 执行 `make build_with_fdb` 编译 kuiperd
-* 在配置中按照如下修改:
+- 执行 `make build_with_fdb` 编译 kuiperd
+- 在配置中按照如下修改:
 
 ```yaml
     store:

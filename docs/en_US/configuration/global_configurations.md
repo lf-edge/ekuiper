@@ -302,20 +302,20 @@ In order to use redis as store type property must be changed into redis value.
 
 It has properties
 
-* name - name of database file - if left empty it will be `sqliteKV.db`
+- name - name of database file - if left empty it will be `sqliteKV.db`
 
 ### Redis
 
 It has properties
 
-* host     - host of redis
-* port     - port of redis
-* password - password used for auth in redis, if left empty auth won't be used
-* timeout  - timeout fo connection
-* connectionSelector - reuse the connection info defined in etc/connections/connection.yaml, mainly used for edgeX redis in secure mode
-  * only applicable to redis connection information
-  * the server, port and password in connection info will overwrite the host port and password above
-  * [more info](../guide/sources/builtin/edgex.md#connection-reusability)
+- host     - host of redis
+- port     - port of redis
+- password - password used for auth in redis, if left empty auth won't be used
+- timeout  - timeout fo connection
+- connectionSelector - reuse the connection info defined in etc/connections/connection.yaml, mainly used for edgeX redis in secure mode
+  - only applicable to redis connection information
+  - the server, port and password in connection info will overwrite the host port and password above
+  - [more info](../guide/sources/builtin/edgex.md#connection-reusability)
 
 ### External State
 
@@ -371,15 +371,15 @@ ruleset. The ruleset will only be import on the first startup of eKuiper.
 
 eKuiper uses sqlite by default to store some meta-information. At the same time, eKuiper also supports using FoundationDB as meta-storage data. We can achieve this through the following steps:
 
-* Confirm that the environment where eKuiper is located has installed and started FoundationDB, and confirm the storage path used by FoundationDB. Please refer to [Official Document](https://apple.github.io/foundationdb/administration.html#default-cluster-file)
-* Confirm the APIVersion of the fdb c language library used by the eKuiper host, and replace the eKuiper dependent library with the corresponding version. Taking APIVersion 6.2.0 as an example, execute the following command in the eKuiper home directory:
+- Confirm that the environment where eKuiper is located has installed and started FoundationDB, and confirm the storage path used by FoundationDB. Please refer to [Official Document](https://apple.github.io/foundationdb/administration.html#default-cluster-file)
+- Confirm the APIVersion of the fdb c language library used by the eKuiper host, and replace the eKuiper dependent library with the corresponding version. Taking APIVersion 6.2.0 as an example, execute the following command in the eKuiper home directory:
 
 ```shell
 go get github.com/apple/foundationdb/bindings/go@6.2.0
 ```
 
-* Execute `make build_with_fdb` to compile kuiperd
-* Modify the configuration as follows:
+- Execute `make build_with_fdb` to compile kuiperd
+- Modify the configuration as follows:
 
 ```yaml
     store:
