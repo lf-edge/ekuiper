@@ -60,7 +60,7 @@ func ValidateFilePath(p string) (string, error) {
 	}
 	validated, _, err := contain(p, dataDir)
 	if err != nil {
-		return "", fmt.Errorf("%v; enable allowExternalFileAccess to allow external paths", err)
+		return "", fmt.Errorf("%w; enable allowExternalFileAccess to allow external paths", err)
 	}
 	return validated, nil
 }

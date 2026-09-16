@@ -176,7 +176,7 @@ func TestSandboxSourceProvision(t *testing.T) {
 
 // A symlink planted inside a provisioned directory after Provision must
 // be denied at read time through the real Load path.
-func TestParseFileDeniesPlantedSymlink(t *testing.T) {
+func TestLoadDeniesPlantedSymlink(t *testing.T) {
 	withRestrictedAccess(t)
 	ctx := mockContext.NewMockContext("sandbox", "source")
 	dataDir, err := conf.GetDataLoc()
@@ -213,7 +213,7 @@ func TestParseFileDeniesPlantedSymlink(t *testing.T) {
 
 // Swapping a provisioned moveTo directory for an escaping symlink after
 // Provision must deny the move through the real Load path.
-func TestParseFileMoveTargetDeniedAfterSwap(t *testing.T) {
+func TestLoadDeniesSwappedMoveTarget(t *testing.T) {
 	withRestrictedAccess(t)
 	ctx := mockContext.NewMockContext("sandbox", "source")
 	dataDir, err := conf.GetDataLoc()

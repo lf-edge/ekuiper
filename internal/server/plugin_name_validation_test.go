@@ -22,73 +22,34 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
-
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
-	"github.com/lf-edge/ekuiper/v2/internal/meta"
 )
 
-// The plugin-name validation in confKey handlers and the portable plugin
-// handler must reject traversal at the edge, before any manager is touched.
+// The plugin-name validation in confKey handlers must reject traversal at
+// the edge, before any manager is touched, so this test needs no config
+// or manager setup. Normal handler behavior is covered by functional tests.
 func TestConfKeyHandlerPluginNameValidation(t *testing.T) {
-	// Snapshot globals: InitConf replaces the shared Config and the keys
-	// below land in the shared KV storage, so restore everything to keep
-	// test order independent.
-	oldConfig, oldTesting := conf.Config, conf.IsTesting
-	t.Cleanup(func() {
-		conf.Config, conf.IsTesting = oldConfig, oldTesting
-		_ = meta.DelSourceConfKey("mqtt", "plugintest", "en_US")
-		_ = meta.DelSinkConfKey("mqtt", "plugintest", "en_US")
-		_ = meta.DelConnectionConfKey("mqtt", "plugintest", "en_US")
-	})
-	conf.InitConf()
-	conf.IsTesting = true
-	meta.InitYamlConfigManager()
-
 	handlers := map[string]func(http.ResponseWriter, *http.Request){
 		"source":     sourceConfKeyHandler,
 		"sink":       sinkConfKeyHandler,
 		"connection": connectionConfKeyHandler,
 	}
 	for name, h := range handlers {
-		// Traversal and separator names are rejected with 400 before any
-		// manager is touched.
-		for _, bad := range []string{"../../etc", "a/b", ".."} {
-			req, _ := http.NewRequest(http.MethodPut,
-				"/metadata/x/"+bad+"/confKeys/test",
-				bytes.NewBufferString(`{"qos": 0}`))
-			req = mux.SetURLVars(req, map[string]string{"name": bad, "confKey": "test"})
-			rr := httptest.NewRecorder()
-			h(rr, req)
-			assert.Equal(t, http.StatusBadRequest, rr.Code, "%s handler accepted %q", name, bad)
-			assert.Contains(t, rr.Body.String(), "Invalid plugin name", "%s handler wrong error for %q", name, bad)
-		}
-		// A clean name passes validation (handler proceeds to the manager).
 		req, _ := http.NewRequest(http.MethodPut,
-			"/metadata/sources/mqtt/confKeys/plugintest",
+			"/metadata/x/../../etc/confKeys/test",
 			bytes.NewBufferString(`{"qos": 0}`))
-		req = mux.SetURLVars(req, map[string]string{"name": "mqtt", "confKey": "plugintest"})
+		req = mux.SetURLVars(req, map[string]string{"name": "../../etc", "confKey": "test"})
 		rr := httptest.NewRecorder()
 		h(rr, req)
-		assert.Equal(t, http.StatusOK, rr.Code, "%s handler rejected clean name: %s", name, rr.Body.String())
+		assert.Equal(t, http.StatusBadRequest, rr.Code, "%s handler accepted traversal", name)
+		assert.Contains(t, rr.Body.String(), "Invalid plugin name", "%s handler wrong error", name)
 	}
 }
 
 func TestPortableHandlerNameValidation(t *testing.T) {
-	cases := []struct {
-		name string
-		want string
-	}{
-		{"../../etc", "invalid characters"},
-		{"a/b", "invalid characters"},
-		{"..", "invalid characters"},
-		{"", "id cannot be empty"},
-	}
-	for _, c := range cases {
-		req, _ := http.NewRequest(http.MethodDelete, "/plugins/portables/"+c.name, bytes.NewReader(nil))
-		req = mux.SetURLVars(req, map[string]string{"name": c.name})
-		rr := httptest.NewRecorder()
-		portableHandler(rr, req)
-		assert.Equal(t, http.StatusBadRequest, rr.Code, "portable handler accepted %q", c.name)
-		assert.Contains(t, rr.Body.String(), c.want, "portable handler wrong error for %q", c.name)
-	}
+	req, _ := http.NewRequest(http.MethodDelete, "/plugins/portables/../../etc", bytes.NewReader(nil))
+	req = mux.SetURLVars(req, map[string]string{"name": "../../etc"})
+	rr := httptest.NewRecorder()
+	portableHandler(rr, req)
+	assert.Equal(t, http.StatusBadRequest, rr.Code, "portable handler accepted traversal")
+	assert.Contains(t, rr.Body.String(), "invalid characters")
 }

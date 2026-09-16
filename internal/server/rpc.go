@@ -285,7 +285,7 @@ func openImportFile(file string) (*os.File, error) {
 	}
 	f, err := os.Open(absFile)
 	if err != nil {
-		return nil, fmt.Errorf("fail to read file %s: %v", file, err)
+		return nil, fmt.Errorf("fail to read file %s: %w", file, err)
 	}
 	return f, nil
 }
@@ -409,6 +409,7 @@ func (t *Server) ExportConfiguration(arg *model.ExportDataDesc, reply *string) e
 	if err != nil {
 		return err
 	}
+	defer f.Close()
 	var jsonBytes []byte
 	// do not specify rules, export all
 	if len(rules) == 0 {

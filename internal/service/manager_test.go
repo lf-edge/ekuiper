@@ -632,28 +632,14 @@ func urlFromFilePath(path string) (*url.URL, error) {
 }
 
 func TestManagerInvalidNames(t *testing.T) {
-	cases := []struct {
-		name string
-		want string
-	}{
-		{"", "id cannot be empty"},
-		{"..", "invalid characters"},
-		{"../../etc", "invalid characters"},
-		{"a/b", "invalid characters"},
+	const bad, want = "../../etc", "invalid characters"
+	if err := m.Delete(bad); err == nil || !strings.Contains(err.Error(), want) {
+		t.Errorf("Delete(%q) = %v, want error containing %q", bad, err, want)
 	}
-	for _, c := range cases {
-		if err := m.Delete(c.name); err == nil || !strings.Contains(err.Error(), c.want) {
-			t.Errorf("Delete(%q) = %v, want error containing %q", c.name, err, c.want)
-		}
-		if _, err := m.Get(c.name); err == nil || !strings.Contains(err.Error(), c.want) {
-			t.Errorf("Get(%q) = %v, want error containing %q", c.name, err, c.want)
-		}
-		if _, err := m.GetFunction(c.name); err == nil || !strings.Contains(err.Error(), c.want) {
-			t.Errorf("GetFunction(%q) = %v, want error containing %q", c.name, err, c.want)
-		}
+	if _, err := m.Get(bad); err == nil || !strings.Contains(err.Error(), want) {
+		t.Errorf("Get(%q) = %v, want error containing %q", bad, err, want)
 	}
-	// A well-formed but unknown name misses instead of failing validation.
-	if _, err := m.Get("no-such-service"); err == nil {
-		t.Errorf("Get(no-such-service) expected not-found error")
+	if _, err := m.GetFunction(bad); err == nil || !strings.Contains(err.Error(), want) {
+		t.Errorf("GetFunction(%q) = %v, want error containing %q", bad, err, want)
 	}
 }

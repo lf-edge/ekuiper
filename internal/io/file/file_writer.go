@@ -46,8 +46,7 @@ type fileWriter struct {
 
 func (m *fileSink) createFileWriter(ctx api.StreamContext, fn string, ft FileType, headers string, compressAlgorithm string, encryption string) (_ *fileWriter, ge error) {
 	ctx.GetLogger().Infof("Create new file writer for %s", fn)
-	// fn arrives validated from Collect/GetFws; keep this function free of
-	// redundant validation so there is a single choke point.
+	// fn is the canonical path validated by Collect.
 	fws := &fileWriter{Start: timex.GetNow()}
 	var (
 		f   *os.File
