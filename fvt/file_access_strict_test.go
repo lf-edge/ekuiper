@@ -20,6 +20,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -28,25 +29,29 @@ import (
 )
 
 // Strict-default file access coverage against the live in-process server.
-// The FVT environment runs permissive (commercial default), so this test
-// forces the production default off and restores it afterwards. Tests run
-// sequentially in this package, so the toggle cannot leak into other tests.
+// This test must run in its own process WITHOUT the
+// KUIPER__BASIC__ALLOWEXTERNALFILEACCESS override (see the "Run fvt" CI
+// step), so it observes the production default. It never mutates global
+// config: flipping the switch at runtime would leak into the long-lived
+// server goroutines and trip the race detector.
 func TestFileAccessStrictDefault(t *testing.T) {
-	old := conf.Config.Basic.AllowExternalFileAccess
-	conf.Config.Basic.AllowExternalFileAccess = false
-	defer func() { conf.Config.Basic.AllowExternalFileAccess = old }()
+	require.False(t, conf.Config.Basic.AllowExternalFileAccess,
+		"strict profile must run without external file access")
 
 	dataDir, err := conf.GetDataLoc()
 	require.NoError(t, err)
 	inFile := filepath.Join(dataDir, "fvt_strict_in.lines")
 	require.NoError(t, os.WriteFile(inFile, []byte("{}\n"), 0o644))
 	defer os.Remove(inFile)
-	defer os.Remove(filepath.Join(dataDir, "fvt_strict_out.log"))
+	outFile := filepath.Join(dataDir, "fvt_strict_out.log")
+	defer os.Remove(outFile)
 
 	// Inside data dir: stream + rule creation succeed.
 	resp, err := client.CreateStream(`{"sql": "CREATE STREAM fvt_strict_in () WITH (DATASOURCE=\"fvt_strict_in.lines\", FORMAT=\"json\", TYPE=\"file\")"}`)
 	require.NoError(t, err)
 	require.Equal(t, http.StatusCreated, resp.StatusCode)
+	_, err = GetResponseText(resp)
+	require.NoError(t, err)
 	defer client.DeleteStream("fvt_strict_in")
 
 	// 1. file sink outside the data dir must be denied with 400.
@@ -65,14 +70,19 @@ func TestFileAccessStrictDefault(t *testing.T) {
 	// 2. file source outside the data dir must be denied with 400.
 	// confKey/stream setup itself is lazy and allowed; the rule triggers
 	// source provisioning where the denial surfaces.
-	_, err = client.CreateConf("sources/file/confKeys/fvt_strict_etc", map[string]any{
+	resp, err = client.CreateConf("sources/file/confKeys/fvt_strict_etc", map[string]any{
 		"fileType": "lines",
 		"path":     outside,
 	})
 	require.NoError(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	_, err = GetResponseText(resp)
+	require.NoError(t, err)
 	resp, err = client.CreateStream(`{"sql": "CREATE STREAM fvt_strict_etc () WITH (DATASOURCE=\"x.lines\", FORMAT=\"json\", TYPE=\"file\", CONF_KEY=\"fvt_strict_etc\")"}`)
 	require.NoError(t, err)
 	require.Equal(t, http.StatusCreated, resp.StatusCode)
+	_, err = GetResponseText(resp)
+	require.NoError(t, err)
 	defer client.DeleteStream("fvt_strict_etc")
 	resp, err = client.CreateRule(`{
 		"id": "fvt_strict_deny_src",
@@ -85,7 +95,8 @@ func TestFileAccessStrictDefault(t *testing.T) {
 	require.NoError(t, err)
 	assert.Contains(t, body, "file access denied")
 
-	// 3. data-dir relative sink path must keep working (201).
+	// 3. data-dir relative sink path must keep working end to end:
+	// rule creation succeeds AND the output file actually lands.
 	resp, err = client.CreateRule(`{
 		"id": "fvt_strict_allow",
 		"sql": "SELECT * FROM fvt_strict_in",
@@ -93,5 +104,11 @@ func TestFileAccessStrictDefault(t *testing.T) {
 	}`)
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusCreated, resp.StatusCode)
+	_, err = GetResponseText(resp)
+	require.NoError(t, err)
 	defer client.DeleteRule("fvt_strict_allow")
+	require.Eventually(t, func() bool {
+		_, err := os.Stat(outFile)
+		return err == nil
+	}, 5*time.Second, 100*time.Millisecond, "output file was not written")
 }
