@@ -392,7 +392,6 @@ func (m *Manager) Create(r *ServiceCreationRequest) error {
 }
 
 func (m *Manager) Delete(name string) error {
-	name = strings.Trim(name, " ")
 	if err := validate.ValidateID(name); err != nil {
 		return err
 	}
@@ -412,7 +411,6 @@ func (m *Manager) Delete(name string) error {
 }
 
 func (m *Manager) Get(name string) (*serviceInfo, error) {
-	name = strings.Trim(name, " ")
 	if err := validate.ValidateID(name); err != nil {
 		return nil, err
 	}
@@ -473,7 +471,6 @@ func (m *Manager) ListFunctions() ([]*functionContainer, error) {
 }
 
 func (m *Manager) GetFunction(name string) (*functionContainer, error) {
-	name = strings.Trim(name, " ")
 	if err := validate.ValidateID(name); err != nil {
 		return nil, err
 	}

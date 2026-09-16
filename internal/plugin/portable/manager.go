@@ -241,7 +241,6 @@ func (m *Manager) removePluginInstallScript(name string) {
 
 func (m *Manager) Register(p plugin.Plugin) error {
 	name, uri, shellParas := p.GetName(), p.GetFile(), p.GetShellParas()
-	name = strings.Trim(name, " ")
 	if err := validate.ValidateID(name); err != nil {
 		return err
 	}

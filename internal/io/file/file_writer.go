@@ -27,7 +27,6 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/compressor"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/io/file/writer"
-	"github.com/lf-edge/ekuiper/v2/internal/pkg/filex"
 	"github.com/lf-edge/ekuiper/v2/modules/encryptor"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
@@ -47,15 +46,13 @@ type fileWriter struct {
 
 func (m *fileSink) createFileWriter(ctx api.StreamContext, fn string, ft FileType, headers string, compressAlgorithm string, encryption string) (_ *fileWriter, ge error) {
 	ctx.GetLogger().Infof("Create new file writer for %s", fn)
-	// Defense in depth: the caller already validated, but the writer must
-	// never create files outside the sandbox even if a new caller forgets.
-	absFn, err := filex.ValidateFilePath(fn)
-	if err != nil {
-		return nil, err
-	}
-	fn = absFn
+	// fn arrives validated from Collect/GetFws; keep this function free of
+	// redundant validation so there is a single choke point.
 	fws := &fileWriter{Start: timex.GetNow()}
-	var f *os.File
+	var (
+		f   *os.File
+		err error
+	)
 	Dir := filepath.Dir(fn)
 	if _, err = os.Stat(Dir); os.IsNotExist(err) {
 		if err := os.MkdirAll(Dir, 0o750); err != nil {

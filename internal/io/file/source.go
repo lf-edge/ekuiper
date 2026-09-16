@@ -110,10 +110,13 @@ func (fs *Source) Provision(ctx api.StreamContext, props map[string]any) error {
 	if err := filex.ValidateFileName(cfg.FileName); err != nil {
 		return err
 	}
-	if _, err := filex.ValidateFilePath(filepath.Join(cfg.Path, cfg.FileName)); err != nil {
+	// Use the validated canonical path from here on so later operations
+	// address exactly what the sandbox checked.
+	validated, err := filex.ValidateFilePath(filepath.Join(cfg.Path, cfg.FileName))
+	if err != nil {
 		return err
 	}
-	fs.file = filepath.Join(cfg.Path, cfg.FileName)
+	fs.file = validated
 	fi, err := os.Stat(fs.file)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -142,9 +145,11 @@ func (fs *Source) Provision(ctx api.StreamContext, props map[string]any) error {
 					return fmt.Errorf("invalid moveTo %s: %v", cfg.MoveTo, err)
 				}
 			}
-			if _, err := filex.ValidateFilePath(cfg.MoveTo); err != nil {
+			validatedMoveTo, err := filex.ValidateFilePath(cfg.MoveTo)
+			if err != nil {
 				return err
 			}
+			cfg.MoveTo = validatedMoveTo
 			fileInfo, err := os.Stat(cfg.MoveTo)
 			if err != nil {
 				err := os.MkdirAll(cfg.MoveTo, os.ModePerm)
@@ -258,8 +263,10 @@ func (fs *Source) parseFile(ctx api.StreamContext, file string, ingest api.Tuple
 		r   io.Reader
 	)
 	// The directory listing may contain a symlink planted after Provision
-	// pointing outside the sandbox; re-validate the runtime path.
-	if _, err := filex.ValidateFilePath(file); err != nil {
+	// pointing outside the sandbox; re-validate the runtime path and use
+	// the validated result for everything below.
+	file, err = filex.ValidateFilePath(file)
+	if err != nil {
 		ingestError(ctx, err)
 		return
 	}
@@ -338,7 +345,8 @@ func (fs *Source) parseFile(ctx api.StreamContext, file string, ingest api.Tuple
 		ctx.GetLogger().Debugf("Remove file %s", file)
 	case 2:
 		targetFile := filepath.Join(fs.config.MoveTo, filepath.Base(file))
-		if _, err := filex.ValidateFilePath(targetFile); err != nil {
+		targetFile, err := filex.ValidateFilePath(targetFile)
+		if err != nil {
 			ingestError(ctx, err)
 			return
 		}

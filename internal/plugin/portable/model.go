@@ -61,19 +61,18 @@ func (p *PluginInfo) Validate(expectedName string) (err error) {
 	// The source/sink/function names become file name fragments in manager
 	// Delete (path.Join(confDir, type, name+".yaml")), so they must not
 	// contain path separators or traversal elements.
-	for _, s := range p.Sources {
-		if err := validate.ValidateID(s); err != nil {
-			return fmt.Errorf("invalid plugin source '%s': %v", s, err)
-		}
-	}
-	for _, s := range p.Sinks {
-		if err := validate.ValidateID(s); err != nil {
-			return fmt.Errorf("invalid plugin sink '%s': %v", s, err)
-		}
-	}
-	for _, s := range p.Functions {
-		if err := validate.ValidateID(s); err != nil {
-			return fmt.Errorf("invalid plugin function '%s': %v", s, err)
+	for _, category := range []struct {
+		kind  string
+		names []string
+	}{
+		{"source", p.Sources},
+		{"sink", p.Sinks},
+		{"function", p.Functions},
+	} {
+		for _, s := range category.names {
+			if err := validate.ValidateID(s); err != nil {
+				return fmt.Errorf("invalid plugin %s '%s': %v", category.kind, s, err)
+			}
 		}
 	}
 	return nil

@@ -278,14 +278,34 @@ func (t *Server) ValidateRule(rule *model.RPCArgDesc, reply *string) error {
 	return nil
 }
 
-func (t *Server) Import(file string, reply *string) error {
+func openImportFile(file string) (*os.File, error) {
 	absFile, err := filex.ValidateFilePath(file)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	f, err := os.Open(absFile)
 	if err != nil {
-		return fmt.Errorf("fail to read file %s: %v", file, err)
+		return nil, fmt.Errorf("fail to read file %s: %v", file, err)
+	}
+	return f, nil
+}
+
+func createExportFile(file string) (*os.File, error) {
+	absFile, err := filex.ValidateFilePath(file)
+	if err != nil {
+		return nil, err
+	}
+	f, err := os.Create(absFile)
+	if err != nil {
+		return nil, err
+	}
+	return f, nil
+}
+
+func (t *Server) Import(file string, reply *string) error {
+	f, err := openImportFile(file)
+	if err != nil {
+		return err
 	}
 	defer f.Close()
 	buf := new(bytes.Buffer)
@@ -317,11 +337,7 @@ func (t *Server) Import(file string, reply *string) error {
 }
 
 func (t *Server) Export(file string, reply *string) error {
-	absFile, err := filex.ValidateFilePath(file)
-	if err != nil {
-		return err
-	}
-	f, err := os.Create(absFile)
+	f, err := createExportFile(file)
 	if err != nil {
 		return err
 	}
@@ -340,13 +356,9 @@ func (t *Server) Export(file string, reply *string) error {
 
 func (t *Server) ImportConfiguration(arg *model.ImportDataDesc, reply *string) error {
 	file := arg.FileName
-	absFile, err := filex.ValidateFilePath(file)
+	f, err := openImportFile(file)
 	if err != nil {
 		return err
-	}
-	f, err := os.Open(absFile)
-	if err != nil {
-		return fmt.Errorf("fail to read file %s: %v", file, err)
 	}
 	defer f.Close()
 	buf := new(bytes.Buffer)
@@ -393,11 +405,7 @@ func (t *Server) GetStatusImport(_ int, reply *string) error {
 func (t *Server) ExportConfiguration(arg *model.ExportDataDesc, reply *string) error {
 	rules := arg.Rules
 	file := arg.FileName
-	absFile, err := filex.ValidateFilePath(file)
-	if err != nil {
-		return err
-	}
-	f, err := os.Create(absFile)
+	f, err := createExportFile(file)
 	if err != nil {
 		return err
 	}

@@ -289,7 +289,6 @@ func (rr *Manager) removePluginInstallScript(name string, t plugin2.PluginType) 
 func (rr *Manager) Register(t plugin2.PluginType, j plugin2.Plugin) error {
 	name, uri, shellParas := j.GetName(), j.GetFile(), j.GetShellParas()
 	// Validation
-	name = strings.Trim(name, " ")
 	if err := validate.ValidateID(name); err != nil {
 		return err
 	}
@@ -397,7 +396,6 @@ func (rr *Manager) RegisterFuncs(name string, functions []string) error {
 }
 
 func (rr *Manager) Delete(t plugin2.PluginType, name string, stop bool) error {
-	name = strings.Trim(name, " ")
 	if err := validate.ValidateID(name); err != nil {
 		return err
 	}

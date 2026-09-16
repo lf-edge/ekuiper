@@ -24,10 +24,10 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 )
 
-// ExternalFileAccessAllowed reports whether the global
+// externalFileAccessAllowed reports whether the global
 // allowExternalFileAccess switch is on. A nil config is treated as
 // restrictive (fail-closed).
-func ExternalFileAccessAllowed() bool {
+func externalFileAccessAllowed() bool {
 	return conf.Config != nil && conf.Config.Basic.AllowExternalFileAccess
 }
 
@@ -47,7 +47,7 @@ func ValidateFilePath(p string) (string, error) {
 	if p == "" {
 		return "", fmt.Errorf("path must be set")
 	}
-	if ExternalFileAccessAllowed() {
+	if externalFileAccessAllowed() {
 		abs, err := filepath.Abs(filepath.Clean(p))
 		if err != nil {
 			return "", fmt.Errorf("invalid path %s: %v", p, err)
@@ -58,26 +58,11 @@ func ValidateFilePath(p string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to get data directory: %v", err)
 	}
-	return ValidatePathInDir(p, dataDir)
-}
-
-// ValidatePathInDir ensures p resolves inside rootDir unless external
-// file access is explicitly allowed (in which case p is returned as an
-// absolute path without containment). It returns the absolute path to
-// use, which may be the canonicalized (symlink-resolved) spelling.
-func ValidatePathInDir(p, rootDir string) (string, error) {
-	if p == "" {
-		return "", fmt.Errorf("path must be set")
+	validated, _, err := contain(p, dataDir)
+	if err != nil {
+		return "", fmt.Errorf("%v; enable allowExternalFileAccess to allow external paths", err)
 	}
-	if ExternalFileAccessAllowed() {
-		abs, err := filepath.Abs(filepath.Clean(p))
-		if err != nil {
-			return "", fmt.Errorf("invalid path %s: %v", p, err)
-		}
-		return abs, nil
-	}
-	validated, _, err := contain(p, rootDir)
-	return validated, err
+	return validated, nil
 }
 
 // OpenUnderRoot validates p inside rootDir (always enforced, regardless
@@ -124,7 +109,7 @@ func contain(p, rootDir string) (validated, canonicalRoot string, err error) {
 		abs = filepath.Join(absRootDir, clean)
 	}
 	// Lexical gate: lexical target against lexical base.
-	if err := CheckUnderDir(absRootDir, abs); err != nil {
+	if err := checkUnderDir(absRootDir, abs); err != nil {
 		return "", "", err
 	}
 	canonicalBase, err := resolveSymlinks(absRootDir)
@@ -135,7 +120,7 @@ func contain(p, rootDir string) (validated, canonicalRoot string, err error) {
 	if err != nil {
 		return abs, absRootDir, nil
 	}
-	if err := CheckUnderDir(canonicalBase, resolved); err != nil {
+	if err := checkUnderDir(canonicalBase, resolved); err != nil {
 		return "", "", err
 	}
 	// Return the canonical spelling so the same file is never addressed
@@ -154,7 +139,7 @@ func ValidateFileName(name string) error {
 	if name == "" {
 		return nil
 	}
-	if ExternalFileAccessAllowed() {
+	if externalFileAccessAllowed() {
 		return nil
 	}
 	if filepath.IsAbs(name) {
@@ -167,13 +152,13 @@ func ValidateFileName(name string) error {
 	return nil
 }
 
-func CheckUnderDir(base, target string) error {
+func checkUnderDir(base, target string) error {
 	rel, err := filepath.Rel(base, target)
 	if err != nil {
 		return fmt.Errorf("file access denied: cannot resolve path %s", target)
 	}
 	if rel == ".." || strings.HasPrefix(rel, ".."+string(os.PathSeparator)) {
-		return fmt.Errorf("file access denied: path %s is outside the data directory, enable allowExternalFileAccess to allow it", target)
+		return fmt.Errorf("file access denied: path %s is outside the allowed directory", target)
 	}
 	return nil
 }
