@@ -17,6 +17,7 @@ package file
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -25,7 +26,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
-	"github.com/lf-edge/ekuiper/v2/internal/pkg/filex"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/model"
 )
@@ -54,13 +54,22 @@ func withRestrictedAccess(t *testing.T) {
 	})
 }
 
+// outside returns a path guaranteed outside the data dir under test.
+func outside(t *testing.T) string {
+	t.Helper()
+	return filepath.Join(t.TempDir(), "secret.txt")
+}
+
 func noopIngest(api.StreamContext, any, map[string]any, time.Time) {}
 
-type evilDynamicTuple struct{ raw []byte }
+type evilDynamicTuple struct {
+	raw  []byte
+	path string
+}
 
 func (e *evilDynamicTuple) Raw() []byte                        { return e.raw }
 func (e *evilDynamicTuple) Replace(b []byte)                   { e.raw = b }
-func (e *evilDynamicTuple) DynamicProps(string) (string, bool) { return "/etc/evil_sink.log", true }
+func (e *evilDynamicTuple) DynamicProps(string) (string, bool) { return e.path, true }
 func (e *evilDynamicTuple) AllProps() map[string]string        { return nil }
 
 func TestSandboxSinkProvision(t *testing.T) {
@@ -70,7 +79,7 @@ func TestSandboxSinkProvision(t *testing.T) {
 	// Absolute path outside the data dir must be rejected.
 	s := &fileSink{}
 	err := s.Provision(ctx, map[string]any{
-		"path":               "/tmp/sandbox_sink.log",
+		"path":               outside(t),
 		"rollingCount":       1,
 		"rollingNamePattern": "none",
 	})
@@ -79,7 +88,7 @@ func TestSandboxSinkProvision(t *testing.T) {
 	// Traversal in a relative path must be rejected.
 	s = &fileSink{}
 	err = s.Provision(ctx, map[string]any{
-		"path":               "../../etc/passwd",
+		"path":               filepath.Join("..", "secret.txt"),
 		"rollingCount":       1,
 		"rollingNamePattern": "none",
 	})
@@ -129,7 +138,7 @@ func TestSandboxSourceProvision(t *testing.T) {
 	// Absolute datasource must be rejected.
 	fs = &Source{}
 	err = fs.Provision(ctx, map[string]any{
-		"datasource": "/etc/passwd",
+		"datasource": outside(t),
 		"path":       dataDir,
 		"fileType":   "json",
 	})
@@ -139,7 +148,7 @@ func TestSandboxSourceProvision(t *testing.T) {
 	fs = &Source{}
 	err = fs.Provision(ctx, map[string]any{
 		"datasource": "sandbox_src.json",
-		"path":       "/tmp",
+		"path":       t.TempDir(),
 		"fileType":   "json",
 	})
 	assert.ErrorContains(t, err, "file access denied")
@@ -160,70 +169,91 @@ func TestSandboxSourceProvision(t *testing.T) {
 		"path":            dataDir,
 		"fileType":        "json",
 		"actionAfterRead": 2,
-		"moveTo":          "/tmp/sandbox_moved",
+		"moveTo":          t.TempDir(),
 	})
 	assert.ErrorContains(t, err, "file access denied")
 }
 
-func TestSandboxSymlinkEscape(t *testing.T) {
-	withRestrictedAccess(t)
-	dataDir, err := conf.GetDataLoc()
-	require.NoError(t, err)
-
-	// Plant a symlink inside the data dir pointing outside.
-	link := filepath.Join(dataDir, "sandbox_link")
-	os.Remove(link)
-	require.NoError(t, os.Symlink("/etc", link))
-	t.Cleanup(func() { os.Remove(link) })
-
-	_, err = filex.ValidateFilePath(filepath.Join("sandbox_link", "passwd"))
-	assert.ErrorContains(t, err, "file access denied")
-}
-
-func TestParseFileDeniesOutside(t *testing.T) {
+// A symlink planted inside a provisioned directory after Provision must
+// be denied at read time through the real Load path.
+func TestParseFileDeniesPlantedSymlink(t *testing.T) {
 	withRestrictedAccess(t)
 	ctx := mockContext.NewMockContext("sandbox", "source")
-	fs := &Source{config: &SourceConfig{FileType: "json"}}
-	var gotErr error
-	fs.parseFile(ctx, "/etc/passwd",
-		noopIngest,
-		func(_ api.StreamContext, err error) { gotErr = err })
-	require.Error(t, gotErr)
-	assert.Contains(t, gotErr.Error(), "file access denied")
-}
-
-func TestParseFileMoveTargetDenied(t *testing.T) {
-	withRestrictedAccess(t)
 	dataDir, err := conf.GetDataLoc()
 	require.NoError(t, err)
-	src := filepath.Join(dataDir, "sandbox_rename_src.json")
-	require.NoError(t, os.WriteFile(src, []byte(`{}`), 0o644))
-	t.Cleanup(func() { os.Remove(src) })
+	watch := filepath.Join(dataDir, "sandbox_watch")
+	require.NoError(t, os.MkdirAll(watch, 0o755))
+	t.Cleanup(func() { os.RemoveAll(watch) })
 
+	fs := &Source{}
+	require.NoError(t, fs.Provision(ctx, map[string]any{
+		"datasource": "",
+		"path":       watch,
+		"fileType":   "json",
+	}))
+
+	// Attacker plants a file symlink after provisioning.
+	planted := t.TempDir()
+	require.NoError(t, os.WriteFile(filepath.Join(planted, "secret.txt"), []byte("{}"), 0o644))
+	require.NoError(t, os.Symlink(filepath.Join(planted, "secret.txt"), filepath.Join(watch, "evil.json")))
+
+	var errs []error
+	fs.Load(ctx, noopIngest, func(_ api.StreamContext, err error) {
+		errs = append(errs, err)
+	})
+	require.NotEmpty(t, errs)
+	denied := false
+	for _, e := range errs {
+		if e != nil && strings.Contains(e.Error(), "file access denied") {
+			denied = true
+		}
+	}
+	assert.True(t, denied, "planted symlink read must be denied, got %v", errs)
+}
+
+// Swapping a provisioned moveTo directory for an escaping symlink after
+// Provision must deny the move through the real Load path.
+func TestParseFileMoveTargetDeniedAfterSwap(t *testing.T) {
+	withRestrictedAccess(t)
 	ctx := mockContext.NewMockContext("sandbox", "source")
-	fs := &Source{config: &SourceConfig{
-		FileType:        "json",
-		ActionAfterRead: 2,
-		MoveTo:          filepath.Join(os.TempDir(), "sandbox_nope_ekuiper"),
-	}}
-	var gotErr error
-	fs.parseFile(ctx, src,
-		noopIngest,
-		func(_ api.StreamContext, err error) { gotErr = err })
-	require.Error(t, gotErr)
-	assert.Contains(t, gotErr.Error(), "file access denied")
+	dataDir, err := conf.GetDataLoc()
+	require.NoError(t, err)
+	watch := filepath.Join(dataDir, "sandbox_watch_move")
+	require.NoError(t, os.MkdirAll(watch, 0o755))
+	t.Cleanup(func() { os.RemoveAll(watch) })
+
+	realFile := filepath.Join(watch, "real.json")
+	require.NoError(t, os.WriteFile(realFile, []byte(`{}`), 0o644))
+	moved := filepath.Join(watch, "moved")
+
+	fs := &Source{}
+	require.NoError(t, fs.Provision(ctx, map[string]any{
+		"datasource":      "real.json",
+		"path":            watch,
+		"fileType":        "json",
+		"actionAfterRead": 2,
+		"moveTo":          moved,
+	}))
+
+	// Attacker replaces the provisioned moveTo dir with an escaping symlink.
+	require.NoError(t, os.RemoveAll(moved))
+	require.NoError(t, os.Symlink(t.TempDir(), moved))
+
+	var errs []error
+	fs.Load(ctx, noopIngest, func(_ api.StreamContext, err error) {
+		errs = append(errs, err)
+	})
+	require.NotEmpty(t, errs)
+	denied := false
+	for _, e := range errs {
+		if e != nil && strings.Contains(e.Error(), "file access denied") {
+			denied = true
+		}
+	}
+	assert.True(t, denied, "swapped moveTo must be denied, got %v", errs)
 	// The source file must survive: no move happened.
-	_, statErr := os.Stat(src)
+	_, statErr := os.Stat(realFile)
 	assert.NoError(t, statErr)
-}
-
-func TestCreateFileWriterDeniesOutside(t *testing.T) {
-	withRestrictedAccess(t)
-	ctx := mockContext.NewMockContext("sandbox", "sink")
-	m := &fileSink{}
-	_, err := m.createFileWriter(ctx, "/etc/sandbox_evil.log", LINES_TYPE, "", "", "")
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "file access denied")
 }
 
 func TestSinkCollectDeniesDynamicTraversal(t *testing.T) {
@@ -237,7 +267,7 @@ func TestSinkCollectDeniesDynamicTraversal(t *testing.T) {
 		"rollingCount":       1,
 		"rollingNamePattern": "none",
 	}))
-	err := m.Collect(ctx, &evilDynamicTuple{raw: []byte(`{"a":1}`)})
+	err := m.Collect(ctx, &evilDynamicTuple{raw: []byte(`{"a":1}`), path: outside(t)})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "file access denied")
 }

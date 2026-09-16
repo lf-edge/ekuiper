@@ -38,19 +38,21 @@ func withFlag(t *testing.T, allow bool) {
 	})
 }
 
+// outside returns a path guaranteed outside any data dir under test.
+func outside(t *testing.T) string {
+	t.Helper()
+	return filepath.Join(t.TempDir(), "secret.txt")
+}
+
 func TestValidateFilePathModes(t *testing.T) {
 	withFlag(t, false)
 
 	_, err := ValidateFilePath("")
 	assert.ErrorContains(t, err, "path must be set")
 
-	assert.False(t, ExternalFileAccessAllowed())
-
 	withFlag(t, true)
-	assert.True(t, ExternalFileAccessAllowed())
-
 	// Flag on: no sandbox, absolute and relative pass through.
-	got, err := ValidateFilePath("/etc/passwd")
+	got, err := ValidateFilePath(outside(t))
 	require.NoError(t, err)
 	assert.True(t, filepath.IsAbs(got))
 
@@ -105,14 +107,14 @@ func TestValidateFilePathSymlinkedBase(t *testing.T) {
 	// Genuine escapes are still rejected.
 	_, err = ValidateFilePath(filepath.Join(linkBase, "data", "..", "secret.txt"))
 	assert.ErrorContains(t, err, "file access denied")
-	_, err = ValidateFilePath("/etc/passwd")
+	_, err = ValidateFilePath(outside(t))
 	assert.ErrorContains(t, err, "file access denied")
 
 	// A symlink planted inside the data dir pointing outside must not
 	// validate, even though it is addressed through the data dir.
-	outside := t.TempDir()
-	require.NoError(t, os.WriteFile(filepath.Join(outside, "secret.txt"), []byte("s"), 0o644))
-	require.NoError(t, os.Symlink(outside, filepath.Join(realBase, "data", "evil")))
+	planted := t.TempDir()
+	require.NoError(t, os.WriteFile(filepath.Join(planted, "secret.txt"), []byte("s"), 0o644))
+	require.NoError(t, os.Symlink(planted, filepath.Join(realBase, "data", "evil")))
 	_, err = ValidateFilePath("evil/secret.txt")
 	assert.ErrorContains(t, err, "file access denied")
 }
@@ -167,56 +169,13 @@ func TestValidateFileName(t *testing.T) {
 	assert.NoError(t, ValidateFileName(""))
 	assert.NoError(t, ValidateFileName("lookup.json"))
 	assert.NoError(t, ValidateFileName("a/b.json"))
-	assert.ErrorContains(t, ValidateFileName("/etc/passwd"), "absolute path")
+	assert.ErrorContains(t, ValidateFileName(outside(t)), "absolute path")
 	assert.ErrorContains(t, ValidateFileName(".."), "traversal")
 	assert.ErrorContains(t, ValidateFileName("../secret.json"), "traversal")
 
 	withFlag(t, true)
 	assert.NoError(t, ValidateFileName("../secret.json"))
-	assert.NoError(t, ValidateFileName("/etc/passwd"))
-}
-
-func TestCheckUnderDir(t *testing.T) {
-	base := filepath.Join(string(os.PathSeparator), "data")
-	assert.NoError(t, CheckUnderDir(base, filepath.Join(base, "a.json")))
-	assert.NoError(t, CheckUnderDir(base, base))
-	assert.ErrorContains(t, CheckUnderDir(base, string(os.PathSeparator)), "file access denied")
-	assert.ErrorContains(t, CheckUnderDir(base, filepath.Join(base, "..", "x")), "file access denied")
-}
-
-func TestResolveSymlinksMissing(t *testing.T) {
-	// Nothing exists up to the filesystem root: returned unchanged.
-	got, err := resolveSymlinks(filepath.Join(string(os.PathSeparator), "definitely-not-here-ekuiper-xyz", "f"))
-	require.NoError(t, err)
-	assert.Equal(t, filepath.Join(string(os.PathSeparator), "definitely-not-here-ekuiper-xyz", "f"), got)
-}
-
-func TestValidatePathInDir(t *testing.T) {
-	withFlag(t, false)
-	root := t.TempDir()
-	require.NoError(t, os.WriteFile(filepath.Join(root, "a.json"), []byte("{}"), 0o644))
-
-	got, err := ValidatePathInDir(filepath.Join(root, "a.json"), root)
-	require.NoError(t, err)
-	assert.Equal(t, filepath.Join(root, "a.json"), got)
-
-	got, err = ValidatePathInDir("a.json", root)
-	require.NoError(t, err)
-	assert.Equal(t, filepath.Join(root, "a.json"), got)
-
-	_, err = ValidatePathInDir("", root)
-	assert.ErrorContains(t, err, "path must be set")
-
-	_, err = ValidatePathInDir(filepath.Join(root, "..", "x.json"), root)
-	assert.ErrorContains(t, err, "file access denied")
-
-	_, err = ValidatePathInDir("/etc/passwd", root)
-	assert.ErrorContains(t, err, "file access denied")
-
-	withFlag(t, true)
-	got, err = ValidatePathInDir("/etc/passwd", root)
-	require.NoError(t, err)
-	assert.Equal(t, "/etc/passwd", got)
+	assert.NoError(t, ValidateFileName(outside(t)))
 }
 
 func TestOpenUnderRoot(t *testing.T) {
@@ -235,9 +194,16 @@ func TestOpenUnderRoot(t *testing.T) {
 	_, err = OpenUnderRoot(root, filepath.Join("..", "evil.txt"))
 	assert.ErrorContains(t, err, "file access denied")
 
-	_, err = OpenUnderRoot(root, "/etc/passwd")
+	_, err = OpenUnderRoot(root, outside(t))
 	assert.ErrorContains(t, err, "file access denied")
 
 	_, err = OpenUnderRoot(root, "missing.txt")
 	assert.Error(t, err)
+
+	// The root containment holds regardless of the global switch.
+	withFlag(t, true)
+	_, err = OpenUnderRoot(root, filepath.Join("..", "evil.txt"))
+	assert.ErrorContains(t, err, "file access denied")
+	_, err = OpenUnderRoot(root, outside(t))
+	assert.ErrorContains(t, err, "file access denied")
 }

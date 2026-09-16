@@ -50,7 +50,8 @@ func TestConfKeyHandlerPluginNameValidation(t *testing.T) {
 		"connection": connectionConfKeyHandler,
 	}
 	for name, h := range handlers {
-		// Traversal and separator names are rejected.
+		// Traversal and separator names are rejected with 400 before any
+		// manager is touched.
 		for _, bad := range []string{"../../etc", "a/b", ".."} {
 			req, _ := http.NewRequest(http.MethodPut,
 				"/metadata/x/"+bad+"/confKeys/test",
@@ -58,7 +59,8 @@ func TestConfKeyHandlerPluginNameValidation(t *testing.T) {
 			req = mux.SetURLVars(req, map[string]string{"name": bad, "confKey": "test"})
 			rr := httptest.NewRecorder()
 			h(rr, req)
-			assert.NotEqual(t, http.StatusOK, rr.Code, "%s handler accepted %q", name, bad)
+			assert.Equal(t, http.StatusBadRequest, rr.Code, "%s handler accepted %q", name, bad)
+			assert.Contains(t, rr.Body.String(), "Invalid plugin name", "%s handler wrong error for %q", name, bad)
 		}
 		// A clean name passes validation (handler proceeds to the manager).
 		req, _ := http.NewRequest(http.MethodPut,
@@ -72,11 +74,21 @@ func TestConfKeyHandlerPluginNameValidation(t *testing.T) {
 }
 
 func TestPortableHandlerNameValidation(t *testing.T) {
-	for _, bad := range []string{"../../etc", "a/b", "..", ""} {
-		req, _ := http.NewRequest(http.MethodDelete, "/plugins/portables/"+bad, bytes.NewReader(nil))
-		req = mux.SetURLVars(req, map[string]string{"name": bad})
+	cases := []struct {
+		name string
+		want string
+	}{
+		{"../../etc", "invalid characters"},
+		{"a/b", "invalid characters"},
+		{"..", "invalid characters"},
+		{"", "id cannot be empty"},
+	}
+	for _, c := range cases {
+		req, _ := http.NewRequest(http.MethodDelete, "/plugins/portables/"+c.name, bytes.NewReader(nil))
+		req = mux.SetURLVars(req, map[string]string{"name": c.name})
 		rr := httptest.NewRecorder()
 		portableHandler(rr, req)
-		assert.NotEqual(t, http.StatusOK, rr.Code, "portable handler accepted %q", bad)
+		assert.Equal(t, http.StatusBadRequest, rr.Code, "portable handler accepted %q", c.name)
+		assert.Contains(t, rr.Body.String(), c.want, "portable handler wrong error for %q", c.name)
 	}
 }

@@ -51,7 +51,10 @@ func TestDeleteRejectsInvalidName(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	assert.Error(t, m.Delete(".."), "dotdot name must be rejected before touching the filesystem")
-	assert.Error(t, m.Delete("../../etc"), "traversal name must be rejected")
-	assert.Error(t, m.Delete("a/b"), "slash name must be rejected")
+	assert.ErrorContains(t, m.Delete(".."), "invalid characters", "dotdot name must be rejected before touching the filesystem")
+	assert.ErrorContains(t, m.Delete("../../etc"), "invalid characters", "traversal name must be rejected")
+	assert.ErrorContains(t, m.Delete("a/b"), "invalid characters", "slash name must be rejected")
+	// A well-formed but unknown name misses instead of failing validation.
+	_, ok := m.GetPluginInfo("no-such-plugin")
+	assert.False(t, ok)
 }

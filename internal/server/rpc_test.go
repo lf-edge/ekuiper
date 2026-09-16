@@ -17,6 +17,7 @@ package server
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -276,25 +277,28 @@ func (suite *ServerTestSuite) TestConfiguration() {
 func (suite *ServerTestSuite) TestImportExportPathTraversal() {
 	allowExternalFileAccess(suite.T(), false)
 	var reply string
+	// outside is guaranteed outside the data dir without hardcoding
+	// platform-specific system paths.
+	outside := filepath.Join(suite.T().TempDir(), "poc.json")
 
-	err := suite.s.Import("/etc/passwd", &reply)
+	err := suite.s.Import(outside, &reply)
 	assert.Error(suite.T(), err)
 	assert.Contains(suite.T(), err.Error(), "file access denied")
 
-	err = suite.s.Export("/tmp/ekuiper_rpc_poc.json", &reply)
+	err = suite.s.Export(outside, &reply)
 	assert.Error(suite.T(), err)
 	assert.Contains(suite.T(), err.Error(), "file access denied")
 
-	err = suite.s.ImportConfiguration(&model.ImportDataDesc{FileName: "/etc/passwd"}, &reply)
+	err = suite.s.ImportConfiguration(&model.ImportDataDesc{FileName: outside}, &reply)
 	assert.Error(suite.T(), err)
 	assert.Contains(suite.T(), err.Error(), "file access denied")
 
-	err = suite.s.ExportConfiguration(&model.ExportDataDesc{FileName: "/tmp/ekuiper_rpc_poc.json"}, &reply)
+	err = suite.s.ExportConfiguration(&model.ExportDataDesc{FileName: outside}, &reply)
 	assert.Error(suite.T(), err)
 	assert.Contains(suite.T(), err.Error(), "file access denied")
 
 	// No file must have been created outside the sandbox.
-	_, statErr := os.Stat("/tmp/ekuiper_rpc_poc.json")
+	_, statErr := os.Stat(outside)
 	assert.True(suite.T(), os.IsNotExist(statErr))
 }
 
