@@ -67,11 +67,11 @@ is false for security.
 
 The configuration item **allowExternalFileAccess** is used to specify whether file access APIs can access files outside the allowed directories. Default is false for security. This prevents path traversal attacks. When enabled, it grants unrestricted filesystem paths to all of the following:
 - file:// URLs in plugins/schemas (otherwise restricted to the `data/uploads` directory);
-- file source/sink connector paths (otherwise restricted to the data directory; relative paths resolve against it);
+- file sink paths (relative paths resolve against the data directory) and file source paths (relative directories resolve against the eKuiper root, e.g. the default `data`); both are contained in the data directory;
 - RPC import/export file arguments (otherwise restricted to the data directory).
 
 > [!WARNING]
-> When `allowExternalFileAccess` is `false` (default), file:// URL access is restricted to the `data/uploads` directory, and file connector paths and RPC import/export files are restricted to the data directory. The option is all-or-nothing: enabling it for one use case (e.g. uploaded plugin files) also permits unrestricted filesystem paths through the other two. Set to `true` only if you need to access files from other locations on the filesystem.
+> When `allowExternalFileAccess` is `false` (default), file:// URL access is restricted to the `data/uploads` directory, and file connector paths and RPC import/export files are contained in the data directory (sink relative paths resolve against it; source relative directories resolve against the eKuiper root). The option is all-or-nothing: enabling it for one use case (e.g. uploaded plugin files) also permits unrestricted filesystem paths through the other two. Set to `true` only if you need to access files from other locations on the filesystem.
 
 for debug option in basic following env is valid `KUIPER__BASIC__DEBUG=true` and if used debug value will be set to true.
 

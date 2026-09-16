@@ -30,6 +30,16 @@ import (
 // The plugin-name validation in confKey handlers and the portable plugin
 // handler must reject traversal at the edge, before any manager is touched.
 func TestConfKeyHandlerPluginNameValidation(t *testing.T) {
+	// Snapshot globals: InitConf replaces the shared Config and the keys
+	// below land in the shared KV storage, so restore everything to keep
+	// test order independent.
+	oldConfig, oldTesting := conf.Config, conf.IsTesting
+	t.Cleanup(func() {
+		conf.Config, conf.IsTesting = oldConfig, oldTesting
+		_ = meta.DelSourceConfKey("mqtt", "plugintest", "en_US")
+		_ = meta.DelSinkConfKey("mqtt", "plugintest", "en_US")
+		_ = meta.DelConnectionConfKey("mqtt", "plugintest", "en_US")
+	})
 	conf.InitConf()
 	conf.IsTesting = true
 	meta.InitYamlConfigManager()

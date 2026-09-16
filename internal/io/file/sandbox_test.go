@@ -30,7 +30,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/model"
 )
 
-// Existing functional tests in this package use tmp//tmp directories by
+// Existing functional tests in this package use tmp directories by
 // design, so external access stays on for them. Sandbox restriction is
 // covered by the TestSandbox* tests below which explicitly turn the switch
 // off.
