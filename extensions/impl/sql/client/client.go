@@ -15,8 +15,10 @@
 package client
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
+	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
@@ -92,7 +94,9 @@ func (s *SQLConnection) Ping(ctx api.StreamContext) error {
 			return err
 		}
 	}
-	return s.db.Ping()
+	pingCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
+	defer cancel()
+	return s.db.PingContext(pingCtx)
 }
 
 func (s *SQLConnection) DetachSub(ctx api.StreamContext, props map[string]any) {
