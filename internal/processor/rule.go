@@ -63,18 +63,18 @@ func (p *RuleProcessor) ExecCreateWithValidation(name, ruleJson string) (*def.Ru
 		return nil, fmt.Errorf("rule %s already exists with version (%s), new version (%s) is lower", rule.Id, or.Version, rule.Version)
 	}
 
-	if err := p.saveRuleWithPersist(rule, ruleJson, persistOnce); err != nil {
+	if err := p.persistRule(rule, ruleJson); err != nil {
 		return nil, err
 	}
 	log.Infof("Rule %s with version (%s) is created.", rule.Id, rule.Version)
 	return rule, nil
 }
 
-func (p *RuleProcessor) saveRuleWithPersist(rule *def.Rule, ruleJSON string, persist func(func() error) error) error {
+func (p *RuleProcessor) persistRule(rule *def.Rule, ruleJSON string) error {
 	if rule.Temp {
 		return nil
 	}
-	return persist(func() error { return p.db.Set(rule.Id, ruleJSON) })
+	return p.db.Set(rule.Id, ruleJSON)
 }
 
 func (p *RuleProcessor) ExecCreate(name, ruleJson string) error {

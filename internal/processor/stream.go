@@ -197,21 +197,22 @@ func (p *StreamProcessor) RecoverLookupTable() (err error) {
 	return nil
 }
 
-func persistOnce(write func() error) error { return write() }
-
 func (p *StreamProcessor) execSave(stmt *ast.StreamStmt, statement string, replace bool) error {
-	return p.execSaveWithPersist(stmt, statement, replace, persistOnce)
+	data, err := p.prepareStreamSave(stmt, statement)
+	if err != nil {
+		return err
+	}
+	return p.persistStream(stmt, data, replace)
 }
 
-// execSaveWithPersist lets startup retry only the database write. In particular,
-// a lookup table's DropInstance/CreateInstance must run at most once per apply.
-func (p *StreamProcessor) execSaveWithPersist(stmt *ast.StreamStmt, statement string, replace bool, persist func(func() error) error) error {
+// prepareStreamSave performs lookup side effects once, before any database write.
+func (p *StreamProcessor) prepareStreamSave(stmt *ast.StreamStmt, statement string) ([]byte, error) {
 	if stmt.StreamType == ast.TypeTable && stmt.Options.KIND == ast.StreamKindLookup {
 		_ = lookup.DropInstance(string(stmt.Name))
 		log.Infof("Creating lookup table %s", stmt.Name)
 		err := lookup.CreateInstance(string(stmt.Name), stmt.Options.TYPE, stmt.Options)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 	s, err := json.Marshal(xsql.StreamInfo{
@@ -221,22 +222,20 @@ func (p *StreamProcessor) execSaveWithPersist(stmt *ast.StreamStmt, statement st
 		Temp:       stmt.Options.Temp,
 	})
 	if err != nil {
-		return fmt.Errorf("error when saving to db: %v.", err)
+		return nil, fmt.Errorf("error when saving to db: %v.", err)
 	}
-	if !stmt.Options.Temp {
-		if replace {
-			err = persist(func() error { return p.db.Set(string(stmt.Name), string(s)) })
-		} else {
-			err = persist(func() error { return p.db.Setnx(string(stmt.Name), string(s)) })
-		}
-	} else {
-		if replace {
-			err = persist(func() error { return p.tempDb.Set(string(stmt.Name), string(s)) })
-		} else {
-			err = persist(func() error { return p.tempDb.Setnx(string(stmt.Name), string(s)) })
-		}
+	return s, nil
+}
+
+func (p *StreamProcessor) persistStream(stmt *ast.StreamStmt, data []byte, replace bool) error {
+	db := p.db
+	if stmt.Options.Temp {
+		db = p.tempDb
 	}
-	return err
+	if replace {
+		return db.Set(string(stmt.Name), string(data))
+	}
+	return db.Setnx(string(stmt.Name), string(data))
 }
 
 func (p *StreamProcessor) ExecReplaceStream(name string, statement string, st ast.StreamType) (info string, err error) {

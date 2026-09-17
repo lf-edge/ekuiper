@@ -254,14 +254,19 @@ func (rs *RulesetProcessor) applySource(name, statement string, kind ast.StreamT
 		r.Err = fmt.Errorf("cannot change %s %s SHARED option", r.Kind, name)
 		return r
 	}
-	r.Outcome = InitRetryableError
-	r.Err = rs.s.execSaveWithPersist(source, statement, true, func(write func() error) error {
-		r.Attempts, err = rs.retryInitApply(write)
-		return err
-	})
-	if r.Err == nil {
-		r.Outcome = InitApplied
+	data, err := rs.s.prepareStreamSave(source, statement)
+	if err != nil {
+		r.Outcome, r.Err = InitRetryableError, err
+		return r
 	}
+	r.Attempts, r.Err = rs.retryInitWrite(func() error {
+		return rs.s.persistStream(source, data, true)
+	})
+	if r.Err != nil {
+		r.Outcome = InitRetryableError
+		return r
+	}
+	r.Outcome = InitApplied
 	return r
 }
 
@@ -305,9 +310,8 @@ func (rs *RulesetProcessor) applyRule(name, ruleJSON string) InitObjectResult {
 		r.Outcome = InitSkipped
 		return r
 	}
-	r.Err = rs.r.saveRuleWithPersist(rule, ruleJSON, func(write func() error) error {
-		r.Attempts, err = rs.retryInitApply(write)
-		return err
+	r.Attempts, r.Err = rs.retryInitWrite(func() error {
+		return rs.r.persistRule(rule, ruleJSON)
 	})
 	if r.Err != nil {
 		r.Outcome = InitRetryableError
@@ -330,7 +334,7 @@ func (rs *RulesetProcessor) readStoredRuleForInit(name string) (*def.Rule, error
 	return old, nil
 }
 
-func (rs *RulesetProcessor) retryInitApply(write func() error) (int, error) {
+func (rs *RulesetProcessor) retryInitWrite(write func() error) (int, error) {
 	attempts := 0
 	err := backoff.Retry(func() error {
 		attempts++
