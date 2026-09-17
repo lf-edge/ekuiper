@@ -88,6 +88,8 @@ func (s *SQLConnection) Reconnect(ctx api.StreamContext) error {
 	if s.db != nil {
 		if err := s.db.PingContext(ctx); err == nil {
 			return nil
+		} else if ctx.Err() != nil {
+			return ctx.Err()
 		}
 		_ = s.db.Close()
 	}
