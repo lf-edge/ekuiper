@@ -141,6 +141,8 @@ func TestImportForInitRetryExhaustedAndTerminal(t *testing.T) {
 	}
 	_, err = rs.ImportForInit([]byte("not JSON"))
 	require.ErrorContains(t, err, "invalid import file")
+	var formatErr *InitJSONError
+	require.ErrorAs(t, err, &formatErr)
 }
 
 func TestImportForInitRetryExhaustedForRule(t *testing.T) {

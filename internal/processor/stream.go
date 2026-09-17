@@ -197,8 +197,10 @@ func (p *StreamProcessor) RecoverLookupTable() (err error) {
 	return nil
 }
 
+func persistOnce(write func() error) error { return write() }
+
 func (p *StreamProcessor) execSave(stmt *ast.StreamStmt, statement string, replace bool) error {
-	return p.execSaveWithPersist(stmt, statement, replace, applyOnce)
+	return p.execSaveWithPersist(stmt, statement, replace, persistOnce)
 }
 
 // execSaveWithPersist lets startup retry only the database write. In particular,

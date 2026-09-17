@@ -48,5 +48,3 @@ func decideRuleReplace(old, next *def.Rule) replaceDecision {
 	}
 	return replaceApply
 }
-
-func applyOnce(write func() error) error { return write() }
