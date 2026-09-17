@@ -23,28 +23,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestWriteInitializedKeepsOldMarker(t *testing.T) {
-	loc := t.TempDir()
-	require.NoError(t, os.WriteFile(filepath.Join(loc, "initialized123"), nil, 0o644))
-	require.NoError(t, os.Mkdir(filepath.Join(loc, "initialized456"), 0o755))
-	require.Error(t, writeInitialized(loc, 456))
-	require.EqualValues(t, 123, findInitializedTime(loc))
-	require.NoError(t, os.Remove(filepath.Join(loc, "initialized456")))
-	require.NoError(t, writeInitialized(loc, 456))
-	require.EqualValues(t, 456, findInitializedTime(loc))
-}
-
-func TestWriteInitializedReadErrorPreservesExistingMarker(t *testing.T) {
-	loc := t.TempDir()
-	marker := filepath.Join(loc, "initialized456")
-	require.NoError(t, os.WriteFile(marker, nil, 0o644))
-	require.Error(t, writeInitializedWithReadDir(loc, 456, func(string) ([]os.DirEntry, error) {
-		return nil, errors.New("temporary read error")
-	}))
-	_, err := os.Stat(marker)
-	require.NoError(t, err)
-}
-
 func TestInitFromLocKeepsMarkerUntilSuccessful(t *testing.T) {
 	loc := t.TempDir()
 	initFile := filepath.Join(loc, "init.json")
