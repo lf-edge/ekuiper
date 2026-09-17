@@ -20,15 +20,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/cenkalti/backoff/v4"
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/processor"
 )
-
-func noWaitInitBackoff() backoff.BackOff {
-	return backoff.WithMaxRetries(backoff.NewConstantBackOff(0), 2)
-}
 
 func TestWriteInitializedKeepsOldMarkerUntilNewIsReady(t *testing.T) {
 	loc := t.TempDir()
@@ -73,9 +68,9 @@ func TestInitFromLocRetriesOnNextStartup(t *testing.T) {
 			Kind: "stream", Name: "source", Outcome: processor.InitApplied, Attempts: 1,
 		}}}, nil
 	}
-	require.NoError(t, initFromLocWith(loc, importer, noWaitInitBackoff))
+	require.NoError(t, initFromLocWith(loc, importer))
 	require.EqualValues(t, 123, findInitializedTime(loc))
-	require.NoError(t, initFromLocWith(loc, importer, noWaitInitBackoff))
+	require.NoError(t, initFromLocWith(loc, importer))
 	info, err := os.Stat(initFile)
 	require.NoError(t, err)
 	require.Equal(t, info.ModTime().UnixMilli(), findInitializedTime(loc))
@@ -91,7 +86,7 @@ func TestInitFromLocSkippedVersionCompletes(t *testing.T) {
 			Kind: "rule", Name: "rule", Outcome: processor.InitSkipped, Attempts: 1,
 		}}}, nil
 	}
-	require.NoError(t, initFromLocWith(loc, importer, noWaitInitBackoff))
+	require.NoError(t, initFromLocWith(loc, importer))
 	info, err := os.Stat(initFile)
 	require.NoError(t, err)
 	require.Equal(t, info.ModTime().UnixMilli(), findInitializedTime(loc))
@@ -103,7 +98,7 @@ func TestInvalidInitJSONIsMarkedCompleted(t *testing.T) {
 	require.NoError(t, os.WriteFile(initFile, []byte("not JSON"), 0o644))
 	require.NoError(t, initFromLocWith(loc, func([]byte) (processor.InitImportResult, error) {
 		return processor.InitImportResult{}, &processor.InitJSONError{Err: errors.New("invalid JSON")}
-	}, noWaitInitBackoff))
+	}))
 	info, err := os.Stat(initFile)
 	require.NoError(t, err)
 	require.Equal(t, info.ModTime().UnixMilli(), findInitializedTime(loc))
@@ -114,13 +109,13 @@ func TestUnclassifiedImportErrorDoesNotCreateMarker(t *testing.T) {
 	require.NoError(t, os.WriteFile(filepath.Join(loc, "init.json"), []byte(`{}`), 0o644))
 	require.NoError(t, initFromLocWith(loc, func([]byte) (processor.InitImportResult, error) {
 		return processor.InitImportResult{}, errors.New("unknown import error")
-	}, noWaitInitBackoff))
+	}))
 	require.EqualValues(t, -1, findInitializedTime(loc))
 }
 
 func TestUnreadableInitDoesNotCreateMarker(t *testing.T) {
 	loc := t.TempDir()
 	require.NoError(t, os.Mkdir(filepath.Join(loc, "init.json"), 0o755))
-	require.NoError(t, initFromLocWith(loc, nil, noWaitInitBackoff))
+	require.NoError(t, initFromLocWith(loc, nil))
 	require.EqualValues(t, -1, findInitializedTime(loc))
 }

@@ -20,9 +20,6 @@ import (
 	"fmt"
 	"io"
 	"strings"
-	"time"
-
-	"github.com/cenkalti/backoff/v4"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
@@ -31,9 +28,8 @@ import (
 )
 
 type RulesetProcessor struct {
-	r              *RuleProcessor
-	s              *StreamProcessor
-	newInitBackoff func() backoff.BackOff
+	r *RuleProcessor
+	s *StreamProcessor
 }
 
 type Ruleset struct {
@@ -43,13 +39,7 @@ type Ruleset struct {
 }
 
 func NewRulesetProcessor(r *RuleProcessor, s *StreamProcessor) *RulesetProcessor {
-	return &RulesetProcessor{
-		r: r,
-		s: s,
-		newInitBackoff: func() backoff.BackOff {
-			return backoff.WithMaxRetries(backoff.NewConstantBackOff(100*time.Millisecond), 2)
-		},
-	}
+	return &RulesetProcessor{r: r, s: s}
 }
 
 func (rs *RulesetProcessor) Export() (io.ReadSeeker, []int, error) {
@@ -259,7 +249,7 @@ func (rs *RulesetProcessor) applySource(name, statement string, kind ast.StreamT
 		r.Outcome, r.Err = InitRetryableError, err
 		return r
 	}
-	r.Attempts, r.Err = rs.retryInitWrite(func() error {
+	r.Attempts, r.Err = retryInitWrite(func() error {
 		return rs.s.persistStream(source, data, true)
 	})
 	if r.Err != nil {
@@ -310,7 +300,7 @@ func (rs *RulesetProcessor) applyRule(name, ruleJSON string) InitObjectResult {
 		r.Outcome = InitSkipped
 		return r
 	}
-	r.Attempts, r.Err = rs.retryInitWrite(func() error {
+	r.Attempts, r.Err = retryInitWrite(func() error {
 		return rs.r.persistRule(rule, ruleJSON)
 	})
 	if r.Err != nil {
@@ -334,13 +324,16 @@ func (rs *RulesetProcessor) readStoredRuleForInit(name string) (*def.Rule, error
 	return old, nil
 }
 
-func (rs *RulesetProcessor) retryInitWrite(write func() error) (int, error) {
-	attempts := 0
-	err := backoff.Retry(func() error {
-		attempts++
-		return write()
-	}, rs.newInitBackoff())
-	return attempts, err
+const initWriteAttempts = 3
+
+func retryInitWrite(write func() error) (int, error) {
+	var err error
+	for attempt := 1; attempt <= initWriteAttempts; attempt++ {
+		if err = write(); err == nil {
+			return attempt, nil
+		}
+	}
+	return initWriteAttempts, err
 }
 
 func (rs *RulesetProcessor) ImportRuleSet(all Ruleset) Ruleset {

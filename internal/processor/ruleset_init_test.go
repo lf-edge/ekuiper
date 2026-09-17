@@ -19,7 +19,6 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/cenkalti/backoff/v4"
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/stretchr/testify/require"
 
@@ -85,11 +84,7 @@ func newInitTestRuleset(t *testing.T) (*RulesetProcessor, *StreamProcessor, *Rul
 	sp := NewStreamProcessor()
 	rp := NewRuleProcessor()
 	t.Cleanup(func() { _ = sp.db.Clean(); _ = rp.db.Clean() })
-	rs := NewRulesetProcessor(rp, sp)
-	rs.newInitBackoff = func() backoff.BackOff {
-		return backoff.WithMaxRetries(backoff.NewConstantBackOff(0), 2)
-	}
-	return rs, sp, rp
+	return NewRulesetProcessor(rp, sp), sp, rp
 }
 
 func TestImportForInitRetriesPersistence(t *testing.T) {

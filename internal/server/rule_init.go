@@ -25,7 +25,6 @@ import (
 	"time"
 
 	"github.com/Rookiecom/cpuprofile"
-	"github.com/cenkalti/backoff/v4"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/schedule"
@@ -45,12 +44,10 @@ func initRuleset() {
 }
 
 func initFromLoc(loc string) error {
-	return initFromLocWith(loc, rulesetProcessor.ImportForInit, func() backoff.BackOff {
-		return backoff.WithMaxRetries(backoff.NewConstantBackOff(100*time.Millisecond), 2)
-	})
+	return initFromLocWith(loc, rulesetProcessor.ImportForInit)
 }
 
-func initFromLocWith(loc string, importRuleset func([]byte) (processor.InitImportResult, error), newBackoff func() backoff.BackOff) error {
+func initFromLocWith(loc string, importRuleset func([]byte) (processor.InitImportResult, error)) error {
 	initFile := filepath.Join(loc, "init.json")
 	fileInfo, err := os.Stat(initFile)
 	if err != nil {
@@ -62,11 +59,7 @@ func initFromLocWith(loc string, importRuleset func([]byte) (processor.InitImpor
 	conf.Log.Infof("found init.json with update time %d and last init time %d", updateTime, lastUpdate)
 	// Only leave one initialized file each time. Due to the time shift in some system, compare time is not a good idea
 	if updateTime != lastUpdate {
-		var content []byte
-		err = backoff.Retry(func() error {
-			content, err = os.ReadFile(initFile)
-			return err
-		}, newBackoff())
+		content, err := os.ReadFile(initFile)
 		if err != nil {
 			conf.Log.Errorf("fail to read init file: %v", err)
 			return nil
