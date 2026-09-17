@@ -245,7 +245,6 @@ func TestBatchWriterRun(t *testing.T) {
 func TestBatchWriterDeferredPropsEvalUsesLastRowOnce(t *testing.T) {
 	ctx := mockContext.NewMockContext("testDeferredProps", "op1")
 	calls := 0
-	var rendered []string
 	op, err := NewBatchWriterOp(ctx, "test", &def.RuleOption{BufferLength: 10, SendError: true}, map[string]*ast.JsonStreamField{
 		"a": nil,
 		"b": nil,
@@ -258,7 +257,6 @@ func TestBatchWriterDeferredPropsEvalUsesLastRowOnce(t *testing.T) {
 	op.SetPropsEval(func(row *xsql.SliceTuple) (map[string]string, error) {
 		calls++
 		v := row.SourceContent[0].(string)
-		rendered = append(rendered, v)
 		return map[string]string{"topic": "t/" + v}, nil
 	})
 	out := make(chan any, 100)
@@ -273,7 +271,6 @@ func TestBatchWriterDeferredPropsEvalUsesLastRowOnce(t *testing.T) {
 	rt, ok := result.(*xsql.RawTuple)
 	require.True(t, ok, "expect RawTuple, got %T", result)
 	assert.Equal(t, 1, calls)
-	assert.Equal(t, []string{"c"}, rendered)
 	assert.Equal(t, map[string]string{"topic": "t/c"}, rt.Props)
 }
 
@@ -299,7 +296,9 @@ func TestBatchWriterDeferredPropsEvalErrorStillEmitsBatch(t *testing.T) {
 	op.input <- xsql.BatchEOFTuple(time.Now())
 	// Accepted policy: the error is reported, but the batch is still emitted.
 	first := <-out
-	assert.Error(t, first.(error))
+	errOut, ok := first.(error)
+	require.True(t, ok, "expected error, got %T", first)
+	require.EqualError(t, errOut, "eval boom")
 	second := <-out
 	rt, ok := second.(*xsql.RawTuple)
 	require.True(t, ok, "expect RawTuple, got %T", second)
