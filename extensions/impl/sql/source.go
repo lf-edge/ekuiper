@@ -178,7 +178,7 @@ func (s *SQLSourceConnector) queryData(ctx api.StreamContext, rcvTime time.Time,
 	logger.Debugf("Query the database with %s", query)
 
 	queryStart := time.Now()
-	rows, err := s.conn.GetDB().Query(query)
+	rows, err := s.conn.GetDB().QueryContext(ctx, query)
 	failpoint.Inject("QueryErr", func() {
 		err = errors.New("QueryErr")
 	})
