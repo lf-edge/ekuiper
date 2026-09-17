@@ -42,10 +42,6 @@ func initRuleset() {
 }
 
 func initFromLoc(loc string) error {
-	return initFromLocWith(loc, rulesetProcessor.ImportForInit)
-}
-
-func initFromLocWith(loc string, importRuleset func([]byte) ([]int, bool, error)) error {
 	initFile := filepath.Join(loc, "init.json")
 	fileInfo, err := os.Stat(initFile)
 	if err != nil {
@@ -88,7 +84,7 @@ func initFromLocWith(loc string, importRuleset func([]byte) ([]int, bool, error)
 			return nil
 		}
 		conf.Log.Infof("start to initialize ruleset")
-		counts, failed, err := importRuleset(content)
+		counts, failed, err := rulesetProcessor.ImportForInit(content)
 		if err != nil {
 			conf.Log.Errorf("fail to import ruleset: %v", err)
 			return nil

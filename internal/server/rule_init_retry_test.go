@@ -15,40 +15,42 @@
 package server
 
 import (
-	"errors"
 	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
+	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 )
 
 func TestInitFromLocKeepsMarkerUntilSuccessful(t *testing.T) {
+	const name = "sf1024_retry_source"
+	t.Cleanup(func() { _, _ = streamProcessor.DropStream(name, ast.TypeStream) })
 	loc := t.TempDir()
 	initFile := filepath.Join(loc, "init.json")
-	require.NoError(t, os.WriteFile(initFile, []byte(`{"streams":{}}`), 0o644))
+	require.NoError(t, os.WriteFile(initFile, []byte(`{"streams":{"sf1024_retry_source":"not SQL"}}`), 0o644))
 	require.NoError(t, os.WriteFile(filepath.Join(loc, "initialized123"), nil, 0o644))
-	calls := 0
-	importer := func([]byte) ([]int, bool, error) {
-		calls++
-		return []int{0, 0, 0}, calls == 1, nil
-	}
-	require.NoError(t, initFromLocWith(loc, importer))
+	require.NoError(t, initFromLoc(loc))
 	require.EqualValues(t, 123, findInitializedTime(loc))
-	require.NoError(t, initFromLocWith(loc, importer))
+	require.NoError(t, os.WriteFile(initFile, []byte(`{"streams":{"sf1024_retry_source":"CREATE STREAM sf1024_retry_source () WITH (DATASOURCE=\"demo\", FORMAT=\"JSON\")"}}`), 0o644))
+	require.NoError(t, initFromLoc(loc))
 	info, err := os.Stat(initFile)
 	require.NoError(t, err)
 	require.Equal(t, info.ModTime().UnixMilli(), findInitializedTime(loc))
-	require.Equal(t, 2, calls)
+	_, err = streamProcessor.GetStream(name, ast.TypeStream)
+	require.NoError(t, err)
 }
 
 func TestInitFromLocVersionSkipCompletes(t *testing.T) {
+	const name = "sf1024_skip_source"
+	t.Cleanup(func() { _, _ = streamProcessor.DropStream(name, ast.TypeStream) })
+	_, err := streamProcessor.ExecReplaceStream(name, `CREATE STREAM sf1024_skip_source () WITH (DATASOURCE="demo", FORMAT="JSON", VERSION="2")`, ast.TypeStream)
+	require.NoError(t, err)
 	loc := t.TempDir()
 	initFile := filepath.Join(loc, "init.json")
-	require.NoError(t, os.WriteFile(initFile, []byte(`{"rules":{}}`), 0o644))
-	require.NoError(t, initFromLocWith(loc, func([]byte) ([]int, bool, error) {
-		return []int{0, 0, 0}, false, nil
-	}))
+	require.NoError(t, os.WriteFile(initFile, []byte(`{"streams":{"sf1024_skip_source":"CREATE STREAM sf1024_skip_source () WITH (DATASOURCE=\"demo\", FORMAT=\"JSON\", VERSION=\"1\")"}}`), 0o644))
+	require.NoError(t, initFromLoc(loc))
 	info, err := os.Stat(initFile)
 	require.NoError(t, err)
 	require.Equal(t, info.ModTime().UnixMilli(), findInitializedTime(loc))
@@ -57,15 +59,13 @@ func TestInitFromLocVersionSkipCompletes(t *testing.T) {
 func TestInitFromLocParseErrorDoesNotCreateMarker(t *testing.T) {
 	loc := t.TempDir()
 	require.NoError(t, os.WriteFile(filepath.Join(loc, "init.json"), []byte("not JSON"), 0o644))
-	require.NoError(t, initFromLocWith(loc, func([]byte) ([]int, bool, error) {
-		return nil, false, errors.New("invalid import file")
-	}))
+	require.NoError(t, initFromLoc(loc))
 	require.EqualValues(t, -1, findInitializedTime(loc))
 }
 
 func TestUnreadableInitDoesNotCreateMarker(t *testing.T) {
 	loc := t.TempDir()
 	require.NoError(t, os.Mkdir(filepath.Join(loc, "init.json"), 0o755))
-	require.NoError(t, initFromLocWith(loc, nil))
+	require.NoError(t, initFromLoc(loc))
 	require.EqualValues(t, -1, findInitializedTime(loc))
 }
