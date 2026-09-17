@@ -290,8 +290,14 @@ func (p *StreamProcessor) replaceStream(name string, statement string, st ast.St
 func (p *StreamProcessor) loadStreamForReplace(name string, kind ast.StreamType) (*ast.StreamStmt, error) {
 	var stored string
 	exists, err := p.db.Get(name, &stored)
-	if err != nil || !exists {
+	if err != nil {
 		return nil, err
+	}
+	if !exists {
+		exists, err = p.tempDb.Get(name, &stored)
+		if err != nil || !exists {
+			return nil, err
+		}
 	}
 	var info xsql.StreamInfo
 	if err := json.Unmarshal([]byte(stored), &info); err != nil || info.StreamType != kind {

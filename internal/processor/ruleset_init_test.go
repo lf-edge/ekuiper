@@ -145,6 +145,14 @@ func TestInitVersionSkipAndSharedOrder(t *testing.T) {
 	require.ErrorContains(t, err, "already exists with version")
 }
 
+func TestReplaceStreamHonorsTemporaryVersion(t *testing.T) {
+	_, sp, _ := newDefinitionTestRuleset(t)
+	_, err := sp.ExecStmt(`CREATE STREAM temp_source () WITH (DATASOURCE="demo", FORMAT="JSON", TEMP=true, VERSION="2")`)
+	require.NoError(t, err)
+	_, err = sp.ExecReplaceStream("temp_source", `CREATE STREAM temp_source () WITH (DATASOURCE="demo", FORMAT="JSON", VERSION="1")`, ast.TypeStream)
+	require.ErrorContains(t, err, "already exists with version")
+}
+
 func TestInitCorruptDefinitionsAreReplaced(t *testing.T) {
 	for _, tc := range []struct {
 		name, kind, corrupt, definition string
