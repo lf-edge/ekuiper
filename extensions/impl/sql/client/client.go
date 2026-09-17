@@ -92,7 +92,7 @@ func (s *SQLConnection) Reconnect() error {
 		}
 		_ = s.db.Close()
 	}
-	if err := s.dial(nil); err != nil {
+	if err := s.dial(context.Background()); err != nil {
 		return fmt.Errorf("reconnect sql err:%v", err)
 	}
 	return nil
@@ -141,9 +141,6 @@ func CreateConnection(ctx api.StreamContext) modules.Connection {
 }
 
 func (s *SQLConnection) dial(ctx context.Context) error {
-	if ctx == nil {
-		ctx = context.Background()
-	}
 	db, err := openDB(s.url)
 	if err != nil {
 		return fmt.Errorf("create connection err:%v", err)
