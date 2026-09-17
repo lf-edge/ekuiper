@@ -16,6 +16,7 @@ package server
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -74,6 +75,11 @@ func initFromLocWith(loc string, importRuleset func([]byte) (processor.InitImpor
 		result, err := importRuleset(content)
 		if err != nil {
 			conf.Log.Errorf("fail to import ruleset: %v", err)
+			var formatErr *processor.InitJSONError
+			if !errors.As(err, &formatErr) {
+				conf.Log.Warn("init.json has an unclassified failure; initialized marker will not be updated")
+				return nil
+			}
 		} else {
 			for _, object := range result.Objects {
 				switch object.Outcome {

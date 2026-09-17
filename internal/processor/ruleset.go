@@ -181,6 +181,14 @@ type InitImportResult struct {
 	Objects []InitObjectResult
 }
 
+// InitJSONError means the init.json content itself cannot be decoded.
+type InitJSONError struct {
+	Err error
+}
+
+func (e *InitJSONError) Error() string { return fmt.Sprintf("invalid import file: %v", e.Err) }
+func (e *InitJSONError) Unwrap() error { return e.Err }
+
 func (r InitImportResult) HasRetryableFailure() bool {
 	for _, object := range r.Objects {
 		if object.Outcome == InitRetryableError {
@@ -196,7 +204,7 @@ func (r InitImportResult) HasRetryableFailure() bool {
 func (rs *RulesetProcessor) ImportForInit(content []byte) (InitImportResult, error) {
 	var all Ruleset
 	if err := json.Unmarshal(content, &all); err != nil {
-		return InitImportResult{}, fmt.Errorf("invalid import file: %v", err)
+		return InitImportResult{}, &InitJSONError{Err: err}
 	}
 	var result InitImportResult
 	for name, statement := range all.Streams {
