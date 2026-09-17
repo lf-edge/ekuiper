@@ -22,14 +22,18 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cenkalti/backoff/v4"
+
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
+	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
 
 type RulesetProcessor struct {
-	r *RuleProcessor
-	s *StreamProcessor
+	r              *RuleProcessor
+	s              *StreamProcessor
+	newInitBackoff func() backoff.BackOff
 }
 
 type Ruleset struct {
@@ -42,6 +46,9 @@ func NewRulesetProcessor(r *RuleProcessor, s *StreamProcessor) *RulesetProcessor
 	return &RulesetProcessor{
 		r: r,
 		s: s,
+		newInitBackoff: func() backoff.BackOff {
+			return backoff.WithMaxRetries(backoff.NewConstantBackOff(100*time.Millisecond), 2)
+		},
 	}
 }
 
@@ -146,23 +153,37 @@ func (rs *RulesetProcessor) Import(content []byte) ([]string, []int, error) {
 	return rules, counts, nil
 }
 
-// InitImportFailure describes the final outcome of one init.json object.
-type InitImportFailure struct {
-	Kind      string
-	Name      string
-	Err       error
-	Retryable bool
-	Attempts  int
+type InitOutcome int
+
+const (
+	InitApplied InitOutcome = iota
+	InitSkipped
+	InitTerminalError
+	InitRetryableError
+)
+
+type InitObjectResult struct {
+	Kind     string
+	Name     string
+	Outcome  InitOutcome
+	Err      error
+	Attempts int
+}
+
+type InitCounts struct {
+	Streams int
+	Tables  int
+	Rules   int
 }
 
 type InitImportResult struct {
-	Counts   [3]int
-	Failures []InitImportFailure
+	Counts  InitCounts
+	Objects []InitObjectResult
 }
 
 func (r InitImportResult) HasRetryableFailure() bool {
-	for _, failure := range r.Failures {
-		if failure.Retryable {
+	for _, object := range r.Objects {
+		if object.Outcome == InitRetryableError {
 			return true
 		}
 	}
@@ -179,100 +200,125 @@ func (rs *RulesetProcessor) ImportForInit(content []byte) (InitImportResult, err
 	}
 	var result InitImportResult
 	for name, statement := range all.Streams {
-		result.addSource(rs.s, name, statement, ast.TypeStream, 0)
+		result.add(rs.applySource(name, statement, ast.TypeStream))
 	}
 	for name, statement := range all.Tables {
-		result.addSource(rs.s, name, statement, ast.TypeTable, 1)
+		result.add(rs.applySource(name, statement, ast.TypeTable))
 	}
 	for name, ruleJSON := range all.Rules {
-		if _, err := rs.r.GetRuleByJson(name, ruleJSON); err != nil {
-			result.Failures = append(result.Failures, InitImportFailure{Kind: "rule", Name: name, Err: err, Attempts: 1})
-			continue
-		}
-		attempts, err := retryInitCreate(func() error {
-			_, e := rs.r.ExecCreateWithValidation(name, ruleJSON)
-			return e
-		}, func(e error) bool {
-			return isStableRuleConflict(rs, name, ruleJSON, e)
-		})
-		if err != nil {
-			result.Failures = append(result.Failures, InitImportFailure{
-				Kind: "rule", Name: name, Err: err, Retryable: !isStableRuleConflict(rs, name, ruleJSON, err), Attempts: attempts,
-			})
-			continue
-		}
-		result.Counts[2]++
+		result.add(rs.applyRule(name, ruleJSON))
 	}
 	return result, nil
 }
 
-func (r *InitImportResult) addSource(s *StreamProcessor, name, statement string, kind ast.StreamType, countIndex int) {
-	if err := validateInitSource(name, statement, kind); err != nil {
-		r.Failures = append(r.Failures, InitImportFailure{Kind: ast.StreamTypeMap[kind], Name: name, Err: err, Attempts: 1})
+func (r *InitImportResult) add(object InitObjectResult) {
+	r.Objects = append(r.Objects, object)
+	if object.Outcome != InitApplied {
 		return
 	}
-	attempts, err := retryInitCreate(func() error {
-		_, e := s.ExecReplaceStream(name, statement, kind)
-		return e
-	}, func(e error) bool {
-		return isStableSourceConflict(e)
-	})
+	switch object.Kind {
+	case "stream":
+		r.Counts.Streams++
+	case "table":
+		r.Counts.Tables++
+	case "rule":
+		r.Counts.Rules++
+	}
+}
+
+func (rs *RulesetProcessor) applySource(name, statement string, kind ast.StreamType) InitObjectResult {
+	r := InitObjectResult{Kind: ast.StreamTypeMap[kind], Name: name, Outcome: InitTerminalError, Attempts: 1}
+	source, err := parseReplaceSource(name, statement, kind)
 	if err != nil {
-		r.Failures = append(r.Failures, InitImportFailure{
-			Kind: ast.StreamTypeMap[kind], Name: name, Err: err, Retryable: !isStableSourceConflict(err), Attempts: attempts,
-		})
-		return
+		r.Err = err
+		return r
 	}
-	r.Counts[countIndex]++
-}
-
-func validateInitSource(name, statement string, kind ast.StreamType) error {
-	stmt, err := xsql.Language.Parse(xsql.NewParser(strings.NewReader(statement)))
+	var stored string
+	exists, err := rs.s.db.Get(name, &stored)
 	if err != nil {
-		return err
+		r.Outcome, r.Err = InitRetryableError, err
+		return r
 	}
-	source, ok := stmt.(*ast.StreamStmt)
-	if !ok || source.StreamType != kind {
-		return fmt.Errorf("invalid %s statement", ast.StreamTypeMap[kind])
-	}
-	if string(source.Name) != name {
-		return fmt.Errorf("the SQL statement must create %s %s", ast.StreamTypeMap[kind], name)
-	}
-	if source.Options == nil {
-		return fmt.Errorf("missing options for %s %s", ast.StreamTypeMap[kind], name)
-	}
-	if source.Options.Temp {
-		return fmt.Errorf("cannot initialize %s %s with temp option", ast.StreamTypeMap[kind], name)
-	}
-	return nil
-}
-
-func isStableSourceConflict(err error) bool {
-	message := err.Error()
-	return strings.Contains(message, "already exists with version") ||
-		strings.Contains(message, "do not support to change stream SHARED option")
-}
-
-func isStableRuleConflict(rs *RulesetProcessor, name, ruleJSON string, err error) bool {
-	if !strings.Contains(err.Error(), "already exists with version") {
-		return false
-	}
-	rule, parseErr := rs.r.GetRuleByJson(name, ruleJSON)
-	if parseErr != nil {
-		return true
-	}
-	old, getErr := rs.r.GetRuleById(rule.Id)
-	return getErr == nil && !CanReplace(old.Version, rule.Version)
-}
-
-func retryInitCreate(create func() error, permanent func(error) bool) (int, error) {
-	for attempt := 1; ; attempt++ {
-		err := create()
-		if err == nil || permanent(err) || attempt == 3 {
-			return attempt, err
+	if exists {
+		var info xsql.StreamInfo
+		if err := json.Unmarshal(cast.StringToBytes(stored), &info); err != nil {
+			r.Outcome, r.Err = InitRetryableError, err
+			return r
 		}
-		time.Sleep(time.Duration(attempt) * 100 * time.Millisecond)
+		if info.StreamType == kind {
+			oldStmt, err := xsql.Language.Parse(xsql.NewParser(strings.NewReader(info.Statement)))
+			if err != nil {
+				r.Outcome, r.Err = InitRetryableError, err
+				return r
+			}
+			old, ok := oldStmt.(*ast.StreamStmt)
+			if !ok || old.Options == nil {
+				r.Outcome, r.Err = InitRetryableError, fmt.Errorf("stored %s %s is invalid", r.Kind, name)
+				return r
+			}
+			if source.Options.SHARED != old.Options.SHARED {
+				r.Err = fmt.Errorf("cannot change %s %s SHARED option", r.Kind, name)
+				return r
+			}
+			if !CanReplace(old.Options.VERSION, source.Options.VERSION) {
+				r.Outcome = InitSkipped
+				return r
+			}
+		}
 	}
+	r.Outcome = InitRetryableError
+	r.Err = rs.s.execSaveWithPersist(source, statement, true, func(write func() error) error {
+		r.Attempts, err = rs.retryInitApply(write)
+		return err
+	})
+	if r.Err == nil {
+		r.Outcome = InitApplied
+	}
+	return r
+}
+
+func (rs *RulesetProcessor) applyRule(name, ruleJSON string) InitObjectResult {
+	r := InitObjectResult{Kind: "rule", Name: name, Outcome: InitTerminalError, Attempts: 1}
+	rule, err := rs.r.GetRuleByJson(name, ruleJSON)
+	if err != nil {
+		r.Err = err
+		return r
+	}
+	var stored string
+	exists, err := rs.r.db.Get(rule.Id, &stored)
+	if err != nil {
+		r.Outcome, r.Err = InitRetryableError, err
+		return r
+	}
+	if exists {
+		old, err := rs.r.GetRuleByJsonValidated(rule.Id, stored)
+		if err != nil {
+			r.Outcome, r.Err = InitRetryableError, err
+			return r
+		}
+		if !CanReplace(old.Version, rule.Version) {
+			r.Outcome = InitSkipped
+			return r
+		}
+	}
+	if !rule.Temp {
+		r.Attempts, r.Err = rs.retryInitApply(func() error { return rs.r.db.Set(rule.Id, ruleJSON) })
+		if r.Err != nil {
+			r.Outcome = InitRetryableError
+			return r
+		}
+	}
+	r.Outcome = InitApplied
+	return r
+}
+
+func (rs *RulesetProcessor) retryInitApply(write func() error) (int, error) {
+	attempts := 0
+	err := backoff.Retry(func() error {
+		attempts++
+		return write()
+	}, rs.newInitBackoff())
+	return attempts, err
 }
 
 func (rs *RulesetProcessor) ImportRuleSet(all Ruleset) Ruleset {

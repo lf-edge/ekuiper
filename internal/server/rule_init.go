@@ -24,9 +24,11 @@ import (
 	"time"
 
 	"github.com/Rookiecom/cpuprofile"
+	"github.com/cenkalti/backoff/v4"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/schedule"
+	"github.com/lf-edge/ekuiper/v2/internal/processor"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/rule/machine"
 	"github.com/lf-edge/ekuiper/v2/metrics"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
@@ -42,6 +44,12 @@ func initRuleset() {
 }
 
 func initFromLoc(loc string) error {
+	return initFromLocWith(loc, rulesetProcessor.ImportForInit, func() backoff.BackOff {
+		return backoff.WithMaxRetries(backoff.NewConstantBackOff(100*time.Millisecond), 2)
+	})
+}
+
+func initFromLocWith(loc string, importRuleset func([]byte) (processor.InitImportResult, error), newBackoff func() backoff.BackOff) error {
 	initFile := filepath.Join(loc, "init.json")
 	fileInfo, err := os.Stat(initFile)
 	if err != nil {
@@ -54,28 +62,28 @@ func initFromLoc(loc string) error {
 	// Only leave one initialized file each time. Due to the time shift in some system, compare time is not a good idea
 	if updateTime != lastUpdate {
 		var content []byte
-		for attempt := 1; attempt <= 3; attempt++ {
+		err = backoff.Retry(func() error {
 			content, err = os.ReadFile(initFile)
-			if err == nil {
-				break
-			}
-			if attempt < 3 {
-				time.Sleep(time.Duration(attempt) * 100 * time.Millisecond)
-			}
-		}
+			return err
+		}, newBackoff())
 		if err != nil {
 			conf.Log.Errorf("fail to read init file: %v", err)
 			return nil
 		}
 		conf.Log.Infof("start to initialize ruleset")
-		result, err := rulesetProcessor.ImportForInit(content)
+		result, err := importRuleset(content)
 		if err != nil {
 			conf.Log.Errorf("fail to import ruleset: %v", err)
 		} else {
-			for _, failure := range result.Failures {
-				conf.Log.Warnf("Fail to import %s %s after %d attempt(s) (retryable=%t): %v", failure.Kind, failure.Name, failure.Attempts, failure.Retryable, failure.Err)
+			for _, object := range result.Objects {
+				switch object.Outcome {
+				case processor.InitSkipped:
+					conf.Log.Infof("Skip %s %s: existing version is newer or equal", object.Kind, object.Name)
+				case processor.InitTerminalError, processor.InitRetryableError:
+					conf.Log.Warnf("Fail to import %s %s after %d attempt(s) (retryable=%t): %v", object.Kind, object.Name, object.Attempts, object.Outcome == processor.InitRetryableError, object.Err)
+				}
 			}
-			conf.Log.Infof("initialize %d streams, %d tables and %d rules", result.Counts[0], result.Counts[1], result.Counts[2])
+			conf.Log.Infof("initialize %d streams, %d tables and %d rules", result.Counts.Streams, result.Counts.Tables, result.Counts.Rules)
 			if result.HasRetryableFailure() {
 				conf.Log.Warn("init.json has retryable failures; initialized marker will not be updated")
 				return nil
@@ -89,19 +97,34 @@ func initFromLoc(loc string) error {
 }
 
 func writeInitialized(loc string, updateTime int64) error {
+	return writeInitializedWithReadDir(loc, updateTime, os.ReadDir)
+}
+
+func writeInitializedWithReadDir(loc string, updateTime int64, readDir func(string) ([]os.DirEntry, error)) error {
 	name := fmt.Sprintf("initialized%d", updateTime)
-	file, err := os.OpenFile(filepath.Join(loc, name), os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o644)
+	path := filepath.Join(loc, name)
+	file, err := os.OpenFile(path, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o644)
+	created := err == nil
 	if err != nil {
 		if !os.IsExist(err) {
 			return err
 		}
+		info, statErr := os.Stat(path)
+		if statErr != nil {
+			return statErr
+		}
+		if !info.Mode().IsRegular() {
+			return fmt.Errorf("initialized marker %s is not a regular file", path)
+		}
 	} else if err := file.Close(); err != nil {
-		_ = os.Remove(filepath.Join(loc, name))
+		_ = os.Remove(path)
 		return err
 	}
-	entries, err := os.ReadDir(loc)
+	entries, err := readDir(loc)
 	if err != nil {
-		_ = os.Remove(filepath.Join(loc, name))
+		if created {
+			_ = os.Remove(path)
+		}
 		return err
 	}
 	for _, entry := range entries {

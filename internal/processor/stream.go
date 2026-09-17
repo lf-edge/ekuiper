@@ -198,6 +198,12 @@ func (p *StreamProcessor) RecoverLookupTable() (err error) {
 }
 
 func (p *StreamProcessor) execSave(stmt *ast.StreamStmt, statement string, replace bool) error {
+	return p.execSaveWithPersist(stmt, statement, replace, func(write func() error) error { return write() })
+}
+
+// execSaveWithPersist lets startup retry only the database write. In particular,
+// a lookup table's DropInstance/CreateInstance must run at most once per apply.
+func (p *StreamProcessor) execSaveWithPersist(stmt *ast.StreamStmt, statement string, replace bool, persist func(func() error) error) error {
 	if stmt.StreamType == ast.TypeTable && stmt.Options.KIND == ast.StreamKindLookup {
 		_ = lookup.DropInstance(string(stmt.Name))
 		log.Infof("Creating lookup table %s", stmt.Name)
@@ -217,15 +223,15 @@ func (p *StreamProcessor) execSave(stmt *ast.StreamStmt, statement string, repla
 	}
 	if !stmt.Options.Temp {
 		if replace {
-			err = p.db.Set(string(stmt.Name), string(s))
+			err = persist(func() error { return p.db.Set(string(stmt.Name), string(s)) })
 		} else {
-			err = p.db.Setnx(string(stmt.Name), string(s))
+			err = persist(func() error { return p.db.Setnx(string(stmt.Name), string(s)) })
 		}
 	} else {
 		if replace {
-			err = p.tempDb.Set(string(stmt.Name), string(s))
+			err = persist(func() error { return p.tempDb.Set(string(stmt.Name), string(s)) })
 		} else {
-			err = p.tempDb.Setnx(string(stmt.Name), string(s))
+			err = persist(func() error { return p.tempDb.Setnx(string(stmt.Name), string(s)) })
 		}
 	}
 	return err
@@ -240,42 +246,49 @@ func (p *StreamProcessor) ExecReplaceStream(name string, statement string, st as
 		}
 	}()
 
-	parser := xsql.NewParser(strings.NewReader(statement))
-	stmt, err := xsql.Language.Parse(parser)
+	s, err := parseReplaceSource(name, statement, st)
 	if err != nil {
 		return "", err
 	}
 	stt := ast.StreamTypeMap[st]
-	switch s := stmt.(type) {
-	case *ast.StreamStmt:
-		if s.StreamType != st {
-			return "", errorx.NewWithCode(errorx.NOT_FOUND, fmt.Sprintf("%s %s is not found", ast.StreamTypeMap[st], s.Name))
-		}
-		if string(s.Name) != name {
-			return "", fmt.Errorf("Replace %s fails: the sql statement must update the %s source.", name, name)
-		}
-		if s.Options.Temp {
-			return "", fmt.Errorf("Replace %s fails: cannot replace with temp option.", name)
-		}
-		// compare version
-		old, _ := p.DescStream(name, s.StreamType)
-		if old != nil && s.Options.SHARED != old.(*ast.StreamStmt).Options.SHARED {
-			return "", fmt.Errorf("Replace %s fails: do not support to change stream SHARED option.", name)
-		}
-		if old != nil && !CanReplace(old.(*ast.StreamStmt).Options.VERSION, s.Options.VERSION) {
-			return "", fmt.Errorf("source %s already exists with version (%s), new version (%s) is lower", name, old.(*ast.StreamStmt).Options.VERSION, s.Options.VERSION)
-		}
-		err = p.execSave(s, statement, true)
-		if err != nil {
-			return "", fmt.Errorf("Replace %s fails: %v.", stt, err)
-		} else {
-			info := fmt.Sprintf("%s %s is replaced.", cases.Title(language.Und).String(stt), s.Name)
-			log.Printf("%s", info)
-			return info, nil
-		}
-	default:
-		return "", fmt.Errorf("Invalid %s statement: %s", stt, statement)
+	// compare version
+	old, _ := p.DescStream(name, s.StreamType)
+	if old != nil && s.Options.SHARED != old.(*ast.StreamStmt).Options.SHARED {
+		return "", fmt.Errorf("Replace %s fails: do not support to change stream SHARED option.", name)
 	}
+	if old != nil && !CanReplace(old.(*ast.StreamStmt).Options.VERSION, s.Options.VERSION) {
+		return "", fmt.Errorf("source %s already exists with version (%s), new version (%s) is lower", name, old.(*ast.StreamStmt).Options.VERSION, s.Options.VERSION)
+	}
+	if err := p.execSave(s, statement, true); err != nil {
+		return "", fmt.Errorf("Replace %s fails: %v.", stt, err)
+	}
+	info = fmt.Sprintf("%s %s is replaced.", cases.Title(language.Und).String(stt), s.Name)
+	log.Printf("%s", info)
+	return info, nil
+}
+
+func parseReplaceSource(name, statement string, st ast.StreamType) (*ast.StreamStmt, error) {
+	stmt, err := xsql.Language.Parse(xsql.NewParser(strings.NewReader(statement)))
+	if err != nil {
+		return nil, err
+	}
+	s, ok := stmt.(*ast.StreamStmt)
+	if !ok {
+		return nil, fmt.Errorf("Invalid %s statement: %s", ast.StreamTypeMap[st], statement)
+	}
+	if s.StreamType != st {
+		return nil, errorx.NewWithCode(errorx.NOT_FOUND, fmt.Sprintf("%s %s is not found", ast.StreamTypeMap[st], s.Name))
+	}
+	if string(s.Name) != name {
+		return nil, fmt.Errorf("Replace %s fails: the sql statement must update the %s source.", name, name)
+	}
+	if s.Options == nil {
+		return nil, fmt.Errorf("Replace %s fails: missing source options.", name)
+	}
+	if s.Options.Temp {
+		return nil, fmt.Errorf("Replace %s fails: cannot replace with temp option.", name)
+	}
+	return s, nil
 }
 
 func (p *StreamProcessor) ExecStreamSql(statement string) (info string, err error) {
