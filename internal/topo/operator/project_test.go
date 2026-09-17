@@ -21,6 +21,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
@@ -3674,4 +3675,56 @@ func BenchmarkSliceProjectEvaluation(b *testing.B) {
 			b.Fatal(err)
 		}
 	}
+}
+
+func TestProjectSlicePrealloc(t *testing.T) {
+	const width = 150
+	cols := make([]string, 0, width)
+	for i := 0; i < width; i++ {
+		cols = append(cols, fmt.Sprintf("c%d", i))
+	}
+	sql := "SELECT " + strings.Join(cols, ", ") + " FROM test"
+	stmt, err := xsql.NewParser(strings.NewReader(sql)).Parse()
+	require.NoError(t, err)
+	newPP := func() *ProjectOp {
+		pp := &ProjectOp{IsAggregate: false}
+		parseStmtWithSlice(pp, stmt.Fields, false)
+		pp.FieldLen = width
+		// dense sink indexes like the planner assigns
+		for i, f := range pp.Fields {
+			if fr, ok := f.Expr.(*ast.FieldRef); ok {
+				fr.Index = i
+				fr.SourceIndex = i
+				fr.HasIndex = true
+			}
+		}
+		return pp
+	}
+	mkRow := func() *xsql.SliceTuple {
+		src := make(model.SliceVal, width)
+		for i := range src {
+			src[i] = i
+		}
+		return &xsql.SliceTuple{SourceContent: src}
+	}
+	contextLogger := conf.Log.WithField("rule", "TestProjectSlicePrealloc")
+	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
+	fv, afv := xsql.NewFunctionValuersForOp(nil)
+
+	// correctness
+	pp := newPP()
+	out := pp.Apply(ctx, mkRow(), fv, afv)
+	rt, ok := out.(*xsql.SliceTuple)
+	require.True(t, ok)
+	require.Equal(t, width, len(rt.SourceContent))
+	for i := 0; i < width; i++ {
+		assert.Equal(t, i, rt.SourceContent[i])
+	}
+
+	// allocation: one pre-sized sink array per row instead of O(n) appends
+	pp2 := newPP()
+	allocs := testing.AllocsPerRun(20, func() {
+		_ = pp2.Apply(ctx, mkRow(), fv, afv)
+	})
+	assert.LessOrEqual(t, allocs, float64(10), "projecting %d cols should not grow the sink slice incrementally", width)
 }
