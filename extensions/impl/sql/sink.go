@@ -317,7 +317,7 @@ func (s *SQLSinkConnector) writeToDB(ctx api.StreamContext, sqlStr string) error
 		}
 	}
 	start := time.Now()
-	r, err := s.conn.GetDB().Exec(sqlStr)
+	r, err := s.conn.GetDB().ExecContext(ctx, sqlStr)
 	failpoint.Inject("dbErr", func() {
 		err = errors.New("dbErr")
 	})
