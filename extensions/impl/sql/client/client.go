@@ -107,14 +107,14 @@ func (s *SQLConnection) GetDB() *sql.DB {
 func (s *SQLConnection) Ping(ctx api.StreamContext) error {
 	s.Lock()
 	defer s.Unlock()
+	pingCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
+	defer cancel()
 	if s.db == nil {
-		err := s.dial(ctx)
+		err := s.dial(pingCtx)
 		if err != nil {
 			return err
 		}
 	}
-	pingCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
-	defer cancel()
 	return s.db.PingContext(pingCtx)
 }
 
@@ -140,12 +140,15 @@ func CreateConnection(ctx api.StreamContext) modules.Connection {
 	return &SQLConnection{}
 }
 
-func (s *SQLConnection) dial(ctx api.StreamContext) error {
+func (s *SQLConnection) dial(ctx context.Context) error {
+	if ctx == nil {
+		ctx = context.Background()
+	}
 	db, err := openDB(s.url)
 	if err != nil {
 		return fmt.Errorf("create connection err:%v", err)
 	}
-	if err := db.Ping(); err != nil {
+	if err := db.PingContext(ctx); err != nil {
 		_ = db.Close()
 		// A database URL can be syntactically valid while the database is
 		// temporarily unreachable. Let the connection pool retry this case.

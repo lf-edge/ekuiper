@@ -401,7 +401,7 @@ func (s *SQLSinkConnector) writeStmtsTx(ctx api.StreamContext, stmts []builtStmt
 	if err := s.ensureConnected(ctx); err != nil {
 		return err
 	}
-	tx, err := s.conn.GetDB().Begin()
+	tx, err := s.conn.GetDB().BeginTx(ctx, nil)
 	if err != nil {
 		s.needReconnect = true
 		return errorx.NewIOErr(err.Error())
@@ -415,7 +415,7 @@ func (s *SQLSinkConnector) writeStmtsTx(ctx api.StreamContext, stmts []builtStmt
 	start := time.Now()
 	for _, st := range stmts {
 		ctx.GetLogger().Debugf("%s with args %v", st.sql, st.args)
-		_, err := tx.Exec(st.sql, st.args...)
+		_, err := tx.ExecContext(ctx, st.sql, st.args...)
 		failpoint.Inject("dbErr", func() {
 			err = errors.New("dbErr")
 		})
@@ -509,7 +509,7 @@ func (s *SQLSinkConnector) writeToDB(ctx api.StreamContext, sqlStr string, args 
 		return err
 	}
 	start := time.Now()
-	r, err := s.conn.GetDB().ExecContext(ctx, sqlStr)
+	r, err := s.conn.GetDB().ExecContext(ctx, sqlStr, args...)
 	failpoint.Inject("dbErr", func() {
 		err = errors.New("dbErr")
 	})
