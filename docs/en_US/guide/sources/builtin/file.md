@@ -118,6 +118,9 @@ default:
 - **`fileType`**: Defines the type of file. Supported values are `raw`, `json`, `csv`, and `lines`. Among them, `raw`
   type will read the binary data of the whole file. Usually, the stream format should be binary to for such file type.
 - **`path`**: Specifies the directory of the file, either relative to the Kuiper root or an absolute path. Note: Do not include the file name here. The file name should be defined in the stream data source.
+  For security reasons, the resolved file location is restricted to the eKuiper data directory by default. Paths outside
+  the data directory (such as `/tmp`) are rejected unless `allowExternalFileAccess` is set to `true` in the global
+  configuration.
 
 ### Reading & Sending Intervals
 

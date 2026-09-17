@@ -25,6 +25,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/topotest/mockclock"
@@ -231,7 +232,13 @@ func TestCollectRolling(t *testing.T) {
 				assert.Equal(t, contents, tt.contents[i])
 			}
 			exp := []string{"test_lines-460.log", "test_lines-1810.log"}
-			assert.Equal(t, hook.result, exp)
+			expAbs := make([]string, 0, len(exp))
+			for _, e := range exp {
+				a, err := filepath.Abs(e)
+				require.NoError(t, err)
+				expAbs = append(expAbs, a)
+			}
+			assert.Equal(t, expAbs, hook.result)
 		})
 	}
 }

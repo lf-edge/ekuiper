@@ -35,6 +35,7 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/filex"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
@@ -171,26 +172,9 @@ func ReadFile(uri string) (io.ReadCloser, error) {
 				return nil, fmt.Errorf("failed to get data directory: %w", err)
 			}
 			uploadsDir := filepath.Join(dataDir, "uploads")
-			// Check if path is under uploads directory
-			absPath, err := filepath.Abs(u.Path)
-			if err != nil {
-				return nil, fmt.Errorf("failed to resolve path: %w", err)
-			}
-			absUploadsDir, err := filepath.Abs(uploadsDir)
-			if err != nil {
-				return nil, fmt.Errorf("failed to resolve uploads directory: %w", err)
-			}
-			relPath, err := filepath.Rel(absUploadsDir, absPath)
-			if err != nil || strings.HasPrefix(relPath, "..") {
-				return nil, fmt.Errorf("file access denied: path must be under %s", uploadsDir)
-			}
-			// Use OpenRoot for sandboxed file access
-			root, err := os.OpenRoot(absUploadsDir)
-			if err != nil {
-				return nil, fmt.Errorf("failed to open uploads directory: %w", err)
-			}
-			defer root.Close()
-			srcFile, err := root.Open(relPath)
+			// Shared containment: lexical gate plus canonical comparison
+			// against the uploads root, then sandboxed open.
+			srcFile, err := filex.OpenUnderRoot(uploadsDir, u.Path)
 			if err != nil {
 				return nil, err
 			}
@@ -285,7 +269,7 @@ func DownloadFile(folder string, name string, uri string) (string, error) {
 	// Write the body to file
 	_, err = io.Copy(out, src)
 	if err != nil {
-		_ = os.Remove(out.Name())
+		_ = root.Remove(name)
 		return "", err
 	}
 	return out.Name(), nil

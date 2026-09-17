@@ -50,7 +50,9 @@ basic:
   enableRestAuditLog: false
   # If it is enabled, the rule functions can access the private network.
   enablePrivateNet: false
-  # If it is enabled, APIs can access files outside the data/uploads directory.
+  # Allow access to files outside the allowed directories:
+  # the eKuiper upload directory for file downloads, the data directory
+  # for file sink/source and RPC import/export.
   allowExternalFileAccess: false
 ```
 
@@ -63,10 +65,13 @@ is false for security.
 > addresses is blocked by default. If your rules rely on accessing local resources (e.g., local REST services, local
 > files), you MUST set this configuration to `true`.
 
-The configuration item **allowExternalFileAccess** is used to specify whether file access APIs (e.g. file:// URLs in plugins/schemas) can access files outside the `data/uploads` directory. Default is false for security - only files in the uploads directory are accessible. This prevents path traversal attacks.
+The configuration item **allowExternalFileAccess** is used to specify whether file access APIs can access files outside the allowed directories. Default is false for security. This prevents path traversal attacks. When enabled, it grants unrestricted filesystem paths to all of the following:
+- file:// URLs in plugins/schemas (otherwise restricted to the `data/uploads` directory);
+- file sink paths (relative paths resolve against the data directory) and file source paths (relative directories resolve against the eKuiper root, e.g. the default `data`); both are contained in the data directory;
+- RPC import/export file arguments (otherwise restricted to the data directory).
 
 > [!WARNING]
-> When `allowExternalFileAccess` is `false` (default), all file:// URL access is restricted to the `data/uploads` directory. Set to `true` only if you need to access files from other locations on the filesystem.
+> When `allowExternalFileAccess` is `false` (default), file:// URL access is restricted to the `data/uploads` directory, and file connector paths and RPC import/export files are contained in the data directory (sink relative paths resolve against it; source relative directories resolve against the eKuiper root). The option is all-or-nothing: enabling it for one use case (e.g. uploaded plugin files) also permits unrestricted filesystem paths through the other two. Set to `true` only if you need to access files from other locations on the filesystem.
 
 for debug option in basic following env is valid `KUIPER__BASIC__DEBUG=true` and if used debug value will be set to true.
 
@@ -299,20 +304,20 @@ In order to use redis as store type property must be changed into redis value.
 
 It has properties
 
-* name - name of database file - if left empty it will be `sqliteKV.db`
+- name - name of database file - if left empty it will be `sqliteKV.db`
 
 ### Redis
 
 It has properties
 
-* host     - host of redis
-* port     - port of redis
-* password - password used for auth in redis, if left empty auth won't be used
-* timeout  - timeout fo connection
-* connectionSelector - reuse the connection info defined in etc/connections/connection.yaml, mainly used for edgeX redis in secure mode
-  * only applicable to redis connection information
-  * the server, port and password in connection info will overwrite the host port and password above
-  * [more info](../guide/sources/builtin/edgex.md#connection-reusability)
+- host     - host of redis
+- port     - port of redis
+- password - password used for auth in redis, if left empty auth won't be used
+- timeout  - timeout fo connection
+- connectionSelector - reuse the connection info defined in etc/connections/connection.yaml, mainly used for edgeX redis in secure mode
+  - only applicable to redis connection information
+  - the server, port and password in connection info will overwrite the host port and password above
+  - [more info](../guide/sources/builtin/edgex.md#connection-reusability)
 
 ### External State
 
@@ -368,15 +373,15 @@ ruleset. The ruleset will only be import on the first startup of eKuiper.
 
 eKuiper uses sqlite by default to store some meta-information. At the same time, eKuiper also supports using FoundationDB as meta-storage data. We can achieve this through the following steps:
 
-* Confirm that the environment where eKuiper is located has installed and started FoundationDB, and confirm the storage path used by FoundationDB. Please refer to [Official Document](https://apple.github.io/foundationdb/administration.html#default-cluster-file)
-* Confirm the APIVersion of the fdb c language library used by the eKuiper host, and replace the eKuiper dependent library with the corresponding version. Taking APIVersion 6.2.0 as an example, execute the following command in the eKuiper home directory:
+- Confirm that the environment where eKuiper is located has installed and started FoundationDB, and confirm the storage path used by FoundationDB. Please refer to [Official Document](https://apple.github.io/foundationdb/administration.html#default-cluster-file)
+- Confirm the APIVersion of the fdb c language library used by the eKuiper host, and replace the eKuiper dependent library with the corresponding version. Taking APIVersion 6.2.0 as an example, execute the following command in the eKuiper home directory:
 
 ```shell
 go get github.com/apple/foundationdb/bindings/go@6.2.0
 ```
 
-* Execute `make build_with_fdb` to compile kuiperd
-* Modify the configuration as follows:
+- Execute `make build_with_fdb` to compile kuiperd
+- Modify the configuration as follows:
 
 ```yaml
     store:

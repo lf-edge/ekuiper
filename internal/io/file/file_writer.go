@@ -46,6 +46,7 @@ type fileWriter struct {
 
 func (m *fileSink) createFileWriter(ctx api.StreamContext, fn string, ft FileType, headers string, compressAlgorithm string, encryption string) (_ *fileWriter, ge error) {
 	ctx.GetLogger().Infof("Create new file writer for %s", fn)
+	// fn is the canonical path validated by Collect.
 	fws := &fileWriter{Start: timex.GetNow()}
 	var (
 		f   *os.File
@@ -53,7 +54,7 @@ func (m *fileSink) createFileWriter(ctx api.StreamContext, fn string, ft FileTyp
 	)
 	Dir := filepath.Dir(fn)
 	if _, err = os.Stat(Dir); os.IsNotExist(err) {
-		if err := os.Mkdir(Dir, 0o777); err != nil {
+		if err := os.MkdirAll(Dir, 0o750); err != nil {
 			return nil, fmt.Errorf("fail to create file %s: %v", fn, err)
 		}
 	}

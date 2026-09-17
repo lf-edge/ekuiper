@@ -21,6 +21,7 @@ import (
 	"github.com/pingcap/failpoint"
 
 	"github.com/lf-edge/ekuiper/v2/internal/plugin/portable/runtime"
+	"github.com/lf-edge/ekuiper/v2/pkg/validate"
 )
 
 type PluginInfo struct {
@@ -56,6 +57,23 @@ func (p *PluginInfo) Validate(expectedName string) (err error) {
 	}
 	if l, ok := langMap[p.Language]; !ok || !l {
 		return fmt.Errorf("invalid plugin, language '%s' is not supported", p.Language)
+	}
+	// The source/sink/function names become file name fragments in manager
+	// Delete (path.Join(confDir, type, name+".yaml")), so they must not
+	// contain path separators or traversal elements.
+	for _, category := range []struct {
+		kind  string
+		names []string
+	}{
+		{"source", p.Sources},
+		{"sink", p.Sinks},
+		{"function", p.Functions},
+	} {
+		for _, s := range category.names {
+			if err := validate.ValidateID(s); err != nil {
+				return fmt.Errorf("invalid plugin %s '%s': %v", category.kind, s, err)
+			}
+		}
 	}
 	return nil
 }

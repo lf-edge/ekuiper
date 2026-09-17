@@ -233,6 +233,10 @@ func sourceConfKeyHandler(w http.ResponseWriter, r *http.Request) {
 	pluginName := vars["name"]
 	confKey := vars["confKey"]
 	language := getLanguage(r)
+	if err := validate.ValidateID(pluginName); err != nil {
+		handleError(w, err, "Invalid plugin name", logger)
+		return
+	}
 	if err := validate.ValidateID(confKey); err != nil {
 		handleError(w, err, "Invalid confKey", logger)
 		return
@@ -262,6 +266,10 @@ func sinkConfKeyHandler(w http.ResponseWriter, r *http.Request) {
 	pluginName := vars["name"]
 	confKey := vars["confKey"]
 	language := getLanguage(r)
+	if err := validate.ValidateID(pluginName); err != nil {
+		handleError(w, err, "Invalid plugin name", logger)
+		return
+	}
 	if err := validate.ValidateID(confKey); err != nil {
 		handleError(w, err, "Invalid confKey", logger)
 		return
@@ -291,6 +299,10 @@ func connectionConfKeyHandler(w http.ResponseWriter, r *http.Request) {
 	pluginName := vars["name"]
 	confKey := vars["confKey"]
 	language := getLanguage(r)
+	if err := validate.ValidateID(pluginName); err != nil {
+		handleError(w, err, "Invalid plugin name", logger)
+		return
+	}
 	if err := validate.ValidateID(confKey); err != nil {
 		handleError(w, err, "Invalid confKey", logger)
 		return

@@ -42,6 +42,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 	"github.com/lf-edge/ekuiper/v2/pkg/kv"
 	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
+	"github.com/lf-edge/ekuiper/v2/pkg/validate"
 )
 
 var (
@@ -240,9 +241,8 @@ func (m *Manager) removePluginInstallScript(name string) {
 
 func (m *Manager) Register(p plugin.Plugin) error {
 	name, uri, shellParas := p.GetName(), p.GetFile(), p.GetShellParas()
-	name = strings.Trim(name, " ")
-	if name == "" {
-		return fmt.Errorf("invalid name %s: should not be empty", name)
+	if err := validate.ValidateID(name); err != nil {
+		return err
 	}
 	if !httpx.IsValidUrl(uri) || !strings.HasSuffix(uri, ".zip") {
 		return fmt.Errorf("invalid uri %s", uri)
@@ -444,6 +444,9 @@ func (m *Manager) GetPluginInfo(pluginName string) (*PluginInfo, bool) {
 }
 
 func (m *Manager) Delete(name string) error {
+	if err := validate.ValidateID(name); err != nil {
+		return err
+	}
 	pinfo, ok := m.reg.Get(name)
 	if !ok {
 		return fmt.Errorf("portable plugin %s is not found", name)

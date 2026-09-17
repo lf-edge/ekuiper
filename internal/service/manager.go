@@ -392,9 +392,8 @@ func (m *Manager) Create(r *ServiceCreationRequest) error {
 }
 
 func (m *Manager) Delete(name string) error {
-	name = strings.Trim(name, " ")
-	if name == "" {
-		return fmt.Errorf("invalid name %s: should not be empty", name)
+	if err := validate.ValidateID(name); err != nil {
+		return err
 	}
 	m.deleteServiceFuncs(name)
 	m.serviceBuf.Delete(name)
@@ -412,9 +411,8 @@ func (m *Manager) Delete(name string) error {
 }
 
 func (m *Manager) Get(name string) (*serviceInfo, error) {
-	name = strings.Trim(name, " ")
-	if name == "" {
-		return nil, fmt.Errorf("invalid name %s: should not be empty", name)
+	if err := validate.ValidateID(name); err != nil {
+		return nil, err
 	}
 	r, ok := m.getService(name)
 	if !ok {
@@ -473,9 +471,8 @@ func (m *Manager) ListFunctions() ([]*functionContainer, error) {
 }
 
 func (m *Manager) GetFunction(name string) (*functionContainer, error) {
-	name = strings.Trim(name, " ")
-	if name == "" {
-		return nil, fmt.Errorf("invalid name %s: should not be empty", name)
+	if err := validate.ValidateID(name); err != nil {
+		return nil, err
 	}
 	r, ok := m.getFunction(name)
 	if !ok {

@@ -30,6 +30,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	_ "github.com/lf-edge/ekuiper/v2/internal/io/file/reader"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/filex"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 	"github.com/lf-edge/ekuiper/v2/pkg/model"
@@ -106,7 +107,16 @@ func (fs *Source) Provision(ctx api.StreamContext, props map[string]any) error {
 		}
 		cfg.Path = p
 	}
-	fs.file = filepath.Join(cfg.Path, cfg.FileName)
+	if err := filex.ValidateFileName(cfg.FileName); err != nil {
+		return err
+	}
+	// Use the validated canonical path from here on so later operations
+	// address exactly what the sandbox checked.
+	validated, err := filex.ValidateFilePath(filepath.Join(cfg.Path, cfg.FileName))
+	if err != nil {
+		return err
+	}
+	fs.file = validated
 	fi, err := os.Stat(fs.file)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -135,6 +145,11 @@ func (fs *Source) Provision(ctx api.StreamContext, props map[string]any) error {
 					return fmt.Errorf("invalid moveTo %s: %v", cfg.MoveTo, err)
 				}
 			}
+			validatedMoveTo, err := filex.ValidateFilePath(cfg.MoveTo)
+			if err != nil {
+				return err
+			}
+			cfg.MoveTo = validatedMoveTo
 			fileInfo, err := os.Stat(cfg.MoveTo)
 			if err != nil {
 				err := os.MkdirAll(cfg.MoveTo, os.ModePerm)
@@ -247,6 +262,14 @@ func (fs *Source) parseFile(ctx api.StreamContext, file string, ingest api.Tuple
 		err error
 		r   io.Reader
 	)
+	// The directory listing may contain a symlink planted after Provision
+	// pointing outside the sandbox; re-validate the runtime path and use
+	// the validated result for everything below.
+	file, err = filex.ValidateFilePath(file)
+	if err != nil {
+		ingestError(ctx, err)
+		return
+	}
 	f, err := os.Open(file)
 	if err != nil {
 		ctx.GetLogger().Debugf("prepare file %s error: %v", file, err)
@@ -322,6 +345,11 @@ func (fs *Source) parseFile(ctx api.StreamContext, file string, ingest api.Tuple
 		ctx.GetLogger().Debugf("Remove file %s", file)
 	case 2:
 		targetFile := filepath.Join(fs.config.MoveTo, filepath.Base(file))
+		targetFile, err := filex.ValidateFilePath(targetFile)
+		if err != nil {
+			ingestError(ctx, err)
+			return
+		}
 		if err := os.Rename(file, targetFile); err != nil {
 			ingestError(ctx, err)
 		}

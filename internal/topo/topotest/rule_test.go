@@ -532,6 +532,9 @@ func TestSRFSQL(t *testing.T) {
 
 func TestSingleSQL(t *testing.T) {
 	conf.InitConf()
+	// InitConf resets the global config: re-enable external file access,
+	// mirroring the commercial default (see TestMain).
+	conf.Config.Basic.AllowExternalFileAccess = true
 	tracer.InitTracer()
 	// Reset
 	streamList := []string{"demo", "demoError", "demo1", "table1", "demoTable", "demoArr"}

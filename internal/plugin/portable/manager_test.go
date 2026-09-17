@@ -70,7 +70,7 @@ func TestManager_Install(t *testing.T) {
 		{ // 0
 			n:   "",
 			u:   "",
-			err: errors.New("invalid name : should not be empty"),
+			err: errors.New("id cannot be empty"),
 		}, { // 1
 			n:   "zipMissJson",
 			u:   endpoint + "/functions/misc.zip",

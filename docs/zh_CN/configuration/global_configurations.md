@@ -46,7 +46,8 @@ basic:
   enableRestAuditLog: false
   # If it is enabled, the rule functions can access the private network.
   enablePrivateNet: false
-  # If it is enabled, APIs can access files outside the data/uploads directory.
+  # 允许访问允许目录之外的文件：文件下载对应 eKuiper 上传目录，
+  # 文件源/目标与 RPC 导入/导出对应数据目录。
   allowExternalFileAccess: false
 ```
 
@@ -57,10 +58,13 @@ true，则可以访问私有网络。出于安全考虑，默认为 false。
 > 自版本 v2.4.0 起，`enablePrivateNet` 的默认值为 `false`，这意味着默认情况下会阻止访问私有网络地址。如果您的规则依赖于访问本地资源（例如本地
 > REST 服务、本地文件），您必须将此配置设置为 `true`。
 
-配置项 **allowExternalFileAccess** 用于指定文件访问 API（例如插件/模式中的 file:// URL）是否可以访问 `data/uploads` 目录之外的文件。为了安全，默认值为 false - 只有上传目录中的文件可以被访问。这可以防止路径遍历攻击。
+配置项 **allowExternalFileAccess** 用于指定文件访问 API 是否可以访问允许目录之外的文件。为了安全，默认值为 false。这可以防止路径遍历攻击。开启后，以下所有入口都会获得不受限的文件系统路径：
+- 插件/模式中的 file:// URL（否则限制在 `data/uploads` 目录内）；
+- 文件目标路径（相对路径解析到数据目录下）与文件源路径（相对目录解析到 eKuiper 根目录，例如默认的 `data`）；两者最终位置都被限制在数据目录内；
+- RPC 导入/导出文件参数（否则限制在数据目录内）。
 
 > [!WARNING]
-> 当 `allowExternalFileAccess` 为 `false`（默认值）时，所有 file:// URL 访问都限制在 `data/uploads` 目录内。仅当您需要从文件系统的其他位置访问文件时才设置为 `true`。
+> 当 `allowExternalFileAccess` 为 `false`（默认值）时，file:// URL 访问限制在 `data/uploads` 目录内，文件连接器路径与 RPC 导入/导出文件被限制在数据目录内（目标相对路径解析到数据目录，源相对目录解析到 eKuiper 根）。该选项是全或无的：为某一用途开启它（例如已上传的插件文件），也会同时放开另外两处的文件系统路径。仅当您需要从文件系统的其他位置访问文件时才设置为 `true`。
 
 将basic项目下debug的值设置为true是有效的 `KUIPER__BASIC__DEBUG=true`。
 
@@ -287,20 +291,20 @@ basic:
 
 可配置如下属性：
 
-* name - 数据库文件名。若为空，则设置为默认名字 `sqliteKV.db`。
+- name - 数据库文件名。若为空，则设置为默认名字 `sqliteKV.db`。
 
 ### Redis
 
 可配置如下属性：
 
-* host     - redis 服务器地址。
-* port     - redis 服务器端口。
-* password - redis 服务器密码。若 redis 未配置认证系统，则可不设置密码。
-* timeout  - 连接超时时间。
-* connectionSelector - 重用 etc/connections/connection.yaml 中定义的连接信息, 主要用在 edgex redis 配置了认证系统时
-  * 只适用于 edgex redis 的连接信息
-  * 连接信息中的 server，port 和 password 会覆盖以上定义的 host，port 和 password
-  * [具体信息可参考](../guide/sources/builtin/edgex.md#连接重用)
+- host     - redis 服务器地址。
+- port     - redis 服务器端口。
+- password - redis 服务器密码。若 redis 未配置认证系统，则可不设置密码。
+- timeout  - 连接超时时间。
+- connectionSelector - 重用 etc/connections/connection.yaml 中定义的连接信息, 主要用在 edgex redis 配置了认证系统时
+  - 只适用于 edgex redis 的连接信息
+  - 连接信息中的 server，port 和 password 会覆盖以上定义的 host，port 和 password
+  - [具体信息可参考](../guide/sources/builtin/edgex.md#连接重用)
 
 ### 外部状态
 
@@ -352,15 +356,15 @@ SQL 中的 [get_keyed_state](../sqls/functions/other_functions.md#getkeyedstate)
 
 eKuiper 默认使用 sqlite 来存储一些元信息，同时 eKuiper 也支持使用 FoundationDB 来作为元存储数据，我们可以通过以下步骤实现:
 
-* 确认 eKuiper 所在环境已经安装并启动 FoundationDB，并确认 FoundationDB 所使用的存储 Path. 可参考[官方文档](https://apple.github.io/foundationdb/administration.html#default-cluster-file)
-* 确认 eKuiper 宿主机所使用的 fdb c 语言库的 APIVersion 版本，并将 eKuiper 依赖库替换为相应版本，以 APIVersion 6.2.0 为例，在 eKuiper 主目录执行以下命令:
+- 确认 eKuiper 所在环境已经安装并启动 FoundationDB，并确认 FoundationDB 所使用的存储 Path. 可参考[官方文档](https://apple.github.io/foundationdb/administration.html#default-cluster-file)
+- 确认 eKuiper 宿主机所使用的 fdb c 语言库的 APIVersion 版本，并将 eKuiper 依赖库替换为相应版本，以 APIVersion 6.2.0 为例，在 eKuiper 主目录执行以下命令:
 
 ```shell
 go get github.com/apple/foundationdb/bindings/go@6.2.0
 ```
 
-* 执行 `make build_with_fdb` 编译 kuiperd
-* 在配置中按照如下修改:
+- 执行 `make build_with_fdb` 编译 kuiperd
+- 在配置中按照如下修改:
 
 ```yaml
     store:

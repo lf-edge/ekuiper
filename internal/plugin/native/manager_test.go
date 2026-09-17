@@ -81,7 +81,7 @@ func TestManager_Register(t *testing.T) {
 			t:   plugin.SOURCE,
 			n:   "",
 			u:   "",
-			err: errors.New("invalid name : should not be empty"),
+			err: errors.New("id cannot be empty"),
 		},
 		{
 			t:   plugin.SOURCE,
@@ -307,7 +307,7 @@ func TestManager_Delete(t *testing.T) {
 		}, {
 			t:   plugin.FUNCTION,
 			n:   "",
-			err: "invalid name : should not be empty",
+			err: "id cannot be empty",
 		},
 	}
 	for _, tt := range data {

@@ -40,6 +40,10 @@ jobs:
 
     env:
       JMETER_VERSION: 5.4.3
+      # Legacy FVT exercises external file paths (/tmp, fixtures); run it
+      # with the commercial default of external file access on. Default-deny
+      # behavior is covered by TestFileAccessStrictDefault in the Go FVT.
+      KUIPER__BASIC__ALLOWEXTERNALFILEACCESS: "true"
 
     steps:
       - uses: actions/setup-go@v5
@@ -155,6 +159,8 @@ jobs:
 
     env:
       JMETER_VERSION: 5.4.3
+      # Same as fvt_tests_with_edgex: legacy FVT needs external file paths.
+      KUIPER__BASIC__ALLOWEXTERNALFILEACCESS: "true"
 
     steps:
       - uses: actions/setup-go@v5

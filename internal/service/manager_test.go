@@ -630,3 +630,16 @@ func urlFromFilePath(path string) (*url.URL, error) {
 		Path:   filepath.ToSlash(path),
 	}, nil
 }
+
+func TestManagerInvalidNames(t *testing.T) {
+	const bad, want = "../../etc", "invalid characters"
+	if err := m.Delete(bad); err == nil || !strings.Contains(err.Error(), want) {
+		t.Errorf("Delete(%q) = %v, want error containing %q", bad, err, want)
+	}
+	if _, err := m.Get(bad); err == nil || !strings.Contains(err.Error(), want) {
+		t.Errorf("Get(%q) = %v, want error containing %q", bad, err, want)
+	}
+	if _, err := m.GetFunction(bad); err == nil || !strings.Contains(err.Error(), want) {
+		t.Errorf("GetFunction(%q) = %v, want error containing %q", bad, err, want)
+	}
+}
