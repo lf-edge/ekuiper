@@ -18,7 +18,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
@@ -107,15 +106,13 @@ func (s *SQLConnection) GetDB() *sql.DB {
 func (s *SQLConnection) Ping(ctx api.StreamContext) error {
 	s.Lock()
 	defer s.Unlock()
-	pingCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
-	defer cancel()
 	if s.db == nil {
-		err := s.dial(pingCtx)
+		err := s.dial(ctx)
 		if err != nil {
 			return err
 		}
 	}
-	return s.db.PingContext(pingCtx)
+	return s.db.Ping()
 }
 
 func (s *SQLConnection) DetachSub(ctx api.StreamContext, props map[string]any) {
