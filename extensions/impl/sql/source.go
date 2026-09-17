@@ -159,7 +159,7 @@ func (s *SQLSourceConnector) queryData(ctx api.StreamContext, rcvTime time.Time,
 	logger := ctx.GetLogger()
 	if s.needReconnect {
 		SqlSourceCounter.WithLabelValues(LblRecon, ctx.GetRuleId(), ctx.GetOpId()).Inc()
-		err := s.conn.Reconnect()
+		err := s.conn.Reconnect(ctx)
 		if err != nil {
 			logger.Errorf("reconnect db error %v", err)
 			ingestError(ctx, err)

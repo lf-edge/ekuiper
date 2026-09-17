@@ -104,7 +104,7 @@ func (s *SqlLookupSource) Connect(ctx api.StreamContext, sc api.StatusChangeHand
 
 func (s *SqlLookupSource) Lookup(ctx api.StreamContext, fields []string, keys []string, values []any) ([]map[string]any, error) {
 	if s.needReconnect {
-		err := s.conn.Reconnect()
+		err := s.conn.Reconnect(ctx)
 		if err != nil {
 			conf.Log.Errorf("reconnect db error %v", err)
 			return nil, err

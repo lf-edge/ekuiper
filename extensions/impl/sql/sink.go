@@ -496,7 +496,7 @@ func (s *SQLSinkConnector) save(ctx api.StreamContext, table string, data map[st
 func (s *SQLSinkConnector) ensureConnected(ctx api.StreamContext) error {
 	if s.needReconnect {
 		metrics.IOCounter.WithLabelValues(LblSql, metrics.LblSinkIO, LblReconn, ctx.GetRuleId(), ctx.GetOpId()).Inc()
-		if err := s.conn.Reconnect(); err != nil {
+		if err := s.conn.Reconnect(ctx); err != nil {
 			return errorx.NewIOErr(err.Error())
 		}
 	}
