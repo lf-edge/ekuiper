@@ -50,6 +50,14 @@ If a derived name does not match this format, the affected write is rejected bef
 
 Explicitly configured `table`, `fields`, and `keyField` values are passed to the generated SQL unchanged so that database-specific identifier syntax remains supported. Each configured `fields` entry is also used to look up the value in the result map, so the map key must exactly match the configured entry and the entry must use syntax accepted by the target database.
 
+### Performance note
+
+Values are sent to the database as bound parameters rather than being concatenated into the SQL text. If sink write latency matters in a MySQL deployment, append `interpolateParams=true` to the `url` (for example `mysql://user:test@host/db?parseTime=true&interpolateParams=true`); this option is not supported with the BIG5, SJIS, GBK, GB18030 and CP932 character sets or the GB2312_BIN collation.
+
+For backward compatibility with the previous non-Unicode SQL string literal behavior, ordinary Go string values are bound as `VARCHAR` when using SQL Server. Other value types are passed to the driver unchanged. Explicit `NVARCHAR` parameter selection is not currently configurable.
+
+Large batches may be split into multiple statements executed in a single transaction; this requires a transactional table engine. Non-transactional engines (such as MyISAM) cannot roll back, so a failed chunk can leave partial rows behind.
+
 ## Sample usage
 
 Below is a sample for using sql to get the target data and set to mysql database

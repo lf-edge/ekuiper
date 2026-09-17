@@ -47,6 +47,14 @@
 
 显式配置的 `table`、`fields` 和 `keyField` 会原样写入生成的 SQL，以继续支持不同数据库的标识符语法。每个 `fields` 配置项同时用于从结果映射中查找值，因此映射 key 必须与配置项完全一致，并且配置项必须使用目标数据库接受的语法。
 
+### 性能说明
+
+写入值以绑定参数而非 SQL 文本拼接的方式发送给数据库。如果写入延迟对 MySQL 部署很关键，可在 `url` 后追加 `interpolateParams=true`（例如 `mysql://user:test@host/db?parseTime=true&interpolateParams=true`）；该选项不支持 BIG5、SJIS、GBK、GB18030、CP932 字符集及 GB2312_BIN 排序规则。
+
+为与之前非 Unicode SQL 字符串字面量行为保持向后兼容，使用 SQL Server 时普通的 Go 字符串值按 `VARCHAR` 绑定。其他类型的值原样传给驱动。目前不支持显式选择 `NVARCHAR` 参数。
+
+大 batch 可能被拆成多条语句放在一个事务里执行，这要求表引擎支持事务。非事务引擎（如 MyISAM）无法回滚，失败的 chunk 可能残留部分行。
+
 ## 使用样例
 
 下面是一个获取目标数据并写入 MySQL 数据库的示例

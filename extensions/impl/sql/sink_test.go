@@ -196,39 +196,41 @@ func TestSQLProvisionErr(t *testing.T) {
 
 func TestSQLSinkConfigKV(t *testing.T) {
 	ctx := mockContext.NewMockContext("1", "2")
-	config := &sqlSinkConfig{
-		Fields: []string{"a"},
-	}
-	_, err := config.getValuesByKeys(ctx, nil, config.Fields)
+	config := &sqlSinkConfig{}
+	newBinder := func() *sqlSinkBinder { return &sqlSinkBinder{next: qmarkBind} }
+
+	_, err := config.buildInsertRow(ctx, newBinder(), nil, []string{"a"})
 	require.Error(t, err)
 
-	values, err := config.getValuesByKeys(ctx, map[string]interface{}{
-		"a": "value",
-	}, config.Fields)
-	require.NoError(t, err)
-	require.Equal(t, []string{"'value'"}, values)
-
-	values, err = config.getValuesByKeys(ctx, map[string]interface{}{
-		"a": "O'Reilly",
-	}, config.Fields)
-	require.NoError(t, err)
-	require.Equal(t, []string{"'O''Reilly'"}, values)
-
-	config = &sqlSinkConfig{
-		Fields: []string{"a"},
-	}
-	values, err = config.getValuesByKeys(ctx, map[string]interface{}{
-		"b": "value",
-	}, config.Fields)
-	require.NoError(t, err)
-	require.Equal(t, []string{"NULL"}, values)
-
-	config = &sqlSinkConfig{}
-	values, err = config.getValuesByKeys(ctx, map[string]interface{}{
+	row, err := config.buildInsertRow(ctx, newBinder(), map[string]interface{}{
 		"a": "value",
 	}, []string{"a"})
 	require.NoError(t, err)
-	require.Equal(t, []string{"'value'"}, values)
+	require.Equal(t, "(?)", row)
+
+	b := newBinder()
+	row, err = config.buildInsertRow(ctx, b, map[string]interface{}{
+		"a": "O'Reilly",
+	}, []string{"a"})
+	require.NoError(t, err)
+	require.Equal(t, "(?)", row)
+	require.Equal(t, []any{"O'Reilly"}, b.args)
+
+	b = newBinder()
+	row, err = config.buildInsertRow(ctx, b, map[string]interface{}{
+		"b": "value",
+	}, []string{"a"})
+	require.NoError(t, err)
+	require.Equal(t, "(NULL)", row)
+	require.Empty(t, b.args)
+
+	b = newBinder()
+	row, err = config.buildInsertRow(ctx, b, map[string]interface{}{
+		"a": "value",
+	}, []string{"a"})
+	require.NoError(t, err)
+	require.Equal(t, "(?)", row)
+	require.Equal(t, []any{"value"}, b.args)
 }
 
 func TestSQLSinkAction(t *testing.T) {

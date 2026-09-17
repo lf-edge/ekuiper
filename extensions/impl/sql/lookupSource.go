@@ -23,6 +23,7 @@ import (
 	"github.com/pingcap/failpoint"
 
 	client2 "github.com/lf-edge/ekuiper/v2/extensions/impl/sql/client"
+	sqldriver "github.com/lf-edge/ekuiper/v2/extensions/impl/sql/sqldatabase/driver"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/util"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
@@ -180,6 +181,9 @@ type paramSQLGen struct {
 	quoteID     func(string) string
 	placeholder func(i int) string
 	strictKeys  bool
+	// transformArg converts values before they are appended as arguments,
+	// resolved from the driver layer in buildGen. Nil means passthrough.
+	transformArg func(any) any
 }
 
 func (g paramSQLGen) buildQuery(fields []string, keys []string, values []interface{}) (string, []any, error) {
@@ -224,11 +228,18 @@ func (g paramSQLGen) buildQuery(fields []string, keys []string, values []interfa
 			query += " AND "
 		}
 		if values[i] == nil {
-			query += fmt.Sprintf("%s IS NULL", g.quoteID(k))
-			continue
+			// A nil lookup key used to produce broken SQL; it must fail loud
+			// instead of silently matching rows via IS NULL on a possibly
+			// non-unique key. (The lookup node already skips nil keys before
+			// calling, so this guards direct API use.)
+			return "", nil, fmt.Errorf("lookup key %q must not be nil", k)
 		}
 		query += fmt.Sprintf("%s = %s", g.quoteID(k), g.placeholder(len(args)+1))
-		args = append(args, values[i])
+		v := values[i]
+		if g.transformArg != nil {
+			v = g.transformArg(v)
+		}
+		args = append(args, v)
 	}
 	return query, args, nil
 }
@@ -256,22 +267,27 @@ func atPPlaceholder(i int) string      { return fmt.Sprintf("@p%d", i) }
 func colonPlaceholder(i int) string { return fmt.Sprintf(":%d", i) }
 
 func (s *SqlLookupSource) buildGen() sqlQueryGen {
+	g := paramSQLGen{
+		table:        s.table,
+		transformArg: sqldriver.TransformerFor(s.driver),
+	}
 	switch strings.ToLower(s.driver) {
 	case "postgres", "postgresql", "pgx":
-		return paramSQLGen{table: s.table, quoteID: bareQuoteID, placeholder: dollarPlaceholder, strictKeys: true}
+		g.quoteID, g.placeholder, g.strictKeys = bareQuoteID, dollarPlaceholder, true
 	case "sqlserver", "mssql":
-		return paramSQLGen{table: s.table, quoteID: bareQuoteID, placeholder: atPPlaceholder, strictKeys: true}
+		g.quoteID, g.placeholder, g.strictKeys = bareQuoteID, atPPlaceholder, true
 	case "oracle", "godror", "ora", "go-ora":
-		return paramSQLGen{table: s.table, quoteID: bareQuoteID, placeholder: colonPlaceholder, strictKeys: true}
+		g.quoteID, g.placeholder, g.strictKeys = bareQuoteID, colonPlaceholder, true
 	case "mysql", "mymysql", "sqlite", "sqlite3":
-		return paramSQLGen{table: s.table, quoteID: backtickQuoteID, placeholder: questionPlaceholder}
+		g.quoteID, g.placeholder = backtickQuoteID, questionPlaceholder
 	default:
 		// Unknown drivers fall back to bare identifiers with "?" placeholders:
 		// backticks are rejected by most dialects, while bare identifiers and
 		// "?" are accepted by the majority (clickhouse, snowflake, presto, ...).
 		conf.Log.Warnf("unknown sql driver %q for lookup source, falling back to \"?\" placeholders", s.driver)
-		return paramSQLGen{table: s.table, quoteID: bareQuoteID, placeholder: questionPlaceholder, strictKeys: true}
+		g.quoteID, g.placeholder, g.strictKeys = bareQuoteID, questionPlaceholder, true
 	}
+	return g
 }
 
 func GetLookupSource() api.Source {

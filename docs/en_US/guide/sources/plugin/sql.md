@@ -86,6 +86,8 @@ The target database url
 | postgres   | postgres://user:pass@localhost/dbname                 |
 | sqlite     | sqlite:/path/to/file.db                               |
 
+When this source is used as a lookup table, join key values are sent as bound parameters. For backward compatibility with the previous non-Unicode SQL string literal behavior, ordinary Go string values are bound as `VARCHAR` when using SQL Server. Other value types are passed to the driver unchanged. Explicit `NVARCHAR` parameter selection is not currently configurable. This applies to generated lookup queries only; `templateSql` renders raw SQL and must handle its own value quoting.
+
 ### internalSqlQueryCfg
 
 * `table`: table name to query
