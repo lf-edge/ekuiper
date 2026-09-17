@@ -59,20 +59,22 @@ func (p *RuleProcessor) ExecCreateWithValidation(name, ruleJson string) (*def.Ru
 	}
 
 	or, err := p.GetRuleById(rule.Id)
-	if err == nil {
-		if !CanReplace(or.Version, rule.Version) { // old rule has newer version
-			return nil, fmt.Errorf("rule %s already exists with version (%s), new version (%s) is lower", rule.Id, or.Version, rule.Version)
-		}
+	if err == nil && decideRuleReplace(or, rule) == replaceSkip {
+		return nil, fmt.Errorf("rule %s already exists with version (%s), new version (%s) is lower", rule.Id, or.Version, rule.Version)
 	}
 
-	if !rule.Temp {
-		err = p.db.Set(rule.Id, ruleJson)
-		if err != nil {
-			return nil, err
-		}
+	if err := p.saveRuleWithPersist(rule, ruleJson, applyOnce); err != nil {
+		return nil, err
 	}
 	log.Infof("Rule %s with version (%s) is created.", rule.Id, rule.Version)
 	return rule, nil
+}
+
+func (p *RuleProcessor) saveRuleWithPersist(rule *def.Rule, ruleJSON string, persist func(func() error) error) error {
+	if rule.Temp {
+		return nil
+	}
+	return persist(func() error { return p.db.Set(rule.Id, ruleJSON) })
 }
 
 func (p *RuleProcessor) ExecCreate(name, ruleJson string) error {

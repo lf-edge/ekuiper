@@ -25,9 +25,9 @@ import (
 	"github.com/cenkalti/backoff/v4"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
-	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
 
 type RulesetProcessor struct {
@@ -241,38 +241,18 @@ func (rs *RulesetProcessor) applySource(name, statement string, kind ast.StreamT
 		r.Err = err
 		return r
 	}
-	var stored string
-	exists, err := rs.s.db.Get(name, &stored)
+	old, err := rs.readStoredSourceForInit(name, kind)
 	if err != nil {
 		r.Outcome, r.Err = InitRetryableError, err
 		return r
 	}
-	if exists {
-		var info xsql.StreamInfo
-		if err := json.Unmarshal(cast.StringToBytes(stored), &info); err != nil {
-			r.Outcome, r.Err = InitRetryableError, err
-			return r
-		}
-		if info.StreamType == kind {
-			oldStmt, err := xsql.Language.Parse(xsql.NewParser(strings.NewReader(info.Statement)))
-			if err != nil {
-				r.Outcome, r.Err = InitRetryableError, err
-				return r
-			}
-			old, ok := oldStmt.(*ast.StreamStmt)
-			if !ok || old.Options == nil {
-				r.Outcome, r.Err = InitRetryableError, fmt.Errorf("stored %s %s is invalid", r.Kind, name)
-				return r
-			}
-			if source.Options.SHARED != old.Options.SHARED {
-				r.Err = fmt.Errorf("cannot change %s %s SHARED option", r.Kind, name)
-				return r
-			}
-			if !CanReplace(old.Options.VERSION, source.Options.VERSION) {
-				r.Outcome = InitSkipped
-				return r
-			}
-		}
+	switch decideSourceReplace(old, source) {
+	case replaceSkip:
+		r.Outcome = InitSkipped
+		return r
+	case replaceSharedConflict:
+		r.Err = fmt.Errorf("cannot change %s %s SHARED option", r.Kind, name)
+		return r
 	}
 	r.Outcome = InitRetryableError
 	r.Err = rs.s.execSaveWithPersist(source, statement, true, func(write func() error) error {
@@ -285,6 +265,30 @@ func (rs *RulesetProcessor) applySource(name, statement string, kind ast.StreamT
 	return r
 }
 
+// A readable but corrupt old definition cannot establish version precedence.
+// The validated init.json definition may replace it, as the regular replace
+// path already does. A storage read error is kept separate from corruption.
+func (rs *RulesetProcessor) readStoredSourceForInit(name string, kind ast.StreamType) (*ast.StreamStmt, error) {
+	var stored string
+	exists, err := rs.s.db.Get(name, &stored)
+	if err != nil || !exists {
+		return nil, err
+	}
+	var info xsql.StreamInfo
+	if err := json.Unmarshal([]byte(stored), &info); err != nil || info.StreamType != kind {
+		return nil, nil
+	}
+	stmt, err := xsql.Language.Parse(xsql.NewParser(strings.NewReader(info.Statement)))
+	if err != nil {
+		return nil, nil
+	}
+	old, ok := stmt.(*ast.StreamStmt)
+	if !ok || old.Options == nil || old.StreamType != kind || string(old.Name) != name {
+		return nil, nil
+	}
+	return old, nil
+}
+
 func (rs *RulesetProcessor) applyRule(name, ruleJSON string) InitObjectResult {
 	r := InitObjectResult{Kind: "rule", Name: name, Outcome: InitTerminalError, Attempts: 1}
 	rule, err := rs.r.GetRuleByJson(name, ruleJSON)
@@ -292,32 +296,38 @@ func (rs *RulesetProcessor) applyRule(name, ruleJSON string) InitObjectResult {
 		r.Err = err
 		return r
 	}
-	var stored string
-	exists, err := rs.r.db.Get(rule.Id, &stored)
+	old, err := rs.readStoredRuleForInit(rule.Id)
 	if err != nil {
 		r.Outcome, r.Err = InitRetryableError, err
 		return r
 	}
-	if exists {
-		old, err := rs.r.GetRuleByJsonValidated(rule.Id, stored)
-		if err != nil {
-			r.Outcome, r.Err = InitRetryableError, err
-			return r
-		}
-		if !CanReplace(old.Version, rule.Version) {
-			r.Outcome = InitSkipped
-			return r
-		}
+	if decideRuleReplace(old, rule) == replaceSkip {
+		r.Outcome = InitSkipped
+		return r
 	}
-	if !rule.Temp {
-		r.Attempts, r.Err = rs.retryInitApply(func() error { return rs.r.db.Set(rule.Id, ruleJSON) })
-		if r.Err != nil {
-			r.Outcome = InitRetryableError
-			return r
-		}
+	r.Err = rs.r.saveRuleWithPersist(rule, ruleJSON, func(write func() error) error {
+		r.Attempts, err = rs.retryInitApply(write)
+		return err
+	})
+	if r.Err != nil {
+		r.Outcome = InitRetryableError
+		return r
 	}
 	r.Outcome = InitApplied
 	return r
+}
+
+func (rs *RulesetProcessor) readStoredRuleForInit(name string) (*def.Rule, error) {
+	var stored string
+	exists, err := rs.r.db.Get(name, &stored)
+	if err != nil || !exists {
+		return nil, err
+	}
+	old, err := rs.r.GetRuleByJsonValidated(name, stored)
+	if err != nil {
+		return nil, nil
+	}
+	return old, nil
 }
 
 func (rs *RulesetProcessor) retryInitApply(write func() error) (int, error) {

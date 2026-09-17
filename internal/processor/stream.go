@@ -198,7 +198,7 @@ func (p *StreamProcessor) RecoverLookupTable() (err error) {
 }
 
 func (p *StreamProcessor) execSave(stmt *ast.StreamStmt, statement string, replace bool) error {
-	return p.execSaveWithPersist(stmt, statement, replace, func(write func() error) error { return write() })
+	return p.execSaveWithPersist(stmt, statement, replace, applyOnce)
 }
 
 // execSaveWithPersist lets startup retry only the database write. In particular,
@@ -251,13 +251,16 @@ func (p *StreamProcessor) ExecReplaceStream(name string, statement string, st as
 		return "", err
 	}
 	stt := ast.StreamTypeMap[st]
-	// compare version
 	old, _ := p.DescStream(name, s.StreamType)
-	if old != nil && s.Options.SHARED != old.(*ast.StreamStmt).Options.SHARED {
-		return "", fmt.Errorf("Replace %s fails: do not support to change stream SHARED option.", name)
+	oldSource, _ := old.(*ast.StreamStmt)
+	if oldSource != nil && oldSource.Options == nil {
+		oldSource = nil
 	}
-	if old != nil && !CanReplace(old.(*ast.StreamStmt).Options.VERSION, s.Options.VERSION) {
-		return "", fmt.Errorf("source %s already exists with version (%s), new version (%s) is lower", name, old.(*ast.StreamStmt).Options.VERSION, s.Options.VERSION)
+	switch decideSourceReplace(oldSource, s) {
+	case replaceSkip:
+		return "", fmt.Errorf("source %s already exists with version (%s), new version (%s) is lower", name, oldSource.Options.VERSION, s.Options.VERSION)
+	case replaceSharedConflict:
+		return "", fmt.Errorf("Replace %s fails: do not support to change stream SHARED option.", name)
 	}
 	if err := p.execSave(s, statement, true); err != nil {
 		return "", fmt.Errorf("Replace %s fails: %v.", stt, err)

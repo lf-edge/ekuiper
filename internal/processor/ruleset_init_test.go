@@ -15,6 +15,7 @@
 package processor
 
 import (
+	"encoding/json"
 	"errors"
 	"testing"
 
@@ -213,4 +214,77 @@ func TestImportForInitUnknownReadErrorDoesNotRetryApply(t *testing.T) {
 	require.Equal(t, InitRetryableError, result.Objects[0].Outcome)
 	require.Equal(t, 1, result.Objects[0].Attempts)
 	require.Zero(t, flaky.attempts)
+
+	rs, _, rp := newInitTestRuleset(t)
+	flakyRule := &flakyInitKV{KeyValue: rp.db, key: "rule", getErr: errors.New("temporary rule read error")}
+	rp.db = flakyRule
+	ruleResult, err := rs.ImportForInit([]byte(`{"rules":{"rule":"{\"id\":\"rule\",\"sql\":\"SELECT * FROM source\",\"actions\":[{\"log\":{}}]}"}}`))
+	require.NoError(t, err)
+	require.Equal(t, InitRetryableError, ruleResult.Objects[0].Outcome)
+	require.Equal(t, 1, ruleResult.Objects[0].Attempts)
+	require.Zero(t, flakyRule.attempts)
+}
+
+func TestImportForInitReplacesCorruptStoredDefinition(t *testing.T) {
+	for _, tc := range []struct {
+		name, kind, corrupt, definition string
+	}{
+		{"bad_stream_json", "stream", "not JSON", `CREATE STREAM bad_stream_json () WITH (DATASOURCE="demo", FORMAT="JSON", VERSION="2")`},
+		{"bad_stream_sql", "stream", `{"streamType":0,"statement":"not SQL"}`, `CREATE STREAM bad_stream_sql () WITH (DATASOURCE="demo", FORMAT="JSON", VERSION="2")`},
+		{"bad_table_json", "table", "not JSON", `CREATE TABLE bad_table_json () WITH (DATASOURCE="demo", TYPE="memory", VERSION="2")`},
+		{"bad_table_sql", "table", `{"streamType":1,"statement":"not SQL"}`, `CREATE TABLE bad_table_sql () WITH (DATASOURCE="demo", TYPE="memory", VERSION="2")`},
+		{"bad_rule_json", "rule", "not JSON", `{"id":"bad_rule_json","version":"2","sql":"SELECT * FROM demo","actions":[{"log":{}}]}`},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			rs, sp, rp := newInitTestRuleset(t)
+			var content Ruleset
+			var db kv.KeyValue
+			switch tc.kind {
+			case "stream":
+				content.Streams = map[string]string{tc.name: tc.definition}
+				db = sp.db
+			case "table":
+				content.Tables = map[string]string{tc.name: tc.definition}
+				db = sp.db
+			case "rule":
+				content.Rules = map[string]string{tc.name: tc.definition}
+				db = rp.db
+			}
+			require.NoError(t, db.Set(tc.name, tc.corrupt))
+			payload, err := json.Marshal(content)
+			require.NoError(t, err)
+			result, err := rs.ImportForInit(payload)
+			require.NoError(t, err)
+			require.False(t, result.HasRetryableFailure())
+			require.Equal(t, InitApplied, result.Objects[0].Outcome)
+			var stored string
+			exists, err := db.Get(tc.name, &stored)
+			require.NoError(t, err)
+			require.True(t, exists)
+			if tc.kind == "rule" {
+				require.Equal(t, tc.definition, stored)
+			} else {
+				var info struct {
+					Statement string `json:"statement"`
+				}
+				require.NoError(t, json.Unmarshal([]byte(stored), &info))
+				require.Equal(t, tc.definition, info.Statement)
+			}
+		})
+	}
+}
+
+func TestImportForInitVersionPrecedesSharedConflict(t *testing.T) {
+	rs, sp, _ := newInitTestRuleset(t)
+	newer := []byte(`{"streams":{"source":"CREATE STREAM source () WITH (DATASOURCE=\"demo\", FORMAT=\"JSON\", VERSION=\"2\", SHARED=true)"}}`)
+	_, err := rs.ImportForInit(newer)
+	require.NoError(t, err)
+	older := []byte(`{"streams":{"source":"CREATE STREAM source () WITH (DATASOURCE=\"demo\", FORMAT=\"JSON\", VERSION=\"1\", SHARED=false)"}}`)
+	result, err := rs.ImportForInit(older)
+	require.NoError(t, err)
+	require.Equal(t, InitSkipped, result.Objects[0].Outcome)
+	require.NoError(t, result.Objects[0].Err)
+	stored, err := sp.GetStream("source", ast.TypeStream)
+	require.NoError(t, err)
+	require.Contains(t, stored, `VERSION="2"`)
 }
