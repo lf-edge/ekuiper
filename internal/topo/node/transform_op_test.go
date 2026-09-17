@@ -24,11 +24,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
-	"github.com/lf-edge/ekuiper/v2/internal/topo/transform"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/model"
-	"github.com/lf-edge/ekuiper/v2/pkg/props"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
@@ -381,47 +379,66 @@ func TestTransformSlice(t *testing.T) {
 }
 
 func TestTransformSliceDeferPropsEval(t *testing.T) {
-	transform.RegisterAdditionalFuncs()
-	props.SC.Set("vvv", "testvvv")
-	topicTpl := `ek/collect/{{prop "vvv"}}`
-	newOp := func(deferEval bool) *TransformOp {
-		op, err := NewTransformOp("test", &def.RuleOption{BufferLength: 10, SendError: true, Experiment: &def.ExpOpts{UseSliceTuple: true}}, &SinkConf{
+	topicTpl := `topic/{{index .SourceContent 0}}`
+	newOp := func(sliceMode bool) *TransformOp {
+		rOpt := &def.RuleOption{BufferLength: 10, SendError: true}
+		if sliceMode {
+			rOpt.Experiment = &def.ExpOpts{UseSliceTuple: true}
+		}
+		op, err := NewTransformOp("test", rOpt, &SinkConf{
 			Omitempty: false,
 			Format:    "json",
 		}, []string{topicTpl})
 		require.NoError(t, err)
-		op.SetDeferPropsEval(deferEval)
 		return op
 	}
-	mkRow := func() *xsql.SliceTuple {
-		return &xsql.SliceTuple{SourceContent: model.SliceVal{1, 2}, Timestamp: time.UnixMilli(0)}
+	mkRow := func(v string) *xsql.SliceTuple {
+		return &xsql.SliceTuple{SourceContent: model.SliceVal{v}, Timestamp: time.UnixMilli(0)}
 	}
 	ctx := mockContext.NewMockContext("testDefer", "transform_test")
-	errCh := make(chan error)
 
-	// Without deferral, props are evaluated per row.
-	op := newOp(false)
-	out := make(chan any, 100)
-	require.NoError(t, op.AddOutput(out, "test"))
-	op.Exec(ctx, errCh)
-	op.input <- mkRow()
-	r := <-out
-	rt, ok := r.(*xsql.SliceTuple)
+	// Normal mode evaluates props per row immediately.
+	op := newOp(true)
+	out := op.transformSlice(ctx, mkRow("a"))
+	require.Len(t, out, 1)
+	rt, ok := out[0].(*xsql.SliceTuple)
 	require.True(t, ok)
-	assert.Equal(t, map[string]string{topicTpl: "ek/collect/testvvv"}, rt.Props)
+	assert.Equal(t, map[string]string{topicTpl: "topic/a"}, rt.Props)
 
-	// With deferral, rows pass through without props; EvalProps renders on demand.
+	// Deferred mode skips per-row evaluation; the handed-off evaluator
+	// renders against the row on demand.
 	op2 := newOp(true)
-	out2 := make(chan any, 100)
-	require.NoError(t, op2.AddOutput(out2, "test"))
-	op2.Exec(ctx, errCh)
-	in := mkRow()
-	op2.input <- in
-	r2 := <-out2
-	rt2, ok := r2.(*xsql.SliceTuple)
+	eval := op2.DeferPropsEval()
+	require.NotNil(t, eval)
+	out2 := op2.transformSlice(ctx, mkRow("b"))
+	require.Len(t, out2, 1)
+	rt2, ok := out2[0].(*xsql.SliceTuple)
 	require.True(t, ok)
 	assert.Nil(t, rt2.Props)
-	props, err := op2.EvalProps(in)
+	props, err := eval(mkRow("c"))
 	require.NoError(t, err)
-	assert.Equal(t, map[string]string{topicTpl: "ek/collect/testvvv"}, props)
+	assert.Equal(t, map[string]string{topicTpl: "topic/c"}, props)
+
+	// Non-slice mode never defers.
+	op3 := newOp(false)
+	assert.Nil(t, op3.DeferPropsEval())
+}
+
+func TestCalculatePropsRecoversAfterError(t *testing.T) {
+	topicTpl := `topic-{{index .SourceContent 2}}`
+	op, err := NewTransformOp("test", &def.RuleOption{BufferLength: 10, SendError: true, Experiment: &def.ExpOpts{UseSliceTuple: true}}, &SinkConf{
+		Omitempty: false,
+		Format:    "json",
+	}, []string{topicTpl})
+	require.NoError(t, err)
+	eval := op.DeferPropsEval()
+	require.NotNil(t, eval)
+	// The first render writes the "topic-" literal, then fails on the index
+	// out of range.
+	_, err = eval(&xsql.SliceTuple{SourceContent: model.SliceVal{"x"}})
+	require.Error(t, err)
+	// The partial output must not leak into the next render.
+	props, err := eval(&xsql.SliceTuple{SourceContent: model.SliceVal{"x", "y", "ok"}})
+	require.NoError(t, err)
+	assert.Equal(t, map[string]string{topicTpl: "topic-ok"}, props)
 }

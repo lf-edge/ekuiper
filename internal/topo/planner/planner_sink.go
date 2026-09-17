@@ -267,10 +267,10 @@ func splitSink(tp *topo.Topo, s api.Sink, sinkName string, options *def.RuleOpti
 			result = append(result, batchWriterOp)
 			// The batch writer only uses the last row props for the flushed
 			// batch, so defer the sink prop templates (e.g. topic) evaluation
-			// from per-row in transform to once per batch here.
+			// from per-row in transform to once per batch here. This is a
+			// single handoff: a nil return keeps per-row evaluation as is.
 			if len(templates) > 0 {
-				transformOp.SetDeferPropsEval(true)
-				batchWriterOp.SetPropsEval(transformOp.EvalProps)
+				batchWriterOp.SetPropsEval(transformOp.DeferPropsEval())
 			}
 		} else if isTupleCollector {
 			batchMergerOp, err := node.NewBatchMergerOp(fmt.Sprintf("%s_%d_batchWriter", sinkName, index), options)
