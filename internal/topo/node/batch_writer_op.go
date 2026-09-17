@@ -41,6 +41,16 @@ type BatchWriterOp struct {
 	rawWriter message.RawConvertWriter
 	// save lastRow to get the props
 	lastRow any
+	// propsEval, when set, renders the sink prop templates (e.g. topic) once
+	// per batch against the last row at flush time. It pairs with
+	// TransformOp deferPropsEval, which skips the per-row evaluation whose
+	// results would otherwise be discarded except for the last row.
+	propsEval func(any) (map[string]string, error)
+}
+
+// SetPropsEval installs the deferred props evaluator. See propsEval.
+func (o *BatchWriterOp) SetPropsEval(f func(any) (map[string]string, error)) {
+	o.propsEval = f
 }
 
 func NewBatchWriterOp(ctx api.StreamContext, name string, rOpt *def.RuleOption, schema map[string]*ast.JsonStreamField, sc *SinkConf, writeRaw bool) (*BatchWriterOp, error) {
@@ -110,6 +120,20 @@ func (o *BatchWriterOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 							result := &xsql.RawTuple{Rawdata: rawBytes, Timestamp: time.Time(dt)}
 							if ss, ok := o.lastRow.(api.HasDynamicProps); ok {
 								result.Props = ss.AllProps()
+							}
+							// Deferred props evaluation: only the last row props are
+							// used for the flushed batch, so render the templates
+							// once here instead of once per row in transform.
+							// Rows that already carry props (e.g. evaluated at pack
+							// time for collections) keep theirs.
+							if o.propsEval != nil {
+								if st, ok := o.lastRow.(*xsql.SliceTuple); ok && len(st.Props) == 0 {
+									if props, e := o.propsEval(st); e == nil {
+										result.Props = props
+									} else {
+										o.onError(ctx, e)
+									}
+								}
 							}
 							o.Broadcast(result)
 							o.onSend(ctx, result)

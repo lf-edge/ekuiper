@@ -24,9 +24,11 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/transform"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/model"
+	"github.com/lf-edge/ekuiper/v2/pkg/props"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
@@ -376,4 +378,50 @@ func TestTransformSlice(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestTransformSliceDeferPropsEval(t *testing.T) {
+	transform.RegisterAdditionalFuncs()
+	props.SC.Set("vvv", "testvvv")
+	topicTpl := `ek/collect/{{prop "vvv"}}`
+	newOp := func(deferEval bool) *TransformOp {
+		op, err := NewTransformOp("test", &def.RuleOption{BufferLength: 10, SendError: true, Experiment: &def.ExpOpts{UseSliceTuple: true}}, &SinkConf{
+			Omitempty: false,
+			Format:    "json",
+		}, []string{topicTpl})
+		require.NoError(t, err)
+		op.SetDeferPropsEval(deferEval)
+		return op
+	}
+	mkRow := func() *xsql.SliceTuple {
+		return &xsql.SliceTuple{SourceContent: model.SliceVal{1, 2}, Timestamp: time.UnixMilli(0)}
+	}
+	ctx := mockContext.NewMockContext("testDefer", "transform_test")
+	errCh := make(chan error)
+
+	// Without deferral, props are evaluated per row.
+	op := newOp(false)
+	out := make(chan any, 100)
+	require.NoError(t, op.AddOutput(out, "test"))
+	op.Exec(ctx, errCh)
+	op.input <- mkRow()
+	r := <-out
+	rt, ok := r.(*xsql.SliceTuple)
+	require.True(t, ok)
+	assert.Equal(t, map[string]string{topicTpl: "ek/collect/testvvv"}, rt.Props)
+
+	// With deferral, rows pass through without props; EvalProps renders on demand.
+	op2 := newOp(true)
+	out2 := make(chan any, 100)
+	require.NoError(t, op2.AddOutput(out2, "test"))
+	op2.Exec(ctx, errCh)
+	in := mkRow()
+	op2.input <- in
+	r2 := <-out2
+	rt2, ok := r2.(*xsql.SliceTuple)
+	require.True(t, ok)
+	assert.Nil(t, rt2.Props)
+	props, err := op2.EvalProps(in)
+	require.NoError(t, err)
+	assert.Equal(t, map[string]string{topicTpl: "ek/collect/testvvv"}, props)
 }

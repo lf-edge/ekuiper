@@ -47,8 +47,27 @@ type TransformOp struct {
 	dt           *template.Template
 	templates    map[string]*template.Template
 	isSliceMode  bool
+	// deferPropsEval skips per-row props (e.g. sink topic templates) evaluation
+	// in slice mode. It must only be enabled when a downstream BatchWriterOp
+	// takes over the evaluation once per batch against the last row through
+	// EvalProps, because only the last row props are used at flush time.
+	deferPropsEval bool
 	// temp state
 	output bytes.Buffer
+}
+
+// SetDeferPropsEval enables deferred props evaluation for slice mode.
+// See deferPropsEval.
+func (t *TransformOp) SetDeferPropsEval(v bool) {
+	t.deferPropsEval = v
+}
+
+// EvalProps renders the sink prop templates (e.g. topic) against the given
+// row. It is the same calculation as the per-row step skipped when
+// deferPropsEval is enabled, extracted so BatchWriterOp can run it once per
+// batch against the last row.
+func (t *TransformOp) EvalProps(data any) (map[string]string, error) {
+	return t.calculateProps(data)
 }
 
 // NewTransformOp creates a transform node
@@ -186,16 +205,21 @@ func (t *TransformOp) Worker(ctx api.StreamContext, item any) []any {
 
 func (t *TransformOp) transformSlice(ctx api.StreamContext, item any) []any {
 	var result []any
-	props, err := t.calculateProps(item)
-	if err != nil {
-		result = []any{err}
-		return result
-	}
 	switch dt := item.(type) {
 	case *xsql.SliceTuple:
-		dt.Props = props
+		if !t.deferPropsEval {
+			props, err := t.calculateProps(item)
+			if err != nil {
+				return []any{err}
+			}
+			dt.Props = props
+		}
 		result = []any{dt}
 	case xsql.Collection:
+		props, err := t.calculateProps(item)
+		if err != nil {
+			return []any{err}
+		}
 		pack := make([]*xsql.SliceTuple, 0, dt.Len())
 		err = dt.Range(func(i int, r xsql.ReadonlyRow) (bool, error) {
 			if rs, ok := r.(*xsql.SliceTuple); ok {

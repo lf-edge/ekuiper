@@ -240,3 +240,75 @@ func TestBatchWriterRun(t *testing.T) {
 		})
 	}
 }
+
+func TestBatchWriterDeferredPropsEval(t *testing.T) {
+	mc := mockclock.GetMockClock()
+	ctx := mockContext.NewMockContext("testDeferredProps", "op1")
+	newOp := func(eval func(any) (map[string]string, error)) *BatchWriterOp {
+		op, err := NewBatchWriterOp(ctx, "test", &def.RuleOption{BufferLength: 10, SendError: true}, map[string]*ast.JsonStreamField{
+			"a": nil,
+			"b": nil,
+		}, &SinkConf{
+			SendSingle: true,
+			Format:     "delimited",
+			HasHeader:  true,
+		}, false)
+		require.NoError(t, err)
+		if eval != nil {
+			op.SetPropsEval(eval)
+		}
+		return op
+	}
+	mkRow := func(props map[string]string) *xsql.SliceTuple {
+		return &xsql.SliceTuple{SourceContent: model.SliceVal{"a", 20}, Props: props}
+	}
+	run := func(op *BatchWriterOp, rows []*xsql.SliceTuple) *xsql.RawTuple {
+		out := make(chan any, 100)
+		require.NoError(t, op.AddOutput(out, "test"))
+		errCh := make(chan error)
+		op.Exec(ctx, errCh)
+		for _, r := range rows {
+			op.input <- r
+			mc.Add(30 * time.Millisecond)
+		}
+		op.input <- xsql.BatchEOFTuple(time.Now())
+		result := <-out
+		rt, ok := result.(*xsql.RawTuple)
+		require.True(t, ok, "expect RawTuple, got %T", result)
+		return rt
+	}
+
+	t.Run("evaluated once with last row", func(t *testing.T) {
+		calls := 0
+		var gotLast any
+		op := newOp(func(data any) (map[string]string, error) {
+			calls++
+			gotLast = data
+			return map[string]string{"topic": "rendered"}, nil
+		})
+		rows := []*xsql.SliceTuple{mkRow(nil), mkRow(nil), mkRow(nil)}
+		rt := run(op, rows)
+		assert.Equal(t, 1, calls)
+		assert.True(t, gotLast.(*xsql.SliceTuple) == rows[2])
+		assert.Equal(t, map[string]string{"topic": "rendered"}, rt.Props)
+	})
+
+	t.Run("keeps existing row props", func(t *testing.T) {
+		calls := 0
+		op := newOp(func(data any) (map[string]string, error) {
+			calls++
+			return map[string]string{"topic": "rendered"}, nil
+		})
+		rows := []*xsql.SliceTuple{mkRow(map[string]string{"topic": "preset"})}
+		rt := run(op, rows)
+		assert.Equal(t, 0, calls)
+		assert.Equal(t, map[string]string{"topic": "preset"}, rt.Props)
+	})
+
+	t.Run("no evaluator keeps last row props", func(t *testing.T) {
+		op := newOp(nil)
+		rows := []*xsql.SliceTuple{mkRow(nil), mkRow(map[string]string{"topic": "preset"})}
+		rt := run(op, rows)
+		assert.Equal(t, map[string]string{"topic": "preset"}, rt.Props)
+	})
+}
