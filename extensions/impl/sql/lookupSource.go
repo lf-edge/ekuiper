@@ -104,7 +104,7 @@ func (s *SqlLookupSource) Connect(ctx api.StreamContext, sc api.StatusChangeHand
 
 func (s *SqlLookupSource) Lookup(ctx api.StreamContext, fields []string, keys []string, values []any) ([]map[string]any, error) {
 	if s.needReconnect {
-		err := s.conn.Reconnect()
+		err := s.conn.Reconnect(ctx)
 		if err != nil {
 			conf.Log.Errorf("reconnect db error %v", err)
 			return nil, err
@@ -130,7 +130,7 @@ func (s *SqlLookupSource) Lookup(ctx api.StreamContext, fields []string, keys []
 		query = sqlQuery
 	}
 	ctx.GetLogger().Debugf("Query is %s with args %v", query, args)
-	rows, err := s.conn.GetDB().Query(query, args...)
+	rows, err := s.conn.GetDB().QueryContext(ctx, query, args...)
 	failpoint.Inject("dbErr", func() {
 		err = errors.New("dbErr")
 	})

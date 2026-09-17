@@ -159,7 +159,7 @@ func (s *SQLSourceConnector) queryData(ctx api.StreamContext, rcvTime time.Time,
 	logger := ctx.GetLogger()
 	if s.needReconnect {
 		SqlSourceCounter.WithLabelValues(LblRecon, ctx.GetRuleId(), ctx.GetOpId()).Inc()
-		err := s.conn.Reconnect()
+		err := s.conn.Reconnect(ctx)
 		if err != nil {
 			logger.Errorf("reconnect db error %v", err)
 			ingestError(ctx, err)
@@ -178,7 +178,7 @@ func (s *SQLSourceConnector) queryData(ctx api.StreamContext, rcvTime time.Time,
 	logger.Debugf("Query the database with %s", query)
 
 	queryStart := time.Now()
-	rows, err := s.conn.GetDB().Query(query)
+	rows, err := s.conn.GetDB().QueryContext(ctx, query)
 	failpoint.Inject("QueryErr", func() {
 		err = errors.New("QueryErr")
 	})
