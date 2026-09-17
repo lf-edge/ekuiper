@@ -104,43 +104,76 @@ func (rs *RulesetProcessor) ExportRuleSetStatus() *Ruleset {
 	return all
 }
 
+type importResult struct {
+	rules  []string
+	counts [3]int
+	failed bool
+}
+
 func (rs *RulesetProcessor) Import(content []byte) ([]string, []int, error) {
+	result, err := rs.importRuleset(content)
+	if err != nil {
+		return nil, nil, err
+	}
+	return result.rules, result.counts[:], nil
+}
+
+func (rs *RulesetProcessor) ImportForInit(content []byte) ([]int, bool, error) {
+	result, err := rs.importRuleset(content)
+	if err != nil {
+		return nil, false, err
+	}
+	return result.counts[:], result.failed, nil
+}
+
+func (rs *RulesetProcessor) importRuleset(content []byte) (importResult, error) {
 	all := &Ruleset{}
 	err := json.Unmarshal(content, all)
 	if err != nil {
-		return nil, nil, fmt.Errorf("invalid import file: %v", err)
+		return importResult{}, fmt.Errorf("invalid import file: %v", err)
 	}
-	counts := make([]int, 3)
+	var result importResult
 	// restore streams
 	for k, v := range all.Streams {
-		_, e := rs.s.ExecReplaceStream(k, v, ast.TypeStream)
+		_, skipped, e := rs.s.replaceStream(k, v, ast.TypeStream)
+		if skipped {
+			continue
+		}
 		if e != nil {
 			conf.Log.Warnf("Fail to import stream %s with error: %v", k, e)
+			result.failed = true
 		} else {
-			counts[0]++
+			result.counts[0]++
 		}
 	}
 	// restore tables
 	for k, v := range all.Tables {
-		_, e := rs.s.ExecReplaceStream(k, v, ast.TypeTable)
+		_, skipped, e := rs.s.replaceStream(k, v, ast.TypeTable)
+		if skipped {
+			continue
+		}
 		if e != nil {
 			conf.Log.Warnf("Fail to import table %s with error: %v", k, e)
+			result.failed = true
 		} else {
-			counts[1]++
+			result.counts[1]++
 		}
 	}
-	var rules []string
 	// restore rules
 	for k, v := range all.Rules {
-		_, e := rs.r.ExecCreateWithValidation(k, v)
+		_, skipped, e := rs.r.createWithValidation(k, v)
+		if skipped {
+			continue
+		}
 		if e != nil {
 			conf.Log.Warnf("Fail to import rule %s with error: %v", k, e)
+			result.failed = true
 		} else {
-			rules = append(rules, k)
-			counts[2]++
+			result.rules = append(result.rules, k)
+			result.counts[2]++
 		}
 	}
-	return rules, counts, nil
+	return result, nil
 }
 
 func (rs *RulesetProcessor) ImportRuleSet(all Ruleset) Ruleset {

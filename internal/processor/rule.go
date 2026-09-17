@@ -53,26 +53,45 @@ func NewRuleProcessor() *RuleProcessor {
 }
 
 func (p *RuleProcessor) ExecCreateWithValidation(name, ruleJson string) (*def.Rule, error) {
+	rule, _, err := p.createWithValidation(name, ruleJson)
+	return rule, err
+}
+
+func (p *RuleProcessor) createWithValidation(name, ruleJson string) (*def.Rule, bool, error) {
 	rule, err := p.GetRuleByJson(name, ruleJson)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
-	or, err := p.GetRuleById(rule.Id)
-	if err == nil {
-		if !CanReplace(or.Version, rule.Version) { // old rule has newer version
-			return nil, fmt.Errorf("rule %s already exists with version (%s), new version (%s) is lower", rule.Id, or.Version, rule.Version)
-		}
+	old, err := p.loadRuleForReplace(rule.Id)
+	if err != nil {
+		return nil, false, err
+	}
+	if old != nil && !CanReplace(old.Version, rule.Version) {
+		return nil, true, fmt.Errorf("rule %s already exists with version (%s), new version (%s) is lower", rule.Id, old.Version, rule.Version)
 	}
 
 	if !rule.Temp {
-		err = p.db.Set(rule.Id, ruleJson)
+		err = retryPersist(func() error { return p.db.Set(rule.Id, ruleJson) })
 		if err != nil {
-			return nil, err
+			return nil, false, err
 		}
 	}
 	log.Infof("Rule %s with version (%s) is created.", rule.Id, rule.Version)
-	return rule, nil
+	return rule, false, nil
+}
+
+func (p *RuleProcessor) loadRuleForReplace(name string) (*def.Rule, error) {
+	var stored string
+	exists, err := p.db.Get(name, &stored)
+	if err != nil || !exists {
+		return nil, err
+	}
+	old, err := p.GetRuleByJsonValidated(name, stored)
+	if err != nil {
+		return nil, nil
+	}
+	return old, nil
 }
 
 func (p *RuleProcessor) ExecCreate(name, ruleJson string) error {

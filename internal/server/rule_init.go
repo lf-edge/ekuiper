@@ -42,6 +42,10 @@ func initRuleset() {
 }
 
 func initFromLoc(loc string) error {
+	return initFromLocWith(loc, rulesetProcessor.ImportForInit)
+}
+
+func initFromLocWith(loc string, importRuleset func([]byte) ([]int, bool, error)) error {
 	initFile := filepath.Join(loc, "init.json")
 	fileInfo, err := os.Stat(initFile)
 	if err != nil {
@@ -53,39 +57,68 @@ func initFromLoc(loc string) error {
 	conf.Log.Infof("found init.json with update time %d and last init time %d", updateTime, lastUpdate)
 	// Only leave one initialized file each time. Due to the time shift in some system, compare time is not a good idea
 	if updateTime != lastUpdate {
-		defer func() {
-			// delete all signal files
-			ff, err := os.ReadDir(loc)
-			if err == nil {
-				prefix := "initialized"
-				for _, entry := range ff {
-					if !entry.IsDir() && strings.HasPrefix(entry.Name(), prefix) {
-						path := filepath.Join(loc, entry.Name())
-						err = os.Remove(path)
-						if err != nil {
-							conf.Log.Warnf("remove file %s failed", path)
-						}
-					}
-				}
-			}
-			// create the unique file
-			_, err = os.Create(filepath.Join(loc, fmt.Sprintf("initialized%d", updateTime)))
-			if err != nil {
-				conf.Log.Warn("create new initialized file failed")
-			}
-		}()
-		content, err := os.ReadFile(filepath.Join(loc, "init.json"))
+		content, err := os.ReadFile(initFile)
 		if err != nil {
 			conf.Log.Errorf("fail to read init file: %v", err)
 			return nil
 		}
 		conf.Log.Infof("start to initialize ruleset")
-		_, counts, err := rulesetProcessor.Import(content)
+		counts, failed, err := importRuleset(content)
 		if err != nil {
 			conf.Log.Errorf("fail to import ruleset: %v", err)
 			return nil
 		}
-		conf.Log.Infof("initialzie %d streams, %d tables and %d rules", counts[0], counts[1], counts[2])
+		conf.Log.Infof("initialize %d streams, %d tables and %d rules", counts[0], counts[1], counts[2])
+		if failed {
+			conf.Log.Warn("init.json is incomplete; initialized marker will not be updated")
+			return nil
+		}
+		if err := writeInitialized(loc, updateTime); err != nil {
+			conf.Log.Warnf("create new initialized file failed: %v", err)
+		}
+	}
+	return nil
+}
+
+func writeInitialized(loc string, updateTime int64) error {
+	return writeInitializedWithReadDir(loc, updateTime, os.ReadDir)
+}
+
+func writeInitializedWithReadDir(loc string, updateTime int64, readDir func(string) ([]os.DirEntry, error)) error {
+	name := fmt.Sprintf("initialized%d", updateTime)
+	path := filepath.Join(loc, name)
+	file, err := os.OpenFile(path, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o644)
+	created := err == nil
+	if err != nil {
+		if !os.IsExist(err) {
+			return err
+		}
+		info, statErr := os.Stat(path)
+		if statErr != nil {
+			return statErr
+		}
+		if !info.Mode().IsRegular() {
+			return fmt.Errorf("initialized marker %s is not a regular file", path)
+		}
+	} else if err := file.Close(); err != nil {
+		_ = os.Remove(path)
+		return err
+	}
+	entries, err := readDir(loc)
+	if err != nil {
+		if created {
+			_ = os.Remove(path)
+		}
+		return err
+	}
+	for _, entry := range entries {
+		if entry.IsDir() || entry.Name() == name || !strings.HasPrefix(entry.Name(), "initialized") {
+			continue
+		}
+		oldPath := filepath.Join(loc, entry.Name())
+		if err := os.Remove(oldPath); err != nil {
+			conf.Log.Warnf("remove file %s failed: %v", oldPath, err)
+		}
 	}
 	return nil
 }
@@ -96,34 +129,32 @@ func initFromLoc(loc string) error {
 // - Matching file with no numeric suffix: 0
 // - Otherwise, the int64 suffix value
 func findInitializedTime(root string) int64 {
-	prefix := "initialized"
-	// Walk through the directory tree
-	var result int64 = -1 // Default: no files found
-	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		// Check if it's a file and starts with "initialized"
-		if !info.IsDir() && strings.HasPrefix(info.Name(), prefix) {
-			// Extract the suffix after "initialized"
-			suffix := strings.TrimPrefix(info.Name(), prefix)
-			if suffix == "" {
-				result = 0 // No suffix, return 0
-			} else {
-				// Try to parse the suffix as an int64
-				if num, err := strconv.ParseInt(suffix, 10, 64); err == nil {
-					result = num // Valid suffix, return it
-				} else {
-					result = 0 // Invalid suffix treated as no suffix
-				}
-			}
-			return filepath.SkipDir // Stop walking after first match
-		}
-		return nil
-	})
+	entries, err := os.ReadDir(root)
 	if err != nil {
-		conf.Log.Errorf("Error walking directory: %v\n", err)
+		conf.Log.Errorf("Error reading initialized directory: %v", err)
 		return -1
+	}
+	var marker string
+	for _, entry := range entries {
+		if entry.IsDir() || !strings.HasPrefix(entry.Name(), "initialized") {
+			continue
+		}
+		if marker != "" {
+			conf.Log.Warn("multiple initialized markers found; initialization will run again")
+			return -1
+		}
+		marker = entry.Name()
+	}
+	if marker == "" {
+		return -1
+	}
+	suffix := strings.TrimPrefix(marker, "initialized")
+	if suffix == "" {
+		return 0
+	}
+	result, err := strconv.ParseInt(suffix, 10, 64)
+	if err != nil {
+		return 0
 	}
 	return result
 }
