@@ -72,9 +72,8 @@ func InitConnectionManager(ctx context.Context) {
 }
 
 const (
-	DefaultInitialInterval    = 100 * time.Millisecond
-	DefaultMaxInterval        = 10 * time.Second
-	DefaultMaxElapsedDuration = 3 * time.Minute
+	DefaultInitialInterval = 100 * time.Millisecond
+	DefaultMaxInterval     = 10 * time.Second
 )
 
 func PatrolConnectionStatusJob(ctx context.Context) {
@@ -111,14 +110,10 @@ func patrolConnectionStatus() {
 }
 
 func NewExponentialBackOff() *backoff.ExponentialBackOff {
-	maxElapsedDuration := DefaultMaxElapsedDuration
-	if conf.Config != nil && conf.Config.Connection.BackoffMaxElapsedDuration > 0 {
-		maxElapsedDuration = time.Duration(conf.Config.Connection.BackoffMaxElapsedDuration)
-	}
 	return backoff.NewExponentialBackOff(
 		backoff.WithInitialInterval(DefaultInitialInterval),
 		backoff.WithMaxInterval(DefaultMaxInterval),
-		backoff.WithMaxElapsedTime(maxElapsedDuration),
+		backoff.WithMaxElapsedTime(0),
 	)
 }
 
