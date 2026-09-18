@@ -88,13 +88,16 @@ func TestInitDefinitionWriteRetries(t *testing.T) {
 					flaky.KeyValue = sp.db
 					sp.db = flaky
 				}
-				counts, failed, err := rs.ImportForInit([]byte(tc.content))
+				counts, importErrors, err := rs.ImportForInit([]byte(tc.content))
 				require.NoError(t, err)
 				require.Equal(t, 3, flaky.attempts)
-				require.Equal(t, failures == 3, failed)
 				if failures == 2 {
+					require.Empty(t, importErrors)
 					require.Equal(t, 1, counts[tc.index])
 				} else {
+					require.Len(t, importErrors, 1)
+					var permanent *InitPermanentError
+					require.False(t, errors.As(importErrors[0], &permanent))
 					require.Equal(t, []int{0, 0, 0}, counts)
 				}
 			})
@@ -119,23 +122,27 @@ func TestInitLookupWriteRetryDoesNotReconnect(t *testing.T) {
 		}
 	}
 	sp.db = flaky
-	counts, failed, err := rs.ImportForInit([]byte(`{"tables":{"init_lookup":"CREATE TABLE init_lookup () WITH (DATASOURCE=\"users\", TYPE=\"memory\", FORMAT=\"JSON\", KEY=\"id\", KIND=\"lookup\")"}}`))
+	counts, importErrors, err := rs.ImportForInit([]byte(`{"tables":{"init_lookup":"CREATE TABLE init_lookup () WITH (DATASOURCE=\"users\", TYPE=\"memory\", FORMAT=\"JSON\", KEY=\"id\", KIND=\"lookup\")"}}`))
 	require.NoError(t, err)
-	require.False(t, failed)
+	require.Empty(t, importErrors)
 	require.Equal(t, []int{0, 1, 0}, counts)
 	require.Equal(t, 3, flaky.attempts)
 }
 
-func TestInitVersionSkipAndSharedOrder(t *testing.T) {
+func TestInitVersionConflictIsPermanentAndPrecedesShared(t *testing.T) {
 	rs, sp, rp := newDefinitionTestRuleset(t)
 	newer := []byte(`{"streams":{"source":"CREATE STREAM source () WITH (DATASOURCE=\"demo\", FORMAT=\"JSON\", VERSION=\"2\", SHARED=true)"},"rules":{"rule":"{\"id\":\"rule\",\"version\":\"2\",\"sql\":\"SELECT * FROM source\",\"actions\":[{\"log\":{}}]}"}}`)
-	_, failed, err := rs.ImportForInit(newer)
+	_, importErrors, err := rs.ImportForInit(newer)
 	require.NoError(t, err)
-	require.False(t, failed)
+	require.Empty(t, importErrors)
 	older := []byte(`{"streams":{"source":"CREATE STREAM source () WITH (DATASOURCE=\"demo\", FORMAT=\"JSON\", VERSION=\"1\", SHARED=false)"},"rules":{"rule":"{\"id\":\"rule\",\"version\":\"1\",\"sql\":\"SELECT * FROM source\",\"actions\":[{\"log\":{}}]}"}}`)
-	counts, failed, err := rs.ImportForInit(older)
+	counts, importErrors, err := rs.ImportForInit(older)
 	require.NoError(t, err)
-	require.False(t, failed)
+	require.Len(t, importErrors, 2)
+	for _, importErr := range importErrors {
+		var permanent *InitPermanentError
+		require.ErrorAs(t, importErr, &permanent)
+	}
 	require.Equal(t, []int{0, 0, 0}, counts)
 	var warnings bytes.Buffer
 	oldOutput := conf.Log.Out
@@ -186,9 +193,9 @@ func TestInitCorruptDefinitionsAreReplaced(t *testing.T) {
 			require.NoError(t, db.Set(tc.name, tc.corrupt))
 			payload, err := json.Marshal(content)
 			require.NoError(t, err)
-			_, failed, err := rs.ImportForInit(payload)
+			_, importErrors, err := rs.ImportForInit(payload)
 			require.NoError(t, err)
-			require.False(t, failed)
+			require.Empty(t, importErrors)
 			var stored string
 			exists, err := db.Get(tc.name, &stored)
 			require.NoError(t, err)
@@ -222,16 +229,24 @@ func TestInitReadErrorDoesNotWrite(t *testing.T) {
 			} else {
 				flaky.KeyValue, sp.db = sp.db, flaky
 			}
-			_, failed, err := rs.ImportForInit([]byte(tc.content))
+			_, importErrors, err := rs.ImportForInit([]byte(tc.content))
 			require.NoError(t, err)
-			require.True(t, failed)
+			require.Len(t, importErrors, 1)
+			var permanent *InitPermanentError
+			require.False(t, errors.As(importErrors[0], &permanent))
 			require.Zero(t, flaky.attempts)
 		})
 	}
 }
 
-func TestInitInvalidJSONFails(t *testing.T) {
+func TestInitInvalidJSONIsPermanent(t *testing.T) {
 	rs, _, _ := newDefinitionTestRuleset(t)
 	_, _, err := rs.ImportForInit([]byte("not JSON"))
 	require.ErrorContains(t, err, "invalid import file")
+	var permanent *InitPermanentError
+	require.ErrorAs(t, err, &permanent)
+	_, importErrors, err := rs.ImportForInit([]byte(`{"rules":{"bad_rule":"not JSON"}}`))
+	require.NoError(t, err)
+	require.Len(t, importErrors, 1)
+	require.ErrorAs(t, importErrors[0], &permanent)
 }

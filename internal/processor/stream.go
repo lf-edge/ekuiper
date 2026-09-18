@@ -17,6 +17,7 @@ package processor
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -232,56 +233,59 @@ func (p *StreamProcessor) execSave(stmt *ast.StreamStmt, statement string, repla
 }
 
 func (p *StreamProcessor) ExecReplaceStream(name string, statement string, st ast.StreamType) (info string, err error) {
-	info, _, err = p.replaceStream(name, statement, st)
+	info, err = p.replaceStream(name, statement, st)
 	if err != nil {
-		if _, ok := err.(errorx.ErrorWithCode); !ok {
+		var coded errorx.ErrorWithCode
+		if errors.As(err, &coded) {
+			err = coded
+		} else {
 			err = errorx.NewWithCode(errorx.StreamTableError, err.Error())
 		}
 	}
 	return info, err
 }
 
-func (p *StreamProcessor) replaceStream(name string, statement string, st ast.StreamType) (info string, skipped bool, err error) {
+func (p *StreamProcessor) replaceStream(name string, statement string, st ast.StreamType) (string, error) {
 	parser := xsql.NewParser(strings.NewReader(statement))
 	stmt, err := xsql.Language.Parse(parser)
 	if err != nil {
-		return "", false, err
+		return "", &InitPermanentError{Err: err}
 	}
 	stt := ast.StreamTypeMap[st]
 	switch s := stmt.(type) {
 	case *ast.StreamStmt:
 		if s.StreamType != st {
-			return "", false, errorx.NewWithCode(errorx.NOT_FOUND, fmt.Sprintf("%s %s is not found", ast.StreamTypeMap[st], s.Name))
+			return "", &InitPermanentError{Err: errorx.NewWithCode(errorx.NOT_FOUND, fmt.Sprintf("%s %s is not found", ast.StreamTypeMap[st], s.Name))}
 		}
 		if string(s.Name) != name {
-			return "", false, fmt.Errorf("Replace %s fails: the sql statement must update the %s source.", name, name)
+			return "", &InitPermanentError{Err: fmt.Errorf("Replace %s fails: the sql statement must update the %s source.", name, name)}
 		}
 		if s.Options == nil {
-			return "", false, fmt.Errorf("Replace %s fails: missing source options.", name)
+			return "", &InitPermanentError{Err: fmt.Errorf("Replace %s fails: missing source options.", name)}
 		}
 		if s.Options.Temp {
-			return "", false, fmt.Errorf("Replace %s fails: cannot replace with temp option.", name)
+			return "", &InitPermanentError{Err: fmt.Errorf("Replace %s fails: cannot replace with temp option.", name)}
 		}
 		old, err := p.loadStreamForReplace(name, st)
 		if err != nil {
-			return "", false, err
+			return "", err
 		}
 		if old != nil && !CanReplace(old.Options.VERSION, s.Options.VERSION) {
-			return "", true, fmt.Errorf("source %s already exists with version (%s), new version (%s) is lower", name, old.Options.VERSION, s.Options.VERSION)
+			return "", &InitPermanentError{Err: fmt.Errorf("source %s already exists with version (%s), new version (%s) is lower", name, old.Options.VERSION, s.Options.VERSION)}
 		}
 		if old != nil && s.Options.SHARED != old.Options.SHARED {
-			return "", false, fmt.Errorf("Replace %s fails: do not support to change stream SHARED option.", name)
+			return "", &InitPermanentError{Err: fmt.Errorf("Replace %s fails: do not support to change stream SHARED option.", name)}
 		}
 		err = p.execSave(s, statement, true)
 		if err != nil {
-			return "", false, fmt.Errorf("Replace %s fails: %v.", stt, err)
+			return "", fmt.Errorf("Replace %s fails: %v.", stt, err)
 		} else {
 			info := fmt.Sprintf("%s %s is replaced.", cases.Title(language.Und).String(stt), s.Name)
 			log.Printf("%s", info)
-			return info, false, nil
+			return info, nil
 		}
 	default:
-		return "", false, fmt.Errorf("Invalid %s statement: %s", stt, statement)
+		return "", &InitPermanentError{Err: fmt.Errorf("Invalid %s statement: %s", stt, statement)}
 	}
 }
 

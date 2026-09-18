@@ -16,6 +16,7 @@ package server
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -27,6 +28,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/schedule"
+	"github.com/lf-edge/ekuiper/v2/internal/processor"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/rule/machine"
 	"github.com/lf-edge/ekuiper/v2/metrics"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
@@ -84,15 +86,22 @@ func initFromLoc(loc string) error {
 			return nil
 		}
 		conf.Log.Infof("start to initialize ruleset")
-		counts, failed, err := rulesetProcessor.ImportForInit(content)
+		counts, importErrors, err := rulesetProcessor.ImportForInit(content)
 		if err != nil {
 			conf.Log.Errorf("fail to import ruleset: %v", err)
+			var permanent *processor.InitPermanentError
+			if errors.As(err, &permanent) {
+				completed = true
+			}
 			return nil
 		}
 		conf.Log.Infof("initialize %d streams, %d tables and %d rules", counts[0], counts[1], counts[2])
-		if failed {
-			conf.Log.Warn("init.json is incomplete; initialized marker will not be updated")
-			return nil
+		for _, importErr := range importErrors {
+			var permanent *processor.InitPermanentError
+			if !errors.As(importErr, &permanent) {
+				conf.Log.Warn("init.json has a retryable error; initialized marker will not be updated")
+				return nil
+			}
 		}
 		completed = true
 	}

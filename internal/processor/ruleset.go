@@ -35,6 +35,13 @@ type Ruleset struct {
 	Rules   map[string]string `json:"rules"`
 }
 
+// InitPermanentError marks an error that retrying the same init.json cannot fix.
+// It keeps the original message and cause for ordinary import callers.
+type InitPermanentError struct{ Err error }
+
+func (e *InitPermanentError) Error() string { return e.Err.Error() }
+func (e *InitPermanentError) Unwrap() error { return e.Err }
+
 func NewRulesetProcessor(r *RuleProcessor, s *StreamProcessor) *RulesetProcessor {
 	return &RulesetProcessor{
 		r: r,
@@ -107,69 +114,58 @@ func (rs *RulesetProcessor) ExportRuleSetStatus() *Ruleset {
 type importResult struct {
 	rules  []string
 	counts [3]int
-	failed bool
+	errors []error
 }
 
 func (rs *RulesetProcessor) Import(content []byte) ([]string, []int, error) {
-	result, err := rs.importRuleset(content, false)
+	result, err := rs.importRuleset(content)
 	if err != nil {
 		return nil, nil, err
 	}
 	return result.rules, result.counts[:], nil
 }
 
-func (rs *RulesetProcessor) ImportForInit(content []byte) ([]int, bool, error) {
-	result, err := rs.importRuleset(content, true)
+func (rs *RulesetProcessor) ImportForInit(content []byte) ([]int, []error, error) {
+	result, err := rs.importRuleset(content)
 	if err != nil {
-		return nil, false, err
+		return nil, nil, err
 	}
-	return result.counts[:], result.failed, nil
+	return result.counts[:], result.errors, nil
 }
 
-// Only startup initialization treats version precedence as a normal skip.
-// Regular Import keeps its existing per-object conflict warning.
-func (rs *RulesetProcessor) importRuleset(content []byte, skipVersionConflicts bool) (importResult, error) {
+func (rs *RulesetProcessor) importRuleset(content []byte) (importResult, error) {
 	all := &Ruleset{}
 	err := json.Unmarshal(content, all)
 	if err != nil {
-		return importResult{}, fmt.Errorf("invalid import file: %v", err)
+		return importResult{}, &InitPermanentError{Err: fmt.Errorf("invalid import file: %w", err)}
 	}
 	var result importResult
 	// restore streams
 	for k, v := range all.Streams {
-		_, skipped, e := rs.s.replaceStream(k, v, ast.TypeStream)
-		if skipped && skipVersionConflicts {
-			continue
-		}
+		_, e := rs.s.replaceStream(k, v, ast.TypeStream)
 		if e != nil {
 			conf.Log.Warnf("Fail to import stream %s with error: %v", k, e)
-			result.failed = true
+			result.errors = append(result.errors, e)
 		} else {
 			result.counts[0]++
 		}
 	}
 	// restore tables
 	for k, v := range all.Tables {
-		_, skipped, e := rs.s.replaceStream(k, v, ast.TypeTable)
-		if skipped && skipVersionConflicts {
-			continue
-		}
+		_, e := rs.s.replaceStream(k, v, ast.TypeTable)
 		if e != nil {
 			conf.Log.Warnf("Fail to import table %s with error: %v", k, e)
-			result.failed = true
+			result.errors = append(result.errors, e)
 		} else {
 			result.counts[1]++
 		}
 	}
 	// restore rules
 	for k, v := range all.Rules {
-		_, skipped, e := rs.r.createWithValidation(k, v)
-		if skipped && skipVersionConflicts {
-			continue
-		}
+		_, e := rs.r.ExecCreateWithValidation(k, v)
 		if e != nil {
 			conf.Log.Warnf("Fail to import rule %s with error: %v", k, e)
-			result.failed = true
+			result.errors = append(result.errors, e)
 		} else {
 			result.rules = append(result.rules, k)
 			result.counts[2]++

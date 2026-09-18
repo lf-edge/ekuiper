@@ -53,34 +53,27 @@ func NewRuleProcessor() *RuleProcessor {
 }
 
 func (p *RuleProcessor) ExecCreateWithValidation(name, ruleJson string) (*def.Rule, error) {
-	rule, _, err := p.createWithValidation(name, ruleJson)
-	return rule, err
-}
-
-// createWithValidation reports version skips separately: the API keeps its
-// existing conflict error, while ruleset import treats the skip as normal.
-func (p *RuleProcessor) createWithValidation(name, ruleJson string) (*def.Rule, bool, error) {
 	rule, err := p.GetRuleByJson(name, ruleJson)
 	if err != nil {
-		return nil, false, err
+		return nil, &InitPermanentError{Err: err}
 	}
 
 	old, err := p.loadRuleForReplace(rule.Id)
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
 	if old != nil && !CanReplace(old.Version, rule.Version) {
-		return nil, true, fmt.Errorf("rule %s already exists with version (%s), new version (%s) is lower", rule.Id, old.Version, rule.Version)
+		return nil, &InitPermanentError{Err: fmt.Errorf("rule %s already exists with version (%s), new version (%s) is lower", rule.Id, old.Version, rule.Version)}
 	}
 
 	if !rule.Temp {
 		err = retryPersist(func() error { return p.db.Set(rule.Id, ruleJson) })
 		if err != nil {
-			return nil, false, err
+			return nil, err
 		}
 	}
 	log.Infof("Rule %s with version (%s) is created.", rule.Id, rule.Version)
-	return rule, false, nil
+	return rule, nil
 }
 
 // loadRuleForReplace propagates storage read errors, but lets a validated new

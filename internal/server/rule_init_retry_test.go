@@ -29,7 +29,7 @@ func TestInitFromLocKeepsMarkerUntilSuccessful(t *testing.T) {
 	t.Cleanup(func() { _, _ = streamProcessor.DropStream(name, ast.TypeStream) })
 	loc := t.TempDir()
 	initFile := filepath.Join(loc, "init.json")
-	require.NoError(t, os.WriteFile(initFile, []byte(`{"streams":{"sf1024_retry_source":"not SQL"}}`), 0o644))
+	require.NoError(t, os.WriteFile(initFile, []byte(`{"streams":{"sf1024_bad_sql":"not SQL"},"tables":{"sf1024_unavailable_lookup":"CREATE TABLE sf1024_unavailable_lookup () WITH (DATASOURCE=\"demo\", TYPE=\"missing_source\", FORMAT=\"JSON\", KEY=\"id\", KIND=\"lookup\")"}}`), 0o644))
 	require.NoError(t, os.WriteFile(filepath.Join(loc, "initialized123"), nil, 0o644))
 	require.NoError(t, initFromLoc(loc))
 	require.EqualValues(t, 123, findInitializedTime(loc))
@@ -42,7 +42,7 @@ func TestInitFromLocKeepsMarkerUntilSuccessful(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func TestInitFromLocVersionSkipCompletes(t *testing.T) {
+func TestInitFromLocVersionConflictCompletes(t *testing.T) {
 	const name = "sf1024_skip_source"
 	t.Cleanup(func() { _, _ = streamProcessor.DropStream(name, ast.TypeStream) })
 	_, err := streamProcessor.ExecReplaceStream(name, `CREATE STREAM sf1024_skip_source () WITH (DATASOURCE="demo", FORMAT="JSON", VERSION="2")`, ast.TypeStream)
@@ -56,11 +56,24 @@ func TestInitFromLocVersionSkipCompletes(t *testing.T) {
 	require.Equal(t, info.ModTime().UnixMilli(), findInitializedTime(loc))
 }
 
-func TestInitFromLocParseErrorDoesNotCreateMarker(t *testing.T) {
+func TestInitFromLocInvalidJSONCompletes(t *testing.T) {
 	loc := t.TempDir()
-	require.NoError(t, os.WriteFile(filepath.Join(loc, "init.json"), []byte("not JSON"), 0o644))
+	initFile := filepath.Join(loc, "init.json")
+	require.NoError(t, os.WriteFile(initFile, []byte("not JSON"), 0o644))
 	require.NoError(t, initFromLoc(loc))
-	require.EqualValues(t, -1, findInitializedTime(loc))
+	info, err := os.Stat(initFile)
+	require.NoError(t, err)
+	require.Equal(t, info.ModTime().UnixMilli(), findInitializedTime(loc))
+}
+
+func TestInitFromLocInvalidSQLCompletes(t *testing.T) {
+	loc := t.TempDir()
+	initFile := filepath.Join(loc, "init.json")
+	require.NoError(t, os.WriteFile(initFile, []byte(`{"streams":{"sf1024_bad_sql":"not SQL"}}`), 0o644))
+	require.NoError(t, initFromLoc(loc))
+	info, err := os.Stat(initFile)
+	require.NoError(t, err)
+	require.Equal(t, info.ModTime().UnixMilli(), findInitializedTime(loc))
 }
 
 func TestUnreadableInitDoesNotCreateMarker(t *testing.T) {
