@@ -118,10 +118,7 @@ func (s *SQLConnection) Ping(ctx api.StreamContext) error {
 	pingCtx, cancel := context.WithTimeout(ctx, defaultDialTimeout)
 	defer cancel()
 	if s.db == nil {
-		err := s.dial(pingCtx)
-		if err != nil {
-			return err
-		}
+		return s.dial(pingCtx)
 	}
 	return s.db.PingContext(pingCtx)
 }
