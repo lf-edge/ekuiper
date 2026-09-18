@@ -31,6 +31,37 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
+func TestCloneTuplePreservesRowSemantics(t *testing.T) {
+	ctx := mockContext.NewMockContext("rule", "decode")
+	source := &xsql.Tuple{
+		Emitter:   "source",
+		Message:   xsql.Message{"value": 1},
+		Metadata:  xsql.Metadata{"topic": "demo"},
+		Timestamp: time.UnixMilli(100),
+		Props:     map[string]string{"format": "json"},
+		AffiliateRow: xsql.AffiliateRow{
+			CalCols:  map[string]interface{}{"calculated": 2},
+			AliasMap: map[string]interface{}{"alias": 3},
+		},
+	}
+	source.SetTracerCtx(ctx)
+
+	cloned := cloneTuple(source, 0)
+	require.Equal(t, source.Emitter, cloned.Emitter)
+	require.Equal(t, source.Message, cloned.Message)
+	require.Equal(t, source.Metadata, cloned.Metadata)
+	require.Equal(t, source.Timestamp, cloned.Timestamp)
+	require.Equal(t, source.Props, cloned.Props)
+	require.Equal(t, source.CalCols, cloned.CalCols)
+	require.Equal(t, source.AliasMap, cloned.AliasMap)
+	require.Same(t, ctx, cloned.GetTracerCtx())
+
+	cloned.Message["value"] = 99
+	cloned.CalCols["calculated"] = 99
+	require.Equal(t, 1, source.Message["value"])
+	require.Equal(t, 2, source.CalCols["calculated"])
+}
+
 func TestJSON(t *testing.T) {
 	tests := []struct {
 		name        string

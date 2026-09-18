@@ -1,4 +1,4 @@
-// Copyright 2021-2024 EMQ Technologies Co., Ltd.
+// Copyright 2021-2026 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -81,8 +81,10 @@ func (s *sink) Collect(ctx api.StreamContext, data api.MessageTuple) error {
 	if dt, ok := data.(xsql.HasTracerCtx); ok {
 		spanCtx = dt.GetTracerCtx()
 	}
+	tuple := &xsql.Tuple{Message: data.ToMap(), Metadata: s.meta, Timestamp: timex.GetNow()}
+	tuple.SetTracerCtx(spanCtx)
 	var (
-		t   pubsub.MemTuple = &xsql.Tuple{Message: data.ToMap(), Metadata: s.meta, Timestamp: timex.GetNow(), Ctx: spanCtx}
+		t   pubsub.MemTuple = tuple
 		err error
 	)
 	if s.rowkindField != "" {
@@ -134,7 +136,8 @@ func (s *sink) CollectList(ctx api.StreamContext, tuples api.MessageTupleList) e
 	}
 	result := make([]pubsub.MemTuple, tuples.Len())
 	tuples.RangeOfTuples(func(index int, tuple api.MessageTuple) bool {
-		t := &xsql.Tuple{Message: tuple.ToMap(), Metadata: s.meta, Timestamp: timex.GetNow(), Ctx: spanCtx}
+		t := &xsql.Tuple{Message: tuple.ToMap(), Metadata: s.meta, Timestamp: timex.GetNow()}
+		t.SetTracerCtx(spanCtx)
 		if s.rowkindField != "" {
 			st, err := s.wrapUpdatable(t)
 			if err != nil {

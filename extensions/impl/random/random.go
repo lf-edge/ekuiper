@@ -1,4 +1,4 @@
-// Copyright 2021-2024 EMQ Technologies Co., Ltd.
+// Copyright 2021-2026 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@ package random
 
 import (
 	"bytes"
+	"encoding/gob"
 	"encoding/json"
 	"fmt"
 	"math/rand"
@@ -29,6 +30,10 @@ import (
 )
 
 const dedupStateKey = "input"
+
+func init() {
+	gob.Register([][]byte{})
+}
 
 type randomSourceConfig struct {
 	Seed    int                    `json:"seed"`
@@ -69,16 +74,19 @@ func (s *randomSource) Connect(ctx api.StreamContext, sch api.StatusChangeHandle
 	logger := ctx.GetLogger()
 	logger.Debugf("open random source with deduplicate %d", s.conf.Deduplicate)
 	if s.conf.Deduplicate != 0 {
+		// Read the legacy state key for checkpoint compatibility. Keep an
+		// owned copy because the context state belongs to the checkpoint
+		// object graph.
 		list, err := ctx.GetState(dedupStateKey)
 		if err != nil {
 			return err
 		}
 		if list == nil {
-			list = make([][]byte, 0)
+			s.list = make([][]byte, 0)
 		} else {
 			if l, ok := list.([][]byte); ok {
 				logger.Debugf("restore list %v", l)
-				s.list = l
+				s.list = cloneDedupList(l)
 			} else {
 				s.list = make([][]byte, 0)
 				logger.Warnf("random source gets invalid state, ignore it")
@@ -128,11 +136,54 @@ func (s *randomSource) isDup(ctx api.StreamContext, next map[string]interface{})
 	}
 	logger.Debugf("no duplicate %s", ns)
 	if s.conf.Deduplicate > 0 && len(s.list) >= s.conf.Deduplicate {
-		s.list = s.list[1:]
+		// Offsets already published to SourceNode are immutable. Build a new
+		// outer slice before evicting an entry so a checkpoint cannot observe
+		// the replacement through an older slice header. The byte entries are
+		// immutable after json.Marshal and can be shared.
+		limit := s.conf.Deduplicate
+		nextList := make([][]byte, limit)
+		copy(nextList, s.list[len(s.list)-(limit-1):])
+		nextList[limit-1] = ns
+		s.list = nextList
+		return false
 	}
 	s.list = append(s.list, ns)
-	_ = ctx.PutState(dedupStateKey, s.list)
 	return false
+}
+
+func (s *randomSource) GetOffset() (any, error) {
+	if s.conf.Deduplicate == 0 {
+		return nil, nil
+	}
+	// Restrict capacity so callers cannot reslice into storage that a later
+	// append may reuse. Existing entries are never modified.
+	return s.list[:len(s.list):len(s.list)], nil
+}
+
+func (s *randomSource) CheckpointOffsetIsImmutable() {}
+
+func (s *randomSource) Rewind(offset any) error {
+	if offset == nil {
+		return nil
+	}
+	list, ok := offset.([][]byte)
+	if !ok {
+		return fmt.Errorf("random source dedup offset has invalid type %T", offset)
+	}
+	s.list = cloneDedupList(list)
+	return nil
+}
+
+func (s *randomSource) ResetOffset(_ map[string]any) error {
+	return fmt.Errorf("random source does not support resetting dedup offset")
+}
+
+func cloneDedupList(list [][]byte) [][]byte {
+	cloned := make([][]byte, len(list))
+	for i, item := range list {
+		cloned[i] = bytes.Clone(item)
+	}
+	return cloned
 }
 
 func (s *randomSource) Close(_ api.StreamContext) error {
@@ -143,4 +194,7 @@ func GetSource() api.Source {
 	return &randomSource{}
 }
 
-var _ api.PullTupleSource = &randomSource{}
+var (
+	_ api.PullTupleSource = &randomSource{}
+	_ api.Rewindable      = &randomSource{}
+)

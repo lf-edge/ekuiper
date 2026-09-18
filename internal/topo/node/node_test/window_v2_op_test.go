@@ -100,7 +100,6 @@ func TestStateWindowStatePartition(t *testing.T) {
 
 func TestStateWindowState(t *testing.T) {
 	conf.IsTesting = true
-	ctx, cancel := mockContext.NewMockContext("1", "2").WithCancel()
 	now := time.Now()
 	o := &def.RuleOption{
 		BufferLength: 10,
@@ -126,11 +125,17 @@ func TestStateWindowState(t *testing.T) {
 	output := make(chan any, 10)
 	op.AddOutput(output, "output")
 	errCh := make(chan error, 10)
-	op.Exec(ctx, errCh)
-	waitExecute()
+	ctx1, cancel1 := newWindowV2CheckpointContext(t, nil)
+	op.Exec(ctx1, errCh)
+	waitWindowV2StateSaved(t, ctx1)
 	input <- &xsql.Tuple{Message: map[string]any{"a": true}, Timestamp: now}
 	input <- &xsql.Tuple{Message: map[string]any{"a": false}, Timestamp: now.Add(500 * time.Millisecond)}
-	waitExecute()
+	waitWindowV2Processed(t, op, 2)
+	frozen := freezeWindowV2State(t, ctx1)
+	stopWindowV2Operator(t, ctx1, cancel1)
+
+	restored := decodeWindowV2State(t, frozen)
+	ctx2, cancel2 := newWindowV2CheckpointContext(t, restored)
 	op2, err := node.NewWindowV2Op("window", node.WindowConfig{
 		Type:            windowPlan.WindowType(),
 		SingleCondition: windowPlan.GetSingleCondition(),
@@ -141,12 +146,12 @@ func TestStateWindowState(t *testing.T) {
 	output2 := make(chan any, 10)
 	op2.AddOutput(output2, "output")
 	errCh2 := make(chan error, 10)
-	op2.Exec(ctx, errCh2)
-	waitExecute()
+	op2.Exec(ctx2, errCh2)
+	waitWindowV2StateSaved(t, ctx2)
 	input2 <- &xsql.Tuple{Message: map[string]any{"a": false}, Timestamp: now.Add(500 * time.Millisecond)}
 	input2 <- &xsql.Tuple{Message: map[string]any{"a": true}, Timestamp: now.Add(500 * time.Millisecond)}
-	waitExecute()
 	got := <-output2
+	waitWindowV2Processed(t, op2, 2)
 	wt, ok := got.(*xsql.WindowTuples)
 	require.True(t, ok)
 	require.NotNil(t, wt)
@@ -162,10 +167,7 @@ func TestStateWindowState(t *testing.T) {
 			"a": false,
 		},
 	}, d)
-	cancel()
-	waitExecute()
-	op.Close()
-	op2.Close()
+	stopWindowV2Operator(t, ctx2, cancel2)
 }
 
 func TestSingleConditionStWindow(t *testing.T) {

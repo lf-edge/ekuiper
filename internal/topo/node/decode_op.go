@@ -1,4 +1,4 @@
-// Copyright 2021-2025 EMQ Technologies Co., Ltd.
+// Copyright 2021-2026 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -391,12 +391,12 @@ func mergeTuple(ctx api.StreamContext, d *xsql.Tuple, result any) {
 
 func toTupleFromRawTuple(ctx api.StreamContext, v map[string]any, d *xsql.RawTuple) *xsql.Tuple {
 	t := &xsql.Tuple{
-		Ctx:       d.Ctx,
 		Message:   v,
 		Metadata:  d.Metadata,
 		Timestamp: d.Timestamp,
 		Emitter:   d.Emitter,
 	}
+	t.SetTracerCtx(d.GetTracerCtx())
 	return t
 }
 
@@ -408,12 +408,17 @@ func cloneTuple(d *xsql.Tuple, hint int) *xsql.Tuple {
 	for k, v := range d.Message {
 		m[k] = v
 	}
-	return &xsql.Tuple{
+	result := &xsql.Tuple{
 		Message:   m,
 		Metadata:  d.Metadata,
 		Timestamp: d.Timestamp,
 		Emitter:   d.Emitter,
+		Props:     d.Props,
+
+		AffiliateRow: d.AffiliateRow.Clone(),
 	}
+	result.SetTracerCtx(d.GetTracerCtx())
+	return result
 }
 
 func tupleAppend(d *xsql.Tuple, mv map[string]any) {

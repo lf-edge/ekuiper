@@ -1,4 +1,4 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2026 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
 package node
 
 import (
+	"encoding/gob"
 	"fmt"
 	"strconv"
 	"time"
@@ -28,6 +29,10 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
+
+func init() {
+	gob.Register([][]int64{})
+}
 
 type DedupTriggerNode struct {
 	*defaultSinkNode

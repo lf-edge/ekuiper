@@ -1,4 +1,4 @@
-// Copyright 2024-2025 EMQ Technologies Co., Ltd.
+// Copyright 2024-2026 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -262,39 +262,41 @@ func decodeAndCollect(ctx api.StreamContext, sink api.TupleCollector, d *xsql.Ra
 	switch r := result.(type) {
 	case map[string]any:
 		t := &xsql.Tuple{
-			Ctx:       d.Ctx,
 			Metadata:  d.Metadata,
 			Timestamp: d.Timestamp,
 			Emitter:   d.Emitter,
 			Props:     d.Props,
 			Message:   r,
 		}
+		t.SetTracerCtx(d.GetTracerCtx())
 		return sink.Collect(ctx, t)
 	case []map[string]any:
 		tuples := make([]api.MessageTuple, len(r))
 		for i, m := range r {
-			tuples[i] = &xsql.Tuple{
-				Ctx:       d.Ctx,
+			tuple := &xsql.Tuple{
 				Metadata:  d.Metadata,
 				Timestamp: d.Timestamp,
 				Emitter:   d.Emitter,
 				Props:     d.Props,
 				Message:   m,
 			}
+			tuple.SetTracerCtx(d.GetTracerCtx())
+			tuples[i] = tuple
 		}
 		return sink.CollectList(ctx, &xsql.TransformedTupleList{Content: tuples})
 	case []any:
 		tuples := make([]api.MessageTuple, 0, len(r))
 		for _, v := range r {
 			if m, ok := v.(map[string]any); ok {
-				tuples = append(tuples, &xsql.Tuple{
-					Ctx:       d.Ctx,
+				tuple := &xsql.Tuple{
 					Metadata:  d.Metadata,
 					Timestamp: d.Timestamp,
 					Emitter:   d.Emitter,
 					Props:     d.Props,
 					Message:   m,
-				})
+				}
+				tuple.SetTracerCtx(d.GetTracerCtx())
+				tuples = append(tuples, tuple)
 			} else {
 				return fmt.Errorf("only map[string]any inside a list is supported but got: %T", v)
 			}

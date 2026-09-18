@@ -1,4 +1,4 @@
-// Copyright 2025 EMQ Technologies Co., Ltd.
+// Copyright 2025-2026 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
 package node
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
@@ -29,7 +30,14 @@ type EventSlidingWindowOp struct {
 	Length           time.Duration
 	stateFuncs       []*ast.Call
 	triggerCondition ast.Expr
-	delayTS          []time.Time
+	state            *EventSlidingWindowV2State
+}
+
+// EventSlidingWindowV2State is published once, mutated only by the operator
+// goroutine, and frozen by the checkpoint barrier.
+type EventSlidingWindowV2State struct {
+	Scanner *WindowScanner
+	DelayTS []time.Time
 }
 
 func NewEventSlidingWindowOp(o *WindowV2Operator) *EventSlidingWindowOp {
@@ -39,11 +47,18 @@ func NewEventSlidingWindowOp(o *WindowV2Operator) *EventSlidingWindowOp {
 		Length:           o.windowConfig.Length,
 		stateFuncs:       o.windowConfig.StateFuncs,
 		triggerCondition: o.windowConfig.TriggerCondition,
-		delayTS:          make([]time.Time, 0),
+		state: &EventSlidingWindowV2State{
+			Scanner: o.scanner,
+			DelayTS: make([]time.Time, 0),
+		},
 	}
 }
 
 func (s *EventSlidingWindowOp) exec(ctx api.StreamContext, errCh chan<- error) {
+	if err := s.restoreState(ctx); err != nil {
+		errCh <- err
+		return
+	}
 	fv, _ := xsql.NewFunctionValuersForOp(ctx)
 	for {
 		select {
@@ -57,19 +72,19 @@ func (s *EventSlidingWindowOp) exec(ctx api.StreamContext, errCh chan<- error) {
 			switch tuple := data.(type) {
 			case *xsql.WatermarkTuple:
 				now := tuple.GetTimestamp()
-				newIndex := -1
-				for i, delayTs := range s.delayTS {
+				consumed := 0
+				for _, delayTs := range s.state.DelayTS {
 					if delayTs.Before(now) || delayTs.Equal(now) {
 						windowStart := delayTs.Add(-s.Length).Add(-s.Delay)
 						windowEnd := now
 						s.emitWindow(ctx, windowStart, windowEnd)
+						consumed++
 					} else {
-						newIndex = i
 						break
 					}
 				}
-				if newIndex != -1 {
-					s.delayTS = s.delayTS[newIndex:]
+				if consumed > 0 {
+					s.state.DelayTS = s.state.DelayTS[consumed:]
 				}
 				s.scanner.gc(now.Add(-s.Length).Add(-s.Delay))
 			case *xsql.Tuple:
@@ -82,7 +97,7 @@ func (s *EventSlidingWindowOp) exec(ctx api.StreamContext, errCh chan<- error) {
 					sendWindow = isMatchCondition(ctx, s.triggerCondition, fv, tuple, s.stateFuncs)
 				}
 				if s.Delay > 0 && sendWindow {
-					s.delayTS = append(s.delayTS, tuple.Timestamp.Add(s.Delay))
+					s.state.DelayTS = append(s.state.DelayTS, tuple.Timestamp.Add(s.Delay))
 					sendWindow = false
 				}
 				if sendWindow {
@@ -92,6 +107,25 @@ func (s *EventSlidingWindowOp) exec(ctx api.StreamContext, errCh chan<- error) {
 			}
 		}
 	}
+}
+
+func (s *EventSlidingWindowOp) restoreState(ctx api.StreamContext) error {
+	v, err := ctx.GetState(V2WindowInputsKey)
+	if err != nil {
+		return err
+	}
+	if v != nil {
+		state, ok := v.(*EventSlidingWindowV2State)
+		if !ok {
+			return fmt.Errorf("restore window V2 event sliding state %T error, invalid type", v)
+		}
+		if state.Scanner == nil {
+			state.Scanner = &WindowScanner{Tuples: make([]*xsql.Tuple, 0)}
+		}
+		s.state = state
+		s.scanner = state.Scanner
+	}
+	return ctx.PutState(V2WindowInputsKey, s.state)
 }
 
 func (o *WindowV2Operator) ingest(ctx api.StreamContext, item any) (any, bool) {
