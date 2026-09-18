@@ -15,11 +15,50 @@
 package lookup
 
 import (
+	"context"
 	"sync"
 	"testing"
+	"time"
+
+	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
+	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
+
+type waitingSQLLookup struct{}
+
+func (*waitingSQLLookup) Provision(api.StreamContext, map[string]any) error { return nil }
+func (*waitingSQLLookup) Close(api.StreamContext) error                     { return nil }
+func (*waitingSQLLookup) Connect(ctx api.StreamContext, _ api.StatusChangeHandler) error {
+	<-ctx.Done()
+	return ctx.Err()
+}
+
+func (*waitingSQLLookup) Lookup(api.StreamContext, []string, []string, []any) ([]map[string]any, error) {
+	return nil, nil
+}
+
+func TestSQLLookupCreateDeadlineReleasesLock(t *testing.T) {
+	previous, existed := modules.LookupSources["sql"]
+	modules.RegisterLookupSource("sql", func() api.Source { return &waitingSQLLookup{} })
+	t.Cleanup(func() {
+		if existed {
+			modules.RegisterLookupSource("sql", previous)
+		} else {
+			delete(modules.LookupSources, "sql")
+		}
+	})
+
+	started := time.Now()
+	err := CreateInstance("timeout_sql_lookup", "sql", &ast.Options{DATASOURCE: "t", TYPE: "sql", KIND: "lookup", KEY: "a"})
+	require.ErrorIs(t, err, context.DeadlineExceeded)
+	require.GreaterOrEqual(t, time.Since(started), 10*time.Second)
+	require.Less(t, time.Since(started), 15*time.Second)
+
+	require.NoError(t, DropInstance("timeout_sql_lookup"), "lookup lock should be released after SQL timeout")
+}
 
 func TestTable(t *testing.T) {
 	var wg sync.WaitGroup

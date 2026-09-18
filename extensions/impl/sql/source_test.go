@@ -15,6 +15,7 @@
 package sql
 
 import (
+	stdcontext "context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -212,6 +213,61 @@ func TestSQLNamedConnectionReconnectAfterStartupFailure(t *testing.T) {
 	case <-time.After(15 * time.Second):
 		t.Fatal("named SQL connection did not reconnect after database recovery")
 	}
+}
+
+func TestSQLSourceWaitsForNamedConnectionAfterTenSeconds(t *testing.T) {
+	require.NoError(t, connection.InitConnectionManager4Test())
+	ctx := mockContext.NewMockContext("late_sql_rule", "source")
+	const port = 33064
+	const connectionID = "late-sql-connection"
+	dbURL := fmt.Sprintf("mysql://root:@%v:%v/test", address, port)
+	cw, err := connection.CreateNamedConnection(ctx, connectionID, "sql", map[string]any{"dburl": dbURL})
+	require.NoError(t, err)
+	defer func() { require.NoError(t, connection.DropNameConnection(ctx, connectionID)) }()
+
+	source := GetSource()
+	props := map[string]any{
+		"interval":           "1s",
+		"dburl":              dbURL,
+		"connectionSelector": connectionID,
+		"templateSqlQueryCfg": map[string]any{
+			"templateSql": "select a,b from t",
+		},
+	}
+	require.NoError(t, source.Provision(ctx, props))
+	connected := make(chan error, 1)
+	go func() { connected <- source.Connect(ctx, nil) }()
+
+	// The original 10-second pool deadline used to permanently cache an error
+	// in this same wrapper. A caller timeout must not cancel its retry worker.
+	waitCtx, cancel := stdcontext.WithTimeout(ctx, 100*time.Millisecond)
+	_, err = cw.Wait(context.WithContext(waitCtx))
+	cancel()
+	require.ErrorIs(t, err, stdcontext.DeadlineExceeded)
+	select {
+	case err := <-connected:
+		t.Fatalf("SQL source returned before database startup: %v", err)
+	default:
+	}
+	time.Sleep(11 * time.Second)
+	s, err := testx.SetupEmbeddedMysqlServer(address, port)
+	require.NoError(t, err)
+	defer s.Close()
+
+	select {
+	case err := <-connected:
+		require.NoError(t, err)
+	case <-time.After(30 * time.Second):
+		t.Fatal("SQL source did not start when the database recovered")
+	}
+	defer func() { require.NoError(t, source.Close(ctx)) }()
+	meta, err := connection.GetConnectionDetail(ctx, connectionID)
+	require.NoError(t, err)
+	require.Equal(t, 1, meta.GetRefCount())
+	require.NotNil(t, source.(*SQLSourceConnector).conn.GetDB())
+	source.(*SQLSourceConnector).queryData(ctx, time.Now(), func(_ api.StreamContext, data any, _ map[string]any, _ time.Time) {
+		require.Equal(t, map[string]any{"a": int64(1), "b": int64(1)}, data)
+	}, func(_ api.StreamContext, err error) { require.NoError(t, err) })
 }
 
 func TestSQLSourceRewind(t *testing.T) {

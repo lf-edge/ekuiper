@@ -62,20 +62,36 @@ func InitConnectionManager4Test() error {
 }
 
 func InitConnectionManager(ctx context.Context) {
-	globalConnectionManager = &Manager{
+	manager := &Manager{
 		connectionPool: make(map[string]*Meta),
 	}
+	globalConnectionManager = manager
 	if conf.IsTesting {
 		return
 	}
 	go PatrolConnectionStatusJob(ctx)
+	go func() {
+		<-ctx.Done()
+		manager.stopAll(topoContext.Background())
+	}()
+}
+
+func (m *Manager) stopAll(ctx api.StreamContext) {
+	m.RLock()
+	wrappers := make([]*ConnWrapper, 0, len(m.connectionPool))
+	for _, meta := range m.connectionPool {
+		wrappers = append(wrappers, meta.cw)
+	}
+	m.RUnlock()
+	for _, wrapper := range wrappers {
+		wrapper.stop(ctx)
+	}
 }
 
 const (
-	DefaultInitialInterval          = 100 * time.Millisecond
-	DefaultMaxInterval              = 10 * time.Second
-	DefaultMaxElapsedDuration       = 10 * time.Second
-	InitialConnectionMaxElapsedTime = 10 * time.Second
+	DefaultInitialInterval    = 100 * time.Millisecond
+	DefaultMaxInterval        = 10 * time.Second
+	DefaultMaxElapsedDuration = 10 * time.Second
 )
 
 func PatrolConnectionStatusJob(ctx context.Context) {
@@ -129,6 +145,10 @@ func newExponentialBackOff(maxElapsedTime time.Duration) *backoff.ExponentialBac
 		backoff.WithMaxInterval(DefaultMaxInterval),
 		backoff.WithMaxElapsedTime(maxElapsedTime),
 	)
+}
+
+func newInitialConnectionBackOff(ctx context.Context) backoff.BackOffContext {
+	return backoff.WithContext(newExponentialBackOff(0), ctx)
 }
 
 // FetchConnection is called by source/sink to get or create an anonymous connection instance in the pool
@@ -217,6 +237,7 @@ func createNamedConnection(ctx api.StreamContext, id, typ string, props map[stri
 	}
 	meta.cw = newConnWrapper(ctx, meta)
 	if err := storeConnectionMeta(typ, id, props); err != nil {
+		meta.cw.stop(ctx)
 		return nil, err
 	}
 	globalConnectionManager.connectionPool[id] = meta
@@ -277,12 +298,7 @@ func dropNameConnection(ctx api.StreamContext, selId string) error {
 	if err != nil {
 		return fmt.Errorf("drop connection %s failed, err:%v", selId, err)
 	}
-	if meta.cw.IsInitialized() {
-		conn, err := meta.cw.Wait(ctx)
-		if conn != nil && err == nil {
-			conn.Close(ctx)
-		}
-	}
+	meta.cw.stop(ctx)
 	delete(globalConnectionManager.connectionPool, selId)
 	return nil
 }
@@ -389,11 +405,7 @@ func detachConnection(ctx api.StreamContext, conId, refId string) error {
 		if conId != refId {
 			conf.Log.Infof("action=close_connection connId=%s type=%s connectionKey=%s rule=%s op=%s reason=zero_ref", conId, meta.Typ, conId, ctx.GetRuleId(), ctx.GetOpId())
 		}
-		close(meta.cw.detachCh)
-		conn, err := meta.cw.Wait(ctx)
-		if conn != nil && err == nil {
-			conn.Close(ctx)
-		}
+		meta.cw.stop(ctx)
 		delete(globalConnectionManager.connectionPool, conId)
 		return nil
 	}
@@ -417,10 +429,8 @@ func createConnection(connCtx api.StreamContext, meta *Meta) (modules.Connection
 		sc.SetStatusChangeHandler(connCtx, meta.NotifyStatus)
 	}
 	err = backoff.Retry(func() error {
-		select {
-		case <-connCtx.Done():
-			return nil
-		default:
+		if err := connCtx.Err(); err != nil {
+			return backoff.Permanent(err)
 		}
 		meta.NotifyStatus(api.ConnectionConnecting, "")
 		connCtx.GetLogger().Debugf("connection retry: %s", meta.ID)
@@ -432,6 +442,9 @@ func createConnection(connCtx api.StreamContext, meta *Meta) (modules.Connection
 			}
 		})
 		if err == nil {
+			if err := connCtx.Err(); err != nil {
+				return backoff.Permanent(err)
+			}
 			if !isStateful {
 				meta.NotifyStatus(api.ConnectionConnected, "")
 			}
@@ -443,7 +456,7 @@ func createConnection(connCtx api.StreamContext, meta *Meta) (modules.Connection
 			return err
 		}
 		return backoff.Permanent(err)
-	}, NewExponentialBackOffWithMaxElapsedTime(InitialConnectionMaxElapsedTime))
+	}, newInitialConnectionBackOff(connCtx))
 	return conn, err
 }
 

@@ -151,9 +151,6 @@ kuiperConfig:
       pluginHosts: https://packages.emqx.net
       # Whether to ignore case in SQL processing. Note that, the name of customized function by plugins are case-sensitive.
       ignoreCase: true
-    connection:
-      backoffMaxElapsedDuration: 3m
-
     # The default options for all rules. Each rule can override this setting by defining its own option
     rule:
       # The qos of the rule. The values can be 0: At most once; 1: At least once; 2: Exactly once
