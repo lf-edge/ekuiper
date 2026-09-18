@@ -34,7 +34,9 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
+	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/model"
 )
 
@@ -223,4 +225,73 @@ func TestIsSensitiveKey(t *testing.T) {
 			assert.Equal(t, tt.want, got)
 		})
 	}
+}
+
+func TestGetValueTypeBySchema(t *testing.T) {
+	tests := []struct {
+		name       string
+		val        string
+		schemaType string
+		want       interface{}
+	}{
+		{"numeric password stays string", "123456", "string", "123456"},
+		{"bool-like password stays string", "true", "string", "true"},
+		{"float-like username stays string", "1.5", "string", "1.5"},
+		{"list-like password stays string", "[1,2]", "string", "[1,2]"},
+		{"qos still int", "2", "int", int64(2)},
+		{"invalid int keeps string", "abc", "int", "abc"},
+		{"bool field", "true", "bool", true},
+		{"boolean alias", "false", "boolean", false},
+		{"float field", "1.25", "float", 1.25},
+		{"list_string keeps numeric elements", "[1,2]", "list_string", []interface{}{"1", "2"}},
+		{"infer int without schema", "123456", "", int64(123456)},
+		{"infer bool without schema", "true", "", true},
+		{"infer array without schema", "[1,2]", "", []interface{}{int64(1), int64(2)}},
+		{"plain string without schema", "abc123", "", "abc123"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := getValueType(tt.val, tt.schemaType)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestMqttNumericPasswordFromEnv(t *testing.T) {
+	clearLoadConfigCache()
+	t.Cleanup(func() {
+		clearLoadConfigCache()
+		SetupEnv()
+	})
+	t.Setenv("MQTT_SOURCE__DEFAULT__PASSWORD", "123456")
+	t.Setenv("MQTT_SOURCE__DEFAULT__USERNAME", "1001")
+	t.Setenv("MQTT_SOURCE__DEFAULT__CLIENTID", "9001")
+	t.Setenv("MQTT_SOURCE__DEFAULT__QOS", "2")
+	t.Setenv("MQTT_SOURCE__DEFAULT__INSECURESKIPVERIFY", "true")
+	SetupEnv()
+
+	c := make(map[string]interface{})
+	err := LoadConfigByName("mqtt_source.yaml", &c)
+	require.NoError(t, err)
+
+	def, ok := c["default"].(map[string]interface{})
+	require.True(t, ok)
+	assert.Equal(t, "123456", def["password"])
+	assert.Equal(t, "1001", def["username"])
+	assert.Equal(t, "9001", def["clientid"])
+	assert.Equal(t, int64(2), def["qos"])
+	assert.Equal(t, true, def["insecureSkipVerify"])
+
+	type mqttConn struct {
+		Password string `json:"password"`
+		Username string `json:"username"`
+		ClientId string `json:"clientid"`
+		Qos      int    `json:"qos"`
+	}
+	cfg := &mqttConn{}
+	require.NoError(t, cast.MapToStruct(def, cfg))
+	assert.Equal(t, "123456", cfg.Password)
+	assert.Equal(t, "1001", cfg.Username)
+	assert.Equal(t, "9001", cfg.ClientId)
+	assert.Equal(t, 2, cfg.Qos)
 }

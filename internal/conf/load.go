@@ -84,7 +84,7 @@ func LoadConfigFromPath(p string, c interface{}) error {
 	}
 	// Make all keys to lowercase to match environment variables then revert it back by checking json defs
 	configs := normalize(configMap)
-	err = process(configs, GetEnv(), prefix)
+	err = process(configs, GetEnv(), prefix, p)
 	if err != nil {
 		return err
 	}
@@ -126,13 +126,14 @@ func getPrefix(p string) string {
 	return strings.ToUpper(strings.TrimSuffix(file, filepath.Ext(file)))
 }
 
-func process(configMap map[string]interface{}, env map[string]string, prefix string) error {
+func process(configMap map[string]interface{}, env map[string]string, prefix string, yamlPath string) error {
+	fileTypes := extractTypesFromJsonIfExists(yamlPath)
 	for key, value := range env {
 		if !strings.HasPrefix(key, prefix) {
 			continue
 		}
 		keys := nameToKeys(trimPrefix(key, prefix))
-		handle(configMap, keys, value)
+		handle(configMap, keys, value, fileTypes)
 		printableK := strings.Join(keys, ".")
 		printableV := value
 		if isSensitiveKey(printableK) || strings.Contains(strings.ToLower(printableK), "kuiper_props") {
@@ -147,21 +148,21 @@ func isSensitiveKey(key string) bool {
 	return replace.IsSensitiveKey(strings.ToLower(key))
 }
 
-func handle(conf map[string]interface{}, keysLeft []string, val string) {
+func handle(conf map[string]interface{}, keysLeft []string, val string, types map[string]string) {
 	key := getConfigKey(keysLeft[0])
 	if len(keysLeft) == 1 {
-		conf[key] = getValueType(val)
+		conf[key] = getValueType(val, types[key])
 	} else if len(keysLeft) >= 2 {
 		if v, ok := conf[key]; ok {
 			if casted, castSuccess := v.(map[string]interface{}); castSuccess {
-				handle(casted, keysLeft[1:], val)
+				handle(casted, keysLeft[1:], val, types)
 			} else {
 				panic("not expected type")
 			}
 		} else {
 			next := make(map[string]interface{})
 			conf[key] = next
-			handle(next, keysLeft[1:], val)
+			handle(next, keysLeft[1:], val, types)
 		}
 	}
 }
@@ -179,25 +180,36 @@ func getConfigKey(key string) string {
 	return strings.ToLower(key)
 }
 
-func getValueType(val string) interface{} {
+func getValueType(val string, schemaType string) interface{} {
 	val = strings.Trim(val, " ")
-	if strings.HasPrefix(val, "[") && strings.HasSuffix(val, "]") {
-		val = strings.ReplaceAll(val, "[", "")
-		val = strings.ReplaceAll(val, "]", "")
-		vals := strings.Split(val, ",")
-		var ret []interface{}
-		for _, v := range vals {
-			if i, err := strconv.ParseInt(v, 10, 64); err == nil {
-				ret = append(ret, i)
-			} else if b, err := strconv.ParseBool(v); err == nil {
-				ret = append(ret, b)
-			} else if f, err := strconv.ParseFloat(v, 64); err == nil {
-				ret = append(ret, f)
-			} else {
-				ret = append(ret, v)
-			}
+	switch strings.ToLower(schemaType) {
+	case "string", "text":
+		return val
+	case "int", "int64", "uint", "uint8":
+		if i, err := strconv.ParseInt(val, 10, 64); err == nil {
+			return i
 		}
-		return ret
+		return val
+	case "bool", "boolean":
+		if b, err := strconv.ParseBool(val); err == nil {
+			return b
+		}
+		return val
+	case "float", "float64", "number":
+		if f, err := strconv.ParseFloat(val, 64); err == nil {
+			return f
+		}
+		return val
+	case "list_string":
+		return parseEnvList(val, true)
+	default:
+		return inferValueType(val)
+	}
+}
+
+func inferValueType(val string) interface{} {
+	if strings.HasPrefix(val, "[") && strings.HasSuffix(val, "]") {
+		return parseEnvList(val, false)
 	} else if i, err := strconv.ParseInt(val, 10, 64); err == nil {
 		return i
 	} else if b, err := strconv.ParseBool(val); err == nil {
@@ -206,6 +218,70 @@ func getValueType(val string) interface{} {
 		return f
 	}
 	return val
+}
+
+func parseEnvList(val string, keepString bool) interface{} {
+	if !strings.HasPrefix(val, "[") || !strings.HasSuffix(val, "]") {
+		return val
+	}
+	val = strings.ReplaceAll(val, "[", "")
+	val = strings.ReplaceAll(val, "]", "")
+	vals := strings.Split(val, ",")
+	ret := make([]interface{}, 0, len(vals))
+	for _, v := range vals {
+		if keepString {
+			ret = append(ret, v)
+			continue
+		}
+		if i, err := strconv.ParseInt(v, 10, 64); err == nil {
+			ret = append(ret, i)
+		} else if b, err := strconv.ParseBool(v); err == nil {
+			ret = append(ret, b)
+		} else if f, err := strconv.ParseFloat(v, 64); err == nil {
+			ret = append(ret, f)
+		} else {
+			ret = append(ret, v)
+		}
+	}
+	return ret
+}
+
+func extractTypesFromJsonIfExists(yamlPath string) map[string]string {
+	return extractTypesFromJsonFile(jsonPathForFile(yamlPath))
+}
+
+func extractTypesFromJsonFile(jsonFilePath string) map[string]string {
+	types := make(map[string]string)
+	if jsonFilePath == "" {
+		return types
+	}
+	if _, err := os.Stat(jsonFilePath); err != nil {
+		return types
+	}
+	m, err := loadJsonForYaml(jsonFilePath)
+	if err != nil {
+		return types
+	}
+	extractTypesFromValue(m, types)
+	return types
+}
+
+func extractTypesFromValue(v interface{}, types map[string]string) {
+	switch t := v.(type) {
+	case map[string]interface{}:
+		name, nameOk := t["name"].(string)
+		typ, typeOk := t["type"].(string)
+		if nameOk && typeOk && name != "" && typ != "" {
+			types[strings.ToLower(name)] = strings.ToLower(typ)
+		}
+		for _, child := range t {
+			extractTypesFromValue(child, types)
+		}
+	case []interface{}:
+		for _, child := range t {
+			extractTypesFromValue(child, types)
+		}
+	}
 }
 
 func normalize(m map[string]interface{}) map[string]interface{} {
