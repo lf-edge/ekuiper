@@ -66,8 +66,6 @@ basic:
   # AES Key, base64 encoded
   aesKey: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3
   gracefulShutdownTimeout: 10s
-  connection:
-    backoffMaxElapsedDuration: 3m
   # If it is enabled, the cpu time of the rule will be recorded.
   ResourceProfileConfig:
     enable: false
@@ -75,6 +73,9 @@ basic:
   metricsDumpConfig:
     enable: false
     retainedDuration: 6h
+
+connection:
+  backoffMaxElapsedDuration: 3m
 
 # The default options for all rules. Each rule can override this setting by defining its own option
 rule:
