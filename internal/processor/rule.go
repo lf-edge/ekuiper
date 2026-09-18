@@ -83,6 +83,8 @@ func (p *RuleProcessor) createWithValidation(name, ruleJson string) (*def.Rule, 
 	return rule, false, nil
 }
 
+// loadRuleForReplace propagates storage read errors, but lets a validated new
+// definition replace a corrupt stored rule that cannot establish precedence.
 func (p *RuleProcessor) loadRuleForReplace(name string) (*def.Rule, error) {
 	var stored string
 	exists, err := p.db.Get(name, &stored)
@@ -91,6 +93,7 @@ func (p *RuleProcessor) loadRuleForReplace(name string) (*def.Rule, error) {
 	}
 	old, err := p.GetRuleByJsonValidated(name, stored)
 	if err != nil {
+		log.Warnf("Ignoring corrupt stored rule %s during replace: %v", name, err)
 		return nil, nil
 	}
 	return old, nil
