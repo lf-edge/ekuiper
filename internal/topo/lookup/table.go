@@ -15,9 +15,12 @@
 package lookup
 
 import (
+	"context"
 	"fmt"
+	"strings"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
@@ -40,6 +43,8 @@ var (
 	instances = make(map[string]*info)
 	lock      = &sync.Mutex{}
 )
+
+const sqlConnectionWaitTimeout = 10 * time.Second
 
 // Attach called by lookup nodes. Add a count to the info
 func Attach(name string) (api.Source, error) {
@@ -84,7 +89,15 @@ func CreateInstance(name string, sourceType string, options *ast.Options) error 
 	}
 	ctx.GetLogger().Debugf("lookup source %s is configured", sourceType)
 	// TODO lookup table connection status support
-	err = ns.Connect(ctx, func(status string, message string) {
+	connectCtx := api.StreamContext(ctx)
+	if strings.EqualFold(sourceType, "sql") {
+		// SQL lookup creation must not hold the global lookup lock indefinitely.
+		// A named connection keeps retrying independently of this wait deadline.
+		deadlineCtx, cancel := context.WithTimeout(ctx, sqlConnectionWaitTimeout)
+		defer cancel()
+		connectCtx = kctx.WithContext(deadlineCtx)
+	}
+	err = ns.Connect(connectCtx, func(status string, message string) {
 		// do nothing
 	})
 	if err != nil {

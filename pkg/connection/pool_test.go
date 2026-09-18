@@ -15,17 +15,98 @@
 package connection
 
 import (
+	stdcontext "context"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/pingcap/failpoint"
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
+	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
+
+type retryTestConnection struct {
+	attempts chan struct{}
+}
+
+func (c *retryTestConnection) GetId(api.StreamContext) string                            { return "retry-test" }
+func (c *retryTestConnection) Provision(api.StreamContext, string, map[string]any) error { return nil }
+func (c *retryTestConnection) Dial(api.StreamContext) error {
+	c.attempts <- struct{}{}
+	return errorx.NewIOErr("database unavailable")
+}
+func (c *retryTestConnection) Ping(api.StreamContext) error  { return nil }
+func (c *retryTestConnection) Close(api.StreamContext) error { return nil }
+
+func TestNamedConnectionRetryCancelledOnUpdateAndDrop(t *testing.T) {
+	require.NoError(t, InitConnectionManager4Test())
+	ctx := context.Background()
+	const typ = "retry-test"
+	previous, hadPrevious := modules.ConnectionRegister[typ]
+	instances := make(chan *retryTestConnection, 3)
+	modules.RegisterConnection(typ, func(api.StreamContext) modules.Connection {
+		conn := &retryTestConnection{attempts: make(chan struct{}, 100)}
+		instances <- conn
+		return conn
+	})
+	t.Cleanup(func() {
+		if hadPrevious {
+			modules.RegisterConnection(typ, previous)
+		} else {
+			delete(modules.ConnectionRegister, typ)
+		}
+	})
+
+	old, err := CreateNamedConnection(ctx, "retry-test-id", typ, nil)
+	require.NoError(t, err)
+	oldConn := <-instances
+	select {
+	case <-oldConn.attempts:
+	case <-time.After(time.Second):
+		t.Fatal("old connection never attempted dial")
+	}
+	current, err := UpdateConnection(ctx, "retry-test-id", typ, nil)
+	require.NoError(t, err)
+	newConn := <-instances
+	_, err = old.Wait(ctx)
+	require.ErrorIs(t, err, stdcontext.Canceled)
+	select {
+	case <-newConn.attempts:
+	case <-time.After(time.Second):
+		t.Fatal("replacement connection never attempted dial")
+	}
+	require.NoError(t, DropNameConnection(ctx, "retry-test-id"))
+	_, err = current.Wait(ctx)
+	require.ErrorIs(t, err, stdcontext.Canceled)
+	for _, ch := range []chan struct{}{oldConn.attempts, newConn.attempts} {
+		for len(ch) > 0 {
+			<-ch
+		}
+		select {
+		case <-ch:
+			t.Fatal("cancelled connection continued retrying")
+		case <-time.After(300 * time.Millisecond):
+		}
+	}
+
+	shutdown, err := CreateNamedConnection(ctx, "retry-test-shutdown", typ, nil)
+	require.NoError(t, err)
+	shutdownConn := <-instances
+	select {
+	case <-shutdownConn.attempts:
+	case <-time.After(time.Second):
+		t.Fatal("shutdown connection never attempted dial")
+	}
+	globalConnectionManager.stopAll(ctx)
+	_, err = shutdown.Wait(ctx)
+	require.ErrorIs(t, err, stdcontext.Canceled)
+	require.NoError(t, DropNameConnection(ctx, "retry-test-shutdown"))
+}
 
 func TestConnection(t *testing.T) {
 	require.NoError(t, InitConnectionManager4Test())

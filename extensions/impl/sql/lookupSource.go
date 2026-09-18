@@ -97,7 +97,10 @@ func (s *SqlLookupSource) Connect(ctx api.StreamContext, sc api.StatusChangeHand
 	conn, err := cw.Wait(ctx)
 	if err != nil || conn == nil {
 		_ = connection.DetachConnectionByRef(ctx, cw.ID, id)
-		return fmt.Errorf("sql client not ready: %v", err)
+		if err != nil {
+			return fmt.Errorf("sql client not ready: %w", err)
+		}
+		return fmt.Errorf("sql client not ready: connection is nil")
 	}
 	cli = conn.(*client2.SQLConnection)
 	s.conn = cli
