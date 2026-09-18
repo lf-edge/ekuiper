@@ -70,8 +70,6 @@ basic:
   # AES Key, base64 encoded
   ## aesKey: your_base64_encoded_aes_key
   gracefulShutdownTimeout: 10s
-  connection:
-    backoffMaxElapsedDuration: 3m
   # If it is enabled, the cpu time of the rule will be recorded.
   ResourceProfileConfig:
     enable: false
@@ -90,6 +88,9 @@ basic:
   # For security reasons, this is disabled by default.
   # Enable only when trusted external file paths are required.
   allowExternalFileAccess: false
+
+connection:
+  backoffMaxElapsedDuration: 3m
 
 # The default options for all rules. Each rule can override this setting by defining its own option
 rule:
