@@ -447,6 +447,22 @@ acc_collect(a)
 
 The results are: [1] [1,2] [1,2,3]
 
+### ACC_DISTINCT_COLLECT
+
+```text
+acc_distinct_collect(expr)
+```
+
+The `acc_distinct_collect` function collects non-nil expression results into an array, removing duplicate values while preserving insertion order.
+
+Example: collect distinct values using `acc_distinct_collect`
+
+```text
+acc_distinct_collect(a)
+```
+
+For input `1, 2, 2, 3`, the result is `[1, 2, 3]`.
+
 ### ACC_MAX_BY
 
 ```text

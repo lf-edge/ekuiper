@@ -17,6 +17,7 @@ package function
 import (
 	"fmt"
 	"math"
+	"reflect"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
@@ -129,6 +130,23 @@ func registerGlobalAggFunc() {
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			status, err := handleAccFunc(ctx, args, accCollectFunc{})
+			if err != nil {
+				return err, false
+			}
+			return status.Value.([]interface{}), true
+		},
+		val: func(ctx api.FunctionContext, args []ast.Expr) error {
+			argsLen := len(args)
+			if argsLen != 1 && argsLen != 3 {
+				return fmt.Errorf("Expect 1/3 arguments but found %d.", argsLen)
+			}
+			return nil
+		},
+	}
+	builtins["acc_distinct_collect"] = builtinFunc{
+		fType: ast.FuncTypeScalar,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			status, err := handleAccFunc(ctx, args, accCollectFunc{distinct: true})
 			if err != nil {
 				return err, false
 			}
@@ -715,7 +733,9 @@ func (a accAvgFunc) accReset(status *accStatus) {
 	status.Value = nil
 }
 
-type accCollectFunc struct{}
+type accCollectFunc struct {
+	distinct bool
+}
 
 func (a accCollectFunc) accFuncExec(ctx api.FunctionContext, value interface{}, validData bool, partitionKey string, status *accStatus, skipStatusSave bool) {
 	if status.Value == nil {
@@ -726,6 +746,18 @@ func (a accCollectFunc) accFuncExec(ctx api.FunctionContext, value interface{}, 
 		return
 	}
 	if value != nil {
+		if a.distinct {
+			for _, collectedValue := range collected {
+				if reflect.DeepEqual(collectedValue, value) {
+					if !skipStatusSave {
+						if err := ctx.PutState(partitionKey, status); err != nil {
+							status.Err = err
+						}
+					}
+					return
+				}
+			}
+		}
 		collected = append(collected, value)
 		status.Value = collected
 	}

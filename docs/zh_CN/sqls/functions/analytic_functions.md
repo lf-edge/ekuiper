@@ -431,6 +431,22 @@ acc_collect(a)
 
 结果为分别为: [1] [1,2] [1,2,3]
 
+### ACC_DISTINCT_COLLECT
+
+```text
+acc_distinct_collect(expr)
+```
+
+`acc_distinct_collect` 函数将非空的表达式结果收集到一个数组中，自动去重并按插入顺序保留。
+
+示例：使用 `acc_distinct_collect` 收集不重复的数据
+
+```text
+acc_distinct_collect(a)
+```
+
+输入 `1, 2, 2, 3` 时，结果为 `[1, 2, 3]`。
+
 ### ACC_MAX_BY
 
 ```text

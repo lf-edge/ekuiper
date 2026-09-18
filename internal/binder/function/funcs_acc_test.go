@@ -14,6 +14,28 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 )
 
+func TestAccDistinctCollect(t *testing.T) {
+	contextLogger := conf.Log.WithField("rule", "testExec")
+	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+	tempStore, _ := state.CreateStore("distinctCollectRule", def.AtMostOnce)
+	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("distinctCollectRule", "test", tempStore), 2)
+	f := builtins["acc_distinct_collect"]
+
+	values := []interface{}{int64(1), int64(2), int64(2), int64(3), nil}
+	expected := [][]interface{}{
+		{int64(1)},
+		{int64(1), int64(2)},
+		{int64(1), int64(2)},
+		{int64(1), int64(2), int64(3)},
+		{int64(1), int64(2), int64(3)},
+	}
+	for i, value := range values {
+		result, ok := f.exec(fctx, []interface{}{value, true, "distinct_collect"})
+		require.True(t, ok)
+		require.Equal(t, expected[i], result)
+	}
+}
+
 func TestAccumulateAggCond(t *testing.T) {
 	tests := []struct {
 		name     string
