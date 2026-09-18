@@ -19,6 +19,7 @@ import (
 	"database/sql"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
@@ -33,6 +34,8 @@ type SQLConnection struct {
 	id     string
 	closed bool
 }
+
+const defaultDialTimeout = 2 * time.Second
 
 func (s *SQLConnection) Provision(ctx api.StreamContext, conId string, props map[string]any) error {
 	url, ok := props["url"]
@@ -60,21 +63,25 @@ func (s *SQLConnection) GetId(ctx api.StreamContext) string {
 func (s *SQLConnection) Dial(ctx api.StreamContext) error {
 	s.Lock()
 	defer s.Unlock()
-	return s.dial(ctx)
+	dialCtx, cancel := context.WithTimeout(ctx, defaultDialTimeout)
+	defer cancel()
+	return s.dial(dialCtx)
 }
 
 func (s *SQLConnection) Reconnect(ctx api.StreamContext) error {
 	s.Lock()
 	defer s.Unlock()
+	dialCtx, cancel := context.WithTimeout(ctx, defaultDialTimeout)
+	defer cancel()
 	if s.db != nil {
-		if err := s.db.PingContext(ctx); err == nil {
+		if err := s.db.PingContext(dialCtx); err == nil {
 			return nil
-		} else if ctx.Err() != nil {
-			return ctx.Err()
+		} else if dialCtx.Err() != nil {
+			return dialCtx.Err()
 		}
 		_ = s.db.Close()
 	}
-	if err := s.dial(ctx); err != nil {
+	if err := s.dial(dialCtx); err != nil {
 		return fmt.Errorf("reconnect sql err:%v", err)
 	}
 	return nil
@@ -89,13 +96,12 @@ func (s *SQLConnection) GetDB() *sql.DB {
 func (s *SQLConnection) Ping(ctx api.StreamContext) error {
 	s.Lock()
 	defer s.Unlock()
+	pingCtx, cancel := context.WithTimeout(ctx, defaultDialTimeout)
+	defer cancel()
 	if s.db == nil {
-		err := s.dial(ctx)
-		if err != nil {
-			return err
-		}
+		return s.dial(pingCtx)
 	}
-	return s.db.Ping()
+	return s.db.PingContext(pingCtx)
 }
 
 func (s *SQLConnection) DetachSub(ctx api.StreamContext, props map[string]any) {
