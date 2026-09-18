@@ -66,6 +66,7 @@ type KuiperConf struct {
 		EnableOpenZiti          bool                  `yaml:"enableOpenZiti"`
 		AesKey                  string                `yaml:"aesKey"`
 		GracefulShutdownTimeout cast.DurationConf     `yaml:"gracefulShutdownTimeout"`
+		Connection              ConnectionConf        `yaml:"connection"`
 		ResourceProfileConfig   ResourceProfileConfig `yaml:"ResourceProfileConfig"`
 		MetricsDumpConfig       MetricsDumpConfig     `yaml:"metricsDumpConfig"`
 		EnableRestAuditLog      bool                  `yaml:"enableRestAuditLog"`
@@ -102,12 +103,13 @@ type KuiperConf struct {
 		SendTimeout time.Duration     `yaml:"sendTimeout"`
 		RecvTimeout time.Duration     `yaml:"recvTimeout"`
 	}
-	Connection struct {
-		BackoffMaxElapsedDuration cast.DurationConf `yaml:"backoffMaxElapsedDuration"`
-	}
 	OpenTelemetry OpenTelemetry `yaml:"openTelemetry"`
 	AesKey        []byte
 	Security      *SecurityConf
+}
+
+type ConnectionConf struct {
+	BackoffMaxElapsedDuration cast.DurationConf `yaml:"backoffMaxElapsedDuration"`
 }
 
 type TlsConf struct {

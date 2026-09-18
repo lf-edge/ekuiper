@@ -113,8 +113,8 @@ func patrolConnectionStatus() {
 
 func NewExponentialBackOff() *backoff.ExponentialBackOff {
 	maxElapsedTime := DefaultMaxElapsedDuration
-	if conf.Config != nil && conf.Config.Connection.BackoffMaxElapsedDuration > 0 {
-		maxElapsedTime = time.Duration(conf.Config.Connection.BackoffMaxElapsedDuration)
+	if conf.Config != nil && conf.Config.Basic.Connection.BackoffMaxElapsedDuration > 0 {
+		maxElapsedTime = time.Duration(conf.Config.Basic.Connection.BackoffMaxElapsedDuration)
 	}
 	return newExponentialBackOff(maxElapsedTime)
 }
