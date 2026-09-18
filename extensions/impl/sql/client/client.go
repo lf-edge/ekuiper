@@ -20,8 +20,10 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/cenkalti/backoff/v4"
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
+	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
@@ -90,20 +92,39 @@ func (s *SQLConnection) Dial(ctx api.StreamContext) error {
 func (s *SQLConnection) Reconnect(ctx api.StreamContext) error {
 	s.Lock()
 	defer s.Unlock()
-	dialCtx, cancel := context.WithTimeout(ctx, defaultDialTimeout)
-	defer cancel()
-	if s.db != nil {
-		if err := s.db.PingContext(dialCtx); err == nil {
-			return nil
-		} else if dialCtx.Err() != nil {
-			return dialCtx.Err()
-		}
-		_ = s.db.Close()
-	}
-	if err := s.dial(dialCtx); err != nil {
+	err := retryReconnect(ctx, connection.NewExponentialBackOff(), s.reconnectOnce)
+	if err != nil {
 		return fmt.Errorf("reconnect sql err:%v", err)
 	}
 	return nil
+}
+
+func retryReconnect(ctx context.Context, b backoff.BackOff, reconnect func(context.Context) error) error {
+	return backoff.Retry(func() error {
+		dialCtx, cancel := context.WithTimeout(ctx, defaultDialTimeout)
+		defer cancel()
+
+		if err := reconnect(dialCtx); err != nil {
+			if dialCtx.Err() != nil {
+				return backoff.Permanent(dialCtx.Err())
+			}
+			if errorx.IsIOError(err) {
+				return err
+			}
+			return backoff.Permanent(err)
+		}
+		return nil
+	}, backoff.WithContext(b, ctx))
+}
+
+func (s *SQLConnection) reconnectOnce(ctx context.Context) error {
+	if s.db != nil {
+		if err := s.db.PingContext(ctx); err == nil {
+			return nil
+		}
+		_ = s.db.Close()
+	}
+	return s.dial(ctx)
 }
 
 func (s *SQLConnection) GetDB() *sql.DB {
