@@ -111,7 +111,7 @@ type importResult struct {
 }
 
 func (rs *RulesetProcessor) Import(content []byte) ([]string, []int, error) {
-	result, err := rs.importRuleset(content)
+	result, err := rs.importRuleset(content, false)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -119,14 +119,16 @@ func (rs *RulesetProcessor) Import(content []byte) ([]string, []int, error) {
 }
 
 func (rs *RulesetProcessor) ImportForInit(content []byte) ([]int, bool, error) {
-	result, err := rs.importRuleset(content)
+	result, err := rs.importRuleset(content, true)
 	if err != nil {
 		return nil, false, err
 	}
 	return result.counts[:], result.failed, nil
 }
 
-func (rs *RulesetProcessor) importRuleset(content []byte) (importResult, error) {
+// Only startup initialization treats version precedence as a normal skip.
+// Regular Import keeps its existing per-object conflict warning.
+func (rs *RulesetProcessor) importRuleset(content []byte, skipVersionConflicts bool) (importResult, error) {
 	all := &Ruleset{}
 	err := json.Unmarshal(content, all)
 	if err != nil {
@@ -136,7 +138,7 @@ func (rs *RulesetProcessor) importRuleset(content []byte) (importResult, error) 
 	// restore streams
 	for k, v := range all.Streams {
 		_, skipped, e := rs.s.replaceStream(k, v, ast.TypeStream)
-		if skipped {
+		if skipped && skipVersionConflicts {
 			continue
 		}
 		if e != nil {
@@ -149,7 +151,7 @@ func (rs *RulesetProcessor) importRuleset(content []byte) (importResult, error) 
 	// restore tables
 	for k, v := range all.Tables {
 		_, skipped, e := rs.s.replaceStream(k, v, ast.TypeTable)
-		if skipped {
+		if skipped && skipVersionConflicts {
 			continue
 		}
 		if e != nil {
@@ -162,7 +164,7 @@ func (rs *RulesetProcessor) importRuleset(content []byte) (importResult, error) 
 	// restore rules
 	for k, v := range all.Rules {
 		_, skipped, e := rs.r.createWithValidation(k, v)
-		if skipped {
+		if skipped && skipVersionConflicts {
 			continue
 		}
 		if e != nil {

@@ -15,6 +15,7 @@
 package processor
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -23,6 +24,7 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/stretchr/testify/require"
 
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/lookup"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/kv"
@@ -135,10 +137,16 @@ func TestInitVersionSkipAndSharedOrder(t *testing.T) {
 	require.NoError(t, err)
 	require.False(t, failed)
 	require.Equal(t, []int{0, 0, 0}, counts)
+	var warnings bytes.Buffer
+	oldOutput := conf.Log.Out
+	conf.Log.SetOutput(&warnings)
+	t.Cleanup(func() { conf.Log.SetOutput(oldOutput) })
 	rules, apiCounts, err := rs.Import(older)
 	require.NoError(t, err)
 	require.Empty(t, rules)
 	require.Equal(t, []int{0, 0, 0}, apiCounts)
+	require.Contains(t, warnings.String(), "Fail to import stream source")
+	require.Contains(t, warnings.String(), "Fail to import rule rule")
 	_, err = sp.ExecReplaceStream("source", `CREATE STREAM source () WITH (DATASOURCE="demo", FORMAT="JSON", VERSION="1", SHARED=false)`, ast.TypeStream)
 	require.ErrorContains(t, err, "already exists with version")
 	_, err = rp.ExecCreateWithValidation("rule", `{"id":"rule","version":"1","sql":"SELECT * FROM source","actions":[{"log":{}}]}`)
