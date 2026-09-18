@@ -190,15 +190,20 @@ func (s *SQLConnectionRegressionTestSuite) TestIssue1233StopAndRestartSQLRules()
 	// Switch the public proxy into a TCP blackhole without changing the public
 	// listener. This models a firewall DROP without a close/rebind race.
 	s.Require().Greater(proxy.ActiveConnections(), 0, "the SQL source must have an active database session")
+	// Snapshot the backend sessions before closing the proxy connections. The
+	// MySQL server removes sessions asynchronously after their sockets close,
+	// so enumerating them after Block can race with that cleanup.
+	var sessionIDs []uint32
+	s.Require().NoError(db.SessionManager().Iter(func(session mysqlsql.Session) (bool, error) {
+		sessionIDs = append(sessionIDs, session.ID())
+		return false, nil
+	}))
+	s.Require().NotEmpty(sessionIDs, "the SQL source must have an active database session")
 	s.Require().NoError(proxy.Block())
 	s.Require().NoError(db.Close())
-	s.Require().NoError(proxy.CloseConnections())
-	var killedSessions int
-	s.Require().NoError(db.SessionManager().Iter(func(session mysqlsql.Session) (bool, error) {
-		killedSessions++
-		return false, db.SessionManager().KillConnection(session.ID())
-	}))
-	s.Require().Greater(killedSessions, 0, "the SQL source must have an active database session")
+	for _, sessionID := range sessionIDs {
+		s.Require().NoError(db.SessionManager().KillConnection(sessionID))
+	}
 	blackholeStarted := time.Now()
 	waitForFVTNamed(s.T(), 8*time.Second, "blocked reconnect", func() bool {
 		// The three rules share one *sql.DB and its connection mutex, so the
