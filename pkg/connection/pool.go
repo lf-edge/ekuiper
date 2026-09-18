@@ -72,8 +72,10 @@ func InitConnectionManager(ctx context.Context) {
 }
 
 const (
-	DefaultInitialInterval = 100 * time.Millisecond
-	DefaultMaxInterval     = 10 * time.Second
+	DefaultInitialInterval          = 100 * time.Millisecond
+	DefaultMaxInterval              = 10 * time.Second
+	DefaultMaxElapsedDuration       = 10 * time.Second
+	InitialConnectionMaxElapsedTime = 10 * time.Second
 )
 
 func PatrolConnectionStatusJob(ctx context.Context) {
@@ -110,10 +112,22 @@ func patrolConnectionStatus() {
 }
 
 func NewExponentialBackOff() *backoff.ExponentialBackOff {
+	maxElapsedTime := DefaultMaxElapsedDuration
+	if conf.Config != nil && conf.Config.Connection.BackoffMaxElapsedDuration > 0 {
+		maxElapsedTime = time.Duration(conf.Config.Connection.BackoffMaxElapsedDuration)
+	}
+	return newExponentialBackOff(maxElapsedTime)
+}
+
+func NewExponentialBackOffWithMaxElapsedTime(maxElapsedTime time.Duration) *backoff.ExponentialBackOff {
+	return newExponentialBackOff(maxElapsedTime)
+}
+
+func newExponentialBackOff(maxElapsedTime time.Duration) *backoff.ExponentialBackOff {
 	return backoff.NewExponentialBackOff(
 		backoff.WithInitialInterval(DefaultInitialInterval),
 		backoff.WithMaxInterval(DefaultMaxInterval),
-		backoff.WithMaxElapsedTime(0),
+		backoff.WithMaxElapsedTime(maxElapsedTime),
 	)
 }
 
@@ -301,12 +315,21 @@ func isInternalConnection(id string) (bool, error) {
 }
 
 func DetachConnection(ctx api.StreamContext, conId string) error {
+	return DetachConnectionByRef(ctx, conId, extractRefId(ctx))
+}
+
+// DetachConnectionByRef detaches a connection using the reference ID supplied
+// to FetchConnection.
+func DetachConnectionByRef(ctx api.StreamContext, conId, refId string) error {
 	if conId == "" {
 		return fmt.Errorf("connection id should be defined")
 	}
+	if refId == "" {
+		return fmt.Errorf("connection reference id should be defined")
+	}
 	globalConnectionManager.Lock()
 	defer globalConnectionManager.Unlock()
-	return detachConnection(ctx, conId)
+	return detachConnection(ctx, conId, refId)
 }
 
 func getConnectionRef(id string) int {
@@ -350,13 +373,12 @@ func attachConnection(conId string, refId string, sc api.StatusChangeHandler) (*
 	return meta.cw, nil
 }
 
-func detachConnection(ctx api.StreamContext, conId string) error {
+func detachConnection(ctx api.StreamContext, conId, refId string) error {
 	meta, ok := globalConnectionManager.connectionPool[conId]
 	if !ok {
 		conf.Log.Infof("detachConnection not found:%v", conId)
 		return nil
 	}
-	refId := extractRefId(ctx)
 	meta.DeRef(refId)
 	globalConnectionManager.connectionPool[conId] = meta
 	conf.Log.Infof("detachConnection remove conn:%v,ref:%v", conId, refId)
@@ -421,7 +443,7 @@ func createConnection(connCtx api.StreamContext, meta *Meta) (modules.Connection
 			return err
 		}
 		return backoff.Permanent(err)
-	}, NewExponentialBackOff())
+	}, NewExponentialBackOffWithMaxElapsedTime(InitialConnectionMaxElapsedTime))
 	return conn, err
 }
 

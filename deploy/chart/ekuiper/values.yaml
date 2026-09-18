@@ -188,8 +188,6 @@ kuiperConfig:
       # AES Key, base64 encoded
       ## aesKey: your_base64_encoded_aes_key
       gracefulShutdownTimeout: 10s
-      connection:
-        backoffMaxElapsedDuration: 3m
       # If it is enabled, the cpu time of the rule will be recorded.
       ResourceProfileConfig:
         enable: false
@@ -198,6 +196,9 @@ kuiperConfig:
         enable: false
         retainedDuration: 6h
       enableRestAuditLog: false
+
+    connection:
+      backoffMaxElapsedDuration: 3m
 
     # The default options for all rules. Each rule can override this setting by defining its own option
     rule:
