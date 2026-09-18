@@ -57,6 +57,8 @@ func (p *RuleProcessor) ExecCreateWithValidation(name, ruleJson string) (*def.Ru
 	return rule, err
 }
 
+// createWithValidation reports version skips separately: the API keeps its
+// existing conflict error, while ruleset import treats the skip as normal.
 func (p *RuleProcessor) createWithValidation(name, ruleJson string) (*def.Rule, bool, error) {
 	rule, err := p.GetRuleByJson(name, ruleJson)
 	if err != nil {
