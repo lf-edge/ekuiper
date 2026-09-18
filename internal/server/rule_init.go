@@ -16,6 +16,7 @@ package server
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -27,6 +28,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/schedule"
+	"github.com/lf-edge/ekuiper/v2/internal/processor"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/rule/machine"
 	"github.com/lf-edge/ekuiper/v2/metrics"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
@@ -53,7 +55,11 @@ func initFromLoc(loc string) error {
 	conf.Log.Infof("found init.json with update time %d and last init time %d", updateTime, lastUpdate)
 	// Only leave one initialized file each time. Due to the time shift in some system, compare time is not a good idea
 	if updateTime != lastUpdate {
+		completed := false
 		defer func() {
+			if !completed {
+				return
+			}
 			// delete all signal files
 			ff, err := os.ReadDir(loc)
 			if err == nil {
@@ -74,18 +80,30 @@ func initFromLoc(loc string) error {
 				conf.Log.Warn("create new initialized file failed")
 			}
 		}()
-		content, err := os.ReadFile(filepath.Join(loc, "init.json"))
+		content, err := os.ReadFile(initFile)
 		if err != nil {
 			conf.Log.Errorf("fail to read init file: %v", err)
 			return nil
 		}
 		conf.Log.Infof("start to initialize ruleset")
-		_, counts, err := rulesetProcessor.Import(content)
+		counts, importErrors, err := rulesetProcessor.ImportForInit(content)
 		if err != nil {
 			conf.Log.Errorf("fail to import ruleset: %v", err)
+			var permanent *processor.InitPermanentError
+			if errors.As(err, &permanent) {
+				completed = true
+			}
 			return nil
 		}
-		conf.Log.Infof("initialzie %d streams, %d tables and %d rules", counts[0], counts[1], counts[2])
+		conf.Log.Infof("initialize %d streams, %d tables and %d rules", counts[0], counts[1], counts[2])
+		for _, importErr := range importErrors {
+			var permanent *processor.InitPermanentError
+			if !errors.As(importErr, &permanent) {
+				conf.Log.Warn("init.json has a retryable error; initialized marker will not be updated")
+				return nil
+			}
+		}
+		completed = true
 	}
 	return nil
 }

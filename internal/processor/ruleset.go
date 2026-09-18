@@ -35,6 +35,13 @@ type Ruleset struct {
 	Rules   map[string]string `json:"rules"`
 }
 
+// InitPermanentError marks an error that retrying the same init.json cannot fix.
+// It keeps the original message and cause for ordinary import callers.
+type InitPermanentError struct{ Err error }
+
+func (e *InitPermanentError) Error() string { return e.Err.Error() }
+func (e *InitPermanentError) Unwrap() error { return e.Err }
+
 func NewRulesetProcessor(r *RuleProcessor, s *StreamProcessor) *RulesetProcessor {
 	return &RulesetProcessor{
 		r: r,
@@ -104,43 +111,67 @@ func (rs *RulesetProcessor) ExportRuleSetStatus() *Ruleset {
 	return all
 }
 
+type importResult struct {
+	rules  []string
+	counts [3]int
+	errors []error
+}
+
 func (rs *RulesetProcessor) Import(content []byte) ([]string, []int, error) {
+	result, err := rs.importRuleset(content)
+	if err != nil {
+		return nil, nil, err
+	}
+	return result.rules, result.counts[:], nil
+}
+
+func (rs *RulesetProcessor) ImportForInit(content []byte) ([]int, []error, error) {
+	result, err := rs.importRuleset(content)
+	if err != nil {
+		return nil, nil, err
+	}
+	return result.counts[:], result.errors, nil
+}
+
+func (rs *RulesetProcessor) importRuleset(content []byte) (importResult, error) {
 	all := &Ruleset{}
 	err := json.Unmarshal(content, all)
 	if err != nil {
-		return nil, nil, fmt.Errorf("invalid import file: %v", err)
+		return importResult{}, &InitPermanentError{Err: fmt.Errorf("invalid import file: %w", err)}
 	}
-	counts := make([]int, 3)
+	var result importResult
 	// restore streams
 	for k, v := range all.Streams {
-		_, e := rs.s.ExecReplaceStream(k, v, ast.TypeStream)
+		_, e := rs.s.replaceStream(k, v, ast.TypeStream)
 		if e != nil {
 			conf.Log.Warnf("Fail to import stream %s with error: %v", k, e)
+			result.errors = append(result.errors, e)
 		} else {
-			counts[0]++
+			result.counts[0]++
 		}
 	}
 	// restore tables
 	for k, v := range all.Tables {
-		_, e := rs.s.ExecReplaceStream(k, v, ast.TypeTable)
+		_, e := rs.s.replaceStream(k, v, ast.TypeTable)
 		if e != nil {
 			conf.Log.Warnf("Fail to import table %s with error: %v", k, e)
+			result.errors = append(result.errors, e)
 		} else {
-			counts[1]++
+			result.counts[1]++
 		}
 	}
-	var rules []string
 	// restore rules
 	for k, v := range all.Rules {
 		_, e := rs.r.ExecCreateWithValidation(k, v)
 		if e != nil {
 			conf.Log.Warnf("Fail to import rule %s with error: %v", k, e)
+			result.errors = append(result.errors, e)
 		} else {
-			rules = append(rules, k)
-			counts[2]++
+			result.rules = append(result.rules, k)
+			result.counts[2]++
 		}
 	}
-	return rules, counts, nil
+	return result, nil
 }
 
 func (rs *RulesetProcessor) ImportRuleSet(all Ruleset) Ruleset {
