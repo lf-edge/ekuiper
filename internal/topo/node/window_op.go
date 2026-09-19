@@ -369,18 +369,11 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []xs
 			case xsql.EventRow:
 				o.handleTraceIngestTuple(ctx, d)
 
-				var filterMatch bool
 				if o.window.Type == ast.COUNT_WINDOW {
 					inputs = append(inputs, d)
-				} else {
-					var err error
-					filterMatch, err = collectConditionMatch(ctx, d, o.window.CollectCondition, o.name)
-					if err != nil {
-						o.onError(ctx, err)
-					}
-				}
-
-				if filterMatch {
+				} else if match, err := collectConditionMatch(ctx, d, o.window.CollectCondition, o.name); err != nil {
+					o.onError(ctx, err)
+				} else if match {
 					inputs = append(inputs, d)
 				}
 
@@ -448,10 +441,6 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []xs
 							triggerTime = timex.GetNowInMilli()
 							windowEnd := triggerTime
 							tsets.WindowRange = xsql.NewWindowRange(windowStart, windowEnd, windowEnd)
-							// skip empty count windows
-							if o.window.CollectCondition != nil && len(tsets.Content) == 0 {
-								continue
-							}
 							log.Debugf("Sent: %v", tsets)
 							o.handleTraceEmitTuple(ctx, tsets)
 							o.Broadcast(tsets)
@@ -764,15 +753,6 @@ func (o *WindowOperator) scan(inputs []xsql.EventRow, triggerTime time.Time, ctx
 		results.WindowRange = xsql.NewWindowRange(windowStart, windowEnd.UnixMilli(), triggerTime.Add(-o.window.Delay).UnixMilli())
 	}
 	log.Debugf("window %s triggered for %d tuples", o.name, len(inputs))
-
-	if o.window.CollectCondition != nil && len(rowContent) == 0 {
-		// A collect filter only buffers matching rows; a window that ended up
-		// empty must not be emitted, otherwise previously-filtered empty
-		// windows would flow downstream since the FilterPlan is eliminated.
-		log.Debugf("window %s collect filter produced an empty window, skip emitting", o.name)
-		o.triggerTime = triggerTime
-		return inputs
-	}
 
 	o.Broadcast(results)
 	o.onSend(ctx, results)
