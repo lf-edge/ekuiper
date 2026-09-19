@@ -100,6 +100,9 @@ func (p *WindowPlan) BuildExplainInfo() {
 }
 
 func (p *WindowPlan) PushDownPredicate(condition ast.Expr) (ast.Expr, LogicalPlan) {
+	if containsBypass(condition) {
+		return condition, p
+	}
 	// not time window depends on the event, so should not filter any.
 	// state window also needs to see every row to detect state transitions
 	// (begin/emit), so the WHERE filter must run after the window rather than
@@ -193,4 +196,21 @@ func (p *WindowPlan) GenWindowConfig() *node.WindowConfig {
 		TriggerCondition: p.triggerCondition,
 		StateFuncs:       p.stateFuncs,
 	}
+}
+
+// containsBypass reports whether the condition references a bypass call
+// (i.e. Name == "bypass"). If the condition contains a bypass, it depends
+// on an aggregate result that is only available after the window has
+// closed, so the condition cannot be evaluated inside the window operator
+func containsBypass(condition ast.Expr) bool {
+	found := false
+	ast.WalkFunc(condition, func(n ast.Node) bool {
+		if f, ok := n.(*ast.Call); ok && f.Name == "bypass" {
+			found = true
+			return false
+		}
+
+		return true
+	})
+	return found
 }
