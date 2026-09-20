@@ -72,10 +72,9 @@ func InitConnectionManager(ctx context.Context) {
 }
 
 const (
-	DefaultInitialInterval          = 100 * time.Millisecond
-	DefaultMaxInterval              = 10 * time.Second
-	DefaultMaxElapsedDuration       = 10 * time.Second
-	InitialConnectionMaxElapsedTime = 10 * time.Second
+	DefaultInitialInterval    = 100 * time.Millisecond
+	DefaultMaxInterval        = 10 * time.Second
+	DefaultMaxElapsedDuration = 10 * time.Second
 )
 
 func PatrolConnectionStatusJob(ctx context.Context) {
@@ -112,11 +111,7 @@ func patrolConnectionStatus() {
 }
 
 func NewExponentialBackOff() *backoff.ExponentialBackOff {
-	maxElapsedTime := DefaultMaxElapsedDuration
-	if conf.Config != nil && conf.Config.Connection.BackoffMaxElapsedDuration > 0 {
-		maxElapsedTime = time.Duration(conf.Config.Connection.BackoffMaxElapsedDuration)
-	}
-	return newExponentialBackOff(maxElapsedTime)
+	return newExponentialBackOff(DefaultMaxElapsedDuration)
 }
 
 func NewExponentialBackOffWithMaxElapsedTime(maxElapsedTime time.Duration) *backoff.ExponentialBackOff {
@@ -443,7 +438,12 @@ func createConnection(connCtx api.StreamContext, meta *Meta) (modules.Connection
 			return err
 		}
 		return backoff.Permanent(err)
-	}, NewExponentialBackOffWithMaxElapsedTime(InitialConnectionMaxElapsedTime))
+		// No max elapsed time: a pooled (especially named) connection must
+		// outlive transient outages and keep retrying until the server/rule
+		// stops. Callers that cannot wait that long (e.g. lookup table
+		// creation, which holds the global lookup lock) apply their own
+		// bounded wait instead of relying on a pool-level cap.
+	}, NewExponentialBackOffWithMaxElapsedTime(0))
 	return conn, err
 }
 

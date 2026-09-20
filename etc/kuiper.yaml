@@ -89,9 +89,6 @@ basic:
   # Enable only when trusted external file paths are required.
   allowExternalFileAccess: false
 
-connection:
-  backoffMaxElapsedDuration: 3m
-
 # The default options for all rules. Each rule can override this setting by defining its own option
 rule:
   # The qos of the rule. The values can be 0: At most once; 1: At least once; 2: Exactly once
