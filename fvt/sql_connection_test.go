@@ -134,7 +134,16 @@ func (s *SQLConnectionRegressionTestSuite) TestIssue1233StopAndRestartSQLRules()
 	s.Require().Equal(http.StatusOK, resp.StatusCode)
 	_, _ = GetResponseText(resp)
 	resp, err = client.CreateConf("sources/simulator/confKeys/"+simConfKey, map[string]any{
-		"data":     []map[string]any{{"a": 1, "b": 2}},
+		// Use distinct PK values so repeated sink inserts do not hit
+		// duplicate-key errors on the composite (a,b) primary key and
+		// spam the shared *sql.DB with failing writes.
+		"data": []map[string]any{
+			{"a": 11, "b": 2},
+			{"a": 12, "b": 2},
+			{"a": 13, "b": 2},
+			{"a": 14, "b": 2},
+			{"a": 15, "b": 2},
+		},
 		"interval": "100ms",
 		"loop":     true,
 	})
@@ -186,15 +195,18 @@ func (s *SQLConnectionRegressionTestSuite) TestIssue1233StopAndRestartSQLRules()
 	}
 	// Two-stage readiness: first wait for any source output (seed row b=1),
 	// then wait for b=2 which requires the simulator->sql sink to have
-	// inserted at least one row and the source to have polled again. Coupling
-	// both into a single 8s wait flaked under -race on loaded CI runners.
-	waitForFVTNamed(s.T(), sqlFVTTimeout, "initial source output (any)", func() bool {
-		return streamLogContains(ruleIDs[0], "sink result") && streamLogContains(ruleIDs[1], "sink result")
+	// inserted at least one row and the source to have polled again.
+	// Metrics are per-rule (unlike the shared stream.log), so use them for
+	// the first stage and keep the log check for content verification.
+	waitForSQLSourceOutput(s.T(), sqlFVTTimeout, "initial source output (any)", connectionID, allRuleIDs, func() bool {
+		return sinkRecordsOut(s.T(), ruleIDs[0]) > 0 && sinkRecordsOut(s.T(), ruleIDs[1]) > 0 &&
+			streamLogContains(ruleIDs[0], "sink result") && streamLogContains(ruleIDs[1], "sink result")
 	})
-	s.T().Logf("initial source any-output seen, waiting for b=2: counts=%d/%d",
+	s.T().Logf("initial source any-output seen, waiting for b=2: counts=%d/%d sinkOut=%v/%v",
 		streamLogCount(ruleIDs[0], "sink result", `\"b\":2`),
-		streamLogCount(ruleIDs[1], "sink result", `\"b\":2`))
-	waitForFVTNamed(s.T(), sqlFVTTimeout, "initial source output", func() bool {
+		streamLogCount(ruleIDs[1], "sink result", `\"b\":2`),
+		sinkRecordsOut(s.T(), ruleIDs[0]), sinkRecordsOut(s.T(), ruleIDs[1]))
+	waitForSQLSourceOutput(s.T(), sqlFVTTimeout, "initial source output", connectionID, allRuleIDs, func() bool {
 		return streamLogContains(ruleIDs[0], "sink result", `\"b\":2`) && streamLogContains(ruleIDs[1], "sink result", `\"b\":2`)
 	})
 	initialResults := map[string]int{
@@ -476,6 +488,71 @@ func waitForFVTNamed(t *testing.T, timeout time.Duration, name string, condition
 		time.Sleep(ConstantInterval)
 	}
 	t.Fatalf("%s condition was not satisfied before timeout", name)
+}
+
+// sinkRecordsOut sums per-rule sink records_out metrics. Unlike the shared
+// stream.log, metrics are per-rule and do not suffer from file rotation or
+// cross-test pollution, so they are a more reliable readiness signal.
+func sinkRecordsOut(t *testing.T, ruleID string) float64 {
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	status, body, err := doFVTRequest(ctx, http.MethodGet, "rules/"+ruleID+"/status", "")
+	if err != nil || status != http.StatusOK {
+		return 0
+	}
+	var result map[string]any
+	if err := json.Unmarshal(body, &result); err != nil {
+		return 0
+	}
+	var total float64
+	for k, v := range result {
+		if len(k) > len("sink_") && strings.HasPrefix(k, "sink_") && strings.HasSuffix(k, "_records_out_total") {
+			if f, ok := v.(float64); ok {
+				total += f
+			}
+		}
+	}
+	return total
+}
+
+func streamLogFileSize() int64 {
+	fi, err := os.Stat(path.Join(PWD, "log", "stream.log"))
+	if err != nil {
+		return -1
+	}
+	return fi.Size()
+}
+
+// waitForSQLSourceOutput polls condition until timeout, logging per-rule
+// diagnostics every 5s and a full dump on failure so CI logs show whether
+// rules were running, the connection was up, metrics advanced, or the log
+// file was missing/rotated.
+func waitForSQLSourceOutput(t *testing.T, timeout time.Duration, name, connectionID string, ruleIDs []string, condition func() bool) {
+	deadline := time.Now().Add(timeout)
+	lastLog := time.Now()
+	for time.Now().Before(deadline) {
+		if condition() {
+			return
+		}
+		if time.Since(lastLog) >= 5*time.Second {
+			lastLog = time.Now()
+			dumpSQLDiagnostics(t, connectionID, ruleIDs)
+		}
+		time.Sleep(ConstantInterval)
+	}
+	dumpSQLDiagnostics(t, connectionID, ruleIDs)
+	t.Fatalf("%s condition was not satisfied before timeout", name)
+}
+
+func dumpSQLDiagnostics(t *testing.T, connectionID string, ruleIDs []string) {
+	connStatus, ok := getConnectionStatus(t, connectionID)
+	t.Logf("diag connection %s status=%q ok=%v", connectionID, connStatus, ok)
+	for _, id := range ruleIDs {
+		t.Logf("diag rule %s status=%q sinkOut=%v logAny=%d logB2=%d",
+			id, getRuleStatus(t, id), sinkRecordsOut(t, id),
+			streamLogCount(id, "sink result"), streamLogCount(id, "sink result", `\"b\":2`))
+	}
+	t.Logf("diag stream.log size=%d", streamLogFileSize())
 }
 
 func streamLogContains(parts ...string) bool {
