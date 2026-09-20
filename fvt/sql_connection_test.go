@@ -307,6 +307,10 @@ func (s *SQLConnectionRegressionTestSuite) TestIssue1233StopAndRestartSQLRules()
 // TestIssue1236 verifies that a failed SQL lookup creation has a finite
 // lifetime, releases the lookup lock, and does not prevent a later lookup or
 // the lookup listing API from succeeding.
+// The bad endpoint is a TCP blackhole (accepts but never responds), not a
+// closed port: a closed port fails fast with refused even on unfixed code,
+// while a blackhole hangs Dial forever without timeouts and exposes the
+// hanging lookup-lock bug.
 func (s *SQLConnectionRegressionTestSuite) TestIssue1236FailedLookupReleasesAPI() {
 	port := freeTCPPort(s.T())
 	badPort := freeTCPPort(s.T())
@@ -324,6 +328,11 @@ func (s *SQLConnectionRegressionTestSuite) TestIssue1236FailedLookupReleasesAPI(
 	db, err := setupEmbeddedMysqlServer("127.0.0.1", port)
 	s.Require().NoError(err)
 	defer db.Close()
+	// Blackhole: accept TCP and hold it without any MySQL handshake so Dial
+	// blocks until timeout instead of failing fast with refused.
+	blackhole, err := newBlackholeListener(badPort)
+	s.Require().NoError(err)
+	defer blackhole.Close()
 
 	createSQLConnection := func(id, dbURL string) {
 		resp, e := client.Post("connections", fmt.Sprintf(`{
@@ -603,6 +612,55 @@ func deleteFVTResource(t *testing.T, resource string) {
 	if err != nil || (status != http.StatusOK && status != http.StatusNotFound) {
 		t.Logf("cleanup %s failed: status=%d err=%v body=%s", resource, status, err, body)
 	}
+}
+
+// blackholeListener accepts TCP connections and holds them open without
+// sending anything, simulating a firewall DROP after accept. Dial blocks
+// until timeout instead of failing fast with refused.
+type blackholeListener struct {
+	listener net.Listener
+	mu       sync.Mutex
+	conns    []net.Conn
+	closed   bool
+}
+
+func newBlackholeListener(port int) (*blackholeListener, error) {
+	l, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", port))
+	if err != nil {
+		return nil, err
+	}
+	b := &blackholeListener{listener: l}
+	go b.accept()
+	return b, nil
+}
+
+func (b *blackholeListener) accept() {
+	for {
+		c, err := b.listener.Accept()
+		if err != nil {
+			return
+		}
+		b.mu.Lock()
+		if b.closed {
+			b.mu.Unlock()
+			_ = c.Close()
+			return
+		}
+		b.conns = append(b.conns, c)
+		b.mu.Unlock()
+	}
+}
+
+func (b *blackholeListener) Close() error {
+	b.mu.Lock()
+	b.closed = true
+	conns := b.conns
+	b.conns = nil
+	b.mu.Unlock()
+	for _, c := range conns {
+		_ = c.Close()
+	}
+	return b.listener.Close()
 }
 
 type tcpProxy struct {
