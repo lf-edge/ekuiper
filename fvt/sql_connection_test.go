@@ -42,6 +42,12 @@ func TestSQLConnectionRegressionSuite(t *testing.T) {
 	suite.Run(t, new(SQLConnectionRegressionTestSuite))
 }
 
+// sqlFVTTimeout is deliberately generous: this suite runs under -race with an
+// embedded MySQL server plus a TCP proxy, so rule startup + first poll can
+// take much longer on a loaded CI runner than on a dev machine. The previous
+// 8s waits flaked in CI (initial source output timeout).
+const sqlFVTTimeout = 30 * time.Second
+
 // TestIssue1227 verifies that a named SQL connection keeps retrying after the
 // database is unavailable during its first dial.
 func (s *SQLConnectionRegressionTestSuite) TestIssue1227NamedConnectionRecovers() {
@@ -69,7 +75,7 @@ func (s *SQLConnectionRegressionTestSuite) TestIssue1227NamedConnectionRecovers(
 	s.Require().NoError(err)
 	defer db.Close()
 
-	waitForFVTNamed(s.T(), 8*time.Second, "named connection recovery", func() bool {
+	waitForFVTNamed(s.T(), sqlFVTTimeout, "named connection recovery", func() bool {
 		status, ok := getConnectionStatus(s.T(), connectionID)
 		return ok && status == "connected"
 	})
@@ -111,7 +117,7 @@ func (s *SQLConnectionRegressionTestSuite) TestIssue1233StopAndRestartSQLRules()
 	s.Require().NoError(err)
 	s.Require().Equal(http.StatusCreated, resp.StatusCode)
 	_, _ = GetResponseText(resp)
-	waitForFVTNamed(s.T(), 8*time.Second, "initial named connection", func() bool {
+	waitForFVTNamed(s.T(), sqlFVTTimeout, "initial named connection", func() bool {
 		status, ok := getConnectionStatus(s.T(), connectionID)
 		return ok && status == "connected"
 	})
@@ -169,16 +175,26 @@ func (s *SQLConnectionRegressionTestSuite) TestIssue1233StopAndRestartSQLRules()
 		s.Require().Equal(http.StatusCreated, resp.StatusCode, body)
 	}
 	for _, ruleID := range ruleIDs {
-		waitForFVTNamed(s.T(), 8*time.Second, "initial source rule "+ruleID, func() bool {
+		waitForFVTNamed(s.T(), sqlFVTTimeout, "initial source rule "+ruleID, func() bool {
 			return getRuleStatus(s.T(), ruleID) == "running"
 		})
 	}
 	for _, ruleID := range sinkRuleIDs {
-		waitForFVTNamed(s.T(), 8*time.Second, "initial sink rule "+ruleID, func() bool {
+		waitForFVTNamed(s.T(), sqlFVTTimeout, "initial sink rule "+ruleID, func() bool {
 			return getRuleStatus(s.T(), ruleID) == "running"
 		})
 	}
-	waitForFVTNamed(s.T(), 8*time.Second, "initial source output", func() bool {
+	// Two-stage readiness: first wait for any source output (seed row b=1),
+	// then wait for b=2 which requires the simulator->sql sink to have
+	// inserted at least one row and the source to have polled again. Coupling
+	// both into a single 8s wait flaked under -race on loaded CI runners.
+	waitForFVTNamed(s.T(), sqlFVTTimeout, "initial source output (any)", func() bool {
+		return streamLogContains(ruleIDs[0], "sink result") && streamLogContains(ruleIDs[1], "sink result")
+	})
+	s.T().Logf("initial source any-output seen, waiting for b=2: counts=%d/%d",
+		streamLogCount(ruleIDs[0], "sink result", `\"b\":2`),
+		streamLogCount(ruleIDs[1], "sink result", `\"b\":2`))
+	waitForFVTNamed(s.T(), sqlFVTTimeout, "initial source output", func() bool {
 		return streamLogContains(ruleIDs[0], "sink result", `\"b\":2`) && streamLogContains(ruleIDs[1], "sink result", `\"b\":2`)
 	})
 	initialResults := map[string]int{
@@ -203,7 +219,7 @@ func (s *SQLConnectionRegressionTestSuite) TestIssue1233StopAndRestartSQLRules()
 		s.Require().NoError(db.SessionManager().KillConnection(sessionID))
 	}
 	blackholeStarted := time.Now()
-	waitForFVTNamed(s.T(), 8*time.Second, "blocked reconnect", func() bool {
+	waitForFVTNamed(s.T(), sqlFVTTimeout, "blocked reconnect", func() bool {
 		// The three rules share one *sql.DB and its connection mutex, so the
 		// driver may serialize their reconnects. One accepted session proves the
 		// shared SQL operation has entered the outage path.
@@ -263,12 +279,12 @@ func (s *SQLConnectionRegressionTestSuite) TestIssue1233StopAndRestartSQLRules()
 		s.Require().NoError(<-startResults)
 	}
 	for _, ruleID := range allRuleIDs {
-		waitForFVTNamed(s.T(), 8*time.Second, "restarted rule "+ruleID, func() bool {
+		waitForFVTNamed(s.T(), sqlFVTTimeout, "restarted rule "+ruleID, func() bool {
 			return getRuleStatus(s.T(), ruleID) == "running"
 		})
 	}
 	for _, ruleID := range ruleIDs {
-		waitForFVTNamed(s.T(), 8*time.Second, "post-restart source output "+ruleID, func() bool {
+		waitForFVTNamed(s.T(), sqlFVTTimeout, "post-restart source output "+ruleID, func() bool {
 			return streamLogCount(ruleID, "sink result", `\"b\":2`) > initialResults[ruleID]
 		})
 	}
