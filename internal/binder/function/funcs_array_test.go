@@ -73,6 +73,27 @@ func TestArrayCommonFunctions(t *testing.T) {
 			result: -1,
 		},
 		{
+			name: "array_positions",
+			args: []interface{}{
+				[]interface{}{1, 2, 2, 3, 2},
+				2,
+			},
+			result: []interface{}{1, 2, 4},
+		},
+		{
+			name: "array_positions",
+			args: []interface{}{
+				[]interface{}{1, 2, 3},
+				4,
+			},
+			result: []interface{}{},
+		},
+		{
+			name:   "array_positions",
+			args:   []interface{}{1, 2},
+			result: errorArrayFirstArgumentNotArrayError,
+		},
+		{
 			name: "length",
 			args: []interface{}{
 				[]interface{}{1, 2, 3},
@@ -957,6 +978,10 @@ func TestArrayFuncNil(t *testing.T) {
 				r, b := mathFunc.exec(fctx, []interface{}{nil})
 				require.True(t, b, fmt.Sprintf("%v failed", mathFuncName))
 				require.Equal(t, r, -1, fmt.Sprintf("%v failed", mathFuncName))
+			case "array_positions":
+				r, b := mathFunc.exec(fctx, []interface{}{nil, 1})
+				require.True(t, b, fmt.Sprintf("%v failed", mathFuncName))
+				require.Nil(t, r, fmt.Sprintf("%v failed", mathFuncName))
 			case "array_contains", "array_contains_any":
 				r, b := mathFunc.check([]interface{}{nil})
 				require.True(t, b, fmt.Sprintf("%v failed", mathFuncName))

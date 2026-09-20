@@ -82,6 +82,28 @@ func registerArrayFunc() {
 			return ValidateLen(2, len(args))
 		},
 	}
+	builtins["array_positions"] = builtinFunc{
+		fType: ast.FuncTypeScalar,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			if args[0] == nil {
+				return nil, true
+			}
+			array, ok := args[0].([]interface{})
+			if !ok {
+				return errorArrayFirstArgumentNotArrayError, false
+			}
+			positions := make([]interface{}, 0)
+			for i, item := range array {
+				if changedValueEqual(item, args[1]) {
+					positions = append(positions, i)
+				}
+			}
+			return positions, true
+		},
+		val: func(ctx api.FunctionContext, args []ast.Expr) error {
+			return ValidateLen(2, len(args))
+		},
+	}
 	builtins["element_at"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
