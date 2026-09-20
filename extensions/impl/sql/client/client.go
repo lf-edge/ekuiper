@@ -126,7 +126,9 @@ func (s *SQLConnection) dial(ctx api.StreamContext) error {
 	if err != nil {
 		return fmt.Errorf("create connection err:%v", err)
 	}
-	if err := db.Ping(); err != nil {
+	pingCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
+	defer cancel()
+	if err := db.PingContext(pingCtx); err != nil {
 		_ = db.Close()
 		// A database URL can be syntactically valid while the database is
 		// temporarily unreachable. Let the connection pool retry this case.

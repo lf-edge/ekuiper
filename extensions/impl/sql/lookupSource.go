@@ -18,6 +18,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/pingcap/failpoint"
@@ -29,6 +30,12 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 )
 
+// lookupConnectTimeout bounds how long lookup table creation waits for the
+// pooled connection to become ready. The pooled connection keeps retrying in
+// the background, so a timeout here only fails fast and releases the lookup
+// lock instead of hanging table creation forever.
+const lookupConnectTimeout = 10 * time.Second
+
 type SqlLookupSource struct {
 	conf          *SQLConf
 	conn          *client2.SQLConnection
@@ -38,6 +45,7 @@ type SqlLookupSource struct {
 	needReconnect bool
 	gen           sqlQueryGen
 	conId         string
+	refId         string
 }
 
 func (s *SqlLookupSource) Ping(ctx api.StreamContext, m map[string]any) error {
@@ -79,7 +87,7 @@ func (s *SqlLookupSource) Close(ctx api.StreamContext) error {
 	if s.conn != nil {
 		s.conn.DetachSub(ctx, s.props)
 	}
-	return connection.DetachConnection(ctx, s.conId)
+	return connection.DetachConnectionByRef(ctx, s.conId, s.refId)
 }
 
 func (s *SqlLookupSource) Connect(ctx api.StreamContext, sc api.StatusChangeHandler) error {
@@ -92,13 +100,21 @@ func (s *SqlLookupSource) Connect(ctx api.StreamContext, sc api.StatusChangeHand
 		return err
 	}
 	s.conId = cw.ID
-	conn, err := cw.Wait(ctx)
-	if conn == nil {
+	s.refId = id
+	waitCtx, cancel := ctx.WithCancel()
+	timer := time.AfterFunc(lookupConnectTimeout, cancel)
+	defer func() {
+		timer.Stop()
+		cancel()
+	}()
+	conn, err := cw.Wait(waitCtx)
+	if err != nil || conn == nil {
+		_ = connection.DetachConnectionByRef(ctx, cw.ID, id)
 		return fmt.Errorf("sql client not ready: %v", err)
 	}
 	cli = conn.(*client2.SQLConnection)
 	s.conn = cli
-	return err
+	return nil
 }
 
 func (s *SqlLookupSource) Lookup(ctx api.StreamContext, fields []string, keys []string, values []any) ([]map[string]any, error) {
