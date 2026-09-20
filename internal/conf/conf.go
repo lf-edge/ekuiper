@@ -89,10 +89,6 @@ func InitConf() {
 		Config.Basic.RulePatrolInterval = cast.DurationConf(10 * time.Second)
 	}
 
-	if time.Duration(Config.Connection.BackoffMaxElapsedDuration) < 1 {
-		Config.Connection.BackoffMaxElapsedDuration = cast.DurationConf(3 * time.Minute)
-	}
-
 	if Config.Basic.LogLevel == "" {
 		Config.Basic.LogLevel = InfoLogLevel
 	}
