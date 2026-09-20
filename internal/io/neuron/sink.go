@@ -129,7 +129,7 @@ func (s *sink) CollectList(ctx api.StreamContext, data api.MessageTupleList) err
 func (s *sink) Close(ctx api.StreamContext) error {
 	ctx.GetLogger().Debugf("closing neuron sink")
 	if s.cw != nil {
-		_ = connection.DetachConnection(ctx, s.cw.ID)
+		_ = connection.DetachConnectionByRef(ctx, s.cw.ID, PROTOCOL+s.cc.Url)
 	}
 	s.cli = nil
 	return nil

@@ -70,6 +70,7 @@ type KafkaSink struct {
 	statManager    metric.StatManager
 	connected      bool
 	sch            api.StatusChangeHandler
+	refId          string
 }
 
 func (k *KafkaSink) setStatManager(ctx api.StreamContext) {
@@ -255,7 +256,7 @@ func (k *KafkaSink) Close(ctx api.StreamContext) error {
 		k.transport = nil
 	}
 	if k.cw != nil {
-		if detachErr := connection.DetachConnection(ctx, k.cw.ID); detachErr != nil && err == nil {
+		if detachErr := connection.DetachConnectionByRef(ctx, k.cw.ID, k.refId); detachErr != nil && err == nil {
 			err = detachErr
 		}
 		k.cw = nil
@@ -273,6 +274,7 @@ func (k *KafkaSink) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) 
 			return err
 		}
 		k.cw = cw
+		k.refId = refID
 		ctx.GetLogger().Infof("action=use_shared_kafka_connection role=sink connId=%s connectionKey=%s rule=%s topic=%s", k.cw.ID, k.kc.SelId, ctx.GetRuleId(), k.kc.Topic)
 	}
 	k.buildKafkaWriter(ctx)

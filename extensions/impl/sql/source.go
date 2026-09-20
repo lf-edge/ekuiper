@@ -146,7 +146,7 @@ func (s *SQLSourceConnector) Close(ctx api.StreamContext) error {
 	if s.conn != nil {
 		s.conn.DetachSub(ctx, s.props)
 	}
-	return connection.DetachConnection(ctx, s.conId)
+	return connection.DetachConnectionByRef(ctx, s.conId, s.id)
 }
 
 func (s *SQLSourceConnector) Pull(ctx api.StreamContext, recvTime time.Time, ingest api.TupleIngest, ingestError api.ErrorIngest) {

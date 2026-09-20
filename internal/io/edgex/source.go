@@ -39,6 +39,7 @@ type Source struct {
 	messageType messageType
 	buflen      int
 	conId       string
+	refId       string
 }
 
 type SourceConf struct {
@@ -86,6 +87,7 @@ func (es *Source) Connect(ctx api.StreamContext, sc api.StatusChangeHandler) err
 		return err
 	}
 	es.conId = cw.ID
+	es.refId = id
 	conn, err := cw.Wait(ctx)
 	if conn == nil {
 		return fmt.Errorf("edgex client not ready: %v", err)
@@ -308,7 +310,7 @@ func (es *Source) Close(ctx api.StreamContext) error {
 		es.cli.DetachSub(ctx, es.config)
 		_ = es.cli.Disconnect()
 	}
-	return connection.DetachConnection(ctx, es.conId)
+	return connection.DetachConnectionByRef(ctx, es.conId, es.refId)
 }
 
 func GetSource() api.Source {

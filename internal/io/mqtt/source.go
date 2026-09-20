@@ -36,6 +36,7 @@ type SourceConnector struct {
 
 	cli        *Connection
 	conId      string
+	refId      string
 	eof        api.EOFIngest
 	eofPayload []byte
 }
@@ -96,6 +97,7 @@ func (ms *SourceConnector) Connect(ctx api.StreamContext, sch api.StatusChangeHa
 		ctx.GetLogger().Infof("action=use_shared_mqtt_connection role=source connId=%s connectionKey=%s rule=%s stream=%s topic=%s", cw.ID, ms.cfg.SelId, ctx.GetRuleId(), ctx.GetOpId(), ms.tpc)
 	}
 	ms.conId = cw.ID
+	ms.refId = id
 	// wait for connection
 	conn, err := cw.Wait(ctx)
 	if conn == nil {
@@ -136,7 +138,7 @@ func (ms *SourceConnector) Close(ctx api.StreamContext) error {
 	if ms.cli != nil {
 		ms.cli.DetachSub(ctx, ms.props)
 	}
-	return connection.DetachConnection(ctx, ms.conId)
+	return connection.DetachConnectionByRef(ctx, ms.conId, ms.refId)
 }
 
 func (ms *SourceConnector) SetEofIngest(eof api.EOFIngest) {

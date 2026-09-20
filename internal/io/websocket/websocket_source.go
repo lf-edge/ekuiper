@@ -56,7 +56,8 @@ func (w *WebsocketSource) Provision(ctx api.StreamContext, configs map[string]an
 
 func (w *WebsocketSource) Close(ctx api.StreamContext) error {
 	pubsub.CloseSourceConsumerChannel(w.topic, w.sourceID)
-	return connection.DetachConnection(ctx, buildWebsocketEpID(w.cfg.Endpoint))
+	epID := buildWebsocketEpID(w.cfg.Endpoint)
+	return connection.DetachConnectionByRef(ctx, epID, epID)
 }
 
 func (w *WebsocketSource) Connect(ctx api.StreamContext, sc api.StatusChangeHandler) error {

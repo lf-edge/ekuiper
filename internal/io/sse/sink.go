@@ -52,7 +52,8 @@ func (s *SSESink) Provision(ctx api.StreamContext, configs map[string]any) error
 
 func (s *SSESink) Close(ctx api.StreamContext) error {
 	pubsub.RemovePub(s.topic)
-	return connection.DetachConnection(ctx, buildSseEpID(s.cfg.Endpoint))
+	epID := buildSseEpID(s.cfg.Endpoint)
+	return connection.DetachConnectionByRef(ctx, epID, epID)
 }
 
 func (s *SSESink) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) error {

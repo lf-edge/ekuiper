@@ -266,6 +266,11 @@ func (m *SourceNode) Run(ctx api.StreamContext, ctrlCh chan<- error) {
 		// Blocking and wait for connection. The connect will call the dial and retry if fails
 		err := m.s.Connect(ctx, m.connectionStatusChange)
 		if err != nil {
+			// Our own context is done (rule stopping): exit quietly instead
+			// of reporting the wait cancellation as a runtime error.
+			if ctx.Err() != nil {
+				return nil
+			}
 			return err
 		}
 		if err := m.Rewind(ctx); err != nil {

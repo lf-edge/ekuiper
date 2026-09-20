@@ -15,13 +15,14 @@
 package connection
 
 import (
+	"context"
 	"sync"
 	"sync/atomic"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
-	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
+	topoContext "github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
 )
@@ -86,6 +87,12 @@ type Meta struct {
 	refCount atomic.Int32 `json:"-"`
 	ref      sync.Map     `json:"-"`
 	cw       *ConnWrapper `json:"-"`
+	// cancel stops the connection lifecycle (initial retry / reconnect loop).
+	// It is created together with the Meta and must be called when the Meta
+	// is removed from the pool, so the lifecycle never depends on the
+	// first fetcher's rule context. Guard against nil for Metas built
+	// outside the pool (e.g. unit tests).
+	cancel context.CancelFunc `json:"-"`
 	// The first connection status
 	// If connection is stateful, the status will update all the way
 	// For stateless connection, the status needs to ping
@@ -118,8 +125,23 @@ func (meta *Meta) AddRef(refId string, sc api.StatusChangeHandler) {
 }
 
 func (meta *Meta) DeRef(refId string) {
-	meta.ref.Delete(refId)
+	// Multiple consumers may share one refId string (e.g. all rules using
+	// the same DB URL), while AddRef counts every Fetch. So a missing key
+	// must still balance a previous attach; only never let the count go
+	// negative, otherwise the connection would never reach zero refs and
+	// never be cleaned up. Callers holding the original FetchConnection
+	// refId should prefer DetachConnectionByRef so the subscriber map
+	// stays accurate as well.
+	_, loaded := meta.ref.LoadAndDelete(refId)
+	if !loaded && meta.GetRefCount() <= 0 {
+		conf.Log.Warnf("conn %s dereference unknown ref %s on zero count, ignored", meta.ID, refId)
+		return
+	}
 	c := meta.refCount.Add(-1)
+	if c < 0 {
+		meta.refCount.Store(0)
+		c = 0
+	}
 	conf.Log.Infof("conn %s dereference %s to %d refs", meta.ID, refId, c)
 }
 
@@ -145,14 +167,14 @@ func (meta *Meta) GetStatus() (s string, e string) {
 		s = ss.(string)
 		if s == api.ConnectionConnected {
 			if meta.cw.IsInitialized() {
-				conn, err := meta.cw.Wait(context.Background())
+				conn, err := meta.cw.Wait(topoContext.Background())
 				if err != nil || conn == nil {
 					return
 				}
 				e = ""
 				// if connected, cw, cw.conn should exist
 				if _, isStateful := conn.(modules.StatefulDialer); !isStateful {
-					err := conn.Ping(context.Background())
+					err := conn.Ping(topoContext.Background())
 					if err != nil {
 						s = api.ConnectionDisconnected
 						e = err.Error()

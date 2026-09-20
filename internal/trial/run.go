@@ -87,7 +87,7 @@ func create(def *RunDef) (*topo.Topo, error) {
 
 func trialRun(tp *topo.Topo, endpoint string) {
 	go func() {
-		defer connection.DetachConnection(context.Background(), endpoint)
+		defer connection.DetachConnectionByRef(context.Background(), endpoint, endpoint)
 		timeout := time.After(5 * time.Minute)
 		err := infra.SafeRun(func() error {
 			select {

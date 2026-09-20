@@ -46,6 +46,7 @@ type SQLSinkConnector struct {
 	conn          *client.SQLConnection
 	props         map[string]any
 	needReconnect bool
+	refId         string
 	// bindNext renders the bind variable for the i-th (1-based) argument of
 	// the current statement, resolved from the driver in Provision.
 	bindNext func(i int) string
@@ -267,6 +268,7 @@ func (s *SQLSinkConnector) Connect(ctx api.StreamContext, sc api.StatusChangeHan
 		return err
 	}
 	s.cw = cw
+	s.refId = id
 	conn, err := s.cw.Wait(ctx)
 	if conn == nil {
 		return fmt.Errorf("sql client not ready: %v", err)
@@ -280,7 +282,7 @@ func (s *SQLSinkConnector) Close(ctx api.StreamContext) error {
 		ctx.GetLogger().Infof("Closing sql sink connector url:%v", s.config.DBUrl)
 	}
 	if s.cw != nil {
-		return connection.DetachConnection(ctx, s.cw.ID)
+		return connection.DetachConnectionByRef(ctx, s.cw.ID, s.refId)
 	}
 	return nil
 }

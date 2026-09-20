@@ -225,3 +225,36 @@ func TestFetchConnectionNotExist(t *testing.T) {
 	_, err := FetchConnection(ctx, "2222", "mock", map[string]interface{}{"connectionSelector": "id2"}, nil)
 	require.Error(t, err)
 }
+
+func TestDeRefFloor(t *testing.T) {
+	require.NoError(t, InitConnectionManager4Test())
+	ctx := context.Background()
+	_, err := FetchConnection(ctx, "floor1", "mock", nil, nil)
+	require.NoError(t, err)
+	require.Equal(t, 1, getConnectionRef("floor1"))
+	// Detach twice with the right refId: the second one must be a no-op
+	// instead of driving the count negative.
+	require.NoError(t, DetachConnectionByRef(ctx, "floor1", "floor1"))
+	require.Equal(t, 0, getConnectionRef("floor1"))
+	require.NoError(t, DetachConnectionByRef(ctx, "floor1", "floor1"))
+	require.Equal(t, 0, getConnectionRef("floor1"))
+	// Detach with an unknown refId on zero count: no-op as well.
+	meta := &Meta{ID: "floor2"}
+	meta.DeRef("ghost")
+	require.Equal(t, 0, meta.GetRefCount())
+}
+
+func TestLifecycleCancelOnDelete(t *testing.T) {
+	require.NoError(t, InitConnectionManager4Test())
+	ctx := context.Background()
+	cw, err := FetchConnection(ctx, "life1", "mock", nil, nil)
+	require.NoError(t, err)
+	require.NotNil(t, cw)
+	// The retry lifecycle must not depend on the fetcher's context...
+	meta := globalConnectionManager.connectionPool["life1"]
+	require.NotNil(t, meta.cancel)
+	// ...and must be cancelled once the Meta leaves the pool.
+	require.NoError(t, DetachConnectionByRef(ctx, "life1", "life1"))
+	_, ok := globalConnectionManager.connectionPool["life1"]
+	require.False(t, ok)
+}

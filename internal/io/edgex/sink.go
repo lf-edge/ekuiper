@@ -515,7 +515,7 @@ func (ems *EdgexMsgBusSink) Close(ctx api.StreamContext) error {
 		_ = ems.cli.Disconnect()
 	}
 	if ems.cw != nil {
-		return connection.DetachConnection(ctx, ems.cw.ID)
+		return connection.DetachConnectionByRef(ctx, ems.cw.ID, ems.id)
 	}
 	return nil
 }

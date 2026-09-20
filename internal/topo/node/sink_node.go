@@ -87,7 +87,7 @@ func (s *SinkNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 		err := infra.SafeRun(func() error {
 			s.setKafkaSinkStatsManager(ctx)
 			err := s.sink.Connect(ctx, s.connectionStatusChange)
-			if err != nil {
+			if err != nil && ctx.Err() == nil {
 				infra.DrainError(ctx, err, errCh)
 			}
 			defer func() {

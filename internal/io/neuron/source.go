@@ -49,6 +49,7 @@ type source struct {
 	cli   *nng.Sock
 	props map[string]any
 	conId string
+	refId string
 	mu    syncx.RWMutex
 }
 
@@ -83,6 +84,7 @@ func (s *source) Connect(ctx api.StreamContext, sc api.StatusChangeHandler) erro
 		return err
 	}
 	s.conId = cw.ID
+	s.refId = PROTOCOL + s.c.Url
 	cli, err := cw.Wait(ctx)
 	if cli == nil {
 		return fmt.Errorf("neuron client not ready: %v", err)
@@ -128,7 +130,7 @@ func (s *source) Subscribe(ctx api.StreamContext, ingest api.BytesIngest, ingest
 
 func (s *source) Close(ctx api.StreamContext) error {
 	ctx.GetLogger().Infof("closing neuron source")
-	_ = connection.DetachConnection(ctx, s.conId)
+	_ = connection.DetachConnectionByRef(ctx, s.conId, s.refId)
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.cli = nil

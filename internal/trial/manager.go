@@ -72,7 +72,7 @@ func (m *Manager) StopRule(ruleId string) {
 	if r, ok := m.runs[ruleId]; ok {
 		r.topo.Cancel()
 		delete(m.runs, ruleId)
-		_ = connection.DetachConnection(context.Background(), r.def.endpoint)
+		_ = connection.DetachConnectionByRef(context.Background(), r.def.endpoint, r.def.endpoint)
 	} else {
 		conf.Log.Warnf("try to stop test rule %s but it is not found", ruleId)
 	}

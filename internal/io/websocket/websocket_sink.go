@@ -49,7 +49,8 @@ func (w *WebsocketSink) Provision(ctx api.StreamContext, configs map[string]any)
 
 func (w *WebsocketSink) Close(ctx api.StreamContext) error {
 	pubsub.RemovePub(w.topic)
-	return connection.DetachConnection(ctx, buildWebsocketEpID(w.cfg.Endpoint))
+	epID := buildWebsocketEpID(w.cfg.Endpoint)
+	return connection.DetachConnectionByRef(ctx, epID, epID)
 }
 
 func (w *WebsocketSink) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) error {

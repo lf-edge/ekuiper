@@ -140,7 +140,7 @@ func (ms *Sink) Collect(ctx api.StreamContext, item api.RawTuple) error {
 func (ms *Sink) Close(ctx api.StreamContext) error {
 	ctx.GetLogger().Infof("Closing mqtt sink connector, id:%v", ms.id)
 	if ms.cw != nil {
-		return connection.DetachConnection(ctx, ms.cw.ID)
+		return connection.DetachConnectionByRef(ctx, ms.cw.ID, ms.id)
 	}
 	return nil
 }

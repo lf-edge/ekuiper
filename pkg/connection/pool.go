@@ -131,6 +131,16 @@ func newExponentialBackOff(maxElapsedTime time.Duration) *backoff.ExponentialBac
 	)
 }
 
+// newLifecycleContext creates the context that owns a connection's retry
+// lifecycle. It must not be derived from any fetcher's rule context:
+// a shared connection has to keep retrying after the rule that created it
+// stops. The returned cancel must be called when the Meta is removed from
+// the pool (last ref detached, named connection dropped).
+func newLifecycleContext() (api.StreamContext, context.CancelFunc) {
+	stdCtx, cancel := context.WithCancel(context.Background())
+	return topoContext.WithContext(stdCtx), cancel
+}
+
 // FetchConnection is called by source/sink to get or create an anonymous connection instance in the pool
 func FetchConnection(ctx api.StreamContext, refId, typ string, props map[string]interface{}, sc api.StatusChangeHandler) (*ConnWrapper, error) {
 	failpoint.Inject("FetchConnectionErr", func() {
@@ -157,7 +167,9 @@ func FetchConnection(ctx api.StreamContext, refId, typ string, props map[string]
 			Props: props,
 			Named: false,
 		}
-		meta.cw = newConnWrapper(ctx, meta)
+		lifeCtx, cancel := newLifecycleContext()
+		meta.cancel = cancel
+		meta.cw = newConnWrapper(lifeCtx, meta)
 		globalConnectionManager.connectionPool[meta.ID] = meta
 		conf.Log.Infof("FetchConnection return new conn %s", conId)
 	}
@@ -188,7 +200,9 @@ func ReloadNamedConnection() error {
 			Props: props,
 			Named: true,
 		}
-		meta.cw = newConnWrapper(topoContext.WithContext(context.Background()), meta)
+		lifeCtx, cancel := newLifecycleContext()
+		meta.cancel = cancel
+		meta.cw = newConnWrapper(lifeCtx, meta)
 		globalConnectionManager.connectionPool[id] = meta
 	}
 	return nil
@@ -215,8 +229,11 @@ func createNamedConnection(ctx api.StreamContext, id, typ string, props map[stri
 		Props: props,
 		Named: true,
 	}
-	meta.cw = newConnWrapper(ctx, meta)
+	lifeCtx, cancel := newLifecycleContext()
+	meta.cancel = cancel
+	meta.cw = newConnWrapper(lifeCtx, meta)
 	if err := storeConnectionMeta(typ, id, props); err != nil {
+		cancel()
 		return nil, err
 	}
 	globalConnectionManager.connectionPool[id] = meta
@@ -276,6 +293,9 @@ func dropNameConnection(ctx api.StreamContext, selId string) error {
 	err = dropConnectionStore(meta.Typ, selId)
 	if err != nil {
 		return fmt.Errorf("drop connection %s failed, err:%v", selId, err)
+	}
+	if meta.cancel != nil {
+		meta.cancel()
 	}
 	if meta.cw.IsInitialized() {
 		conn, err := meta.cw.Wait(ctx)
@@ -389,6 +409,9 @@ func detachConnection(ctx api.StreamContext, conId, refId string) error {
 		if conId != refId {
 			conf.Log.Infof("action=close_connection connId=%s type=%s connectionKey=%s rule=%s op=%s reason=zero_ref", conId, meta.Typ, conId, ctx.GetRuleId(), ctx.GetOpId())
 		}
+		if meta.cancel != nil {
+			meta.cancel()
+		}
 		close(meta.cw.detachCh)
 		conn, err := meta.cw.Wait(ctx)
 		if conn != nil && err == nil {
@@ -419,7 +442,11 @@ func createConnection(connCtx api.StreamContext, meta *Meta) (modules.Connection
 	err = backoff.Retry(func() error {
 		select {
 		case <-connCtx.Done():
-			return nil
+			// Report cancellation explicitly instead of (nil, nil): callers
+			// can tell "no connection because we stopped waiting" apart
+			// from a successful dial. Node layer exits quietly when its
+			// own context is done, so this does not add shutdown noise.
+			return backoff.Permanent(connCtx.Err())
 		default:
 		}
 		meta.NotifyStatus(api.ConnectionConnecting, "")
