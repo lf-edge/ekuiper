@@ -15,33 +15,108 @@
 package sql
 
 import (
+	"context"
 	"fmt"
+	"net"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
-	_ "modernc.org/sqlite"
 
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
 
-func TestLookupConnectionFailureCleanup(t *testing.T) {
+// closedPort returns a port number that nothing listens on.
+func closedPort(t *testing.T) int {
+	t.Helper()
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	require.NoError(t, err)
+	port := listener.Addr().(*net.TCPAddr).Port
+	require.NoError(t, listener.Close())
+	return port
+}
+
+// TestLookupCreateSemantics verifies the CREATE TABLE contract: static
+// configuration errors fail immediately, while an unreachable database does
+// not block table creation at all.
+func TestLookupCreateSemantics(t *testing.T) {
 	require.NoError(t, connection.InitConnectionManager4Test())
-	ctx := mockContext.NewMockContext("lookup_cleanup", "op1")
+	ctx := mockContext.NewMockContext("lookup_create", "op1")
 
-	failed := &SqlLookupSource{
-		conf:  &SQLConf{DBUrl: "unknown-driver://database"},
-		props: map[string]any{"dburl": "unknown-driver://database"},
+	// Malformed URLs and unsupported drivers are static errors: they are
+	// detected without touching the remote database and fail Provision.
+	for _, dburl := range []string{"123", "unknown-driver://database"} {
+		ls := &SqlLookupSource{}
+		require.Error(t, ls.Provision(ctx, map[string]any{
+			"dburl":      dburl,
+			"datasource": "t",
+		}), "dburl %v must fail static validation", dburl)
 	}
-	require.Error(t, failed.Connect(ctx, nil))
-	_, err := connection.GetConnectionDetail(ctx, "unknown-driver://database")
-	require.Error(t, err, "a failed lookup connection must not remain in the pool")
 
-	validURL := fmt.Sprintf("sqlite://%s/lookup.db", t.TempDir())
-	valid := &SqlLookupSource{
-		conf:  &SQLConf{DBUrl: validURL},
-		props: map[string]any{"dburl": validURL},
+	// A valid URL to an unreachable database is a connection-phase issue:
+	// Connect only attaches to the pool, so creation succeeds immediately.
+	port := closedPort(t)
+	dburl := fmt.Sprintf("mysql://root:@127.0.0.1:%d/test", port)
+	ls := &SqlLookupSource{}
+	require.NoError(t, ls.Provision(ctx, map[string]any{
+		"dburl":      dburl,
+		"datasource": "t",
+	}))
+	started := time.Now()
+	require.NoError(t, ls.Connect(ctx, nil))
+	require.Less(t, time.Since(started), time.Second, "lookup Connect must not wait for the database")
+
+	// The first business request reports the unavailable connection once...
+	_, err := ls.Lookup(ctx, []string{"a"}, []string{"a"}, []any{1})
+	require.Error(t, err)
+	require.True(t, ls.needReconnect)
+
+	require.NoError(t, ls.Close(ctx))
+	_, err = connection.GetConnectionDetail(ctx, dburl)
+	require.Error(t, err, "a closed lookup connection must not remain in the pool")
+}
+
+// TestLookupWaitCancellation verifies that the recovery wait is bound to
+// the request context: a rule stop must unblock a pending Lookup even while
+// the pool initial connection never succeeds.
+func TestLookupWaitCancellation(t *testing.T) {
+	require.NoError(t, connection.InitConnectionManager4Test())
+	rootCtx := mockContext.NewMockContext("lookup_cancel", "op1")
+	ctx, cancel := rootCtx.WithCancel()
+
+	port := closedPort(t)
+	dburl := fmt.Sprintf("mysql://root:@127.0.0.1:%d/test", port)
+	ls := &SqlLookupSource{}
+	require.NoError(t, ls.Provision(ctx, map[string]any{
+		"dburl":      dburl,
+		"datasource": "t",
+	}))
+	require.NoError(t, ls.Connect(ctx, nil))
+
+	// First request reports once and marks the source as recovering.
+	_, err := ls.Lookup(ctx, []string{"a"}, []string{"a"}, []any{1})
+	require.Error(t, err)
+
+	// The second request enters the recovery wait and must exit promptly
+	// once the rule context is canceled.
+	result := make(chan error, 1)
+	go func() {
+		_, err := ls.Lookup(ctx, []string{"a"}, []string{"a"}, []any{1})
+		result <- err
+	}()
+	select {
+	case <-result:
+		t.Fatal("lookup must block while waiting for the database")
+	case <-time.After(300 * time.Millisecond):
 	}
-	require.NoError(t, valid.Connect(ctx, nil))
-	require.NoError(t, valid.Close(ctx))
+	cancel()
+	select {
+	case err := <-result:
+		require.ErrorIs(t, err, context.Canceled)
+	case <-time.After(5 * time.Second):
+		t.Fatal("canceled lookup did not return in time")
+	}
+
+	require.NoError(t, ls.Close(ctx))
 }

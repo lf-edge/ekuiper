@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/pingcap/failpoint"
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/extensions/impl/sql/testx"
@@ -314,8 +313,10 @@ func TestSQLSinkReconnect(t *testing.T) {
 	require.NoError(t, sqlSink.Connect(ctx, func(status string, message string) {
 		// do nothing
 	}))
+	// Simulate a runtime disconnect: break the established sessions and
+	// close the server.
+	require.NoError(t, testx.KillSessions(s))
 	s.Close()
-	failpoint.Enable("github.com/lf-edge/ekuiper/v2/extensions/impl/sql/dbErr", "return(true)")
 	// update
 	require.Error(t, sqlSink.collect(ctx, map[string]any{
 		"a":      1,
@@ -323,7 +324,6 @@ func TestSQLSinkReconnect(t *testing.T) {
 		"action": "update",
 	}))
 	require.True(t, sqlSink.needReconnect)
-	failpoint.Disable("github.com/lf-edge/ekuiper/v2/extensions/impl/sql/dbErr")
 	s, err = testx.SetupEmbeddedMysqlServer(address, port)
 	require.NoError(t, err)
 	defer func() {

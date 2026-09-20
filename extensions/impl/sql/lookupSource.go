@@ -18,7 +18,6 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/pingcap/failpoint"
@@ -29,24 +28,29 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/util"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
+	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
+	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
 )
 
-// lookupConnectTimeout bounds how long lookup table creation waits for the
-// pooled connection to become ready. The pooled connection keeps retrying in
-// the background, so a timeout here only fails fast and releases the lookup
-// lock instead of hanging table creation forever.
-const lookupConnectTimeout = 10 * time.Second
-
 type SqlLookupSource struct {
-	conf          *SQLConf
+	conf   *SQLConf
+	props  map[string]any
+	driver string
+	table  string
+	gen    sqlQueryGen
+	conId  string
+	refId  string
+
+	// cw is the pooled connection this lookup attached to. It is set once
+	// by Connect and never mutated afterwards.
+	cw *connection.ConnWrapper
+
+	// mu guards the lazy connection state below. It is never held while
+	// waiting on cw.Wait or retryReconnect so a slow recovery cannot block
+	// Close or concurrent lookups on the state itself.
+	mu            syncx.Mutex
 	conn          *client2.SQLConnection
-	props         map[string]any
-	driver        string
-	table         string
 	needReconnect bool
-	gen           sqlQueryGen
-	conId         string
-	refId         string
 }
 
 func (s *SqlLookupSource) Ping(ctx api.StreamContext, m map[string]any) error {
@@ -85,46 +89,113 @@ func (s *SqlLookupSource) Provision(ctx api.StreamContext, configs map[string]an
 
 func (s *SqlLookupSource) Close(ctx api.StreamContext) error {
 	ctx.GetLogger().Infof("Closing sql source connector url:%v", s.conf.DBUrl)
-	if s.conn != nil {
-		s.conn.DetachSub(ctx, s.props)
+	if conn := s.getConn(); conn != nil {
+		conn.DetachSub(ctx, s.props)
 	}
+	// Always detach with the refId saved by Connect, so a lookup whose
+	// pooled connection never became ready still releases its reference.
 	return connection.DetachConnectionByRef(ctx, s.conId, s.refId)
 }
 
+// Connect only attaches to the pooled connection and returns immediately:
+// table creation must not depend on whether the database is currently
+// reachable. The pool keeps its initial retry in the background and the
+// first Lookup reports (and then recovers from) an unavailable database.
 func (s *SqlLookupSource) Connect(ctx api.StreamContext, sc api.StatusChangeHandler) error {
 	ctx.GetLogger().Infof("Connecting to sql server")
-	var cli *client2.SQLConnection
-	var err error
 	id := s.conf.DBUrl
 	cw, err := connection.FetchConnection(ctx, id, "sql", s.props, sc)
 	if err != nil {
 		return err
 	}
+	s.cw = cw
 	s.conId = cw.ID
 	s.refId = id
-	waitCtx, cancel := ctx.WithCancel()
-	timer := time.AfterFunc(lookupConnectTimeout, cancel)
-	defer func() {
-		timer.Stop()
-		cancel()
-	}()
-	conn, err := cw.Wait(waitCtx)
-	if err != nil || conn == nil {
-		_ = connection.DetachConnectionByRef(ctx, cw.ID, id)
-		return fmt.Errorf("sql client not ready: %v", err)
+	return nil
+}
+
+// ensureConnection returns a usable SQLConnection for the current request.
+//
+// Semantics (shared by first-unreachable and runtime disconnect):
+//   - conn != nil && !needReconnect: use it directly.
+//   - conn == nil and the pooled connection is not ready yet: the first
+//     request reports a not-ready error once; needReconnect is set so
+//     subsequent requests wait for the pool's initial retry instead.
+//   - conn == nil && needReconnect: wait for the pool's initial connection.
+//   - conn != nil && needReconnect: retry reconnecting until the database
+//     is back or the rule context is canceled.
+//
+// Waiting is always bound to ctx: a rule stop cancels it and unblocks the
+// current Lookup.
+func (s *SqlLookupSource) ensureConnection(
+	ctx api.StreamContext,
+) (*client2.SQLConnection, error) {
+	conn, needReconnect := s.getState()
+
+	if conn == nil {
+		if !needReconnect && !s.cw.IsInitialized() {
+			s.setNeedReconnect(true)
+			return nil, errorx.NewIOErr("sql client not ready")
+		}
+
+		c, err := s.cw.Wait(ctx)
+
+		// Do not depend on Wait returning ctx.Err() itself.
+		if ctx.Err() != nil {
+			return nil, ctx.Err()
+		}
+		if err != nil {
+			return nil, err
+		}
+		if c == nil {
+			return nil, errorx.NewIOErr("sql client not ready")
+		}
+
+		sqlConn := c.(*client2.SQLConnection)
+		s.storeConnection(sqlConn)
+		s.setNeedReconnect(false)
+
+		return sqlConn, nil
 	}
-	cli = conn.(*client2.SQLConnection)
-	s.conn = cli
-	return err
+
+	if needReconnect {
+		if err := retryReconnect(ctx, conn); err != nil {
+			return nil, err
+		}
+	}
+
+	return conn, nil
+}
+
+func (s *SqlLookupSource) getState() (conn *client2.SQLConnection, needReconnect bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.conn, s.needReconnect
+}
+
+func (s *SqlLookupSource) storeConnection(conn *client2.SQLConnection) {
+	s.mu.Lock()
+	s.conn = conn
+	s.mu.Unlock()
+}
+
+func (s *SqlLookupSource) setNeedReconnect(needReconnect bool) {
+	s.mu.Lock()
+	s.needReconnect = needReconnect
+	s.mu.Unlock()
+}
+
+func (s *SqlLookupSource) getConn() *client2.SQLConnection {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.conn
 }
 
 func (s *SqlLookupSource) Lookup(ctx api.StreamContext, fields []string, keys []string, values []any) ([]map[string]any, error) {
-	if s.needReconnect {
-		err := s.conn.Reconnect(ctx)
-		if err != nil {
-			conf.Log.Errorf("reconnect db error %v", err)
-			return nil, err
-		}
+	conn, err := s.ensureConnection(ctx)
+	if err != nil {
+		conf.Log.Errorf("sql lookup connect err %v", err)
+		return nil, err
 	}
 	var query string
 	var args []any
@@ -146,16 +217,16 @@ func (s *SqlLookupSource) Lookup(ctx api.StreamContext, fields []string, keys []
 		query = sqlQuery
 	}
 	ctx.GetLogger().Debugf("Query is %s with args %v", query, args)
-	rows, err := s.conn.GetDB().QueryContext(ctx, query, args...)
+	rows, err := conn.GetDB().QueryContext(ctx, query, args...)
 	failpoint.Inject("dbErr", func() {
 		err = errors.New("dbErr")
 	})
 	if err != nil {
-		s.needReconnect = true
+		s.setNeedReconnect(true)
 		ctx.GetLogger().Errorf("sql look table failed, err:%v, query: %v, args: %v", err, query, args)
 		return nil, err
 	} else {
-		s.needReconnect = false
+		s.setNeedReconnect(false)
 	}
 	defer rows.Close()
 	cols, _ := rows.Columns()
