@@ -102,7 +102,7 @@ type KuiperConf struct {
 		SendTimeout time.Duration     `yaml:"sendTimeout"`
 		RecvTimeout time.Duration     `yaml:"recvTimeout"`
 	}
-	OpenTelemetry OpenTelemetry  `yaml:"openTelemetry"`
+	OpenTelemetry OpenTelemetry `yaml:"openTelemetry"`
 	AesKey        []byte
 	Security      *SecurityConf
 }
