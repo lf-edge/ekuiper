@@ -18,6 +18,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/pingcap/failpoint"
@@ -29,6 +30,12 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 )
+
+// lookupConnectTimeout bounds how long lookup table creation waits for the
+// pooled connection to become ready. The pooled connection keeps retrying in
+// the background, so a timeout here only fails fast and releases the lookup
+// lock instead of hanging table creation forever.
+const lookupConnectTimeout = 10 * time.Second
 
 type SqlLookupSource struct {
 	conf          *SQLConf
@@ -95,7 +102,13 @@ func (s *SqlLookupSource) Connect(ctx api.StreamContext, sc api.StatusChangeHand
 	}
 	s.conId = cw.ID
 	s.refId = id
-	conn, err := cw.Wait(ctx)
+	waitCtx, cancel := ctx.WithCancel()
+	timer := time.AfterFunc(lookupConnectTimeout, cancel)
+	defer func() {
+		timer.Stop()
+		cancel()
+	}()
+	conn, err := cw.Wait(waitCtx)
 	if err != nil || conn == nil {
 		_ = connection.DetachConnectionByRef(ctx, cw.ID, id)
 		return fmt.Errorf("sql client not ready: %v", err)
