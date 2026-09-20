@@ -15,6 +15,7 @@
 package node
 
 import (
+	"errors"
 	"testing"
 	"time"
 
@@ -239,4 +240,91 @@ func TestBatchWriterRun(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestBatchWriterDeferredPropsEvalUsesLastRowOnce(t *testing.T) {
+	ctx := mockContext.NewMockContext("testDeferredProps", "op1")
+	calls := 0
+	op, err := NewBatchWriterOp(ctx, "test", &def.RuleOption{BufferLength: 10, SendError: true}, map[string]*ast.JsonStreamField{
+		"a": nil,
+		"b": nil,
+	}, &SinkConf{
+		SendSingle: true,
+		Format:     "delimited",
+		HasHeader:  true,
+	}, false)
+	require.NoError(t, err)
+	op.SetPropsEval(func(row *xsql.SliceTuple) (map[string]string, error) {
+		calls++
+		v := row.SourceContent[0].(string)
+		return map[string]string{"topic": "t/" + v}, nil
+	})
+	out := make(chan any, 100)
+	require.NoError(t, op.AddOutput(out, "test"))
+	errCh := make(chan error)
+	op.Exec(ctx, errCh)
+	for _, v := range []string{"a", "b", "c"} {
+		op.input <- &xsql.SliceTuple{SourceContent: model.SliceVal{v, 20}}
+	}
+	op.input <- xsql.BatchEOFTuple(time.Now())
+	result := <-out
+	rt, ok := result.(*xsql.RawTuple)
+	require.True(t, ok, "expect RawTuple, got %T", result)
+	assert.Equal(t, 1, calls)
+	assert.Equal(t, map[string]string{"topic": "t/c"}, rt.Props)
+}
+
+func TestBatchWriterDeferredPropsEvalErrorStillEmitsBatch(t *testing.T) {
+	ctx := mockContext.NewMockContext("testDeferredPropsErr", "op1")
+	op, err := NewBatchWriterOp(ctx, "test", &def.RuleOption{BufferLength: 10, SendError: true}, map[string]*ast.JsonStreamField{
+		"a": nil,
+		"b": nil,
+	}, &SinkConf{
+		SendSingle: true,
+		Format:     "delimited",
+		HasHeader:  true,
+	}, false)
+	require.NoError(t, err)
+	op.SetPropsEval(func(row *xsql.SliceTuple) (map[string]string, error) {
+		return nil, errors.New("eval boom")
+	})
+	out := make(chan any, 100)
+	require.NoError(t, op.AddOutput(out, "test"))
+	errCh := make(chan error)
+	op.Exec(ctx, errCh)
+	op.input <- &xsql.SliceTuple{SourceContent: model.SliceVal{"a", 20}}
+	op.input <- xsql.BatchEOFTuple(time.Now())
+	// Accepted policy: the error is reported, but the batch is still emitted.
+	first := <-out
+	errOut, ok := first.(error)
+	require.True(t, ok, "expected error, got %T", first)
+	require.EqualError(t, errOut, "eval boom")
+	second := <-out
+	rt, ok := second.(*xsql.RawTuple)
+	require.True(t, ok, "expect RawTuple, got %T", second)
+	assert.Nil(t, rt.Props)
+}
+
+func TestBatchWriterNoEvaluatorKeepsLastRowProps(t *testing.T) {
+	ctx := mockContext.NewMockContext("testNoEvaluator", "op1")
+	op, err := NewBatchWriterOp(ctx, "test", &def.RuleOption{BufferLength: 10, SendError: true}, map[string]*ast.JsonStreamField{
+		"a": nil,
+		"b": nil,
+	}, &SinkConf{
+		SendSingle: true,
+		Format:     "delimited",
+		HasHeader:  true,
+	}, false)
+	require.NoError(t, err)
+	out := make(chan any, 100)
+	require.NoError(t, op.AddOutput(out, "test"))
+	errCh := make(chan error)
+	op.Exec(ctx, errCh)
+	op.input <- &xsql.SliceTuple{SourceContent: model.SliceVal{"a", 20}}
+	op.input <- &xsql.SliceTuple{SourceContent: model.SliceVal{"b", 20}, Props: map[string]string{"topic": "preset"}}
+	op.input <- xsql.BatchEOFTuple(time.Now())
+	result := <-out
+	rt, ok := result.(*xsql.RawTuple)
+	require.True(t, ok, "expect RawTuple, got %T", result)
+	assert.Equal(t, map[string]string{"topic": "preset"}, rt.Props)
 }
