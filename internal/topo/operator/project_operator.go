@@ -24,6 +24,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/message"
+	"github.com/lf-edge/ekuiper/v2/pkg/model"
 )
 
 type ProjectOp struct {
@@ -175,6 +176,13 @@ func (pp *ProjectOp) getRowVE(tuple xsql.Row, wr *xsql.WindowRange, fv *xsql.Fun
 func (pp *ProjectOp) project(row xsql.RawRow, ve *xsql.ValuerEval) error {
 	switch rt := row.(type) {
 	case *xsql.SliceTuple:
+		// Field sink indexes are dense (0..FieldLen-1), so pre-size the sink
+		// content once. This replaces O(n) incremental appends per row in
+		// SetByIndex with a single allocation; out-of-range indexes still
+		// fall back to append inside SetByIndex.
+		if len(rt.SinkContent) == 0 && pp.FieldLen > 0 {
+			rt.SinkContent = make(model.SliceVal, pp.FieldLen)
+		}
 		for _, f := range pp.AliasFields {
 			vi := ve.Eval(f.Expr)
 			if e, ok := vi.(error); ok {
