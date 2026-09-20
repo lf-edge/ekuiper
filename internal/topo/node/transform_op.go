@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"sync"
 	"text/template"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
@@ -47,8 +48,30 @@ type TransformOp struct {
 	dt           *template.Template
 	templates    map[string]*template.Template
 	isSliceMode  bool
-	// temp state
-	output bytes.Buffer
+	// deferPropsEval skips per-row props (e.g. sink topic templates) evaluation
+	// in slice mode. It is only set through DeferPropsEval, which hands the
+	// deferred evaluator to a downstream BatchWriterOp; only the last row
+	// props are used at flush time.
+	deferPropsEval bool
+	// outputPool recycles template execution buffers. calculateProps may run
+	// on the transform workers and, when deferred, on the batch writer
+	// goroutine, so a shared buffer would not be safe.
+	outputPool sync.Pool
+}
+
+// DeferPropsEval switches slice mode to deferred props evaluation and
+// returns the evaluator for the downstream BatchWriterOp to run once per
+// batch against the last row. It returns nil when deferral does not apply
+// (non-slice mode or no prop templates), in which case per-row evaluation
+// stays as is.
+func (t *TransformOp) DeferPropsEval() func(*xsql.SliceTuple) (map[string]string, error) {
+	if !t.isSliceMode || len(t.templates) == 0 {
+		return nil
+	}
+	t.deferPropsEval = true
+	return func(row *xsql.SliceTuple) (map[string]string, error) {
+		return t.calculateProps(row)
+	}
 }
 
 // NewTransformOp creates a transform node
@@ -186,16 +209,21 @@ func (t *TransformOp) Worker(ctx api.StreamContext, item any) []any {
 
 func (t *TransformOp) transformSlice(ctx api.StreamContext, item any) []any {
 	var result []any
-	props, err := t.calculateProps(item)
-	if err != nil {
-		result = []any{err}
-		return result
-	}
 	switch dt := item.(type) {
 	case *xsql.SliceTuple:
-		dt.Props = props
+		if !t.deferPropsEval {
+			props, err := t.calculateProps(item)
+			if err != nil {
+				return []any{err}
+			}
+			dt.Props = props
+		}
 		result = []any{dt}
 	case xsql.Collection:
+		props, err := t.calculateProps(item)
+		if err != nil {
+			return []any{err}
+		}
 		pack := make([]*xsql.SliceTuple, 0, dt.Len())
 		err = dt.Range(func(i int, r xsql.ReadonlyRow) (bool, error) {
 			if rs, ok := r.(*xsql.SliceTuple); ok {
@@ -284,14 +312,25 @@ func (t *TransformOp) calculateProps(data any) (map[string]string, error) {
 	if len(t.templates) == 0 {
 		return nil, nil
 	}
+	// Use a pooled buffer: this may run on transform workers and, when
+	// deferred, on the batch writer goroutine. Reset up front so a previous
+	// partial write after a template error never leaks into the next render.
+	output, _ := t.outputPool.Get().(*bytes.Buffer)
+	if output == nil {
+		output = new(bytes.Buffer)
+	}
+	output.Reset()
+	defer func() {
+		output.Reset()
+		t.outputPool.Put(output)
+	}()
 	result := make(map[string]string, len(t.templates))
 	for k, temp := range t.templates {
-		err := temp.Execute(&t.output, data)
-		if err != nil {
+		output.Reset()
+		if err := temp.Execute(output, data); err != nil {
 			return nil, fmt.Errorf("fail to calculate props %s through data %v with dataTemplate for error %v", k, data, err)
 		}
-		result[k] = t.output.String()
-		t.output.Reset()
+		result[k] = output.String()
 	}
 	return result, nil
 }
