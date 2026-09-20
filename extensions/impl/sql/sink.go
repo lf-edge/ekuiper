@@ -492,11 +492,13 @@ func (s *SQLSinkConnector) save(ctx api.StreamContext, table string, data map[st
 
 // ensureConnected reconnects when a previous write marked the connection
 // bad. It never clears the flag: only a successful Exec or transaction
-// completion does that.
+// completion does that. The reconnect itself retries until the database is
+// back or the rule context is canceled, which naturally backpressures the
+// upstream while the database is unavailable.
 func (s *SQLSinkConnector) ensureConnected(ctx api.StreamContext) error {
 	if s.needReconnect {
 		metrics.IOCounter.WithLabelValues(LblSql, metrics.LblSinkIO, LblReconn, ctx.GetRuleId(), ctx.GetOpId()).Inc()
-		if err := s.conn.Reconnect(ctx); err != nil {
+		if err := retryReconnect(ctx, s.conn); err != nil {
 			return errorx.NewIOErr(err.Error())
 		}
 	}

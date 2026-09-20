@@ -43,6 +43,26 @@ func ParseDriver(url string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("parse driver err:%v", err)
 	}
+	// Knowing the scheme is not enough: several drivers are behind build
+	// tags, so the database/sql driver may not be compiled into this
+	// binary. Check registration against the same normalized driver name
+	// that Dial passes to sql.Open, so validation agrees with Dial by
+	// construction. This is strictly local: no handle is allocated and no
+	// network is touched.
+	driver, _, err := ParseDBUrl(url)
+	if err != nil {
+		return "", err
+	}
+	registered := false
+	for _, name := range sql.Drivers() {
+		if name == driver {
+			registered = true
+			break
+		}
+	}
+	if !registered {
+		return "", fmt.Errorf("sql driver %q is not supported/registered in this build", driver)
+	}
 	return u.Driver, nil
 }
 

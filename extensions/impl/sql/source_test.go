@@ -302,7 +302,7 @@ func TestSQLSourceRewind(t *testing.T) {
 
 func TestSQLReconnect(t *testing.T) {
 	connection.InitConnectionManager4Test()
-	ctx := mockContext.NewMockContext("1", "2")
+	rootCtx := mockContext.NewMockContext("1", "2")
 	props := map[string]interface{}{
 		"interval": "1s",
 		"dburl":    fmt.Sprintf("mysql://root:@%v:%v/test", address, port),
@@ -311,25 +311,69 @@ func TestSQLReconnect(t *testing.T) {
 		},
 	}
 	sqlSource := GetSource()
-	require.NoError(t, sqlSource.Provision(ctx, props))
-	require.Error(t, sqlSource.Connect(ctx, func(status string, message string) {
+	require.NoError(t, sqlSource.Provision(rootCtx, props))
+
+	// The database is up: the source connects and reads.
+	s, err := testx.SetupEmbeddedMysqlServer(address, port)
+	require.NoError(t, err)
+	ctx := mockContext.NewMockContext("1", "2")
+	require.NoError(t, sqlSource.Connect(ctx, func(status string, message string) {
 		// do nothing
 	}))
 	sqlConnector, ok := sqlSource.(*SQLSourceConnector)
 	require.True(t, ok)
-	sqlConnector.queryData(ctx, time.Now(), func(ctx api.StreamContext, data any, meta map[string]any, ts time.Time) {}, func(ctx api.StreamContext, err error) {})
-	require.True(t, sqlConnector.needReconnect)
+	dataChan := make(chan any, 1)
+	sqlConnector.queryData(ctx, time.Now(), func(ctx api.StreamContext, data any, meta map[string]any, ts time.Time) {
+		dataChan <- data
+	}, func(ctx api.StreamContext, err error) {})
+	require.NotNil(t, <-dataChan)
+	require.False(t, sqlConnector.needReconnect)
 
-	sqlConnector.queryData(ctx, time.Now(), func(ctx api.StreamContext, data any, meta map[string]any, ts time.Time) {}, func(ctx api.StreamContext, err error) {
-		require.Error(t, err)
+	// Runtime disconnect: one poll fails and marks the connection; while
+	// the database stays down, the next poll keeps retrying until the rule
+	// context is canceled instead of failing the rule.
+	require.NoError(t, testx.KillSessions(s))
+	s.Close()
+	errCh := make(chan error, 1)
+	sqlConnector.queryData(ctx, time.Now(), func(ctx api.StreamContext, data any, meta map[string]any, ts time.Time) {
+		dataChan <- data
+	}, func(ctx api.StreamContext, err error) {
+		errCh <- err
 	})
+	require.Error(t, <-errCh)
 	require.True(t, sqlConnector.needReconnect)
 
-	// start server then reconnect
-	s, err := testx.SetupEmbeddedMysqlServer(address, port)
+	pollCtx, cancelPoll := rootCtx.WithCancel()
+	pollErr := make(chan error, 1)
+	go func() {
+		sqlConnector.queryData(pollCtx, time.Now(), func(ctx api.StreamContext, data any, meta map[string]any, ts time.Time) {
+			dataChan <- data
+		}, func(ctx api.StreamContext, err error) {
+			pollErr <- err
+		})
+	}()
+	// The retry loop must be cancellable while the database is still down.
+	time.Sleep(500 * time.Millisecond)
+	cancelPoll()
+	select {
+	case err := <-pollErr:
+		require.Error(t, err)
+	case <-time.After(5 * time.Second):
+		t.Fatal("canceled poll did not return in time")
+	}
+	require.True(t, sqlConnector.needReconnect)
+
+	// Database recovery: the next poll reconnects and reads again without
+	// restarting anything.
+	s, err = testx.SetupEmbeddedMysqlServer(address, port)
 	require.NoError(t, err)
 	defer s.Close()
-	sqlConnector.queryData(ctx, time.Now(), func(ctx api.StreamContext, data any, meta map[string]any, ts time.Time) {}, func(ctx api.StreamContext, err error) {})
+	sqlConnector.queryData(ctx, time.Now(), func(ctx api.StreamContext, data any, meta map[string]any, ts time.Time) {
+		dataChan <- data
+	}, func(ctx api.StreamContext, err error) {
+		t.Logf("query error after recovery: %v", err)
+	})
+	require.NotNil(t, <-dataChan)
 	require.False(t, sqlConnector.needReconnect)
 }
 
