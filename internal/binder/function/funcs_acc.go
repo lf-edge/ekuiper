@@ -552,7 +552,7 @@ type accStatus struct {
 	Err           error
 	Value         interface{}
 	HasBegin      bool
-	DistinctIndex map[interface{}]struct{}
+	distinctIndex map[interface{}]struct{}
 }
 
 type accFunc interface {
@@ -747,19 +747,19 @@ func (a accCollectFunc) accFuncExec(ctx api.FunctionContext, value interface{}, 
 	}
 	if value != nil {
 		if a.distinct {
-			if status.DistinctIndex == nil {
-				status.DistinctIndex = make(map[interface{}]struct{}, len(collected))
+		if status.distinctIndex == nil {
+				status.distinctIndex = make(map[interface{}]struct{}, len(collected))
 				for _, collectedValue := range collected {
 					if isDistinctComparableValue(collectedValue) {
-						status.DistinctIndex[collectedValue] = struct{}{}
+						status.distinctIndex[collectedValue] = struct{}{}
 					}
 				}
 			}
 			if isDistinctComparableValue(value) {
-				if _, exists := status.DistinctIndex[value]; exists {
+				if _, exists := status.distinctIndex[value]; exists {
 					return
 				}
-				status.DistinctIndex[value] = struct{}{}
+				status.distinctIndex[value] = struct{}{}
 			}
 		}
 		collected = append(collected, value)
@@ -775,9 +775,9 @@ func (a accCollectFunc) accFuncExec(ctx api.FunctionContext, value interface{}, 
 func (a accCollectFunc) accReset(status *accStatus) {
 	status.Value = []interface{}{}
 	if a.distinct {
-		status.DistinctIndex = make(map[interface{}]struct{})
+		status.distinctIndex = make(map[interface{}]struct{})
 	} else {
-		status.DistinctIndex = nil
+		status.distinctIndex = nil
 	}
 }
 
