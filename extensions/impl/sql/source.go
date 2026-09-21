@@ -42,10 +42,13 @@ type SQLSourceConnector struct {
 	props         map[string]any
 	needReconnect bool
 	conId         string
-	columns       []interface{}
-	stats         *sqlSourceStats
-	ruleID        string
-	opID          string
+	// refID is the consumer identity attached at Connect time. It is
+	// passed back verbatim at Close; never re-derived from ctx.
+	refID   string
+	columns []interface{}
+	stats   *sqlSourceStats
+	ruleID  string
+	opID    string
 }
 
 type sqlSourceStats struct {
@@ -125,11 +128,24 @@ func (s *SQLSourceConnector) Connect(ctx api.StreamContext, sc api.StatusChangeH
 	var cli *client2.SQLConnection
 	var err error
 	s.id = s.conf.DBUrl
-	cw, err := connection.FetchConnection(ctx, s.id, "sql", s.props, sc)
+	key, requireExisting, err := sqlConnectionKey(s.props, s.conf.DBUrl)
+	if err != nil {
+		return err
+	}
+	refID := connection.ConsumerRefID(ctx)
+	cw, err := connection.FetchConnectionWithOptions(ctx, connection.FetchOptions{
+		ConnectionKey:   key,
+		RefID:           refID,
+		RequireExisting: requireExisting,
+		Type:            "sql",
+		Props:           s.props,
+		StatusHandler:   sc,
+	})
 	if err != nil {
 		return err
 	}
 	s.conId = cw.ID
+	s.refID = refID
 	conn, err := cw.Wait(ctx)
 	if conn == nil {
 		return fmt.Errorf("sql client not ready: %v", err)
@@ -146,7 +162,7 @@ func (s *SQLSourceConnector) Close(ctx api.StreamContext) error {
 	if s.conn != nil {
 		s.conn.DetachSub(ctx, s.props)
 	}
-	return connection.DetachConnection(ctx, s.conId)
+	return connection.DetachConnectionByRef(ctx, s.conId, s.refID)
 }
 
 func (s *SQLSourceConnector) Pull(ctx api.StreamContext, recvTime time.Time, ingest api.TupleIngest, ingestError api.ErrorIngest) {

@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 	"strings"
 	"time"
 
@@ -121,7 +122,70 @@ func newExponentialBackOff(maxElapsedTime time.Duration) *backoff.ExponentialBac
 	)
 }
 
-// FetchConnection is called by source/sink to get or create an anonymous connection instance in the pool
+// FetchOptions carries the explicit connection identity for the new fetch
+// path (DESIGN §8, A1a). ConnectionKey selects which logical connection to
+// share; RefID identifies which consumer holds it. The two must never be
+// mixed: Pool never derives one from the other.
+type FetchOptions struct {
+	// ConnectionKey is the opaque logical-connection identity. For named
+	// connections it is the connectionSelector; for anonymous ones it is
+	// the connector-provided canonical key (e.g. resolved SQL DB URL).
+	ConnectionKey string
+	// RefID identifies the holding consumer. Source/Sink use the
+	// rule+op+instance identity; lookup tables use the framework-injected
+	// lookup resource identity. It must be saved by the consumer at
+	// Connect time and passed back verbatim at detach time.
+	RefID string
+	// RequireExisting marks a fetch that may only attach to an already
+	// existing logical connection: a missing ConnectionKey is an error
+	// and anonymous creation is never performed. Used for
+	// connectionSelector/named references. False allows creating an
+	// anonymous Meta when the key is absent. This describes the fetch
+	// mode, not the Meta lifecycle type (Meta.Named).
+	RequireExisting bool
+	Type            string
+	Props           map[string]any
+	// StatusHandler receives connection status changes for this ref.
+	StatusHandler api.StatusChangeHandler
+}
+
+// ConsumerRefID derives the stable Source/Sink consumer identity
+// (ruleID + opID + instanceID) for the current context. Connect must save
+// the returned value and pass it back verbatim to DetachConnectionByRef.
+func ConsumerRefID(ctx api.StreamContext) string {
+	return extractRefId(ctx)
+}
+
+// FetchConnectionWithOptions is the explicit-identity fetch path. Callers
+// must canonicalize props/key and compute RefID before calling; Pool treats
+// ConnectionKey as an opaque identity.
+func FetchConnectionWithOptions(ctx api.StreamContext, opts FetchOptions) (*ConnWrapper, error) {
+	failpoint.Inject("FetchConnectionErr", func() {
+		failpoint.Return(nil, fmt.Errorf("FetchConnectionErr"))
+	})
+	if opts.ConnectionKey == "" {
+		return nil, fmt.Errorf("connection key should be defined")
+	}
+	if opts.RefID == "" {
+		return nil, fmt.Errorf("connection ref id should be defined")
+	}
+	if opts.Type == "" {
+		return nil, fmt.Errorf("connection type should be defined")
+	}
+	globalConnectionManager.Lock()
+	defer globalConnectionManager.Unlock()
+	return fetchInternal(ctx, opts)
+}
+
+// FetchConnection is the legacy compatibility shim. It keeps the historical
+// connectionKey derivation (connectionSelector-or-refId) so unmigrated
+// connectors keep resolving the same logical connection. The consumer ref,
+// however, is normalized to ConsumerRefID(ctx): legacy DetachConnection
+// derives exactly that value, and the historical habit of passing
+// connection-identity material (endpoint/topic/URL) as refId never
+// identified the consumer. Without this normalization every legacy Close
+// would miss its ref and leak the reference. New code must use
+// FetchConnectionWithOptions instead.
 func FetchConnection(ctx api.StreamContext, refId, typ string, props map[string]interface{}, sc api.StatusChangeHandler) (*ConnWrapper, error) {
 	failpoint.Inject("FetchConnectionErr", func() {
 		failpoint.Return(nil, fmt.Errorf("FetchConnectionErr"))
@@ -130,28 +194,63 @@ func FetchConnection(ctx api.StreamContext, refId, typ string, props map[string]
 		return nil, fmt.Errorf("connection ref id should be defined")
 	}
 	conId := extractSelID(props, refId)
+	opts := FetchOptions{
+		ConnectionKey:   conId,
+		RefID:           ConsumerRefID(ctx),
+		RequireExisting: conId != refId,
+		Type:            typ,
+		Props:           props,
+		StatusHandler:   sc,
+	}
 	globalConnectionManager.Lock()
 	defer globalConnectionManager.Unlock()
-	if _, ok := globalConnectionManager.connectionPool[conId]; ok {
+	return fetchInternal(ctx, opts)
+}
+
+// fetchInternal implements lookup-or-create plus attach. Callers must hold
+// the Manager lock. A1a introduces no new plugin/network work here, but the
+// attach path still reaches the preexisting Meta.GetStatus behavior (which
+// may Ping for stateless connections); that is normalized in A2. The only
+// local addition is the synchronous compatibility comparison.
+func fetchInternal(ctx api.StreamContext, opts FetchOptions) (*ConnWrapper, error) {
+	conId := opts.ConnectionKey
+	if meta, ok := globalConnectionManager.connectionPool[conId]; ok {
+		if err := checkCompatible(meta, opts); err != nil {
+			return nil, err
+		}
 		conf.Log.Infof("FetchConnection return existed conn %s", conId)
-		if conId != refId {
-			conf.Log.Infof("action=reuse_connection connId=%s type=%s connectionKey=%s rule=%s op=%s refId=%s", conId, typ, conId, ctx.GetRuleId(), ctx.GetOpId(), refId)
+		if conId != opts.RefID {
+			conf.Log.Infof("action=reuse_connection connId=%s type=%s connectionKey=%s rule=%s op=%s refId=%s", conId, opts.Type, conId, ctx.GetRuleId(), ctx.GetOpId(), opts.RefID)
 		}
-	} else {
-		if conId != refId {
-			return nil, fmt.Errorf("connection %s not existed", conId)
-		}
-		meta := &Meta{
-			ID:    conId,
-			Typ:   typ,
-			Props: props,
-			Named: false,
-		}
-		meta.cw = newConnWrapper(ctx, meta)
-		globalConnectionManager.connectionPool[meta.ID] = meta
-		conf.Log.Infof("FetchConnection return new conn %s", conId)
+		return attachConnection(conId, opts.RefID, opts.StatusHandler)
 	}
-	return attachConnection(conId, refId, sc)
+	if opts.RequireExisting {
+		return nil, fmt.Errorf("connection %s not existed", conId)
+	}
+	meta := &Meta{
+		ID:  conId,
+		Typ: opts.Type,
+		// Shallow-copy the caller map: Meta.Props is immutable once
+		// inside the Pool. maps.Clone(nil) is nil, so no nil guard
+		// needed. Connectors requiring deep-copy semantics must
+		// normalize before fetching.
+		Props: maps.Clone(opts.Props),
+		Named: false,
+	}
+	meta.cw = newConnWrapper(ctx, meta)
+	globalConnectionManager.connectionPool[meta.ID] = meta
+	conf.Log.Infof("FetchConnection return new conn %s", conId)
+	return attachConnection(conId, opts.RefID, opts.StatusHandler)
+}
+
+// checkCompatible rejects sharing one logical connection between
+// incompatible definitions. The comparison is strictly local: identity
+// material already normalized by the caller, no plugin calls, no I/O.
+func checkCompatible(meta *Meta, opts FetchOptions) error {
+	if !strings.EqualFold(meta.Typ, opts.Type) {
+		return fmt.Errorf("connection %s type conflict: pooled %q vs requested %q", meta.ID, meta.Typ, opts.Type)
+	}
+	return nil
 }
 
 // ReloadNamedConnection is called when server starts. It initializes all stored named connections

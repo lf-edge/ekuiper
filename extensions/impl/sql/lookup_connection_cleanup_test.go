@@ -22,8 +22,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	kctx "github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
-	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
 
 // TestLookupCreateSemantics verifies the CREATE TABLE contract: static
@@ -31,8 +31,10 @@ import (
 // not block table creation at all.
 func TestLookupCreateSemantics(t *testing.T) {
 	require.NoError(t, connection.InitConnectionManager4Test())
-	rootCtx := mockContext.NewMockContext("lookup_create", "op1")
-	ctx, cancel := rootCtx.WithCancel()
+	// Simulate the lookup framework: CreateInstance builds a framework
+	// context and injects the table resource identity before Connect.
+	base := connection.WithLookupRefID(kctx.Background(), "lookup:cleanup_create")
+	ctx, cancel := base.WithCancel()
 	defer cancel()
 
 	// Malformed URLs and unsupported drivers are static errors: they are
@@ -74,8 +76,9 @@ func TestLookupCreateSemantics(t *testing.T) {
 // the pool initial connection never succeeds.
 func TestLookupWaitCancellation(t *testing.T) {
 	require.NoError(t, connection.InitConnectionManager4Test())
-	rootCtx := mockContext.NewMockContext("lookup_cancel", "op1")
-	ctx, cancel := rootCtx.WithCancel()
+	// Simulate the lookup framework injection (real framework context).
+	base := connection.WithLookupRefID(kctx.Background(), "lookup:cleanup_cancel")
+	ctx, cancel := base.WithCancel()
 
 	port := newBlackholeListener(t)
 	dburl := fmt.Sprintf("mysql://root:@127.0.0.1:%d/test", port)

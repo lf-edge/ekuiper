@@ -46,6 +46,9 @@ type SQLSinkConnector struct {
 	conn          *client.SQLConnection
 	props         map[string]any
 	needReconnect bool
+	// refID is the consumer identity attached at Connect time. It is
+	// passed back verbatim at Close; never re-derived from ctx.
+	refID string
 	// bindNext renders the bind variable for the i-th (1-based) argument of
 	// the current statement, resolved from the driver in Provision.
 	bindNext func(i int) string
@@ -261,12 +264,24 @@ func (s *SQLSinkConnector) Consume(props map[string]any) {
 func (s *SQLSinkConnector) Connect(ctx api.StreamContext, sc api.StatusChangeHandler) error {
 	ctx.GetLogger().Infof("Connecting to sql server")
 	var err error
-	id := s.config.DBUrl
-	cw, err := connection.FetchConnection(ctx, id, "sql", s.props, sc)
+	key, requireExisting, err := sqlConnectionKey(s.props, s.config.DBUrl)
+	if err != nil {
+		return err
+	}
+	refID := connection.ConsumerRefID(ctx)
+	cw, err := connection.FetchConnectionWithOptions(ctx, connection.FetchOptions{
+		ConnectionKey:   key,
+		RefID:           refID,
+		RequireExisting: requireExisting,
+		Type:            "sql",
+		Props:           s.props,
+		StatusHandler:   sc,
+	})
 	if err != nil {
 		return err
 	}
 	s.cw = cw
+	s.refID = refID
 	conn, err := s.cw.Wait(ctx)
 	if conn == nil {
 		return fmt.Errorf("sql client not ready: %v", err)
@@ -280,7 +295,7 @@ func (s *SQLSinkConnector) Close(ctx api.StreamContext) error {
 		ctx.GetLogger().Infof("Closing sql sink connector url:%v", s.config.DBUrl)
 	}
 	if s.cw != nil {
-		return connection.DetachConnection(ctx, s.cw.ID)
+		return connection.DetachConnectionByRef(ctx, s.cw.ID, s.refID)
 	}
 	return nil
 }
