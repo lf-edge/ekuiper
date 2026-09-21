@@ -453,7 +453,7 @@ The results are: [1] [1,2] [1,2,3]
 acc_distinct_collect(expr)
 ```
 
-The `acc_distinct_collect` function collects non-nil expression results into an array, removing duplicate values while preserving insertion order.
+The `acc_distinct_collect` function collects non-nil expression results into an array, removing duplicate scalar values while preserving insertion order. Arrays, maps, and other non-comparable values are not deduplicated.
 
 Example: collect distinct values using `acc_distinct_collect`
 

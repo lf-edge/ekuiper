@@ -606,6 +606,13 @@ func TestArrayCommonFunctions(t *testing.T) {
 			result: []interface{}{map[string]any{"a": 1}, map[string]any{"a": 1}, map[string]any{"a": 2}},
 		},
 		{
+			name: "array_distinct",
+			args: []interface{}{
+				[]interface{}{[]interface{}{1}, []interface{}{1}},
+			},
+			result: []interface{}{[]interface{}{1}, []interface{}{1}},
+		},
+		{
 			name: "array_map",
 			args: []interface{}{
 				"round", []interface{}{0, 0.4, 1.2},

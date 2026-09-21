@@ -437,7 +437,7 @@ acc_collect(a)
 acc_distinct_collect(expr)
 ```
 
-`acc_distinct_collect` 函数将非空的表达式结果收集到一个数组中，自动去重并按插入顺序保留。
+`acc_distinct_collect` 函数将非空的表达式结果收集到一个数组中，对标量值自动去重并按插入顺序保留。数组、对象及其他不可比较的值不会去重。
 
 示例：使用 `acc_distinct_collect` 收集不重复的数据
 

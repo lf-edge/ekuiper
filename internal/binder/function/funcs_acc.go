@@ -17,7 +17,6 @@ package function
 import (
 	"fmt"
 	"math"
-	"reflect"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
@@ -550,9 +549,10 @@ func accFuncWithCond(ctx api.FunctionContext, value interface{}, onBegin, onRese
 }
 
 type accStatus struct {
-	Err      error
-	Value    interface{}
-	HasBegin bool
+	Err           error
+	Value         interface{}
+	HasBegin      bool
+	DistinctIndex map[interface{}]struct{}
 }
 
 type accFunc interface {
@@ -747,15 +747,19 @@ func (a accCollectFunc) accFuncExec(ctx api.FunctionContext, value interface{}, 
 	}
 	if value != nil {
 		if a.distinct {
-			for _, collectedValue := range collected {
-				if reflect.DeepEqual(collectedValue, value) {
-					if !skipStatusSave {
-						if err := ctx.PutState(partitionKey, status); err != nil {
-							status.Err = err
-						}
+			if status.DistinctIndex == nil {
+				status.DistinctIndex = make(map[interface{}]struct{}, len(collected))
+				for _, collectedValue := range collected {
+					if isDistinctComparableValue(collectedValue) {
+						status.DistinctIndex[collectedValue] = struct{}{}
 					}
+				}
+			}
+			if isDistinctComparableValue(value) {
+				if _, exists := status.DistinctIndex[value]; exists {
 					return
 				}
+				status.DistinctIndex[value] = struct{}{}
 			}
 		}
 		collected = append(collected, value)
@@ -770,6 +774,11 @@ func (a accCollectFunc) accFuncExec(ctx api.FunctionContext, value interface{}, 
 
 func (a accCollectFunc) accReset(status *accStatus) {
 	status.Value = []interface{}{}
+	if a.distinct {
+		status.DistinctIndex = make(map[interface{}]struct{})
+	} else {
+		status.DistinctIndex = nil
+	}
 }
 
 type accAvgStatus struct {
