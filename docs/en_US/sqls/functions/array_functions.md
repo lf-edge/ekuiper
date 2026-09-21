@@ -19,6 +19,14 @@ array_position(array, value)
 Return a 0-based index of the first occurrence of val if it is found within an array. If val does not exist within the
 array, it returns -1. When array is nil, -1 is returned.
 
+## ARRAY_POSITIONS
+
+```text
+array_positions(array, value)
+```
+
+Returns an array containing the 0-based indexes of all occurrences of `value`. If the value is not found, an empty array is returned. When array is nil, nil is returned.
+
 ## ELEMENT_AT
 
 ```text

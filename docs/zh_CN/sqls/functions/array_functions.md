@@ -18,6 +18,14 @@ array_position(array, value)
 
 返回第二个参数在列表参数中的索引下标位置，索引下标从 0 开始，若该元素不存在，则返回 -1。array 为 nil 时则固定返回 -1。
 
+## ARRAY_POSITIONS
+
+```text
+array_positions(array, value)
+```
+
+返回参数在数组中所有匹配元素的索引下标数组，索引下标从 0 开始。若元素不存在，则返回空数组；array 为 nil 时返回 nil。
+
 ## ELEMENT_AT
 
 ```text
