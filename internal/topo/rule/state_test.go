@@ -280,6 +280,72 @@ func TestRuleRestart(t *testing.T) {
 	// TODO added later
 }
 
+// TestCleanRuleStaleTopo pins the ownership rule for async topo cleanup:
+// a stale run (replaced or explicitly stopped) must never panic nor disturb
+// the active run. It covers the CI panic where cleanRule dereferenced a
+// topology already cleared by a concurrent doStop.
+func TestCleanRuleStaleTopo(t *testing.T) {
+	sp := processor.NewStreamProcessor()
+	_, err := sp.ExecStmt(`CREATE STREAM demo () WITH (FORMAT="JSON", TYPE="memory", DATASOURCE="test")`)
+	require.NoError(t, err)
+	defer sp.ExecStmt(`DROP STREAM demo`)
+	st := NewState(def.GetDefaultRule("testStaleTopo", "select * from demo"), func(string, bool) {})
+	defer st.Delete()
+
+	require.NoError(t, st.Start())
+	require.Eventually(t, func() bool { return st.GetState() == machine.Running }, time.Second, time.Millisecond)
+	old, err := st.GetPlainTopology()
+	require.NoError(t, err)
+	require.NotNil(t, old)
+
+	// Stop and restart to replace the run.
+	st.Stop()
+	assert.Equal(t, machine.Stopped, st.GetState())
+	require.NoError(t, st.Start())
+	require.Eventually(t, func() bool { return st.GetState() == machine.Running }, time.Second, time.Millisecond)
+	cur, err := st.GetPlainTopology()
+	require.NoError(t, err)
+	require.NotNil(t, cur)
+	assert.False(t, old == cur, "restart must plan a new topology instance")
+
+	// Stale cleanup from the replaced run must be a no-op and never panic.
+	require.NotPanics(t, func() {
+		st.cleanRule(old, false, "stale")
+	})
+	kept, err := st.GetPlainTopology()
+	require.NoError(t, err)
+	assert.True(t, kept == cur, "stale cleanup must not detach the active run")
+	assert.Equal(t, machine.Running, st.GetState())
+
+	// Rapid restarts while stale async cleanups race in the background must
+	// never disturb the active run either.
+	for i := 0; i < 5; i++ {
+		st.Stop()
+		require.NoError(t, st.Start())
+	}
+	require.Eventually(t, func() bool { return st.GetState() == machine.Running }, time.Second, time.Millisecond)
+	cur, err = st.GetPlainTopology()
+	require.NoError(t, err)
+	require.NotPanics(t, func() {
+		st.cleanRule(old, false, "stale")
+	})
+	kept, err = st.GetPlainTopology()
+	require.NoError(t, err)
+	assert.True(t, kept == cur, "stale cleanup must not detach the active run")
+	assert.Equal(t, machine.Running, st.GetState())
+
+	// Stale cleanup after an explicit stop (active topology is nil) must
+	// also be safe: this is the exact CI panic path.
+	st.Stop()
+	assert.Equal(t, machine.Stopped, st.GetState())
+	require.NotPanics(t, func() {
+		st.cleanRule(old, false, "stale")
+	})
+	_, err = st.GetPlainTopology()
+	require.Error(t, err)
+	assert.Equal(t, machine.Stopped, st.GetState())
+}
+
 func TestStartRechecksStateAfterLock(t *testing.T) {
 	tests := []struct {
 		name  string
