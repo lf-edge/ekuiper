@@ -511,7 +511,7 @@ func TestStreamReplace(t *testing.T) {
 		},
 		{
 			n:   "update from low to high",
-			s:   `CREATE STREAM r1 () WITH (DATASOURCE="users", FORMAT="JSON", SHARED="true");`,
+			s:   `CREATE STREAM r1 () WITH (DATASOURCE="users", FORMAT="JSON", VERSION="12346", SHARED="true");`,
 			err: "Replace r1 fails: do not support to change stream SHARED option.",
 		},
 	}
