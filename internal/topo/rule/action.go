@@ -75,6 +75,7 @@ func (s *State) validate() (tp *topo.Topo, err error) {
 }
 
 // DoStart runs internally
+// requires ruleLock held by caller
 func (s *State) doStart() error {
 	// Start normally or start in schedule period Rule
 	// doStart trigger the Rule run. If no trigger error, the Rule will run async and control the state by itself
@@ -101,6 +102,7 @@ func (s *State) doStart() error {
 }
 
 func (s *State) doStop(stateType machine.RunState, msg string) {
+	// requires ruleLock held by caller
 	s.logger.Infof("stopping rule %s", s.Rule.Id)
 	if s.topology != nil {
 		s.topoGraph = s.topology.GetTopo()
@@ -115,7 +117,8 @@ func (s *State) doStop(stateType machine.RunState, msg string) {
 	s.transitState(stateType, msg)
 }
 
-// This is called async
+// This is called async without holding ruleLock.
+// It must not access s.topology directly; ownership is decided in cleanRule under lock.
 func (s *State) runTopo(tp *topo.Topo, ruleId string) {
 	s.logger.Infof("topo %d opens", tp.GetRunId())
 	e := <-tp.Open()
@@ -138,21 +141,35 @@ func (s *State) runTopo(tp *topo.Topo, ruleId string) {
 			s.updateTrigger(ruleId, false)
 		}
 	}
-	// The run exit may be caused by user action or rule itself
-	// Only do clean up when it is exit automatically
-	if !tp.IsClosed() {
-		_ = tp.GracefulStop(0)
-		s.cleanRule(tp, hasError, lastWill)
-	}
+	// The run exit may be caused by user action or rule itself. Ownership
+	// and stopping are serialized in cleanRule under ruleLock (see below).
+	s.cleanRule(tp, hasError, lastWill)
 }
 
 func (s *State) cleanRule(tp *topo.Topo, hasError bool, lastWill string) {
 	s.ruleLock.Lock()
 	defer s.ruleLock.Unlock()
 	if s.topology != tp {
+		// s.topology may have been cleared by a concurrent doStop; never
+		// dereference it here. A nil topology means an explicit stop already
+		// owned the cleanup, which is the normal path, so stay quiet.
+		if s.topology == nil {
+			s.logger.Debug("topology already stopped, skip clean up")
+			return
+		}
 		s.logger.Warnf("topology mismatch, skip clean up: %d vs %d", s.topology.GetRunId(), tp.GetRunId())
 		return
 	}
+	// This is the only place an async run stops its topo. The ownership
+	// check above and this stop run in the same critical section, so an
+	// explicit doStop and a stale runTopo cannot interleave here: whoever
+	// holds the lock owns the stop, the loser sees a changed topology and
+	// returns above. This matters because Topo.doClose closes shared
+	// MergeableTopo sources even when the topo is already closed, so a
+	// stale stop could detach schema state of a replacement run.
+	// Holding ruleLock across GracefulStop matches the existing doStop path
+	// (StopWithLastWill holds the lock while stopping).
+	_ = tp.GracefulStop(0)
 	if s.topology != nil {
 		s.topoGraph = s.topology.GetTopo()
 		keys, values := s.topology.GetMetrics()
