@@ -15,13 +15,14 @@
 package connection
 
 import (
+	"context"
 	"sync"
 	"sync/atomic"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
-	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
+	topoContext "github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
 
@@ -33,13 +34,36 @@ type ConnWrapper struct {
 	l           sync.RWMutex
 	readCh      chan struct{}
 	detachCh    chan struct{}
+	cancel      context.CancelFunc
+	stopped     bool
 }
 
 func (cw *ConnWrapper) setConn(conn modules.Connection, err error) {
 	cw.l.Lock()
-	defer cw.l.Unlock()
 	cw.initialized = true
 	cw.conn, cw.err = conn, err
+	stopped := cw.stopped
+	cw.l.Unlock()
+	if stopped && conn != nil {
+		_ = conn.Close(topoContext.Background())
+	}
+}
+
+// stop cancels an unfinished dial and closes a connection that finished already.
+func (cw *ConnWrapper) stop(ctx api.StreamContext) {
+	cw.l.Lock()
+	if cw.stopped {
+		cw.l.Unlock()
+		return
+	}
+	cw.stopped = true
+	cw.cancel()
+	close(cw.detachCh)
+	conn := cw.conn
+	cw.l.Unlock()
+	if conn != nil {
+		_ = conn.Close(ctx)
+	}
 }
 
 // Wait will wait for connection connected or the caller interrupts (like rule exit)
@@ -47,11 +71,19 @@ func (cw *ConnWrapper) Wait(connectorCtx api.StreamContext) (modules.Connection,
 	select {
 	case <-connectorCtx.Done():
 		connectorCtx.GetLogger().Infof("stop waiting connection")
+		return nil, connectorCtx.Err()
 	case <-cw.readCh:
 	case <-cw.detachCh:
+		return nil, context.Canceled
 	}
 	cw.l.RLock()
 	defer cw.l.RUnlock()
+	if err := connectorCtx.Err(); err != nil {
+		return nil, err
+	}
+	if cw.stopped {
+		return nil, context.Canceled
+	}
 	return cw.conn, cw.err
 }
 
@@ -62,13 +94,15 @@ func (cw *ConnWrapper) IsInitialized() bool {
 }
 
 func newConnWrapper(ctx api.StreamContext, meta *Meta) *ConnWrapper {
+	workCtx, cancel := ctx.WithCancel()
 	cw := &ConnWrapper{
 		ID:       meta.ID,
 		readCh:   make(chan struct{}),
 		detachCh: make(chan struct{}),
+		cancel:   cancel,
 	}
 	go func() {
-		conn, err := createConnection(ctx, meta)
+		conn, err := createConnection(workCtx, meta)
 		cw.setConn(conn, err)
 		close(cw.readCh)
 	}()
@@ -144,14 +178,14 @@ func (meta *Meta) GetStatus() (s string, e string) {
 		s = ss.(string)
 		if s == api.ConnectionConnected {
 			if meta.cw.IsInitialized() {
-				conn, err := meta.cw.Wait(context.Background())
+				conn, err := meta.cw.Wait(topoContext.Background())
 				if err != nil || conn == nil {
 					return
 				}
 				e = ""
 				// if connected, cw, cw.conn should exist
 				if _, isStateful := conn.(modules.StatefulDialer); !isStateful {
-					err := conn.Ping(context.Background())
+					err := conn.Ping(topoContext.Background())
 					if err != nil {
 						s = api.ConnectionDisconnected
 						e = err.Error()
