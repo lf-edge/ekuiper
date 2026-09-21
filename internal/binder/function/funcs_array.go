@@ -41,6 +41,20 @@ var (
 	errorArrayNotStringElementError        = fmt.Errorf("array elements should be string")
 )
 
+func isDistinctComparableValue(value interface{}) bool {
+	switch value.(type) {
+	case int, int8, int16, int32, int64,
+		uint, uint8, uint16, uint32, uint64,
+		float32, float64,
+		string,
+		bool,
+		nil:
+		return true
+	default:
+		return false
+	}
+}
+
 func registerArrayFunc() {
 	builtins["array_create"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
@@ -77,6 +91,28 @@ func registerArrayFunc() {
 				}
 			}
 			return -1, true
+		},
+		val: func(ctx api.FunctionContext, args []ast.Expr) error {
+			return ValidateLen(2, len(args))
+		},
+	}
+	builtins["array_positions"] = builtinFunc{
+		fType: ast.FuncTypeScalar,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			if args[0] == nil {
+				return nil, true
+			}
+			array, ok := args[0].([]interface{})
+			if !ok {
+				return errorArrayFirstArgumentNotArrayError, false
+			}
+			positions := make([]interface{}, 0)
+			for i, item := range array {
+				if changedValueEqual(item, args[1]) {
+					positions = append(positions, i)
+				}
+			}
+			return positions, true
 		},
 		val: func(ctx api.FunctionContext, args []ast.Expr) error {
 			return ValidateLen(2, len(args))
@@ -492,19 +528,14 @@ func registerArrayFunc() {
 			set := make(map[interface{}]bool)
 
 			for _, val := range array {
-				switch val.(type) {
-				case int, int8, int16, int32, int64,
-					uint, uint8, uint16, uint32, uint64,
-					float32, float64,
-					string,
-					bool,
-					nil:
-					if !set[val] {
-						output = append(output, val)
-						set[val] = true
-					}
-				default: // all un-hashable types are not deduplicated, including array, map, etc.
+				if !isDistinctComparableValue(val) {
+					// All un-hashable types are not deduplicated, including array, map, etc.
 					output = append(output, val)
+					continue
+				}
+				if !set[val] {
+					output = append(output, val)
+					set[val] = true
 				}
 			}
 
