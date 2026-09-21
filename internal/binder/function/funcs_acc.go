@@ -142,6 +142,23 @@ func registerGlobalAggFunc() {
 			return nil
 		},
 	}
+	builtins["acc_distinct_collect"] = builtinFunc{
+		fType: ast.FuncTypeScalar,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			status, err := handleAccFunc(ctx, args, accCollectFunc{distinct: true})
+			if err != nil {
+				return err, false
+			}
+			return status.Value.([]interface{}), true
+		},
+		val: func(ctx api.FunctionContext, args []ast.Expr) error {
+			argsLen := len(args)
+			if argsLen != 1 && argsLen != 3 {
+				return fmt.Errorf("Expect 1/3 arguments but found %d.", argsLen)
+			}
+			return nil
+		},
+	}
 	builtins["acc_max_by"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
@@ -532,9 +549,10 @@ func accFuncWithCond(ctx api.FunctionContext, value interface{}, onBegin, onRese
 }
 
 type accStatus struct {
-	Err      error
-	Value    interface{}
-	HasBegin bool
+	Err           error
+	Value         interface{}
+	HasBegin      bool
+	distinctIndex map[interface{}]struct{}
 }
 
 type accFunc interface {
@@ -715,7 +733,9 @@ func (a accAvgFunc) accReset(status *accStatus) {
 	status.Value = nil
 }
 
-type accCollectFunc struct{}
+type accCollectFunc struct {
+	distinct bool
+}
 
 func (a accCollectFunc) accFuncExec(ctx api.FunctionContext, value interface{}, validData bool, partitionKey string, status *accStatus, skipStatusSave bool) {
 	if status.Value == nil {
@@ -726,6 +746,22 @@ func (a accCollectFunc) accFuncExec(ctx api.FunctionContext, value interface{}, 
 		return
 	}
 	if value != nil {
+		if a.distinct {
+			if status.distinctIndex == nil {
+				status.distinctIndex = make(map[interface{}]struct{}, len(collected))
+				for _, collectedValue := range collected {
+					if isDistinctComparableValue(collectedValue) {
+						status.distinctIndex[collectedValue] = struct{}{}
+					}
+				}
+			}
+			if isDistinctComparableValue(value) {
+				if _, exists := status.distinctIndex[value]; exists {
+					return
+				}
+				status.distinctIndex[value] = struct{}{}
+			}
+		}
 		collected = append(collected, value)
 		status.Value = collected
 	}
@@ -738,6 +774,11 @@ func (a accCollectFunc) accFuncExec(ctx api.FunctionContext, value interface{}, 
 
 func (a accCollectFunc) accReset(status *accStatus) {
 	status.Value = []interface{}{}
+	if a.distinct {
+		status.distinctIndex = make(map[interface{}]struct{})
+	} else {
+		status.distinctIndex = nil
+	}
 }
 
 type accAvgStatus struct {
