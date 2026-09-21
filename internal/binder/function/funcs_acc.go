@@ -747,7 +747,7 @@ func (a accCollectFunc) accFuncExec(ctx api.FunctionContext, value interface{}, 
 	}
 	if value != nil {
 		if a.distinct {
-		if status.distinctIndex == nil {
+			if status.distinctIndex == nil {
 				status.distinctIndex = make(map[interface{}]struct{}, len(collected))
 				for _, collectedValue := range collected {
 					if isDistinctComparableValue(collectedValue) {
