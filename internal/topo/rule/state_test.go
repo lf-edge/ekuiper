@@ -27,6 +27,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/schedule"
 	"github.com/lf-edge/ekuiper/v2/internal/processor"
 	"github.com/lf-edge/ekuiper/v2/internal/testx"
+	"github.com/lf-edge/ekuiper/v2/internal/topo"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/rule/machine"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
@@ -284,6 +285,8 @@ func TestRuleRestart(t *testing.T) {
 // a stale run (replaced or explicitly stopped) must never panic nor disturb
 // the active run. It covers the CI panic where cleanRule dereferenced a
 // topology already cleared by a concurrent doStop.
+// NOTE: master-2.4 has no State.GetPlainTopology, so read st.topology
+// directly under ruleLock (same package) instead.
 func TestCleanRuleStaleTopo(t *testing.T) {
 	sp := processor.NewStreamProcessor()
 	_, err := sp.ExecStmt(`CREATE STREAM demo () WITH (FORMAT="JSON", TYPE="memory", DATASOURCE="test")`)
@@ -292,10 +295,15 @@ func TestCleanRuleStaleTopo(t *testing.T) {
 	st := NewState(def.GetDefaultRule("testStaleTopo", "select * from demo"), func(string, bool) {})
 	defer st.Delete()
 
+	getTopo := func() *topo.Topo {
+		st.ruleLock.RLock()
+		defer st.ruleLock.RUnlock()
+		return st.topology
+	}
+
 	require.NoError(t, st.Start())
 	require.Eventually(t, func() bool { return st.GetState() == machine.Running }, time.Second, time.Millisecond)
-	old, err := st.GetPlainTopology()
-	require.NoError(t, err)
+	old := getTopo()
 	require.NotNil(t, old)
 
 	// Stop and restart to replace the run.
@@ -303,8 +311,7 @@ func TestCleanRuleStaleTopo(t *testing.T) {
 	assert.Equal(t, machine.Stopped, st.GetState())
 	require.NoError(t, st.Start())
 	require.Eventually(t, func() bool { return st.GetState() == machine.Running }, time.Second, time.Millisecond)
-	cur, err := st.GetPlainTopology()
-	require.NoError(t, err)
+	cur := getTopo()
 	require.NotNil(t, cur)
 	assert.False(t, old == cur, "restart must plan a new topology instance")
 
@@ -312,8 +319,7 @@ func TestCleanRuleStaleTopo(t *testing.T) {
 	require.NotPanics(t, func() {
 		st.cleanRule(old, false, "stale")
 	})
-	kept, err := st.GetPlainTopology()
-	require.NoError(t, err)
+	kept := getTopo()
 	assert.True(t, kept == cur, "stale cleanup must not detach the active run")
 	assert.Equal(t, machine.Running, st.GetState())
 
@@ -324,13 +330,11 @@ func TestCleanRuleStaleTopo(t *testing.T) {
 		require.NoError(t, st.Start())
 	}
 	require.Eventually(t, func() bool { return st.GetState() == machine.Running }, time.Second, time.Millisecond)
-	cur, err = st.GetPlainTopology()
-	require.NoError(t, err)
+	cur = getTopo()
 	require.NotPanics(t, func() {
 		st.cleanRule(old, false, "stale")
 	})
-	kept, err = st.GetPlainTopology()
-	require.NoError(t, err)
+	kept = getTopo()
 	assert.True(t, kept == cur, "stale cleanup must not detach the active run")
 	assert.Equal(t, machine.Running, st.GetState())
 
@@ -341,8 +345,7 @@ func TestCleanRuleStaleTopo(t *testing.T) {
 	require.NotPanics(t, func() {
 		st.cleanRule(old, false, "stale")
 	})
-	_, err = st.GetPlainTopology()
-	require.Error(t, err)
+	assert.Nil(t, getTopo())
 	assert.Equal(t, machine.Stopped, st.GetState())
 }
 
