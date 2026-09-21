@@ -304,14 +304,12 @@ func (s *SQLConnectionRegressionTestSuite) TestIssue1233StopAndRestartSQLRules()
 	deleteFVTResource(s.T(), "connections/"+connectionID)
 }
 
-// TestIssue1236 verifies that a failed SQL lookup creation has a finite
-// lifetime, releases the lookup lock, and does not prevent a later lookup or
-// the lookup listing API from succeeding.
-// The bad endpoint is a TCP blackhole (accepts but never responds), not a
-// closed port: a closed port fails fast with refused even on unfixed code,
-// while a blackhole hangs Dial forever without timeouts and exposes the
-// hanging lookup-lock bug.
-func (s *SQLConnectionRegressionTestSuite) TestIssue1236FailedLookupReleasesAPI() {
+// TestIssue1236 verifies the lookup CREATE semantics: only static
+// configuration errors fail table creation, while an unreachable database
+// (TCP blackhole) never blocks the lookup APIs. This guards the original
+// regression, where a bad lookup held the global lookup lock while waiting
+// for the pooled connection.
+func (s *SQLConnectionRegressionTestSuite) TestIssue1236UnreachableLookupCreates() {
 	port := freeTCPPort(s.T())
 	badPort := freeTCPPort(s.T())
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
@@ -319,27 +317,28 @@ func (s *SQLConnectionRegressionTestSuite) TestIssue1236FailedLookupReleasesAPI(
 	badConnectionID := "fvt-sql-1236-bad-" + suffix
 	goodConfKey := "fvt-sql-1236-good-conf-" + suffix
 	badConfKey := "fvt-sql-1236-bad-conf-" + suffix
+	malformedConfKey := "fvt-sql-1236-malformed-conf-" + suffix
 	goodLookup := "fvt_sql_1236_good_" + suffix
-	secondLookup := "fvt_sql_1236_second_" + suffix
 	badLookup := "fvt_sql_1236_bad_" + suffix
+	malformedLookup := "fvt_sql_1236_malformed_" + suffix
 	goodURL := fmt.Sprintf("mysql://root:@127.0.0.1:%d/test", port)
 	badURL := fmt.Sprintf("mysql://root:@127.0.0.1:%d/test", badPort)
 
 	db, err := setupEmbeddedMysqlServer("127.0.0.1", port)
 	s.Require().NoError(err)
 	defer db.Close()
-	// Blackhole: accept TCP and hold it without any MySQL handshake so Dial
-	// blocks until timeout instead of failing fast with refused.
+	// Blackhole: accept TCP and hold it without any MySQL handshake so a
+	// dial blocks until timeout instead of failing fast with refused.
 	blackhole, err := newBlackholeListener(badPort)
 	s.Require().NoError(err)
 	defer blackhole.Close()
 
 	createSQLConnection := func(id, dbURL string) {
 		resp, e := client.Post("connections", fmt.Sprintf(`{
-			"id": %q,
-			"typ": "sql",
-			"props": {"dburl": %q}
-		}`, id, dbURL))
+		"id": %q,
+		"typ": "sql",
+		"props": {"dburl": %q}
+	}`, id, dbURL))
 		s.Require().NoError(e)
 		s.Require().Equal(http.StatusCreated, resp.StatusCode)
 		_, _ = GetResponseText(resp)
@@ -349,11 +348,16 @@ func (s *SQLConnectionRegressionTestSuite) TestIssue1236FailedLookupReleasesAPI(
 
 	goodConf := map[string]any{"connectionSelector": goodConnectionID}
 	badConf := map[string]any{"connectionSelector": badConnectionID}
+	malformedConf := map[string]any{"dburl": "not-a-url"}
 	resp, err := client.CreateConf("sources/sql/confKeys/"+goodConfKey, goodConf)
 	s.Require().NoError(err)
 	s.Require().Equal(http.StatusOK, resp.StatusCode)
 	_, _ = GetResponseText(resp)
 	resp, err = client.CreateConf("sources/sql/confKeys/"+badConfKey, badConf)
+	s.Require().NoError(err)
+	s.Require().Equal(http.StatusOK, resp.StatusCode)
+	_, _ = GetResponseText(resp)
+	resp, err = client.CreateConf("sources/sql/confKeys/"+malformedConfKey, malformedConf)
 	s.Require().NoError(err)
 	s.Require().Equal(http.StatusOK, resp.StatusCode)
 	_, _ = GetResponseText(resp)
@@ -369,51 +373,155 @@ func (s *SQLConnectionRegressionTestSuite) TestIssue1236FailedLookupReleasesAPI(
 	s.Require().NoError(err)
 	s.Require().Equal(http.StatusCreated, status, string(body))
 
-	badResult := make(chan fvtHTTPResult, 1)
+	// A malformed URL is a static error: CREATE TABLE fails.
+	status, body, err = createLookup(malformedLookup, malformedConfKey)
+	s.Require().NoError(err)
+	s.Require().Equal(http.StatusBadRequest, status, string(body))
+
+	// The unreachable (blackhole) database does NOT fail table creation:
+	// the connection attaches lazily and returns immediately.
 	started := time.Now()
-	go func() {
-		status, body, err := createLookup(badLookup, badConfKey)
-		badResult <- fvtHTTPResult{status: status, body: body, err: err}
-	}()
-
-	// The bad create holds the lookup lock while it waits for the named
-	// connection. The list request must not remain blocked after the bounded
-	// lookup wait expires.
-	time.Sleep(300 * time.Millisecond)
-	listCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-	listStarted := time.Now()
-	listResult := make(chan fvtHTTPResult, 1)
-	go func() {
-		status, body, err := doFVTRequest(listCtx, http.MethodGet, "tables?kind=lookup", "")
-		listResult <- fvtHTTPResult{status: status, body: body, err: err}
-	}()
-
-	bad := <-badResult
-	list := <-listResult
-	cancel()
-	s.Require().NoError(bad.err)
-	s.Require().Equal(http.StatusBadRequest, bad.status, string(bad.body))
-	s.Require().Less(time.Since(started), 15*time.Second)
-	s.Require().NoError(list.err)
-	s.Require().Equal(http.StatusOK, list.status, string(list.body))
-	s.Require().Less(time.Since(listStarted), 15*time.Second)
-	s.Require().Contains(string(list.body), goodLookup)
-
-	status, body, err = createLookup(secondLookup, goodConfKey)
+	status, body, err = createLookup(badLookup, badConfKey)
 	s.Require().NoError(err)
 	s.Require().Equal(http.StatusCreated, status, string(body))
+	s.Require().Less(time.Since(started), 5*time.Second, "lookup creation must not wait for the database")
 
-	for _, name := range []string{secondLookup, goodLookup, badLookup} {
+	// The lookup listing API stays available and shows both tables.
+	listCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	listStarted := time.Now()
+	status, body, err = doFVTRequest(listCtx, http.MethodGet, "tables?kind=lookup", "")
+	cancel()
+	s.Require().NoError(err)
+	s.Require().Equal(http.StatusOK, status, string(body))
+	s.Require().Less(time.Since(listStarted), 15*time.Second)
+	s.Require().Contains(string(body), goodLookup)
+	s.Require().Contains(string(body), badLookup)
+
+	for _, name := range []string{goodLookup, badLookup} {
 		deleteFVTResource(s.T(), "tables/"+name)
 	}
 	deleteFVTResource(s.T(), "connections/"+goodConnectionID)
 	deleteFVTResource(s.T(), "connections/"+badConnectionID)
 }
 
-type fvtHTTPResult struct {
-	status int
-	body   []byte
-	err    error
+// TestIssue1238LookupRecoversWhileRunning verifies the lookup recovery
+// semantics: the table is created while the database is down, the first
+// lookup reports once (op exception metric), the following lookups wait for
+// recovery, and the rule resumes producing output once the database returns
+// without any rule restart.
+func (s *SQLConnectionRegressionTestSuite) TestIssue1238LookupRecoversWhileRunning() {
+	port := freeTCPPort(s.T())
+	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
+	connectionID := "fvt-sql-1238-" + suffix
+	confKey := "fvt-sql-1238-conf-" + suffix
+	simConfKey := "fvt-sql-1238-sim-conf-" + suffix
+	tableName := "fvt_sql_1238_tab_" + suffix
+	streamName := "fvt_sql_1238_stream_" + suffix
+	ruleID := "fvt_sql_1238_rule_" + suffix
+	dbURL := fmt.Sprintf("mysql://root:@127.0.0.1:%d/test", port)
+
+	// The database is not started yet; the named connection keeps retrying
+	// in the background.
+	resp, err := client.Post("connections", fmt.Sprintf(`{
+		"id": %q,
+		"typ": "sql",
+		"props": {"dburl": %q}
+	}`, connectionID, dbURL))
+	s.Require().NoError(err)
+	s.Require().Equal(http.StatusCreated, resp.StatusCode)
+	_, _ = GetResponseText(resp)
+	s.T().Cleanup(func() {
+		deleteFVTResource(s.T(), "connections/"+connectionID)
+	})
+
+	resp, err = client.CreateConf("sources/sql/confKeys/"+confKey, map[string]any{
+		"connectionSelector": connectionID,
+	})
+	s.Require().NoError(err)
+	s.Require().Equal(http.StatusOK, resp.StatusCode)
+	_, _ = GetResponseText(resp)
+	resp, err = client.CreateConf("sources/simulator/confKeys/"+simConfKey, map[string]any{
+		"data":     []map[string]any{{"a": 1, "b": 2}},
+		"interval": "200ms",
+		"loop":     true,
+	})
+	s.Require().NoError(err)
+	s.Require().Equal(http.StatusOK, resp.StatusCode)
+	_, _ = GetResponseText(resp)
+
+	// CREATE TABLE succeeds although the database is unreachable.
+	statement := fmt.Sprintf(`{"sql":"CREATE TABLE %s() WITH (DATASOURCE=\"t\", CONF_KEY=\"%s\", TYPE=\"sql\", KIND=\"lookup\", KEY=\"a\")"}`, tableName, confKey)
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+	status, body, err := doFVTRequest(ctx, http.MethodPost, "tables", statement)
+	s.Require().NoError(err)
+	s.Require().Equal(http.StatusCreated, status, string(body))
+	s.T().Cleanup(func() {
+		deleteFVTResource(s.T(), "tables/"+tableName)
+	})
+
+	resp, err = client.CreateStream(fmt.Sprintf(`{
+		"sql": "create stream %s () WITH (TYPE=\"simulator\", CONF_KEY=\"%s\", FORMAT=\"json\")"
+	}`, streamName, simConfKey))
+	s.Require().NoError(err)
+	s.Require().Equal(http.StatusCreated, resp.StatusCode)
+	_, _ = GetResponseText(resp)
+	s.T().Cleanup(func() {
+		deleteFVTResource(s.T(), "streams/"+streamName)
+	})
+	resp, err = client.CreateRule(fmt.Sprintf(`{
+		"id": %q,
+		"sql": "SELECT %s.a AS a, %s.b AS b FROM %s INNER JOIN %s ON %s.a = %s.a",
+		"actions": [{"log": {}}]
+	}`, ruleID, streamName, tableName, streamName, tableName, tableName, streamName))
+	s.Require().NoError(err)
+	s.Require().Equal(http.StatusCreated, resp.StatusCode)
+	_, _ = GetResponseText(resp)
+	s.T().Cleanup(func() {
+		deleteFVTResource(s.T(), "rules/"+ruleID)
+	})
+
+	waitForFVTNamed(s.T(), sqlFVTTimeout, "initial rule "+ruleID, func() bool {
+		return getRuleStatus(s.T(), ruleID) == "running"
+	})
+	// The first lookup reports the unavailable connection exactly once:
+	// the op exception metric must observe it.
+	waitForFVTNamed(s.T(), sqlFVTTimeout, "first lookup exception", func() bool {
+		return opExceptionsTotal(s.T(), ruleID) > 0
+	})
+
+	// Start the database; the rule recovers without restart.
+	db, err := setupEmbeddedMysqlServer("127.0.0.1", port)
+	s.Require().NoError(err)
+	defer db.Close()
+
+	waitForFVTNamed(s.T(), sqlFVTTimeout, "lookup recovery output", func() bool {
+		return sinkRecordsOut(s.T(), ruleID) > 0
+	})
+}
+
+// opExceptionsTotal sums per-op exception metrics of a rule. The lookup
+// failure surfaces in the owning op (the lookup join node).
+func opExceptionsTotal(t *testing.T, ruleID string) float64 {
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	status, body, err := doFVTRequest(ctx, http.MethodGet, "rules/"+ruleID+"/status", "")
+	if err != nil || status != http.StatusOK {
+		return 0
+	}
+	var result map[string]any
+	if err := json.Unmarshal(body, &result); err != nil {
+		return 0
+	}
+	var total float64
+	for k, v := range result {
+		if len(k) > len("op_") && strings.HasPrefix(k, "op_") && strings.HasSuffix(k, "_exceptions_total") {
+			if f, ok := v.(float64); ok {
+				total += f
+			}
+		}
+	}
+	return total
 }
 
 func freeTCPPort(t *testing.T) int {

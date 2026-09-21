@@ -35,7 +35,9 @@ type SQLConnection struct {
 	closed bool
 }
 
-const defaultDialTimeout = 2 * time.Second
+// defaultAttemptTimeout bounds one Dial, Ping, or Reconnect attempt.
+// Retry cadence and total retry lifetime are owned by the caller.
+const defaultAttemptTimeout = 10 * time.Second
 
 func (s *SQLConnection) Provision(ctx api.StreamContext, conId string, props map[string]any) error {
 	// dburl is canonical (url is only a compatibility alias): it wins when
@@ -82,7 +84,7 @@ func (s *SQLConnection) GetId(ctx api.StreamContext) string {
 func (s *SQLConnection) Dial(ctx api.StreamContext) error {
 	s.Lock()
 	defer s.Unlock()
-	dialCtx, cancel := context.WithTimeout(ctx, defaultDialTimeout)
+	dialCtx, cancel := context.WithTimeout(ctx, defaultAttemptTimeout)
 	defer cancel()
 	return s.dial(dialCtx)
 }
@@ -90,7 +92,7 @@ func (s *SQLConnection) Dial(ctx api.StreamContext) error {
 func (s *SQLConnection) Reconnect(ctx api.StreamContext) error {
 	s.Lock()
 	defer s.Unlock()
-	dialCtx, cancel := context.WithTimeout(ctx, defaultDialTimeout)
+	dialCtx, cancel := context.WithTimeout(ctx, defaultAttemptTimeout)
 	defer cancel()
 	if s.db != nil {
 		if err := s.db.PingContext(dialCtx); err == nil {
@@ -115,7 +117,7 @@ func (s *SQLConnection) GetDB() *sql.DB {
 func (s *SQLConnection) Ping(ctx api.StreamContext) error {
 	s.Lock()
 	defer s.Unlock()
-	pingCtx, cancel := context.WithTimeout(ctx, defaultDialTimeout)
+	pingCtx, cancel := context.WithTimeout(ctx, defaultAttemptTimeout)
 	defer cancel()
 	if s.db == nil {
 		return s.dial(pingCtx)

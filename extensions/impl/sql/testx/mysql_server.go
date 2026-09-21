@@ -48,6 +48,26 @@ func SetupEmbeddedMysqlServer(address string, port int) (*server.Server, error) 
 	return s, nil
 }
 
+// KillSessions closes all active sessions of the embedded server so that
+// established client connections break, simulating a runtime database
+// disconnect (a plain server Close leaves existing sessions alive).
+func KillSessions(s *server.Server) error {
+	sm := s.SessionManager()
+	var ids []uint32
+	if err := sm.Iter(func(session sql.Session) (bool, error) {
+		ids = append(ids, session.ID())
+		return false, nil
+	}); err != nil {
+		return err
+	}
+	for _, id := range ids {
+		if err := sm.KillConnection(id); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func createTestDatabase() *memory.DbProvider {
 	tableName := "t"
 	db := memory.NewDatabase("test")
