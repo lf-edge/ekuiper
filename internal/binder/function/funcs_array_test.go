@@ -953,6 +953,15 @@ func TestArraySort(t *testing.T) {
 	}
 }
 
+func TestArrayPositionsValidation(t *testing.T) {
+	f, ok := builtins["array_positions"]
+	require.True(t, ok)
+	require.Error(t, f.val(nil, nil))
+	result, ok := f.exec(nil, []interface{}{nil, 1})
+	require.True(t, ok)
+	require.Nil(t, result)
+}
+
 func TestArrayFuncNil(t *testing.T) {
 	contextLogger := conf.Log.WithField("rule", "testExec")
 	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)

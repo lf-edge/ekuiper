@@ -34,6 +34,14 @@ func TestAccDistinctCollect(t *testing.T) {
 		require.True(t, ok)
 		require.Equal(t, expected[i], result)
 	}
+
+	require.Error(t, f.val(nil, nil))
+	require.NoError(t, f.val(nil, []ast.Expr{nil}))
+	result, ok := f.exec(fctx, []interface{}{int64(1), true, 1})
+	require.False(t, ok)
+	err, isErr := result.(error)
+	require.True(t, isErr)
+	require.Error(t, err)
 }
 
 func TestAccumulateAggCond(t *testing.T) {
