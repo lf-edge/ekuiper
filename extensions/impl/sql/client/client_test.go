@@ -69,11 +69,12 @@ func TestSQLReconnectFailureKeepsDBHandle(t *testing.T) {
 	sconn := conn.(*SQLConnection)
 
 	// Simulate a runtime disconnect and make the replacement endpoint fail.
-	// The second consumer shares the same SQLConnection instance.
+	// The failed candidate owns nothing: the previous (broken) handle stays
+	// installed for the Pool to verify, and queries on it keep failing.
 	_ = sconn.db.Close()
 	sconn.url = fmt.Sprintf("mysql://root:@%v:%v/test", address, serverPort+1)
 
-	require.Error(t, sconn.Reconnect(ctx))
+	require.Error(t, sconn.Recover(ctx))
 	sharedDB := sconn.GetDB()
 	require.NotNil(t, sharedDB)
 	_, err = sharedDB.Query("select 1")

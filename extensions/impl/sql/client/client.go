@@ -99,25 +99,6 @@ func (s *SQLConnection) Dial(ctx api.StreamContext) error {
 	return s.dial(dialCtx)
 }
 
-func (s *SQLConnection) Reconnect(ctx api.StreamContext) error {
-	s.Lock()
-	defer s.Unlock()
-	dialCtx, cancel := context.WithTimeout(ctx, defaultAttemptTimeout)
-	defer cancel()
-	if s.db != nil {
-		if err := s.db.PingContext(dialCtx); err == nil {
-			return nil
-		} else if dialCtx.Err() != nil {
-			return dialCtx.Err()
-		}
-		_ = s.db.Close()
-	}
-	if err := s.dial(dialCtx); err != nil {
-		return fmt.Errorf("reconnect sql err:%v", err)
-	}
-	return nil
-}
-
 func (s *SQLConnection) GetDB() *sql.DB {
 	s.RLock()
 	defer s.RUnlock()
