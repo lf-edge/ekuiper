@@ -363,3 +363,101 @@ func TestProbeNudgesWorkerOnFlip(t *testing.T) {
 	require.Equal(t, uint64(1), meta.currentSuspectSeq())
 	require.Equal(t, 1, len(meta.suspectCh))
 }
+
+// episodeFakeConn is a scriptable PoolRecoverableConnection for the
+// end-to-end test: sickness toggles Ping/Recover outcomes at runtime.
+type episodeFakeConn struct {
+	id           string
+	sick         atomic.Bool
+	pingCalls    atomic.Int32
+	recoverCalls atomic.Int32
+}
+
+func (e *episodeFakeConn) Provision(ctx api.StreamContext, conId string, props map[string]any) error {
+	e.id = conId
+	return nil
+}
+
+func (e *episodeFakeConn) Dial(ctx api.StreamContext) error { return nil }
+
+func (e *episodeFakeConn) GetId(ctx api.StreamContext) string { return e.id }
+
+func (e *episodeFakeConn) Ping(ctx api.StreamContext) error {
+	e.pingCalls.Add(1)
+	if e.sick.Load() {
+		return errors.New("episode down")
+	}
+	return nil
+}
+
+func (e *episodeFakeConn) Recover(ctx api.StreamContext) error {
+	e.recoverCalls.Add(1)
+	if e.sick.Load() {
+		return errors.New("episode still down")
+	}
+	return nil
+}
+
+func (e *episodeFakeConn) Close(ctx api.StreamContext) error { return nil }
+
+var episodeFake = &episodeFakeConn{}
+
+func registerEpisodeProvider() {
+	modules.RegisterConnection("recovtest", func(ctx api.StreamContext) modules.Connection {
+		return episodeFake
+	})
+}
+
+// TestRecoveryEpisodeEndToEnd drives a full outage through public
+// APIs only: suspect -> verify -> disconnected (waiters park) ->
+// worker-owned retries -> heal -> connected (waiters resume).
+func TestRecoveryEpisodeEndToEnd(t *testing.T) {
+	require.NoError(t, InitConnectionManager4Test())
+	registerEpisodeProvider()
+	episodeFake.sick.Store(false)
+	ctx := probeTestCtx()
+
+	cw, err := CreateNamedConnection(ctx, "recov-e2e", "recovtest", nil)
+	require.NoError(t, err)
+	defer DropNameConnection(ctx, "recov-e2e")
+	require.Eventually(t, func() bool {
+		s, _ := cw.Status()
+		return s == api.ConnectionConnected
+	}, 5*time.Second, 5*time.Millisecond)
+
+	// Outage begins: the first failure surfaces and reports.
+	episodeFake.sick.Store(true)
+	cw.ReportSuspectedFailure()
+
+	// Two waiters park on the closed gate while the worker owns the
+	// failing episode.
+	waiter := func() <-chan error {
+		done := make(chan error, 1)
+		go func() { done <- cw.WaitReady(ctx) }()
+		return done
+	}
+	w1, w2 := waiter(), waiter()
+	select {
+	case err := <-w1:
+		t.Fatalf("waiter released during outage: %v", err)
+	case <-time.After(200 * time.Millisecond):
+	}
+	require.Eventually(t, func() bool {
+		s, _ := cw.Status()
+		return s == api.ConnectionDisconnected
+	}, 5*time.Second, 5*time.Millisecond)
+
+	// Heal: the worker's next attempt succeeds and both waiters resume.
+	episodeFake.sick.Store(false)
+	for i, w := range []<-chan error{w1, w2} {
+		select {
+		case err := <-w:
+			require.NoError(t, err, "waiter %d", i)
+		case <-time.After(15 * time.Second):
+			t.Fatalf("waiter %d did not resume after recovery", i)
+		}
+	}
+	s, _ := cw.Status()
+	require.Equal(t, api.ConnectionConnected, s)
+	require.GreaterOrEqual(t, episodeFake.recoverCalls.Load(), int32(1))
+}

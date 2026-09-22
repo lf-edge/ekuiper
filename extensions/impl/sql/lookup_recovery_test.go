@@ -15,7 +15,6 @@
 package sql
 
 import (
-	"context"
 	"fmt"
 	"net"
 	"sync"
@@ -24,10 +23,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	client2 "github.com/lf-edge/ekuiper/v2/extensions/impl/sql/client"
 	kctx "github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
-	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
 
 // blackholeListener accepts TCP connections and never answers, so a dial
@@ -134,59 +131,4 @@ func TestLookupConcurrentAccess(t *testing.T) {
 		_ = ls.Close(ctx)
 	}()
 	wg.Wait()
-}
-
-// TestRetryReconnectCancelDuringAttempt verifies that canceling the rule
-// context interrupts a reconnect attempt that is blocked on the network
-// instead of waiting out the full attempt timeout.
-func TestRetryReconnectCancelDuringAttempt(t *testing.T) {
-	rootCtx := mockContext.NewMockContext("reconnect_attempt", "op1")
-	ctx, cancel := rootCtx.WithCancel()
-
-	port := newBlackholeListener(t)
-	conn := client2.CreateConnection(ctx).(*client2.SQLConnection)
-	require.NoError(t, conn.Provision(ctx, "attempt", map[string]any{
-		"dburl": fmt.Sprintf("mysql://root:@127.0.0.1:%d/test", port),
-	}))
-
-	result := make(chan error, 1)
-	go func() {
-		result <- retryReconnect(ctx, conn)
-	}()
-	time.Sleep(500 * time.Millisecond)
-	cancel()
-	select {
-	case err := <-result:
-		require.ErrorIs(t, err, context.Canceled)
-	case <-time.After(5 * time.Second):
-		t.Fatal("cancellation did not interrupt the reconnect attempt")
-	}
-}
-
-// TestRetryReconnectCancelDuringBackoff verifies that canceling the rule
-// context during the backoff sleep between two attempts exits promptly.
-func TestRetryReconnectCancelDuringBackoff(t *testing.T) {
-	rootCtx := mockContext.NewMockContext("reconnect_backoff", "op1")
-	ctx, cancel := rootCtx.WithCancel()
-
-	// A rejecting endpoint fails each attempt fast (accepted then closed),
-	// so the retry loop spends its time in the backoff sleep.
-	port := newRejectListener(t)
-	conn := client2.CreateConnection(ctx).(*client2.SQLConnection)
-	require.NoError(t, conn.Provision(ctx, "backoff", map[string]any{
-		"dburl": fmt.Sprintf("mysql://root:@127.0.0.1:%d/test", port),
-	}))
-
-	result := make(chan error, 1)
-	go func() {
-		result <- retryReconnect(ctx, conn)
-	}()
-	time.Sleep(300 * time.Millisecond)
-	cancel()
-	select {
-	case err := <-result:
-		require.ErrorIs(t, err, context.Canceled)
-	case <-time.After(5 * time.Second):
-		t.Fatal("cancellation did not interrupt the backoff sleep")
-	}
 }
