@@ -24,7 +24,14 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
+	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
+
+func init() {
+	// Named creation validates the provider synchronously; reuse the
+	// existing mock provider instead of a local fixture.
+	modules.RegisterConnection("mock", connection.CreateMockConnection)
+}
 
 func TestGetSourceConf(t *testing.T) {
 	connection.InitConnectionManager4Test()
