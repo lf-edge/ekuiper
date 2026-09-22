@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	"github.com/eclipse/paho.golang/paho"
+	storefile "github.com/eclipse/paho.golang/paho/store/file"
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	mqtt "github.com/mochi-mqtt/server/v2"
 	"github.com/mochi-mqtt/server/v2/hooks/auth"
@@ -29,6 +30,29 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
+
+func TestStateFilePrefix(t *testing.T) {
+	// Same logical connection and role: stable namespace across restarts.
+	require.Equal(t, stateFilePrefix("connA", "cli"), stateFilePrefix("connA", "cli"))
+	// Different connection keys must not share session state files.
+	require.NotEqual(t, stateFilePrefix("connA", "cli"), stateFilePrefix("connB", "cli"))
+	// Client and server stores must not share session state files.
+	require.NotEqual(t, stateFilePrefix("connA", "cli"), stateFilePrefix("connA", "srv"))
+	// Identity material hostile to file names is hashed away, and the
+	// resulting prefix must be usable by the file store.
+	for _, id := range []string{
+		"tcp://user:pass@host:1883/a/b#c",
+		"ipc:///tmp/foo bar/../baz",
+		"rule/op+#topic",
+	} {
+		prefix := stateFilePrefix(id, "cli")
+		require.NotContains(t, prefix, "/")
+		require.NotContains(t, prefix, "#")
+		require.NotContains(t, prefix, ":")
+		_, err := storefile.New(t.TempDir(), prefix, ".pkt")
+		require.NoError(t, err)
+	}
+}
 
 func TestValidateConfigGeneratesTLSConfig(t *testing.T) {
 	ctx, _ := mockContext.NewMockContext("ruleTls", "op1").WithCancel()
@@ -62,7 +86,7 @@ func TestV5MultiTopicSubscribe(t *testing.T) {
 	require.NoError(t, store.SetupDefault(dataDir))
 	require.NoError(t, connection.InitConnectionManager4Test())
 	ctx, _ := mockContext.NewMockContext("ruleEof", "op1").WithCancel()
-	c, err := Provision(ctx, map[string]any{
+	c, err := Provision(ctx, "ruleEof-op1-test1,test2-mqtt", map[string]any{
 		"server":     url,
 		"datasource": "test1,test2",
 		"qos":        0,
