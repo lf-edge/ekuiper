@@ -100,9 +100,53 @@ func (s *SQLConnection) Dial(ctx api.StreamContext) error {
 }
 
 func (s *SQLConnection) GetDB() *sql.DB {
+	// Deprecated: reach the database only through the QueryContext /
+	// ExecContext / BeginTx facade below, which always routes to the
+	// current handle. A raw *sql.DB outlives recovery swaps and
+	// bypasses pool ownership. Kept for external compatibility.
 	s.RLock()
 	defer s.RUnlock()
 	return s.db
+}
+
+// QueryContext routes one query to the current handle. It is pure
+// routing: no retry, no recovery, no readiness wait — those belong to
+// the consumer (WaitReady/suspect) and the Pool worker. The handle is
+// snapshotted under a read lock; a recovery swap racing the call
+// lands on either generation, and a failure on a stale one surfaces
+// as a normal error for the caller to report.
+func (s *SQLConnection) QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error) {
+	s.RLock()
+	db := s.db
+	s.RUnlock()
+	if db == nil {
+		return nil, fmt.Errorf("sql connection %s has no database handle", s.id)
+	}
+	return db.QueryContext(ctx, query, args...)
+}
+
+// ExecContext routes one statement to the current handle, same
+// routing-only contract as QueryContext.
+func (s *SQLConnection) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
+	s.RLock()
+	db := s.db
+	s.RUnlock()
+	if db == nil {
+		return nil, fmt.Errorf("sql connection %s has no database handle", s.id)
+	}
+	return db.ExecContext(ctx, query, args...)
+}
+
+// BeginTx routes one transaction to the current handle, same
+// routing-only contract as QueryContext.
+func (s *SQLConnection) BeginTx(ctx context.Context, opts *sql.TxOptions) (*sql.Tx, error) {
+	s.RLock()
+	db := s.db
+	s.RUnlock()
+	if db == nil {
+		return nil, fmt.Errorf("sql connection %s has no database handle", s.id)
+	}
+	return db.BeginTx(ctx, opts)
 }
 
 func (s *SQLConnection) Ping(ctx api.StreamContext) error {

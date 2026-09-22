@@ -424,7 +424,7 @@ func (s *SQLSinkConnector) writeStmtsTx(ctx api.StreamContext, stmts []builtStmt
 	if err := s.ensureConnected(ctx); err != nil {
 		return err
 	}
-	tx, err := s.conn.GetDB().BeginTx(ctx, nil)
+	tx, err := s.conn.BeginTx(ctx, nil)
 	if err != nil {
 		// Transport failure: report a suspect (unless the caller
 		// itself is gone) and surface an IO error for the SinkNode
@@ -533,7 +533,7 @@ func (s *SQLSinkConnector) writeToDB(ctx api.StreamContext, sqlStr string, args 
 		return err
 	}
 	start := time.Now()
-	r, err := s.conn.GetDB().ExecContext(ctx, sqlStr, args...)
+	r, err := s.conn.ExecContext(ctx, sqlStr, args...)
 	failpoint.Inject("dbErr", func() {
 		err = errors.New("dbErr")
 	})
