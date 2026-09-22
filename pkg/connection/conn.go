@@ -156,10 +156,8 @@ func (meta *Meta) reportSuspect() {
 			meta.generation++
 		}
 		// Already verifying: coalesce, nudge below.
-		meta.suspectSeq++
 	case api.ConnectionDisconnected:
-		// Fault already recorded; sequence bump plus nudge only.
-		meta.suspectSeq++
+		// Fault already recorded; nudge only.
 	default:
 		// connecting/recovering: the worker (or the initial dial)
 		// owns the episode, nothing to record.
@@ -398,19 +396,16 @@ type Meta struct {
 	// wakeups.
 	readyCh    chan struct{} `json:"-"`
 	generation uint64        `json:"-"`
-	// suspectCh wakes the recovery worker (c3): one buffered slot,
+	// suspectCh wakes the recovery worker: one buffered slot,
 	// non-blocking send, coalesced by construction. It carries no
-	// truth — the worker always re-reads Meta state on wakeup, so a
-	// stale wakeup against an open gate is a no-op. Created with the
+	// truth — the worker always re-reads Meta state on wakeup, and a
+	// wakeup against settled state is a no-op. Sequence numbers are
+	// deliberately absent: absorbing "everything seen so far" after
+	// an attempt can swallow a newer episode reported during a slow
+	// status delivery, parking the gate forever. Created with the
 	// Meta; the worker (when started) drains it until the lifecycle
 	// ends.
 	suspectCh chan struct{} `json:"-"`
-	// suspectSeq counts accepted recovery wakeups (consumer suspects
-	// plus probe-confirmed flips), guarded by stateMu. The worker
-	// acts only on a sequence newer than it last absorbed, which is
-	// what makes a stale wakeup a pure no-op instead of a redundant
-	// recovery.
-	suspectSeq uint64 `json:"-"`
 	// recoveryDone is closed by the recovery worker on exit. Written
 	// by the initial worker before it closes done (ordered by that
 	// close), read by stop() after waiting done — no extra mutex.

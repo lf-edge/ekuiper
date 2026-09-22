@@ -165,8 +165,9 @@ func (s *SQLConnection) dial(ctx context.Context) error {
 // cancellation. The replaced handle retires asynchronously — closed
 // detached from this call so a slow old pool never stalls the hot
 // path, drained by Close so nothing leaks past the logical lifetime.
-// A failure leaves the previous handle untouched for the Pool to
-// verify with Ping.
+// A failure leaves the previous handle untouched; the Pool worker
+// keeps owning the episode (Ping verification, then retries with
+// backoff until success).
 func (s *SQLConnection) Recover(ctx api.StreamContext) error {
 	recCtx, cancel := context.WithTimeout(ctx, defaultAttemptTimeout)
 	defer cancel()
