@@ -129,10 +129,11 @@ func (m *Manager) reserveCreating(key string) (*poolEntry, bool) {
 
 // fetchPlanKind is the locked decision for one fetch attempt. The lock is
 // held only inside planFetch (defer-unlocked); waiting, creation and
-// logging-free returns happen outside it — except attach, which stays
-// under the lock so a ready attach and a last-detach teardown remain
-// mutually exclusive (attach still reaches the preexisting GetStatus path,
-// A2 debt, stated here so nobody mistakes this for final lock discipline).
+// logging-free returns happen outside it — including attach, which only
+// registers the ref under the lock so a ready attach and a last-detach
+// teardown remain mutually exclusive. Registration is structural-only
+// (no status read, no callback); the initial state delivery runs after
+// unlock via deliverInitial.
 type fetchPlanKind int
 
 const (
