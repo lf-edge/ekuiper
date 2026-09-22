@@ -81,6 +81,25 @@ type StatefulDialer interface {
 	Status(ctx api.StreamContext) ConnectionStatus
 }
 
+// PoolRecoverableConnection is implemented by providers whose runtime
+// recovery is owned by the Pool (e.g. SQL). It is mutually exclusive
+// with StatefulDialer: a provider implementing both is treated as
+// self-recovering, and the Pool never starts its recovery worker.
+//
+// Recover performs a single bounded recovery attempt: build a
+// candidate, verify it, and install it so subsequent operations use
+// the new handle. It must not retry or back off internally (the Pool
+// worker owns the rhythm), must honor ctx (per-attempt deadline on
+// top of lifecycle cancellation), and must not invoke Pool status
+// callbacks or mutate Pool-visible status: recovering/disconnected/
+// connected transitions belong to the Pool. A nil return means the
+// new handle is installed and usable; an error return leaves prior
+// state untouched for the Pool to verify with Ping.
+type PoolRecoverableConnection interface {
+	Connection
+	Recover(ctx api.StreamContext) error
+}
+
 type ConnectionProvider func(ctx api.StreamContext) Connection
 
 var (
