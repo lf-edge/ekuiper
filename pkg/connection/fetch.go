@@ -48,6 +48,10 @@ type FetchOptions struct {
 	Type            string
 	Props           map[string]any
 	// StatusHandler receives connection status changes for this ref.
+	// Contract: return promptly, memory-only (no I/O, no blocking or
+	// waiting), and never synchronously re-enter Pool operations that
+	// can produce another delivery on the same Meta (self-deadlock on
+	// the per-Meta event serialization). See Meta.eventMu.
 	StatusHandler api.StatusChangeHandler
 }
 

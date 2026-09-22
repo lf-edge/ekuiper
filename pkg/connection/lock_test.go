@@ -16,6 +16,7 @@ package connection
 
 import (
 	"context"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -172,4 +173,114 @@ func TestAttemptStreamContextIsBoundedServerScope(t *testing.T) {
 		t.Fatal("attempt scope died before its deadline")
 	case <-time.After(5 * time.Millisecond):
 	}
+}
+
+type statusEvent struct {
+	status string
+	errMsg string
+}
+
+// TestEventOrderingPreservesEveryTransition pins the eventMu contract
+// for sequential transitions: each NotifyStatus is delivered exactly
+// once, in order, with its own exact event snapshot. Transitions are
+// never coalesced: a disconnected event followed by connected must
+// both reach the consumer (metrics record per-transition side
+// effects such as lastDisconnectTime, so swallowing is data loss).
+func TestEventOrderingPreservesEveryTransition(t *testing.T) {
+	m := newStateMeta()
+	var mu sync.Mutex
+	var got []statusEvent
+	m.AddRef("r1", func(s, e string) {
+		mu.Lock()
+		got = append(got, statusEvent{s, e})
+		mu.Unlock()
+	})
+	m.NotifyStatus(api.ConnectionDisconnected, "down")
+	m.NotifyStatus(api.ConnectionConnected, "")
+	mu.Lock()
+	defer mu.Unlock()
+	require.Equal(t, []statusEvent{
+		{api.ConnectionDisconnected, "down"},
+		{api.ConnectionConnected, ""},
+	}, got)
+}
+
+// TestInitialDeliveryJoinsEventSerialization pins the gated
+// interleaving of deliverInitial with a broadcast: the broadcast
+// holds eventMu inside a slow consumer, the initial delivery queues
+// behind it, and neither delivery inverts nor swallows. The new
+// consumer observes exactly the serialized latest state. A same-state
+// duplicate (connected, connected) would be allowed here by design;
+// this scenario asserts the exact single each, which is the
+// deterministic outcome of this gating.
+func TestInitialDeliveryJoinsEventSerialization(t *testing.T) {
+	m := newStateMeta()
+	var mu sync.Mutex
+	var oldGot, newGot []statusEvent
+	entered := make(chan struct{})
+	var enterOnce sync.Once
+	release := make(chan struct{})
+	m.AddRef("old", func(s, e string) {
+		mu.Lock()
+		oldGot = append(oldGot, statusEvent{s, e})
+		mu.Unlock()
+		enterOnce.Do(func() { close(entered) })
+		<-release
+	})
+
+	// Phase 1: broadcast holds eventMu inside the slow consumer.
+	notifyDone := make(chan struct{})
+	go func() {
+		m.NotifyStatus(api.ConnectionDisconnected, "down")
+		close(notifyDone)
+	}()
+	select {
+	case <-entered:
+	case <-time.After(2 * time.Second):
+		t.Fatal("broadcast did not reach the slow consumer")
+	}
+
+	// Register + deliver while the broadcast still holds eventMu:
+	// the initial delivery queues behind it deterministically.
+	newHandler := func(s, e string) {
+		mu.Lock()
+		newGot = append(newGot, statusEvent{s, e})
+		mu.Unlock()
+	}
+	m.AddRef("new", newHandler)
+	deliverDone := make(chan struct{})
+	go func() {
+		m.deliverInitial("new", newHandler)
+		close(deliverDone)
+	}()
+
+	close(release)
+	select {
+	case <-notifyDone:
+	case <-time.After(2 * time.Second):
+		t.Fatal("broadcast did not complete after release")
+	}
+	select {
+	case <-deliverDone:
+	case <-time.After(2 * time.Second):
+		t.Fatal("initial delivery did not complete after release")
+	}
+
+	mu.Lock()
+	require.Equal(t, []statusEvent{{api.ConnectionDisconnected, "down"}}, oldGot)
+	require.Equal(t, []statusEvent{{api.ConnectionDisconnected, "down"}}, newGot)
+	mu.Unlock()
+
+	// Phase 2: the next transition reaches both consumers exactly once.
+	m.NotifyStatus(api.ConnectionConnected, "")
+	mu.Lock()
+	defer mu.Unlock()
+	require.Equal(t, []statusEvent{
+		{api.ConnectionDisconnected, "down"},
+		{api.ConnectionConnected, ""},
+	}, oldGot)
+	require.Equal(t, []statusEvent{
+		{api.ConnectionDisconnected, "down"},
+		{api.ConnectionConnected, ""},
+	}, newGot)
 }
