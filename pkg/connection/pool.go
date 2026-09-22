@@ -307,16 +307,108 @@ func FetchConnection(ctx api.StreamContext, refId, typ string, props map[string]
 	return fetchInternal(ctx, opts)
 }
 
+// reserveCreating installs a creating reservation for key under one
+// critical section. It reports false when the key is already present,
+// so Fetch/Create/Reload share a single reservation path.
+func (m *Manager) reserveCreating(key string) (*poolEntry, bool) {
+	m.Lock()
+	defer m.Unlock()
+	if _, ok := m.connectionPool[key]; ok {
+		return nil, false
+	}
+	e := &poolEntry{state: entryCreating, ready: make(chan struct{})}
+	m.connectionPool[key] = e
+	return e, true
+}
+
+// fetchPlanKind is the locked decision for one fetch attempt. The lock is
+// held only inside planFetch (defer-unlocked); waiting, creation and
+// logging-free returns happen outside it — except attach, which stays
+// under the lock so a ready attach and a last-detach teardown remain
+// mutually exclusive (attach still reaches the preexisting GetStatus path,
+// A2 debt, stated here so nobody mistakes this for final lock discipline).
+type fetchPlanKind int
+
+const (
+	fetchCreate fetchPlanKind = iota
+	fetchAttached
+	fetchWaitCreating
+	fetchWaitRemoving
+	fetchFailed
+)
+
+type fetchPlan struct {
+	kind fetchPlanKind
+	// fetchCreate: reserved entry plus the immutable props clone.
+	entry *poolEntry
+	props map[string]any
+	// fetchAttached: handle attached atomically under the lock.
+	cw *ConnWrapper
+	// fetchWaitCreating: creation entry to wait on (e.err read after
+	// ready-close is safe: immutable past close).
+	waitEntry *poolEntry
+	wait      <-chan struct{}
+	// fetchWaitRemoving: teardown channel to wait out.
+	removed <-chan struct{}
+	err     error
+}
+
+// planFetch decides one fetch attempt under a single critical section.
+func (m *Manager) planFetch(ctx api.StreamContext, opts FetchOptions) fetchPlan {
+	m.Lock()
+	defer m.Unlock()
+	e, ok := m.connectionPool[opts.ConnectionKey]
+	if !ok {
+		if opts.RequireExisting {
+			return fetchPlan{kind: fetchFailed, err: fmt.Errorf("connection %s not existed", opts.ConnectionKey)}
+		}
+		e := &poolEntry{state: entryCreating, ready: make(chan struct{})}
+		m.connectionPool[opts.ConnectionKey] = e
+		// Shallow-copy the caller map: Meta.Props is immutable once
+		// inside the Pool. maps.Clone(nil) is nil, so no nil guard
+		// needed. Connectors requiring deep-copy semantics must
+		// normalize before fetching.
+		return fetchPlan{kind: fetchCreate, entry: e, props: maps.Clone(opts.Props)}
+	}
+	switch e.state {
+	case entryReady:
+		if err := checkCompatible(e.meta, opts); err != nil {
+			return fetchPlan{kind: fetchFailed, err: err}
+		}
+		conf.Log.Infof("FetchConnection return existed conn %s", e.meta.ID)
+		if e.meta.ID != opts.RefID {
+			conf.Log.Infof("action=reuse_connection connId=%s type=%s connectionKey=%s rule=%s op=%s refId=%s", e.meta.ID, opts.Type, e.meta.ID, ctx.GetRuleId(), ctx.GetOpId(), opts.RefID)
+		}
+		cw, err := attachToMeta(e.meta, opts.RefID, opts.StatusHandler)
+		if err != nil {
+			return fetchPlan{kind: fetchFailed, err: err}
+		}
+		return fetchPlan{kind: fetchAttached, cw: cw}
+	case entryCreating:
+		return fetchPlan{kind: fetchWaitCreating, waitEntry: e, wait: e.ready}
+	default: // entryRemoving
+		if opts.RequireExisting {
+			return fetchPlan{kind: fetchFailed, err: ErrConnectionRemoving}
+		}
+		// A teardown owns this key. Wait it out (or caller
+		// cancel) and re-resolve: after cleanup the key is
+		// absent and this fetch creates fresh, exactly as if
+		// it had blocked on the old global-lock Close path.
+		if e.removed == nil {
+			return fetchPlan{kind: fetchFailed, err: ErrConnectionRemoving}
+		}
+		return fetchPlan{kind: fetchWaitRemoving, removed: e.removed}
+	}
+}
+
 // fetchInternal implements lookup-or-create plus attach. Resolution and
-// attach share one Manager critical section per attempt, so a ready
-// attach and a last-detach teardown are mutually exclusive: either the
-// fetch lands first (the later detach sees refs and stands down) or the
-// teardown wins (the fetch observes removing, never the dying Meta).
+// attach share one Manager critical section per attempt (inside
+// planFetch), so a ready attach and a last-detach teardown are mutually
+// exclusive: either the fetch lands first (the later detach sees refs
+// and stands down) or the teardown wins (the fetch observes removing,
+// never the dying Meta).
 //
 //   - Ready entry: compatibility-check, then attach, all under the lock.
-//     AddRef still reaches the preexisting GetStatus path (network I/O
-//     under the lock is A2 debt, stated here so nobody mistakes this for
-//     the final lock discipline).
 //   - Creating entry: wait for the round, then re-resolve by key (the
 //     entry pointer may have turned over while waiting).
 //   - Removing entry: anonymous fetches wait for cleanup and retry the
@@ -327,79 +419,42 @@ func FetchConnection(ctx api.StreamContext, refId, typ string, props map[string]
 // The initiating caller ctx only bounds waiting. Shared creation runs on
 // the manager scope, so one caller going away never cancels creation for
 // the others.
+//
+// fetchInternal itself never touches the Manager lock; every attempt goes
+// through planFetch.
 func fetchInternal(ctx api.StreamContext, opts FetchOptions) (*ConnWrapper, error) {
 	for {
 		m := globalConnectionManager.Load()
-		m.Lock()
-		e, ok := m.connectionPool[opts.ConnectionKey]
-		if !ok {
-			if opts.RequireExisting {
-				m.Unlock()
-				return nil, fmt.Errorf("connection %s not existed", opts.ConnectionKey)
-			}
-			e = &poolEntry{state: entryCreating, ready: make(chan struct{})}
-			m.connectionPool[opts.ConnectionKey] = e
-			// Shallow-copy the caller map: Meta.Props is immutable once
-			// inside the Pool. maps.Clone(nil) is nil, so no nil guard
-			// needed. Connectors requiring deep-copy semantics must
-			// normalize before fetching.
-			props := maps.Clone(opts.Props)
-			m.Unlock()
-			meta, err := m.runCreation(e, opts.ConnectionKey, opts.Type, props, false, nil, opts.RefID, opts.StatusHandler)
+		plan := m.planFetch(ctx, opts)
+		switch plan.kind {
+		case fetchAttached:
+			return plan.cw, nil
+		case fetchFailed:
+			return nil, plan.err
+		case fetchCreate:
+			meta, err := m.runCreation(plan.entry, opts.ConnectionKey, opts.Type, plan.props, false, nil, opts.RefID, opts.StatusHandler)
 			if err != nil {
 				return nil, err
 			}
 			conf.Log.Infof("FetchConnection return new conn %s", meta.ID)
 			return meta.cw, nil
-		}
-		switch e.state {
-		case entryReady:
-			if err := checkCompatible(e.meta, opts); err != nil {
-				m.Unlock()
-				return nil, err
-			}
-			conf.Log.Infof("FetchConnection return existed conn %s", e.meta.ID)
-			if e.meta.ID != opts.RefID {
-				conf.Log.Infof("action=reuse_connection connId=%s type=%s connectionKey=%s rule=%s op=%s refId=%s", e.meta.ID, opts.Type, e.meta.ID, ctx.GetRuleId(), ctx.GetOpId(), opts.RefID)
-			}
-			cw, err := attachToMeta(e.meta, opts.RefID, opts.StatusHandler)
-			m.Unlock()
-			if err != nil {
-				return nil, err
-			}
-			return cw, nil
-		case entryCreating:
-			ch := e.ready
-			m.Unlock()
+		case fetchWaitCreating:
 			select {
 			case <-ctx.Done():
 				return nil, ctx.Err()
-			case <-ch:
+			case <-plan.wait:
 			}
-			// e is immutable past ready-close, so reading err here
-			// is safe even if the key has since turned over.
-			if e.err != nil {
-				return nil, e.err
+			// plan.waitEntry is immutable past ready-close, so reading
+			// err here is safe even if the key has since turned over.
+			if plan.waitEntry.err != nil {
+				return nil, plan.waitEntry.err
 			}
 			continue
-		default: // entryRemoving
-			if opts.RequireExisting {
-				m.Unlock()
-				return nil, ErrConnectionRemoving
-			}
-			// A teardown owns this key. Wait it out (or caller
-			// cancel) and re-resolve: after cleanup the key is
-			// absent and this fetch creates fresh, exactly as if
-			// it had blocked on the old global-lock Close path.
-			removed := e.removed
-			m.Unlock()
-			if removed == nil {
-				return nil, ErrConnectionRemoving
-			}
+		default: // fetchWaitRemoving
 			select {
 			case <-ctx.Done():
 				return nil, ctx.Err()
-			case <-removed:
+			case <-plan.removed:
 				continue
 			}
 		}
@@ -524,15 +579,11 @@ func ReloadNamedConnection() error {
 		typ := names[1]
 		id := names[2]
 		m := globalConnectionManager.Load()
-		m.Lock()
-		if _, ok := m.connectionPool[id]; ok {
-			m.Unlock()
+		e, reserved := m.reserveCreating(id)
+		if !reserved {
 			continue
 		}
-		e := &poolEntry{state: entryCreating, ready: make(chan struct{})}
-		m.connectionPool[id] = e
 		cloned := maps.Clone(props)
-		m.Unlock()
 		// Reload semantics differ from Create: the KV record is already
 		// committed, so a static failure must NOT hide the resource.
 		// Provision/runtime failure publishes a manageable Meta in
@@ -602,37 +653,65 @@ func CreateNamedConnection(ctx api.StreamContext, id, typ string, props map[stri
 	return createNamedConnection(ctx, id, typ, props)
 }
 
-func createNamedConnection(ctx api.StreamContext, id, typ string, props map[string]any) (*ConnWrapper, error) {
-	m := globalConnectionManager.Load()
+type namedCreateKind int
+
+const (
+	namedCreate namedCreateKind = iota
+	namedWait
+	namedFailed
+)
+
+type namedCreatePlan struct {
+	kind namedCreateKind
+	// namedCreate: reserved entry plus the immutable props clone.
+	entry *poolEntry
+	props map[string]any
+	// namedWait: creation entry to wait on via waitNamedCreation.
+	waitEntry *poolEntry
+	wait      <-chan struct{}
+	err       error
+}
+
+// planNamedCreate decides one named creation attempt under a single
+// critical section.
+func (m *Manager) planNamedCreate(id string, props map[string]any) namedCreatePlan {
 	m.Lock()
+	defer m.Unlock()
 	if e, ok := m.connectionPool[id]; ok {
 		switch e.state {
 		case entryReady:
-			m.Unlock()
-			return nil, fmt.Errorf("connection %v already been created", id)
+			return namedCreatePlan{kind: namedFailed, err: fmt.Errorf("connection %v already been created", id)}
 		case entryCreating:
-			ch := e.ready
-			m.Unlock()
-			return waitNamedCreation(ctx, m, e, ch, id)
+			return namedCreatePlan{kind: namedWait, waitEntry: e, wait: e.ready}
 		default: // entryRemoving
-			m.Unlock()
-			return nil, ErrConnectionRemoving
+			return namedCreatePlan{kind: namedFailed, err: ErrConnectionRemoving}
 		}
 	}
 	e := &poolEntry{state: entryCreating, ready: make(chan struct{})}
 	m.connectionPool[id] = e
-	cloned := maps.Clone(props)
-	m.Unlock()
-	// Static ordering: Provision, then persist, then publish, then worker.
-	// A persist failure publishes only an error: no Meta, no worker.
-	// Named creation carries no creator ref: zero-ref named is idle.
-	meta, err := m.runCreation(e, id, typ, cloned, true, func() error {
-		return storeConnectionMeta(typ, id, cloned)
-	}, "", nil)
-	if err != nil {
-		return nil, err
+	return namedCreatePlan{kind: namedCreate, entry: e, props: maps.Clone(props)}
+}
+
+func createNamedConnection(ctx api.StreamContext, id, typ string, props map[string]any) (*ConnWrapper, error) {
+	m := globalConnectionManager.Load()
+	plan := m.planNamedCreate(id, props)
+	switch plan.kind {
+	case namedFailed:
+		return nil, plan.err
+	case namedWait:
+		return waitNamedCreation(ctx, m, plan.waitEntry, plan.wait, id)
+	default:
+		// Static ordering: Provision, then persist, then publish, then worker.
+		// A persist failure publishes only an error: no Meta, no worker.
+		// Named creation carries no creator ref: zero-ref named is idle.
+		meta, err := m.runCreation(plan.entry, id, typ, plan.props, true, func() error {
+			return storeConnectionMeta(typ, id, plan.props)
+		}, "", nil)
+		if err != nil {
+			return nil, err
+		}
+		return meta.cw, nil
 	}
-	return meta.cw, nil
 }
 
 // waitNamedCreation shares a concurrent creation round without promoting
@@ -1009,13 +1088,18 @@ func detachLocked(m *Manager, ctx api.StreamContext, conId, refId string) (meta 
 }
 
 // provisionConnection runs provider lookup plus the synchronous static
-// Provision phase. It performs no Dial and no retry: static errors fail
-// here, before any Meta is published or worker started.
+// Provision phase. It performs no Dial, no retry and no remote
+// round-trip: static errors fail here, before any Meta is published or
+// worker started.
 //
-// Provision is static by contract (local validation only): it must not
-// acquire live resources, so a provisioned object dropped on a later
-// failure step is discarded undisposed rather than closed. Resource
-// ownership starts at Dial.
+// Ownership follows modules.Connection: Provision builds the local
+// candidate (validation plus any local candidate state/resource) and a
+// nil return transfers it to the Pool. The Pool may Close the candidate
+// at any time afterwards — including on a later creation-step failure
+// before any Dial, or when the lifecycle stops before Dial completes —
+// so Close must stay safe on a provisioned-but-never-dialed object.
+// A non-nil return means Provision itself failed: the provider owns
+// cleanup of any partial state, the Pool closes nothing.
 func provisionConnection(ctx api.StreamContext, key, typ string, props map[string]any) (modules.Connection, error) {
 	connRegister, ok := modules.GetConnectionProvider(strings.ToLower(typ))
 	if !ok {
