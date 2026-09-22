@@ -95,7 +95,8 @@ func (meta *Meta) recoveryLoop(conn modules.PoolRecoverableConnection, bo *backo
 //	connected + verifying -> Ping verify: healthy reopens the gate,
 //	  failed records disconnected and falls through to recovery.
 //	disconnected          -> confirmed fault (consumer report or a
-//	  probe flip): backoff, recovering, one Recover attempt.
+//	  probe flip): the worker owns the episode from here, retrying
+//	  with backoff until success or lifecycle end.
 //	anything else         -> stale: connected+ready, recovering owned
 //	  by an in-flight attempt, or connecting owned by initial dial.
 //
@@ -125,24 +126,32 @@ func (meta *Meta) handleSuspect(conn modules.PoolRecoverableConnection, bo *back
 	if status != api.ConnectionDisconnected {
 		return
 	}
-	// Confirmed fault: one bounded recovery attempt after backoff.
-	// A single attempt per wakeup, never an internal retry loop —
-	// the next wakeup (if any) owns the next attempt.
-	if !meta.sleepBackoff(bo) {
-		return
+	// Own the disconnected episode: attempt until success or
+	// lifecycle end. One attempt per backoff step, never an internal
+	// tight loop. New wakeups during the episode are absorbed by the
+	// loop above (sequence), so concurrent reports never fork a
+	// second episode — and a parked consumer never needs to fail
+	// again to keep recovery going. Each cycle re-announces through
+	// disconnected/recovering so lastError stays fresh for operators;
+	// all of it shares the one parked generation.
+	for {
+		if !meta.sleepBackoff(bo) {
+			return
+		}
+		meta.NotifyStatus(ConnectionRecovering, "")
+		recCtx, cancel := attemptStreamContext(meta.lifecycleCtx, recoveryAttemptTimeout)
+		err := conn.Recover(recCtx)
+		cancel()
+		if meta.lifecycleCtx.Err() != nil {
+			return
+		}
+		if err != nil {
+			meta.NotifyStatus(api.ConnectionDisconnected, err.Error())
+			continue
+		}
+		bo.Reset()
+		break
 	}
-	meta.NotifyStatus(ConnectionRecovering, "")
-	recCtx, cancel := attemptStreamContext(meta.lifecycleCtx, recoveryAttemptTimeout)
-	err := conn.Recover(recCtx)
-	cancel()
-	if meta.lifecycleCtx.Err() != nil {
-		return
-	}
-	if err != nil {
-		meta.NotifyStatus(api.ConnectionDisconnected, err.Error())
-		return
-	}
-	bo.Reset()
 	// Success: the provider installed and verified the candidate, so
 	// the new handle is healthy by construction. Only this worker
 	// leaves recovering for a pool-recovered connection (suspects

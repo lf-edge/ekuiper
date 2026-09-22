@@ -36,6 +36,9 @@ type recoverableFakeConn struct {
 	probeConn
 	recoverErr   error
 	recoverCalls atomic.Int32
+	// onRecover scripts per-attempt errors when set (call count
+	// starts at 1); nil falls back to recoverErr.
+	onRecover func(call int32) error
 	// recoverRelease gates Recover's return; nil returns at once.
 	recoverRelease chan struct{}
 	// slowCancelTail simulates an uncancellable provider wind-down
@@ -47,7 +50,7 @@ type recoverableFakeConn struct {
 }
 
 func (f *recoverableFakeConn) Recover(ctx api.StreamContext) error {
-	f.recoverCalls.Add(1)
+	call := f.recoverCalls.Add(1)
 	if f.recoverRelease != nil {
 		select {
 		case <-f.recoverRelease:
@@ -60,6 +63,9 @@ func (f *recoverableFakeConn) Recover(ctx api.StreamContext) error {
 	f.mu.Lock()
 	f.events = append(f.events, "recover-return")
 	f.mu.Unlock()
+	if f.onRecover != nil {
+		return f.onRecover(call)
+	}
 	return f.recoverErr
 }
 
@@ -195,27 +201,61 @@ func TestRecoveryVerifyFailRecovers(t *testing.T) {
 	require.Contains(t, seen, ConnectionRecovering)
 }
 
-// TestRecoveryFailStaysDisconnected: a failed Recover parks on
-// disconnected with the attempt error, gate closed.
-func TestRecoveryFailStaysDisconnected(t *testing.T) {
+// TestRecoveryRetriesDisconnectedEpisode: the worker owns a failed
+// episode — it keeps attempting with backoff (gate closed, latest
+// error recorded) until the lifecycle ends, so a parked consumer
+// never needs to fail again to keep recovery going.
+func TestRecoveryRetriesDisconnectedEpisode(t *testing.T) {
 	fake := newRecoverableFake()
 	fake.recoverErr = errors.New("recover down")
 	fake.pingErr = errors.New("verify down")
 	m := newWorkerMeta(t, fake)
-	defer m.lifecycleCancel()
 
 	m.cw.ReportSuspectedFailure()
-	// Wait for the episode terminal state, not the intermediate
-	// verify-failed disconnected (which precedes the Recover call).
+	// The episode persists across attempts: more than one Recover,
+	// still disconnected, gate still closed.
 	require.Eventually(t, func() bool {
-		s, _ := m.GetStatus()
-		return s == api.ConnectionDisconnected && fake.recoverCalls.Load() == 1
+		return fake.recoverCalls.Load() >= 2
 	}, 5*time.Second, 5*time.Millisecond)
-	ready, _ := workerGate(t, m)
-	require.False(t, ready)
 	s, e := m.GetStatus()
 	require.Equal(t, api.ConnectionDisconnected, s)
 	require.Equal(t, "recover down", e)
+	ready, _ := workerGate(t, m)
+	require.False(t, ready)
+
+	// Lifecycle end exits the episode: no hang, worker joined.
+	m.lifecycleCancel()
+	require.Eventually(t, func() bool {
+		select {
+		case <-m.recoveryDone:
+			return true
+		default:
+			return false
+		}
+	}, 5*time.Second, 5*time.Millisecond)
+}
+
+// TestRecoverySucceedsAfterRetries: failed attempts keep the episode
+// open; a later success reopens the gate for all parked waiters.
+func TestRecoverySucceedsAfterRetries(t *testing.T) {
+	fake := newRecoverableFake()
+	fake.pingErr = errors.New("verify down")
+	fake.onRecover = func(call int32) error {
+		if call < 3 {
+			return errors.New("still down")
+		}
+		return nil
+	}
+	m := newWorkerMeta(t, fake)
+	defer m.lifecycleCancel()
+
+	m.cw.ReportSuspectedFailure()
+	require.Eventually(t, func() bool {
+		ready, _ := workerGate(t, m)
+		s, _ := m.GetStatus()
+		return ready && s == api.ConnectionConnected
+	}, 5*time.Second, 5*time.Millisecond)
+	require.Equal(t, int32(3), fake.recoverCalls.Load())
 }
 
 // TestRecoveryStormSingleAttempt: a suspect storm collapsing into one
