@@ -27,10 +27,10 @@ import (
 // dropNameConnection validates and drops one ready key under a single
 // Manager critical section. Caller holds m's lock and keeps using m
 // afterwards. Validation, the single-key KV delete and the
-// ready→removing flip are atomic: a KV failure returns an error with
-// no state change at all (the entry stays ready throughout, so a
-// concurrent Fetch simply attaches). The stop itself still runs
-// outside the lock via finishStop.
+// ready→removing flip are atomic: on KV failure no pool state changes,
+// so Fetch waiters blocked on the Manager lock during the delete
+// subsequently observe the original ready entry. The stop itself still
+// runs outside the lock via finishStop.
 func dropNameConnection(m *Manager, ctx api.StreamContext, selId string) (meta *Meta, stop func(api.StreamContext), err error) {
 	e, ok := m.connectionPool[selId]
 	if !ok {
