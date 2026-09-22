@@ -98,12 +98,15 @@ func (s *Sock) Provision(ctx api.StreamContext, conId string, props map[string]a
 	sock.SetPipeEventHook(func(ev mangos.PipeEvent, p mangos.Pipe) {
 		switch ev {
 		case mangos.PipeEventAttached:
+			// Publish state before waking Dial: Dial returns on
+			// close(ready), so Store must happen first, otherwise
+			// Send right after Dial can observe connected==false.
+			s.connected.Store(true)
+			s.status.Store(modules.ConnectionStatus{Status: api.ConnectionConnected})
 			once.Do(func() {
 				ctx.GetLogger().Infof("nng connection is ready")
 				close(s.ready)
 			})
-			s.connected.Store(true)
-			s.status.Store(modules.ConnectionStatus{Status: api.ConnectionConnected})
 			if s.scHandler != nil {
 				s.scHandler(api.ConnectionConnected, "")
 			}

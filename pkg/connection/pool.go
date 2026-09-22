@@ -436,39 +436,44 @@ func (m *Manager) runCreation(e *poolEntry, key, typ string, props map[string]an
 	if err == nil && persist != nil {
 		err = persist()
 	}
-	// Provider Close must never run under the Manager lock. Publish the
-	// round outcome under the lock, then release a failed candidate
+	// Provider Close must never run under the Manager lock. The publish
+	// decision runs locked (with defer); a failed candidate is released
 	// outside it. After the registered-flag fix (WS/SSE) a
 	// provisioned-but-never-dialed Close is a no-op for endpoint
 	// providers and a local dispose for the rest, so a fresh round
 	// starting right after publishing the failure cannot be disturbed
 	// by the cleanup still in flight.
+	meta, toClose, perr := m.publishCreation(e, key, typ, props, named, conn, err, attachRef, sc)
+	if toClose != nil {
+		// The candidate belongs to the Pool from a nil Provision
+		// return on; a failed later step must release it instead
+		// of dropping the reference.
+		toClose.Close(serverStreamContext(m.ctx))
+	}
+	return meta, perr
+}
+
+// publishCreation publishes one creation round outcome atomically under a
+// single Manager critical section (defer-unlocked). It never runs provider
+// code: a candidate needing release is returned as toClose for the caller
+// to dispose outside the lock.
+func (m *Manager) publishCreation(e *poolEntry, key, typ string, props map[string]any, named bool, conn modules.Connection, perr error, attachRef string, sc api.StatusChangeHandler) (meta *Meta, toClose modules.Connection, err error) {
 	m.Lock()
+	defer m.Unlock()
 	// Verify our reservation survived. Init/reset is contractually
 	// serialized with mutations, so the only way out here is a stale
 	// entry from a misuse path — never silently publish over it.
 	cur, ok := m.connectionPool[key]
 	if !ok || cur != e || cur.state != entryCreating {
-		m.Unlock()
-		if conn != nil {
-			conn.Close(serverStreamContext(m.ctx))
-		}
-		return nil, ErrConnectionClosed
+		return nil, conn, ErrConnectionClosed
 	}
-	if err != nil {
-		e.err = err
+	if perr != nil {
+		e.err = perr
 		close(e.ready)
 		delete(m.connectionPool, key)
-		m.Unlock()
-		if conn != nil {
-			// The candidate belongs to the Pool from a nil Provision
-			// return on; a failed later step must release it instead
-			// of dropping the reference.
-			conn.Close(serverStreamContext(m.ctx))
-		}
-		return nil, err
+		return nil, conn, perr
 	}
-	meta := newMeta(m, key, typ, props, named)
+	meta = newMeta(m, key, typ, props, named)
 	meta.pendingConn = conn
 	meta.cw = newConnWrapper(meta)
 	if attachRef != "" {
@@ -477,8 +482,7 @@ func (m *Manager) runCreation(e *poolEntry, key, typ string, props map[string]an
 	e.meta = meta
 	e.state = entryReady
 	close(e.ready)
-	m.Unlock()
-	return meta, nil
+	return meta, nil, nil
 }
 
 // attachToMeta stores one consumer reference and returns the stable
@@ -724,55 +728,114 @@ func finishStop(m *Manager, key string, stop func(api.StreamContext), ctx api.St
 	m.Unlock()
 }
 
+// dropPlan is the locked decision for Drop/Update: the lock is held only
+// inside planDrop/planUpdateDrop (defer-unlocked). Execution (waiting,
+// stopping) always happens outside the lock.
+//   - stop != nil: caller must finishStop outside the lock, then done.
+//   - wait != nil: a creation round owns the key; caller waits outside
+//     the lock and retries (bounded: Provision + persist only, no Dial).
+//   - err != nil: terminal error.
+//   - otherwise (stop == nil, wait == nil, err == nil): key is
+//     missing/removing; Drop reports success, Update reports its own error.
+type dropPlan struct {
+	stop func(api.StreamContext)
+	wait <-chan struct{}
+	err  error
+}
+
+// planDrop decides one Drop step under a single critical section.
+func (m *Manager) planDrop(ctx api.StreamContext, selId string) dropPlan {
+	m.Lock()
+	defer m.Unlock()
+	_, stop, err := dropNameConnection(m, ctx, selId)
+	if err == nil {
+		return dropPlan{stop: stop}
+	}
+	if !errors.Is(err, ErrConnectionRemoving) {
+		return dropPlan{err: err}
+	}
+	// ErrConnectionRemoving covers both creating and removing.
+	// Removing stays idempotent (nil). Creating must not report
+	// success: wait out the round and retry, mirroring the old
+	// global-lock behavior where Drop blocked until Create published.
+	e, ok := m.connectionPool[selId]
+	if !ok {
+		// Lost a race with a failed round's cleanup.
+		return dropPlan{}
+	}
+	if e.state == entryCreating {
+		return dropPlan{wait: e.ready}
+	}
+	return dropPlan{}
+}
+
+// planUpdateDrop decides the validate + drop handoff for Update under one
+// critical section, so no state change can slip between validation and the
+// drop. Creating yields wait (retry whole Update); removing yields err.
+func (m *Manager) planUpdateDrop(ctx api.StreamContext, id string) dropPlan {
+	m.Lock()
+	defer m.Unlock()
+	isInternal, err := isInternalConnection(m, id)
+	if err != nil {
+		if errors.Is(err, ErrConnectionRemoving) {
+			if e, ok := m.connectionPool[id]; ok && e.state == entryCreating {
+				return dropPlan{wait: e.ready}
+			}
+		}
+		return dropPlan{err: err}
+	}
+	if isInternal {
+		return dropPlan{err: fmt.Errorf("internal connection %v can't be edit", id)}
+	}
+	// Drop holds the lock only for validation and stop handoff; the
+	// previous generation is fully stopped and removed before creating
+	// the replacement, preserving drop-then-create ordering. Creation
+	// re-locks internally.
+	_, stop, err := dropNameConnection(m, ctx, id)
+	if err != nil {
+		if errors.Is(err, ErrConnectionRemoving) {
+			if e, ok := m.connectionPool[id]; ok && e.state == entryCreating {
+				return dropPlan{wait: e.ready}
+			}
+		}
+		return dropPlan{err: err}
+	}
+	return dropPlan{stop: stop}
+}
+
+// waitForRound waits out a creation round outside the Manager lock.
+func waitForRound(ctx api.StreamContext, m *Manager, wait <-chan struct{}) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-wait:
+		if globalConnectionManager.Load() != m {
+			return ErrConnectionClosed
+		}
+		return nil
+	}
+}
+
 func DropNameConnection(ctx api.StreamContext, selId string) error {
 	if selId == "" {
 		return fmt.Errorf("connection id should be defined")
 	}
 	m := globalConnectionManager.Load()
 	for {
-		m.Lock()
-		_, stop, err := dropNameConnection(m, ctx, selId)
-		if err == nil {
-			m.Unlock()
-			if stop != nil {
-				finishStop(m, selId, stop, ctx)
-			}
-			return nil
+		plan := m.planDrop(ctx, selId)
+		if plan.err != nil {
+			return plan.err
 		}
-		if !errors.Is(err, ErrConnectionRemoving) {
-			m.Unlock()
-			return err
-		}
-		// ErrConnectionRemoving covers both creating and removing.
-		// Removing stays idempotent (nil). Creating must not report
-		// success: wait out the creation round (bounded: Provision +
-		// persist only, no Dial) and retry, mirroring the old global-lock
-		// behavior where Drop blocked until Create published.
-		e, ok := m.connectionPool[selId]
-		if !ok {
-			// Lost a race with a failed round's cleanup.
-			m.Unlock()
-			return nil
-		}
-		if e.state == entryRemoving {
-			m.Unlock()
-			return nil
-		}
-		if e.state != entryCreating {
-			m.Unlock()
-			return nil
-		}
-		ch := e.ready
-		m.Unlock()
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-ch:
-			if globalConnectionManager.Load() != m {
-				return ErrConnectionClosed
+		if plan.wait != nil {
+			if err := waitForRound(ctx, m, plan.wait); err != nil {
+				return err
 			}
 			continue
 		}
+		if plan.stop != nil {
+			finishStop(m, selId, plan.stop, ctx)
+		}
+		return nil
 	}
 }
 
@@ -781,64 +844,23 @@ func UpdateConnection(ctx api.StreamContext, id, typ string, props map[string]an
 		return nil, fmt.Errorf("connection id and type should be defined")
 	}
 	// Validation + drop run under one hold of a single captured manager;
-	// creation re-locks internally, so the lock must be released in
-	// between (no defer across the call). A concurrent creation round is
+	// creation re-locks internally. A concurrent creation round is
 	// waited out and retried, consistent with DropNameConnection; a key
 	// already owned by teardown stays a hard error.
 	for {
 		m := globalConnectionManager.Load()
-		m.Lock()
-		isInternal, err := isInternalConnection(m, id)
-		if err != nil {
-			if errors.Is(err, ErrConnectionRemoving) {
-				if e, ok := m.connectionPool[id]; ok && e.state == entryCreating {
-					ch := e.ready
-					m.Unlock()
-					select {
-					case <-ctx.Done():
-						return nil, ctx.Err()
-					case <-ch:
-						if globalConnectionManager.Load() != m {
-							return nil, ErrConnectionClosed
-						}
-						continue
-					}
-				}
+		plan := m.planUpdateDrop(ctx, id)
+		if plan.wait != nil {
+			if err := waitForRound(ctx, m, plan.wait); err != nil {
+				return nil, err
 			}
-			m.Unlock()
-			return nil, err
+			continue
 		}
-		if isInternal {
-			m.Unlock()
-			return nil, fmt.Errorf("internal connection %v can't be edit", id)
+		if plan.err != nil {
+			return nil, plan.err
 		}
-		// Drop holds the lock only for validation and stop handoff; the
-		// previous generation is fully stopped and removed before creating
-		// the replacement, preserving drop-then-create ordering. Creation
-		// re-locks internally.
-		_, stop, err := dropNameConnection(m, ctx, id)
-		if err != nil {
-			if errors.Is(err, ErrConnectionRemoving) {
-				if e, ok := m.connectionPool[id]; ok && e.state == entryCreating {
-					ch := e.ready
-					m.Unlock()
-					select {
-					case <-ctx.Done():
-						return nil, ctx.Err()
-					case <-ch:
-						if globalConnectionManager.Load() != m {
-							return nil, ErrConnectionClosed
-						}
-						continue
-					}
-				}
-			}
-			m.Unlock()
-			return nil, err
-		}
-		m.Unlock()
-		if stop != nil {
-			finishStop(m, id, stop, ctx)
+		if plan.stop != nil {
+			finishStop(m, id, plan.stop, ctx)
 		}
 		return createNamedConnection(ctx, id, typ, props)
 	}
