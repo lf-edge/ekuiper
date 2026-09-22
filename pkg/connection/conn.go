@@ -115,6 +115,18 @@ func (cw *ConnWrapper) IsInitialized() bool {
 	return cw.initialized
 }
 
+// peekConn returns the published logical connection, or nil when the
+// worker has not published yet or published a failure. Pure read for
+// the health probe: it never waits for readiness.
+func (cw *ConnWrapper) peekConn() modules.Connection {
+	cw.l.RLock()
+	defer cw.l.RUnlock()
+	if !cw.initialized || cw.err != nil {
+		return nil
+	}
+	return cw.conn
+}
+
 // Status reports the last-known connection state, same pure-read
 // semantics as Meta.GetStatus: it never probes the provider.
 func (cw *ConnWrapper) Status() (string, string) {
