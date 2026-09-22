@@ -191,7 +191,7 @@ func (s *ConnectionTestSuite) TestConnStatus() {
 			resultMap, e := GetResponseResultMap(get)
 			fmt.Println(resultMap)
 			s.Require().NoError(e)
-			return resultMap["status"] == "connecting"
+			return resultMap["status"] == "recovering"
 		})
 		s.Require().True(r)
 	})
