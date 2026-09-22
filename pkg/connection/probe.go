@@ -115,8 +115,8 @@ func probeOne(meta *Meta, cw *ConnWrapper, timeout time.Duration) {
 	if _, isStateful := conn.(modules.StatefulDialer); isStateful {
 		return
 	}
-	pingCtx, cancel := context.WithTimeout(meta.lifecycleCtx, timeout)
-	err := conn.Ping(serverStreamContext(pingCtx))
+	pingCtx, cancel := attemptStreamContext(meta.lifecycleCtx, timeout)
+	err := conn.Ping(pingCtx)
 	cancel()
 	if err == nil {
 		return

@@ -115,12 +115,16 @@ func (s *SQLConnection) GetDB() *sql.DB {
 }
 
 func (s *SQLConnection) Ping(ctx api.StreamContext) error {
-	s.Lock()
-	defer s.Unlock()
+	// Pure health check: a single bounded attempt, never a dial. An
+	// absent handle means Dial never succeeded (or Close already ran);
+	// creating the handle belongs to Dial/Reconnect, not to a status
+	// read. Read-locked: Ping observes but never mutates.
+	s.RLock()
+	defer s.RUnlock()
 	pingCtx, cancel := context.WithTimeout(ctx, defaultAttemptTimeout)
 	defer cancel()
 	if s.db == nil {
-		return s.dial(pingCtx)
+		return fmt.Errorf("sql connection %s has no database handle", s.id)
 	}
 	return s.db.PingContext(pingCtx)
 }

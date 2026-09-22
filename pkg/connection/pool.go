@@ -211,13 +211,17 @@ func patrolConnectionStatus() {
 	}
 	m.RUnlock()
 	for _, t := range targets {
+		// Numeric gauge reports the availability class, not the full
+		// four-state model: connecting and recovering both mean
+		// "not serving yet" (0). The string status stays four-state
+		// on the API surface.
 		status, _ := t.meta.GetStatus()
 		switch status {
 		case api.ConnectionConnected:
 			ConnStatusGauge.WithLabelValues(t.name).Set(1)
 		case api.ConnectionDisconnected:
 			ConnStatusGauge.WithLabelValues(t.name).Set(-1)
-		case api.ConnectionConnecting:
+		case api.ConnectionConnecting, ConnectionRecovering:
 			ConnStatusGauge.WithLabelValues(t.name).Set(0)
 		}
 	}

@@ -24,6 +24,7 @@ import (
 	"go.nanomsg.org/mangos/v3/protocol/pair"
 	_ "go.nanomsg.org/mangos/v3/transport/ipc"
 
+	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
@@ -121,10 +122,24 @@ func TestConStatus(t *testing.T) {
 	}
 	if !c.connected.Load() {
 		st = c.Status(ctx)
-		assert.Equal(t, modules.ConnectionStatus{Status: api.ConnectionDisconnected}, st)
+		// Runtime detach after a completed attach reports recovering,
+		// not disconnected: async redial is already underway and the
+		// Pool never recovers NNG itself.
+		assert.Equal(t, modules.ConnectionStatus{Status: connection.ConnectionRecovering}, st)
 	} else {
 		require.FailNow(t, "failed to connect")
 	}
+	// The Pool callback observed the same runtime transition.
+	mu.Lock()
+	sawRecovering := false
+	for _, h := range statusHistory {
+		if h.Status == connection.ConnectionRecovering {
+			sawRecovering = true
+			break
+		}
+	}
+	mu.Unlock()
+	assert.True(t, sawRecovering, "expected a recovering callback after runtime detach, got %+v", statusHistory)
 	// ReConnect
 	sock, err = pair.NewSocket()
 	require.NoError(t, err)
