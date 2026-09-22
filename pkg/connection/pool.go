@@ -35,10 +35,12 @@ import (
 
 type Manager struct {
 	syncx.RWMutex
-	// Lock invariant (A2): the Manager lock is structural only. Under
-	// it: map/entry-state/pointer operations and ref registration.
+	// Lock invariant (A2): the Manager lock covers structural work
+	// (map/entry-state/pointer operations, ref registration) plus
+	// single-key KV/store CRUD, which is a bounded local op in the
+	// same failure domain as the in-memory map it mirrors.
 	// Never under it: provider I/O (Provision/Dial/Ping/Close),
-	// KV/store I/O, consumer-callback invocation, or blocking waits.
+	// consumer-callback invocation, or blocking waits.
 	// Heavy phases run outside the lock; callbacks are delivered
 	// after unlock via Meta.deliverInitial.
 	//
