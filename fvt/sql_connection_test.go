@@ -48,6 +48,15 @@ func TestSQLConnectionRegressionSuite(t *testing.T) {
 // 8s waits flaked in CI (initial source output timeout).
 const sqlFVTTimeout = 30 * time.Second
 
+// sqlFVTRequestTimeout bounds one rule stop/start REST request. Stop/start
+// attach or detach a pooled connection, which needs the Manager lock. While
+// the database is blackholed, a concurrent patrol health Ping can hold that
+// lock for up to one bounded SQL attempt (defaultAttemptTimeout, 10s); that
+// is pre-existing lock/status debt tracked for A2. The bound stays finite on
+// purpose: without the intended cancellation the reconnect loop never exits,
+// so the request would still time out and fail the test.
+const sqlFVTRequestTimeout = 20 * time.Second
+
 // TestIssue1227 verifies that a named SQL connection keeps retrying after the
 // database is unavailable during its first dial.
 func (s *SQLConnectionRegressionTestSuite) TestIssue1227NamedConnectionRecovers() {
@@ -242,7 +251,7 @@ func (s *SQLConnectionRegressionTestSuite) TestIssue1233StopAndRestartSQLRules()
 	stopResults := make(chan error, len(allRuleIDs))
 	for _, ruleID := range allRuleIDs {
 		go func(id string) {
-			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			ctx, cancel := context.WithTimeout(context.Background(), sqlFVTRequestTimeout)
 			defer cancel()
 			status, _, err := doFVTRequest(ctx, http.MethodPost, "rules/"+id+"/stop", "")
 			if err != nil {
@@ -268,7 +277,7 @@ func (s *SQLConnectionRegressionTestSuite) TestIssue1233StopAndRestartSQLRules()
 	startResults := make(chan error, len(allRuleIDs))
 	for _, ruleID := range allRuleIDs {
 		go func(id string) {
-			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			ctx, cancel := context.WithTimeout(context.Background(), sqlFVTRequestTimeout)
 			status, _, err := doFVTRequest(ctx, http.MethodPost, "rules/"+id+"/start", "")
 			cancel()
 			if err != nil {
