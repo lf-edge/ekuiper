@@ -90,8 +90,10 @@ func (w *WebsocketConnection) Ping(ctx api.StreamContext) error {
 
 func (w *WebsocketConnection) Close(ctx api.StreamContext) error {
 	if w.isServer {
-		UnRegisterWebSocketEndpoint(w.cfg.Datasource)
-	} else {
+		if w.cfg != nil {
+			UnRegisterWebSocketEndpoint(w.cfg.Datasource)
+		}
+	} else if w.client != nil {
 		w.client.Close(ctx)
 	}
 	return nil

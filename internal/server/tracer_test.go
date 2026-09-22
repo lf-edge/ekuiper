@@ -71,8 +71,8 @@ func (suite *RestTestSuite) TestTraceRule() {
 	require.NoError(suite.T(), json.Unmarshal(returnVal, &v))
 	for _, vv := range v {
 		if vv["id"] == "test54321" {
-			require.Equal(suite.T(), "running", v[0]["status"])
-			require.Equal(suite.T(), false, v[0]["trace"])
+			require.Equal(suite.T(), "running", vv["status"])
+			require.Equal(suite.T(), false, vv["trace"])
 		}
 	}
 }

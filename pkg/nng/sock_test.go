@@ -166,3 +166,28 @@ func TestSend(t *testing.T) {
 	err = c.Send(ctx, []byte("test"))
 	require.NoError(t, err)
 }
+
+func TestDialRespondsToCancel(t *testing.T) {
+	ctx := mockContext.NewMockContext("nngcancel", "op1")
+	c := CreateConnection(ctx).(*Sock)
+	require.NoError(t, c.Provision(ctx, "canceltest", map[string]any{
+		"url":      "tcp://127.0.0.1:1",
+		"protocol": "pair",
+	}))
+	cctx, cancel := ctx.WithCancel()
+	done := make(chan error, 1)
+	go func() {
+		done <- c.Dial(cctx)
+	}()
+	// Give Dial a chance to block on first-connect; cancel is
+	// effective regardless of the exact timing.
+	time.Sleep(200 * time.Millisecond)
+	cancel()
+	select {
+	case err := <-done:
+		require.ErrorIs(t, err, cctx.Err())
+	case <-time.After(5 * time.Second):
+		t.Fatal("Dial did not observe lifecycle cancellation")
+	}
+	require.NoError(t, c.Close(ctx))
+}

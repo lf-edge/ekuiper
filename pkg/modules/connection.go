@@ -26,7 +26,23 @@ type ConnectionStatus struct {
 }
 
 type Connection interface {
+	// Provision performs synchronous static validation and constructs
+	// the candidate object. It must not dial, retry, or depend on the
+	// remote being reachable.
+	//
+	// Ownership: a nil return transfers the candidate to the Pool.
+	// The Pool may Close it at any time afterwards — including when a
+	// later creation step (e.g. persist) fails before any Dial, or when
+	// the lifecycle stops before Dial completes. Close must therefore
+	// stay safe on a provisioned-but-never-dialed object.
+	// A non-nil return means Provision itself failed: the provider
+	// owns cleanup of any partial state, the Pool closes nothing.
 	Provision(ctx api.StreamContext, conId string, props map[string]any) error
+	// Dial performs one bounded connection attempt. It must honor ctx
+	// cancellation (return ctx.Err() promptly) or otherwise guarantee a
+	// finite block: the Pool stops a lifecycle by canceling its scope
+	// and waiting for the worker, so an uncancellable Dial hangs every
+	// stop path (Detach/Drop/reset).
 	Dial(ctx api.StreamContext) error
 	GetId(ctx api.StreamContext) string
 	Ping(ctx api.StreamContext) error
