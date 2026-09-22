@@ -35,13 +35,17 @@ import (
 )
 
 type SQLSourceConnector struct {
-	id            string
-	conf          *SQLConf
-	Query         sqlgen.SqlQueryGenerator
-	conn          *client2.SQLConnection
-	props         map[string]any
-	needReconnect bool
-	conId         string
+	id    string
+	conf  *SQLConf
+	Query sqlgen.SqlQueryGenerator
+	conn  *client2.SQLConnection
+	props map[string]any
+	conId string
+	// cw is the pooled connection attached at Connect time. The
+	// pooled object identity is stable across recovery, so conn is
+	// resolved once while cw serves WaitReady parks and suspect
+	// reports for every poll.
+	cw *connection.ConnWrapper
 	// refID is the consumer identity attached at Connect time. It is
 	// passed back verbatim at Close; never re-derived from ctx.
 	refID   string
@@ -152,6 +156,7 @@ func (s *SQLSourceConnector) Connect(ctx api.StreamContext, sc api.StatusChangeH
 	}
 	s.conId = cw.ID
 	s.refID = refID
+	s.cw = cw
 	conn, err := cw.Wait(ctx)
 	if conn == nil {
 		return fmt.Errorf("sql client not ready: %v", err)
@@ -179,13 +184,14 @@ func (s *SQLSourceConnector) Pull(ctx api.StreamContext, recvTime time.Time, ing
 func (s *SQLSourceConnector) queryData(ctx api.StreamContext, rcvTime time.Time, ingest api.TupleIngest, ingestError api.ErrorIngest) {
 	s.resetStats()
 	logger := ctx.GetLogger()
-	if s.needReconnect {
-		SqlSourceCounter.WithLabelValues(LblRecon, ctx.GetRuleId(), ctx.GetOpId()).Inc()
-		if err := retryReconnect(ctx, s.conn); err != nil {
-			logger.Errorf("reconnect db error %v", err)
-			ingestError(ctx, err)
-			return
-		}
+	// Park on the Pool gate first: connected is a fast state read,
+	// a closed gate waits for the recovery worker. The first failed
+	// poll surfaces below and reports a suspect; later polls park
+	// here instead of retrying locally.
+	if err := s.cw.WaitReady(ctx); err != nil {
+		logger.Errorf("wait sql connection ready error %v", err)
+		ingestError(ctx, err)
+		return
 	}
 	query, err := s.Query.SqlQueryStatement()
 	failpoint.Inject("StatementErr", func() {
@@ -205,11 +211,13 @@ func (s *SQLSourceConnector) queryData(ctx api.StreamContext, rcvTime time.Time,
 	})
 	if err != nil {
 		logger.Errorf("query sql error %v", err)
-		s.needReconnect = true
+		// First failure surfaces and reports a suspect; the Pool
+		// verifies and recovers while later polls park above. Only
+		// a failed QueryContext reports — statement, column-type
+		// and scan errors below are data errors, not transport.
+		s.cw.ReportSuspectedFailure()
 		ingestError(ctx, err)
 		return
-	} else if s.needReconnect {
-		s.needReconnect = false
 	}
 	cols, _ := rows.Columns()
 	types, err := rows.ColumnTypes()
