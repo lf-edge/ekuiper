@@ -21,12 +21,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/stretchr/testify/require"
 	_ "modernc.org/sqlite"
 
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
-	"github.com/lf-edge/ekuiper/v2/metrics"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
@@ -215,13 +213,15 @@ func TestSinkSqliteConnectorEndToEnd(t *testing.T) {
 	// Empty item fails in row building.
 	require.Error(t, s.collect(ctx, map[string]any{}))
 
-	// writeToDB error path sets needReconnect; breaking the pooled *sql.DB
-	// makes the next Exec fail, and Reconnect redials the sqlite file.
+	// writeToDB error path reports and recovers: breaking the pooled
+	// *sql.DB makes the next Exec fail and surface an IO error; the
+	// Pool worker opens a fresh handle on the same file, and the
+	// following write parks until it succeeds.
 	require.NoError(t, s.conn.GetDB().Close())
 	require.Error(t, s.Collect(ctx, &xsql.Tuple{Message: map[string]any{"id": 9}}))
-	require.True(t, s.needReconnect)
-	require.NoError(t, s.Collect(ctx, &xsql.Tuple{Message: map[string]any{"id": 9}}))
-	require.False(t, s.needReconnect)
+	require.Eventually(t, func() bool {
+		return s.Collect(ctx, &xsql.Tuple{Message: map[string]any{"id": 9}}) == nil
+	}, 30*time.Second, 200*time.Millisecond)
 
 	// Rowkind paths.
 	s2 := newSink(map[string]any{
@@ -273,13 +273,22 @@ func TestSinkSqliteConnectorMisc(t *testing.T) {
 		Maps: []map[string]any{
 			{"id": 1, "note": "a", "action": "insert"},
 			{"id": 1, "note": "b", "action": "update"},
-			// A bad row must not abort the batch; the error is only logged.
-			{"id": 2, "note": "c", "action": "mock"},
 		},
 	}))
 	var note string
 	require.NoError(t, s2.conn.GetDB().QueryRow(`SELECT note FROM t WHERE id = 1`).Scan(&note))
 	require.Equal(t, "b", note)
+	// A bad row aborts the batch with a plain data error (no silent
+	// loss) that is not an IO error (poison rows must not loop in
+	// the sink replay); rows before it stay written.
+	err = s2.CollectList(ctx, &xsql.TransformedTupleList{
+		Maps: []map[string]any{
+			{"id": 5, "note": "a", "action": "insert"},
+			{"id": 6, "note": "c", "action": "mock"},
+		},
+	})
+	require.Error(t, err)
+	require.False(t, errorx.IsIOError(err))
 
 	// Empty batch is a no-op.
 	require.NoError(t, s2.CollectList(ctx, &xsql.TransformedTupleList{}))
@@ -401,8 +410,8 @@ func TestSinkChunkedBuildErrorEndToEnd(t *testing.T) {
 	require.NoError(t, err)
 
 	// Force 2 chunks with a deterministically bad row in the second one.
-	// The build error must surface raw: no reconnect flag, no IO error
-	// (hence no sink retry), and nothing reaches the database.
+	// The build error must surface raw: no IO error (hence no sink
+	// retry), and nothing reaches the database.
 	s.maxParams = 4
 	err = s.collectList(ctx, []map[string]any{
 		{"a": 1, "b": 1},
@@ -412,31 +421,9 @@ func TestSinkChunkedBuildErrorEndToEnd(t *testing.T) {
 	})
 	require.Error(t, err)
 	require.False(t, errorx.IsIOError(err))
-	require.False(t, s.needReconnect)
 	var count int
 	require.NoError(t, s.conn.GetDB().QueryRow(`SELECT COUNT(*) FROM t`).Scan(&count))
 	require.Equal(t, 0, count)
-}
-
-func TestSinkSingleWriteReconnectsOnce(t *testing.T) {
-	require.NoError(t, connection.InitConnectionManager4Test())
-	ctx := mockContext.NewMockContext("sink_once", "op1")
-	dburl := fmt.Sprintf("sqlite://%s", filepath.Join(t.TempDir(), "once.db"))
-	s := &SQLSinkConnector{}
-	require.NoError(t, s.Provision(ctx, map[string]any{"dburl": dburl, "table": "t"}))
-	require.NoError(t, s.Connect(ctx, func(string, string) {}))
-	defer s.Close(ctx)
-	_, err := s.conn.GetDB().Exec(`CREATE TABLE t (a BIGINT)`)
-	require.NoError(t, err)
-
-	before := testutil.ToFloat64(metrics.IOCounter.WithLabelValues(
-		LblSql, metrics.LblSinkIO, LblReconn, ctx.GetRuleId(), ctx.GetOpId()))
-	s.needReconnect = true
-	require.NoError(t, s.collectList(ctx, []map[string]any{{"a": 1}}))
-	require.False(t, s.needReconnect)
-	after := testutil.ToFloat64(metrics.IOCounter.WithLabelValues(
-		LblSql, metrics.LblSinkIO, LblReconn, ctx.GetRuleId(), ctx.GetOpId()))
-	require.Equal(t, float64(1), after-before, "single write must reconnect exactly once")
 }
 
 func TestSQLConnectionPrefersDburl(t *testing.T) {
