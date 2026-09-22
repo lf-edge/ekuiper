@@ -15,6 +15,7 @@
 package connection
 
 import (
+	"context"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -154,4 +155,21 @@ func TestDropReservationAbortRestoresReady(t *testing.T) {
 	require.NotNil(t, cw)
 	require.NoError(t, DetachConnectionByRef(ctx, "drop-abort", "ref1"))
 	require.NoError(t, DropNameConnection(ctx, "drop-abort"))
+}
+
+// TestAttemptStreamContextIsBoundedServerScope pins the attempt-scope
+// rule: every provider attempt runs under an explicitly bounded,
+// server-owned scope — never a rule/request lifetime.
+func TestAttemptStreamContextIsBoundedServerScope(t *testing.T) {
+	actx, cancel := attemptStreamContext(context.Background(), 50*time.Millisecond)
+	defer cancel()
+	dl, ok := actx.Deadline()
+	require.True(t, ok)
+	require.WithinDuration(t, time.Now().Add(50*time.Millisecond), dl, 5*time.Second)
+	require.Equal(t, "", actx.GetRuleId())
+	select {
+	case <-actx.Done():
+		t.Fatal("attempt scope died before its deadline")
+	case <-time.After(5 * time.Millisecond):
+	}
 }

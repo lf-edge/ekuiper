@@ -47,9 +47,30 @@ type Connection interface {
 	// initially usable.
 	Dial(ctx api.StreamContext) error
 	GetId(ctx api.StreamContext) string
+	// Ping is a single bounded health-check attempt: no retry, no
+	// reconnect, no dial-on-empty. An absent handle (Dial never
+	// succeeded, or Close already ran) reports an error; creating
+	// the handle belongs to Dial/Reconnect, never to a status read.
+	// The Pool calls Ping on a bounded attempt scope; providers must
+	// honor its deadline rather than imposing their own unbounded
+	// block. Self-recovering clients (StatefulDialer) may answer
+	// from their local lifecycle flag instead of hitting the remote.
 	Ping(ctx api.StreamContext) error
 	api.Closable
 }
+
+// Attempt and cancellation contract (Pool side, applies to Dial, Ping
+// and the A3 Recover):
+//
+//   - Every attempt runs under an explicitly bounded, server-owned
+//     scope — never a rule/request lifetime, never unbounded. Dial
+//     waits for initial usability under plain cancellation (no blanket
+//     timeout); Ping/Recover additionally carry an attempt deadline.
+//   - Caller cancellation surfaces as ctx.Err(); lifecycle termination
+//     surfaces as the Pool's ErrConnectionClosed. An attempt must never
+//     return (nil, nil): success and failure are distinguishable in
+//     every path, so waiters and the recovery worker never observe a
+//     vacuous outcome.
 
 type StatefulDialer interface {
 	SetStatusChangeHandler(ctx api.StreamContext, handler api.StatusChangeHandler)

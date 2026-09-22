@@ -213,12 +213,18 @@ func isIdentifierPart(c byte) bool {
 }
 
 func (s *SQLSinkConnector) Ping(ctx api.StreamContext, props map[string]any) error {
+	// Validation probe: connect for real on a throwaway candidate.
+	// Dial is explicit here — SQLConnection.Ping itself is a pure
+	// health check and never dials.
 	cli := &client.SQLConnection{}
 	err := cli.Provision(ctx, "test", props)
 	if err != nil {
 		return err
 	}
 	defer cli.Close(ctx)
+	if err := cli.Dial(ctx); err != nil {
+		return err
+	}
 	return cli.Ping(ctx)
 }
 

@@ -57,12 +57,18 @@ type sqlSourceStats struct {
 }
 
 func (s *SQLSourceConnector) Ping(ctx api.StreamContext, m map[string]any) error {
+	// Validation probe: connect for real on a throwaway candidate.
+	// Dial is explicit here — SQLConnection.Ping itself is a pure
+	// health check and never dials.
 	cli := &client2.SQLConnection{}
 	err := cli.Provision(ctx, "test", m)
 	if err != nil {
 		return err
 	}
 	defer cli.Close(ctx)
+	if err := cli.Dial(ctx); err != nil {
+		return err
+	}
 	return cli.Ping(ctx)
 }
 
