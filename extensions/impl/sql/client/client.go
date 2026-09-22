@@ -18,6 +18,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
@@ -33,7 +34,16 @@ type SQLConnection struct {
 	db     *sql.DB
 	id     string
 	closed bool
+	// retireWG tracks handles replaced by Recover and closed
+	// asynchronously. Add happens only under the write lock before
+	// closed is set; Close waits after setting it — so no Add can
+	// race the Wait. SQLConnection is always used by pointer.
+	retireWG sync.WaitGroup
 }
+
+// SQLConnection is pool-recovered: runtime recovery belongs to the
+// Pool worker, never to consumer retry loops.
+var _ modules.PoolRecoverableConnection = (*SQLConnection)(nil)
 
 // defaultAttemptTimeout bounds one Dial, Ping, or Reconnect attempt.
 // Retry cadence and total retry lifetime are owned by the caller.
@@ -135,8 +145,8 @@ func (s *SQLConnection) DetachSub(ctx api.StreamContext, props map[string]any) {
 
 func (s *SQLConnection) Close(ctx api.StreamContext) error {
 	s.Lock()
-	defer s.Unlock()
 	if s.closed {
+		s.Unlock()
 		return nil
 	}
 	ctx.GetLogger().Infof("close db with url:%v", s.url)
@@ -144,6 +154,13 @@ func (s *SQLConnection) Close(ctx api.StreamContext) error {
 		_ = s.db.Close()
 	}
 	s.closed = true
+	s.Unlock()
+	// Drain handles retired by Recover: each retired Close runs
+	// detached so a slow old pool never stalls the hot path, but the
+	// logical Close still waits for all of them — no handle outlives
+	// the connection. The retire goroutines never take this lock, so
+	// waiting here cannot deadlock.
+	s.retireWG.Wait()
 	return nil
 }
 
@@ -152,16 +169,67 @@ func CreateConnection(ctx api.StreamContext) modules.Connection {
 }
 
 func (s *SQLConnection) dial(ctx context.Context) error {
-	db, err := openDB(s.url)
+	db, err := openVerifiedDB(s.url, ctx)
 	if err != nil {
-		return fmt.Errorf("create connection err:%v", err)
+		return err
+	}
+	s.db = db
+	return nil
+}
+
+// Recover implements modules.PoolRecoverableConnection: one bounded
+// attempt that builds a candidate, verifies it, and installs it. No
+// internal retry or backoff (the Pool worker owns the rhythm); ctx
+// carries the Pool's per-attempt deadline plus lifecycle
+// cancellation. The replaced handle retires asynchronously — closed
+// detached from this call so a slow old pool never stalls the hot
+// path, drained by Close so nothing leaks past the logical lifetime.
+// A failure leaves the previous handle untouched for the Pool to
+// verify with Ping.
+func (s *SQLConnection) Recover(ctx api.StreamContext) error {
+	recCtx, cancel := context.WithTimeout(ctx, defaultAttemptTimeout)
+	defer cancel()
+	db, err := openVerifiedDB(s.url, recCtx)
+	if err != nil {
+		return err
+	}
+	s.Lock()
+	if s.closed {
+		// Raced with the logical Close: dispose the candidate.
+		// The Pool joins this worker before its own Close, so the
+		// dispose here is the only Close the candidate gets.
+		s.Unlock()
+		_ = db.Close()
+		return fmt.Errorf("sql connection %s closed during recovery", s.id)
+	}
+	old := s.db
+	s.db = db
+	if old != nil {
+		s.retireWG.Add(1)
+		go func() {
+			defer s.retireWG.Done()
+			_ = old.Close()
+		}()
+	}
+	s.Unlock()
+	return nil
+}
+
+// openVerifiedDB opens one candidate and verifies it with a single
+// bounded Ping. Shared by Dial (initial handle) and Recover
+// (replacement handle) so the two paths can never diverge in what
+// counts as usable. A failure owns no handle: the candidate is
+// closed before return.
+func openVerifiedDB(url string, ctx context.Context) (*sql.DB, error) {
+	db, err := openDB(url)
+	if err != nil {
+		return nil, err
 	}
 	if err := db.PingContext(ctx); err != nil {
 		_ = db.Close()
 		// A database URL can be syntactically valid while the database is
 		// temporarily unreachable. Let the connection pool retry this case.
-		return errorx.NewIOErr(fmt.Sprintf("create connection err:%v", err))
+		return nil, errorx.NewIOErr(fmt.Sprintf("create connection err:%v", err))
 	}
-	s.db = db
-	return nil
+	return db, nil
 }
