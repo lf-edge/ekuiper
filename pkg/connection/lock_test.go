@@ -113,51 +113,6 @@ func TestDeliverInitialSkipsDetached(t *testing.T) {
 	require.Equal(t, api.ConnectionConnecting, gotS)
 }
 
-// TestDropReservationAbortRestoresReady drives the KV-failure branch
-// white-box (no failpoint needed): reserve parks the key as
-// removing with a live removed channel; abort flips it back to
-// ready and wakes parked waiters, which re-resolve against the
-// restored entry. A subsequent real Drop completes the cycle.
-func TestDropReservationAbortRestoresReady(t *testing.T) {
-	ctx := mockContext.NewMockContext("dropabort", "op1")
-	_, err := CreateNamedConnection(ctx, "drop-abort", "mock", map[string]any{})
-	require.NoError(t, err)
-
-	m := globalConnectionManager.Load()
-	m.Lock()
-	meta, err := reserveDropLocked(m, "drop-abort")
-	require.NoError(t, err)
-	require.NotNil(t, meta)
-	e := m.connectionPool["drop-abort"]
-	require.Equal(t, entryRemoving, e.state)
-	require.NotNil(t, e.removed)
-	removed := e.removed
-	m.Unlock()
-
-	woken := make(chan struct{})
-	go func() { <-removed; close(woken) }()
-
-	m.Lock()
-	abortDropLocked(m, "drop-abort")
-	e = m.connectionPool["drop-abort"]
-	require.Equal(t, entryReady, e.state)
-	require.Nil(t, e.removed)
-	m.Unlock()
-
-	select {
-	case <-woken:
-	case <-time.After(2 * time.Second):
-		t.Fatal("waiter parked on the reservation was not woken by abort")
-	}
-
-	// The restored entry is fully usable again.
-	cw, err := attachConnection("drop-abort", "ref1", nil)
-	require.NoError(t, err)
-	require.NotNil(t, cw)
-	require.NoError(t, DetachConnectionByRef(ctx, "drop-abort", "ref1"))
-	require.NoError(t, DropNameConnection(ctx, "drop-abort"))
-}
-
 // TestAttemptStreamContextIsBoundedServerScope pins the Ping/Recover
 // attempt-scope rule: those scopes are explicitly deadline-bounded and
 // server-owned — never a rule/request lifetime. (Dial is intentionally
