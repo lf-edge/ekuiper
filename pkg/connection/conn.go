@@ -156,8 +156,10 @@ func (meta *Meta) reportSuspect() {
 			meta.generation++
 		}
 		// Already verifying: coalesce, nudge below.
+		meta.suspectSeq++
 	case api.ConnectionDisconnected:
-		// Fault already recorded; nudge only.
+		// Fault already recorded; sequence bump plus nudge only.
+		meta.suspectSeq++
 	default:
 		// connecting/recovering: the worker (or the initial dial)
 		// owns the episode, nothing to record.
@@ -250,6 +252,15 @@ func newConnWrapper(meta *Meta) *ConnWrapper {
 		conn, err := dialInitial(serverStreamContext(meta.lifecycleCtx), meta, pending)
 		if meta.lifecycleCtx.Err() != nil {
 			err = ErrConnectionClosed
+		}
+		if err == nil {
+			// The initial episode concluded with a usable handle:
+			// arm the runtime recovery worker before publishing,
+			// so even a zero-ref named connection recovers. The
+			// worker is Meta-lifecycle-owned (stop() joins it)
+			// and parks until the first wakeup. No-op unless the
+			// provider is pool-recoverable.
+			meta.startRecoveryWorker(conn)
 		}
 		cw.setConn(conn, err)
 		close(cw.readCh)
@@ -394,6 +405,18 @@ type Meta struct {
 	// Meta; the worker (when started) drains it until the lifecycle
 	// ends.
 	suspectCh chan struct{} `json:"-"`
+	// suspectSeq counts accepted recovery wakeups (consumer suspects
+	// plus probe-confirmed flips), guarded by stateMu. The worker
+	// acts only on a sequence newer than it last absorbed, which is
+	// what makes a stale wakeup a pure no-op instead of a redundant
+	// recovery.
+	suspectSeq uint64 `json:"-"`
+	// recoveryDone is closed by the recovery worker on exit. Written
+	// by the initial worker before it closes done (ordered by that
+	// close), read by stop() after waiting done — no extra mutex.
+	// Nil when the provider is not pool-recoverable: no worker was
+	// ever started, nothing to join.
+	recoveryDone chan struct{} `json:"-"`
 }
 
 // setReadyLocked opens the internal readiness gate and ends the
@@ -566,14 +589,21 @@ func (meta *Meta) DeRef(refId string) bool {
 	return true
 }
 
-// stop terminates the Meta exactly once: cancel the lifecycle, wait for
-// the worker to exit, then close the logical connection. It must run
-// outside the Manager lock. Concurrent stoppers converge on the first
-// caller's execution; latecomers return once it completes.
+// stop terminates the Meta exactly once: cancel the lifecycle, wait
+// for the workers to exit, then close the logical connection. It must
+// run outside the Manager lock. Concurrent stoppers converge on the
+// first caller's execution; latecomers return once it completes.
 func (meta *Meta) stop(ctx api.StreamContext) {
 	meta.stopOnce.Do(func() {
 		meta.lifecycleCancel()
 		<-meta.done
+		// Hard invariant 2: the recovery worker belongs to this
+		// lifecycle. It closes recoveryDone on exit, so joining it
+		// here means a Recover can never run concurrently with the
+		// final Close below. Nil when no worker was started.
+		if meta.recoveryDone != nil {
+			<-meta.recoveryDone
+		}
 		// Safe without the cw lock: the worker wrote conn before
 		// closing readCh and done in the same goroutine, so the
 		// receive above happens after that write. The object is

@@ -39,11 +39,11 @@ const (
 // ConnectionHealthProbeJob periodically verifies the health of
 // connected named connections. It is failure discovery only: a
 // failed Ping flips connected to disconnected (opening a new
-// readiness generation for WaitReady waiters) and nothing else. It
-// never dials, never recovers, never reconnects — recovery belongs
-// to the A3 worker. It runs independent of the status Patrol: the
-// Patrol stays a pure-read metrics job that a slow probe can never
-// stall.
+// readiness generation for WaitReady waiters) and hands the episode
+// to the per-Meta recovery worker via nudgeRecovery. It never dials,
+// never recovers, never reconnects — recovery belongs to the worker.
+// It runs independent of the status Patrol: the Patrol stays a
+// pure-read metrics job that a slow probe can never stall.
 func ConnectionHealthProbeJob(ctx context.Context) {
 	ticker := time.NewTicker(defaultConnectionMonitorInterval)
 	defer ticker.Stop()
@@ -127,4 +127,8 @@ func probeOne(meta *Meta, cw *ConnWrapper, timeout time.Duration) {
 		return
 	}
 	meta.NotifyStatus(api.ConnectionDisconnected, err.Error())
+	// Hard invariant 3: a probe failure is a confirmed fault. Hand
+	// the episode to the recovery worker (when one exists); a stale
+	// wakeup against settled state is a no-op by sequence design.
+	meta.nudgeRecovery()
 }
