@@ -153,7 +153,22 @@ func (cw *ConnWrapper) WaitReady(ctx api.StreamContext) error {
 			return ErrConnectionClosed
 		}
 		if status == api.ConnectionConnected {
-			return nil
+			// Final recheck with Wait() precedence: a caller that
+			// canceled between the snapshot and this return must
+			// observe its own cancellation, and a lifecycle that
+			// ended in between must surface as termination — never
+			// a success. This narrows the race to recheck-vs-return
+			// (the same standard as Wait), it does not claim to
+			// catch a cancel landing after the return instruction.
+			if ctx.Err() != nil {
+				return ctx.Err()
+			}
+			select {
+			case <-cw.meta.lifecycleCtx.Done():
+				return ErrConnectionClosed
+			default:
+				return nil
+			}
 		}
 		select {
 		case <-ctx.Done():
@@ -248,14 +263,27 @@ type Meta struct {
 	// RefCount is always len(refs). Guarded by refMu.
 	refMu sync.Mutex
 	refs  map[string]api.StatusChangeHandler `json:"-"`
-	// cbMu serializes consumer-callback invocation per Meta: the
-	// NotifyStatus broadcast and initial deliveries never run a
-	// handler concurrently, and every delivery observes a snapshot
-	// at least as new as any broadcast that preceded it. Lock
-	// discipline: stateMu, refMu and cbMu are never nested — each is
-	// released before the next is taken.
-	cbMu sync.Mutex   `json:"-"`
-	cw   *ConnWrapper `json:"-"`
+	// eventMu serializes the observable status event stream per Meta:
+	// one complete event (transition + handler snapshot + delivery)
+	// at a time, in transition order. Every NotifyStatus transition
+	// is delivered exactly once, in order; initial deliveries share
+	// the same serialization, so they can duplicate the latest state
+	// but never invert it (never new-then-old) and never swallow a
+	// real transition. Lock discipline: eventMu is outermost;
+	// stateMu and refMu are only ever taken while holding eventMu
+	// (briefly, never across a callback) or on their own — never
+	// the reverse. Callbacks run holding eventMu but neither
+	// stateMu, refMu nor the Manager lock.
+	//
+	// Handler contract (the premise this serialization rests on):
+	// StatusChangeHandler must return promptly, be memory-only
+	// (no I/O, no blocking/waiting), and must not synchronously
+	// re-enter Connection Pool operations that can produce another
+	// status delivery on the same Meta (e.g. Fetch/attach of the
+	// same Meta inside the callback): the callback already holds
+	// eventMu, so such re-entry self-deadlocks.
+	eventMu sync.Mutex   `json:"-"`
+	cw      *ConnWrapper `json:"-"`
 	// lifecycleCtx parents the Meta worker. Derived from the Manager
 	// server ctx at creation; canceled on zero-ref/Drop/Update/shutdown
 	// or Manager re-init. Never a rule/request/first-fetcher ctx.
@@ -323,6 +351,15 @@ func (meta *Meta) newGenerationLocked() {
 }
 
 func (meta *Meta) NotifyStatus(status string, s string) {
+	// eventMu serializes the whole observable event: the transition,
+	// the exact event snapshot and the handler snapshot are one
+	// atomic unit in delivery order. The readiness generation still
+	// closes inside the transition (before any callback), so
+	// WaitReady waiters wake promptly; only the *next* transition's
+	// state write waits for a slow callback — bounded by the handler
+	// contract above, never by the Manager lock.
+	meta.eventMu.Lock()
+	defer meta.eventMu.Unlock()
 	meta.stateMu.Lock()
 	switch status {
 	case api.ConnectionConnected:
@@ -370,21 +407,20 @@ func (meta *Meta) NotifyStatus(status string, s string) {
 	}
 	effStatus, effErr := meta.status, meta.lastError
 	meta.stateMu.Unlock()
-	// Snapshot handlers before invoking so the invocation does not run
-	// while holding the refs lock. Delivery itself is serialized per
-	// Meta on cbMu (see Meta.cbMu): a slow consumer delays later
-	// deliveries, never the Manager lock and never concurrently with
-	// another delivery to the same Meta. Handlers observe the
-	// effective post-transition state, never the raw producer
-	// arguments.
+	// Snapshot handlers while still holding eventMu so no concurrent
+	// deliverInitial can interleave a snapshot between our transition
+	// and our delivery. The invocation itself runs holding eventMu
+	// but neither the refs lock nor the state lock: a slow consumer
+	// delays later deliveries on this Meta, never the Manager lock
+	// and never concurrently with another delivery to the same Meta.
+	// Handlers observe the exact post-transition state of this event,
+	// never the raw producer arguments and never a coalesced latest.
 	meta.refMu.Lock()
 	handlers := make([]api.StatusChangeHandler, 0, len(meta.refs))
 	for _, sc := range meta.refs {
 		handlers = append(handlers, sc)
 	}
 	meta.refMu.Unlock()
-	meta.cbMu.Lock()
-	defer meta.cbMu.Unlock()
 	for _, sch := range handlers {
 		if sch != nil {
 			sch(effStatus, effErr)
@@ -397,8 +433,11 @@ func (meta *Meta) NotifyStatus(status string, s string) {
 // The initial state delivery is a separate step (deliverInitial) that
 // runs after the Manager lock is released, so a slow consumer can
 // never stall the Pool. Registration precedes delivery; combined with
-// per-Meta serialized invocation (cbMu) every handler observes a
-// monotonic state sequence, never a concurrent or inverted one.
+// per-Meta event serialization (eventMu) every handler observes each
+// transition exactly once and in order, never concurrently and never
+// inverted. A racing initial delivery may duplicate the latest state
+// (connected, connected) but never reports new-then-old and never
+// swallows a real transition.
 func (meta *Meta) AddRef(refId string, sc api.StatusChangeHandler) {
 	meta.refMu.Lock()
 	if meta.refs == nil {
@@ -416,26 +455,29 @@ func (meta *Meta) AddRef(refId string, sc api.StatusChangeHandler) {
 }
 
 // deliverInitial delivers the current state snapshot to a freshly
-// attached consumer. Call only after releasing the Manager lock. The
-// snapshot is taken after registration, so any broadcast that reached
-// the handler concurrently carries a state no newer than this one:
-// the handler always sees old-then-new. A ref detached before this
-// check is skipped; a detach racing the invocation may still observe
-// one benign delivery (status sets are idempotent). Locks are never
-// nested: refMu is released before cbMu is taken.
+// attached consumer. Call only after releasing the Manager lock, and
+// only once per attach. It joins the same eventMu serialization as
+// NotifyStatus: the ref check, the state snapshot and the invocation
+// are one atomic unit in delivery order. A ref detached before this
+// unit runs is skipped; a detach racing the invocation may still
+// observe one benign same-state duplicate (status sets are
+// idempotent). A duplicate is always the latest state repeated —
+// real NotifyStatus transitions are never coalesced or swallowed.
 func (meta *Meta) deliverInitial(refId string, sc api.StatusChangeHandler) {
 	if sc == nil {
 		return
 	}
+	meta.eventMu.Lock()
+	defer meta.eventMu.Unlock()
 	meta.refMu.Lock()
 	_, ok := meta.refs[refId]
 	meta.refMu.Unlock()
 	if !ok {
 		return
 	}
-	s, e := meta.GetStatus()
-	meta.cbMu.Lock()
-	defer meta.cbMu.Unlock()
+	meta.stateMu.RLock()
+	s, e := meta.status, meta.lastError
+	meta.stateMu.RUnlock()
 	sc(s, e)
 }
 

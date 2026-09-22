@@ -62,10 +62,14 @@ type Connection interface {
 // Attempt and cancellation contract (Pool side, applies to Dial, Ping
 // and the A3 Recover):
 //
-//   - Every attempt runs under an explicitly bounded, server-owned
-//     scope — never a rule/request lifetime, never unbounded. Dial
-//     waits for initial usability under plain cancellation (no blanket
-//     timeout); Ping/Recover additionally carry an attempt deadline.
+//   - Every attempt runs under a server-owned scope, never a
+//     rule/request lifetime.
+//   - Dial runs under the connection lifecycle scope and must honor
+//     cancellation promptly or otherwise have a finite provider-side
+//     bound (no blanket Pool timeout: async dials and session
+//     startups wait for initial usability under plain cancellation).
+//   - Ping and Recover additionally run under an explicit
+//     per-attempt deadline on top of the lifecycle scope.
 //   - Caller cancellation surfaces as ctx.Err(); lifecycle termination
 //     surfaces as the Pool's ErrConnectionClosed. An attempt must never
 //     return (nil, nil): success and failure are distinguishable in
