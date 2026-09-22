@@ -211,8 +211,14 @@ func TestProbeSkipsStateful(t *testing.T) {
 	defer DropNameConnection(ctx, "probe-stateful")
 
 	// Stateful providers never get the automatic connected report;
-	// simulate their runtime callback instead.
+	// simulate their runtime callback instead. Wait for the worker to
+	// finish its initial dial first: its connecting report must land
+	// before the manual connected, otherwise a slow scheduler flips
+	// the manual state back to connecting (flaky in CI).
 	meta := probeMeta(t, "probe-stateful")
+	require.Eventually(t, func() bool {
+		return meta.cw != nil && meta.cw.IsInitialized()
+	}, 5*time.Second, 5*time.Millisecond)
 	meta.NotifyStatus(api.ConnectionConnected, "")
 	callsBefore := probeStatePingCalls.Load()
 
