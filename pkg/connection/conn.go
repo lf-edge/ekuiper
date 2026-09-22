@@ -497,14 +497,19 @@ func (meta *Meta) NotifyStatus(status string, s string) {
 	}
 	effStatus, effErr := meta.status, meta.lastError
 	meta.stateMu.Unlock()
-	// Snapshot handlers while still holding eventMu so no concurrent
-	// deliverInitial can interleave a snapshot between our transition
-	// and our delivery. The invocation itself runs holding eventMu
-	// but neither the refs lock nor the state lock: a slow consumer
-	// delays later deliveries on this Meta, never the Manager lock
-	// and never concurrently with another delivery to the same Meta.
-	// Handlers observe the exact post-transition state of this event,
-	// never the raw producer arguments and never a coalesced latest.
+	meta.deliverLocked(effStatus, effErr)
+}
+
+// deliverLocked invokes every registered handler with one exact
+// post-transition snapshot. Caller holds eventMu (ordering against
+// concurrent transitions and initial deliveries). It takes refMu
+// briefly for the handler snapshot and holds no lock across the
+// invocation except eventMu itself: a slow consumer delays later
+// deliveries on this Meta, never the Manager lock and never
+// concurrently with another delivery to the same Meta. Handlers
+// observe the exact post-transition state of this event, never the
+// raw producer arguments and never a coalesced latest.
+func (meta *Meta) deliverLocked(effStatus, effErr string) {
 	meta.refMu.Lock()
 	handlers := make([]api.StatusChangeHandler, 0, len(meta.refs))
 	for _, sc := range meta.refs {
@@ -634,6 +639,41 @@ func (meta *Meta) GetStatus() (s string, e string) {
 	meta.stateMu.RLock()
 	defer meta.stateMu.RUnlock()
 	return meta.status, meta.lastError
+}
+
+// snapshotProbe captures the probe's precondition atomically: public
+// status, internal gate, and generation. The probe only Pings a
+// connected+ready Meta, and only lands its verdict if none of the
+// three moved while the Ping was in flight.
+func (meta *Meta) snapshotProbe() (status string, ready bool, generation uint64) {
+	meta.stateMu.RLock()
+	defer meta.stateMu.RUnlock()
+	return meta.status, meta.ready, meta.generation
+}
+
+// tryProbeDisconnect lands a failed probe Ping as disconnected only
+// if the Meta still belongs to the probed episode: same generation,
+// still connected, gate still open. A recovery (or any newer episode)
+// that moved the generation while the Ping was in flight makes this
+// stale verdict a no-op — it must not overwrite fresh connected
+// state, nor trigger a redundant recovery. Returns true only when
+// the flip was applied; only then may the caller nudge the worker.
+func (meta *Meta) tryProbeDisconnect(generation uint64, errMsg string) bool {
+	meta.eventMu.Lock()
+	defer meta.eventMu.Unlock()
+	meta.stateMu.Lock()
+	if meta.generation != generation || meta.status != api.ConnectionConnected || !meta.ready {
+		meta.stateMu.Unlock()
+		return false
+	}
+	meta.status = api.ConnectionDisconnected
+	meta.lastError = errMsg
+	meta.verifying = false
+	meta.setNotReadyLocked()
+	effStatus, effErr := meta.status, meta.lastError
+	meta.stateMu.Unlock()
+	meta.deliverLocked(effStatus, effErr)
+	return true
 }
 
 // snapshotReady captures one consistent readiness observation for

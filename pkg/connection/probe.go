@@ -99,10 +99,14 @@ func probeOne(meta *Meta, cw *ConnWrapper, timeout time.Duration) {
 	if meta.lifecycleCtx.Err() != nil {
 		return
 	}
-	// The probe only ever produces connected -> disconnected. Every
-	// other state already parks waiters on an open generation.
-	status, _ := meta.GetStatus()
-	if status != api.ConnectionConnected {
+	// The probe only ever Pings a connected+ready Meta: every other
+	// state already parks waiters on an open generation, and a
+	// verifying episode belongs to the recovery worker, not to a
+	// competing Ping verdict. The generation travels with the Ping:
+	// the verdict below only lands if none of the three moved while
+	// it was in flight.
+	status, ready, generation := meta.snapshotProbe()
+	if status != api.ConnectionConnected || !ready {
 		return
 	}
 	conn := cw.peekConn()
@@ -126,9 +130,10 @@ func probeOne(meta *Meta, cw *ConnWrapper, timeout time.Duration) {
 	if meta.lifecycleCtx.Err() != nil {
 		return
 	}
-	meta.NotifyStatus(api.ConnectionDisconnected, err.Error())
-	// Hard invariant 3: a probe failure is a confirmed fault. Hand
-	// the episode to the recovery worker (when one exists); a stale
-	// wakeup against settled state is a no-op by sequence design.
-	meta.nudgeRecovery()
+	// A verdict superseded mid-Ping (e.g. by a completed recovery) is
+	// dropped: it must not overwrite fresh state. Only a real flip
+	// hands the episode to the recovery worker.
+	if meta.tryProbeDisconnect(generation, err.Error()) {
+		meta.nudgeRecovery()
+	}
 }
