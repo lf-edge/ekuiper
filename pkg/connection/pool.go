@@ -140,6 +140,7 @@ func InitConnectionManager(ctx context.Context) {
 		return
 	}
 	go PatrolConnectionStatusJob(ctx)
+	go ConnectionHealthProbeJob(ctx)
 }
 
 // stopAllRuntime synchronously retires every published runtime
@@ -177,7 +178,7 @@ const (
 )
 
 func PatrolConnectionStatusJob(ctx context.Context) {
-	ticker := time.NewTicker(15 * time.Second)
+	ticker := time.NewTicker(defaultConnectionMonitorInterval)
 	defer ticker.Stop()
 	for {
 		select {
