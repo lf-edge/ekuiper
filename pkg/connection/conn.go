@@ -57,12 +57,22 @@ func (cw *ConnWrapper) Wait(connectorCtx api.StreamContext) (modules.Connection,
 	if connectorCtx.Err() != nil {
 		return nil, connectorCtx.Err()
 	}
+	// The select only wakes us up; it never decides the result. When
+	// several cases are ready Go may pick any of them, so every path
+	// below re-applies the same order: caller first, lifecycle second,
+	// published result last.
 	select {
 	case <-connectorCtx.Done():
+	case <-cw.meta.lifecycleCtx.Done():
+	case <-cw.readCh:
+	}
+	if connectorCtx.Err() != nil {
 		return nil, connectorCtx.Err()
+	}
+	select {
 	case <-cw.meta.lifecycleCtx.Done():
 		return nil, ErrConnectionClosed
-	case <-cw.readCh:
+	default:
 	}
 	cw.l.RLock()
 	conn, err := cw.conn, cw.err
@@ -73,8 +83,12 @@ func (cw *ConnWrapper) Wait(connectorCtx api.StreamContext) (modules.Connection,
 		return nil, err
 	}
 	if conn != nil {
-		// Recheck: the lifecycle may have ended between ready and
-		// return; never hand out a connection of a dead scope.
+		// Final recheck with the same precedence: caller cancellation
+		// wins even if readiness and cancellation became ready together,
+		// and a dead lifecycle never hands out its connection.
+		if connectorCtx.Err() != nil {
+			return nil, connectorCtx.Err()
+		}
 		select {
 		case <-cw.meta.lifecycleCtx.Done():
 			return nil, ErrConnectionClosed
