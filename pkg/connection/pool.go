@@ -35,6 +35,13 @@ import (
 
 type Manager struct {
 	syncx.RWMutex
+	// Lock invariant (A2): the Manager lock is structural only. Under
+	// it: map/entry-state/pointer operations and ref registration.
+	// Never under it: provider I/O (Provision/Dial/Ping/Close),
+	// KV/store I/O, consumer-callback invocation, or blocking waits.
+	// Heavy phases run outside the lock; callbacks are delivered
+	// after unlock via Meta.deliverInitial.
+	//
 	// connectionPool maps a connectionKey to its coordination entry.
 	// Entries exist for creating, ready, and (from the A1b stop work)
 	// removing Metas alike, so concurrent Fetch/Create always observe
@@ -183,23 +190,34 @@ func PatrolConnectionStatusJob(ctx context.Context) {
 }
 
 func patrolConnectionStatus() {
+	// Snapshot under the lock, work outside it (lock invariant):
+	// status reads and metric writes never hold the Manager lock,
+	// so a slow consumer (or a future blocking read) cannot stall
+	// the Pool. Only named ready Metas are patrolled; creating
+	// entries have no Meta yet and report nothing.
+	type patrolTarget struct {
+		name string
+		meta *Meta
+	}
 	m := globalConnectionManager.Load()
 	m.RLock()
-	defer m.RUnlock()
+	var targets []patrolTarget
 	for connName, e := range m.connectionPool {
-		// For now, we only patrol named connection. Creating entries
-		// have no Meta yet and report nothing.
 		if e.state != entryReady || e.meta == nil || !e.meta.Named {
 			continue
 		}
-		status, _ := e.meta.GetStatus()
+		targets = append(targets, patrolTarget{name: connName, meta: e.meta})
+	}
+	m.RUnlock()
+	for _, t := range targets {
+		status, _ := t.meta.GetStatus()
 		switch status {
 		case api.ConnectionConnected:
-			ConnStatusGauge.WithLabelValues(connName).Set(1)
+			ConnStatusGauge.WithLabelValues(t.name).Set(1)
 		case api.ConnectionDisconnected:
-			ConnStatusGauge.WithLabelValues(connName).Set(-1)
+			ConnStatusGauge.WithLabelValues(t.name).Set(-1)
 		case api.ConnectionConnecting:
-			ConnStatusGauge.WithLabelValues(connName).Set(0)
+			ConnStatusGauge.WithLabelValues(t.name).Set(0)
 		}
 	}
 }

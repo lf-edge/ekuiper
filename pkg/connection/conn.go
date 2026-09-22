@@ -236,7 +236,14 @@ type Meta struct {
 	// RefCount is always len(refs). Guarded by refMu.
 	refMu sync.Mutex
 	refs  map[string]api.StatusChangeHandler `json:"-"`
-	cw    *ConnWrapper                       `json:"-"`
+	// cbMu serializes consumer-callback invocation per Meta: the
+	// NotifyStatus broadcast and initial deliveries never run a
+	// handler concurrently, and every delivery observes a snapshot
+	// at least as new as any broadcast that preceded it. Lock
+	// discipline: stateMu, refMu and cbMu are never nested — each is
+	// released before the next is taken.
+	cbMu sync.Mutex   `json:"-"`
+	cw   *ConnWrapper `json:"-"`
 	// lifecycleCtx parents the Meta worker. Derived from the Manager
 	// server ctx at creation; canceled on zero-ref/Drop/Update/shutdown
 	// or Manager re-init. Never a rule/request/first-fetcher ctx.
@@ -352,17 +359,20 @@ func (meta *Meta) NotifyStatus(status string, s string) {
 	effStatus, effErr := meta.status, meta.lastError
 	meta.stateMu.Unlock()
 	// Snapshot handlers before invoking so the invocation does not run
-	// while holding the refs lock. Invocation stays synchronous: a slow
-	// consumer callback can still delay the connection worker; isolating
-	// that (dispatcher/queue) is follow-up work, not attempted here.
-	// Handlers observe the effective post-transition state, never the
-	// raw producer arguments.
+	// while holding the refs lock. Delivery itself is serialized per
+	// Meta on cbMu (see Meta.cbMu): a slow consumer delays later
+	// deliveries, never the Manager lock and never concurrently with
+	// another delivery to the same Meta. Handlers observe the
+	// effective post-transition state, never the raw producer
+	// arguments.
 	meta.refMu.Lock()
 	handlers := make([]api.StatusChangeHandler, 0, len(meta.refs))
 	for _, sc := range meta.refs {
 		handlers = append(handlers, sc)
 	}
 	meta.refMu.Unlock()
+	meta.cbMu.Lock()
+	defer meta.cbMu.Unlock()
 	for _, sch := range handlers {
 		if sch != nil {
 			sch(effStatus, effErr)
@@ -370,18 +380,14 @@ func (meta *Meta) NotifyStatus(status string, s string) {
 	}
 }
 
+// AddRef registers one consumer reference. It is structural only:
+// no status read, no callback, no I/O — safe under the Manager lock.
+// The initial state delivery is a separate step (deliverInitial) that
+// runs after the Manager lock is released, so a slow consumer can
+// never stall the Pool. Registration precedes delivery; combined with
+// per-Meta serialized invocation (cbMu) every handler observes a
+// monotonic state sequence, never a concurrent or inverted one.
 func (meta *Meta) AddRef(refId string, sc api.StatusChangeHandler) {
-	// Baseline ordering, kept deliberately: snapshot and deliver the
-	// initial status BEFORE registering the handler. Register-then-deliver
-	// would let a concurrent broadcast reach the handler first and then be
-	// overwritten by the older snapshot (new-then-old inversion).
-	// Fully lock-free ordered delivery needs a serialized subscription
-	// mechanism (A2); until then the initial callback runs here, under
-	// the Manager lock held by the fetch path.
-	s, e := meta.GetStatus()
-	if sc != nil {
-		sc(s, e)
-	}
 	meta.refMu.Lock()
 	if meta.refs == nil {
 		meta.refs = make(map[string]api.StatusChangeHandler)
@@ -395,6 +401,30 @@ func (meta *Meta) AddRef(refId string, sc api.StatusChangeHandler) {
 		return
 	}
 	conf.Log.Infof("conn %s add reference %s to %d refs", meta.ID, refId, count)
+}
+
+// deliverInitial delivers the current state snapshot to a freshly
+// attached consumer. Call only after releasing the Manager lock. The
+// snapshot is taken after registration, so any broadcast that reached
+// the handler concurrently carries a state no newer than this one:
+// the handler always sees old-then-new. A ref detached before this
+// check is skipped; a detach racing the invocation may still observe
+// one benign delivery (status sets are idempotent). Locks are never
+// nested: refMu is released before cbMu is taken.
+func (meta *Meta) deliverInitial(refId string, sc api.StatusChangeHandler) {
+	if sc == nil {
+		return
+	}
+	meta.refMu.Lock()
+	_, ok := meta.refs[refId]
+	meta.refMu.Unlock()
+	if !ok {
+		return
+	}
+	s, e := meta.GetStatus()
+	meta.cbMu.Lock()
+	defer meta.cbMu.Unlock()
+	sc(s, e)
 }
 
 func (meta *Meta) DeRef(refId string) bool {
