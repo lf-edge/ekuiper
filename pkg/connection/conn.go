@@ -83,9 +83,11 @@ type Meta struct {
 	// named means connection is created manually
 	Named bool `json:"named"`
 
-	refCount atomic.Int32 `json:"-"`
-	ref      sync.Map     `json:"-"`
-	cw       *ConnWrapper `json:"-"`
+	// refs is the single source of truth for consumer references.
+	// RefCount is always len(refs). Guarded by refMu.
+	refMu sync.Mutex
+	refs  map[string]api.StatusChangeHandler `json:"-"`
+	cw    *ConnWrapper                       `json:"-"`
 	// The first connection status
 	// If connection is stateful, the status will update all the way
 	// For stateless connection, the status needs to ping
@@ -98,40 +100,76 @@ func (meta *Meta) NotifyStatus(status string, s string) {
 	if s != "" {
 		meta.lastError.Store(s)
 	}
-	meta.ref.Range(func(refId, sc any) bool {
-		sch := sc.(api.StatusChangeHandler)
+	// Snapshot handlers before invoking so the invocation does not run
+	// while holding the refs lock. Invocation stays synchronous: a slow
+	// consumer callback can still delay the connection worker; isolating
+	// that (dispatcher/queue) is A2 work, not attempted here.
+	meta.refMu.Lock()
+	handlers := make([]api.StatusChangeHandler, 0, len(meta.refs))
+	for _, sc := range meta.refs {
+		handlers = append(handlers, sc)
+	}
+	meta.refMu.Unlock()
+	for _, sch := range handlers {
 		if sch != nil {
 			sch(status, s)
 		}
-		return true
-	})
+	}
 }
 
 func (meta *Meta) AddRef(refId string, sc api.StatusChangeHandler) {
+	// Baseline ordering, kept deliberately: snapshot and deliver the
+	// initial status BEFORE registering the handler. Register-then-deliver
+	// would let a concurrent broadcast reach the handler first and then be
+	// overwritten by the older snapshot (new-then-old inversion).
+	// Fully lock-free ordered delivery needs a serialized subscription
+	// mechanism (A2); until then the initial callback runs here, under
+	// the Manager lock held by the fetch path.
 	s, e := meta.GetStatus()
 	if sc != nil {
 		sc(s, e)
 	}
-	meta.ref.Store(refId, sc)
-	c := meta.refCount.Add(1)
-	conf.Log.Infof("conn %s add reference %s to %d refs", meta.ID, refId, c)
+	meta.refMu.Lock()
+	if meta.refs == nil {
+		meta.refs = make(map[string]api.StatusChangeHandler)
+	}
+	_, dup := meta.refs[refId]
+	meta.refs[refId] = sc
+	count := len(meta.refs)
+	meta.refMu.Unlock()
+	if dup {
+		conf.Log.Infof("conn %s re-attach existing reference %s, refs stay %d", meta.ID, refId, count)
+		return
+	}
+	conf.Log.Infof("conn %s add reference %s to %d refs", meta.ID, refId, count)
 }
 
 func (meta *Meta) DeRef(refId string) {
-	meta.ref.Delete(refId)
-	c := meta.refCount.Add(-1)
-	conf.Log.Infof("conn %s dereference %s to %d refs", meta.ID, refId, c)
+	meta.refMu.Lock()
+	if _, ok := meta.refs[refId]; !ok {
+		count := len(meta.refs)
+		meta.refMu.Unlock()
+		conf.Log.Warnf("conn %s dereference missing %s, refs stay %d", meta.ID, refId, count)
+		return
+	}
+	delete(meta.refs, refId)
+	count := len(meta.refs)
+	meta.refMu.Unlock()
+	conf.Log.Infof("conn %s dereference %s to %d refs", meta.ID, refId, count)
 }
 
 func (meta *Meta) GetRefCount() int {
-	return int(meta.refCount.Load())
+	meta.refMu.Lock()
+	defer meta.refMu.Unlock()
+	return len(meta.refs)
 }
 
 func (meta *Meta) GetRefNames() (result []string) {
-	meta.ref.Range(func(key, _ any) bool {
-		result = append(result, key.(string))
-		return true
-	})
+	meta.refMu.Lock()
+	defer meta.refMu.Unlock()
+	for key := range meta.refs {
+		result = append(result, key)
+	}
 	return
 }
 

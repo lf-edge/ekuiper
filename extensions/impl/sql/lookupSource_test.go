@@ -31,7 +31,7 @@ import (
 
 func TestSQLLookupSourceErr(t *testing.T) {
 	connection.InitConnectionManager4Test()
-	ctx := mockContext.NewMockContext("1", "2")
+	ctx := connection.WithLookupRefID(context.Background(), "lookup:mysqltest")
 	props := map[string]interface{}{
 		"dburl":              fmt.Sprintf("mysql://root:@%v:%v/test", address, port),
 		"datasource":         "t",
@@ -46,7 +46,7 @@ func TestSQLLookupSourceErr(t *testing.T) {
 
 func TestSQLLookupSource(t *testing.T) {
 	connection.InitConnectionManager4Test()
-	ctx := mockContext.NewMockContext("1", "2")
+	ctx := connection.WithLookupRefID(context.Background(), "lookup:mysqltest")
 	s, err := testx.SetupEmbeddedMysqlServer(address, port)
 	require.NoError(t, err)
 	defer func() {
@@ -114,7 +114,7 @@ func TestSQLLookupSourceProvisionErr(t *testing.T) {
 
 func TestSQLLookupReconnect(t *testing.T) {
 	connection.InitConnectionManager4Test()
-	ctx := mockContext.NewMockContext("1", "2")
+	ctx := connection.WithLookupRefID(context.Background(), "lookup:mysqltest")
 	s, err := testx.SetupEmbeddedMysqlServer(address, port)
 	require.NoError(t, err)
 	props := map[string]interface{}{

@@ -25,6 +25,7 @@ import (
 	kctx "github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	nodeConf "github.com/lf-edge/ekuiper/v2/internal/topo/node/conf"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
+	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
 )
 
@@ -69,6 +70,10 @@ func CreateInstance(name string, sourceType string, options *ast.Options) error 
 	defer lock.Unlock()
 	contextLogger := conf.Log.WithField("table", name)
 	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+	// Inject the framework-owned lookup resource identity so the
+	// connection pool can attribute the reference to this table
+	// instance instead of the shared database (DESIGN §5.3, A1a).
+	ctxWithRef := connection.WithLookupRefID(ctx, "lookup:"+name)
 	props := nodeConf.GetSourceConf(sourceType, options)
 	ctx.GetLogger().Infof("open lookup table with props %v", conf.Printable(props))
 	// Create the lookup source according to the source options
@@ -78,13 +83,13 @@ func CreateInstance(name string, sourceType string, options *ast.Options) error 
 		return err
 	}
 	ctx.GetLogger().Debugf("lookup source %s is created", sourceType)
-	err = ns.Provision(ctx, props)
+	err = ns.Provision(ctxWithRef, props)
 	if err != nil {
 		return err
 	}
 	ctx.GetLogger().Debugf("lookup source %s is configured", sourceType)
 	// TODO lookup table connection status support
-	err = ns.Connect(ctx, func(status string, message string) {
+	err = ns.Connect(ctxWithRef, func(status string, message string) {
 		// do nothing
 	})
 	if err != nil {

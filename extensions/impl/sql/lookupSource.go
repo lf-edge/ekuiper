@@ -103,14 +103,31 @@ func (s *SqlLookupSource) Close(ctx api.StreamContext) error {
 // first Lookup reports (and then recovers from) an unavailable database.
 func (s *SqlLookupSource) Connect(ctx api.StreamContext, sc api.StatusChangeHandler) error {
 	ctx.GetLogger().Infof("Connecting to sql server")
-	id := s.conf.DBUrl
-	cw, err := connection.FetchConnection(ctx, id, "sql", s.props, sc)
+	// The consumer identity is framework-owned (DESIGN §5.3): it must be
+	// injected by lookup.CreateInstance via connection.WithLookupRefID.
+	// Never derive it from DBUrl/ctx here.
+	refID, ok := connection.LookupRefID(ctx)
+	if !ok {
+		return fmt.Errorf("lookup ref id missing: Connect must be called with a lookup framework context")
+	}
+	key, requireExisting, err := sqlConnectionKey(s.props, s.conf.DBUrl)
+	if err != nil {
+		return err
+	}
+	cw, err := connection.FetchConnectionWithOptions(ctx, connection.FetchOptions{
+		ConnectionKey:   key,
+		RefID:           refID,
+		RequireExisting: requireExisting,
+		Type:            "sql",
+		Props:           s.props,
+		StatusHandler:   sc,
+	})
 	if err != nil {
 		return err
 	}
 	s.cw = cw
 	s.conId = cw.ID
-	s.refId = id
+	s.refId = refID
 	return nil
 }
 

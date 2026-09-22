@@ -25,6 +25,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	client2 "github.com/lf-edge/ekuiper/v2/extensions/impl/sql/client"
+	kctx "github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
@@ -102,7 +103,8 @@ func newRejectListener(t *testing.T) int {
 // Close. Run with -race.
 func TestLookupConcurrentAccess(t *testing.T) {
 	require.NoError(t, connection.InitConnectionManager4Test())
-	ctx := mockContext.NewMockContext("lookup_race", "op1")
+	// Simulate the lookup framework injection (real framework context).
+	ctx := connection.WithLookupRefID(kctx.Background(), "lookup:race")
 
 	dburl := fmt.Sprintf("sqlite://%s/lookup_race.db", t.TempDir())
 	ls := &SqlLookupSource{}
