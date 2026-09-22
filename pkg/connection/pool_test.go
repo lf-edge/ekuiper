@@ -15,14 +15,17 @@
 package connection
 
 import (
-	"sync"
+	"fmt"
+	"sync/atomic"
 	"testing"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/pingcap/failpoint"
 	"github.com/stretchr/testify/require"
 
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
+	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
@@ -45,12 +48,12 @@ func TestConnection(t *testing.T) {
 	_, err = attachConnection("id1", "ref2", nil)
 	require.NoError(t, err)
 	require.Equal(t, 2, getConnectionRef("id1"))
-	err = detachConnection(ctx, "id1", "ref1")
+	err = DetachConnectionByRef(ctx, "id1", "ref1")
 	require.NoError(t, err)
 	require.Equal(t, 1, getConnectionRef("id1"))
 	err = DropNameConnection(ctx, "id1")
 	require.Error(t, err)
-	err = detachConnection(ctx, "id1", "ref2")
+	err = DetachConnectionByRef(ctx, "id1", "ref2")
 	require.NoError(t, err)
 	require.Equal(t, 0, getConnectionRef("id1"))
 	err = DropNameConnection(ctx, "id1")
@@ -81,26 +84,17 @@ func TestConnectionErr(t *testing.T) {
 	require.Error(t, err)
 	err = DropNameConnection(ctx, "")
 	require.Error(t, err)
-	cw, err := CreateNamedConnection(ctx, "12", "unknown", nil)
-	require.NoError(t, err)
-	_, err = cw.Wait(ctx)
-	require.Error(t, err)
+	// Unknown connection types are static creation errors: no Meta is
+	// published and no worker starts, so the error surfaces here rather
+	// than from a later Wait on a doomed handle.
+	_, err = CreateNamedConnection(ctx, "12", "unknown", nil)
+	require.ErrorContains(t, err, "unknown connection type")
 	_, err = attachConnection("", "ref1", nil)
 	require.Error(t, err)
 	err = DetachConnection(ctx, "")
 	require.Error(t, err)
 	err = DetachConnection(ctx, "nonexists")
 	require.NoError(t, err)
-
-	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/pkg/createConnectionErr", "return(true)")
-	conn, err := createConnection(ctx, &Meta{
-		ID:    "1",
-		Typ:   "mock",
-		Props: nil,
-	})
-	require.NoError(t, err)
-	require.NotNil(t, conn)
-	failpoint.Disable("github.com/lf-edge/ekuiper/v2/pkg/connection/createConnectionErr")
 
 	failpoint.Enable("github.com/lf-edge/ekuiper/v2/pkg/connection/storeConnectionErr", "return(true)")
 	_, err = CreateNamedConnection(ctx, "qwe", "mock", nil)
@@ -146,7 +140,7 @@ func TestNonStoredConnection(t *testing.T) {
 	// round-trip releases and drops the Meta instead of leaking it.
 	require.NoError(t, DetachConnection(ctx, "id1"))
 	require.Equal(t, 0, getConnectionRef("id1"))
-	_, ok := globalConnectionManager.connectionPool["id1"]
+	_, ok := globalConnectionManager.Load().connectionPool["id1"]
 	require.False(t, ok)
 }
 
@@ -180,7 +174,7 @@ func TestFetchWithOptionsExplicitIdentity(t *testing.T) {
 	require.NoError(t, DetachConnectionByRef(ctx, "dbA", "rule1_op1_0"))
 	require.Equal(t, 1, getConnectionRef("dbA"))
 	require.NoError(t, DetachConnectionByRef(ctx, "dbA", "rule2_op1_0"))
-	_, ok := globalConnectionManager.connectionPool["dbA"]
+	_, ok := globalConnectionManager.Load().connectionPool["dbA"]
 	require.False(t, ok)
 }
 
@@ -222,80 +216,169 @@ func TestFetchWithOptionsNamedMissing(t *testing.T) {
 	require.ErrorContains(t, err, "not existed")
 }
 
-func TestConnectionLock(t *testing.T) {
-	require.NoError(t, InitConnectionManager4Test())
-	ctx := mockContext.NewMockContext("id", "2")
-	wg := sync.WaitGroup{}
-	wg.Add(1)
-	go func() {
-		_, err := CreateNamedConnection(ctx, "ccc1", "blockconn", nil)
-		require.NoError(t, err)
-		wg.Done()
-	}()
-	blockCh <- struct{}{}
-	wg.Wait()
-	require.True(t, checkConn("ccc1"))
-
-	wg = sync.WaitGroup{}
-	wg.Add(1)
-	go func() {
-		_, err := CreateNamedConnection(ctx, "ccc2", "blockconn", nil)
-		require.NoError(t, err)
-		wg.Done()
-	}()
-	wg.Wait()
-	require.NoError(t, DropNameConnection(ctx, "ccc2"))
-}
-
-var blockCh chan any
-
 func init() {
-	blockCh = make(chan any, 10)
-	modules.RegisterConnection("blockconn", CreateBlockConnection)
 	modules.RegisterConnection("mock", CreateMockConnection)
-	modules.RegisterConnection("mockerr", CreateMockErrConnection)
+	modules.RegisterConnection("faildial", CreateFailDialConnection)
+	modules.RegisterConnection("countprov", CreateCountProvConnection)
+	modules.RegisterConnection("failprov", CreateFailProvConnection)
+	modules.RegisterConnection("countclose", CreateCountCloseConnection)
 }
 
-type blockConnection struct {
-	blochCh chan any
-	id      string
+// failDialConnection never dials successfully: every attempt fails with an
+// IO error, so the Pool worker retries until the Meta lifecycle ends. It
+// models an unreachable database for lifecycle ownership tests.
+type failDialConnection struct {
+	id string
 }
 
-func (b *blockConnection) GetId(ctx api.StreamContext) string {
-	return b.id
+func (f *failDialConnection) GetId(ctx api.StreamContext) string {
+	return f.id
 }
 
-func (b *blockConnection) Provision(ctx api.StreamContext, conId string, props map[string]any) error {
-	b.id = conId
+func (f *failDialConnection) Provision(ctx api.StreamContext, conId string, props map[string]any) error {
+	f.id = conId
 	return nil
 }
 
-func (b *blockConnection) Dial(ctx api.StreamContext) error {
-	<-blockCh
+func (f *failDialConnection) Dial(ctx api.StreamContext) error {
+	return errorx.NewIOErr("faildial: database unreachable")
+}
+
+func (f *failDialConnection) Ping(ctx api.StreamContext) error {
+	return errorx.NewIOErr("faildial: database unreachable")
+}
+
+func (f *failDialConnection) Close(ctx api.StreamContext) error {
 	return nil
 }
 
-func (b *blockConnection) Ping(ctx api.StreamContext) error {
+func CreateFailDialConnection(ctx api.StreamContext) modules.Connection {
+	return &failDialConnection{}
+}
+
+// countProvConnection counts static Provisions to prove same-key
+// single-flight. Provision blocks on countProvRelease so concurrent
+// fetchers reliably pile up as waiters instead of serializing.
+var (
+	countProvRelease = make(chan struct{}, 1)
+	countProvCalls   atomic.Int32
+)
+
+type countProvConnection struct {
+	id string
+}
+
+func (c *countProvConnection) GetId(ctx api.StreamContext) string {
+	return c.id
+}
+
+func (c *countProvConnection) Provision(ctx api.StreamContext, conId string, props map[string]any) error {
+	countProvCalls.Add(1)
+	<-countProvRelease
 	return nil
 }
 
-func (b *blockConnection) Close(ctx api.StreamContext) error {
+func (c *countProvConnection) Dial(ctx api.StreamContext) error {
 	return nil
 }
 
-func CreateBlockConnection(ctx api.StreamContext) modules.Connection {
-	return &blockConnection{}
+func (c *countProvConnection) Ping(ctx api.StreamContext) error {
+	return nil
+}
+
+func (c *countProvConnection) Close(ctx api.StreamContext) error {
+	return nil
+}
+
+func CreateCountProvConnection(ctx api.StreamContext) modules.Connection {
+	return &countProvConnection{}
+}
+
+// failProvConnection fails its static Provision, but only after the test
+// releases it: concurrent fetchers are guaranteed to pile up on one
+// creating round instead of running sequential rounds with the same
+// error text.
+var (
+	failProvRelease = make(chan struct{}, 1)
+	failProvCalls   atomic.Int32
+)
+
+type failProvConnection struct{}
+
+func (f *failProvConnection) GetId(ctx api.StreamContext) string { return "failprov" }
+
+func (f *failProvConnection) Provision(ctx api.StreamContext, conId string, props map[string]any) error {
+	failProvCalls.Add(1)
+	<-failProvRelease
+	return fmt.Errorf("failprov: static provision failure")
+}
+
+func (f *failProvConnection) Dial(ctx api.StreamContext) error { return nil }
+
+func (f *failProvConnection) Ping(ctx api.StreamContext) error { return nil }
+
+func (f *failProvConnection) Close(ctx api.StreamContext) error { return nil }
+
+func CreateFailProvConnection(ctx api.StreamContext) modules.Connection {
+	return &failProvConnection{}
 }
 
 func checkConn(id string) bool {
-	globalConnectionManager.RLock()
-	defer globalConnectionManager.RUnlock()
-	_, ok := globalConnectionManager.connectionPool[id]
+	m := globalConnectionManager.Load()
+	m.RLock()
+	defer m.RUnlock()
+	_, ok := m.connectionPool[id]
 	return ok
+}
+
+// getReadyTestMeta resolves the published Meta for tests. It returns nil
+// for missing keys and for keys still mid-transition.
+func getReadyTestMeta(key string) *Meta {
+	m := globalConnectionManager.Load()
+	m.RLock()
+	defer m.RUnlock()
+	if e, ok := m.connectionPool[key]; ok && e.state == entryReady {
+		return e.meta
+	}
+	return nil
 }
 
 func TestFetchConnectionNotExist(t *testing.T) {
 	ctx := context.Background()
 	_, err := FetchConnection(ctx, "2222", "mock", map[string]interface{}{"connectionSelector": "id2"}, nil)
 	require.Error(t, err)
+}
+
+// TestReloadFailedProvisionStaysManageable is the KV-ghost regression
+// test: a persisted named record whose provider is gone (unknown type)
+// must still reload into a manageable Meta — GET sees it as
+// disconnected, and DELETE removes both the Meta and the KV record
+// instead of reporting success while the ghost resurrects on restart.
+func TestReloadFailedProvisionStaysManageable(t *testing.T) {
+	require.NoError(t, InitConnectionManager4Test())
+	ctx := mockContext.NewMockContext("reload", "op1")
+	// Defensive cleanup from any prior failed run.
+	_ = dropConnectionStore("nosuchprovider", "ghost1")
+
+	require.NoError(t, storeConnectionMeta("nosuchprovider", "ghost1", map[string]any{"a": 1}))
+	require.NoError(t, ReloadNamedConnection())
+
+	meta, err := GetConnectionDetail(ctx, "ghost1")
+	require.NoError(t, err)
+	require.True(t, meta.Named)
+	status, msg := meta.GetStatus()
+	require.Equal(t, api.ConnectionDisconnected, status)
+	require.NotEmpty(t, msg)
+
+	// Wait on the failed handle surfaces the provision error, not nil.
+	_, err = meta.cw.Wait(ctx)
+	require.Error(t, err)
+
+	// DELETE works and really removes the KV record.
+	require.NoError(t, DropNameConnection(ctx, "ghost1"))
+	_, err = GetConnectionDetail(ctx, "ghost1")
+	require.Error(t, err)
+	cfgs, err := conf.GetCfgFromKVStorage("connections", "nosuchprovider", "ghost1")
+	require.NoError(t, err)
+	require.Empty(t, cfgs)
 }
