@@ -327,11 +327,10 @@ func TestSQLReconnect(t *testing.T) {
 		dataChan <- data
 	}, func(ctx api.StreamContext, err error) {})
 	require.NotNil(t, <-dataChan)
-	require.False(t, sqlConnector.needReconnect)
 
-	// Runtime disconnect: one poll fails and marks the connection; while
-	// the database stays down, the next poll keeps retrying until the rule
-	// context is canceled instead of failing the rule.
+	// Runtime disconnect: one poll fails and reports a suspect while
+	// the database stays down; the next poll parks on the Pool gate
+	// until the rule context is canceled instead of failing the rule.
 	require.NoError(t, testx.KillSessions(s))
 	s.Close()
 	errCh := make(chan error, 1)
@@ -341,7 +340,6 @@ func TestSQLReconnect(t *testing.T) {
 		errCh <- err
 	})
 	require.Error(t, <-errCh)
-	require.True(t, sqlConnector.needReconnect)
 
 	pollCtx, cancelPoll := rootCtx.WithCancel()
 	pollErr := make(chan error, 1)
@@ -352,7 +350,7 @@ func TestSQLReconnect(t *testing.T) {
 			pollErr <- err
 		})
 	}()
-	// The retry loop must be cancellable while the database is still down.
+	// The parked wait must be cancellable while the database is still down.
 	time.Sleep(500 * time.Millisecond)
 	cancelPoll()
 	select {
@@ -361,10 +359,10 @@ func TestSQLReconnect(t *testing.T) {
 	case <-time.After(5 * time.Second):
 		t.Fatal("canceled poll did not return in time")
 	}
-	require.True(t, sqlConnector.needReconnect)
 
-	// Database recovery: the next poll reconnects and reads again without
-	// restarting anything.
+	// Database recovery: the Pool worker keeps recovering in the
+	// background; the next poll parks until it succeeds, then reads
+	// again without restarting anything.
 	s, err = testx.SetupEmbeddedMysqlServer(address, port)
 	require.NoError(t, err)
 	defer s.Close()
@@ -374,7 +372,6 @@ func TestSQLReconnect(t *testing.T) {
 		t.Logf("query error after recovery: %v", err)
 	})
 	require.NotNil(t, <-dataChan)
-	require.False(t, sqlConnector.needReconnect)
 }
 
 func TestSQLConfURL(t *testing.T) {
