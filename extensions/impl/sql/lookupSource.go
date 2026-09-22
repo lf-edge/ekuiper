@@ -244,7 +244,7 @@ func (s *SqlLookupSource) Lookup(ctx api.StreamContext, fields []string, keys []
 		query = sqlQuery
 	}
 	ctx.GetLogger().Debugf("Query is %s with args %v", query, args)
-	rows, err := conn.GetDB().QueryContext(ctx, query, args...)
+	rows, err := conn.QueryContext(ctx, query, args...)
 	failpoint.Inject("dbErr", func() {
 		err = errors.New("dbErr")
 	})
