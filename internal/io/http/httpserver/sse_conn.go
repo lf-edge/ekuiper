@@ -27,6 +27,9 @@ type SSEConnection struct {
 	id        string
 	props     map[string]any
 	cfg       *sseConfig
+	// registered tracks whether Dial successfully registered the endpoint.
+	// Close must only unregister an endpoint this instance registered.
+	registered bool
 }
 
 type sseConfig struct {
@@ -49,6 +52,7 @@ func (s *SSEConnection) Provision(ctx api.StreamContext, conId string, props map
 	s.cfg = cfg
 	s.id = conId
 	s.props = props
+	s.registered = false
 	return nil
 }
 
@@ -59,6 +63,7 @@ func (s *SSEConnection) Dial(ctx api.StreamContext) error {
 	}
 	s.RecvTopic = rTopic
 	s.SendTopic = sTopic
+	s.registered = true
 	return nil
 }
 
@@ -67,7 +72,7 @@ func (s *SSEConnection) Ping(ctx api.StreamContext) error {
 }
 
 func (s *SSEConnection) Close(ctx api.StreamContext) error {
-	if s.cfg != nil {
+	if s.registered && s.cfg != nil {
 		UnRegisterSSEEndpoint(s.cfg.Datasource)
 	}
 	return nil

@@ -436,28 +436,36 @@ func (m *Manager) runCreation(e *poolEntry, key, typ string, props map[string]an
 	if err == nil && persist != nil {
 		err = persist()
 	}
+	// Provider Close must never run under the Manager lock. Publish the
+	// round outcome under the lock, then release a failed candidate
+	// outside it. After the registered-flag fix (WS/SSE) a
+	// provisioned-but-never-dialed Close is a no-op for endpoint
+	// providers and a local dispose for the rest, so a fresh round
+	// starting right after publishing the failure cannot be disturbed
+	// by the cleanup still in flight.
 	m.Lock()
-	defer m.Unlock()
 	// Verify our reservation survived. Init/reset is contractually
 	// serialized with mutations, so the only way out here is a stale
 	// entry from a misuse path — never silently publish over it.
 	cur, ok := m.connectionPool[key]
 	if !ok || cur != e || cur.state != entryCreating {
+		m.Unlock()
 		if conn != nil {
 			conn.Close(serverStreamContext(m.ctx))
 		}
 		return nil, ErrConnectionClosed
 	}
 	if err != nil {
+		e.err = err
+		close(e.ready)
+		delete(m.connectionPool, key)
+		m.Unlock()
 		if conn != nil {
 			// The candidate belongs to the Pool from a nil Provision
 			// return on; a failed later step must release it instead
 			// of dropping the reference.
 			conn.Close(serverStreamContext(m.ctx))
 		}
-		e.err = err
-		close(e.ready)
-		delete(m.connectionPool, key)
 		return nil, err
 	}
 	meta := newMeta(m, key, typ, props, named)
@@ -469,6 +477,7 @@ func (m *Manager) runCreation(e *poolEntry, key, typ string, props map[string]an
 	e.meta = meta
 	e.state = entryReady
 	close(e.ready)
+	m.Unlock()
 	return meta, nil
 }
 
@@ -720,23 +729,51 @@ func DropNameConnection(ctx api.StreamContext, selId string) error {
 		return fmt.Errorf("connection id should be defined")
 	}
 	m := globalConnectionManager.Load()
-	m.Lock()
-	_, stop, err := dropNameConnection(m, ctx, selId)
-	m.Unlock()
-	if err != nil {
-		// DELETE stays idempotent: a teardown already owning the key
-		// converges to the same end state, so a concurrent dropper
-		// reports success. Internal strict callers (Update) use
-		// dropNameConnection directly and still see the error.
-		if errors.Is(err, ErrConnectionRemoving) {
+	for {
+		m.Lock()
+		_, stop, err := dropNameConnection(m, ctx, selId)
+		if err == nil {
+			m.Unlock()
+			if stop != nil {
+				finishStop(m, selId, stop, ctx)
+			}
 			return nil
 		}
-		return err
+		if !errors.Is(err, ErrConnectionRemoving) {
+			m.Unlock()
+			return err
+		}
+		// ErrConnectionRemoving covers both creating and removing.
+		// Removing stays idempotent (nil). Creating must not report
+		// success: wait out the creation round (bounded: Provision +
+		// persist only, no Dial) and retry, mirroring the old global-lock
+		// behavior where Drop blocked until Create published.
+		e, ok := m.connectionPool[selId]
+		if !ok {
+			// Lost a race with a failed round's cleanup.
+			m.Unlock()
+			return nil
+		}
+		if e.state == entryRemoving {
+			m.Unlock()
+			return nil
+		}
+		if e.state != entryCreating {
+			m.Unlock()
+			return nil
+		}
+		ch := e.ready
+		m.Unlock()
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-ch:
+			if globalConnectionManager.Load() != m {
+				return ErrConnectionClosed
+			}
+			continue
+		}
 	}
-	if stop != nil {
-		finishStop(m, selId, stop, ctx)
-	}
-	return nil
 }
 
 func UpdateConnection(ctx api.StreamContext, id, typ string, props map[string]any) (*ConnWrapper, error) {
@@ -745,31 +782,66 @@ func UpdateConnection(ctx api.StreamContext, id, typ string, props map[string]an
 	}
 	// Validation + drop run under one hold of a single captured manager;
 	// creation re-locks internally, so the lock must be released in
-	// between (no defer across the call).
-	m := globalConnectionManager.Load()
-	m.Lock()
-	isInternal, err := isInternalConnection(m, id)
-	if err != nil {
+	// between (no defer across the call). A concurrent creation round is
+	// waited out and retried, consistent with DropNameConnection; a key
+	// already owned by teardown stays a hard error.
+	for {
+		m := globalConnectionManager.Load()
+		m.Lock()
+		isInternal, err := isInternalConnection(m, id)
+		if err != nil {
+			if errors.Is(err, ErrConnectionRemoving) {
+				if e, ok := m.connectionPool[id]; ok && e.state == entryCreating {
+					ch := e.ready
+					m.Unlock()
+					select {
+					case <-ctx.Done():
+						return nil, ctx.Err()
+					case <-ch:
+						if globalConnectionManager.Load() != m {
+							return nil, ErrConnectionClosed
+						}
+						continue
+					}
+				}
+			}
+			m.Unlock()
+			return nil, err
+		}
+		if isInternal {
+			m.Unlock()
+			return nil, fmt.Errorf("internal connection %v can't be edit", id)
+		}
+		// Drop holds the lock only for validation and stop handoff; the
+		// previous generation is fully stopped and removed before creating
+		// the replacement, preserving drop-then-create ordering. Creation
+		// re-locks internally.
+		_, stop, err := dropNameConnection(m, ctx, id)
+		if err != nil {
+			if errors.Is(err, ErrConnectionRemoving) {
+				if e, ok := m.connectionPool[id]; ok && e.state == entryCreating {
+					ch := e.ready
+					m.Unlock()
+					select {
+					case <-ctx.Done():
+						return nil, ctx.Err()
+					case <-ch:
+						if globalConnectionManager.Load() != m {
+							return nil, ErrConnectionClosed
+						}
+						continue
+					}
+				}
+			}
+			m.Unlock()
+			return nil, err
+		}
 		m.Unlock()
-		return nil, err
+		if stop != nil {
+			finishStop(m, id, stop, ctx)
+		}
+		return createNamedConnection(ctx, id, typ, props)
 	}
-	if isInternal {
-		m.Unlock()
-		return nil, fmt.Errorf("internal connection %v can't be edit", id)
-	}
-	// Drop holds the lock only for validation and stop handoff; the
-	// previous generation is fully stopped and removed before creating
-	// the replacement, preserving drop-then-create ordering. Creation
-	// re-locks internally.
-	_, stop, err := dropNameConnection(m, ctx, id)
-	m.Unlock()
-	if err != nil {
-		return nil, err
-	}
-	if stop != nil {
-		finishStop(m, id, stop, ctx)
-	}
-	return createNamedConnection(ctx, id, typ, props)
 }
 
 func isInternalConnection(m *Manager, id string) (bool, error) {
