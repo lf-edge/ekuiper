@@ -146,6 +146,10 @@ type fetchPlan struct {
 	props map[string]any
 	// fetchAttached: handle attached atomically under the lock.
 	cw *ConnWrapper
+	// fetchAttached: Meta owning the handle, for the post-unlock
+	// initial delivery (deliverInitial runs outside the Manager
+	// lock per the lock invariant; the plan only registers).
+	attachedMeta *Meta
 	// fetchWaitCreating: creation entry to wait on (e.err read after
 	// ready-close is safe: immutable past close).
 	waitEntry *poolEntry
@@ -185,7 +189,7 @@ func (m *Manager) planFetch(ctx api.StreamContext, opts FetchOptions) fetchPlan 
 		if err != nil {
 			return fetchPlan{kind: fetchFailed, err: err}
 		}
-		return fetchPlan{kind: fetchAttached, cw: cw}
+		return fetchPlan{kind: fetchAttached, cw: cw, attachedMeta: e.meta}
 	case entryCreating:
 		return fetchPlan{kind: fetchWaitCreating, waitEntry: e, wait: e.ready}
 	default: // entryRemoving
@@ -230,6 +234,10 @@ func fetchInternal(ctx api.StreamContext, opts FetchOptions) (*ConnWrapper, erro
 		plan := m.planFetch(ctx, opts)
 		switch plan.kind {
 		case fetchAttached:
+			// Initial delivery runs outside the Manager lock
+			// (lock invariant): a slow consumer stalls only its
+			// own delivery, never the Pool.
+			plan.attachedMeta.deliverInitial(opts.RefID, opts.StatusHandler)
 			return plan.cw, nil
 		case fetchFailed:
 			return nil, plan.err
