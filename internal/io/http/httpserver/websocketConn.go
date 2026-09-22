@@ -30,6 +30,10 @@ type WebsocketConnection struct {
 	cfg       *wscConfig
 	isServer  bool
 	client    *WebsocketClient
+	// registered tracks whether Dial successfully registered the server
+	// endpoint. Close must only unregister an endpoint this instance
+	// registered; a provisioned-but-never-dialed candidate must be a no-op.
+	registered bool
 }
 
 func (w *WebsocketConnection) GetId(ctx api.StreamContext) string {
@@ -50,6 +54,7 @@ func (w *WebsocketConnection) Provision(ctx api.StreamContext, conId string, pro
 	w.id = conId
 	w.props = props
 	w.isServer = getWsType(cfg)
+	w.registered = false
 	return nil
 }
 
@@ -61,6 +66,7 @@ func (w *WebsocketConnection) Dial(ctx api.StreamContext) error {
 		}
 		w.RecvTopic = rTopic
 		w.SendTopic = sTopic
+		w.registered = true
 	} else {
 		tlsConfig, err := cert.GenTLSConfig(ctx, w.props)
 		if err != nil {
@@ -90,7 +96,7 @@ func (w *WebsocketConnection) Ping(ctx api.StreamContext) error {
 
 func (w *WebsocketConnection) Close(ctx api.StreamContext) error {
 	if w.isServer {
-		if w.cfg != nil {
+		if w.registered && w.cfg != nil {
 			UnRegisterWebSocketEndpoint(w.cfg.Datasource)
 		}
 	} else if w.client != nil {
