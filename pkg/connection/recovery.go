@@ -60,37 +60,28 @@ func (meta *Meta) startRecoveryWorker(conn modules.Connection) {
 	go meta.recoveryLoop(rc, newRecoveryBackoff())
 }
 
-// recoveryLoop parks until a fresh wakeup sequence arrives, acts on
-// it exactly once, then absorbs every report that landed during the
-// attempt: those describe the pre-attempt handle, superseded by its
-// verdict. A stale buffered slot (sequence already absorbed) wakes
-// the select and re-parks without touching the provider — no Ping,
-// no Recover, no status write.
-//
-// No wakeup is ever lost: every sequence bump pairs with a
-// non-blocking send, and a non-empty buffer always trips the select,
-// so a parked worker either observes the bump by re-reading the
-// sequence or is forced to re-read by the slot. The loop exits only
-// on lifecycle termination.
+// recoveryLoop parks until a wakeup arrives and acts on current Meta
+// state. The channel is only the wakeup, state is the truth: a wakeup
+// against settled state (connected+ready, or an episode owned by an
+// in-flight attempt) is a pure no-op with no provider I/O. No wakeup
+// is ever lost: every accepted report pairs a state change (or a
+// confirmed flip fact) with a non-blocking send, and a non-empty
+// buffer always trips the select, forcing a state re-read. The loop
+// exits only on lifecycle termination.
 func (meta *Meta) recoveryLoop(conn modules.PoolRecoverableConnection, bo *backoff.ExponentialBackOff) {
 	defer close(meta.recoveryDone)
-	var acted uint64
 	for {
-		if meta.currentSuspectSeq() == acted {
-			select {
-			case <-meta.lifecycleCtx.Done():
-				return
-			case <-meta.suspectCh:
-			}
-			continue
+		select {
+		case <-meta.lifecycleCtx.Done():
+			return
+		case <-meta.suspectCh:
 		}
 		meta.handleSuspect(conn, bo)
-		acted = meta.currentSuspectSeq()
 	}
 }
 
-// handleSuspect acts on one fresh wakeup. The truth table (hard
-// invariant 4: the channel is only the wakeup, Meta state is truth):
+// handleSuspect acts on one wakeup. The truth table (hard invariant
+// 4: the channel is only the wakeup, Meta state is truth):
 //
 //	connected + verifying -> Ping verify: healthy reopens the gate,
 //	  failed records disconnected and falls through to recovery.
@@ -101,10 +92,10 @@ func (meta *Meta) recoveryLoop(conn modules.PoolRecoverableConnection, bo *backo
 //	  by an in-flight attempt, or connecting owned by initial dial.
 //
 // Provider I/O always runs outside every lock on a bounded
-// server-owned attempt scope. A verdict for a superseded episode is
-// impossible by construction: reports arriving mid-attempt are
-// absorbed by the loop above, and the Ping-healthy reopen is always
-// fresher than any report it supersedes.
+// server-owned attempt scope. Reports arriving mid-attempt sit
+// coalesced in the buffered slot; when the episode ends, the next
+// wakeup re-reads state, so a newer episode is always honored and a
+// settled one is a no-op — never the reverse.
 func (meta *Meta) handleSuspect(conn modules.PoolRecoverableConnection, bo *backoff.ExponentialBackOff) {
 	meta.stateMu.RLock()
 	status, verifying := meta.status, meta.verifying
@@ -128,10 +119,10 @@ func (meta *Meta) handleSuspect(conn modules.PoolRecoverableConnection, bo *back
 	}
 	// Own the disconnected episode: attempt until success or
 	// lifecycle end. One attempt per backoff step, never an internal
-	// tight loop. New wakeups during the episode are absorbed by the
-	// loop above (sequence), so concurrent reports never fork a
-	// second episode — and a parked consumer never needs to fail
-	// again to keep recovery going. Each cycle re-announces through
+	// tight loop. Wakeups arriving during the episode sit coalesced
+	// in the buffered slot; the single worker never forks a second
+	// episode, and a parked consumer never needs to fail again to
+	// keep recovery going. Each cycle re-announces through
 	// disconnected/recovering so lastError stays fresh for operators;
 	// all of it shares the one parked generation.
 	for {
@@ -174,22 +165,12 @@ func (meta *Meta) sleepBackoff(bo *backoff.ExponentialBackOff) bool {
 	}
 }
 
-// currentSuspectSeq reads the wakeup sequence. Guarded by stateMu.
-func (meta *Meta) currentSuspectSeq() uint64 {
-	meta.stateMu.RLock()
-	defer meta.stateMu.RUnlock()
-	return meta.suspectSeq
-}
-
-// nudgeRecovery records one probe-confirmed fault and wakes the
-// recovery worker. The flip the probe just performed is the fact;
-// the sequence bump lets the worker tell it apart from a stale
-// wakeup. No-op when no worker exists: the slot just sits buffered
-// (coalesced) until one ever starts — or forever, harmlessly.
+// nudgeRecovery wakes the recovery worker after a probe-confirmed
+// fault. The flip the probe just performed is the fact; this is only
+// its wakeup. No-op when no worker exists: the slot just sits
+// buffered (coalesced) until one ever starts — or forever,
+// harmlessly, since a wakeup against settled state is a no-op.
 func (meta *Meta) nudgeRecovery() {
-	meta.stateMu.Lock()
-	meta.suspectSeq++
-	meta.stateMu.Unlock()
 	select {
 	case meta.suspectCh <- struct{}{}:
 	default:

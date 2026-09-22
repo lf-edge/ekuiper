@@ -284,8 +284,55 @@ func TestRecoveryStormSingleAttempt(t *testing.T) {
 	require.Equal(t, int32(1), fake.recoverCalls.Load())
 }
 
-// TestRecoveryStaleWakeupIgnored: a buffered slot with no sequence
-// bump wakes the worker and re-parks without touching the provider.
+// TestRecoverySecondEpisodeNotSwallowed pins that a newer episode
+// reported during a slow status delivery is honored, never absorbed:
+// the first suspect verifies healthy and reopens the gate, a waiter
+// fails on the new handle and reports again while the reopen delivery
+// is still blocked, and the worker must verify a second time.
+func TestRecoverySecondEpisodeNotSwallowed(t *testing.T) {
+	fake := newRecoverableFake()
+	m := newWorkerMeta(t, fake)
+	defer m.lifecycleCancel()
+	ctx := mockContext.NewMockContext("r1", "op1")
+
+	// The first reopen delivery blocks, holding eventMu.
+	blocked := make(chan struct{})
+	release := make(chan struct{})
+	var first atomic.Bool
+	first.Store(true)
+	m.AddRef("blocker", func(s, e string) {
+		if first.CompareAndSwap(true, false) {
+			close(blocked)
+			<-release
+		}
+	})
+
+	m.cw.ReportSuspectedFailure()
+	select {
+	case <-blocked:
+	case <-time.After(5 * time.Second):
+		t.Fatal("reopen delivery did not start")
+	}
+	// The gate already reopened in state (delivery is only the
+	// callback): a waiter passes and reports the new-handle failure
+	// while the old delivery is still blocked.
+	require.NoError(t, m.cw.WaitReady(ctx))
+	m.cw.ReportSuspectedFailure()
+	ready, verifying := workerGate(t, m)
+	require.False(t, ready)
+	require.True(t, verifying)
+	close(release)
+
+	// The worker must act on the second episode: a second Ping and a
+	// reopened gate. Absorbing the new report would park here forever.
+	require.Eventually(t, func() bool {
+		ready, _ := workerGate(t, m)
+		return ready && fake.pingCalls.Load() == 2
+	}, 5*time.Second, 5*time.Millisecond)
+}
+
+// TestRecoveryStaleWakeupIgnored: a buffered slot against settled
+// state wakes the worker and re-parks without touching the provider.
 func TestRecoveryStaleWakeupIgnored(t *testing.T) {
 	fake := newRecoverableFake()
 	m := newWorkerMeta(t, fake)
@@ -354,13 +401,14 @@ func TestProbeNudgesWorkerOnFlip(t *testing.T) {
 
 	requireConnected(t, "probe-nudge")
 	meta := probeMeta(t, "probe-nudge")
-	require.Equal(t, uint64(0), meta.currentSuspectSeq())
 
 	probeConnections(time.Second)
 
+	// The flip the probe performed pairs with exactly one worker
+	// wakeup. failping is not pool-recoverable, so no worker exists
+	// and the slot stays buffered.
 	s, _ := meta.GetStatus()
 	require.Equal(t, api.ConnectionDisconnected, s)
-	require.Equal(t, uint64(1), meta.currentSuspectSeq())
 	require.Equal(t, 1, len(meta.suspectCh))
 }
 
