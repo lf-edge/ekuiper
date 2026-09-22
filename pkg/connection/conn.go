@@ -127,17 +127,63 @@ func (cw *ConnWrapper) peekConn() modules.Connection {
 	return cw.conn
 }
 
+// ReportSuspectedFailure reports one failed business I/O against the
+// pooled connection. The first suspect of an episode closes the
+// internal readiness gate (public status stays connected) so
+// subsequent WaitReady callers park; verification and recovery belong
+// to the Pool worker. Non-blocking and coalesced: a storm of reports
+// collapses into one worker wakeup. Safe to call from any consumer;
+// it never performs I/O and never blocks.
+func (cw *ConnWrapper) ReportSuspectedFailure() {
+	cw.meta.reportSuspect()
+}
+
+// reportSuspect records one consumer-observed failure and nudges the
+// recovery worker. The gate change is the signal; suspectCh is only
+// the wakeup. StateMu only, never eventMu: closing the gate must not
+// wait behind a slow status callback.
+func (meta *Meta) reportSuspect() {
+	meta.stateMu.Lock()
+	switch meta.status {
+	case api.ConnectionConnected:
+		if meta.ready {
+			// First suspect of this episode: close the gate,
+			// open a fresh parked generation, mark verification
+			// pending. Public status stays connected.
+			meta.ready = false
+			meta.verifying = true
+			meta.readyCh = make(chan struct{})
+			meta.generation++
+		}
+		// Already verifying: coalesce, nudge below.
+	case api.ConnectionDisconnected:
+		// Fault already recorded; nudge only.
+	default:
+		// connecting/recovering: the worker (or the initial dial)
+		// owns the episode, nothing to record.
+		meta.stateMu.Unlock()
+		return
+	}
+	meta.stateMu.Unlock()
+	select {
+	case meta.suspectCh <- struct{}{}:
+	default:
+	}
+}
+
 // Status reports the last-known connection state, same pure-read
 // semantics as Meta.GetStatus: it never probes the provider.
 func (cw *ConnWrapper) Status() (string, string) {
 	return cw.meta.GetStatus()
 }
 
-// WaitReady blocks until the pooled connection is connected. Unlike
-// Wait (first-use readiness), it tracks the current lifecycle across
-// disconnect/reconnect cycles: a waiter parked in a disconnected
-// generation stays parked until some generation connects. It never
-// returns nil error without connected status. Precedence is fixed: a
+// WaitReady blocks until the pooled connection is internally ready.
+// Unlike Wait (first-use readiness), it tracks the current lifecycle
+// across disconnect/reconnect cycles: a waiter parked in a
+// not-ready generation stays parked until some generation opens the
+// gate. Readiness is the internal gate, not the public status: a
+// connected status under verification still parks. It never returns
+// nil error without internal readiness. Precedence is fixed: a
 // canceled caller always observes ctx.Err() first, lifecycle
 // termination yields ErrConnectionClosed otherwise. Waking from a
 // generation channel always rechecks; a wake is never success.
@@ -148,11 +194,11 @@ func (cw *ConnWrapper) WaitReady(ctx api.StreamContext) error {
 		return ctx.Err()
 	}
 	for {
-		status, ch, closed := cw.meta.snapshotReady()
+		ready, ch, closed := cw.meta.snapshotReady()
 		if closed {
 			return ErrConnectionClosed
 		}
-		if status == api.ConnectionConnected {
+		if ready {
 			// Final recheck with Wait() precedence: a caller that
 			// canceled between the snapshot and this return must
 			// observe its own cancellation, and a lifecycle that
@@ -249,6 +295,7 @@ func newMeta(manager *Manager, id, typ string, props map[string]any, named bool)
 		done:            make(chan struct{}),
 		status:          api.ConnectionConnecting,
 		readyCh:         make(chan struct{}),
+		suspectCh:       make(chan struct{}, 1),
 	}
 }
 
@@ -306,12 +353,13 @@ type Meta struct {
 	// For stateless connection, the status needs to ping
 	//
 	// stateMu is the single synchronization domain for connection
-	// state. status, lastError and the readiness generation (readyCh)
-	// always transition together under this lock, so every snapshot
-	// is consistent and WaitReady can never miss a wakeup. Reading
-	// state never performs I/O (pure read); health detection is
-	// produced asynchronously by provider callbacks and the health
-	// probe, never by a status read.
+	// state. status, lastError, the internal readiness gate
+	// (ready/verifying) and the readiness generation (readyCh) always
+	// transition together under this lock, so every snapshot is
+	// consistent and WaitReady can never miss a wakeup. Reading state
+	// never performs I/O (pure read); health detection is produced
+	// asynchronously by provider callbacks, the health probe and the
+	// recovery worker, never by a status read.
 	stateMu sync.RWMutex `json:"-"`
 	// status is one of connecting/connected/disconnected/recovering.
 	// connecting is only for the initial dial; runtime reconnects
@@ -321,33 +369,58 @@ type Meta struct {
 	// connected clears it, entering disconnected replaces it. A stale
 	// error from an older generation is never reported.
 	lastError string `json:"-"`
+	// ready is the internal readiness gate judged by WaitReady. It is
+	// true exactly when the current generation channel is closed.
+	// Public status may stay connected while ready is false (an
+	// episode under verification): subsequent operations park even
+	// though the status still reads connected.
+	ready bool `json:"-"`
+	// verifying marks a connected episode with a failure under
+	// investigation: the first suspect closed the gate and the worker
+	// has not concluded yet. Cleared on every status transition out
+	// of the episode (connected/disconnected/recovering/connecting).
+	verifying bool `json:"-"`
 	// readyCh is the current readiness generation: open while the
-	// connection is not connected, closed on every transition into
-	// connected. Leaving connected always opens a new channel, so
-	// parked WaitReady waiters stay parked across
-	// disconnected<->recovering without spurious wakeups.
+	// gate is closed, closed when the gate opens. Closing the gate
+	// always opens a new channel, so parked WaitReady waiters stay
+	// parked across disconnected<->recovering without spurious
+	// wakeups.
 	readyCh    chan struct{} `json:"-"`
 	generation uint64        `json:"-"`
+	// suspectCh wakes the recovery worker (c3): one buffered slot,
+	// non-blocking send, coalesced by construction. It carries no
+	// truth — the worker always re-reads Meta state on wakeup, so a
+	// stale wakeup against an open gate is a no-op. Created with the
+	// Meta; the worker (when started) drains it until the lifecycle
+	// ends.
+	suspectCh chan struct{} `json:"-"`
 }
 
-// closeReadyLocked ends the current generation: every waiter parked
-// on readyCh wakes and rechecks. prev is the pre-transition status;
-// only a transition into connected from another state closes the
-// channel, duplicate connected reports are no-ops (closing an
-// already-closed channel would panic). Caller holds stateMu (write).
-func (meta *Meta) closeReadyLocked(prev string) {
-	if prev != api.ConnectionConnected {
+// setReadyLocked opens the internal readiness gate and ends the
+// current generation: every waiter parked on readyCh wakes and
+// rechecks. Idempotent: an already-open gate changes nothing (closing
+// an already-closed channel would panic). Caller holds stateMu
+// (write).
+func (meta *Meta) setReadyLocked() {
+	if !meta.ready {
 		close(meta.readyCh)
 		meta.generation++
 	}
+	meta.ready = true
+	meta.verifying = false
 }
 
-// newGenerationLocked opens a fresh parked generation. Caller holds
-// stateMu (write); only call when leaving connected, i.e. the
-// current channel is already closed.
-func (meta *Meta) newGenerationLocked() {
-	meta.readyCh = make(chan struct{})
-	meta.generation++
+// setNotReadyLocked closes the internal readiness gate and opens a
+// fresh parked generation. Idempotent: an already-closed gate changes
+// nothing, so a verifying episode followed by connected->disconnected
+// never opens two generations for one outage. Caller holds stateMu
+// (write).
+func (meta *Meta) setNotReadyLocked() {
+	if meta.ready {
+		meta.ready = false
+		meta.readyCh = make(chan struct{})
+		meta.generation++
+	}
 }
 
 func (meta *Meta) NotifyStatus(status string, s string) {
@@ -364,41 +437,40 @@ func (meta *Meta) NotifyStatus(status string, s string) {
 	switch status {
 	case api.ConnectionConnected:
 		// A new generation ends here: clear the previous
-		// generation's error even when the producer sends none.
-		prev := meta.status
+		// generation's error even when the producer sends none,
+		// open the internal gate.
 		meta.status = api.ConnectionConnected
 		meta.lastError = ""
-		meta.closeReadyLocked(prev)
+		meta.setReadyLocked()
 	case api.ConnectionDisconnected:
-		// Leaving connected parks waiters on a new generation;
-		// repeated disconnects within one generation only refresh
+		// The gate closes at most once per outage: a verifying
+		// episode already parked waiters, so a subsequent
+		// connected->disconnected only records the fault. A
+		// probe-first disconnect (gate still open) parks here.
+		// Repeated disconnects within one episode only refresh
 		// the error.
-		if meta.status == api.ConnectionConnected {
-			meta.newGenerationLocked()
-		}
 		meta.status = api.ConnectionDisconnected
 		meta.lastError = s
+		meta.verifying = false
+		meta.setNotReadyLocked()
 	case ConnectionRecovering:
-		// Runtime reconnect shares the disconnected generation:
-		// no new channel, no wakeup. Direct connected->recovering
-		// still opens a generation first (leaving connected always
-		// parks).
-		if meta.status == api.ConnectionConnected {
-			meta.newGenerationLocked()
-		}
+		// Runtime reconnect shares the episode: entering
+		// recovering concludes verification and parks the gate,
+		// never opening a second generation for one outage.
 		meta.status = ConnectionRecovering
 		if s != "" {
 			meta.lastError = s
 		}
+		meta.verifying = false
+		meta.setNotReadyLocked()
 	case api.ConnectionConnecting:
 		// Initial dial attempts re-report connecting; that is a
 		// no-op, not a new generation. Any other regression into
-		// connecting re-opens a parked generation defensively.
+		// connecting parks the gate defensively.
 		if meta.status != api.ConnectionConnecting {
-			if meta.status == api.ConnectionConnected {
-				meta.newGenerationLocked()
-			}
 			meta.status = api.ConnectionConnecting
+			meta.verifying = false
+			meta.setNotReadyLocked()
 		}
 	default:
 		conf.Log.Warnf("conn %s ignoring unknown status %q", meta.ID, status)
@@ -540,18 +612,18 @@ func (meta *Meta) GetStatus() (s string, e string) {
 }
 
 // snapshotReady captures one consistent readiness observation for
-// WaitReady: the status, its generation channel, and whether the
-// lifecycle already ended. Channel close and status change happen
+// WaitReady: the internal gate, its generation channel, and whether
+// the lifecycle already ended. Gate flip and channel swap happen
 // atomically under stateMu, so a waiter parked on the returned
 // channel can never miss the transition that ends its generation;
 // it wakes and rechecks.
-func (meta *Meta) snapshotReady() (status string, ch <-chan struct{}, closed bool) {
+func (meta *Meta) snapshotReady() (ready bool, ch <-chan struct{}, closed bool) {
 	select {
 	case <-meta.lifecycleCtx.Done():
-		return "", nil, true
+		return false, nil, true
 	default:
 	}
 	meta.stateMu.RLock()
 	defer meta.stateMu.RUnlock()
-	return meta.status, meta.readyCh, false
+	return meta.ready, meta.readyCh, false
 }

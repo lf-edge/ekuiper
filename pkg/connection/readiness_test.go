@@ -208,3 +208,115 @@ func TestWaitReadyLifecycleClosed(t *testing.T) {
 		t.Fatal("WaitReady did not observe lifecycle termination")
 	}
 }
+
+// TestSuspectClosesGateKeepsStatus pins hard invariant 1: the first
+// suspect of a connected episode closes the internal readiness gate
+// and opens a fresh parked generation while the public status stays
+// connected, plus exactly one worker wakeup.
+func TestSuspectClosesGateKeepsStatus(t *testing.T) {
+	m := newStateMeta()
+	m.NotifyStatus(api.ConnectionConnected, "")
+	gen0 := m.generation
+
+	m.reportSuspect()
+
+	s, _ := m.GetStatus()
+	require.Equal(t, api.ConnectionConnected, s)
+	m.stateMu.RLock()
+	ready, verifying := m.ready, m.verifying
+	m.stateMu.RUnlock()
+	require.False(t, ready)
+	require.True(t, verifying)
+	require.Greater(t, m.generation, gen0)
+	require.False(t, isClosed(m.readyCh))
+	select {
+	case <-m.suspectCh:
+	default:
+		t.Fatal("expected one worker wakeup")
+	}
+}
+
+// TestSuspectThenDisconnectSingleGeneration pins the no-double-open
+// rule: a verifying episode followed by connected->disconnected opens
+// exactly one generation for the outage.
+func TestSuspectThenDisconnectSingleGeneration(t *testing.T) {
+	m := newStateMeta()
+	m.NotifyStatus(api.ConnectionConnected, "")
+	m.reportSuspect()
+	gen, ch := m.generation, m.readyCh
+
+	m.NotifyStatus(api.ConnectionDisconnected, "boom")
+
+	require.Equal(t, gen, m.generation)
+	require.True(t, ch == m.readyCh)
+	requireState(t, m, api.ConnectionDisconnected, "boom")
+}
+
+// TestSuspectStormCoalesces: any number of reports collapse into one
+// buffered wakeup.
+func TestSuspectStormCoalesces(t *testing.T) {
+	m := newStateMeta()
+	m.NotifyStatus(api.ConnectionConnected, "")
+	for i := 0; i < 50; i++ {
+		m.reportSuspect()
+	}
+	require.LessOrEqual(t, len(m.suspectCh), 1)
+	select {
+	case <-m.suspectCh:
+	default:
+	}
+	require.Equal(t, 0, len(m.suspectCh))
+}
+
+// TestSuspectByState pins the report table: disconnected nudges
+// without state change, connecting and recovering are ignored.
+func TestSuspectByState(t *testing.T) {
+	disconnected := newStateMeta()
+	disconnected.NotifyStatus(api.ConnectionDisconnected, "down")
+	gen := disconnected.generation
+	disconnected.reportSuspect()
+	require.Equal(t, gen, disconnected.generation)
+	requireState(t, disconnected, api.ConnectionDisconnected, "down")
+	select {
+	case <-disconnected.suspectCh:
+	default:
+		t.Fatal("expected a wakeup for the disconnected suspect")
+	}
+
+	connecting := newStateMeta()
+	connecting.reportSuspect()
+	require.Equal(t, 0, len(connecting.suspectCh))
+
+	recovering := newStateMeta()
+	recovering.NotifyStatus(api.ConnectionConnected, "")
+	recovering.NotifyStatus(ConnectionRecovering, "")
+	recovering.reportSuspect()
+	require.Equal(t, 0, len(recovering.suspectCh))
+}
+
+// TestWaitReadyParksDuringVerifying is the c2 acceptance: after the
+// first suspect, subsequent WaitReady callers park while the status
+// still reads connected, and resume when the gate reopens.
+func TestWaitReadyParksDuringVerifying(t *testing.T) {
+	m := newStateMeta()
+	m.NotifyStatus(api.ConnectionConnected, "")
+	m.reportSuspect()
+	cw := &ConnWrapper{ID: m.ID, meta: m}
+	ctx := mockContext.NewMockContext("r1", "op1")
+
+	done := make(chan error, 1)
+	go func() { done <- cw.WaitReady(ctx) }()
+	select {
+	case err := <-done:
+		t.Fatalf("WaitReady returned during verification: %v", err)
+	case <-time.After(100 * time.Millisecond):
+	}
+
+	m.NotifyStatus(api.ConnectionConnected, "")
+	select {
+	case err := <-done:
+		require.NoError(t, err)
+	case <-time.After(2 * time.Second):
+		t.Fatal("WaitReady did not return after the gate reopened")
+	}
+}
