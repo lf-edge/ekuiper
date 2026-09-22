@@ -426,10 +426,11 @@ func (s *SQLSinkConnector) writeStmtsTx(ctx api.StreamContext, stmts []builtStmt
 	}
 	tx, err := s.conn.GetDB().BeginTx(ctx, nil)
 	if err != nil {
-		// Transport failure: report a suspect and surface an IO
-		// error for the SinkNode replay. Validation errors never
-		// reach here — callers build all statements first.
-		s.cw.ReportSuspectedFailure()
+		// Transport failure: report a suspect (unless the caller
+		// itself is gone) and surface an IO error for the SinkNode
+		// replay. Validation errors never reach here — callers
+		// build all statements first.
+		reportTransportFailure(ctx, s.cw)
 		return errorx.NewIOErr(err.Error())
 	}
 	committed := false
@@ -446,12 +447,12 @@ func (s *SQLSinkConnector) writeStmtsTx(ctx api.StreamContext, stmts []builtStmt
 			err = errors.New("dbErr")
 		})
 		if err != nil {
-			s.cw.ReportSuspectedFailure()
+			reportTransportFailure(ctx, s.cw)
 			return errorx.NewIOErr(err.Error())
 		}
 	}
 	if err := tx.Commit(); err != nil {
-		s.cw.ReportSuspectedFailure()
+		reportTransportFailure(ctx, s.cw)
 		return errorx.NewIOErr(err.Error())
 	}
 	committed = true
@@ -537,7 +538,7 @@ func (s *SQLSinkConnector) writeToDB(ctx api.StreamContext, sqlStr string, args 
 		err = errors.New("dbErr")
 	})
 	if err != nil {
-		s.cw.ReportSuspectedFailure()
+		reportTransportFailure(ctx, s.cw)
 		return errorx.NewIOErr(err.Error())
 	}
 	metrics.IODurationHist.WithLabelValues(LblSql, metrics.LblSinkIO, ctx.GetRuleId(), ctx.GetOpId()).Observe(float64(time.Since(start).Microseconds()))

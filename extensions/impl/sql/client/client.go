@@ -45,7 +45,7 @@ type SQLConnection struct {
 // Pool worker, never to consumer retry loops.
 var _ modules.PoolRecoverableConnection = (*SQLConnection)(nil)
 
-// defaultAttemptTimeout bounds one Dial, Ping, or Reconnect attempt.
+// defaultAttemptTimeout bounds one Dial, Ping, or Recover attempt.
 // Retry cadence and total retry lifetime are owned by the caller.
 const defaultAttemptTimeout = 10 * time.Second
 
@@ -108,7 +108,7 @@ func (s *SQLConnection) GetDB() *sql.DB {
 func (s *SQLConnection) Ping(ctx api.StreamContext) error {
 	// Pure health check: a single bounded attempt, never a dial. An
 	// absent handle means Dial never succeeded (or Close already ran);
-	// creating the handle belongs to Dial/Reconnect, not to a status
+	// creating the handle belongs to Dial/Recover, not to a status
 	// read. Read-locked: Ping observes but never mutates.
 	s.RLock()
 	defer s.RUnlock()

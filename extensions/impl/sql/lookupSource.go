@@ -249,11 +249,12 @@ func (s *SqlLookupSource) Lookup(ctx api.StreamContext, fields []string, keys []
 		err = errors.New("dbErr")
 	})
 	if err != nil {
-		// First failure surfaces and reports a suspect: the Pool
-		// verifies and recovers while later lookups park on
-		// WaitReady. Query/validation errors below never report —
+		// First failure surfaces and reports a suspect, unless the
+		// caller itself is already gone (see reportTransportFailure):
+		// the Pool verifies and recovers while later lookups park
+		// on WaitReady. Query/validation errors below never report —
 		// only a failed QueryContext means the transport is suspect.
-		s.cw.ReportSuspectedFailure()
+		reportTransportFailure(ctx, s.cw)
 		ctx.GetLogger().Errorf("sql look table failed, err:%v, query: %v, args: %v", err, query, args)
 		return nil, err
 	}

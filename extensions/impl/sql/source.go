@@ -211,11 +211,13 @@ func (s *SQLSourceConnector) queryData(ctx api.StreamContext, rcvTime time.Time,
 	})
 	if err != nil {
 		logger.Errorf("query sql error %v", err)
-		// First failure surfaces and reports a suspect; the Pool
-		// verifies and recovers while later polls park above. Only
-		// a failed QueryContext reports — statement, column-type
-		// and scan errors below are data errors, not transport.
-		s.cw.ReportSuspectedFailure()
+		// First failure surfaces and reports a suspect, unless the
+		// caller itself is already gone (see reportTransportFailure);
+		// the Pool verifies and recovers while later polls park
+		// above. Only a failed QueryContext reports — statement,
+		// column-type and scan errors below are data errors, not
+		// transport.
+		reportTransportFailure(ctx, s.cw)
 		ingestError(ctx, err)
 		return
 	}
