@@ -17,7 +17,6 @@ package connection
 import (
 	"context"
 	"sync"
-	"sync/atomic"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
@@ -116,6 +115,45 @@ func (cw *ConnWrapper) IsInitialized() bool {
 	return cw.initialized
 }
 
+// Status reports the last-known connection state, same pure-read
+// semantics as Meta.GetStatus: it never probes the provider.
+func (cw *ConnWrapper) Status() (string, string) {
+	return cw.meta.GetStatus()
+}
+
+// WaitReady blocks until the pooled connection is connected. Unlike
+// Wait (first-use readiness), it tracks the current lifecycle across
+// disconnect/reconnect cycles: a waiter parked in a disconnected
+// generation stays parked until some generation connects. It never
+// returns nil error without connected status. Precedence is fixed: a
+// canceled caller always observes ctx.Err() first, lifecycle
+// termination yields ErrConnectionClosed otherwise. Waking from a
+// generation channel always rechecks; a wake is never success.
+func (cw *ConnWrapper) WaitReady(ctx api.StreamContext) error {
+	// Fixed precedence before the loop: when the caller is already
+	// done, it sees its own cancellation.
+	if ctx.Err() != nil {
+		return ctx.Err()
+	}
+	for {
+		status, ch, closed := cw.meta.snapshotReady()
+		if closed {
+			return ErrConnectionClosed
+		}
+		if status == api.ConnectionConnected {
+			return nil
+		}
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-cw.meta.lifecycleCtx.Done():
+			return ErrConnectionClosed
+		case <-ch:
+			// Generation ended: recheck, never assume success.
+		}
+	}
+}
+
 func newConnWrapper(meta *Meta) *ConnWrapper {
 	cw := &ConnWrapper{
 		ID:     meta.ID,
@@ -154,9 +192,20 @@ func serverStreamContext(parent context.Context) api.StreamContext {
 	return topoContext.WithContext(parent)
 }
 
+// ConnectionRecovering is the runtime-reconnect state: a previously
+// connected logical connection lost its transport and (for
+// self-recovering clients) is re-establishing it, or (for
+// pool-recovered clients) is waiting for the Pool recovery worker.
+// It shares the disconnected generation: waiters stay parked, they
+// are not woken and re-parked. Defined here until it is promoted to
+// the contract api on the next contract release; the wire value is
+// fixed as "recovering".
+const ConnectionRecovering = "recovering"
+
 // newMeta builds a Meta whose lifecycle derives from the owning Manager.
 // Caller ctx only decides whether the current API call keeps waiting;
-// it never parents the Meta worker.
+// it never parents the Meta worker. The state domain starts as
+// connecting with an open generation-0 readiness channel.
 func newMeta(manager *Manager, id, typ string, props map[string]any, named bool) *Meta {
 	parent := context.Background()
 	if manager != nil && manager.ctx != nil {
@@ -171,6 +220,8 @@ func newMeta(manager *Manager, id, typ string, props map[string]any, named bool)
 		lifecycleCtx:    lifecycleCtx,
 		lifecycleCancel: cancel,
 		done:            make(chan struct{}),
+		status:          api.ConnectionConnecting,
+		readyCh:         make(chan struct{}),
 	}
 }
 
@@ -206,19 +257,106 @@ type Meta struct {
 	// The first connection status
 	// If connection is stateful, the status will update all the way
 	// For stateless connection, the status needs to ping
-	status    atomic.Value `json:"-"`
-	lastError atomic.Value `json:"-"`
+	//
+	// stateMu is the single synchronization domain for connection
+	// state. status, lastError and the readiness generation (readyCh)
+	// always transition together under this lock, so every snapshot
+	// is consistent and WaitReady can never miss a wakeup. Reading
+	// state never performs I/O (pure read); health detection is
+	// produced asynchronously by provider callbacks and the health
+	// probe, never by a status read.
+	stateMu sync.RWMutex `json:"-"`
+	// status is one of connecting/connected/disconnected/recovering.
+	// connecting is only for the initial dial; runtime reconnects
+	// report recovering, never connecting.
+	status string `json:"-"`
+	// lastError belongs to the generation that produced it: entering
+	// connected clears it, entering disconnected replaces it. A stale
+	// error from an older generation is never reported.
+	lastError string `json:"-"`
+	// readyCh is the current readiness generation: open while the
+	// connection is not connected, closed on every transition into
+	// connected. Leaving connected always opens a new channel, so
+	// parked WaitReady waiters stay parked across
+	// disconnected<->recovering without spurious wakeups.
+	readyCh    chan struct{} `json:"-"`
+	generation uint64        `json:"-"`
+}
+
+// closeReadyLocked ends the current generation: every waiter parked
+// on readyCh wakes and rechecks. prev is the pre-transition status;
+// only a transition into connected from another state closes the
+// channel, duplicate connected reports are no-ops (closing an
+// already-closed channel would panic). Caller holds stateMu (write).
+func (meta *Meta) closeReadyLocked(prev string) {
+	if prev != api.ConnectionConnected {
+		close(meta.readyCh)
+		meta.generation++
+	}
+}
+
+// newGenerationLocked opens a fresh parked generation. Caller holds
+// stateMu (write); only call when leaving connected, i.e. the
+// current channel is already closed.
+func (meta *Meta) newGenerationLocked() {
+	meta.readyCh = make(chan struct{})
+	meta.generation++
 }
 
 func (meta *Meta) NotifyStatus(status string, s string) {
-	meta.status.Store(status)
-	if s != "" {
-		meta.lastError.Store(s)
+	meta.stateMu.Lock()
+	switch status {
+	case api.ConnectionConnected:
+		// A new generation ends here: clear the previous
+		// generation's error even when the producer sends none.
+		prev := meta.status
+		meta.status = api.ConnectionConnected
+		meta.lastError = ""
+		meta.closeReadyLocked(prev)
+	case api.ConnectionDisconnected:
+		// Leaving connected parks waiters on a new generation;
+		// repeated disconnects within one generation only refresh
+		// the error.
+		if meta.status == api.ConnectionConnected {
+			meta.newGenerationLocked()
+		}
+		meta.status = api.ConnectionDisconnected
+		meta.lastError = s
+	case ConnectionRecovering:
+		// Runtime reconnect shares the disconnected generation:
+		// no new channel, no wakeup. Direct connected->recovering
+		// still opens a generation first (leaving connected always
+		// parks).
+		if meta.status == api.ConnectionConnected {
+			meta.newGenerationLocked()
+		}
+		meta.status = ConnectionRecovering
+		if s != "" {
+			meta.lastError = s
+		}
+	case api.ConnectionConnecting:
+		// Initial dial attempts re-report connecting; that is a
+		// no-op, not a new generation. Any other regression into
+		// connecting re-opens a parked generation defensively.
+		if meta.status != api.ConnectionConnecting {
+			if meta.status == api.ConnectionConnected {
+				meta.newGenerationLocked()
+			}
+			meta.status = api.ConnectionConnecting
+		}
+	default:
+		conf.Log.Warnf("conn %s ignoring unknown status %q", meta.ID, status)
+		meta.stateMu.Unlock()
+		return
 	}
+	effStatus, effErr := meta.status, meta.lastError
+	meta.stateMu.Unlock()
 	// Snapshot handlers before invoking so the invocation does not run
 	// while holding the refs lock. Invocation stays synchronous: a slow
 	// consumer callback can still delay the connection worker; isolating
-	// that (dispatcher/queue) is A2 work, not attempted here.
+	// that (dispatcher/queue) is follow-up work, not attempted here.
+	// Handlers observe the effective post-transition state, never the
+	// raw producer arguments.
 	meta.refMu.Lock()
 	handlers := make([]api.StatusChangeHandler, 0, len(meta.refs))
 	for _, sc := range meta.refs {
@@ -227,7 +365,7 @@ func (meta *Meta) NotifyStatus(status string, s string) {
 	meta.refMu.Unlock()
 	for _, sch := range handlers {
 		if sch != nil {
-			sch(status, s)
+			sch(effStatus, effErr)
 		}
 	}
 }
@@ -306,34 +444,30 @@ func (meta *Meta) GetRefNames() (result []string) {
 	return
 }
 
+// GetStatus reports the last-known connection state maintained by the
+// Pool. It is a pure read: it never dials, pings or waits. Freshness
+// comes from asynchronous producers (provider status callbacks, the
+// initial dial loop, the health probe), never from the read itself.
+// Callers must not interpret connected as "probed just now".
 func (meta *Meta) GetStatus() (s string, e string) {
-	ee := meta.lastError.Load()
-	if ee != nil {
-		e = ee.(string)
+	meta.stateMu.RLock()
+	defer meta.stateMu.RUnlock()
+	return meta.status, meta.lastError
+}
+
+// snapshotReady captures one consistent readiness observation for
+// WaitReady: the status, its generation channel, and whether the
+// lifecycle already ended. Channel close and status change happen
+// atomically under stateMu, so a waiter parked on the returned
+// channel can never miss the transition that ends its generation;
+// it wakes and rechecks.
+func (meta *Meta) snapshotReady() (status string, ch <-chan struct{}, closed bool) {
+	select {
+	case <-meta.lifecycleCtx.Done():
+		return "", nil, true
+	default:
 	}
-	ss := meta.status.Load()
-	if ss != nil {
-		s = ss.(string)
-		if s == api.ConnectionConnected {
-			if meta.cw.IsInitialized() {
-				conn, err := meta.cw.Wait(topoContext.Background())
-				if err != nil || conn == nil {
-					return
-				}
-				e = ""
-				// if connected, cw, cw.conn should exist
-				if _, isStateful := conn.(modules.StatefulDialer); !isStateful {
-					err := conn.Ping(topoContext.Background())
-					if err != nil {
-						s = api.ConnectionDisconnected
-						e = err.Error()
-					}
-				}
-			}
-		}
-		return
-	} else {
-		s = api.ConnectionConnecting
-		return
-	}
+	meta.stateMu.RLock()
+	defer meta.stateMu.RUnlock()
+	return meta.status, meta.readyCh, false
 }
