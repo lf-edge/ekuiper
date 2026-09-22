@@ -45,12 +45,19 @@ type SqlLookupSource struct {
 	// by Connect and never mutated afterwards.
 	cw *connection.ConnWrapper
 
-	// mu guards the lazy connection state below. It is never held while
-	// waiting on cw.Wait or retryReconnect so a slow recovery cannot block
-	// Close or concurrent lookups on the state itself.
-	mu            syncx.Mutex
-	conn          *client2.SQLConnection
-	needReconnect bool
+	// mu guards the lazily resolved pooled connection and the
+	// initial-report flag below. It is never held while waiting on
+	// cw.Wait/cw.WaitReady so a parked recovery cannot block Close or
+	// concurrent lookups on the state itself.
+	mu   syncx.Mutex
+	conn *client2.SQLConnection
+	// initialNotReadyReported is a creation-compatibility flag, not
+	// recovery ownership: Connect is attach-only, so the first
+	// request against a pooled connection that never published yet
+	// reports not-ready once instead of parking on a database that
+	// may never answer. Every later request waits for initial
+	// readiness bound to ctx.
+	initialNotReadyReported bool
 }
 
 func (s *SqlLookupSource) Ping(ctx api.StreamContext, m map[string]any) error {
@@ -95,7 +102,7 @@ func (s *SqlLookupSource) Provision(ctx api.StreamContext, configs map[string]an
 
 func (s *SqlLookupSource) Close(ctx api.StreamContext) error {
 	ctx.GetLogger().Infof("Closing sql source connector url:%v", s.conf.DBUrl)
-	if conn, _ := s.getState(); conn != nil {
+	if conn := s.getConn(); conn != nil {
 		conn.DetachSub(ctx, s.props)
 	}
 	// Always detach with the refId saved by Connect, so a lookup whose
@@ -137,75 +144,78 @@ func (s *SqlLookupSource) Connect(ctx api.StreamContext, sc api.StatusChangeHand
 	return nil
 }
 
-// ensureConnection returns a usable SQLConnection for the current request.
+// ensureConnection returns the stable pooled SQLConnection.
 //
-// Semantics (shared by first-unreachable and runtime disconnect):
-//   - conn != nil && !needReconnect: use it directly.
-//   - conn == nil and the pooled connection is not ready yet: the first
-//     request reports a not-ready error once; needReconnect is set so
-//     subsequent requests wait for the pool's initial retry instead.
-//   - conn == nil && needReconnect: wait for the pool's initial connection.
-//   - conn != nil && needReconnect: retry reconnecting until the database
-//     is back or the rule context is canceled.
+// The pooled object identity never changes across recovery (Recover
+// swaps the handle inside it), so it is resolved once and cached.
+// Every call passes through WaitReady first: while connected it is a
+// fast state read, while the gate is closed the lookup parks until
+// the Pool recovery worker reopens it. The first failure surfaces to
+// the caller (see Lookup); later lookups park — there is no local
+// retry loop and no reconnect flag.
 //
-// Waiting is always bound to ctx: a rule stop cancels it and unblocks the
-// current Lookup.
+// Waiting is always bound to ctx: a rule stop cancels it and unblocks
+// the current Lookup.
 func (s *SqlLookupSource) ensureConnection(
 	ctx api.StreamContext,
 ) (*client2.SQLConnection, error) {
-	conn, needReconnect := s.getState()
-
-	if conn == nil {
-		if !needReconnect && !s.cw.IsInitialized() {
-			s.setNeedReconnect(true)
-			return nil, errorx.NewIOErr("sql client not ready")
-		}
-
-		c, err := s.cw.Wait(ctx)
-
-		// Do not depend on Wait returning ctx.Err() itself.
-		if ctx.Err() != nil {
-			return nil, ctx.Err()
-		}
-		if err != nil {
+	if conn := s.getConn(); conn != nil {
+		if err := s.cw.WaitReady(ctx); err != nil {
 			return nil, err
 		}
-		if c == nil {
-			return nil, errorx.NewIOErr("sql client not ready")
-		}
-
-		sqlConn := c.(*client2.SQLConnection)
-		s.setConnection(sqlConn)
-
-		return sqlConn, nil
+		return conn, nil
 	}
 
-	if needReconnect {
-		if err := retryReconnect(ctx, conn); err != nil {
-			return nil, err
-		}
+	// First resolution. A pooled connection that never published yet
+	// reports not-ready once (see the flag above); every later call
+	// waits for initial readiness bound to ctx. An already-published
+	// handle resolves through Wait immediately.
+	if !s.cw.IsInitialized() && !s.markInitialReported() {
+		return nil, errorx.NewIOErr("sql client not ready")
 	}
 
-	return conn, nil
+	c, err := s.cw.Wait(ctx)
+
+	// Do not depend on Wait returning ctx.Err() itself.
+	if ctx.Err() != nil {
+		return nil, ctx.Err()
+	}
+	if err != nil {
+		return nil, err
+	}
+	if c == nil {
+		return nil, errorx.NewIOErr("sql client not ready")
+	}
+
+	sqlConn := c.(*client2.SQLConnection)
+	s.setConn(sqlConn)
+
+	return sqlConn, nil
 }
 
-func (s *SqlLookupSource) getState() (conn *client2.SQLConnection, needReconnect bool) {
+func (s *SqlLookupSource) getConn() *client2.SQLConnection {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	return s.conn, s.needReconnect
+	return s.conn
 }
 
-func (s *SqlLookupSource) setConnection(conn *client2.SQLConnection) {
+func (s *SqlLookupSource) setConn(conn *client2.SQLConnection) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.conn = conn
-	s.needReconnect = false
 }
 
-func (s *SqlLookupSource) setNeedReconnect(needReconnect bool) {
+// markInitialReported records the one-time not-ready report,
+// returning true when a previous call already reported (i.e. this
+// call must wait instead).
+func (s *SqlLookupSource) markInitialReported() bool {
 	s.mu.Lock()
-	s.needReconnect = needReconnect
-	s.mu.Unlock()
+	defer s.mu.Unlock()
+	if s.initialNotReadyReported {
+		return true
+	}
+	s.initialNotReadyReported = true
+	return false
 }
 
 func (s *SqlLookupSource) Lookup(ctx api.StreamContext, fields []string, keys []string, values []any) ([]map[string]any, error) {
@@ -239,11 +249,13 @@ func (s *SqlLookupSource) Lookup(ctx api.StreamContext, fields []string, keys []
 		err = errors.New("dbErr")
 	})
 	if err != nil {
-		s.setNeedReconnect(true)
+		// First failure surfaces and reports a suspect: the Pool
+		// verifies and recovers while later lookups park on
+		// WaitReady. Query/validation errors below never report —
+		// only a failed QueryContext means the transport is suspect.
+		s.cw.ReportSuspectedFailure()
 		ctx.GetLogger().Errorf("sql look table failed, err:%v, query: %v, args: %v", err, query, args)
 		return nil, err
-	} else {
-		s.setNeedReconnect(false)
 	}
 	defer rows.Close()
 	cols, _ := rows.Columns()
