@@ -158,9 +158,11 @@ func TestDropReservationAbortRestoresReady(t *testing.T) {
 	require.NoError(t, DropNameConnection(ctx, "drop-abort"))
 }
 
-// TestAttemptStreamContextIsBoundedServerScope pins the attempt-scope
-// rule: every provider attempt runs under an explicitly bounded,
-// server-owned scope — never a rule/request lifetime.
+// TestAttemptStreamContextIsBoundedServerScope pins the Ping/Recover
+// attempt-scope rule: those scopes are explicitly deadline-bounded and
+// server-owned — never a rule/request lifetime. (Dial is intentionally
+// excluded: it waits for initial usability under plain lifecycle
+// cancellation, see the modules.Connection attempt contract.)
 func TestAttemptStreamContextIsBoundedServerScope(t *testing.T) {
 	actx, cancel := attemptStreamContext(context.Background(), 50*time.Millisecond)
 	defer cancel()
