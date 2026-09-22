@@ -15,8 +15,10 @@
 package connection
 
 import (
+	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/cenkalti/backoff/v4"
 	"github.com/lf-edge/ekuiper/contract/v2/api"
@@ -24,6 +26,22 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
+
+// attemptStreamContext derives one bounded attempt scope from a
+// lifecycle context: timeout first, then the server-scoped
+// StreamContext adaptation. Every provider attempt runs under an
+// explicitly bounded, server-owned scope — never a rule/request
+// scope, never unbounded. Used for Ping (health probe) and later
+// Recover (A3 worker).
+//
+// Dial intentionally does NOT use this helper: Dial establishes or
+// waits for initial usability under plain cancellation (NNG async
+// dial, MQTT autopaho startup), and a blanket Dial timeout would
+// break that contract.
+func attemptStreamContext(parent context.Context, timeout time.Duration) (api.StreamContext, context.CancelFunc) {
+	ctx, cancel := context.WithTimeout(parent, timeout)
+	return serverStreamContext(ctx), cancel
+}
 
 // provisionConnection runs provider lookup plus the synchronous static
 // Provision phase. It performs no Dial, no retry and no remote
