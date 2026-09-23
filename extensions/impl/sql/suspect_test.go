@@ -113,7 +113,7 @@ func TestLookupCanceledBeforeIOLeavesGateOpen(t *testing.T) {
 	c, err := ls.cw.Wait(ctx)
 	require.NoError(t, err)
 	require.NotNil(t, c)
-	_, err = c.(*client2.SQLConnection).GetDB().Exec(`CREATE TABLE t (a BIGINT)`)
+	_, err = c.(*client2.SQLConnection).ExecContext(ctx, `CREATE TABLE t (a BIGINT)`)
 	require.NoError(t, err)
 	_, err = ls.Lookup(live, []string{"a"}, []string{"a"}, []any{1})
 	require.NoError(t, err)
