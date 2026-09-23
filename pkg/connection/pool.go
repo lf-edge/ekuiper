@@ -83,7 +83,7 @@ type poolEntry struct {
 	state entryState
 	// ready is closed exactly once when this creation round concludes
 	// (success or failure). It never signals connection readiness;
-	// use ConnWrapper.Wait / Meta readiness for that.
+	// use connWrapper.Wait / Meta readiness for that.
 	ready chan struct{}
 	// meta is set on successful creation before ready is closed.
 	meta *Meta

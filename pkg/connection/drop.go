@@ -184,7 +184,7 @@ func DropNameConnection(ctx api.StreamContext, selId string) error {
 	}
 }
 
-func UpdateConnection(ctx api.StreamContext, id, typ string, props map[string]any) (*ConnWrapper, error) {
+func UpdateConnection(ctx api.StreamContext, id, typ string, props map[string]any) (*ConnectionLease, error) {
 	if id == "" || typ == "" {
 		return nil, fmt.Errorf("connection id and type should be defined")
 	}
@@ -222,13 +222,11 @@ func isInternalConnection(m *Manager, id string) (bool, error) {
 	return !meta.Named, nil
 }
 
-func DetachConnection(ctx api.StreamContext, conId string) error {
-	return DetachConnectionByRef(ctx, conId, extractRefId(ctx))
-}
-
-// DetachConnectionByRef detaches a connection using the reference ID supplied
-// to FetchConnection.
-func DetachConnectionByRef(ctx api.StreamContext, conId, refId string) error {
+// detachRef detaches one consumer reference. It is the single release
+// path: ConnectionLease.Release owns the key+refID pair and calls here,
+// and same-package tests call here directly. Consumers must never call
+// it with a re-derived identity — only via Lease.Release.
+func detachRef(ctx api.StreamContext, conId, refId string) error {
 	if conId == "" {
 		return fmt.Errorf("connection id should be defined")
 	}
@@ -275,7 +273,7 @@ func getConnectionRef(id string) int {
 	return meta.GetRefCount()
 }
 
-func attachConnection(conId string, refId string, sc api.StatusChangeHandler) (*ConnWrapper, error) {
+func attachConnection(conId string, refId string, sc api.StatusChangeHandler) (*ConnectionLease, error) {
 	if conId == "" {
 		return nil, fmt.Errorf("connection id should be defined")
 	}
@@ -300,7 +298,7 @@ func attachConnection(conId string, refId string, sc api.StatusChangeHandler) (*
 	}
 	m.Unlock()
 	meta.deliverInitial(refId, sc)
-	return meta.cw, nil
+	return newLease(meta.cw, conId, refId), nil
 }
 
 // detachLocked removes one consumer reference. The caller must hold m's

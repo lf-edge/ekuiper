@@ -56,7 +56,7 @@ func genTrialRule(rd *RunDef, sinkProps map[string]interface{}) *def.Rule {
 	return rt
 }
 
-func create(def *RunDef) (*topo.Topo, error) {
+func create(def *RunDef) (*topo.Topo, *connection.ConnectionLease, error) {
 	endpoint := "/test/" + def.Id
 	def.endpoint = fmt.Sprintf("$$sse/%s", endpoint)
 	sinkProps := map[string]any{
@@ -64,18 +64,19 @@ func create(def *RunDef) (*topo.Topo, error) {
 		"sendError":  true,
 		"datasource": endpoint,
 	}
-	cw, err := connection.FetchConnectionWithOptions(context.Background(), connection.FetchOptions{
+	lease, err := connection.FetchConnectionWithOptions(context.Background(), connection.FetchOptions{
 		ConnectionKey: def.endpoint,
 		RefID:         connection.ConsumerRefID(context.Background()),
 		Type:          "sse",
 		Props:         sinkProps,
 	})
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	_, err = cw.Wait(context.Background())
+	_, err = lease.Wait(context.Background())
 	if err != nil {
-		return nil, err
+		_ = lease.Release(context.Background())
+		return nil, nil, err
 	}
 
 	for k, v := range def.SinkProps {
@@ -85,14 +86,17 @@ func create(def *RunDef) (*topo.Topo, error) {
 	// Add trial run prefix for rule id to avoid duplicate rule id with real rules in runtime or other trial rule
 	tp, _, err := planner.PlanSQLWithSourcesAndSinks(trialRule, def.Mock)
 	if err != nil {
-		return nil, fmt.Errorf("fail to run rule %s: %s", def.Id, err)
+		_ = lease.Release(context.Background())
+		return nil, nil, fmt.Errorf("fail to run rule %s: %s", def.Id, err)
 	}
-	return tp, nil
+	return tp, lease, nil
 }
 
-func trialRun(tp *topo.Topo, endpoint string) {
+func trialRun(tp *topo.Topo, lease *connection.ConnectionLease) {
 	go func() {
-		defer connection.DetachConnection(context.Background(), endpoint)
+		// Idempotent with Manager.StopRule's Release: whichever runs
+		// first detaches, the other is a no-op.
+		defer lease.Release(context.Background())
 		timeout := time.After(5 * time.Minute)
 		err := infra.SafeRun(func() error {
 			select {

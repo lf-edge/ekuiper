@@ -27,7 +27,7 @@ import (
 )
 
 type WebsocketSink struct {
-	cw    *connection.ConnWrapper
+	lease *connection.ConnectionLease
 	cfg   *WebsocketConfig
 	props map[string]any
 	topic string
@@ -49,18 +49,14 @@ func (w *WebsocketSink) Provision(ctx api.StreamContext, configs map[string]any)
 
 func (w *WebsocketSink) Close(ctx api.StreamContext) error {
 	pubsub.RemovePub(w.topic)
-	conId := buildWebsocketEpID(w.cfg.Endpoint)
-	if w.cw != nil {
-		conId = w.cw.ID
-	}
-	return connection.DetachConnection(ctx, conId)
+	return w.lease.Release(ctx)
 }
 
 func (w *WebsocketSink) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) error {
 	var err error
 	// Connection pool will handle status change
 	key, requireExisting := connection.ResolveConnectionKey(w.props, buildWebsocketEpID(w.cfg.Endpoint))
-	w.cw, err = connection.FetchConnectionWithOptions(ctx, connection.FetchOptions{
+	w.lease, err = connection.FetchConnectionWithOptions(ctx, connection.FetchOptions{
 		ConnectionKey:   key,
 		RefID:           connection.ConsumerRefID(ctx),
 		RequireExisting: requireExisting,
@@ -71,7 +67,7 @@ func (w *WebsocketSink) Connect(ctx api.StreamContext, sch api.StatusChangeHandl
 	if err != nil {
 		return err
 	}
-	conn, err := w.cw.Wait(ctx)
+	conn, err := w.lease.Wait(ctx)
 	if err != nil {
 		return err
 	}

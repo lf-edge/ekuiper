@@ -38,7 +38,7 @@ type Source struct {
 	topic       string
 	messageType messageType
 	buflen      int
-	conId       string
+	lease       *connection.ConnectionLease
 }
 
 type SourceConf struct {
@@ -82,7 +82,7 @@ func (es *Source) Connect(ctx api.StreamContext, sc api.StatusChangeHandler) err
 	var err error
 	id := fmt.Sprintf("%s-%s-%d-edgex-source", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId())
 	key, requireExisting := connection.ResolveConnectionKey(es.config, id)
-	cw, err := connection.FetchConnectionWithOptions(ctx, connection.FetchOptions{
+	lease, err := connection.FetchConnectionWithOptions(ctx, connection.FetchOptions{
 		ConnectionKey:   key,
 		RefID:           connection.ConsumerRefID(ctx),
 		RequireExisting: requireExisting,
@@ -93,8 +93,8 @@ func (es *Source) Connect(ctx api.StreamContext, sc api.StatusChangeHandler) err
 	if err != nil {
 		return err
 	}
-	es.conId = cw.ID
-	conn, err := cw.Wait(ctx)
+	es.lease = lease
+	conn, err := lease.Wait(ctx)
 	if conn == nil {
 		return fmt.Errorf("edgex client not ready: %v", err)
 	}
@@ -316,7 +316,7 @@ func (es *Source) Close(ctx api.StreamContext) error {
 		es.cli.DetachSub(ctx, es.config)
 		_ = es.cli.Disconnect()
 	}
-	return connection.DetachConnection(ctx, es.conId)
+	return es.lease.Release(ctx)
 }
 
 func GetSource() api.Source {

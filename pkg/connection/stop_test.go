@@ -89,7 +89,7 @@ func TestZeroRefRemovingFetchWaits(t *testing.T) {
 
 	stopDone := make(chan error, 1)
 	go func() {
-		stopDone <- DetachConnectionByRef(ctx, "stop-anon", "r1")
+		stopDone <- detachRef(ctx, "stop-anon", "r1")
 	}()
 	// Wait until the stopper owns the key: the entry flips to removing
 	// synchronously inside Detach, before Close blocks.
@@ -126,7 +126,7 @@ func TestZeroRefRemovingFetchWaits(t *testing.T) {
 
 	stopDone2 := make(chan error, 1)
 	go func() {
-		stopDone2 <- DetachConnectionByRef(ctx, "stop-anon", "r2")
+		stopDone2 <- detachRef(ctx, "stop-anon", "r2")
 	}()
 	countCloseRelease <- struct{}{}
 	require.NoError(t, <-stopDone2)
@@ -152,7 +152,7 @@ func TestAttachVsZeroRefFetchWins(t *testing.T) {
 	require.NoError(t, err)
 
 	// Fetch won: one detach leaves a live ref, so no stop runs.
-	require.NoError(t, DetachConnectionByRef(ctx, "fetch-wins", "rA"))
+	require.NoError(t, detachRef(ctx, "fetch-wins", "rA"))
 	require.Equal(t, 1, getConnectionRef("fetch-wins"))
 	require.Equal(t, int32(0), countCloseCalls.Load())
 	meta := getReadyTestMeta("fetch-wins")
@@ -161,7 +161,7 @@ func TestAttachVsZeroRefFetchWins(t *testing.T) {
 	// Last detach stops and removes; Close runs exactly once.
 	stopDone := make(chan error, 1)
 	go func() {
-		stopDone <- DetachConnectionByRef(ctx, "fetch-wins", "rB")
+		stopDone <- detachRef(ctx, "fetch-wins", "rB")
 	}()
 	countCloseRelease <- struct{}{}
 	require.NoError(t, <-stopDone)
@@ -258,8 +258,8 @@ func TestRepeatedDetachStaysNil(t *testing.T) {
 		ConnectionKey: "dbl", RefID: "r1", Type: "mock",
 	})
 	require.NoError(t, err)
-	require.NoError(t, DetachConnectionByRef(ctx, "dbl", "r1"))
-	require.NoError(t, DetachConnectionByRef(ctx, "dbl", "r1"))
+	require.NoError(t, detachRef(ctx, "dbl", "r1"))
+	require.NoError(t, detachRef(ctx, "dbl", "r1"))
 	require.Equal(t, 0, getConnectionRef("dbl"))
 }
 
@@ -294,7 +294,7 @@ func TestStopTwoPhaseDrain(t *testing.T) {
 	}
 	// Publish the handle and simulate an exited initial worker; a
 	// plain (non-recoverable) provider needs no recovery join.
-	m.cw = &ConnWrapper{ID: m.ID, meta: m, initialized: true, conn: fake, readCh: make(chan struct{})}
+	m.cw = &connWrapper{ID: m.ID, meta: m, initialized: true, conn: fake, readCh: make(chan struct{})}
 	close(m.cw.readCh)
 	close(m.done)
 

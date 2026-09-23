@@ -61,15 +61,16 @@ type FetchOptions struct {
 
 // ConsumerRefID derives the stable Source/Sink consumer identity
 // (ruleID + opID + instanceID) for the current context. Connect must save
-// the returned value and pass it back verbatim to DetachConnectionByRef.
+// nothing: the returned Lease already binds it; Release detaches it.
 func ConsumerRefID(ctx api.StreamContext) string {
 	return extractRefId(ctx)
 }
 
 // FetchConnectionWithOptions is the explicit-identity fetch path. Callers
 // must canonicalize props/key and compute RefID before calling; Pool treats
-// ConnectionKey as an opaque identity.
-func FetchConnectionWithOptions(ctx api.StreamContext, opts FetchOptions) (*ConnWrapper, error) {
+// ConnectionKey as an opaque identity. Every successful fetch mints one
+// ConnectionLease binding this caller's reference; Release it to detach.
+func FetchConnectionWithOptions(ctx api.StreamContext, opts FetchOptions) (*ConnectionLease, error) {
 	failpoint.Inject("FetchConnectionErr", func() {
 		failpoint.Return(nil, fmt.Errorf("FetchConnectionErr"))
 	})
@@ -143,7 +144,7 @@ type fetchPlan struct {
 	entry *poolEntry
 	props map[string]any
 	// fetchAttached: handle attached atomically under the lock.
-	cw *ConnWrapper
+	cw *connWrapper
 	// fetchAttached: Meta owning the handle, for the post-unlock
 	// initial delivery (deliverInitial runs outside the Manager
 	// lock per the lock invariant; the plan only registers).
@@ -226,7 +227,7 @@ func (m *Manager) planFetch(ctx api.StreamContext, opts FetchOptions) fetchPlan 
 //
 // fetchInternal itself never touches the Manager lock; every attempt goes
 // through planFetch.
-func fetchInternal(ctx api.StreamContext, opts FetchOptions) (*ConnWrapper, error) {
+func fetchInternal(ctx api.StreamContext, opts FetchOptions) (*ConnectionLease, error) {
 	for {
 		m := globalConnectionManager.Load()
 		plan := m.planFetch(ctx, opts)
@@ -236,7 +237,7 @@ func fetchInternal(ctx api.StreamContext, opts FetchOptions) (*ConnWrapper, erro
 			// (lock invariant): a slow consumer stalls only its
 			// own delivery, never the Pool.
 			plan.attachedMeta.deliverInitial(opts.RefID, opts.StatusHandler)
-			return plan.cw, nil
+			return newLease(plan.cw, opts.ConnectionKey, opts.RefID), nil
 		case fetchFailed:
 			return nil, plan.err
 		case fetchCreate:
@@ -245,7 +246,7 @@ func fetchInternal(ctx api.StreamContext, opts FetchOptions) (*ConnWrapper, erro
 				return nil, err
 			}
 			conf.Log.Infof("FetchConnection return new conn %s", meta.ID)
-			return meta.cw, nil
+			return newLease(meta.cw, opts.ConnectionKey, opts.RefID), nil
 		case fetchWaitCreating:
 			select {
 			case <-ctx.Done():

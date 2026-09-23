@@ -34,9 +34,8 @@ type WebsocketSource struct {
 	props         map[string]any
 	connectionTyp string
 	sourceID      string
-	// conId is the actual pool key (cw.ID), which differs from the
-	// endpoint-derived key for named connections.
-	conId string
+	// lease is the per-consumer pool handle; Release it to detach.
+	lease *connection.ConnectionLease
 }
 
 type WebsocketConfig struct {
@@ -59,16 +58,12 @@ func (w *WebsocketSource) Provision(ctx api.StreamContext, configs map[string]an
 
 func (w *WebsocketSource) Close(ctx api.StreamContext) error {
 	pubsub.CloseSourceConsumerChannel(w.topic, w.sourceID)
-	conId := buildWebsocketEpID(w.cfg.Endpoint)
-	if w.conId != "" {
-		conId = w.conId
-	}
-	return connection.DetachConnection(ctx, conId)
+	return w.lease.Release(ctx)
 }
 
 func (w *WebsocketSource) Connect(ctx api.StreamContext, sc api.StatusChangeHandler) error {
 	key, requireExisting := connection.ResolveConnectionKey(w.props, buildWebsocketEpID(w.cfg.Endpoint))
-	cw, err := connection.FetchConnectionWithOptions(ctx, connection.FetchOptions{
+	lease, err := connection.FetchConnectionWithOptions(ctx, connection.FetchOptions{
 		ConnectionKey:   key,
 		RefID:           connection.ConsumerRefID(ctx),
 		RequireExisting: requireExisting,
@@ -79,8 +74,8 @@ func (w *WebsocketSource) Connect(ctx api.StreamContext, sc api.StatusChangeHand
 	if err != nil {
 		return err
 	}
-	w.conId = cw.ID
-	conn, err := cw.Wait(ctx)
+	w.lease = lease
+	conn, err := lease.Wait(ctx)
 	if err != nil {
 		return err
 	}

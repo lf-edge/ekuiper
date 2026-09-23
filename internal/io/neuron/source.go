@@ -48,7 +48,7 @@ type source struct {
 	c     *nng.SockConf
 	cli   *nng.Sock
 	props map[string]any
-	conId string
+	lease *connection.ConnectionLease
 	mu    syncx.RWMutex
 }
 
@@ -82,7 +82,7 @@ func (s *source) Connect(ctx api.StreamContext, sc api.StatusChangeHandler) erro
 	// it intentionally differs from the planner UniqueConn.ConnId
 	// ("nng:"+...), which lives in a separate namespace.
 	key, requireExisting := connection.ResolveConnectionKey(s.props, PROTOCOL+s.c.Url)
-	cw, err := connection.FetchConnectionWithOptions(ctx, connection.FetchOptions{
+	lease, err := connection.FetchConnectionWithOptions(ctx, connection.FetchOptions{
 		ConnectionKey:   key,
 		RefID:           connection.ConsumerRefID(ctx),
 		RequireExisting: requireExisting,
@@ -93,8 +93,8 @@ func (s *source) Connect(ctx api.StreamContext, sc api.StatusChangeHandler) erro
 	if err != nil {
 		return err
 	}
-	s.conId = cw.ID
-	cli, err := cw.Wait(ctx)
+	s.lease = lease
+	cli, err := lease.Wait(ctx)
 	if cli == nil {
 		return fmt.Errorf("neuron client not ready: %v", err)
 	}
@@ -139,7 +139,7 @@ func (s *source) Subscribe(ctx api.StreamContext, ingest api.BytesIngest, ingest
 
 func (s *source) Close(ctx api.StreamContext) error {
 	ctx.GetLogger().Infof("closing neuron source")
-	_ = connection.DetachConnection(ctx, s.conId)
+	_ = s.lease.Release(ctx)
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.cli = nil

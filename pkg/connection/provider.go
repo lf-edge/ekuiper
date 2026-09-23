@@ -103,7 +103,7 @@ func dialInitial(connCtx api.StreamContext, meta *Meta, conn modules.Connection)
 		return backoff.Permanent(err)
 		// No max elapsed time: pooled connections keep retrying until their
 		// lifecycle context ends. Consumers decide whether and when to wait
-		// for the ConnWrapper to become ready.
+		// for the connWrapper to become ready.
 	}, NewExponentialBackOffWithMaxElapsedTime(0))
 	return conn, err
 }

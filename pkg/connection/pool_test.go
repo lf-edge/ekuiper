@@ -48,12 +48,12 @@ func TestConnection(t *testing.T) {
 	_, err = attachConnection("id1", "ref2", nil)
 	require.NoError(t, err)
 	require.Equal(t, 2, getConnectionRef("id1"))
-	err = DetachConnectionByRef(ctx, "id1", "ref1")
+	err = detachRef(ctx, "id1", "ref1")
 	require.NoError(t, err)
 	require.Equal(t, 1, getConnectionRef("id1"))
 	err = DropNameConnection(ctx, "id1")
 	require.Error(t, err)
-	err = DetachConnectionByRef(ctx, "id1", "ref2")
+	err = detachRef(ctx, "id1", "ref2")
 	require.NoError(t, err)
 	require.Equal(t, 0, getConnectionRef("id1"))
 	err = DropNameConnection(ctx, "id1")
@@ -96,9 +96,9 @@ func TestConnectionErr(t *testing.T) {
 	require.ErrorContains(t, err, "unknown connection type")
 	_, err = attachConnection("", "ref1", nil)
 	require.Error(t, err)
-	err = DetachConnection(ctx, "")
+	err = detachRef(ctx, "", ConsumerRefID(ctx))
 	require.Error(t, err)
-	err = DetachConnection(ctx, "nonexists")
+	err = detachRef(ctx, "nonexists", ConsumerRefID(ctx))
 	require.NoError(t, err)
 
 	failpoint.Enable("github.com/lf-edge/ekuiper/v2/pkg/connection/storeConnectionErr", "return(true)")
@@ -140,10 +140,11 @@ func TestNonStoredConnection(t *testing.T) {
 	_, err = FetchConnectionWithOptions(ctx, FetchOptions{ConnectionKey: "id1", RefID: ConsumerRefID(ctx), Type: "mock"})
 	require.NoError(t, err)
 	require.Equal(t, 1, getConnectionRef("id1"))
-	// The stored ref is ConsumerRefID(ctx), which is exactly what
-	// DetachConnection derives: the round-trip releases and drops the
-	// Meta instead of leaking it.
-	require.NoError(t, DetachConnection(ctx, "id1"))
+	// The stored ref is ConsumerRefID(ctx): releasing the fetched Lease
+	// round-trips and drops the Meta instead of leaking it.
+	lease, err := FetchConnectionWithOptions(ctx, FetchOptions{ConnectionKey: "id1", RefID: ConsumerRefID(ctx), Type: "mock"})
+	require.NoError(t, err)
+	require.NoError(t, lease.Release(ctx))
 	require.Equal(t, 0, getConnectionRef("id1"))
 	_, ok := globalConnectionManager.Load().connectionPool["id1"]
 	require.False(t, ok)
@@ -172,13 +173,13 @@ func TestFetchWithOptionsExplicitIdentity(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 2, getConnectionRef("dbA"))
 	// Missing DeRef is a no-op and never drives the count negative.
-	require.NoError(t, DetachConnectionByRef(ctx, "dbA", "no-such-ref"))
+	require.NoError(t, detachRef(ctx, "dbA", "no-such-ref"))
 	require.Equal(t, 2, getConnectionRef("dbA"))
-	require.NoError(t, DetachConnectionByRef(ctx, "dbA", "rule1_op1_0"))
+	require.NoError(t, detachRef(ctx, "dbA", "rule1_op1_0"))
 	require.Equal(t, 1, getConnectionRef("dbA"))
-	require.NoError(t, DetachConnectionByRef(ctx, "dbA", "rule1_op1_0"))
+	require.NoError(t, detachRef(ctx, "dbA", "rule1_op1_0"))
 	require.Equal(t, 1, getConnectionRef("dbA"))
-	require.NoError(t, DetachConnectionByRef(ctx, "dbA", "rule2_op1_0"))
+	require.NoError(t, detachRef(ctx, "dbA", "rule2_op1_0"))
 	_, ok := globalConnectionManager.Load().connectionPool["dbA"]
 	require.False(t, ok)
 }
