@@ -60,11 +60,11 @@ func dropNameConnection(m *Manager, ctx api.StreamContext, selId string) (meta *
 }
 
 func finishStop(m *Manager, key string, stop func(api.StreamContext)) {
-	// Teardown runs on a server-owned cleanup scope, never on the
-	// caller ctx: rule/request scopes are frequently already canceled
-	// when Close/Drop/zero-ref fires, and provider Close must not
-	// depend on them. Mirrors stopAllRuntime; the caller ctx only
-	// bounds the API call itself, never the lifecycle teardown.
+	// Teardown runs on a server-owned cleanup scope: rule/request
+	// scopes are frequently already canceled when Close/Drop/zero-ref
+	// fires, and provider Close must not depend on them. The caller
+	// ctx is not propagated into lifecycle teardown. Mirrors
+	// stopAllRuntime.
 	stop(serverStreamContext(context.Background()))
 	m.Lock()
 	// Delete only our own entry: a re-init swaps the whole manager, and

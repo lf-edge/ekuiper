@@ -32,6 +32,10 @@ import (
 var (
 	countCloseRelease = make(chan struct{}, 1)
 	countCloseCalls   atomic.Int32
+	// countCloseSawCancel records whether the last Close observed a
+	// canceled scope: normally false. The teardown-scope test sets and
+	// asserts it.
+	countCloseSawCancel atomic.Bool
 )
 
 type countCloseConnection struct {
@@ -57,6 +61,7 @@ func (c *countCloseConnection) Ping(ctx api.StreamContext) error {
 
 func (c *countCloseConnection) Close(ctx api.StreamContext) error {
 	countCloseCalls.Add(1)
+	countCloseSawCancel.Store(ctx.Err() != nil)
 	<-countCloseRelease
 	return nil
 }
@@ -247,6 +252,31 @@ func TestConcurrentDropClosesOnce(t *testing.T) {
 	require.Equal(t, int32(1), countCloseCalls.Load(), "Close runs exactly once")
 	_, ok := globalConnectionManager.Load().connectionPool["stop-once"]
 	require.False(t, ok, "entry removed after stop completes")
+}
+
+// TestTeardownRunsOnServerOwnedScope pins the teardown invariant: the
+// provider Close observes a live scope even when the releasing caller
+// ctx is already canceled. The caller ctx never propagates into
+// lifecycle teardown, so a future change passing it back into stop()
+// fails here instead of silently depending on providers tolerating
+// cancellation.
+func TestTeardownRunsOnServerOwnedScope(t *testing.T) {
+	require.NoError(t, InitConnectionManager4Test())
+	drainCountCloseRelease()
+	countCloseCalls.Store(0)
+	countCloseSawCancel.Store(false)
+	rootCtx := mockContext.NewMockContext("stop", "op1")
+	ctx, cancel := rootCtx.WithCancel()
+	lease, err := FetchConnectionWithOptions(ctx, FetchOptions{
+		ConnectionKey: "stop-scope", RefID: "r1", Type: "countclose",
+	})
+	require.NoError(t, err)
+	cancel()
+	// Pre-supply the blocking Close so Release runs synchronously.
+	countCloseRelease <- struct{}{}
+	require.NoError(t, lease.Release(ctx))
+	require.Equal(t, int32(1), countCloseCalls.Load())
+	require.False(t, countCloseSawCancel.Load(), "provider Close must not observe the canceled caller ctx")
 }
 
 // TestLeaseReleaseIsIdempotent verifies double-Release idempotency on

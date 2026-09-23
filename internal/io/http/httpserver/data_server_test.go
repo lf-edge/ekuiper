@@ -151,13 +151,24 @@ func TestSamePathMethodsRouteIndependently(t *testing.T) {
 
 	UnregisterEndpoint("/dual", "PUT")
 	require.Equal(t, map[string]struct{}{}, GetEndpoints())
+
+	// Unregister → re-register reactivates the same slot: the mux
+	// route was installed once (named route exists) and dispatches
+	// again after reactivation.
+	_, err = RegisterEndpoint("/dual", "POST")
+	require.NoError(t, err)
+	require.NotNil(t, m.router.GetRoute("httppush:/dual$$POST"))
+	require.Equal(t, http.StatusOK, serve(m, "POST", "/dual", "again").Code)
+	select {
+	case got := <-postSub:
+		require.Equal(t, []byte("again"), got)
+	case <-time.After(2 * time.Second):
+		t.Fatal("re-registered POST did not deliver")
+	}
+	UnregisterEndpoint("/dual", "POST")
+	require.Equal(t, map[string]struct{}{}, GetEndpoints())
 }
 
-// HttpPushConnection: two holders (e.g. a named and an anonymous
-// connection) may register the same endpoint; the first Unregister
-// only drops its own reference, and the route disappears only after
-// the last holder leaves. Unregistering a never-registered endpoint
-// is a no-op.
 // TestSharedEndpointRefcount pins the registry ownership backing
 // HttpPushConnection: two holders (e.g. a named and an anonymous
 // connection) may register the same endpoint; the first Unregister
