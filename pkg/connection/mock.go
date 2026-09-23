@@ -15,9 +15,6 @@
 package connection
 
 import (
-	"errors"
-
-	"github.com/cenkalti/backoff/v4"
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
@@ -67,34 +64,4 @@ func (m *mockConnection) Ref(ctx api.StreamContext) int {
 
 func CreateMockConnection(ctx api.StreamContext) modules.Connection {
 	return &mockConnection{ref: 0}
-}
-
-type mockErrConnection struct{}
-
-func (m mockErrConnection) GetId(ctx api.StreamContext) string {
-	return "test"
-}
-
-func (m mockErrConnection) Provision(ctx api.StreamContext, conId string, props map[string]any) error {
-	return backoff.Permanent(errors.New("mockErr"))
-}
-
-func (m mockErrConnection) Dial(ctx api.StreamContext) error {
-	return nil
-}
-
-func (m mockErrConnection) Ping(ctx api.StreamContext) error {
-	return errors.New("mockErr")
-}
-
-func (m mockErrConnection) Close(ctx api.StreamContext) error {
-	return nil
-}
-
-func (m mockErrConnection) DetachSub(ctx api.StreamContext, props map[string]any) {
-	// do nothing
-}
-
-func CreateMockErrConnection(ctx api.StreamContext) modules.Connection {
-	return &mockErrConnection{}
 }
