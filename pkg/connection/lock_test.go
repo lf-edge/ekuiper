@@ -101,12 +101,14 @@ func TestDeliverInitialSkipsDetached(t *testing.T) {
 	m.AddRef("gone", sc)
 	require.True(t, m.DeRef("gone"))
 	m.deliverInitial("gone", sc)
+	m.drainEvents()
 	require.Equal(t, int32(0), calls.Load())
 
 	m.AddRef("live", sc)
 	// Snapshot content matches current state (connecting, no error).
 	var gotS, gotE string
 	m.deliverInitial("live", func(s, e string) { gotS, gotE = s, e })
+	m.drainEvents()
 	s, e := m.GetStatus()
 	require.Equal(t, s, gotS)
 	require.Equal(t, e, gotE)
@@ -154,6 +156,9 @@ func TestEventOrderingPreservesEveryTransition(t *testing.T) {
 	})
 	m.NotifyStatus(api.ConnectionDisconnected, "down")
 	m.NotifyStatus(api.ConnectionConnected, "")
+	// Delivery is async; the barrier flush makes the assertion
+	// deterministic without timing.
+	m.drainEvents()
 	mu.Lock()
 	defer mu.Unlock()
 	require.Equal(t, []statusEvent{
@@ -163,10 +168,10 @@ func TestEventOrderingPreservesEveryTransition(t *testing.T) {
 }
 
 // TestInitialDeliveryJoinsEventSerialization pins the gated
-// interleaving of deliverInitial with a broadcast: the broadcast
-// holds eventMu inside a slow consumer, the initial delivery queues
-// behind it, and neither delivery inverts nor swallows. The new
-// consumer observes exactly the serialized latest state. A same-state
+// interleaving of deliverInitial with a transition: the dispatcher is
+// parked inside a slow consumer, the initial delivery enqueues behind
+// it, and neither delivery inverts nor swallows. The new consumer
+// observes exactly the serialized latest state. A same-state
 // duplicate (connected, connected) would be allowed here by design;
 // this scenario asserts the exact single each, which is the
 // deterministic outcome of this gating.
@@ -185,43 +190,29 @@ func TestInitialDeliveryJoinsEventSerialization(t *testing.T) {
 		<-release
 	})
 
-	// Phase 1: broadcast holds eventMu inside the slow consumer.
-	notifyDone := make(chan struct{})
-	go func() {
-		m.NotifyStatus(api.ConnectionDisconnected, "down")
-		close(notifyDone)
-	}()
+	// Phase 1: the transition enqueues and returns immediately; the
+	// dispatcher parks inside the slow consumer.
+	m.NotifyStatus(api.ConnectionDisconnected, "down")
 	select {
 	case <-entered:
 	case <-time.After(2 * time.Second):
-		t.Fatal("broadcast did not reach the slow consumer")
+		t.Fatal("dispatcher did not reach the slow consumer")
 	}
 
-	// Register + deliver while the broadcast still holds eventMu:
-	// the initial delivery queues behind it deterministically.
+	// Register + enqueue while the dispatcher is still parked: the
+	// initial event lands behind the transition deterministically.
 	newHandler := func(s, e string) {
 		mu.Lock()
 		newGot = append(newGot, statusEvent{s, e})
 		mu.Unlock()
 	}
 	m.AddRef("new", newHandler)
-	deliverDone := make(chan struct{})
-	go func() {
-		m.deliverInitial("new", newHandler)
-		close(deliverDone)
-	}()
+	m.deliverInitial("new", newHandler)
 
 	close(release)
-	select {
-	case <-notifyDone:
-	case <-time.After(2 * time.Second):
-		t.Fatal("broadcast did not complete after release")
-	}
-	select {
-	case <-deliverDone:
-	case <-time.After(2 * time.Second):
-		t.Fatal("initial delivery did not complete after release")
-	}
+	// The barrier flush makes the assertions deterministic: every
+	// event enqueued so far is delivered before it returns.
+	m.drainEvents()
 
 	mu.Lock()
 	require.Equal(t, []statusEvent{{api.ConnectionDisconnected, "down"}}, oldGot)
@@ -230,6 +221,7 @@ func TestInitialDeliveryJoinsEventSerialization(t *testing.T) {
 
 	// Phase 2: the next transition reaches both consumers exactly once.
 	m.NotifyStatus(api.ConnectionConnected, "")
+	m.drainEvents()
 	mu.Lock()
 	defer mu.Unlock()
 	require.Equal(t, []statusEvent{
