@@ -119,11 +119,11 @@ func newWorkerMeta(t *testing.T, fake *recoverableFakeConn) *Meta {
 	m := newStateMeta(t)
 	m.NotifyStatus(api.ConnectionConnected, "")
 	// Wire the handle back-pointer like attachToMeta does; the
-	// worker tests drive suspects through the public ConnWrapper API.
+	// worker tests drive suspects through the shared internal handle.
 	// The worker is started directly (same package): recoveryDone is
 	// initialized here exactly as startRecoveryWorker would, and stop
 	// paths join it the same way.
-	m.cw = &ConnWrapper{ID: m.ID, meta: m}
+	m.cw = &connWrapper{ID: m.ID, meta: m}
 	m.recoveryDone = make(chan struct{})
 	go m.recoveryLoop(fake, bo)
 	return m
@@ -413,7 +413,7 @@ func TestRecoveryStopJoinsWorker(t *testing.T) {
 	fake.slowCancelTail = 300 * time.Millisecond
 	fake.pingErr = errors.New("verify down")
 	m := newWorkerMeta(t, fake)
-	m.cw = &ConnWrapper{ID: m.ID, meta: m, initialized: true, conn: fake, readCh: make(chan struct{})}
+	m.cw = &connWrapper{ID: m.ID, meta: m, initialized: true, conn: fake, readCh: make(chan struct{})}
 	close(m.cw.readCh)
 	// Simulate the initial worker already exited.
 	close(m.done)

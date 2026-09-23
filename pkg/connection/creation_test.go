@@ -70,7 +70,7 @@ func TestConcurrentFetchSingleFlight(t *testing.T) {
 
 	const fetchers = 8
 	var wg sync.WaitGroup
-	cws := make([]*ConnWrapper, fetchers)
+	cws := make([]*ConnectionLease, fetchers)
 	errs := make([]error, fetchers)
 	for i := 0; i < fetchers; i++ {
 		wg.Add(1)
@@ -98,16 +98,17 @@ func TestConcurrentFetchSingleFlight(t *testing.T) {
 	countProvRelease <- struct{}{}
 	wg.Wait()
 
-	for i := 0; i < fetchers; i++ {
+	for i := 1; i < fetchers; i++ {
 		require.NoError(t, errs[i])
 		require.NotNil(t, cws[i])
-		require.Same(t, cws[0], cws[i], "all fetchers must share one handle")
+		require.NotSame(t, cws[0], cws[i], "each fetcher mints its own lease")
+		require.Same(t, cws[0].cw, cws[i].cw, "all fetchers must share one handle")
 	}
 	require.Equal(t, int32(1), countProvCalls.Load(), "exactly one Provision per key")
 	require.Equal(t, fetchers, getConnectionRef("single-flight"))
 
 	for i := 0; i < fetchers; i++ {
-		require.NoError(t, DetachConnectionByRef(ctx, "single-flight", fmt.Sprintf("ref-%d", i)))
+		require.NoError(t, cws[i].Release(ctx))
 	}
 	_, ok := globalConnectionManager.Load().connectionPool["single-flight"]
 	require.False(t, ok)

@@ -117,7 +117,7 @@ func (m *Manager) publishCreation(e *poolEntry, key, typ string, props map[strin
 // (no callback); the caller delivers the initial snapshot via
 // deliverInitial after unlocking. The lifecycle guard fails the
 // attach instead of parking a ref on a dying Meta.
-func attachToMeta(meta *Meta, refId string, sc api.StatusChangeHandler) (*ConnWrapper, error) {
+func attachToMeta(meta *Meta, refId string, sc api.StatusChangeHandler) (*connWrapper, error) {
 	select {
 	case <-meta.lifecycleCtx.Done():
 		return nil, ErrConnectionClosed
@@ -196,7 +196,7 @@ func (m *Manager) reloadOne(e *poolEntry, id, typ string, props map[string]any) 
 		// started; done is pre-closed so stop() returns immediately
 		// and Close(nil) is skipped.
 		meta.NotifyStatus(api.ConnectionDisconnected, err.Error())
-		meta.cw = &ConnWrapper{
+		meta.cw = &connWrapper{
 			ID:          id,
 			initialized: true,
 			err:         err,
@@ -218,7 +218,11 @@ func (m *Manager) reloadOne(e *poolEntry, id, typ string, props map[string]any) 
 
 // Connection API handlers
 
-func CreateNamedConnection(ctx api.StreamContext, id, typ string, props map[string]any) (*ConnWrapper, error) {
+// CreateNamedConnection creates a named connection without attaching a
+// consumer reference: the returned Lease holds no ref, so Release on it
+// is a no-op. It exists so API handlers and tests can observe the
+// shared handle (Wait/Status) without owning a reference.
+func CreateNamedConnection(ctx api.StreamContext, id, typ string, props map[string]any) (*ConnectionLease, error) {
 	if id == "" || typ == "" {
 		return nil, fmt.Errorf("connection id and type should be defined")
 	}
@@ -265,14 +269,14 @@ func (m *Manager) planNamedCreate(id string, props map[string]any) namedCreatePl
 	return namedCreatePlan{kind: namedCreate, entry: e, props: maps.Clone(props)}
 }
 
-func createNamedConnection(ctx api.StreamContext, id, typ string, props map[string]any) (*ConnWrapper, error) {
+func createNamedConnection(ctx api.StreamContext, id, typ string, props map[string]any) (*ConnectionLease, error) {
 	m := globalConnectionManager.Load()
 	plan := m.planNamedCreate(id, props)
 	switch plan.kind {
 	case namedFailed:
 		return nil, plan.err
 	case namedWait:
-		return waitNamedCreation(ctx, m, plan.waitEntry, plan.wait, id)
+		return nil, waitNamedCreation(ctx, m, plan.waitEntry, plan.wait, id)
 	default:
 		// Static ordering: Provision, then persist, then publish, then worker.
 		// A persist failure publishes only an error: no Meta, no worker.
@@ -283,7 +287,7 @@ func createNamedConnection(ctx api.StreamContext, id, typ string, props map[stri
 		if err != nil {
 			return nil, err
 		}
-		return meta.cw, nil
+		return newLease(meta.cw, id, ""), nil
 	}
 }
 
@@ -291,19 +295,19 @@ func createNamedConnection(ctx api.StreamContext, id, typ string, props map[stri
 // the waiter to creator: on success the key already exists, so the waiter
 // gets already-exists; on failure it gets the same creation error and may
 // retry with a fresh Create call.
-func waitNamedCreation(ctx api.StreamContext, m *Manager, e *poolEntry, ch <-chan struct{}, id string) (*ConnWrapper, error) {
+func waitNamedCreation(ctx api.StreamContext, m *Manager, e *poolEntry, ch <-chan struct{}, id string) error {
 	select {
 	case <-ctx.Done():
-		return nil, ctx.Err()
+		return ctx.Err()
 	case <-ch:
 	}
 	if e.err != nil {
-		return nil, e.err
+		return e.err
 	}
 	if e.meta == nil || globalConnectionManager.Load() != m {
-		return nil, ErrConnectionClosed
+		return ErrConnectionClosed
 	}
-	return nil, fmt.Errorf("connection %v already been created", id)
+	return fmt.Errorf("connection %v already been created", id)
 }
 
 func storeConnectionMeta(plugin, id string, props map[string]interface{}) error {

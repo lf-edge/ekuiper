@@ -25,7 +25,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
 )
 
-type ConnWrapper struct {
+type connWrapper struct {
 	ID          string
 	initialized bool
 	conn        modules.Connection
@@ -38,7 +38,7 @@ type ConnWrapper struct {
 	meta *Meta
 }
 
-func (cw *ConnWrapper) setConn(conn modules.Connection, err error) {
+func (cw *connWrapper) setConn(conn modules.Connection, err error) {
 	cw.l.Lock()
 	defer cw.l.Unlock()
 	cw.initialized = true
@@ -49,7 +49,7 @@ func (cw *ConnWrapper) setConn(conn modules.Connection, err error) {
 // returns (nil, nil). Precedence is fixed: a canceled caller always
 // observes ctx.Err() first, lifecycle termination yields
 // ErrConnectionClosed otherwise.
-func (cw *ConnWrapper) Wait(connectorCtx api.StreamContext) (modules.Connection, error) {
+func (cw *connWrapper) Wait(connectorCtx api.StreamContext) (modules.Connection, error) {
 	// Fixed precedence before the racing select below: when both scopes
 	// are already done, the caller sees its own cancellation.
 	if connectorCtx.Err() != nil {
@@ -108,7 +108,7 @@ func (cw *ConnWrapper) Wait(connectorCtx api.StreamContext) (modules.Connection,
 	return nil, ErrConnectionClosed
 }
 
-func (cw *ConnWrapper) IsInitialized() bool {
+func (cw *connWrapper) IsInitialized() bool {
 	cw.l.RLock()
 	defer cw.l.RUnlock()
 	return cw.initialized
@@ -117,7 +117,7 @@ func (cw *ConnWrapper) IsInitialized() bool {
 // peekConn returns the published logical connection, or nil when the
 // worker has not published yet or published a failure. Pure read for
 // the health probe: it never waits for readiness.
-func (cw *ConnWrapper) peekConn() modules.Connection {
+func (cw *connWrapper) peekConn() modules.Connection {
 	cw.l.RLock()
 	defer cw.l.RUnlock()
 	if !cw.initialized || cw.err != nil {
@@ -133,7 +133,7 @@ func (cw *ConnWrapper) peekConn() modules.Connection {
 // to the Pool worker. Non-blocking and coalesced: a storm of reports
 // collapses into one worker wakeup. Safe to call from any consumer;
 // it never performs I/O and never blocks.
-func (cw *ConnWrapper) ReportSuspectedFailure() {
+func (cw *connWrapper) ReportSuspectedFailure() {
 	cw.meta.reportSuspect()
 }
 
@@ -172,7 +172,7 @@ func (meta *Meta) reportSuspect() {
 
 // Status reports the last-known connection state, same pure-read
 // semantics as Meta.GetStatus: it never probes the provider.
-func (cw *ConnWrapper) Status() (string, string) {
+func (cw *connWrapper) Status() (string, string) {
 	return cw.meta.GetStatus()
 }
 
@@ -186,7 +186,7 @@ func (cw *ConnWrapper) Status() (string, string) {
 // canceled caller always observes ctx.Err() first, lifecycle
 // termination yields ErrConnectionClosed otherwise. Waking from a
 // generation channel always rechecks; a wake is never success.
-func (cw *ConnWrapper) WaitReady(ctx api.StreamContext) error {
+func (cw *connWrapper) WaitReady(ctx api.StreamContext) error {
 	// Fixed precedence before the loop: when the caller is already
 	// done, it sees its own cancellation.
 	if ctx.Err() != nil {
@@ -226,8 +226,8 @@ func (cw *ConnWrapper) WaitReady(ctx api.StreamContext) error {
 	}
 }
 
-func newConnWrapper(meta *Meta) *ConnWrapper {
-	cw := &ConnWrapper{
+func newConnWrapper(meta *Meta) *connWrapper {
+	cw := &connWrapper{
 		ID:     meta.ID,
 		readCh: make(chan struct{}),
 		meta:   meta,
@@ -343,7 +343,7 @@ type Meta struct {
 	// queue is never closed, so a late enqueue can never panic —
 	// it is simply skipped once stopping is set.
 	dispatcherStopping bool         `json:"-"`
-	cw                 *ConnWrapper `json:"-"`
+	cw                 *connWrapper `json:"-"`
 	// lifecycleCtx parents the Meta worker. Derived from the Manager
 	// server ctx at creation; canceled on zero-ref/Drop/Update/shutdown
 	// or Manager re-init. Never a rule/request/first-fetcher ctx.

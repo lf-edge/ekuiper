@@ -53,7 +53,7 @@ type EdgexMsgBusSink struct {
 	topic  string
 
 	id         string
-	cw         *connection.ConnWrapper
+	lease      *connection.ConnectionLease
 	cli        *client.Client
 	sendParams map[string]any
 }
@@ -108,7 +108,7 @@ func (ems *EdgexMsgBusSink) Connect(ctx api.StreamContext, sc api.StatusChangeHa
 	var err error
 	ems.id = fmt.Sprintf("%s-%s-%d-edgex-sink", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId())
 	key, requireExisting := connection.ResolveConnectionKey(ems.config, ems.id)
-	ems.cw, err = connection.FetchConnectionWithOptions(ctx, connection.FetchOptions{
+	ems.lease, err = connection.FetchConnectionWithOptions(ctx, connection.FetchOptions{
 		ConnectionKey:   key,
 		RefID:           connection.ConsumerRefID(ctx),
 		RequireExisting: requireExisting,
@@ -119,13 +119,13 @@ func (ems *EdgexMsgBusSink) Connect(ctx api.StreamContext, sc api.StatusChangeHa
 	if err != nil {
 		return err
 	}
-	conn, err := ems.cw.Wait(ctx)
+	conn, err := ems.lease.Wait(ctx)
 	if conn == nil {
 		return fmt.Errorf("edgex client not ready: %v", err)
 	}
 	c, ok := conn.(*client.Client)
 	if !ok {
-		return fmt.Errorf("connection %s should be edgex connection", ems.cw.ID)
+		return fmt.Errorf("connection %s should be edgex connection", ems.lease.ConnectionKey())
 	}
 	ems.cli = c
 	return err
@@ -522,8 +522,8 @@ func (ems *EdgexMsgBusSink) Close(ctx api.StreamContext) error {
 	if ems.cli != nil {
 		_ = ems.cli.Disconnect()
 	}
-	if ems.cw != nil {
-		return connection.DetachConnection(ctx, ems.cw.ID)
+	if ems.lease != nil {
+		return ems.lease.Release(ctx)
 	}
 	return nil
 }

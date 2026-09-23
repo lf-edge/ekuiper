@@ -38,7 +38,7 @@ type c struct {
 }
 
 type sink struct {
-	cw    *connection.ConnWrapper
+	lease *connection.ConnectionLease
 	c     *c
 	cc    *nng.SockConf
 	cli   *nng.Sock
@@ -88,7 +88,7 @@ func (s *sink) Connect(ctx api.StreamContext, sc api.StatusChangeHandler) error 
 	// Same pool key as the source above: URL-based, separate from
 	// the planner UniqueConn.ConnId namespace.
 	key, requireExisting := connection.ResolveConnectionKey(s.props, PROTOCOL+s.cc.Url)
-	cw, err := connection.FetchConnectionWithOptions(ctx, connection.FetchOptions{
+	lease, err := connection.FetchConnectionWithOptions(ctx, connection.FetchOptions{
 		ConnectionKey:   key,
 		RefID:           connection.ConsumerRefID(ctx),
 		RequireExisting: requireExisting,
@@ -99,8 +99,8 @@ func (s *sink) Connect(ctx api.StreamContext, sc api.StatusChangeHandler) error 
 	if err != nil {
 		return err
 	}
-	s.cw = cw
-	cli, err := cw.Wait(ctx)
+	s.lease = lease
+	cli, err := lease.Wait(ctx)
 	if cli == nil {
 		return fmt.Errorf("neuron client not ready: %v", err)
 	}
@@ -138,8 +138,8 @@ func (s *sink) CollectList(ctx api.StreamContext, data api.MessageTupleList) err
 
 func (s *sink) Close(ctx api.StreamContext) error {
 	ctx.GetLogger().Debugf("closing neuron sink")
-	if s.cw != nil {
-		_ = connection.DetachConnection(ctx, s.cw.ID)
+	if s.lease != nil {
+		_ = s.lease.Release(ctx)
 	}
 	s.cli = nil
 	return nil

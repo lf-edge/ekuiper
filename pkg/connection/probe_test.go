@@ -278,7 +278,7 @@ func TestProbeStaleVerdictDropped(t *testing.T) {
 	fake := &probeConn{blockPing: true, pingCalls: &pingCalls, dialCalls: &dialCalls}
 	m := newStateMeta(t)
 	m.NotifyStatus(api.ConnectionConnected, "")
-	cw := &ConnWrapper{ID: m.ID, meta: m}
+	cw := &connWrapper{ID: m.ID, meta: m}
 	cw.setConn(fake, nil)
 
 	done := make(chan struct{})
