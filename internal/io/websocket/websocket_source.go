@@ -34,6 +34,9 @@ type WebsocketSource struct {
 	props         map[string]any
 	connectionTyp string
 	sourceID      string
+	// conId is the actual pool key (cw.ID), which differs from the
+	// endpoint-derived key for named connections.
+	conId string
 }
 
 type WebsocketConfig struct {
@@ -56,14 +59,27 @@ func (w *WebsocketSource) Provision(ctx api.StreamContext, configs map[string]an
 
 func (w *WebsocketSource) Close(ctx api.StreamContext) error {
 	pubsub.CloseSourceConsumerChannel(w.topic, w.sourceID)
-	return connection.DetachConnection(ctx, buildWebsocketEpID(w.cfg.Endpoint))
+	conId := buildWebsocketEpID(w.cfg.Endpoint)
+	if w.conId != "" {
+		conId = w.conId
+	}
+	return connection.DetachConnection(ctx, conId)
 }
 
 func (w *WebsocketSource) Connect(ctx api.StreamContext, sc api.StatusChangeHandler) error {
-	cw, err := connection.FetchConnection(ctx, buildWebsocketEpID(w.cfg.Endpoint), "websocket", w.props, sc)
+	key, requireExisting := connection.ResolveConnectionKey(w.props, buildWebsocketEpID(w.cfg.Endpoint))
+	cw, err := connection.FetchConnectionWithOptions(ctx, connection.FetchOptions{
+		ConnectionKey:   key,
+		RefID:           connection.ConsumerRefID(ctx),
+		RequireExisting: requireExisting,
+		Type:            "websocket",
+		Props:           w.props,
+		StatusHandler:   sc,
+	})
 	if err != nil {
 		return err
 	}
+	w.conId = cw.ID
 	conn, err := cw.Wait(ctx)
 	if err != nil {
 		return err

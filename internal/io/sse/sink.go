@@ -52,13 +52,25 @@ func (s *SSESink) Provision(ctx api.StreamContext, configs map[string]any) error
 
 func (s *SSESink) Close(ctx api.StreamContext) error {
 	pubsub.RemovePub(s.topic)
-	return connection.DetachConnection(ctx, buildSseEpID(s.cfg.Endpoint))
+	conId := buildSseEpID(s.cfg.Endpoint)
+	if s.cw != nil {
+		conId = s.cw.ID
+	}
+	return connection.DetachConnection(ctx, conId)
 }
 
 func (s *SSESink) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) error {
 	var err error
 	// Connection pool will handle status change
-	s.cw, err = connection.FetchConnection(ctx, buildSseEpID(s.cfg.Endpoint), "sse", s.props, sch)
+	key, requireExisting := connection.ResolveConnectionKey(s.props, buildSseEpID(s.cfg.Endpoint))
+	s.cw, err = connection.FetchConnectionWithOptions(ctx, connection.FetchOptions{
+		ConnectionKey:   key,
+		RefID:           connection.ConsumerRefID(ctx),
+		RequireExisting: requireExisting,
+		Type:            "sse",
+		Props:           s.props,
+		StatusHandler:   sch,
+	})
 	if err != nil {
 		return err
 	}

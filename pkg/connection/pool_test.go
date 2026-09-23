@@ -68,7 +68,12 @@ func TestConnection(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, cw)
 
-	cw, err = FetchConnection(ctx, "2222", "mock", map[string]interface{}{"connectionSelector": "id2"}, nil)
+	cw, err = FetchConnectionWithOptions(ctx, FetchOptions{
+		ConnectionKey:   "id2",
+		RefID:           ConsumerRefID(ctx),
+		RequireExisting: true,
+		Type:            "mock",
+	})
 	require.NoError(t, err)
 	require.NotNil(t, cw)
 
@@ -119,7 +124,7 @@ func TestUpdateConn(t *testing.T) {
 	require.Error(t, err)
 	_, err = UpdateConnection(ctx, "1", "mockmock", map[string]any{})
 	require.Error(t, err)
-	_, err = FetchConnection(ctx, "id1", "mock", nil, nil)
+	_, err = FetchConnectionWithOptions(ctx, FetchOptions{ConnectionKey: "id1", RefID: ConsumerRefID(ctx), Type: "mock"})
 	require.NoError(t, err)
 	_, err = UpdateConnection(ctx, "id1", "mockmock", map[string]any{})
 	require.Error(t, err)
@@ -128,16 +133,16 @@ func TestUpdateConn(t *testing.T) {
 func TestNonStoredConnection(t *testing.T) {
 	require.NoError(t, InitConnectionManager4Test())
 	ctx := mockContext.NewMockContext("id", "2")
-	_, err := FetchConnection(ctx, "id1", "mock", nil, nil)
+	_, err := FetchConnectionWithOptions(ctx, FetchOptions{ConnectionKey: "id1", RefID: ConsumerRefID(ctx), Type: "mock"})
 	require.NoError(t, err)
 	require.Equal(t, 1, getConnectionRef("id1"))
 	// Same consumer re-attaching the same key does not grow the count.
-	_, err = FetchConnection(ctx, "id1", "mock", nil, nil)
+	_, err = FetchConnectionWithOptions(ctx, FetchOptions{ConnectionKey: "id1", RefID: ConsumerRefID(ctx), Type: "mock"})
 	require.NoError(t, err)
 	require.Equal(t, 1, getConnectionRef("id1"))
-	// The legacy shim normalizes the stored ref to ConsumerRefID(ctx),
-	// which is exactly what legacy DetachConnection derives: the
-	// round-trip releases and drops the Meta instead of leaking it.
+	// The stored ref is ConsumerRefID(ctx), which is exactly what
+	// DetachConnection derives: the round-trip releases and drops the
+	// Meta instead of leaking it.
 	require.NoError(t, DetachConnection(ctx, "id1"))
 	require.Equal(t, 0, getConnectionRef("id1"))
 	_, ok := globalConnectionManager.Load().connectionPool["id1"]
@@ -345,7 +350,12 @@ func getReadyTestMeta(key string) *Meta {
 
 func TestFetchConnectionNotExist(t *testing.T) {
 	ctx := context.Background()
-	_, err := FetchConnection(ctx, "2222", "mock", map[string]interface{}{"connectionSelector": "id2"}, nil)
+	_, err := FetchConnectionWithOptions(ctx, FetchOptions{
+		ConnectionKey:   "id2",
+		RefID:           ConsumerRefID(ctx),
+		RequireExisting: true,
+		Type:            "mock",
+	})
 	require.Error(t, err)
 }
 

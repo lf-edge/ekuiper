@@ -106,35 +106,6 @@ func ResolveConnectionKey(props map[string]any, anonymous string) (key string, r
 	return anonymous, false
 }
 
-// FetchConnection is the legacy compatibility shim. It keeps the historical
-// connectionKey derivation (connectionSelector-or-refId) so unmigrated
-// connectors keep resolving the same logical connection. The consumer ref,
-// however, is normalized to ConsumerRefID(ctx): legacy DetachConnection
-// derives exactly that value, and the historical habit of passing
-// connection-identity material (endpoint/topic/URL) as refId never
-// identified the consumer. Without this normalization every legacy Close
-// would miss its ref and leak the reference. New code must use
-// FetchConnectionWithOptions instead.
-func FetchConnection(ctx api.StreamContext, refId, typ string, props map[string]interface{}, sc api.StatusChangeHandler) (*ConnWrapper, error) {
-	failpoint.Inject("FetchConnectionErr", func() {
-		failpoint.Return(nil, fmt.Errorf("FetchConnectionErr"))
-	})
-	if refId == "" {
-		return nil, fmt.Errorf("connection ref id should be defined")
-	}
-	conId := extractSelID(props, refId)
-	opts := FetchOptions{
-		ConnectionKey:   conId,
-		RefID:           ConsumerRefID(ctx),
-		RequireExisting: conId != refId,
-		Type:            typ,
-		Props:           props,
-		StatusHandler:   sc,
-	}
-	// Same as above: fetchInternal owns its locking.
-	return fetchInternal(ctx, opts)
-}
-
 // reserveCreating installs a creating reservation for key under one
 // critical section. It reports false when the key is already present,
 // so Fetch/Create/Reload share a single reservation path.
@@ -296,22 +267,6 @@ func fetchInternal(ctx api.StreamContext, opts FetchOptions) (*ConnWrapper, erro
 			}
 		}
 	}
-}
-
-// Return the unique connection id and whether it is set explicitly
-func extractSelID(props map[string]interface{}, anomId string) string {
-	if len(props) < 1 {
-		return anomId
-	}
-	v, ok := props["connectionSelector"]
-	if !ok {
-		return anomId
-	}
-	id, ok := v.(string)
-	if !ok {
-		return anomId
-	}
-	return id
 }
 
 func extractRefId(ctx api.StreamContext) string {

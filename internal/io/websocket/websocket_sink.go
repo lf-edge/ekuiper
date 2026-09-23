@@ -49,13 +49,25 @@ func (w *WebsocketSink) Provision(ctx api.StreamContext, configs map[string]any)
 
 func (w *WebsocketSink) Close(ctx api.StreamContext) error {
 	pubsub.RemovePub(w.topic)
-	return connection.DetachConnection(ctx, buildWebsocketEpID(w.cfg.Endpoint))
+	conId := buildWebsocketEpID(w.cfg.Endpoint)
+	if w.cw != nil {
+		conId = w.cw.ID
+	}
+	return connection.DetachConnection(ctx, conId)
 }
 
 func (w *WebsocketSink) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) error {
 	var err error
 	// Connection pool will handle status change
-	w.cw, err = connection.FetchConnection(ctx, buildWebsocketEpID(w.cfg.Endpoint), "websocket", w.props, sch)
+	key, requireExisting := connection.ResolveConnectionKey(w.props, buildWebsocketEpID(w.cfg.Endpoint))
+	w.cw, err = connection.FetchConnectionWithOptions(ctx, connection.FetchOptions{
+		ConnectionKey:   key,
+		RefID:           connection.ConsumerRefID(ctx),
+		RequireExisting: requireExisting,
+		Type:            "websocket",
+		Props:           w.props,
+		StatusHandler:   sch,
+	})
 	if err != nil {
 		return err
 	}
