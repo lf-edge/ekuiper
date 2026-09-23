@@ -295,7 +295,8 @@ func TestRecoverySecondEpisodeNotSwallowed(t *testing.T) {
 	defer m.lifecycleCancel()
 	ctx := mockContext.NewMockContext("r1", "op1")
 
-	// The first reopen delivery blocks, holding eventMu.
+	// The first reopen delivery blocks the dispatcher (FIFO stalls
+	// behind the slow consumer), while state already reopened.
 	blocked := make(chan struct{})
 	release := make(chan struct{})
 	var first atomic.Bool
@@ -329,6 +330,58 @@ func TestRecoverySecondEpisodeNotSwallowed(t *testing.T) {
 		ready, _ := workerGate(t, m)
 		return ready && fake.pingCalls.Load() == 2
 	}, 5*time.Second, 5*time.Millisecond)
+}
+
+// TestRecoveryNotBlockedBySlowCallback is the dispatcher blocker
+// proof: a consumer callback parked downstream must not stall the
+// recovery worker. The suspect's Ping fails, disconnected lands in
+// state (gate closes, waiters park) while its delivery is still
+// queued behind the blocked handler — and Recover proceeds to
+// success regardless.
+func TestRecoveryNotBlockedBySlowCallback(t *testing.T) {
+	fake := newRecoverableFake()
+	fake.pingErr = errors.New("verify down")
+	// Pin the episode open: Recover blocks until released, so the
+	// disconnected middle state is stable while we observe it.
+	recoverRelease := make(chan struct{})
+	fake.recoverRelease = recoverRelease
+	m := newWorkerMeta(t, fake)
+	defer m.lifecycleCancel()
+
+	entered := make(chan struct{})
+	handlerRelease := make(chan struct{})
+	var enterOnce sync.Once
+	m.AddRef("blocked", func(s, e string) {
+		enterOnce.Do(func() { close(entered) })
+		<-handlerRelease
+	})
+
+	m.cw.ReportSuspectedFailure()
+	// The disconnected event reaches the parked handler: delivery
+	// backpressure genuinely exists in this scenario.
+	select {
+	case <-entered:
+	case <-time.After(5 * time.Second):
+		t.Fatal("dispatcher never reached the blocked handler")
+	}
+	// The worker proceeds into Recover while the callback is still
+	// blocked and the gate stays closed: delivery backpressure never
+	// becomes recovery backpressure. (The public status by now is
+	// disconnected or recovering — both transient on the way into
+	// the owned episode, so the stable assertions are the gate and
+	// the Recover call.)
+	require.Eventually(t, func() bool {
+		ready, _ := workerGate(t, m)
+		return !ready && fake.recoverCalls.Load() == 1
+	}, 5*time.Second, 5*time.Millisecond)
+	close(handlerRelease)
+	close(recoverRelease)
+	require.Eventually(t, func() bool {
+		ready, _ := workerGate(t, m)
+		s, _ := m.GetStatus()
+		return ready && s == api.ConnectionConnected
+	}, 5*time.Second, 5*time.Millisecond)
+	require.Equal(t, int32(1), fake.recoverCalls.Load())
 }
 
 // TestRecoveryStaleWakeupIgnored: a buffered slot against settled
