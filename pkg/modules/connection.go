@@ -125,7 +125,8 @@ type PeriodicHealthChecker interface {
 // callbacks or mutate Pool-visible status: recovering/disconnected/
 // connected transitions belong to the Pool. A nil return means the
 // new handle is installed and usable; an error return leaves prior
-// state untouched for the Pool to verify with Ping.
+// state untouched, and the Pool worker keeps owning the episode
+// (re-verify, then backoff and retry until success or lifecycle end).
 type PoolRecoverableConnection interface {
 	Connection
 	Recover(ctx api.StreamContext) error
