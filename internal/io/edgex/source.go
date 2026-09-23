@@ -313,8 +313,11 @@ func (es *Source) Close(ctx api.StreamContext) error {
 	log := ctx.GetLogger()
 	log.Infof("EdgeX Source instance %d Done.", ctx.GetInstanceId())
 	if es.cli != nil {
+		// Per-consumer cleanup only: unsubscribe this source's topic.
+		// The shared transport stays up for other holders; the Pool
+		// stop path disconnects it via Client.Close once the last
+		// Lease is released.
 		es.cli.DetachSub(ctx, es.config)
-		_ = es.cli.Disconnect()
 	}
 	return es.lease.Release(ctx)
 }

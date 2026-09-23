@@ -519,9 +519,9 @@ func (ems *EdgexMsgBusSink) doCollect(ctx api.StreamContext, item any) error {
 func (ems *EdgexMsgBusSink) Close(ctx api.StreamContext) error {
 	logger := ctx.GetLogger()
 	logger.Infof("Closing edgex sink")
-	if ems.cli != nil {
-		_ = ems.cli.Disconnect()
-	}
+	// No transport teardown here: the shared connection may still serve
+	// other holders. The Pool stop path disconnects it via Client.Close
+	// once the last Lease is released.
 	if ems.lease != nil {
 		return ems.lease.Release(ctx)
 	}

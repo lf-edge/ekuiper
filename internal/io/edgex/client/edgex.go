@@ -88,7 +88,11 @@ func (es *Client) DetachSub(ctx api.StreamContext, props map[string]any) {
 }
 
 func (es *Client) Close(ctx api.StreamContext) error {
+	// Sole owner of transport teardown: the Pool stop path calls Close
+	// once the last Lease is released. Consumers must never disconnect
+	// the shared transport on their own Close.
 	if es.client != nil {
+		conf.Log.Infof("Closing the connection to edgex messagebus.")
 		return es.client.Disconnect()
 	}
 	return nil
@@ -184,14 +188,6 @@ func (es *Client) Subscribe(msg chan types.MessageEnvelope, topic string, err ch
 	if err := es.client.Subscribe(topics, err); err != nil {
 		conf.Log.Errorf("Failed to subscribe to edgex messagebus with topic %s has error : %s.", topic, err.Error())
 		return err
-	}
-	return nil
-}
-
-func (es *Client) Disconnect() error {
-	conf.Log.Infof("Closing the connection to edgex messagebus.")
-	if e := es.client.Disconnect(); e != nil {
-		return e
 	}
 	return nil
 }
