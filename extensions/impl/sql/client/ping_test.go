@@ -24,7 +24,7 @@ import (
 
 // TestPingWithoutHandleIsPureHealthCheck pins that Ping never dials:
 // an absent handle reports an error instead of creating the database
-// connection. Handle creation belongs to Dial/Reconnect.
+// connection. Handle creation belongs to Dial/Recover.
 func TestPingWithoutHandleIsPureHealthCheck(t *testing.T) {
 	ctx := mockContext.NewMockContext("ping", "op1")
 	c := &SQLConnection{id: "no-handle"}
