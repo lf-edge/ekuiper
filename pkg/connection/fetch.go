@@ -90,16 +90,16 @@ func FetchConnectionWithOptions(ctx api.StreamContext, opts FetchOptions) (*Conn
 }
 
 // ResolveConnectionKey derives the explicit pool identity for one fetch
-// from connector-local material. It carries the valid-selector rule the
-// legacy shim relied on: a non-empty string props["connectionSelector"]
-// selects the named connection (RequireExisting=true, the fetch only
-// attaches); otherwise the caller-provided anonymous key is used and
-// the fetch may create. An empty selector counts as absent. The Pool
-// treats the returned key as opaque.
+// from connector-local material: any non-empty string
+// props["connectionSelector"] selects the named connection
+// (RequireExisting=true, the fetch only attaches); otherwise the
+// caller-provided anonymous key is used and the fetch may create. An
+// empty selector counts as absent. The Pool treats the returned key
+// as opaque.
 func ResolveConnectionKey(props map[string]any, anonymous string) (key string, requireExisting bool) {
 	if len(props) > 0 {
 		if v, ok := props["connectionSelector"]; ok {
-			if id, ok := v.(string); ok && id != "" && id != anonymous {
+			if id, ok := v.(string); ok && id != "" {
 				return id, true
 			}
 		}

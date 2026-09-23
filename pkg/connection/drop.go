@@ -15,6 +15,7 @@
 package connection
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
@@ -58,8 +59,13 @@ func dropNameConnection(m *Manager, ctx api.StreamContext, selId string) (meta *
 	return meta, meta.stop, nil
 }
 
-func finishStop(m *Manager, key string, stop func(api.StreamContext), ctx api.StreamContext) {
-	stop(ctx)
+func finishStop(m *Manager, key string, stop func(api.StreamContext)) {
+	// Teardown runs on a server-owned cleanup scope, never on the
+	// caller ctx: rule/request scopes are frequently already canceled
+	// when Close/Drop/zero-ref fires, and provider Close must not
+	// depend on them. Mirrors stopAllRuntime; the caller ctx only
+	// bounds the API call itself, never the lifecycle teardown.
+	stop(serverStreamContext(context.Background()))
 	m.Lock()
 	// Delete only our own entry: a re-init swaps the whole manager, and
 	// a concurrent round cannot reuse the key while it is removing.
@@ -178,7 +184,7 @@ func DropNameConnection(ctx api.StreamContext, selId string) error {
 			continue
 		}
 		if plan.stop != nil {
-			finishStop(m, selId, plan.stop, ctx)
+			finishStop(m, selId, plan.stop)
 		}
 		return nil
 	}
@@ -205,7 +211,7 @@ func UpdateConnection(ctx api.StreamContext, id, typ string, props map[string]an
 			return nil, plan.err
 		}
 		if plan.stop != nil {
-			finishStop(m, id, plan.stop, ctx)
+			finishStop(m, id, plan.stop)
 		}
 		return createNamedConnection(ctx, id, typ, props)
 	}
@@ -233,37 +239,13 @@ func detachChecked(ctx api.StreamContext, mgr *Manager, conId, refId string, tok
 		return nil
 	}
 	mgr.Lock()
-	_, stop, err := detachLocked(mgr, ctx, conId, refId, token, true)
+	_, stop, err := detachLocked(mgr, ctx, conId, refId, token)
 	mgr.Unlock()
 	if err != nil {
 		return err
 	}
 	if stop != nil {
-		finishStop(mgr, conId, stop, ctx)
-	}
-	return nil
-}
-
-// detachRef detaches one consumer reference by key+refID without token
-// or generation checks. Same-package tests only: it exercises the
-// shared detachLocked core. Consumers must never call it — only via
-// Lease.Release, which binds the exact attachment.
-func detachRef(ctx api.StreamContext, conId, refId string) error {
-	if conId == "" {
-		return fmt.Errorf("connection id should be defined")
-	}
-	if refId == "" {
-		return fmt.Errorf("connection reference id should be defined")
-	}
-	m := globalConnectionManager.Load()
-	m.Lock()
-	_, stop, err := detachLocked(m, ctx, conId, refId, 0, false)
-	m.Unlock()
-	if err != nil {
-		return err
-	}
-	if stop != nil {
-		finishStop(m, conId, stop, ctx)
+		finishStop(mgr, conId, stop)
 	}
 	return nil
 }
@@ -284,55 +266,16 @@ func readyMeta(m *Manager, key string) (*Meta, error) {
 	return e.meta, nil
 }
 
-func getConnectionRef(id string) int {
-	m := globalConnectionManager.Load()
-	m.RLock()
-	defer m.RUnlock()
-	meta, err := readyMeta(m, id)
-	if err != nil || meta == nil {
-		return 0
-	}
-	return meta.GetRefCount()
-}
-
-func attachConnection(conId string, refId string, sc api.StatusChangeHandler) (*ConnectionLease, error) {
-	if conId == "" {
-		return nil, fmt.Errorf("connection id should be defined")
-	}
-	// Test/compat helper: same atomic attach as the fast path, just
-	// resolved by key instead of by entry. No defer: the initial
-	// delivery must run after the Manager lock is released (lock
-	// invariant).
-	m := globalConnectionManager.Load()
-	m.Lock()
-	meta, err := readyMeta(m, conId)
-	if err != nil {
-		m.Unlock()
-		return nil, err
-	}
-	if meta == nil {
-		m.Unlock()
-		return nil, fmt.Errorf("connection %s not existed", conId)
-	}
-	token := meta.AddRef(refId, sc)
-	if conId != refId {
-		conf.Log.Infof("action=attach_connection_ref connId=%s type=%s connectionKey=%s refId=%s refCount=%d", conId, meta.Typ, conId, refId, meta.GetRefCount())
-	}
-	m.Unlock()
-	meta.deliverInitial(refId, sc, token)
-	return newLease(meta.cw, m, conId, refId, token), nil
-}
-
 // detachLocked removes one consumer reference. The caller must hold m's
-// lock and keep using m afterwards. When checkToken is set, the recorded
-// attachment token must still match: a stale token means this release
-// belongs to an earlier attachment and must leave the current holder
-// untouched. If an anonymous Meta reaches zero refs it flips to removing
-// and hands out its stop ownership; the caller must run the stop outside
-// the lock and delete the entry after it completes. Refs on an
-// already-removing Meta are released best-effort so repeated Close stays
-// nil and never triggers a second stop.
-func detachLocked(m *Manager, ctx api.StreamContext, conId, refId string, token uint64, checkToken bool) (meta *Meta, stop func(api.StreamContext), err error) {
+// lock and keep using m afterwards. The recorded attachment token must
+// still match: a stale token means this release belongs to an earlier
+// attachment and must leave the current holder untouched. If an
+// anonymous Meta reaches zero refs it flips to removing and hands out
+// its stop ownership; the caller must run the stop outside the lock and
+// delete the entry after it completes. Refs on an already-removing Meta
+// are released best-effort so repeated Close stays nil and never
+// triggers a second stop.
+func detachLocked(m *Manager, ctx api.StreamContext, conId, refId string, token uint64) (meta *Meta, stop func(api.StreamContext), err error) {
 	e, ok := m.connectionPool[conId]
 	if !ok {
 		conf.Log.Infof("detachConnection not found:%v", conId)
@@ -340,10 +283,8 @@ func detachLocked(m *Manager, ctx api.StreamContext, conId, refId string, token 
 	}
 	if e.state != entryReady || e.meta == nil {
 		if e.state == entryRemoving && e.meta != nil {
-			if checkToken {
-				if cur, ok := e.meta.refToken(refId); !ok || cur != token {
-					return nil, nil, nil
-				}
+			if cur, ok := e.meta.refToken(refId); !ok || cur != token {
+				return nil, nil, nil
 			}
 			e.meta.DeRef(refId)
 			return nil, nil, nil
@@ -351,10 +292,8 @@ func detachLocked(m *Manager, ctx api.StreamContext, conId, refId string, token 
 		return nil, nil, ErrConnectionRemoving
 	}
 	meta = e.meta
-	if checkToken {
-		if cur, ok := meta.refToken(refId); !ok || cur != token {
-			return nil, nil, nil
-		}
+	if cur, ok := meta.refToken(refId); !ok || cur != token {
+		return nil, nil, nil
 	}
 	// Only an actually-removed ref can drive teardown: a stray detach
 	// for an unknown refId must neither decrement (DeRef already

@@ -91,8 +91,10 @@ func (l *ConnectionLease) ReportSuspectedFailure() {
 	l.cw.ReportSuspectedFailure()
 }
 
-// IsInitialized reports whether the logical connection was published.
-// A leased handle is always initialized; a creation-only handle may not be.
+// IsInitialized reports whether the initial connection worker has
+// published its first result: false while the first Dial is still in
+// flight (a lookup against it reports not-ready once instead of
+// parking), true once a handle or an error is available.
 func (l *ConnectionLease) IsInitialized() bool {
 	if l == nil || l.cw == nil {
 		return false
