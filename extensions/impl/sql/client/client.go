@@ -15,17 +15,14 @@
 // Package client implements the SQL connection provider. Like all
 // packages under extensions/impl, it does not promise a stable Go
 // API: the supported contract surface is contract/v2, and in-tree
-// plugins are compiled against it. GetDB is retained as deprecated
-// purely as a zero-cost raw-handle migration convenience — the
-// returned *sql.DB is fully usable (read, write, close), which is
-// exactly why production code must not reach for it: a raw handle
-// outlives recovery swaps and bypasses pool ownership. Its retention
-// does not promote this package to a compatibility surface. In
-// particular, control-plane operations that would fork connection
-// recovery ownership (notably the removed Reconnect) stay deleted
-// with no compatibility shim: a shim would hand external callers an
-// officially sanctioned way to bypass the Pool-only recovery
-// invariant.
+// plugins are compiled against it. The database is reached only
+// through the QueryContext / ExecContext / BeginTx facade below,
+// which always routes to the current handle: a previously returned
+// *sql.DB would outlive recovery swaps and bypass pool ownership.
+// In particular, control-plane operations that would fork connection
+// recovery ownership stay deleted with no compatibility shim: a shim
+// would hand external callers an officially sanctioned way to bypass
+// the Pool-only recovery invariant.
 package client
 
 import (
@@ -111,19 +108,6 @@ func (s *SQLConnection) Dial(ctx api.StreamContext) error {
 	dialCtx, cancel := context.WithTimeout(ctx, defaultAttemptTimeout)
 	defer cancel()
 	return s.dial(dialCtx)
-}
-
-// GetDB returns the current handle.
-//
-// Deprecated: reach the database only through the QueryContext /
-// ExecContext / BeginTx facade, which always routes to the current
-// handle. A raw *sql.DB outlives recovery swaps and bypasses pool
-// ownership. Kept as a zero-cost migration convenience, not as a
-// stability promise (see the package comment).
-func (s *SQLConnection) GetDB() *sql.DB {
-	s.RLock()
-	defer s.RUnlock()
-	return s.db
 }
 
 // QueryContext routes one query to the current handle. It is pure
