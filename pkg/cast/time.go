@@ -349,7 +349,7 @@ func convertFormat(f string) (string, error) {
 		case '\'': // ' (text delimiter)  or '' (real quote)
 
 			// real quote
-			if formatRune[i+1] == r {
+			if i+1 < lenFormat && formatRune[i+1] == r {
 				out += "'"
 				i = i + 1
 				continue
