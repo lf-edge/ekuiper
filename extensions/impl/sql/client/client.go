@@ -12,6 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package client implements the SQL connection provider. Like all
+// packages under extensions/impl, it does not promise a stable Go
+// API: the supported contract surface is contract/v2, and in-tree
+// plugins are compiled against it. GetDB is retained as deprecated
+// purely as a zero-cost read-only migration convenience — that does
+// not promote this package to a compatibility surface. In
+// particular, control-plane operations that would fork connection
+// recovery ownership (notably the removed Reconnect) stay deleted
+// with no compatibility shim: a shim would hand external callers an
+// officially sanctioned way to bypass the Pool-only recovery
+// invariant.
 package client
 
 import (
@@ -99,11 +110,14 @@ func (s *SQLConnection) Dial(ctx api.StreamContext) error {
 	return s.dial(dialCtx)
 }
 
+// GetDB returns the current handle.
+//
+// Deprecated: reach the database only through the QueryContext /
+// ExecContext / BeginTx facade, which always routes to the current
+// handle. A raw *sql.DB outlives recovery swaps and bypasses pool
+// ownership. Kept as a zero-cost migration convenience, not as a
+// stability promise (see the package comment).
 func (s *SQLConnection) GetDB() *sql.DB {
-	// Deprecated: reach the database only through the QueryContext /
-	// ExecContext / BeginTx facade below, which always routes to the
-	// current handle. A raw *sql.DB outlives recovery swaps and
-	// bypasses pool ownership. Kept for external compatibility.
 	s.RLock()
 	defer s.RUnlock()
 	return s.db

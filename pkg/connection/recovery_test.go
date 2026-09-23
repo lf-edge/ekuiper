@@ -110,23 +110,18 @@ func (b *bothFakeConn) Status(ctx api.StreamContext) modules.ConnectionStatus {
 // worker on millisecond backoff. Caller owns lifecycleCancel.
 func newWorkerMeta(t *testing.T, fake *recoverableFakeConn) *Meta {
 	t.Helper()
-	old := newRecoveryBackoff
-	newRecoveryBackoff = func() *backoff.ExponentialBackOff {
-		b := backoff.NewExponentialBackOff()
-		b.InitialInterval = time.Millisecond
-		b.RandomizationFactor = 0
-		b.MaxInterval = 5 * time.Millisecond
-		b.MaxElapsedTime = 0
-		b.Reset()
-		return b
-	}
-	t.Cleanup(func() { newRecoveryBackoff = old })
+	bo := backoff.NewExponentialBackOff()
+	bo.InitialInterval = time.Millisecond
+	bo.RandomizationFactor = 0
+	bo.MaxInterval = 5 * time.Millisecond
+	bo.MaxElapsedTime = 0
+	bo.Reset()
 	m := newStateMeta()
 	m.NotifyStatus(api.ConnectionConnected, "")
 	// Wire the handle back-pointer like attachToMeta does; the
 	// worker tests drive suspects through the public ConnWrapper API.
 	m.cw = &ConnWrapper{ID: m.ID, meta: m}
-	m.startRecoveryWorker(fake)
+	startRecoveryWorkerWithBackoff(m, fake, bo)
 	require.NotNil(t, m.recoveryDone)
 	return m
 }
@@ -442,27 +437,43 @@ func TestRecoveryStopJoinsWorker(t *testing.T) {
 	require.Equal(t, int32(1), fake.closedCalls.Load())
 }
 
-// TestProbeNudgesWorkerOnFlip pins hard invariant 3 at the probe
-// boundary: the flip the probe performs pairs with exactly one
-// worker wakeup sequence.
-func TestProbeNudgesWorkerOnFlip(t *testing.T) {
-	registerProbeProviders()
+// TestProbeNudgesWorkerToRecover is the probe→worker behavior
+// contract: a probe-confirmed flip hands the episode to the Pool
+// worker, whose Recover runs and converges once the backend heals.
+// It asserts behavior (Recover ran, gate reopened), never channel
+// buffer internals.
+func TestProbeNudgesWorkerToRecover(t *testing.T) {
+	require.NoError(t, InitConnectionManager4Test())
+	registerEpisodeProvider()
+	episodeFake.sick.Store(false)
+	defer episodeFake.sick.Store(false)
 	ctx := probeTestCtx()
-	_, err := CreateNamedConnection(ctx, "probe-nudge", "failping", nil)
+
+	cw, err := CreateNamedConnection(ctx, "probe-recovers", "recovtest", nil)
 	require.NoError(t, err)
-	defer DropNameConnection(ctx, "probe-nudge")
+	defer DropNameConnection(ctx, "probe-recovers")
+	require.Eventually(t, func() bool {
+		s, _ := cw.Status()
+		return s == api.ConnectionConnected
+	}, 5*time.Second, 5*time.Millisecond)
+	recoversBefore := episodeFake.recoverCalls.Load()
 
-	requireConnected(t, "probe-nudge")
-	meta := probeMeta(t, "probe-nudge")
-
+	// Outage: the probe flips connected→disconnected and nudges the
+	// worker, which owns the episode from here.
+	episodeFake.sick.Store(true)
 	probeConnections(time.Second)
+	require.Eventually(t, func() bool {
+		s, _ := cw.Status()
+		return s == api.ConnectionDisconnected
+	}, 5*time.Second, 5*time.Millisecond)
 
-	// The flip the probe performed pairs with exactly one worker
-	// wakeup. failping is not pool-recoverable, so no worker exists
-	// and the slot stays buffered.
-	s, _ := meta.GetStatus()
-	require.Equal(t, api.ConnectionDisconnected, s)
-	require.Equal(t, 1, len(meta.suspectCh))
+	// Heal: the worker's retries converge and reopen the gate.
+	episodeFake.sick.Store(false)
+	require.Eventually(t, func() bool {
+		s, _ := cw.Status()
+		return s == api.ConnectionConnected
+	}, 15*time.Second, 10*time.Millisecond)
+	require.Greater(t, episodeFake.recoverCalls.Load(), recoversBefore)
 }
 
 // episodeFakeConn is a scriptable PoolRecoverableConnection for the

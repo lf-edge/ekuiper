@@ -252,22 +252,6 @@ func TestSuspectThenDisconnectSingleGeneration(t *testing.T) {
 	requireState(t, m, api.ConnectionDisconnected, "boom")
 }
 
-// TestSuspectStormCoalesces: any number of reports collapse into one
-// buffered wakeup.
-func TestSuspectStormCoalesces(t *testing.T) {
-	m := newStateMeta()
-	m.NotifyStatus(api.ConnectionConnected, "")
-	for i := 0; i < 50; i++ {
-		m.reportSuspect()
-	}
-	require.LessOrEqual(t, len(m.suspectCh), 1)
-	select {
-	case <-m.suspectCh:
-	default:
-	}
-	require.Equal(t, 0, len(m.suspectCh))
-}
-
 // TestSuspectByState pins the report table: disconnected nudges
 // without state change, connecting and recovering are ignored.
 func TestSuspectByState(t *testing.T) {
