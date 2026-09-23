@@ -15,10 +15,17 @@
 package connection
 
 import (
+	"sync/atomic"
+
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 )
+
+// attachTokenSeq mints process-unique attachment tokens: every AddRef
+// consumes one, never reused, so a token can never collide with a
+// later attachment even across Meta recreation. Zero means no token.
+var attachTokenSeq atomic.Uint64
 
 // statusDispatch is one frozen status event in the per-Meta FIFO.
 // Transition events carry the handler membership frozen at enqueue
@@ -34,7 +41,10 @@ type statusDispatch struct {
 	status, errMsg string
 	handlers       []api.StatusChangeHandler
 	refId          string
-	barrier        chan struct{}
+	// token binds an initial-delivery event to the attachment that
+	// enqueued it; transition events leave it zero and skip the check.
+	token   uint64
+	barrier chan struct{}
 }
 
 func (meta *Meta) NotifyStatus(status string, s string) {
@@ -153,9 +163,9 @@ func (meta *Meta) dispatchLoop() {
 		}
 		if ev.refId != "" {
 			meta.refMu.Lock()
-			_, ok := meta.refs[ev.refId]
+			cur, ok := meta.refTokens[ev.refId]
 			meta.refMu.Unlock()
-			if !ok {
+			if !ok || cur != ev.token {
 				continue
 			}
 		}
@@ -182,58 +192,77 @@ func (meta *Meta) drainEvents() {
 	<-done
 }
 
-// AddRef registers one consumer reference. It is structural only:
-// no status read, no callback, no I/O — safe under the Manager lock.
-// The initial state delivery is a separate step (deliverInitial) that
-// runs after the Manager lock is released, so a slow consumer can
-// never stall the Pool. Registration precedes delivery; combined with
-// per-Meta FIFO event order (eventMu) every handler observes each
-// transition exactly once and in order, never concurrently and never
-// inverted. A racing initial delivery may duplicate the latest state
-// (connected, connected) but never reports new-then-old and never
-// swallows a real transition.
-func (meta *Meta) AddRef(refId string, sc api.StatusChangeHandler) {
+// AddRef registers one consumer reference and mints its attachment
+// token. It is structural only: no status read, no callback, no I/O —
+// safe under the Manager lock. Every call mints a fresh token, even a
+// same-ref reattach that replaces the handler without growing the
+// count: the token identifies this attachment, not just the refID, so
+// a stale Lease from an earlier attachment can never release or
+// observe a later one. The initial state delivery is a separate step
+// (deliverInitial) that runs after the Manager lock is released, so a
+// slow consumer can never stall the Pool. Registration precedes
+// delivery; combined with per-Meta FIFO event order (eventMu) every
+// handler observes each transition exactly once and in order, never
+// concurrently and never inverted. A racing initial delivery may
+// duplicate the latest state (connected, connected) but never reports
+// new-then-old and never swallows a real transition.
+func (meta *Meta) AddRef(refId string, sc api.StatusChangeHandler) uint64 {
+	token := attachTokenSeq.Add(1)
 	meta.refMu.Lock()
 	if meta.refs == nil {
 		meta.refs = make(map[string]api.StatusChangeHandler)
 	}
+	if meta.refTokens == nil {
+		meta.refTokens = make(map[string]uint64)
+	}
 	_, dup := meta.refs[refId]
 	meta.refs[refId] = sc
+	meta.refTokens[refId] = token
 	count := len(meta.refs)
 	meta.refMu.Unlock()
 	if dup {
 		conf.Log.Infof("conn %s re-attach existing reference %s, refs stay %d", meta.ID, refId, count)
-		return
+		return token
 	}
 	conf.Log.Infof("conn %s add reference %s to %d refs", meta.ID, refId, count)
+	return token
+}
+
+// refToken reports the current attachment token for refId. Same-package
+// escape for paths that must name a token without holding a Lease.
+func (meta *Meta) refToken(refId string) (uint64, bool) {
+	meta.refMu.RLock()
+	defer meta.refMu.RUnlock()
+	token, ok := meta.refTokens[refId]
+	return token, ok
 }
 
 // deliverInitial enqueues the current state snapshot for a freshly
 // attached consumer. Call only after releasing the Manager lock, and
-// only once per attach. It joins the same eventMu enqueue order as
-// NotifyStatus, so a concurrent transition and this initial observe
-// a total order: initial-first sees the old state then the
-// transition, transition-first yields the transition then a
-// same-state initial duplicate. Never new-then-old, never swallowed.
-// A ref detached before the enqueue is skipped; a detach racing the
-// dispatch may still observe one benign same-state duplicate (status
-// sets are idempotent).
-func (meta *Meta) deliverInitial(refId string, sc api.StatusChangeHandler) {
+// only once per attach, passing the token minted by that attach's
+// AddRef. It joins the same eventMu enqueue order as NotifyStatus, so
+// a concurrent transition and this initial observe a total order:
+// initial-first sees the old state then the transition,
+// transition-first yields the transition then a same-state initial
+// duplicate. Never new-then-old, never swallowed. A ref detached (or
+// reattached, which mints a new token) before dispatch is skipped, so
+// a stale attachment never observes a later one.
+func (meta *Meta) deliverInitial(refId string, sc api.StatusChangeHandler, token uint64) {
 	if sc == nil {
 		return
 	}
 	meta.eventMu.Lock()
 	defer meta.eventMu.Unlock()
 	meta.refMu.Lock()
-	_, ok := meta.refs[refId]
+	cur, ok := meta.refTokens[refId]
 	meta.refMu.Unlock()
-	if !ok {
+	if !ok || cur != token {
 		return
 	}
 	meta.stateMu.RLock()
 	s, e := meta.status, meta.lastError
 	meta.stateMu.RUnlock()
-	meta.enqueueLocked(statusDispatch{status: s, errMsg: e, handlers: []api.StatusChangeHandler{sc}, refId: refId})
+	meta.enqueueLocked(statusDispatch{status: s, errMsg: e, handlers: []api.StatusChangeHandler{sc}, refId: refId, token: token})
 }
 
 func (meta *Meta) DeRef(refId string) bool {
@@ -244,6 +273,7 @@ func (meta *Meta) DeRef(refId string) bool {
 		return false
 	}
 	delete(meta.refs, refId)
+	delete(meta.refTokens, refId)
 	count := len(meta.refs)
 	conf.Log.Infof("conn %s dereference %s to %d refs", meta.ID, refId, count)
 	return true

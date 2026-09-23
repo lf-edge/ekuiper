@@ -291,9 +291,14 @@ type Meta struct {
 	Named bool `json:"named"`
 
 	// refs is the single source of truth for consumer references.
-	// RefCount is always len(refs). Guarded by refMu.
-	refMu sync.Mutex
-	refs  map[string]api.StatusChangeHandler `json:"-"`
+	// RefCount is always len(refs). Guarded by refMu. refTokens holds
+	// the attachment token minted by each AddRef (guarded by the same
+	// refMu, updated atomically with refs): Release and initial
+	// delivery only honor the currently recorded token, so a stale
+	// attachment can never act on a later one.
+	refMu     sync.RWMutex
+	refs      map[string]api.StatusChangeHandler `json:"-"`
+	refTokens map[string]uint64                  `json:"-"`
 	// eventMu orders the observable status event stream per Meta.
 	// Producers (NotifyStatus, tryProbeDisconnect, deliverInitial)
 	// hold it only to transition state, freeze the handler snapshot
