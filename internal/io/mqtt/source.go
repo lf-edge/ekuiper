@@ -88,7 +88,15 @@ func (ms *SourceConnector) Connect(ctx api.StreamContext, sch api.StatusChangeHa
 	var cli *Connection
 	var err error
 	id := fmt.Sprintf("%s-%s-%s-mqtt-source", ctx.GetRuleId(), ctx.GetOpId(), ms.tpc)
-	cw, err := connection.FetchConnection(ctx, id, "mqtt", ms.props, sch)
+	key, requireExisting := connection.ResolveConnectionKey(ms.props, id)
+	cw, err := connection.FetchConnectionWithOptions(ctx, connection.FetchOptions{
+		ConnectionKey:   key,
+		RefID:           connection.ConsumerRefID(ctx),
+		RequireExisting: requireExisting,
+		Type:            "mqtt",
+		Props:           ms.props,
+		StatusHandler:   sch,
+	})
 	if err != nil {
 		return err
 	}

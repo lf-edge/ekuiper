@@ -76,7 +76,15 @@ func (ms *Sink) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) erro
 	ctx.GetLogger().Infof("Connecting to mqtt server")
 	var err error
 	ms.id = fmt.Sprintf("%s-%s-%s-mqtt-sink", ctx.GetRuleId(), ctx.GetOpId(), ms.adconf.Tpc)
-	ms.cw, err = connection.FetchConnection(ctx, ms.id, "mqtt", ms.config, sch)
+	key, requireExisting := connection.ResolveConnectionKey(ms.config, ms.id)
+	ms.cw, err = connection.FetchConnectionWithOptions(ctx, connection.FetchOptions{
+		ConnectionKey:   key,
+		RefID:           connection.ConsumerRefID(ctx),
+		RequireExisting: requireExisting,
+		Type:            "mqtt",
+		Props:           ms.config,
+		StatusHandler:   sch,
+	})
 	if err != nil {
 		return err
 	}
