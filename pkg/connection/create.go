@@ -51,7 +51,7 @@ import (
 // no lifecycle. The reservation is removed so a later call may start a
 // fresh round, while current waiters still observe this round's error
 // through the entry.
-func (m *Manager) runCreation(e *poolEntry, key, typ string, props map[string]any, named bool, persist func() error, attachRef string, sc api.StatusChangeHandler) (*Meta, error) {
+func (m *Manager) runCreation(e *poolEntry, key, typ string, props map[string]any, named bool, persist func() error, attachRef string, sc api.StatusChangeHandler) (meta *Meta, token uint64, perr error) {
 	createCtx := serverStreamContext(m.ctx)
 	conn, err := provisionConnection(createCtx, key, typ, props)
 	if err == nil && persist != nil {
@@ -64,7 +64,7 @@ func (m *Manager) runCreation(e *poolEntry, key, typ string, props map[string]an
 	// providers and a local dispose for the rest, so a fresh round
 	// starting right after publishing the failure cannot be disturbed
 	// by the cleanup still in flight.
-	meta, toClose, perr := m.publishCreation(e, key, typ, props, named, conn, err, attachRef, sc)
+	meta, toClose, token, perr := m.publishCreation(e, key, typ, props, named, conn, err, attachRef, sc)
 	if toClose != nil {
 		// The candidate belongs to the Pool from a nil Provision
 		// return on; a failed later step must release it instead
@@ -74,16 +74,16 @@ func (m *Manager) runCreation(e *poolEntry, key, typ string, props map[string]an
 	if perr == nil && attachRef != "" {
 		// Creator delivery runs outside the Manager lock (lock
 		// invariant): publishCreation only registered the ref.
-		meta.deliverInitial(attachRef, sc)
+		meta.deliverInitial(attachRef, sc, token)
 	}
-	return meta, perr
+	return meta, token, perr
 }
 
 // publishCreation publishes one creation round outcome atomically under a
 // single Manager critical section (defer-unlocked). It never runs provider
 // code: a candidate needing release is returned as toClose for the caller
 // to dispose outside the lock.
-func (m *Manager) publishCreation(e *poolEntry, key, typ string, props map[string]any, named bool, conn modules.Connection, perr error, attachRef string, sc api.StatusChangeHandler) (meta *Meta, toClose modules.Connection, err error) {
+func (m *Manager) publishCreation(e *poolEntry, key, typ string, props map[string]any, named bool, conn modules.Connection, perr error, attachRef string, sc api.StatusChangeHandler) (meta *Meta, toClose modules.Connection, token uint64, err error) {
 	m.Lock()
 	defer m.Unlock()
 	// Verify our reservation survived. Init/reset is contractually
@@ -91,40 +91,42 @@ func (m *Manager) publishCreation(e *poolEntry, key, typ string, props map[strin
 	// entry from a misuse path — never silently publish over it.
 	cur, ok := m.connectionPool[key]
 	if !ok || cur != e || cur.state != entryCreating {
-		return nil, conn, ErrConnectionClosed
+		return nil, conn, 0, ErrConnectionClosed
 	}
 	if perr != nil {
 		e.err = perr
 		close(e.ready)
 		delete(m.connectionPool, key)
-		return nil, conn, perr
+		return nil, conn, 0, perr
 	}
 	meta = newMeta(m, key, typ, props, named)
 	meta.pendingConn = conn
 	meta.cw = newConnWrapper(meta)
 	if attachRef != "" {
-		meta.AddRef(attachRef, sc)
+		token = meta.AddRef(attachRef, sc)
 	}
 	e.meta = meta
 	e.state = entryReady
 	close(e.ready)
-	return meta, nil, nil
+	return meta, nil, token, nil
 }
 
 // attachToMeta stores one consumer reference and returns the stable
-// handle. Callers must hold the Manager lock so the attach is atomic
-// with zero-ref teardown decisions. Registration is structural only
-// (no callback); the caller delivers the initial snapshot via
-// deliverInitial after unlocking. The lifecycle guard fails the
-// attach instead of parking a ref on a dying Meta.
-func attachToMeta(meta *Meta, refId string, sc api.StatusChangeHandler) (*connWrapper, error) {
+// handle plus the attachment token minted by this attach. Callers must
+// hold the Manager lock so the attach is atomic with zero-ref teardown
+// decisions. Registration is structural only (no callback); the caller
+// delivers the initial snapshot via deliverInitial after unlocking,
+// passing the token back so a stale attachment is never observed. The
+// lifecycle guard fails the attach instead of parking a ref on a dying
+// Meta.
+func attachToMeta(meta *Meta, refId string, sc api.StatusChangeHandler) (*connWrapper, uint64, error) {
 	select {
 	case <-meta.lifecycleCtx.Done():
-		return nil, ErrConnectionClosed
+		return nil, 0, ErrConnectionClosed
 	default:
 	}
-	meta.AddRef(refId, sc)
-	return meta.cw, nil
+	token := meta.AddRef(refId, sc)
+	return meta.cw, token, nil
 }
 
 // checkCompatible rejects sharing one logical connection between
@@ -281,13 +283,13 @@ func createNamedConnection(ctx api.StreamContext, id, typ string, props map[stri
 		// Static ordering: Provision, then persist, then publish, then worker.
 		// A persist failure publishes only an error: no Meta, no worker.
 		// Named creation carries no creator ref: zero-ref named is idle.
-		meta, err := m.runCreation(plan.entry, id, typ, plan.props, true, func() error {
+		meta, _, err := m.runCreation(plan.entry, id, typ, plan.props, true, func() error {
 			return storeConnectionMeta(typ, id, plan.props)
 		}, "", nil)
 		if err != nil {
 			return nil, err
 		}
-		return newLease(meta.cw, id, ""), nil
+		return newLease(meta.cw, m, id, "", 0), nil
 	}
 }
 
