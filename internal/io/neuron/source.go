@@ -78,7 +78,18 @@ func (s *source) SubId(_ map[string]any) string {
 
 func (s *source) Connect(ctx api.StreamContext, sc api.StatusChangeHandler) error {
 	ctx.GetLogger().Infof("Connecting to neuron")
-	cw, err := connection.FetchConnection(ctx, PROTOCOL+s.c.Url, "nng", s.props, sc)
+	// Pool key stays the URL-based anonymous identity ("pair"+url);
+	// it intentionally differs from the planner UniqueConn.ConnId
+	// ("nng:"+...), which lives in a separate namespace.
+	key, requireExisting := connection.ResolveConnectionKey(s.props, PROTOCOL+s.c.Url)
+	cw, err := connection.FetchConnectionWithOptions(ctx, connection.FetchOptions{
+		ConnectionKey:   key,
+		RefID:           connection.ConsumerRefID(ctx),
+		RequireExisting: requireExisting,
+		Type:            "nng",
+		Props:           s.props,
+		StatusHandler:   sc,
+	})
 	if err != nil {
 		return err
 	}
