@@ -22,6 +22,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/lf-edge/ekuiper/v2/internal/io/memory/pubsub"
 	"github.com/lf-edge/ekuiper/v2/internal/testx"
 )
 
@@ -74,6 +75,63 @@ func (m *GlobalServerManager) GetEndpoints() map[string]struct{} {
 	return ma
 }
 
+// TestSamePathMethodsRouteIndependently pins the per-method routing:
+// POST and PUT on one path are independent registrations sharing only
+// the path. Each request must reach its own topic, and unregistering
+// POST must leave PUT serving (no 404 from a shared route slot).
+func TestSamePathMethodsRouteIndependently(t *testing.T) {
+	ip := "127.0.0.1"
+	port := 10085
+	InitGlobalServerManager(ip, port, nil)
+	defer ShutDown()
+	urlPrefix := fmt.Sprintf("http://%v:%v", ip, port)
+	client := &http.Client{}
+
+	postTopic, err := RegisterEndpoint("/dual", "POST")
+	require.NoError(t, err)
+	putTopic, err := RegisterEndpoint("/dual", "PUT")
+	require.NoError(t, err)
+	require.NotEqual(t, postTopic, putTopic)
+	postSub := pubsub.CreateSub(postTopic, nil, "dual-post", 16)
+	putSub := pubsub.CreateSub(putTopic, nil, "dual-put", 16)
+
+	// wait for http server start
+	var lastErr error
+	for i := 0; i < 6; i++ {
+		lastErr = testx.TestHttp(client, urlPrefix+"/dual", "PUT")
+		if lastErr == nil {
+			break
+		}
+		time.Sleep(time.Millisecond * 500)
+	}
+	require.NoError(t, lastErr)
+	require.NoError(t, testx.TestHttp(client, urlPrefix+"/dual", "POST"))
+
+	select {
+	case <-postSub:
+	case <-time.After(2 * time.Second):
+		t.Fatal("POST request did not reach the POST topic")
+	}
+	select {
+	case <-putSub:
+	case <-time.After(2 * time.Second):
+		t.Fatal("PUT request did not reach the PUT topic")
+	}
+
+	// Unregistering POST leaves PUT serving; POST goes 404.
+	UnregisterEndpoint("/dual", "POST")
+	require.Error(t, testx.TestHttp(client, urlPrefix+"/dual", "POST"))
+	require.NoError(t, testx.TestHttp(client, urlPrefix+"/dual", "PUT"))
+
+	UnregisterEndpoint("/dual", "PUT")
+	require.Equal(t, map[string]struct{}{}, GetEndpoints())
+}
+
+// HttpPushConnection: two holders (e.g. a named and an anonymous
+// connection) may register the same endpoint; the first Unregister
+// only drops its own reference, and the route disappears only after
+// the last holder leaves. Unregistering a never-registered endpoint
+// is a no-op.
 // TestSharedEndpointRefcount pins the registry ownership backing
 // HttpPushConnection: two holders (e.g. a named and an anonymous
 // connection) may register the same endpoint; the first Unregister

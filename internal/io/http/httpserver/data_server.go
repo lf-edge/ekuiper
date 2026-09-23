@@ -151,7 +151,10 @@ func (m *GlobalServerManager) RegisterEndpoint(endpoint string, method string) (
 		m.endpointRefs[key] = 1
 	}
 	pubsub.CreatePub(topic)
-	m.routes[endpoint] = func(w http.ResponseWriter, r *http.Request) {
+	// The mux route dispatches through the per-method slot, not the
+	// bare endpoint: POST and PUT on the same path are independent
+	// registrations that must not overwrite or delete each other.
+	m.routes[key] = func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
 		data, err := io.ReadAll(r.Body)
 		if err != nil {
@@ -163,7 +166,7 @@ func (m *GlobalServerManager) RegisterEndpoint(endpoint string, method string) (
 		_, _ = w.Write([]byte("ok"))
 	}
 	m.router.HandleFunc(endpoint, func(w http.ResponseWriter, r *http.Request) {
-		if h, ok := m.routes[endpoint]; ok {
+		if h, ok := m.routes[key]; ok {
 			h(w, r)
 		} else {
 			w.WriteHeader(http.StatusNotFound)
@@ -189,7 +192,7 @@ func (m *GlobalServerManager) UnregisterEndpoint(endpoint, method string) {
 	}
 	delete(m.endpointRefs, key)
 	delete(m.endpoint, key)
-	delete(m.routes, endpoint)
+	delete(m.routes, key)
 	pubsub.RemovePub(TopicPrefix + key)
 }
 
