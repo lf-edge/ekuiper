@@ -294,7 +294,7 @@ func newMeta(manager *Manager, id, typ string, props map[string]any, named bool)
 		parent = manager.ctx
 	}
 	lifecycleCtx, cancel := context.WithCancel(parent)
-	return &Meta{
+	m := &Meta{
 		ID:              id,
 		Typ:             typ,
 		Props:           props,
@@ -305,7 +305,14 @@ func newMeta(manager *Manager, id, typ string, props map[string]any, named bool)
 		status:          api.ConnectionConnecting,
 		readyCh:         make(chan struct{}),
 		suspectCh:       make(chan struct{}, 1),
+		eventWake:       make(chan struct{}, 1),
+		dispatcherDone:  make(chan struct{}),
 	}
+	// The dispatcher owns all handler invocation from birth: every
+	// producer below only enqueues. It exits on the stop path after
+	// the second drain barrier (see stop).
+	go m.dispatchLoop()
+	return m
 }
 
 type Meta struct {
@@ -319,27 +326,56 @@ type Meta struct {
 	// RefCount is always len(refs). Guarded by refMu.
 	refMu sync.Mutex
 	refs  map[string]api.StatusChangeHandler `json:"-"`
-	// eventMu serializes the observable status event stream per Meta:
-	// one complete event (transition + handler snapshot + delivery)
-	// at a time, in transition order. Every NotifyStatus transition
-	// is delivered exactly once, in order; initial deliveries share
-	// the same serialization, so they can duplicate the latest state
-	// but never invert it (never new-then-old) and never swallow a
-	// real transition. Lock discipline: eventMu is outermost;
-	// stateMu and refMu are only ever taken while holding eventMu
-	// (briefly, never across a callback) or on their own — never
-	// the reverse. Callbacks run holding eventMu but neither
-	// stateMu, refMu nor the Manager lock.
+	// eventMu orders the observable status event stream per Meta.
+	// Producers (NotifyStatus, tryProbeDisconnect, deliverInitial)
+	// hold it only to transition state, freeze the handler snapshot
+	// and append one event to the FIFO below — never across a handler
+	// invocation. The dispatcher then delivers FIFO, each event
+	// exactly once, so every handler observes each transition in
+	// order, never concurrently and never inverted. A racing initial
+	// delivery may duplicate the latest state (connected, connected)
+	// but never reports new-then-old and never swallows a real
+	// transition. Lock discipline: eventMu is outermost; stateMu and
+	// refMu are only ever taken while holding eventMu (briefly, never
+	// across a callback) or on their own — never the reverse. The
+	// dispatcher holds no lock across an invocation except refMu
+	// briefly for initial-event membership.
 	//
-	// Handler contract (the premise this serialization rests on):
-	// StatusChangeHandler must return promptly, be memory-only
-	// (no I/O, no blocking/waiting), and must not synchronously
-	// re-enter Connection Pool operations that can produce another
-	// status delivery on the same Meta (e.g. Fetch/attach of the
-	// same Meta inside the callback): the callback already holds
-	// eventMu, so such re-entry self-deadlocks.
-	eventMu sync.Mutex   `json:"-"`
-	cw      *ConnWrapper `json:"-"`
+	// Handler contract: handlers run serially on the dispatcher, so a
+	// slow consumer delays later deliveries on the same Meta — but,
+	// unlike the pre-dispatcher design, never the next transition,
+	// never the recovery worker, and never the Manager lock.
+	// Handlers may synchronously re-enter Pool operations (enqueue
+	// paths only take eventMu briefly and never wait for delivery);
+	// they still must not perform I/O or block indefinitely, since
+	// that stalls their own Meta's event stream and, at teardown,
+	// the stop-path drain (see stop).
+	eventMu sync.Mutex `json:"-"`
+	// eventQueue is the FIFO of frozen status events, guarded by
+	// eventMu. Append-only for producers; the dispatcher pops from
+	// the front. Unbounded by design: a bounded queue would turn
+	// consumer backpressure into producer backpressure, which is
+	// exactly what the dispatcher exists to remove. In practice it
+	// holds a handful of transitions — producers only enqueue on
+	// real state changes, and the dispatcher drains continuously.
+	eventQueue []statusDispatch `json:"-"`
+	// eventWake wakes the dispatcher; capacity 1, coalesced. It
+	// carries no truth — the dispatcher always re-reads the queue
+	// under eventMu after waking, so a pending wake always means
+	// "re-check the queue".
+	eventWake chan struct{} `json:"-"`
+	// dispatcherDone is closed by the dispatcher on exit; stop()
+	// joins it after the second drain barrier.
+	dispatcherDone chan struct{} `json:"-"`
+	// dispatcherStopping is set under eventMu by stop() before the
+	// final join. A producer callback arriving after Close (e.g. a
+	// stateful client's teardown event) still applies its state
+	// transition but drops the event instead of enqueueing onto a
+	// stopped dispatcher. There is no close-the-queue window: the
+	// queue is never closed, so a late enqueue can never panic —
+	// it is simply skipped once stopping is set.
+	dispatcherStopping bool         `json:"-"`
+	cw                 *ConnWrapper `json:"-"`
 	// lifecycleCtx parents the Meta worker. Derived from the Manager
 	// server ctx at creation; canceled on zero-ref/Drop/Update/shutdown
 	// or Manager re-init. Never a rule/request/first-fetcher ctx.
@@ -441,14 +477,31 @@ func (meta *Meta) setNotReadyLocked() {
 	}
 }
 
+// statusDispatch is one frozen status event in the per-Meta FIFO.
+// Transition events carry the handler membership frozen at enqueue
+// time: a ref attached after the enqueue never receives the earlier
+// transition, so a late attacher can never observe attach-before
+// history. Initial-delivery events carry exactly one handler plus
+// its refId; the dispatcher additionally verifies the ref is still
+// registered at dispatch time, so a ref detached between enqueue and
+// dispatch is skipped. A barrier event carries no status: the
+// dispatcher closes its channel once every event enqueued before it
+// is delivered, which is what makes the stop-path drain exact.
+type statusDispatch struct {
+	status, errMsg string
+	handlers       []api.StatusChangeHandler
+	refId          string
+	barrier        chan struct{}
+}
+
 func (meta *Meta) NotifyStatus(status string, s string) {
-	// eventMu serializes the whole observable event: the transition,
-	// the exact event snapshot and the handler snapshot are one
-	// atomic unit in delivery order. The readiness generation still
-	// closes inside the transition (before any callback), so
-	// WaitReady waiters wake promptly; only the *next* transition's
-	// state write waits for a slow callback — bounded by the handler
-	// contract above, never by the Manager lock.
+	// eventMu orders producers: the transition, the exact event
+	// snapshot and the frozen handler membership are one atomic unit
+	// in enqueue order. The readiness generation still closes inside
+	// the transition (before any delivery), so WaitReady waiters wake
+	// promptly; delivery itself never blocks the next producer —
+	// that decoupling is what keeps a slow consumer from stalling
+	// the recovery worker.
 	meta.eventMu.Lock()
 	defer meta.eventMu.Unlock()
 	meta.stateMu.Lock()
@@ -497,30 +550,93 @@ func (meta *Meta) NotifyStatus(status string, s string) {
 	}
 	effStatus, effErr := meta.status, meta.lastError
 	meta.stateMu.Unlock()
-	meta.deliverLocked(effStatus, effErr)
-}
-
-// deliverLocked invokes every registered handler with one exact
-// post-transition snapshot. Caller holds eventMu (ordering against
-// concurrent transitions and initial deliveries). It takes refMu
-// briefly for the handler snapshot and holds no lock across the
-// invocation except eventMu itself: a slow consumer delays later
-// deliveries on this Meta, never the Manager lock and never
-// concurrently with another delivery to the same Meta. Handlers
-// observe the exact post-transition state of this event, never the
-// raw producer arguments and never a coalesced latest.
-func (meta *Meta) deliverLocked(effStatus, effErr string) {
+	// Freeze the handler membership now, not at dispatch: the queue
+	// may hold a backlog, and a ref attached afterwards must not
+	// receive history from before its attach.
 	meta.refMu.Lock()
 	handlers := make([]api.StatusChangeHandler, 0, len(meta.refs))
 	for _, sc := range meta.refs {
 		handlers = append(handlers, sc)
 	}
 	meta.refMu.Unlock()
-	for _, sch := range handlers {
-		if sch != nil {
-			sch(effStatus, effErr)
+	meta.enqueueLocked(statusDispatch{status: effStatus, errMsg: effErr, handlers: handlers})
+}
+
+// enqueueLocked appends one event to the FIFO and wakes the
+// dispatcher. Caller holds eventMu. After stop() sets
+// dispatcherStopping the event is dropped: state (already
+// transitioned by the caller) stays truthful, delivery is moot on a
+// dying Meta.
+func (meta *Meta) enqueueLocked(ev statusDispatch) {
+	if meta.dispatcherStopping {
+		return
+	}
+	meta.eventQueue = append(meta.eventQueue, ev)
+	select {
+	case meta.eventWake <- struct{}{}:
+	default:
+	}
+}
+
+// dispatchLoop delivers frozen events FIFO on a single goroutine,
+// which is the only delivery path: exactly once, in enqueue order,
+// never concurrent on one Meta. A wakeup against an empty queue is a
+// no-op. It holds no lock across a handler invocation (refMu briefly
+// for initial-event membership), so a blocked consumer stalls only
+// its own Meta's stream. Exits only after stop() sets
+// dispatcherStopping and the queue drains.
+func (meta *Meta) dispatchLoop() {
+	defer close(meta.dispatcherDone)
+	for {
+		meta.eventMu.Lock()
+		for len(meta.eventQueue) == 0 {
+			if meta.dispatcherStopping {
+				meta.eventMu.Unlock()
+				return
+			}
+			meta.eventMu.Unlock()
+			<-meta.eventWake
+			meta.eventMu.Lock()
+		}
+		ev := meta.eventQueue[0]
+		// Clear the popped slot so handler references do not linger
+		// in the backing array.
+		meta.eventQueue[0] = statusDispatch{}
+		meta.eventQueue = meta.eventQueue[1:]
+		meta.eventMu.Unlock()
+		if ev.barrier != nil {
+			close(ev.barrier)
+			continue
+		}
+		if ev.refId != "" {
+			meta.refMu.Lock()
+			_, ok := meta.refs[ev.refId]
+			meta.refMu.Unlock()
+			if !ok {
+				continue
+			}
+		}
+		for _, h := range ev.handlers {
+			if h != nil {
+				h(ev.status, ev.errMsg)
+			}
 		}
 	}
+}
+
+// drainEvents blocks until every event enqueued so far is delivered.
+// The barrier rides the same FIFO, so its completion means exactly
+// that. Only the stop path uses it (two phases, see stop).
+func (meta *Meta) drainEvents() {
+	done := make(chan struct{})
+	meta.eventMu.Lock()
+	meta.eventQueue = append(meta.eventQueue, statusDispatch{barrier: done})
+	select {
+	case meta.eventWake <- struct{}{}:
+	default:
+	}
+	meta.eventMu.Unlock()
+	<-done
 }
 
 // AddRef registers one consumer reference. It is structural only:
@@ -528,7 +644,7 @@ func (meta *Meta) deliverLocked(effStatus, effErr string) {
 // The initial state delivery is a separate step (deliverInitial) that
 // runs after the Manager lock is released, so a slow consumer can
 // never stall the Pool. Registration precedes delivery; combined with
-// per-Meta event serialization (eventMu) every handler observes each
+// per-Meta FIFO event order (eventMu) every handler observes each
 // transition exactly once and in order, never concurrently and never
 // inverted. A racing initial delivery may duplicate the latest state
 // (connected, connected) but never reports new-then-old and never
@@ -549,15 +665,16 @@ func (meta *Meta) AddRef(refId string, sc api.StatusChangeHandler) {
 	conf.Log.Infof("conn %s add reference %s to %d refs", meta.ID, refId, count)
 }
 
-// deliverInitial delivers the current state snapshot to a freshly
+// deliverInitial enqueues the current state snapshot for a freshly
 // attached consumer. Call only after releasing the Manager lock, and
-// only once per attach. It joins the same eventMu serialization as
-// NotifyStatus: the ref check, the state snapshot and the invocation
-// are one atomic unit in delivery order. A ref detached before this
-// unit runs is skipped; a detach racing the invocation may still
-// observe one benign same-state duplicate (status sets are
-// idempotent). A duplicate is always the latest state repeated —
-// real NotifyStatus transitions are never coalesced or swallowed.
+// only once per attach. It joins the same eventMu enqueue order as
+// NotifyStatus, so a concurrent transition and this initial observe
+// a total order: initial-first sees the old state then the
+// transition, transition-first yields the transition then a
+// same-state initial duplicate. Never new-then-old, never swallowed.
+// A ref detached before the enqueue is skipped; a detach racing the
+// dispatch may still observe one benign same-state duplicate (status
+// sets are idempotent).
 func (meta *Meta) deliverInitial(refId string, sc api.StatusChangeHandler) {
 	if sc == nil {
 		return
@@ -573,7 +690,7 @@ func (meta *Meta) deliverInitial(refId string, sc api.StatusChangeHandler) {
 	meta.stateMu.RLock()
 	s, e := meta.status, meta.lastError
 	meta.stateMu.RUnlock()
-	sc(s, e)
+	meta.enqueueLocked(statusDispatch{status: s, errMsg: e, handlers: []api.StatusChangeHandler{sc}, refId: refId})
 }
 
 func (meta *Meta) DeRef(refId string) bool {
@@ -589,10 +706,27 @@ func (meta *Meta) DeRef(refId string) bool {
 	return true
 }
 
-// stop terminates the Meta exactly once: cancel the lifecycle, wait
-// for the workers to exit, then close the logical connection. It must
-// run outside the Manager lock. Concurrent stoppers converge on the
-// first caller's execution; latecomers return once it completes.
+// stop terminates the Meta exactly once and joins every worker in
+// dependency order. It must run outside the Manager lock. Concurrent
+// stoppers converge on the first caller's execution; latecomers
+// return once it completes.
+//
+// Order: cancel the lifecycle, wait for the initial worker, join the
+// recovery worker (a Recover can never run concurrently with the
+// final Close below), drain the pre-Close backlog so no observed
+// state is lost, Close the provider, then drain again for finals
+// produced by provider teardown itself (a stateful client's teardown
+// event lands here). Only then is the dispatcher stopped and joined:
+// the queue is never closed, so a provider callback racing the end
+// drops its event instead of panicking — state stays truthful,
+// delivery is moot on a dying Meta.
+//
+// Teardown caveat: the drains wait for queued handlers, so a handler
+// blocked past teardown (downstream never unblocks, rule scope never
+// dies) stalls stop here. That matches the pre-existing rule-teardown
+// assumption (teardown unblocks blocked Broadcasts); the dispatcher
+// only narrows the blast radius from "recovery stalls forever" to
+// "stop waits for teardown to keep its promise".
 func (meta *Meta) stop(ctx api.StreamContext) {
 	meta.stopOnce.Do(func() {
 		meta.lifecycleCancel()
@@ -604,6 +738,7 @@ func (meta *Meta) stop(ctx api.StreamContext) {
 		if meta.recoveryDone != nil {
 			<-meta.recoveryDone
 		}
+		meta.drainEvents()
 		// Safe without the cw lock: the worker wrote conn before
 		// closing readCh and done in the same goroutine, so the
 		// receive above happens after that write. The object is
@@ -612,6 +747,15 @@ func (meta *Meta) stop(ctx api.StreamContext) {
 		if conn := meta.cw.conn; conn != nil {
 			_ = conn.Close(ctx)
 		}
+		meta.drainEvents()
+		meta.eventMu.Lock()
+		meta.dispatcherStopping = true
+		meta.eventMu.Unlock()
+		select {
+		case meta.eventWake <- struct{}{}:
+		default:
+		}
+		<-meta.dispatcherDone
 	})
 }
 
@@ -672,7 +816,13 @@ func (meta *Meta) tryProbeDisconnect(generation uint64, errMsg string) bool {
 	meta.setNotReadyLocked()
 	effStatus, effErr := meta.status, meta.lastError
 	meta.stateMu.Unlock()
-	meta.deliverLocked(effStatus, effErr)
+	meta.refMu.Lock()
+	handlers := make([]api.StatusChangeHandler, 0, len(meta.refs))
+	for _, sc := range meta.refs {
+		handlers = append(handlers, sc)
+	}
+	meta.refMu.Unlock()
+	meta.enqueueLocked(statusDispatch{status: effStatus, errMsg: effErr, handlers: handlers})
 	return true
 }
 
