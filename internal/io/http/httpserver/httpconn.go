@@ -27,6 +27,10 @@ type HttpPushConnection struct {
 	endpoint string
 	method   string
 	id       string
+	// registered tracks whether Dial successfully registered the endpoint.
+	// Close must only unregister an endpoint this instance registered;
+	// a provisioned-but-never-dialed candidate must be a no-op.
+	registered bool
 }
 
 func (h *HttpPushConnection) GetId(ctx api.StreamContext) string {
@@ -42,6 +46,7 @@ func (h *HttpPushConnection) Provision(ctx api.StreamContext, conId string, prop
 	h.endpoint = cfg.Datasource
 	h.method = cfg.Method
 	h.id = conId
+	h.registered = false
 	return nil
 }
 
@@ -51,6 +56,7 @@ func (h *HttpPushConnection) Dial(ctx api.StreamContext) error {
 		return err
 	}
 	h.topic = topic
+	h.registered = true
 	return nil
 }
 
@@ -67,11 +73,14 @@ func (h *HttpPushConnection) Ping(ctx api.StreamContext) error {
 	return nil
 }
 
-func (h *HttpPushConnection) DetachSub(ctx api.StreamContext) {
-	UnregisterEndpoint(h.endpoint, h.method)
-}
-
 func (h *HttpPushConnection) Close(ctx api.StreamContext) error {
+	// The endpoint is owned by this connection: Dial registers it,
+	// Close unregisters it. UnregisterEndpoint is idempotent, and the
+	// flag keeps a provisioned-but-never-dialed Close a no-op.
+	if h.registered && h.cfg != nil {
+		UnregisterEndpoint(h.endpoint, h.method)
+		h.registered = false
+	}
 	return nil
 }
 
