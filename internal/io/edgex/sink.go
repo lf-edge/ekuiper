@@ -107,7 +107,15 @@ func (ems *EdgexMsgBusSink) Connect(ctx api.StreamContext, sc api.StatusChangeHa
 	ctx.GetLogger().Infof("Connecting to edgex server")
 	var err error
 	ems.id = fmt.Sprintf("%s-%s-%d-edgex-sink", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId())
-	ems.cw, err = connection.FetchConnection(ctx, ems.id, "edgex", ems.config, sc)
+	key, requireExisting := connection.ResolveConnectionKey(ems.config, ems.id)
+	ems.cw, err = connection.FetchConnectionWithOptions(ctx, connection.FetchOptions{
+		ConnectionKey:   key,
+		RefID:           connection.ConsumerRefID(ctx),
+		RequireExisting: requireExisting,
+		Type:            "edgex",
+		Props:           ems.config,
+		StatusHandler:   sc,
+	})
 	if err != nil {
 		return err
 	}

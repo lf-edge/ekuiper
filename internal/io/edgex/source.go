@@ -81,7 +81,15 @@ func (es *Source) Connect(ctx api.StreamContext, sc api.StatusChangeHandler) err
 	var cli *client.Client
 	var err error
 	id := fmt.Sprintf("%s-%s-%d-edgex-source", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId())
-	cw, err := connection.FetchConnection(ctx, id, "edgex", es.config, sc)
+	key, requireExisting := connection.ResolveConnectionKey(es.config, id)
+	cw, err := connection.FetchConnectionWithOptions(ctx, connection.FetchOptions{
+		ConnectionKey:   key,
+		RefID:           connection.ConsumerRefID(ctx),
+		RequireExisting: requireExisting,
+		Type:            "edgex",
+		Props:           es.config,
+		StatusHandler:   sc,
+	})
 	if err != nil {
 		return err
 	}

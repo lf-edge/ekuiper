@@ -85,7 +85,17 @@ func (s *sink) Provision(_ api.StreamContext, props map[string]any) error {
 
 func (s *sink) Connect(ctx api.StreamContext, sc api.StatusChangeHandler) error {
 	ctx.GetLogger().Infof("Connecting to neuron")
-	cw, err := connection.FetchConnection(ctx, PROTOCOL+s.cc.Url, "nng", s.props, sc)
+	// Same pool key as the source above: URL-based, separate from
+	// the planner UniqueConn.ConnId namespace.
+	key, requireExisting := connection.ResolveConnectionKey(s.props, PROTOCOL+s.cc.Url)
+	cw, err := connection.FetchConnectionWithOptions(ctx, connection.FetchOptions{
+		ConnectionKey:   key,
+		RefID:           connection.ConsumerRefID(ctx),
+		RequireExisting: requireExisting,
+		Type:            "nng",
+		Props:           s.props,
+		StatusHandler:   sc,
+	})
 	if err != nil {
 		return err
 	}
