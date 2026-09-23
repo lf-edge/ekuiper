@@ -116,13 +116,16 @@ func newWorkerMeta(t *testing.T, fake *recoverableFakeConn) *Meta {
 	bo.MaxInterval = 5 * time.Millisecond
 	bo.MaxElapsedTime = 0
 	bo.Reset()
-	m := newStateMeta()
+	m := newStateMeta(t)
 	m.NotifyStatus(api.ConnectionConnected, "")
 	// Wire the handle back-pointer like attachToMeta does; the
 	// worker tests drive suspects through the public ConnWrapper API.
+	// The worker is started directly (same package): recoveryDone is
+	// initialized here exactly as startRecoveryWorker would, and stop
+	// paths join it the same way.
 	m.cw = &ConnWrapper{ID: m.ID, meta: m}
-	startRecoveryWorkerWithBackoff(m, fake, bo)
-	require.NotNil(t, m.recoveryDone)
+	m.recoveryDone = make(chan struct{})
+	go m.recoveryLoop(fake, bo)
 	return m
 }
 
@@ -137,12 +140,12 @@ func workerGate(t *testing.T, m *Meta) (ready, verifying bool) {
 // providers and self-recovering (stateful, even if also
 // pool-recoverable) connections get no worker.
 func TestRecoveryWorkerNotStarted(t *testing.T) {
-	plain := newStateMeta()
+	plain := newStateMeta(t)
 	plain.NotifyStatus(api.ConnectionConnected, "")
 	plain.startRecoveryWorker(&probeConn{})
 	require.Nil(t, plain.recoveryDone)
 
-	both := newStateMeta()
+	both := newStateMeta(t)
 	both.NotifyStatus(api.ConnectionConnected, "")
 	both.startRecoveryWorker(&bothFakeConn{})
 	require.Nil(t, both.recoveryDone)

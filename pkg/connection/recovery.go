@@ -43,15 +43,6 @@ var (
 // worker. Call before publishing the handle; stop() relies on
 // recoveryDone being written before done closes.
 func (meta *Meta) startRecoveryWorker(conn modules.Connection) {
-	startRecoveryWorkerWithBackoff(meta, conn, newExponentialBackOff(0))
-}
-
-// startRecoveryWorkerWithBackoff is the test seam for the worker:
-// production always passes the standard pool backoff above, tests in
-// this package call it directly with millisecond intervals. It is
-// deliberately unexported so no test parameter leaks into the
-// production API.
-func startRecoveryWorkerWithBackoff(meta *Meta, conn modules.Connection, bo *backoff.ExponentialBackOff) {
 	rc, ok := conn.(modules.PoolRecoverableConnection)
 	if !ok {
 		return
@@ -60,7 +51,7 @@ func startRecoveryWorkerWithBackoff(meta *Meta, conn modules.Connection, bo *bac
 		return
 	}
 	meta.recoveryDone = make(chan struct{})
-	go meta.recoveryLoop(rc, bo)
+	go meta.recoveryLoop(rc, newExponentialBackOff(0))
 }
 
 // recoveryLoop parks until a wakeup arrives and acts on current Meta

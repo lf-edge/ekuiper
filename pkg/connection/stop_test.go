@@ -262,3 +262,60 @@ func TestRepeatedDetachStaysNil(t *testing.T) {
 	require.NoError(t, DetachConnectionByRef(ctx, "dbl", "r1"))
 	require.Equal(t, 0, getConnectionRef("dbl"))
 }
+
+// closeCallbackConn fires onClose inside Close, modeling a stateful
+// provider whose teardown produces one final status event.
+type closeCallbackConn struct {
+	probeConn
+	onClose func()
+}
+
+func (c *closeCallbackConn) Close(ctx api.StreamContext) error {
+	if c.onClose != nil {
+		c.onClose()
+	}
+	return nil
+}
+
+// TestStopTwoPhaseDrain pins the stop lifecycle: events queued before
+// Close are delivered first, a final status produced by provider
+// teardown is delivered second, and only then does the dispatcher
+// exit. Collapsing the two drains into one would drop or reorder the
+// teardown final, so this test guards the phase structure itself.
+func TestStopTwoPhaseDrain(t *testing.T) {
+	m := newStateMeta(t)
+	fake := &closeCallbackConn{
+		probeConn: probeConn{pingCalls: &atomic.Int32{}, dialCalls: &atomic.Int32{}},
+	}
+	fake.onClose = func() {
+		// Provider teardown produces a final status while stop() is
+		// inside Close — after the first drain, before the second.
+		m.NotifyStatus(api.ConnectionDisconnected, "teardown")
+	}
+	// Publish the handle and simulate an exited initial worker; a
+	// plain (non-recoverable) provider needs no recovery join.
+	m.cw = &ConnWrapper{ID: m.ID, meta: m, initialized: true, conn: fake, readCh: make(chan struct{})}
+	close(m.cw.readCh)
+	close(m.done)
+
+	var got []string
+	m.AddRef("watcher", func(s, e string) {
+		got = append(got, s)
+	})
+
+	// Pre-Close event.
+	m.NotifyStatus(ConnectionRecovering, "pre-close")
+
+	ctx := mockContext.NewMockContext("stop", "op1")
+	m.stop(ctx)
+
+	// stop() joined the dispatcher, so the delivery log is stable
+	// without synchronization: pre-Close event first, teardown final
+	// second, nothing lost.
+	require.Equal(t, []string{ConnectionRecovering, api.ConnectionDisconnected}, got)
+	select {
+	case <-m.dispatcherDone:
+	default:
+		t.Fatal("dispatcher did not exit after stop")
+	}
+}

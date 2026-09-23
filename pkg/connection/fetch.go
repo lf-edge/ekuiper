@@ -48,10 +48,14 @@ type FetchOptions struct {
 	Type            string
 	Props           map[string]any
 	// StatusHandler receives connection status changes for this ref.
-	// Contract: return promptly, memory-only (no I/O, no blocking or
-	// waiting), and never synchronously re-enter Pool operations that
-	// can produce another delivery on the same Meta (self-deadlock on
-	// the per-Meta event serialization). See Meta.eventMu.
+	// Deliveries run serially on the per-Meta dispatcher, in enqueue
+	// order, each exactly once. Contract: return promptly and stay
+	// memory-only (no I/O, no blocking or waiting) — a slow handler
+	// delays later deliveries on the same Meta and, at teardown, the
+	// stop-path drain. Unlike the pre-dispatcher design, handlers may
+	// synchronously re-enter Pool operations: producers never hold
+	// the ordering lock across an invocation, so re-entry cannot
+	// self-deadlock. See Meta.eventMu.
 	StatusHandler api.StatusChangeHandler
 }
 

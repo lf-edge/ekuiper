@@ -276,7 +276,7 @@ func TestProbePingBounded(t *testing.T) {
 func TestProbeStaleVerdictDropped(t *testing.T) {
 	var pingCalls, dialCalls atomic.Int32
 	fake := &probeConn{blockPing: true, pingCalls: &pingCalls, dialCalls: &dialCalls}
-	m := newStateMeta()
+	m := newStateMeta(t)
 	m.NotifyStatus(api.ConnectionConnected, "")
 	cw := &ConnWrapper{ID: m.ID, meta: m}
 	cw.setConn(fake, nil)
