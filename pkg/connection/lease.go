@@ -34,6 +34,15 @@ import (
 // only Release is per-Lease state. A nil Lease is safe to use:
 // business methods behave as if the connection were never acquired,
 // and Release is a no-op.
+//
+// Attachment vs handle semantics (deliberate): only Release is
+// per-attachment. Wait, WaitReady, Status and ReportSuspectedFailure
+// address the shared logical connection, so they stay usable after
+// Release and are intentionally not token-gated. A suspect is
+// transport-health signal, not an ownership mutation — even a
+// superseded holder that just failed real I/O reports a true signal,
+// and the Pool worker verifies (Ping) before acting on it, so a
+// spurious report costs at most one verification.
 type ConnectionLease struct {
 	cw       *connWrapper
 	mgr      *Manager
