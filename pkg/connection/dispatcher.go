@@ -162,9 +162,9 @@ func (meta *Meta) dispatchLoop() {
 			continue
 		}
 		if ev.refId != "" {
-			meta.refMu.Lock()
+			meta.refMu.RLock()
 			cur, ok := meta.refTokens[ev.refId]
-			meta.refMu.Unlock()
+			meta.refMu.RUnlock()
 			if !ok || cur != ev.token {
 				continue
 			}

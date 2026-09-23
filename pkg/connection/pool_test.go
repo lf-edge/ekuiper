@@ -42,25 +42,29 @@ func TestConnection(t *testing.T) {
 	require.Equal(t, 0, getConnectionRef("id1"))
 	_, err = CreateNamedConnection(ctx, "id1", "mock", nil)
 	require.Error(t, err)
-	_, err = attachConnection("id1", "ref1", nil)
+	l1, err := FetchConnectionWithOptions(ctx, FetchOptions{
+		ConnectionKey: "id1", RefID: "ref1", RequireExisting: true, Type: "mock",
+	})
 	require.NoError(t, err)
 	require.Equal(t, 1, getConnectionRef("id1"))
-	_, err = attachConnection("id1", "ref2", nil)
+	l2, err := FetchConnectionWithOptions(ctx, FetchOptions{
+		ConnectionKey: "id1", RefID: "ref2", RequireExisting: true, Type: "mock",
+	})
 	require.NoError(t, err)
 	require.Equal(t, 2, getConnectionRef("id1"))
-	err = detachRef(ctx, "id1", "ref1")
-	require.NoError(t, err)
+	require.NoError(t, l1.Release(ctx))
 	require.Equal(t, 1, getConnectionRef("id1"))
 	err = DropNameConnection(ctx, "id1")
 	require.Error(t, err)
-	err = detachRef(ctx, "id1", "ref2")
-	require.NoError(t, err)
+	require.NoError(t, l2.Release(ctx))
 	require.Equal(t, 0, getConnectionRef("id1"))
 	err = DropNameConnection(ctx, "id1")
 	require.NoError(t, err)
 	err = DropNameConnection(ctx, "id1")
 	require.NoError(t, err)
-	conn3, err := attachConnection("id1", "ref3", nil)
+	conn3, err := FetchConnectionWithOptions(ctx, FetchOptions{
+		ConnectionKey: "id1", RefID: "ref3", RequireExisting: true, Type: "mock",
+	})
 	require.Error(t, err)
 	require.Nil(t, conn3)
 
@@ -94,12 +98,8 @@ func TestConnectionErr(t *testing.T) {
 	// than from a later Wait on a doomed handle.
 	_, err = CreateNamedConnection(ctx, "12", "unknown", nil)
 	require.ErrorContains(t, err, "unknown connection type")
-	_, err = attachConnection("", "ref1", nil)
+	_, err = FetchConnectionWithOptions(ctx, FetchOptions{Type: "mock"})
 	require.Error(t, err)
-	err = detachRef(ctx, "", ConsumerRefID(ctx))
-	require.Error(t, err)
-	err = detachRef(ctx, "nonexists", ConsumerRefID(ctx))
-	require.NoError(t, err)
 
 	failpoint.Enable("github.com/lf-edge/ekuiper/v2/pkg/connection/storeConnectionErr", "return(true)")
 	_, err = CreateNamedConnection(ctx, "qwe", "mock", nil)
@@ -137,13 +137,11 @@ func TestNonStoredConnection(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 1, getConnectionRef("id1"))
 	// Same consumer re-attaching the same key does not grow the count.
-	_, err = FetchConnectionWithOptions(ctx, FetchOptions{ConnectionKey: "id1", RefID: ConsumerRefID(ctx), Type: "mock"})
-	require.NoError(t, err)
-	require.Equal(t, 1, getConnectionRef("id1"))
-	// The stored ref is ConsumerRefID(ctx): releasing the fetched Lease
-	// round-trips and drops the Meta instead of leaking it.
+	// The second Lease supersedes the first; releasing it drops the
+	// Meta instead of leaking it.
 	lease, err := FetchConnectionWithOptions(ctx, FetchOptions{ConnectionKey: "id1", RefID: ConsumerRefID(ctx), Type: "mock"})
 	require.NoError(t, err)
+	require.Equal(t, 1, getConnectionRef("id1"))
 	require.NoError(t, lease.Release(ctx))
 	require.Equal(t, 0, getConnectionRef("id1"))
 	_, ok := globalConnectionManager.Load().connectionPool["id1"]
@@ -161,25 +159,29 @@ func TestFetchWithOptionsExplicitIdentity(t *testing.T) {
 			Props:         map[string]any{"k": "v"},
 		}
 	}
-	_, err := FetchConnectionWithOptions(ctx, newOpts("dbA", "rule1_op1_0"))
+	l1, err := FetchConnectionWithOptions(ctx, newOpts("dbA", "rule1_op1_0"))
 	require.NoError(t, err)
 	require.Equal(t, 1, getConnectionRef("dbA"))
-	// Same ref re-attaches without growing the count.
-	_, err = FetchConnectionWithOptions(ctx, newOpts("dbA", "rule1_op1_0"))
+	// Same ref re-attaches without growing the count; the first Lease
+	// is superseded and can no longer release.
+	l1b, err := FetchConnectionWithOptions(ctx, newOpts("dbA", "rule1_op1_0"))
 	require.NoError(t, err)
 	require.Equal(t, 1, getConnectionRef("dbA"))
 	// A different consumer of the same key adds a second ref.
-	_, err = FetchConnectionWithOptions(ctx, newOpts("dbA", "rule2_op1_0"))
+	l2, err := FetchConnectionWithOptions(ctx, newOpts("dbA", "rule2_op1_0"))
 	require.NoError(t, err)
 	require.Equal(t, 2, getConnectionRef("dbA"))
 	// Missing DeRef is a no-op and never drives the count negative.
-	require.NoError(t, detachRef(ctx, "dbA", "no-such-ref"))
+	meta, err := GetConnectionDetail(ctx, "dbA")
+	require.NoError(t, err)
+	require.False(t, meta.DeRef("no-such-ref"))
 	require.Equal(t, 2, getConnectionRef("dbA"))
-	require.NoError(t, detachRef(ctx, "dbA", "rule1_op1_0"))
+	// The superseded Lease releases nothing.
+	require.NoError(t, l1.Release(ctx))
+	require.Equal(t, 2, getConnectionRef("dbA"))
+	require.NoError(t, l1b.Release(ctx))
 	require.Equal(t, 1, getConnectionRef("dbA"))
-	require.NoError(t, detachRef(ctx, "dbA", "rule1_op1_0"))
-	require.Equal(t, 1, getConnectionRef("dbA"))
-	require.NoError(t, detachRef(ctx, "dbA", "rule2_op1_0"))
+	require.NoError(t, l2.Release(ctx))
 	_, ok := globalConnectionManager.Load().connectionPool["dbA"]
 	require.False(t, ok)
 }
@@ -347,17 +349,6 @@ func getReadyTestMeta(key string) *Meta {
 		return e.meta
 	}
 	return nil
-}
-
-func TestFetchConnectionNotExist(t *testing.T) {
-	ctx := context.Background()
-	_, err := FetchConnectionWithOptions(ctx, FetchOptions{
-		ConnectionKey:   "id2",
-		RefID:           ConsumerRefID(ctx),
-		RequireExisting: true,
-		Type:            "mock",
-	})
-	require.Error(t, err)
 }
 
 // TestReloadFailedProvisionStaysManageable is the KV-ghost regression

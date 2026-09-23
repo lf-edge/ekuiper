@@ -451,14 +451,14 @@ func (meta *Meta) setNotReadyLocked() {
 }
 
 func (meta *Meta) GetRefCount() int {
-	meta.refMu.Lock()
-	defer meta.refMu.Unlock()
+	meta.refMu.RLock()
+	defer meta.refMu.RUnlock()
 	return len(meta.refs)
 }
 
 func (meta *Meta) GetRefNames() (result []string) {
-	meta.refMu.Lock()
-	defer meta.refMu.Unlock()
+	meta.refMu.RLock()
+	defer meta.refMu.RUnlock()
 	for key := range meta.refs {
 		result = append(result, key)
 	}

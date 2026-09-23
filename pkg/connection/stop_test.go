@@ -89,7 +89,7 @@ func TestZeroRefRemovingFetchWaits(t *testing.T) {
 
 	stopDone := make(chan error, 1)
 	go func() {
-		stopDone <- detachRef(ctx, "stop-anon", "r1")
+		stopDone <- oldCW.Release(ctx)
 	}()
 	// Wait until the stopper owns the key: the entry flips to removing
 	// synchronously inside Detach, before Close blocks.
@@ -126,7 +126,7 @@ func TestZeroRefRemovingFetchWaits(t *testing.T) {
 
 	stopDone2 := make(chan error, 1)
 	go func() {
-		stopDone2 <- detachRef(ctx, "stop-anon", "r2")
+		stopDone2 <- newCW.Release(ctx)
 	}()
 	countCloseRelease <- struct{}{}
 	require.NoError(t, <-stopDone2)
@@ -142,17 +142,17 @@ func TestAttachVsZeroRefFetchWins(t *testing.T) {
 	countCloseCalls.Store(0)
 	ctx := mockContext.NewMockContext("stop", "op1")
 
-	_, err := FetchConnectionWithOptions(ctx, FetchOptions{
+	lA, err := FetchConnectionWithOptions(ctx, FetchOptions{
 		ConnectionKey: "fetch-wins", RefID: "rA", Type: "countclose",
 	})
 	require.NoError(t, err)
-	_, err = FetchConnectionWithOptions(ctx, FetchOptions{
+	lB, err := FetchConnectionWithOptions(ctx, FetchOptions{
 		ConnectionKey: "fetch-wins", RefID: "rB", Type: "countclose",
 	})
 	require.NoError(t, err)
 
 	// Fetch won: one detach leaves a live ref, so no stop runs.
-	require.NoError(t, detachRef(ctx, "fetch-wins", "rA"))
+	require.NoError(t, lA.Release(ctx))
 	require.Equal(t, 1, getConnectionRef("fetch-wins"))
 	require.Equal(t, int32(0), countCloseCalls.Load())
 	meta := getReadyTestMeta("fetch-wins")
@@ -161,7 +161,7 @@ func TestAttachVsZeroRefFetchWins(t *testing.T) {
 	// Last detach stops and removes; Close runs exactly once.
 	stopDone := make(chan error, 1)
 	go func() {
-		stopDone <- detachRef(ctx, "fetch-wins", "rB")
+		stopDone <- lB.Release(ctx)
 	}()
 	countCloseRelease <- struct{}{}
 	require.NoError(t, <-stopDone)
@@ -249,17 +249,17 @@ func TestConcurrentDropClosesOnce(t *testing.T) {
 	require.False(t, ok, "entry removed after stop completes")
 }
 
-// TestRepeatedDetachStaysNil verifies double-Close idempotency on the
-// public path: the second detach finds nothing and stays nil.
-func TestRepeatedDetachStaysNil(t *testing.T) {
+// TestLeaseReleaseIsIdempotent verifies double-Release idempotency on
+// the public path: the second Release finds nothing and stays nil.
+func TestLeaseReleaseIsIdempotent(t *testing.T) {
 	require.NoError(t, InitConnectionManager4Test())
 	ctx := mockContext.NewMockContext("stop", "op1")
-	_, err := FetchConnectionWithOptions(ctx, FetchOptions{
+	lease, err := FetchConnectionWithOptions(ctx, FetchOptions{
 		ConnectionKey: "dbl", RefID: "r1", Type: "mock",
 	})
 	require.NoError(t, err)
-	require.NoError(t, detachRef(ctx, "dbl", "r1"))
-	require.NoError(t, detachRef(ctx, "dbl", "r1"))
+	require.NoError(t, lease.Release(ctx))
+	require.NoError(t, lease.Release(ctx))
 	require.Equal(t, 0, getConnectionRef("dbl"))
 }
 
