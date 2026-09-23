@@ -149,29 +149,39 @@ func (m *GlobalServerManager) RegisterEndpoint(endpoint string, method string) (
 		topic = TopicPrefix + key
 		m.endpoint[key] = topic
 		m.endpointRefs[key] = 1
-	}
-	pubsub.CreatePub(topic)
-	// The mux route dispatches through the per-method slot, not the
-	// bare endpoint: POST and PUT on the same path are independent
-	// registrations that must not overwrite or delete each other.
-	m.routes[key] = func(w http.ResponseWriter, r *http.Request) {
-		defer r.Body.Close()
-		data, err := io.ReadAll(r.Body)
-		if err != nil {
-			handleError(w, err, "Fail to decode data")
-			return
+		pubsub.CreatePub(topic)
+		// The mux route dispatches through the per-method slot, not the
+		// bare endpoint: POST and PUT on the same path are independent
+		// registrations that must not overwrite or delete each other.
+		// The mux registration itself is a permanent slot installed
+		// once: unregister only clears the handler slot (requests then
+		// 404), so repeated start/stop cycles never accumulate routes.
+		m.routes[key] = func(w http.ResponseWriter, r *http.Request) {
+			defer r.Body.Close()
+			data, err := io.ReadAll(r.Body)
+			if err != nil {
+				handleError(w, err, "Fail to decode data")
+				return
+			}
+			pubsub.ProduceAny(topoContext.Background(), topic, data)
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte("ok"))
 		}
-		pubsub.ProduceAny(topoContext.Background(), topic, data)
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte("ok"))
+		m.router.HandleFunc(endpoint, func(w http.ResponseWriter, r *http.Request) {
+			// Snapshot under RLock, invoke after unlock: the handler runs
+			// arbitrary consumer time while Unregister may delete the
+			// slot concurrently. Never hold the lock across invocation,
+			// mirroring the websocket/SSE dispatch discipline.
+			m.RLock()
+			h, ok := m.routes[key]
+			m.RUnlock()
+			if ok {
+				h(w, r)
+			} else {
+				w.WriteHeader(http.StatusNotFound)
+			}
+		}).Methods(method)
 	}
-	m.router.HandleFunc(endpoint, func(w http.ResponseWriter, r *http.Request) {
-		if h, ok := m.routes[key]; ok {
-			h(w, r)
-		} else {
-			w.WriteHeader(http.StatusNotFound)
-		}
-	}).Methods(method)
 	return topic, nil
 }
 

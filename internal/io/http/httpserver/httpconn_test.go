@@ -28,10 +28,7 @@ import (
 // Dial does not double-count, and of two instances sharing one
 // endpoint the first Close leaves the route for the other.
 func TestHttpPushConnectionEndpointOwnership(t *testing.T) {
-	ip := "127.0.0.1"
-	port := 10084
-	InitGlobalServerManager(ip, port, nil)
-	defer ShutDown()
+	installTestManager(t)
 	ctx := mockContext.NewMockContext("push", "op1")
 	props := map[string]any{"datasource": "/owned", "method": "POST"}
 
