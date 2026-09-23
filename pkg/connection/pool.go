@@ -35,6 +35,19 @@ import (
 
 type Manager struct {
 	syncx.RWMutex
+	// Lock invariant (A2): the Manager lock covers connection
+	// control-plane state: map/entry/ref operations and KV/store CRUD.
+	//
+	// KV/store latency is intentionally part of the Manager critical
+	// section in exchange for atomic, simpler control-plane
+	// transitions. A slow KV backend only stalls the control plane;
+	// it never affects data-plane I/O, which stays outside the lock.
+	//
+	// Never under the lock:
+	// provider/runtime I/O, consumer callbacks, or blocking waits.
+	// Heavy phases run outside the lock; callbacks are delivered
+	// after unlock via Meta.deliverInitial.
+	//
 	// connectionPool maps a connectionKey to its coordination entry.
 	// Entries exist for creating, ready, and (from the A1b stop work)
 	// removing Metas alike, so concurrent Fetch/Create always observe
@@ -133,6 +146,7 @@ func InitConnectionManager(ctx context.Context) {
 		return
 	}
 	go PatrolConnectionStatusJob(ctx)
+	go ConnectionHealthProbeJob(ctx)
 }
 
 // stopAllRuntime synchronously retires every published runtime
@@ -170,7 +184,7 @@ const (
 )
 
 func PatrolConnectionStatusJob(ctx context.Context) {
-	ticker := time.NewTicker(15 * time.Second)
+	ticker := time.NewTicker(defaultConnectionMonitorInterval)
 	defer ticker.Stop()
 	for {
 		select {
@@ -183,23 +197,38 @@ func PatrolConnectionStatusJob(ctx context.Context) {
 }
 
 func patrolConnectionStatus() {
+	// Snapshot under the lock, work outside it (lock invariant):
+	// status reads and metric writes never hold the Manager lock,
+	// so a slow consumer (or a future blocking read) cannot stall
+	// the Pool. Only named ready Metas are patrolled; creating
+	// entries have no Meta yet and report nothing.
+	type patrolTarget struct {
+		name string
+		meta *Meta
+	}
 	m := globalConnectionManager.Load()
 	m.RLock()
-	defer m.RUnlock()
+	var targets []patrolTarget
 	for connName, e := range m.connectionPool {
-		// For now, we only patrol named connection. Creating entries
-		// have no Meta yet and report nothing.
 		if e.state != entryReady || e.meta == nil || !e.meta.Named {
 			continue
 		}
-		status, _ := e.meta.GetStatus()
+		targets = append(targets, patrolTarget{name: connName, meta: e.meta})
+	}
+	m.RUnlock()
+	for _, t := range targets {
+		// Numeric gauge reports the availability class, not the full
+		// four-state model: connecting and recovering both mean
+		// "not serving yet" (0). The string status stays four-state
+		// on the API surface.
+		status, _ := t.meta.GetStatus()
 		switch status {
 		case api.ConnectionConnected:
-			ConnStatusGauge.WithLabelValues(connName).Set(1)
+			ConnStatusGauge.WithLabelValues(t.name).Set(1)
 		case api.ConnectionDisconnected:
-			ConnStatusGauge.WithLabelValues(connName).Set(-1)
-		case api.ConnectionConnecting:
-			ConnStatusGauge.WithLabelValues(connName).Set(0)
+			ConnStatusGauge.WithLabelValues(t.name).Set(-1)
+		case api.ConnectionConnecting, ConnectionRecovering:
+			ConnStatusGauge.WithLabelValues(t.name).Set(0)
 		}
 	}
 }

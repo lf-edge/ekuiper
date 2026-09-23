@@ -30,6 +30,7 @@ import (
 	_ "go.nanomsg.org/mangos/v3/transport/tcp"
 
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
@@ -112,21 +113,48 @@ func (s *Sock) Provision(ctx api.StreamContext, conId string, props map[string]a
 			}
 			ctx.GetLogger().Infof("nng connection attached")
 		case mangos.PipeEventAttaching:
-			s.status.Store(modules.ConnectionStatus{Status: api.ConnectionConnecting})
+			// Initial dial phases report connecting; anything after
+			// the first attach is a runtime redial and reports
+			// recovering, sharing the disconnected generation.
+			st := api.ConnectionConnecting
+			if s.everConnected() {
+				st = connection.ConnectionRecovering
+			}
+			s.status.Store(modules.ConnectionStatus{Status: st})
 			if s.scHandler != nil {
-				s.scHandler(api.ConnectionConnecting, "")
+				s.scHandler(st, "")
 			}
 			ctx.GetLogger().Debugf("nng connection is attaching")
 		case mangos.PipeEventDetached:
+			// A detach before the first attach is an initial dial
+			// failure (disconnected); afterwards it is a runtime
+			// transport loss with async redial already underway
+			// (recovering). The Pool never recovers NNG itself.
+			st := api.ConnectionDisconnected
+			if s.everConnected() {
+				st = connection.ConnectionRecovering
+			}
 			s.connected.Store(false)
-			s.status.Store(modules.ConnectionStatus{Status: api.ConnectionDisconnected})
+			s.status.Store(modules.ConnectionStatus{Status: st})
 			if s.scHandler != nil {
-				s.scHandler(api.ConnectionDisconnected, "")
+				s.scHandler(st, "")
 			}
 			ctx.GetLogger().Warnf("nng connection detached")
 		}
 	})
 	return nil
+}
+
+// everConnected reports whether this socket has completed at least one
+// attach (ready closes exactly once, on the first attach, and is never
+// replaced within a Sock's lifetime).
+func (s *Sock) everConnected() bool {
+	select {
+	case <-s.ready:
+		return true
+	default:
+		return false
+	}
 }
 
 func (s *Sock) Dial(ctx api.StreamContext) error {

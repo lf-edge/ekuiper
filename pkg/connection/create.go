@@ -71,6 +71,11 @@ func (m *Manager) runCreation(e *poolEntry, key, typ string, props map[string]an
 		// of dropping the reference.
 		toClose.Close(serverStreamContext(m.ctx))
 	}
+	if perr == nil && attachRef != "" {
+		// Creator delivery runs outside the Manager lock (lock
+		// invariant): publishCreation only registered the ref.
+		meta.deliverInitial(attachRef, sc)
+	}
 	return meta, perr
 }
 
@@ -108,7 +113,9 @@ func (m *Manager) publishCreation(e *poolEntry, key, typ string, props map[strin
 
 // attachToMeta stores one consumer reference and returns the stable
 // handle. Callers must hold the Manager lock so the attach is atomic
-// with zero-ref teardown decisions. The lifecycle guard fails the
+// with zero-ref teardown decisions. Registration is structural only
+// (no callback); the caller delivers the initial snapshot via
+// deliverInitial after unlocking. The lifecycle guard fails the
 // attach instead of parking a ref on a dying Meta.
 func attachToMeta(meta *Meta, refId string, sc api.StatusChangeHandler) (*ConnWrapper, error) {
 	select {

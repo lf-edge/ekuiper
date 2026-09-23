@@ -22,6 +22,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 )
 
 func getStatManager(ctx api.StreamContext, dsm *DefaultStatManager) (StatManager, error) {
@@ -143,7 +144,7 @@ func (sm *PrometheusStatManager) SetConnectionState(state string, message string
 	switch state {
 	case api.ConnectionDisconnected:
 		sm.pConnectionStatus.Set(-1)
-	case api.ConnectionConnecting:
+	case api.ConnectionConnecting, connection.ConnectionRecovering:
 		sm.pConnectionStatus.Set(0)
 	case api.ConnectionConnected:
 		sm.pConnectionStatus.Set(1)

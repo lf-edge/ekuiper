@@ -25,6 +25,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/io/mqtt/v4client"
 	"github.com/lf-edge/ekuiper/v2/internal/io/mqtt/v5client"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
@@ -162,12 +163,16 @@ func (conn *Connection) onConnectLost(ctx api.StreamContext, err error) {
 }
 
 func (conn *Connection) onReconnecting(ctx api.StreamContext) {
-	conn.status.Store(modules.ConnectionStatus{Status: api.ConnectionConnecting})
+	// Runtime reconnect is recovering, never connecting: connecting is
+	// reserved for the initial dial. The Pool keeps the disconnected
+	// generation (no waiter wakeup); recovery completion arrives as
+	// connected via onConnect.
+	conn.status.Store(modules.ConnectionStatus{Status: connection.ConnectionRecovering})
 	conn.mu.Lock()
 	handler := conn.scHandler
 	conn.mu.Unlock()
 	if handler != nil {
-		handler(api.ConnectionConnecting, "")
+		handler(connection.ConnectionRecovering, "")
 	}
 	ctx.GetLogger().Debugf("Reconnecting to mqtt broker")
 }

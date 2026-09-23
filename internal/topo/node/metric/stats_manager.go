@@ -19,6 +19,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
+	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
 )
 
@@ -256,7 +257,7 @@ func setMemConnState(csm *ConnectionStatManager, state string, message string) {
 		csm.connStatus = -1
 		csm.lastDisconnectTime = now
 		csm.lastDisconnect = message
-	case api.ConnectionConnecting:
+	case api.ConnectionConnecting, connection.ConnectionRecovering:
 		csm.connStatus = 0
 		csm.lastTryTime = now
 	case api.ConnectionConnected:

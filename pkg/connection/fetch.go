@@ -48,6 +48,10 @@ type FetchOptions struct {
 	Type            string
 	Props           map[string]any
 	// StatusHandler receives connection status changes for this ref.
+	// Contract: return promptly, memory-only (no I/O, no blocking or
+	// waiting), and never synchronously re-enter Pool operations that
+	// can produce another delivery on the same Meta (self-deadlock on
+	// the per-Meta event serialization). See Meta.eventMu.
 	StatusHandler api.StatusChangeHandler
 }
 
@@ -125,10 +129,11 @@ func (m *Manager) reserveCreating(key string) (*poolEntry, bool) {
 
 // fetchPlanKind is the locked decision for one fetch attempt. The lock is
 // held only inside planFetch (defer-unlocked); waiting, creation and
-// logging-free returns happen outside it — except attach, which stays
-// under the lock so a ready attach and a last-detach teardown remain
-// mutually exclusive (attach still reaches the preexisting GetStatus path,
-// A2 debt, stated here so nobody mistakes this for final lock discipline).
+// logging-free returns happen outside it — including attach, which only
+// registers the ref under the lock so a ready attach and a last-detach
+// teardown remain mutually exclusive. Registration is structural-only
+// (no status read, no callback); the initial state delivery runs after
+// unlock via deliverInitial.
 type fetchPlanKind int
 
 const (
@@ -146,6 +151,10 @@ type fetchPlan struct {
 	props map[string]any
 	// fetchAttached: handle attached atomically under the lock.
 	cw *ConnWrapper
+	// fetchAttached: Meta owning the handle, for the post-unlock
+	// initial delivery (deliverInitial runs outside the Manager
+	// lock per the lock invariant; the plan only registers).
+	attachedMeta *Meta
 	// fetchWaitCreating: creation entry to wait on (e.err read after
 	// ready-close is safe: immutable past close).
 	waitEntry *poolEntry
@@ -185,7 +194,7 @@ func (m *Manager) planFetch(ctx api.StreamContext, opts FetchOptions) fetchPlan 
 		if err != nil {
 			return fetchPlan{kind: fetchFailed, err: err}
 		}
-		return fetchPlan{kind: fetchAttached, cw: cw}
+		return fetchPlan{kind: fetchAttached, cw: cw, attachedMeta: e.meta}
 	case entryCreating:
 		return fetchPlan{kind: fetchWaitCreating, waitEntry: e, wait: e.ready}
 	default: // entryRemoving
@@ -230,6 +239,10 @@ func fetchInternal(ctx api.StreamContext, opts FetchOptions) (*ConnWrapper, erro
 		plan := m.planFetch(ctx, opts)
 		switch plan.kind {
 		case fetchAttached:
+			// Initial delivery runs outside the Manager lock
+			// (lock invariant): a slow consumer stalls only its
+			// own delivery, never the Pool.
+			plan.attachedMeta.deliverInitial(opts.RefID, opts.StatusHandler)
 			return plan.cw, nil
 		case fetchFailed:
 			return nil, plan.err
