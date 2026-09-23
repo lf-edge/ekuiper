@@ -64,7 +64,12 @@ func create(def *RunDef) (*topo.Topo, error) {
 		"sendError":  true,
 		"datasource": endpoint,
 	}
-	cw, err := connection.FetchConnection(context.Background(), def.endpoint, "sse", sinkProps, nil)
+	cw, err := connection.FetchConnectionWithOptions(context.Background(), connection.FetchOptions{
+		ConnectionKey: def.endpoint,
+		RefID:         connection.ConsumerRefID(context.Background()),
+		Type:          "sse",
+		Props:         sinkProps,
+	})
 	if err != nil {
 		return nil, err
 	}

@@ -36,6 +36,9 @@ type HttpPushSource struct {
 	ch       <-chan any
 	conf     *PushConf
 	props    map[string]any
+	// conId is the actual pool key (cw.ID), which differs from the
+	// datasource for named connections.
+	conId string
 }
 
 type PushConf struct {
@@ -68,15 +71,27 @@ func (h *HttpPushSource) Provision(ctx api.StreamContext, configs map[string]any
 
 func (h *HttpPushSource) Close(ctx api.StreamContext) error {
 	pubsub.CloseSourceConsumerChannel(h.topic, h.sourceID)
-	// TODO if supports to be resource, this should change to the unique conn id
-	return connection.DetachConnection(ctx, h.conf.DataSource)
+	conId := h.conf.DataSource
+	if h.conId != "" {
+		conId = h.conId
+	}
+	return connection.DetachConnection(ctx, conId)
 }
 
 func (h *HttpPushSource) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) error {
-	cw, err := connection.FetchConnection(ctx, h.conf.DataSource, "httppush", h.props, sch)
+	key, requireExisting := connection.ResolveConnectionKey(h.props, h.conf.DataSource)
+	cw, err := connection.FetchConnectionWithOptions(ctx, connection.FetchOptions{
+		ConnectionKey:   key,
+		RefID:           connection.ConsumerRefID(ctx),
+		RequireExisting: requireExisting,
+		Type:            "httppush",
+		Props:           h.props,
+		StatusHandler:   sch,
+	})
 	if err != nil {
 		return err
 	}
+	h.conId = cw.ID
 	c, err := cw.Wait(ctx)
 	if c == nil {
 		return fmt.Errorf("http push endpoint not ready: %v", err)
