@@ -29,5 +29,5 @@ func TestPingWithoutHandleIsPureHealthCheck(t *testing.T) {
 	ctx := mockContext.NewMockContext("ping", "op1")
 	c := &SQLConnection{id: "no-handle"}
 	require.ErrorContains(t, c.Ping(ctx), "no database handle")
-	require.Nil(t, c.GetDB())
+	require.Nil(t, c.db)
 }
