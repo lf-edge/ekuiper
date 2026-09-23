@@ -85,10 +85,14 @@ func TestReportTransportFailureRespectsCallerDeath(t *testing.T) {
 	}
 }
 
-// TestLookupCanceledCallerNeverReports pins the consumer side of the
-// same rule: a lookup canceled before doing I/O surfaces the caller
-// error without touching the shared gate.
-func TestLookupCanceledCallerNeverReports(t *testing.T) {
+// TestLookupCanceledBeforeIOLeavesGateOpen pins report-point
+// placement, not the report path itself: a lookup canceled before
+// doing I/O fails in WaitReady, so it never reaches QueryContext and
+// the shared gate stays open. (The dead-vs-live branch semantics of
+// reportTransportFailure itself are pinned by
+// TestReportTransportFailureRespectsCallerDeath; this test would turn
+// red if anyone moved the report ahead of the readiness wait.)
+func TestLookupCanceledBeforeIOLeavesGateOpen(t *testing.T) {
 	require.NoError(t, connection.InitConnectionManager4Test())
 	base := connection.WithLookupRefID(kctx.Background(), "lookup:suspectcancel")
 	ctx, cancel := base.WithCancel()

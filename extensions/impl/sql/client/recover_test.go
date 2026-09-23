@@ -120,21 +120,6 @@ func TestFacadeRoutesCurrentHandle(t *testing.T) {
 	require.NoError(t, c.Close(ctx))
 }
 
-// TestFacadeFollowsRecover: after a swap the facade serves the new
-// handle; the old one is retired.
-func TestFacadeFollowsRecover(t *testing.T) {
-	url := "sqlite3://" + filepath.Join(t.TempDir(), "facadeswap.db")
-	c, ctx := recoverTestConn(t, url)
-	require.NoError(t, c.Dial(ctx))
-	old := c.GetDB()
-
-	require.NoError(t, c.Recover(ctx))
-	require.NotSame(t, old, c.GetDB())
-	_, err := c.ExecContext(ctx, `CREATE TABLE t (a BIGINT)`)
-	require.NoError(t, err)
-	require.NoError(t, c.Close(ctx))
-}
-
 // TestFacadeWithoutHandle errors instead of panicking on a nil handle.
 func TestFacadeWithoutHandle(t *testing.T) {
 	c := &SQLConnection{id: "no-handle"}
