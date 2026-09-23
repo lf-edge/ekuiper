@@ -21,14 +21,12 @@ import (
 )
 
 const (
-	LblRecon     = "recon"
 	LblQuery     = "query"
 	LblScan      = "scan"
 	LblWait      = "wait"
 	LblPrepare   = "prepare"
 	LblScanInto  = "scanInto"
 	LblPull      = "pull"
-	LblReconn    = "reconn"
 	LblSql       = "sql"
 	LblException = "exception"
 	LblReq       = "req"

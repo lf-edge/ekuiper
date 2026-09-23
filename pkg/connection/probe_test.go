@@ -267,3 +267,46 @@ func TestProbePingBounded(t *testing.T) {
 	s, _ := meta.GetStatus()
 	require.Equal(t, api.ConnectionDisconnected, s)
 }
+
+// TestProbeStaleVerdictDropped pins the generation guard: a probe Ping
+// that spans a completed recovery episode cannot overwrite the fresh
+// connected state, and emits no worker wakeup. The Ping is blocked
+// until its attempt scope fires; the recovery lands while it is in
+// flight, so the verdict arrives stale by construction.
+func TestProbeStaleVerdictDropped(t *testing.T) {
+	var pingCalls, dialCalls atomic.Int32
+	fake := &probeConn{blockPing: true, pingCalls: &pingCalls, dialCalls: &dialCalls}
+	m := newStateMeta(t)
+	m.NotifyStatus(api.ConnectionConnected, "")
+	cw := &ConnWrapper{ID: m.ID, meta: m}
+	cw.setConn(fake, nil)
+
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		probeOne(m, cw, 300*time.Millisecond)
+	}()
+	// The Ping is in flight; a full recovery episode lands now.
+	require.Eventually(t, func() bool {
+		return pingCalls.Load() == 1
+	}, 5*time.Second, 5*time.Millisecond)
+	genBefore := m.generation
+	m.NotifyStatus(api.ConnectionDisconnected, "old outage")
+	m.NotifyStatus(api.ConnectionConnected, "")
+
+	select {
+	case <-done:
+	case <-time.After(5 * time.Second):
+		t.Fatal("probeOne did not return after its attempt scope fired")
+	}
+	// Fresh state untouched: still connected, gate open, generation
+	// exactly as the recovery left it, no wakeup emitted.
+	s, _ := m.GetStatus()
+	require.Equal(t, api.ConnectionConnected, s)
+	m.stateMu.RLock()
+	ready := m.ready
+	m.stateMu.RUnlock()
+	require.True(t, ready)
+	require.Equal(t, genBefore+2, m.generation)
+	require.Equal(t, 0, len(m.suspectCh))
+}

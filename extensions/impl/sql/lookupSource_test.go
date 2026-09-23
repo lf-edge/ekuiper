@@ -136,13 +136,18 @@ func TestSQLLookupReconnect(t *testing.T) {
 	s.Close()
 	_, err = ls.Lookup(ctx, []string{"a", "b"}, []string{"a"}, []any{1})
 	require.Error(t, err)
-	require.True(t, ls.needReconnect)
 	s, err = testx.SetupEmbeddedMysqlServer(address, port)
 	require.NoError(t, err)
 	defer func() {
 		s.Close()
 	}()
-	// The next lookup keeps recovering until the database is back.
+	// The failed lookup hands the episode to the Pool worker, which
+	// keeps recovering until the database is back; later lookups park
+	// on WaitReady meanwhile and continue afterwards.
+	require.Eventually(t, func() bool {
+		got, err := ls.Lookup(ctx, []string{"a", "b"}, []string{"a"}, []any{1})
+		return err == nil && len(got) == 1
+	}, 60*time.Second, 200*time.Millisecond)
 	got, err := ls.Lookup(ctx, []string{"a", "b"}, []string{"a"}, []any{1})
 	require.NoError(t, err)
 	require.Equal(t, []map[string]any{{"a": int64(1), "b": int64(1)}}, got)

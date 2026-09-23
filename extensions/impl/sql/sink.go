@@ -41,11 +41,10 @@ const (
 )
 
 type SQLSinkConnector struct {
-	config        *sqlSinkConfig
-	cw            *connection.ConnWrapper
-	conn          *client.SQLConnection
-	props         map[string]any
-	needReconnect bool
+	config *sqlSinkConfig
+	cw     *connection.ConnWrapper
+	conn   *client.SQLConnection
+	props  map[string]any
 	// refID is the consumer identity attached at Connect time. It is
 	// passed back verbatim at Close; never re-derived from ctx.
 	refID string
@@ -386,9 +385,12 @@ func (s *SQLSinkConnector) collectList(ctx api.StreamContext, items []map[string
 		return s.writeStmtsTx(ctx, stmts)
 	}
 	for _, el := range items {
-		err := s.save(ctx, s.config.Table, el)
-		if err != nil {
-			ctx.GetLogger().Error(err)
+		// Propagate the first error: a transport failure surfaces
+		// as an IO error for the SinkNode replay, a data error as
+		// a plain error. Swallowing either would lose data or
+		// misroute poison rows into the IO retry.
+		if err := s.save(ctx, s.config.Table, el); err != nil {
+			return err
 		}
 	}
 	return nil
@@ -422,9 +424,13 @@ func (s *SQLSinkConnector) writeStmtsTx(ctx api.StreamContext, stmts []builtStmt
 	if err := s.ensureConnected(ctx); err != nil {
 		return err
 	}
-	tx, err := s.conn.GetDB().BeginTx(ctx, nil)
+	tx, err := s.conn.BeginTx(ctx, nil)
 	if err != nil {
-		s.needReconnect = true
+		// Transport failure: report a suspect (unless the caller
+		// itself is gone) and surface an IO error for the SinkNode
+		// replay. Validation errors never reach here — callers
+		// build all statements first.
+		reportTransportFailure(ctx, s.cw)
 		return errorx.NewIOErr(err.Error())
 	}
 	committed := false
@@ -441,17 +447,16 @@ func (s *SQLSinkConnector) writeStmtsTx(ctx api.StreamContext, stmts []builtStmt
 			err = errors.New("dbErr")
 		})
 		if err != nil {
-			s.needReconnect = true
+			reportTransportFailure(ctx, s.cw)
 			return errorx.NewIOErr(err.Error())
 		}
 	}
 	if err := tx.Commit(); err != nil {
-		s.needReconnect = true
+		reportTransportFailure(ctx, s.cw)
 		return errorx.NewIOErr(err.Error())
 	}
 	committed = true
 	metrics.IODurationHist.WithLabelValues(LblSql, metrics.LblSinkIO, ctx.GetRuleId(), ctx.GetOpId()).Observe(float64(time.Since(start).Microseconds()))
-	s.needReconnect = false
 	return nil
 }
 
@@ -511,17 +516,13 @@ func (s *SQLSinkConnector) save(ctx api.StreamContext, table string, data map[st
 	return s.writeToDB(ctx, sqlStr, args...)
 }
 
-// ensureConnected reconnects when a previous write marked the connection
-// bad. It never clears the flag: only a successful Exec or transaction
-// completion does that. The reconnect itself retries until the database is
-// back or the rule context is canceled, which naturally backpressures the
-// upstream while the database is unavailable.
+// ensureConnected parks on the Pool gate: connected is a fast state
+// read, a closed gate waits for the recovery worker. Transport
+// failures below report a suspect and surface as IO errors for the
+// SinkNode replay; validation/statement errors never touch the gate.
 func (s *SQLSinkConnector) ensureConnected(ctx api.StreamContext) error {
-	if s.needReconnect {
-		metrics.IOCounter.WithLabelValues(LblSql, metrics.LblSinkIO, LblReconn, ctx.GetRuleId(), ctx.GetOpId()).Inc()
-		if err := retryReconnect(ctx, s.conn); err != nil {
-			return errorx.NewIOErr(err.Error())
-		}
+	if err := s.cw.WaitReady(ctx); err != nil {
+		return errorx.NewIOErr(err.Error())
 	}
 	return nil
 }
@@ -532,16 +533,15 @@ func (s *SQLSinkConnector) writeToDB(ctx api.StreamContext, sqlStr string, args 
 		return err
 	}
 	start := time.Now()
-	r, err := s.conn.GetDB().ExecContext(ctx, sqlStr, args...)
+	r, err := s.conn.ExecContext(ctx, sqlStr, args...)
 	failpoint.Inject("dbErr", func() {
 		err = errors.New("dbErr")
 	})
 	if err != nil {
-		s.needReconnect = true
+		reportTransportFailure(ctx, s.cw)
 		return errorx.NewIOErr(err.Error())
 	}
 	metrics.IODurationHist.WithLabelValues(LblSql, metrics.LblSinkIO, ctx.GetRuleId(), ctx.GetOpId()).Observe(float64(time.Since(start).Microseconds()))
-	s.needReconnect = false
 	d, err := r.RowsAffected()
 	if err != nil {
 		ctx.GetLogger().Errorf("get rows affected error: %s", err.Error())

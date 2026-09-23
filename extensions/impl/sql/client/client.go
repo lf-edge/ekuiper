@@ -12,12 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package client implements the SQL connection provider. Like all
+// packages under extensions/impl, it does not promise a stable Go
+// API: the supported contract surface is contract/v2, and in-tree
+// plugins are compiled against it. GetDB is retained as deprecated
+// purely as a zero-cost raw-handle migration convenience — the
+// returned *sql.DB is fully usable (read, write, close), which is
+// exactly why production code must not reach for it: a raw handle
+// outlives recovery swaps and bypasses pool ownership. Its retention
+// does not promote this package to a compatibility surface. In
+// particular, control-plane operations that would fork connection
+// recovery ownership (notably the removed Reconnect) stay deleted
+// with no compatibility shim: a shim would hand external callers an
+// officially sanctioned way to bypass the Pool-only recovery
+// invariant.
 package client
 
 import (
 	"context"
 	"database/sql"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
@@ -33,9 +48,18 @@ type SQLConnection struct {
 	db     *sql.DB
 	id     string
 	closed bool
+	// retireWG tracks handles replaced by Recover and closed
+	// asynchronously. Add happens only under the write lock before
+	// closed is set; Close waits after setting it — so no Add can
+	// race the Wait. SQLConnection is always used by pointer.
+	retireWG sync.WaitGroup
 }
 
-// defaultAttemptTimeout bounds one Dial, Ping, or Reconnect attempt.
+// SQLConnection is pool-recovered: runtime recovery belongs to the
+// Pool worker, never to consumer retry loops.
+var _ modules.PoolRecoverableConnection = (*SQLConnection)(nil)
+
+// defaultAttemptTimeout bounds one Dial, Ping, or Recover attempt.
 // Retry cadence and total retry lifetime are owned by the caller.
 const defaultAttemptTimeout = 10 * time.Second
 
@@ -89,35 +113,63 @@ func (s *SQLConnection) Dial(ctx api.StreamContext) error {
 	return s.dial(dialCtx)
 }
 
-func (s *SQLConnection) Reconnect(ctx api.StreamContext) error {
-	s.Lock()
-	defer s.Unlock()
-	dialCtx, cancel := context.WithTimeout(ctx, defaultAttemptTimeout)
-	defer cancel()
-	if s.db != nil {
-		if err := s.db.PingContext(dialCtx); err == nil {
-			return nil
-		} else if dialCtx.Err() != nil {
-			return dialCtx.Err()
-		}
-		_ = s.db.Close()
-	}
-	if err := s.dial(dialCtx); err != nil {
-		return fmt.Errorf("reconnect sql err:%v", err)
-	}
-	return nil
-}
-
+// GetDB returns the current handle.
+//
+// Deprecated: reach the database only through the QueryContext /
+// ExecContext / BeginTx facade, which always routes to the current
+// handle. A raw *sql.DB outlives recovery swaps and bypasses pool
+// ownership. Kept as a zero-cost migration convenience, not as a
+// stability promise (see the package comment).
 func (s *SQLConnection) GetDB() *sql.DB {
 	s.RLock()
 	defer s.RUnlock()
 	return s.db
 }
 
+// QueryContext routes one query to the current handle. It is pure
+// routing: no retry, no recovery, no readiness wait — those belong to
+// the consumer (WaitReady/suspect) and the Pool worker. The handle is
+// snapshotted under a read lock; a recovery swap racing the call
+// lands on either generation, and a failure on a stale one surfaces
+// as a normal error for the caller to report.
+func (s *SQLConnection) QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error) {
+	s.RLock()
+	db := s.db
+	s.RUnlock()
+	if db == nil {
+		return nil, fmt.Errorf("sql connection %s has no database handle", s.id)
+	}
+	return db.QueryContext(ctx, query, args...)
+}
+
+// ExecContext routes one statement to the current handle, same
+// routing-only contract as QueryContext.
+func (s *SQLConnection) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
+	s.RLock()
+	db := s.db
+	s.RUnlock()
+	if db == nil {
+		return nil, fmt.Errorf("sql connection %s has no database handle", s.id)
+	}
+	return db.ExecContext(ctx, query, args...)
+}
+
+// BeginTx routes one transaction to the current handle, same
+// routing-only contract as QueryContext.
+func (s *SQLConnection) BeginTx(ctx context.Context, opts *sql.TxOptions) (*sql.Tx, error) {
+	s.RLock()
+	db := s.db
+	s.RUnlock()
+	if db == nil {
+		return nil, fmt.Errorf("sql connection %s has no database handle", s.id)
+	}
+	return db.BeginTx(ctx, opts)
+}
+
 func (s *SQLConnection) Ping(ctx api.StreamContext) error {
 	// Pure health check: a single bounded attempt, never a dial. An
 	// absent handle means Dial never succeeded (or Close already ran);
-	// creating the handle belongs to Dial/Reconnect, not to a status
+	// creating the handle belongs to Dial/Recover, not to a status
 	// read. Read-locked: Ping observes but never mutates.
 	s.RLock()
 	defer s.RUnlock()
@@ -135,8 +187,8 @@ func (s *SQLConnection) DetachSub(ctx api.StreamContext, props map[string]any) {
 
 func (s *SQLConnection) Close(ctx api.StreamContext) error {
 	s.Lock()
-	defer s.Unlock()
 	if s.closed {
+		s.Unlock()
 		return nil
 	}
 	ctx.GetLogger().Infof("close db with url:%v", s.url)
@@ -144,6 +196,13 @@ func (s *SQLConnection) Close(ctx api.StreamContext) error {
 		_ = s.db.Close()
 	}
 	s.closed = true
+	s.Unlock()
+	// Drain handles retired by Recover: each retired Close runs
+	// detached so a slow old pool never stalls the hot path, but the
+	// logical Close still waits for all of them — no handle outlives
+	// the connection. The retire goroutines never take this lock, so
+	// waiting here cannot deadlock.
+	s.retireWG.Wait()
 	return nil
 }
 
@@ -152,16 +211,68 @@ func CreateConnection(ctx api.StreamContext) modules.Connection {
 }
 
 func (s *SQLConnection) dial(ctx context.Context) error {
-	db, err := openDB(s.url)
+	db, err := openVerifiedDB(s.url, ctx)
 	if err != nil {
-		return fmt.Errorf("create connection err:%v", err)
+		return err
+	}
+	s.db = db
+	return nil
+}
+
+// Recover implements modules.PoolRecoverableConnection: one bounded
+// attempt that builds a candidate, verifies it, and installs it. No
+// internal retry or backoff (the Pool worker owns the rhythm); ctx
+// carries the Pool's per-attempt deadline plus lifecycle
+// cancellation. The replaced handle retires asynchronously — closed
+// detached from this call so a slow old pool never stalls the hot
+// path, drained by Close so nothing leaks past the logical lifetime.
+// A failure leaves the previous handle untouched; the Pool worker
+// keeps owning the episode (Ping verification, then retries with
+// backoff until success).
+func (s *SQLConnection) Recover(ctx api.StreamContext) error {
+	recCtx, cancel := context.WithTimeout(ctx, defaultAttemptTimeout)
+	defer cancel()
+	db, err := openVerifiedDB(s.url, recCtx)
+	if err != nil {
+		return err
+	}
+	s.Lock()
+	if s.closed {
+		// Raced with the logical Close: dispose the candidate.
+		// The Pool joins this worker before its own Close, so the
+		// dispose here is the only Close the candidate gets.
+		s.Unlock()
+		_ = db.Close()
+		return fmt.Errorf("sql connection %s closed during recovery", s.id)
+	}
+	old := s.db
+	s.db = db
+	if old != nil {
+		s.retireWG.Add(1)
+		go func() {
+			defer s.retireWG.Done()
+			_ = old.Close()
+		}()
+	}
+	s.Unlock()
+	return nil
+}
+
+// openVerifiedDB opens one candidate and verifies it with a single
+// bounded Ping. Shared by Dial (initial handle) and Recover
+// (replacement handle) so the two paths can never diverge in what
+// counts as usable. A failure owns no handle: the candidate is
+// closed before return.
+func openVerifiedDB(url string, ctx context.Context) (*sql.DB, error) {
+	db, err := openDB(url)
+	if err != nil {
+		return nil, err
 	}
 	if err := db.PingContext(ctx); err != nil {
 		_ = db.Close()
 		// A database URL can be syntactically valid while the database is
 		// temporarily unreachable. Let the connection pool retry this case.
-		return errorx.NewIOErr(fmt.Sprintf("create connection err:%v", err))
+		return nil, errorx.NewIOErr(fmt.Sprintf("create connection err:%v", err))
 	}
-	s.db = db
-	return nil
+	return db, nil
 }

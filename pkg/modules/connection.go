@@ -50,7 +50,7 @@ type Connection interface {
 	// Ping is a single bounded health-check attempt: no retry, no
 	// reconnect, no dial-on-empty. An absent handle (Dial never
 	// succeeded, or Close already ran) reports an error; creating
-	// the handle belongs to Dial/Reconnect, never to a status read.
+	// the handle belongs to Dial/Recover, never to a status read.
 	// The Pool calls Ping on a bounded attempt scope; providers must
 	// honor its deadline rather than imposing their own unbounded
 	// block. Self-recovering clients (StatefulDialer) may answer
@@ -79,6 +79,26 @@ type Connection interface {
 type StatefulDialer interface {
 	SetStatusChangeHandler(ctx api.StreamContext, handler api.StatusChangeHandler)
 	Status(ctx api.StreamContext) ConnectionStatus
+}
+
+// PoolRecoverableConnection is implemented by providers whose runtime
+// recovery is owned by the Pool (e.g. SQL). It is mutually exclusive
+// with StatefulDialer: a provider implementing both is treated as
+// self-recovering, and the Pool never starts its recovery worker.
+//
+// Recover performs a single bounded recovery attempt: build a
+// candidate, verify it, and install it so subsequent operations use
+// the new handle. It must not retry or back off internally (the Pool
+// worker owns the rhythm), must honor ctx (per-attempt deadline on
+// top of lifecycle cancellation), and must not invoke Pool status
+// callbacks or mutate Pool-visible status: recovering/disconnected/
+// connected transitions belong to the Pool. A nil return means the
+// new handle is installed and usable; an error return leaves prior
+// state untouched, and the Pool worker keeps owning the episode
+// (re-verify, then backoff and retry until success or lifecycle end).
+type PoolRecoverableConnection interface {
+	Connection
+	Recover(ctx api.StreamContext) error
 }
 
 type ConnectionProvider func(ctx api.StreamContext) Connection

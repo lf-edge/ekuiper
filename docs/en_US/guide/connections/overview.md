@@ -134,11 +134,17 @@ Connection status is divided into four types:
 2. **Connecting**, represented by 0 in metrics. Only used for the initial connection attempt.
 3. **Disconnected**, represented by -1 in metrics.
 4. **Recovering**, represented by 0 in metrics. Only used when a previously connected connection is
-   re-establishing its transport at runtime (self-recovering clients); the connection is still not serving.
+   re-establishing its transport at runtime (self-recovering clients, or pool-recovered clients such as SQL
+   while the pool recovery worker retries); the connection is still not serving.
 
 The reported status is the last-known state maintained by the connection pool: it is updated asynchronously by
 provider status callbacks and periodic health checks. Reading the status (via API or metrics) never triggers a
 network probe by itself.
+
+When a SQL operation fails at runtime, the first failure is returned to the caller and reported to the pool as a
+suspect; later operations wait until the pool recovery worker re-establishes the connection. The worker retries with
+backoff until it succeeds, so a database outage delays rules instead of failing them. A lookup against a connection
+that never became ready reports unavailable once on first use instead of waiting.
 
 Users can retrieve the connection status via the connection API. Additionally, users can view the connection status in
 the rule's source/sink metrics, for example, the `source_demo_0_connection_status` metric indicates the connection
