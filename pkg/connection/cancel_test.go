@@ -99,3 +99,42 @@ func TestRemovePendingNamedConnection(t *testing.T) {
 		}
 	}
 }
+
+func TestDetachCanceledAnonymousConnection(t *testing.T) {
+	for _, completed := range []bool{false, true} {
+		name := "dial-pending"
+		if completed {
+			name = "dial-completed"
+		}
+		t.Run(name, func(t *testing.T) {
+			require.NoError(t, InitConnectionManager4Test())
+			ctx, cancel := context.Background().WithCancel()
+			defer cancel()
+			conn := &pendingConnection{started: make(chan struct{}), release: make(chan struct{}), closed: make(chan struct{})}
+			modules.RegisterConnection("pending-anonymous", func(api.StreamContext) modules.Connection { return conn })
+			id := extractRefId(ctx)
+			cw, err := FetchConnection(ctx, id, "pending-anonymous", nil, nil)
+			require.NoError(t, err)
+			select {
+			case <-conn.started:
+			case <-time.After(2 * time.Second):
+				t.Fatal("connection did not start")
+			}
+			cancel()
+			if completed {
+				close(conn.release)
+				<-cw.readCh
+			}
+			require.NoError(t, DetachConnection(ctx, id))
+			if !completed {
+				close(conn.release)
+			}
+			require.False(t, checkConn(id))
+			select {
+			case <-conn.closed:
+			case <-time.After(2 * time.Second):
+				t.Fatal("detached anonymous connection was not closed")
+			}
+		})
+	}
+}

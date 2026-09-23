@@ -362,12 +362,8 @@ func detachConnection(ctx api.StreamContext, conId string) error {
 		if conId != refId {
 			conf.Log.Infof("action=close_connection connId=%s type=%s connectionKey=%s rule=%s op=%s reason=zero_ref", conId, meta.Typ, conId, ctx.GetRuleId(), ctx.GetOpId())
 		}
-		// TODO: cancel pending retries on anonymous connections as well.
 		close(meta.cw.detachCh)
-		conn, err := meta.cw.Wait(ctx)
-		if conn != nil && err == nil {
-			conn.Close(ctx)
-		}
+		meta.cw.cancelAndClose(ctx)
 		delete(globalConnectionManager.connectionPool, conId)
 		return nil
 	}
