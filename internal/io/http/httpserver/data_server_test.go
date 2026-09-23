@@ -73,3 +73,32 @@ func (m *GlobalServerManager) GetEndpoints() map[string]struct{} {
 	}
 	return ma
 }
+
+// TestSharedEndpointRefcount pins the registry ownership backing
+// HttpPushConnection: two holders (e.g. a named and an anonymous
+// connection) may register the same endpoint; the first Unregister
+// only drops its own reference, and the route disappears only after
+// the last holder leaves. Unregistering a never-registered endpoint
+// is a no-op.
+func TestSharedEndpointRefcount(t *testing.T) {
+	ip := "127.0.0.1"
+	port := 10083
+	InitGlobalServerManager(ip, port, nil)
+	defer ShutDown()
+
+	UnregisterEndpoint("/nope", "POST")
+	require.Equal(t, map[string]struct{}{}, GetEndpoints())
+
+	topic1, err := RegisterEndpoint("/shared", "POST")
+	require.NoError(t, err)
+	topic2, err := RegisterEndpoint("/shared", "POST")
+	require.NoError(t, err)
+	require.Equal(t, topic1, topic2)
+	require.Equal(t, map[string]struct{}{"/shared$$POST": {}}, GetEndpoints())
+
+	UnregisterEndpoint("/shared", "POST")
+	require.Equal(t, map[string]struct{}{"/shared$$POST": {}}, GetEndpoints())
+
+	UnregisterEndpoint("/shared", "POST")
+	require.Equal(t, map[string]struct{}{}, GetEndpoints())
+}

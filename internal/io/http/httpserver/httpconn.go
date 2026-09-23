@@ -51,6 +51,12 @@ func (h *HttpPushConnection) Provision(ctx api.StreamContext, conId string, prop
 }
 
 func (h *HttpPushConnection) Dial(ctx api.StreamContext) error {
+	if h.registered {
+		// Re-entry on an already-registered instance (e.g. a pool
+		// Dial retry): the holder is already counted, do not
+		// register twice.
+		return nil
+	}
 	topic, err := RegisterEndpoint(h.cfg.Datasource, h.cfg.Method)
 	if err != nil {
 		return err
