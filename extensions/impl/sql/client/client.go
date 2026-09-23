@@ -16,8 +16,11 @@
 // packages under extensions/impl, it does not promise a stable Go
 // API: the supported contract surface is contract/v2, and in-tree
 // plugins are compiled against it. GetDB is retained as deprecated
-// purely as a zero-cost read-only migration convenience — that does
-// not promote this package to a compatibility surface. In
+// purely as a zero-cost raw-handle migration convenience — the
+// returned *sql.DB is fully usable (read, write, close), which is
+// exactly why production code must not reach for it: a raw handle
+// outlives recovery swaps and bypasses pool ownership. Its retention
+// does not promote this package to a compatibility surface. In
 // particular, control-plane operations that would fork connection
 // recovery ownership (notably the removed Reconnect) stay deleted
 // with no compatibility shim: a shim would hand external callers an
