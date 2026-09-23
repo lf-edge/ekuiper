@@ -88,6 +88,24 @@ func FetchConnectionWithOptions(ctx api.StreamContext, opts FetchOptions) (*Conn
 	return fetchInternal(ctx, opts)
 }
 
+// ResolveConnectionKey derives the explicit pool identity for one fetch
+// from connector-local material. It is the explicit replacement for the
+// implicit derivation the legacy FetchConnection shim used to perform:
+// a non-empty string props["connectionSelector"] selects the named
+// connection (RequireExisting=true, the fetch only attaches); otherwise
+// the caller-provided anonymous key is used and the fetch may create.
+// The Pool treats the returned key as opaque.
+func ResolveConnectionKey(props map[string]any, anonymous string) (key string, requireExisting bool) {
+	if len(props) > 0 {
+		if v, ok := props["connectionSelector"]; ok {
+			if id, ok := v.(string); ok && id != "" && id != anonymous {
+				return id, true
+			}
+		}
+	}
+	return anonymous, false
+}
+
 // FetchConnection is the legacy compatibility shim. It keeps the historical
 // connectionKey derivation (connectionSelector-or-refId) so unmigrated
 // connectors keep resolving the same logical connection. The consumer ref,

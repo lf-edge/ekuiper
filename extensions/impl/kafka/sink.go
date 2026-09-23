@@ -267,8 +267,14 @@ func (k *KafkaSink) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) 
 	k.ruleID = ctx.GetRuleId()
 	k.opID = ctx.GetOpId()
 	if k.kc.SelId != "" {
-		refID := fmt.Sprintf("%s_%s_%d", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId())
-		cw, err := connection.FetchConnection(ctx, refID, "kafka", k.props, sch)
+		cw, err := connection.FetchConnectionWithOptions(ctx, connection.FetchOptions{
+			ConnectionKey:   k.kc.SelId,
+			RefID:           connection.ConsumerRefID(ctx),
+			RequireExisting: true,
+			Type:            "kafka",
+			Props:           k.props,
+			StatusHandler:   sch,
+		})
 		if err != nil {
 			return err
 		}
