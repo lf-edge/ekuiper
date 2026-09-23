@@ -94,7 +94,7 @@ func TestSlowInitialCallbackDoesNotBlockPool(t *testing.T) {
 // removed between registration and delivery gets no initial call,
 // while a live ref gets exactly the current snapshot.
 func TestDeliverInitialSkipsDetached(t *testing.T) {
-	m := newStateMeta()
+	m := newStateMeta(t)
 	var calls atomic.Int32
 	sc := func(string, string) { calls.Add(1) }
 
@@ -146,7 +146,7 @@ type statusEvent struct {
 // both reach the consumer (metrics record per-transition side
 // effects such as lastDisconnectTime, so swallowing is data loss).
 func TestEventOrderingPreservesEveryTransition(t *testing.T) {
-	m := newStateMeta()
+	m := newStateMeta(t)
 	var mu sync.Mutex
 	var got []statusEvent
 	m.AddRef("r1", func(s, e string) {
@@ -176,7 +176,7 @@ func TestEventOrderingPreservesEveryTransition(t *testing.T) {
 // this scenario asserts the exact single each, which is the
 // deterministic outcome of this gating.
 func TestInitialDeliveryJoinsEventSerialization(t *testing.T) {
-	m := newStateMeta()
+	m := newStateMeta(t)
 	var mu sync.Mutex
 	var oldGot, newGot []statusEvent
 	entered := make(chan struct{})

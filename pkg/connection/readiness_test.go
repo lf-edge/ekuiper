@@ -35,8 +35,36 @@ func isClosed(ch <-chan struct{}) bool {
 	}
 }
 
-func newStateMeta() *Meta {
-	return newMeta(nil, "state-test", "mock", nil, false)
+func newStateMeta(t *testing.T) *Meta {
+	t.Helper()
+	m := newMeta(nil, "state-test", "mock", nil, false)
+	// Every Meta births a dispatcher; bare test Metas never go through
+	// stop(), so the test owns its cleanup and join here.
+	t.Cleanup(m.shutdownDispatcherForTest)
+	return m
+}
+
+// shutdownDispatcherForTest drains pending events, then stops and joins
+// the dispatcher. Test-only cleanup for bare Metas that never go through
+// stop() (which performs the same sequence as its final phase). Safe to
+// run after stop(): an already-stopped dispatcher is detected under
+// eventMu and skipped — stop() joined it already.
+func (meta *Meta) shutdownDispatcherForTest() {
+	meta.eventMu.Lock()
+	if meta.dispatcherStopping {
+		meta.eventMu.Unlock()
+		return
+	}
+	meta.eventMu.Unlock()
+	meta.drainEvents()
+	meta.eventMu.Lock()
+	meta.dispatcherStopping = true
+	meta.eventMu.Unlock()
+	select {
+	case meta.eventWake <- struct{}{}:
+	default:
+	}
+	<-meta.dispatcherDone
 }
 
 func requireState(t *testing.T, m *Meta, status, errMsg string) {
@@ -51,7 +79,7 @@ func requireState(t *testing.T, m *Meta, status, errMsg string) {
 // always opens a new parked generation; disconnected<->recovering
 // share one generation without wakeups.
 func TestStateTransitionTable(t *testing.T) {
-	m := newStateMeta()
+	m := newStateMeta(t)
 	// Initial: connecting, open generation 0.
 	requireState(t, m, api.ConnectionConnecting, "")
 	require.False(t, isClosed(m.readyCh))
@@ -123,7 +151,7 @@ func TestStateTransitionTable(t *testing.T) {
 // an error recorded by an older generation must not leak into the
 // connected state the next generation reaches.
 func TestConnectedClearsStaleError(t *testing.T) {
-	m := newStateMeta()
+	m := newStateMeta(t)
 	m.NotifyStatus(api.ConnectionDisconnected, "timeout")
 	m.NotifyStatus(api.ConnectionConnected, "")
 	s, e := m.GetStatus()
@@ -133,7 +161,7 @@ func TestConnectedClearsStaleError(t *testing.T) {
 
 // TestWaitReadyImmediateConnected returns without blocking.
 func TestWaitReadyImmediateConnected(t *testing.T) {
-	m := newStateMeta()
+	m := newStateMeta(t)
 	m.NotifyStatus(api.ConnectionConnected, "")
 	cw := &ConnWrapper{ID: m.ID, meta: m}
 	ctx := mockContext.NewMockContext("r1", "op1")
@@ -144,7 +172,7 @@ func TestWaitReadyImmediateConnected(t *testing.T) {
 // recover->disconnect cycle (shared generation, no spurious
 // success) and releases it only on connected.
 func TestWaitReadyRecheckAfterWake(t *testing.T) {
-	m := newStateMeta()
+	m := newStateMeta(t)
 	m.NotifyStatus(api.ConnectionConnected, "")
 	m.NotifyStatus(api.ConnectionDisconnected, "down")
 	cw := &ConnWrapper{ID: m.ID, meta: m}
@@ -174,7 +202,7 @@ func TestWaitReadyRecheckAfterWake(t *testing.T) {
 // TestWaitReadyCallerCancelFirst fixes precedence: a canceled caller
 // observes ctx.Err(), never a state outcome.
 func TestWaitReadyCallerCancelFirst(t *testing.T) {
-	m := newStateMeta()
+	m := newStateMeta(t)
 	cw := &ConnWrapper{ID: m.ID, meta: m}
 	ctx := mockContext.NewMockContext("r1", "op1")
 	canceled, cancel := ctx.WithCancel()
@@ -242,7 +270,7 @@ func TestWaitReadyBothDonePrefersCallerCancel(t *testing.T) {
 // TestWaitReadyLifecycleClosed maps termination to
 // ErrConnectionClosed, both before and during the wait.
 func TestWaitReadyLifecycleClosed(t *testing.T) {
-	m := newStateMeta()
+	m := newStateMeta(t)
 	cw := &ConnWrapper{ID: m.ID, meta: m}
 	ctx := mockContext.NewMockContext("r1", "op1")
 
@@ -250,7 +278,7 @@ func TestWaitReadyLifecycleClosed(t *testing.T) {
 	require.ErrorIs(t, cw.WaitReady(ctx), ErrConnectionClosed)
 
 	// A waiter parked in a dead generation is released as well.
-	m2 := newStateMeta()
+	m2 := newStateMeta(t)
 	cw2 := &ConnWrapper{ID: m2.ID, meta: m2}
 	done := make(chan error, 1)
 	go func() { done <- cw2.WaitReady(ctx) }()
@@ -269,7 +297,7 @@ func TestWaitReadyLifecycleClosed(t *testing.T) {
 // and opens a fresh parked generation while the public status stays
 // connected, plus exactly one worker wakeup.
 func TestSuspectClosesGateKeepsStatus(t *testing.T) {
-	m := newStateMeta()
+	m := newStateMeta(t)
 	m.NotifyStatus(api.ConnectionConnected, "")
 	gen0 := m.generation
 
@@ -295,7 +323,7 @@ func TestSuspectClosesGateKeepsStatus(t *testing.T) {
 // rule: a verifying episode followed by connected->disconnected opens
 // exactly one generation for the outage.
 func TestSuspectThenDisconnectSingleGeneration(t *testing.T) {
-	m := newStateMeta()
+	m := newStateMeta(t)
 	m.NotifyStatus(api.ConnectionConnected, "")
 	m.reportSuspect()
 	gen, ch := m.generation, m.readyCh
@@ -310,7 +338,7 @@ func TestSuspectThenDisconnectSingleGeneration(t *testing.T) {
 // TestSuspectByState pins the report table: disconnected nudges
 // without state change, connecting and recovering are ignored.
 func TestSuspectByState(t *testing.T) {
-	disconnected := newStateMeta()
+	disconnected := newStateMeta(t)
 	disconnected.NotifyStatus(api.ConnectionDisconnected, "down")
 	gen := disconnected.generation
 	disconnected.reportSuspect()
@@ -322,11 +350,11 @@ func TestSuspectByState(t *testing.T) {
 		t.Fatal("expected a wakeup for the disconnected suspect")
 	}
 
-	connecting := newStateMeta()
+	connecting := newStateMeta(t)
 	connecting.reportSuspect()
 	require.Equal(t, 0, len(connecting.suspectCh))
 
-	recovering := newStateMeta()
+	recovering := newStateMeta(t)
 	recovering.NotifyStatus(api.ConnectionConnected, "")
 	recovering.NotifyStatus(ConnectionRecovering, "")
 	recovering.reportSuspect()
@@ -337,7 +365,7 @@ func TestSuspectByState(t *testing.T) {
 // first suspect, subsequent WaitReady callers park while the status
 // still reads connected, and resume when the gate reopens.
 func TestWaitReadyParksDuringVerifying(t *testing.T) {
-	m := newStateMeta()
+	m := newStateMeta(t)
 	m.NotifyStatus(api.ConnectionConnected, "")
 	m.reportSuspect()
 	cw := &ConnWrapper{ID: m.ID, meta: m}
