@@ -92,7 +92,7 @@ func (suite *ServerTestSuite) TestStream() {
 }
 
 func (suite *ServerTestSuite) TestRule() {
-	sql := `Create Stream test () WITH (DATASOURCE="../internal/server/rpc_test_data/test.json", FORMAT="JSON", type="file");`
+	sql := `Create Stream test () WITH (DATASOURCE="../internal/server/rpc_test_data/test.json", FORMAT="JSON", type="file", EXTRA="{\"interval\":1000}");`
 	var reply string
 	err := suite.s.Stream(sql, &reply)
 	assert.Nil(suite.T(), err)
