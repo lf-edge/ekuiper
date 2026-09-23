@@ -210,16 +210,21 @@ func TestRecoveryRetriesDisconnectedEpisode(t *testing.T) {
 	m := newWorkerMeta(t, fake)
 
 	m.cw.ReportSuspectedFailure()
-	// The episode persists across attempts: more than one Recover,
-	// still disconnected, gate still closed.
+	// The episode persists across attempts: more than one Recover
+	// while the gate stays closed and the latest error is kept. The
+	// public phase is deliberately not pinned — a persistent episode
+	// cycles disconnected<->recovering, so asserting one exact phase
+	// after "attempts >= 2" races the worker's own announcement
+	// (Recover increments its counter before returning, i.e. before
+	// the next disconnected is announced).
 	require.Eventually(t, func() bool {
-		return fake.recoverCalls.Load() >= 2
+		if fake.recoverCalls.Load() < 2 {
+			return false
+		}
+		_, errMsg := m.GetStatus()
+		ready, _ := workerGate(t, m)
+		return !ready && errMsg == "recover down"
 	}, 5*time.Second, 5*time.Millisecond)
-	s, e := m.GetStatus()
-	require.Equal(t, api.ConnectionDisconnected, s)
-	require.Equal(t, "recover down", e)
-	ready, _ := workerGate(t, m)
-	require.False(t, ready)
 
 	// Lifecycle end exits the episode: no hang, worker joined.
 	m.lifecycleCancel()
