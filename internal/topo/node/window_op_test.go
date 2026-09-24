@@ -128,13 +128,13 @@ func TestTime(t *testing.T) {
 }
 
 func TestNewTupleList(t *testing.T) {
-	_, e := NewTupleList(nil, 0)
+	_, e := NewTupleList(nil, nil, 0, nil)
 	es1 := "Window size should not be less than zero."
 	if !reflect.DeepEqual(es1, e.Error()) {
 		t.Errorf("error mismatch:\n  exp=%s\n  got=%s\n\n", es1, e)
 	}
 
-	_, e = NewTupleList(nil, 2)
+	_, e = NewTupleList(nil, nil, 2, nil)
 	es1 = "The tuples should not be nil or empty."
 	if !reflect.DeepEqual(es1, e.Error()) {
 		t.Errorf("error mismatch:\n  exp=%s\n  got=%s\n\n", es1, e)
@@ -330,7 +330,7 @@ func TestCountWindow(t *testing.T) {
 				if !tt.tuplelist.hasMoreCountWindow() {
 					t.Errorf("%d \n Expect more element, but cannot find more element.", i)
 				}
-				cw := tt.tuplelist.nextCountWindow()
+				cw, _ := tt.tuplelist.nextCountWindow()
 				if !reflect.DeepEqual(tt.winTupleSets[j].Content, cw.Content) {
 					t.Errorf("%d. \nresult mismatch:\n\nexp=%#v\n\ngot=%#v", i, tt.winTupleSets[j], cw) //nolint:govet
 				}
