@@ -67,7 +67,7 @@ func finishStop(m *Manager, key string, stop func(api.StreamContext)) {
 	// stopAllRuntime.
 	stop(serverStreamContext(context.Background()))
 	m.Lock()
-	// Delete only our own entry: a re-init swaps the whole manager, and
+	// Delete only our own entry: a reset retires all entries anyway, and
 	// a concurrent round cannot reuse the key while it is removing.
 	// Closing removed wakes Fetch waiters so they retry on the key.
 	if e, ok := m.connectionPool[key]; ok && e.state == entryRemoving {

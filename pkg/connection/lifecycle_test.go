@@ -95,7 +95,7 @@ func TestManagerReinitTerminatesLifecycles(t *testing.T) {
 		return isDoneClosed(oldMeta.done)
 	}, 10*time.Second, 50*time.Millisecond, "old worker must exit after scope cancel")
 
-	// The replacement manager is fully functional and starts empty.
+	// The reset manager is fully functional and starts empty.
 	_, err := GetConnectionDetail(ctx, "lc-reinit")
 	require.Error(t, err)
 	lNew := fetchFailDial(t, ctx, "lc-new", "refN")
@@ -104,10 +104,10 @@ func TestManagerReinitTerminatesLifecycles(t *testing.T) {
 }
 
 // TestManagerResetClosesPublishedConnections proves reset retires the
-// whole generation: a published named connection with zero refs — which
+// whole runtime: a published named connection with zero refs — which
 // no detach path would ever stop — is physically Closed exactly once,
 // while its KV record is left intact for the next bootstrap reload.
-// The replacement manager starts empty but fully usable.
+// The reset manager starts empty but fully usable.
 func TestManagerResetClosesPublishedConnections(t *testing.T) {
 	require.NoError(t, InitConnectionManager4Test())
 	drainCountCloseRelease()
@@ -127,7 +127,7 @@ func TestManagerResetClosesPublishedConnections(t *testing.T) {
 	require.NoError(t, InitConnectionManager4Test())
 	require.Equal(t, int32(1), countCloseCalls.Load(), "published named conn must be Closed exactly once")
 
-	// Old generation holds nothing anymore.
+	// Old runtime holds nothing anymore.
 	_, err = GetConnectionDetail(ctx, "reset-named")
 	require.Error(t, err)
 	_, err = GetConnectionDetail(ctx, "reset-anon")
