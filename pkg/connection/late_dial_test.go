@@ -38,7 +38,6 @@ type blockingDialConnection struct {
 	mockConnection
 	started    chan struct{}
 	release    chan struct{}
-	closed     chan struct{}
 	startOnce  sync.Once
 	closeCalls atomic.Int32
 	events     chan string
@@ -52,11 +51,8 @@ func (c *blockingDialConnection) Dial(ctx api.StreamContext) error {
 }
 
 func (c *blockingDialConnection) Close(ctx api.StreamContext) error {
-	if c.closeCalls.Add(1) == 1 {
-		close(c.closed)
-		if c.events != nil {
-			c.events <- c.name + "-closed"
-		}
+	if c.closeCalls.Add(1) == 1 && c.events != nil {
+		c.events <- c.name + "-closed"
 	}
 	return nil
 }
@@ -68,6 +64,21 @@ func waitDialBlocked(t *testing.T, c *blockingDialConnection) {
 	case <-time.After(5 * time.Second):
 		t.Fatal("Dial did not start")
 	}
+}
+
+// waitRemoving waits until the key flips to teardown ownership. It is
+// hang insurance only: once the entry is removing while the old Dial
+// is still blocked, Meta.stop structurally cannot complete, so a
+// non-blocking check suffices to prove the waiter is still parked.
+func waitRemoving(t *testing.T, key string) {
+	t.Helper()
+	require.Eventually(t, func() bool {
+		m := globalConnectionManager
+		m.RLock()
+		defer m.RUnlock()
+		e, ok := m.connectionPool[key]
+		return ok && e.state == entryRemoving
+	}, 5*time.Second, 10*time.Millisecond, "entry must flip to removing")
 }
 
 // TestNamedReplacementDuringLateDial pins the named-update teardown
@@ -82,7 +93,6 @@ func TestNamedReplacementDuringLateDial(t *testing.T) {
 	old := &blockingDialConnection{
 		started: make(chan struct{}),
 		release: make(chan struct{}),
-		closed:  make(chan struct{}),
 		events:  events,
 		name:    "old",
 	}
@@ -105,11 +115,14 @@ func TestNamedReplacementDuringLateDial(t *testing.T) {
 		_, err = replacement.Wait(ctx)
 		updated <- err
 	}()
-	// Update must stay blocked on the old initial worker.
+	// Update must stay blocked on the old initial worker: the entry is
+	// already removing while Dial is still blocked, so Meta.stop
+	// structurally cannot have completed.
+	waitRemoving(t, "late-named")
 	select {
 	case err := <-updated:
 		t.Fatalf("Update returned while old Dial blocked: %v", err)
-	case <-time.After(200 * time.Millisecond):
+	default:
 	}
 
 	// Late success despite cancellation: the worker still routes
@@ -149,7 +162,6 @@ func TestAnonymousReleaseDuringLateDial(t *testing.T) {
 	old := &blockingDialConnection{
 		started: make(chan struct{}),
 		release: make(chan struct{}),
-		closed:  make(chan struct{}),
 	}
 	modules.RegisterConnection("late-anon", func(api.StreamContext) modules.Connection { return old })
 	lease, err := FetchConnectionWithOptions(ctx, FetchOptions{
@@ -162,11 +174,13 @@ func TestAnonymousReleaseDuringLateDial(t *testing.T) {
 	go func() {
 		released <- lease.Release(ctx)
 	}()
-	// Release stays blocked waiting for the initial worker.
+	// Release stays blocked waiting for the initial worker: same
+	// structural argument as above.
+	waitRemoving(t, "late-anon")
 	select {
 	case err := <-released:
 		t.Fatalf("Release returned while Dial blocked: %v", err)
-	case <-time.After(200 * time.Millisecond):
+	default:
 	}
 
 	close(old.release)
