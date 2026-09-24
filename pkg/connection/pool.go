@@ -96,11 +96,9 @@ type poolEntry struct {
 	removed chan struct{}
 }
 
-// globalConnectionManager is a process-lifetime singleton. Its identity
-// never changes: Init/reset retires all runtime state and installs a
-// fresh lifecycle scope on the same object, but never replaces it.
-// Test reset may retire all runtime state and install a fresh lifecycle
-// scope, but never replaces the Manager object.
+// globalConnectionManager is a process-lifetime singleton: Init/reset
+// retires all runtime state and installs a fresh lifecycle scope on the
+// same object, but never replaces it.
 var globalConnectionManager = newManager(context.Background())
 
 func newManager(ctx context.Context) *Manager {
@@ -125,8 +123,8 @@ func InitConnectionManager(ctx context.Context) {
 	// connection stopped and closed) on the same singleton object;
 	// only then is a fresh lifecycle scope installed. Persistent
 	// named records are left intact; the next bootstrap reloads them
-	// via ReloadNamedConnection. This is generation replacement of
-	// runtime state, not object replacement, and not process shutdown:
+	// via ReloadNamedConnection. This is a runtime reset, not object
+	// replacement, and not process shutdown:
 	// server exit keeps relying on the existing rule teardown path
 	// and never calls into here.
 	if ctx == nil {
