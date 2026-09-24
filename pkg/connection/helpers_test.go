@@ -18,7 +18,7 @@ package connection
 // 0 when the key is absent or mid-transition. Production code never
 // needs it — ownership flows through Lease Release.
 func getConnectionRef(id string) int {
-	m := globalConnectionManager.Load()
+	m := globalConnectionManager
 	m.RLock()
 	defer m.RUnlock()
 	meta, err := readyMeta(m, id)

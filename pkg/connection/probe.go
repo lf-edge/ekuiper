@@ -66,7 +66,7 @@ type probeTarget struct {
 }
 
 func snapshotProbeTargets() []probeTarget {
-	m := globalConnectionManager.Load()
+	m := globalConnectionManager
 	if m == nil {
 		return nil
 	}

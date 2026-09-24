@@ -24,16 +24,14 @@ import (
 
 // ConnectionLease is the per-consumer handle on a shared logical
 // connection. Each successful fetch mints exactly one Lease binding
-// one attachment (owner Manager generation + connectionKey + refID +
-// attachment token) to the Meta-shared internal handle, so a consumer
-// can never release the wrong reference: Release only detaches when
-// the owner generation is still current and the token still matches
-// the recorded attachment. A Lease from an earlier manager generation
-// (after re-init) or an earlier same-ref attachment is stale: its
-// Release is a no-op. Business methods delegate to the shared handle;
-// only Release is per-Lease state. A nil Lease is safe to use:
-// business methods behave as if the connection were never acquired,
-// and Release is a no-op.
+// one attachment (connectionKey + refID + attachment token) to the
+// Meta-shared internal handle, so a consumer can never release the
+// wrong reference: Release only detaches when the token still matches
+// the recorded attachment. A Lease from an earlier same-ref attachment
+// is stale: its Release is a no-op. Business methods delegate to the
+// shared handle; only Release is per-Lease state. A nil Lease is safe
+// to use: business methods behave as if the connection were never
+// acquired, and Release is a no-op.
 //
 // Attachment vs handle semantics (deliberate): only Release is
 // per-attachment. Wait, WaitReady, Status and ReportSuspectedFailure
@@ -45,15 +43,14 @@ import (
 // spurious report costs at most one verification.
 type ConnectionLease struct {
 	cw       *connWrapper
-	mgr      *Manager
 	key      string
 	refID    string
 	token    uint64
 	released atomic.Bool
 }
 
-func newLease(cw *connWrapper, mgr *Manager, key, refID string, token uint64) *ConnectionLease {
-	return &ConnectionLease{cw: cw, mgr: mgr, key: key, refID: refID, token: token}
+func newLease(cw *connWrapper, key, refID string, token uint64) *ConnectionLease {
+	return &ConnectionLease{cw: cw, key: key, refID: refID, token: token}
 }
 
 // Wait blocks until the logical connection is first usable.
@@ -112,9 +109,9 @@ func (l *ConnectionLease) ConnectionKey() string {
 
 // Release detaches this Lease's own attachment exactly once; repeated
 // calls are a no-op returning nil. A Lease holding no reference
-// (named creation, or nil) releases nothing. A stale Lease — owner
-// generation replaced, or attachment superseded by a reattach —
-// releases nothing: the current holder is untouched.
+// (named creation, or nil) releases nothing. A stale Lease —
+// attachment superseded by a reattach — releases nothing: the current
+// holder is untouched.
 func (l *ConnectionLease) Release(ctx api.StreamContext) error {
 	if l == nil {
 		return nil
@@ -125,5 +122,5 @@ func (l *ConnectionLease) Release(ctx api.StreamContext) error {
 	if l.refID == "" {
 		return nil
 	}
-	return detachChecked(ctx, l.mgr, l.key, l.refID, l.token)
+	return detachChecked(ctx, l.key, l.refID, l.token)
 }

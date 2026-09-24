@@ -155,14 +155,11 @@ func (m *Manager) planUpdateDrop(ctx api.StreamContext, id string) dropPlan {
 }
 
 // waitForRound waits out a creation round outside the Manager lock.
-func waitForRound(ctx api.StreamContext, m *Manager, wait <-chan struct{}) error {
+func waitForRound(ctx api.StreamContext, wait <-chan struct{}) error {
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
 	case <-wait:
-		if globalConnectionManager.Load() != m {
-			return ErrConnectionClosed
-		}
 		return nil
 	}
 }
@@ -171,14 +168,14 @@ func DropNameConnection(ctx api.StreamContext, selId string) error {
 	if selId == "" {
 		return fmt.Errorf("connection id should be defined")
 	}
-	m := globalConnectionManager.Load()
+	m := globalConnectionManager
 	for {
 		plan := m.planDrop(ctx, selId)
 		if plan.err != nil {
 			return plan.err
 		}
 		if plan.wait != nil {
-			if err := waitForRound(ctx, m, plan.wait); err != nil {
+			if err := waitForRound(ctx, plan.wait); err != nil {
 				return err
 			}
 			continue
@@ -199,10 +196,10 @@ func UpdateConnection(ctx api.StreamContext, id, typ string, props map[string]an
 	// waited out and retried, consistent with DropNameConnection; a key
 	// already owned by teardown stays a hard error.
 	for {
-		m := globalConnectionManager.Load()
+		m := globalConnectionManager
 		plan := m.planUpdateDrop(ctx, id)
 		if plan.wait != nil {
-			if err := waitForRound(ctx, m, plan.wait); err != nil {
+			if err := waitForRound(ctx, plan.wait); err != nil {
 				return nil, err
 			}
 			continue
@@ -228,24 +225,20 @@ func isInternalConnection(m *Manager, id string) (bool, error) {
 	return !meta.Named, nil
 }
 
-// detachChecked detaches one Lease-owned reference. It is the only
-// production release path (via ConnectionLease.Release): the Lease's
-// owner Manager must still be current, and its token must still match
-// the recorded attachment — otherwise this is a stale Lease from an
-// earlier generation or attachment, and the release is a no-op that
-// leaves the current holder untouched.
-func detachChecked(ctx api.StreamContext, mgr *Manager, conId, refId string, token uint64) error {
-	if globalConnectionManager.Load() != mgr {
-		return nil
-	}
-	mgr.Lock()
-	_, stop, err := detachLocked(mgr, ctx, conId, refId, token)
-	mgr.Unlock()
+// detachChecked detaches one Lease-owned reference. The recorded
+// attachment token must still match — otherwise this is a stale Lease
+// from an earlier attachment, and the release is a no-op that leaves
+// the current holder untouched.
+func detachChecked(ctx api.StreamContext, conId, refId string, token uint64) error {
+	m := globalConnectionManager
+	m.Lock()
+	_, stop, err := detachLocked(m, ctx, conId, refId, token)
+	m.Unlock()
 	if err != nil {
 		return err
 	}
 	if stop != nil {
-		finishStop(mgr, conId, stop)
+		finishStop(m, conId, stop)
 	}
 	return nil
 }

@@ -108,7 +108,7 @@ func probeTestCtx() api.StreamContext {
 func requireConnected(t *testing.T, key string) {
 	t.Helper()
 	require.Eventually(t, func() bool {
-		m := globalConnectionManager.Load()
+		m := globalConnectionManager
 		m.RLock()
 		defer m.RUnlock()
 		e, ok := m.connectionPool[key]
@@ -122,7 +122,7 @@ func requireConnected(t *testing.T, key string) {
 
 func probeMeta(t *testing.T, key string) *Meta {
 	t.Helper()
-	m := globalConnectionManager.Load()
+	m := globalConnectionManager
 	m.RLock()
 	defer m.RUnlock()
 	e, ok := m.connectionPool[key]

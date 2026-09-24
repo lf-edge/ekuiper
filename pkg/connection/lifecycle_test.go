@@ -73,7 +73,7 @@ func TestMetaLifecycleIndependentOfFirstFetcher(t *testing.T) {
 	// zero-ref path.
 	require.NoError(t, lA.Release(ctxB))
 	require.NoError(t, lB.Release(ctxB))
-	_, ok := globalConnectionManager.Load().connectionPool["lc-shared"]
+	_, ok := globalConnectionManager.connectionPool["lc-shared"]
 	require.False(t, ok)
 }
 

@@ -231,7 +231,7 @@ func (m *Manager) planFetch(ctx api.StreamContext, opts FetchOptions) fetchPlan 
 // through planFetch.
 func fetchInternal(ctx api.StreamContext, opts FetchOptions) (*ConnectionLease, error) {
 	for {
-		m := globalConnectionManager.Load()
+		m := globalConnectionManager
 		plan := m.planFetch(ctx, opts)
 		switch plan.kind {
 		case fetchAttached:
@@ -239,7 +239,7 @@ func fetchInternal(ctx api.StreamContext, opts FetchOptions) (*ConnectionLease, 
 			// (lock invariant): a slow consumer stalls only its
 			// own delivery, never the Pool.
 			plan.attachedMeta.deliverInitial(opts.RefID, opts.StatusHandler, plan.token)
-			return newLease(plan.cw, m, opts.ConnectionKey, opts.RefID, plan.token), nil
+			return newLease(plan.cw, opts.ConnectionKey, opts.RefID, plan.token), nil
 		case fetchFailed:
 			return nil, plan.err
 		case fetchCreate:
@@ -248,7 +248,7 @@ func fetchInternal(ctx api.StreamContext, opts FetchOptions) (*ConnectionLease, 
 				return nil, err
 			}
 			conf.Log.Infof("FetchConnection return new conn %s", meta.ID)
-			return newLease(meta.cw, m, opts.ConnectionKey, opts.RefID, token), nil
+			return newLease(meta.cw, opts.ConnectionKey, opts.RefID, token), nil
 		case fetchWaitCreating:
 			select {
 			case <-ctx.Done():
