@@ -22,11 +22,12 @@ import (
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
 
-// TestStaleLeaseAfterReinitCannotDetach pins the generation binding:
-// a Lease minted before a manager re-init targets the retired
-// generation, so its Release must not detach the same key+refID
-// freshly attached on the new generation.
-func TestStaleLeaseAfterReinitCannotDetach(t *testing.T) {
+// TestStaleLeaseAfterResetCannotDetach pins token uniqueness across
+// resets: a Lease minted before a manager reset targets a retired
+// attachment, so its Release must not detach the same key+refID
+// freshly attached afterwards. The reset here is only an extreme ABA
+// generator; no manager-generation semantics are involved.
+func TestStaleLeaseAfterResetCannotDetach(t *testing.T) {
 	require.NoError(t, InitConnectionManager4Test())
 	ctx := mockContext.NewMockContext("rule1", "op1")
 	opts := FetchOptions{ConnectionKey: "gen-key", RefID: "r1", Type: "mock"}

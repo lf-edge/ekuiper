@@ -153,7 +153,7 @@ func ReloadNamedConnection() error {
 		}
 		typ := names[1]
 		id := names[2]
-		m := globalConnectionManager.Load()
+		m := globalConnectionManager
 		e, reserved := m.reserveCreating(id)
 		if !reserved {
 			continue
@@ -272,7 +272,7 @@ func (m *Manager) planNamedCreate(id string, props map[string]any) namedCreatePl
 }
 
 func createNamedConnection(ctx api.StreamContext, id, typ string, props map[string]any) (*ConnectionLease, error) {
-	m := globalConnectionManager.Load()
+	m := globalConnectionManager
 	plan := m.planNamedCreate(id, props)
 	switch plan.kind {
 	case namedFailed:
@@ -289,7 +289,7 @@ func createNamedConnection(ctx api.StreamContext, id, typ string, props map[stri
 		if err != nil {
 			return nil, err
 		}
-		return newLease(meta.cw, m, id, "", 0), nil
+		return newLease(meta.cw, id, "", 0), nil
 	}
 }
 
@@ -306,7 +306,7 @@ func waitNamedCreation(ctx api.StreamContext, m *Manager, e *poolEntry, ch <-cha
 	if e.err != nil {
 		return e.err
 	}
-	if e.meta == nil || globalConnectionManager.Load() != m {
+	if e.meta == nil {
 		return ErrConnectionClosed
 	}
 	return fmt.Errorf("connection %v already been created", id)

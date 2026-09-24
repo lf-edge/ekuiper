@@ -25,6 +25,8 @@ import (
 // attachTokenSeq mints process-unique attachment tokens: every AddRef
 // consumes one, never reused, so a token can never collide with a
 // later attachment even across Meta recreation. Zero means no token.
+// Never reset: uniqueness across resets is what makes stale-lease
+// checks sound — a reset that recycled tokens would reintroduce ABA.
 var attachTokenSeq atomic.Uint64
 
 // statusDispatch is one frozen status event in the per-Meta FIFO.

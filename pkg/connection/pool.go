@@ -17,7 +17,6 @@ package connection
 import (
 	"context"
 	"fmt"
-	"sync/atomic"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
@@ -97,22 +96,20 @@ type poolEntry struct {
 	removed chan struct{}
 }
 
-// globalConnectionManager is swapped wholesale on Init/reset. The
-// pointer itself is synchronized so concurrent readers (e.g. a rule
-// teardown racing a test reset) never trip the memory model; every
-// mutation path still goes through the captured instance's own
-// lock. This does NOT make concurrent Init safe: Init/reset stays
-// contractually serialized with all mutations, it just fails
-// observably instead of racing.
-var globalConnectionManager atomic.Pointer[Manager]
+// globalConnectionManager is a process-lifetime singleton. Its identity
+// never changes: Init/reset retires all runtime state and installs a
+// fresh lifecycle scope on the same object, but never replaces it.
+// Test reset may retire all runtime state and install a fresh lifecycle
+// scope, but never replaces the Manager object.
+var globalConnectionManager = newManager(context.Background())
 
-func init() {
-	ctx, cancel := context.WithCancel(context.Background())
-	globalConnectionManager.Store(&Manager{
+func newManager(ctx context.Context) *Manager {
+	mctx, cancel := context.WithCancel(ctx)
+	return &Manager{
 		connectionPool: make(map[string]*poolEntry),
-		ctx:            ctx,
+		ctx:            mctx,
 		cancel:         cancel,
-	})
+	}
 }
 
 func InitConnectionManager4Test() error {
@@ -123,30 +120,35 @@ func InitConnectionManager4Test() error {
 
 func InitConnectionManager(ctx context.Context) {
 	// Bootstrap/reset only: must not race Fetch/Create/Update/Drop/
-	// Detach/Reload. The previous generation, if any, is retired
+	// Detach/Reload. The previous runtime, if any, is retired
 	// serially first (scope canceled, every published runtime
-	// connection stopped and closed), and only then replaced.
-	// Persistent named records are left intact; the next bootstrap
-	// reloads them via ReloadNamedConnection. This is generation
-	// replacement, not process shutdown: server exit keeps relying on
-	// the existing rule teardown path and never calls into here.
+	// connection stopped and closed) on the same singleton object;
+	// only then is a fresh lifecycle scope installed. Persistent
+	// named records are left intact; the next bootstrap reloads them
+	// via ReloadNamedConnection. This is generation replacement of
+	// runtime state, not object replacement, and not process shutdown:
+	// server exit keeps relying on the existing rule teardown path
+	// and never calls into here.
 	if ctx == nil {
 		ctx = context.Background()
 	}
-	if prev := globalConnectionManager.Load(); prev != nil {
-		prev.stopAllRuntime()
-	}
-	mctx, cancel := context.WithCancel(ctx)
-	globalConnectionManager.Store(&Manager{
-		connectionPool: make(map[string]*poolEntry),
-		ctx:            mctx,
-		cancel:         cancel,
-	})
+	globalConnectionManager.reset(ctx)
 	if conf.IsTesting {
 		return
 	}
 	go PatrolConnectionStatusJob(ctx)
 	go ConnectionHealthProbeJob(ctx)
+}
+
+// reset retires this Manager's runtime and installs a fresh lifecycle
+// scope in place. The Manager object's identity is stable; only its
+// runtime state turns over. Callers must serialize reset with all
+// mutations.
+func (m *Manager) reset(ctx context.Context) {
+	m.stopAllRuntime()
+	m.Lock()
+	m.ctx, m.cancel = context.WithCancel(ctx)
+	m.Unlock()
 }
 
 // stopAllRuntime synchronously retires every published runtime
@@ -206,7 +208,7 @@ func patrolConnectionStatus() {
 		name string
 		meta *Meta
 	}
-	m := globalConnectionManager.Load()
+	m := globalConnectionManager
 	m.RLock()
 	var targets []patrolTarget
 	for connName, e := range m.connectionPool {
@@ -246,7 +248,7 @@ func newExponentialBackOff(maxElapsedTime time.Duration) *backoff.ExponentialBac
 }
 
 func GetAllConnectionsMeta(forceAll bool) []*Meta {
-	m := globalConnectionManager.Load()
+	m := globalConnectionManager
 	m.RLock()
 	defer m.RUnlock()
 	metaList := make([]*Meta, 0)
@@ -266,7 +268,7 @@ func GetConnectionDetail(_ api.StreamContext, id string) (*Meta, error) {
 	if id == "" {
 		return nil, fmt.Errorf("connection id should be defined")
 	}
-	m := globalConnectionManager.Load()
+	m := globalConnectionManager
 	m.RLock()
 	defer m.RUnlock()
 	e, ok := m.connectionPool[id]

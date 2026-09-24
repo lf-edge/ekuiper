@@ -99,7 +99,7 @@ func TestZeroRefRemovingFetchWaits(t *testing.T) {
 	// Wait until the stopper owns the key: the entry flips to removing
 	// synchronously inside Detach, before Close blocks.
 	require.Eventually(t, func() bool {
-		m := globalConnectionManager.Load()
+		m := globalConnectionManager
 		m.RLock()
 		defer m.RUnlock()
 		e, ok := m.connectionPool["stop-anon"]
@@ -126,7 +126,7 @@ func TestZeroRefRemovingFetchWaits(t *testing.T) {
 	})
 	require.NoError(t, err)
 	require.NotSame(t, oldCW, newCW, "post-cleanup fetch must attach to the fresh generation")
-	_, ok := globalConnectionManager.Load().connectionPool["stop-anon"]
+	_, ok := globalConnectionManager.connectionPool["stop-anon"]
 	require.True(t, ok)
 
 	stopDone2 := make(chan error, 1)
@@ -171,7 +171,7 @@ func TestAttachVsZeroRefFetchWins(t *testing.T) {
 	countCloseRelease <- struct{}{}
 	require.NoError(t, <-stopDone)
 	require.Equal(t, int32(1), countCloseCalls.Load())
-	_, ok := globalConnectionManager.Load().connectionPool["fetch-wins"]
+	_, ok := globalConnectionManager.connectionPool["fetch-wins"]
 	require.False(t, ok)
 }
 
@@ -195,7 +195,7 @@ func TestNamedDropRemovingRejectsNamedFetch(t *testing.T) {
 		stopDone <- DropNameConnection(ctx, "stop-named")
 	}()
 	require.Eventually(t, func() bool {
-		m := globalConnectionManager.Load()
+		m := globalConnectionManager
 		m.RLock()
 		defer m.RUnlock()
 		e, ok := m.connectionPool["stop-named"]
@@ -237,7 +237,7 @@ func TestConcurrentDropClosesOnce(t *testing.T) {
 	// A owns the stop: entry flips to removing synchronously, before
 	// Close blocks.
 	require.Eventually(t, func() bool {
-		m := globalConnectionManager.Load()
+		m := globalConnectionManager
 		m.RLock()
 		defer m.RUnlock()
 		e, ok := m.connectionPool["stop-once"]
@@ -250,7 +250,7 @@ func TestConcurrentDropClosesOnce(t *testing.T) {
 	countCloseRelease <- struct{}{}
 	require.NoError(t, <-stopDone)
 	require.Equal(t, int32(1), countCloseCalls.Load(), "Close runs exactly once")
-	_, ok := globalConnectionManager.Load().connectionPool["stop-once"]
+	_, ok := globalConnectionManager.connectionPool["stop-once"]
 	require.False(t, ok, "entry removed after stop completes")
 }
 

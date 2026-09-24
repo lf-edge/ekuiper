@@ -144,7 +144,7 @@ func TestNonStoredConnection(t *testing.T) {
 	require.Equal(t, 1, getConnectionRef("id1"))
 	require.NoError(t, lease.Release(ctx))
 	require.Equal(t, 0, getConnectionRef("id1"))
-	_, ok := globalConnectionManager.Load().connectionPool["id1"]
+	_, ok := globalConnectionManager.connectionPool["id1"]
 	require.False(t, ok)
 }
 
@@ -182,7 +182,7 @@ func TestFetchWithOptionsExplicitIdentity(t *testing.T) {
 	require.NoError(t, l1b.Release(ctx))
 	require.Equal(t, 1, getConnectionRef("dbA"))
 	require.NoError(t, l2.Release(ctx))
-	_, ok := globalConnectionManager.Load().connectionPool["dbA"]
+	_, ok := globalConnectionManager.connectionPool["dbA"]
 	require.False(t, ok)
 }
 
@@ -332,7 +332,7 @@ func CreateFailProvConnection(ctx api.StreamContext) modules.Connection {
 }
 
 func checkConn(id string) bool {
-	m := globalConnectionManager.Load()
+	m := globalConnectionManager
 	m.RLock()
 	defer m.RUnlock()
 	_, ok := m.connectionPool[id]
@@ -342,7 +342,7 @@ func checkConn(id string) bool {
 // getReadyTestMeta resolves the published Meta for tests. It returns nil
 // for missing keys and for keys still mid-transition.
 func getReadyTestMeta(key string) *Meta {
-	m := globalConnectionManager.Load()
+	m := globalConnectionManager
 	m.RLock()
 	defer m.RUnlock()
 	if e, ok := m.connectionPool[key]; ok && e.state == entryReady {

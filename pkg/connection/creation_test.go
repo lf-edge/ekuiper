@@ -110,7 +110,7 @@ func TestConcurrentFetchSingleFlight(t *testing.T) {
 	for i := 0; i < fetchers; i++ {
 		require.NoError(t, cws[i].Release(ctx))
 	}
-	_, ok := globalConnectionManager.Load().connectionPool["single-flight"]
+	_, ok := globalConnectionManager.connectionPool["single-flight"]
 	require.False(t, ok)
 }
 
@@ -232,7 +232,7 @@ func TestCreationFailureCleaned(t *testing.T) {
 	failProvRelease <- struct{}{}
 	require.ErrorContains(t, <-creatorDone, "failprov: static provision failure")
 	require.Equal(t, int32(1), failProvCalls.Load())
-	_, ok := globalConnectionManager.Load().connectionPool["prov-fail"]
+	_, ok := globalConnectionManager.connectionPool["prov-fail"]
 	require.False(t, ok, "failed reservation must be removed")
 
 	// A later call starts a fresh round (and fails the same static way).
