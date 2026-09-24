@@ -137,21 +137,17 @@ func (p *WindowPlan) PruneColumns(fields []ast.Expr) error {
 
 func (p *WindowPlan) ExtractStateFunc() {
 	aliases := make(map[string]ast.Expr)
-	walkExpr := func(expr ast.Expr) {
-		ast.WalkFunc(expr, func(n ast.Node) bool {
-			switch f := n.(type) {
-			case *ast.Call:
-				p.transform(f)
-			case *ast.FieldRef:
-				if f.AliasRef != nil {
-					aliases[f.Name] = f.AliasRef.Expression
-				}
+	ast.WalkFunc(p.triggerCondition, func(n ast.Node) bool {
+		switch f := n.(type) {
+		case *ast.Call:
+			p.transform(f)
+		case *ast.FieldRef:
+			if f.AliasRef != nil {
+				aliases[f.Name] = f.AliasRef.Expression
 			}
-			return true
-		})
-	}
-	walkExpr(p.triggerCondition)
-	walkExpr(p.collectCondition)
+		}
+		return true
+	})
 	for _, ex := range aliases {
 		ast.WalkFunc(ex, func(n ast.Node) bool {
 			switch f := n.(type) {
