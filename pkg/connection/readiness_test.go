@@ -161,7 +161,7 @@ func TestConnectedClearsStaleError(t *testing.T) {
 func TestWaitReadyImmediateConnected(t *testing.T) {
 	m := newStateMeta(t)
 	m.NotifyStatus(api.ConnectionConnected, "")
-	cw := &ConnWrapper{ID: m.ID, meta: m}
+	cw := &connWrapper{ID: m.ID, meta: m}
 	ctx := mockContext.NewMockContext("r1", "op1")
 	require.NoError(t, cw.WaitReady(ctx))
 }
@@ -173,7 +173,7 @@ func TestWaitReadyRecheckAfterWake(t *testing.T) {
 	m := newStateMeta(t)
 	m.NotifyStatus(api.ConnectionConnected, "")
 	m.NotifyStatus(api.ConnectionDisconnected, "down")
-	cw := &ConnWrapper{ID: m.ID, meta: m}
+	cw := &connWrapper{ID: m.ID, meta: m}
 	ctx := mockContext.NewMockContext("r1", "op1")
 
 	done := make(chan error, 1)
@@ -201,7 +201,7 @@ func TestWaitReadyRecheckAfterWake(t *testing.T) {
 // observes ctx.Err(), never a state outcome.
 func TestWaitReadyCallerCancelFirst(t *testing.T) {
 	m := newStateMeta(t)
-	cw := &ConnWrapper{ID: m.ID, meta: m}
+	cw := &connWrapper{ID: m.ID, meta: m}
 	ctx := mockContext.NewMockContext("r1", "op1")
 	canceled, cancel := ctx.WithCancel()
 	cancel()
@@ -216,7 +216,7 @@ func TestWaitReadyCallerCancelFirst(t *testing.T) {
 // ErrConnectionClosed, both before and during the wait.
 func TestWaitReadyLifecycleClosed(t *testing.T) {
 	m := newStateMeta(t)
-	cw := &ConnWrapper{ID: m.ID, meta: m}
+	cw := &connWrapper{ID: m.ID, meta: m}
 	ctx := mockContext.NewMockContext("r1", "op1")
 
 	m.lifecycleCancel()
@@ -224,7 +224,7 @@ func TestWaitReadyLifecycleClosed(t *testing.T) {
 
 	// A waiter parked in a dead generation is released as well.
 	m2 := newStateMeta(t)
-	cw2 := &ConnWrapper{ID: m2.ID, meta: m2}
+	cw2 := &connWrapper{ID: m2.ID, meta: m2}
 	done := make(chan error, 1)
 	go func() { done <- cw2.WaitReady(ctx) }()
 	time.Sleep(50 * time.Millisecond)
@@ -313,7 +313,7 @@ func TestWaitReadyParksDuringVerifying(t *testing.T) {
 	m := newStateMeta(t)
 	m.NotifyStatus(api.ConnectionConnected, "")
 	m.reportSuspect()
-	cw := &ConnWrapper{ID: m.ID, meta: m}
+	cw := &connWrapper{ID: m.ID, meta: m}
 	ctx := mockContext.NewMockContext("r1", "op1")
 
 	done := make(chan error, 1)

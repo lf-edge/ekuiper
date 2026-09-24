@@ -38,16 +38,14 @@ type SqlLookupSource struct {
 	driver string
 	table  string
 	gen    sqlQueryGen
-	conId  string
-	refId  string
 
-	// cw is the pooled connection this lookup attached to. It is set once
-	// by Connect and never mutated afterwards.
-	cw *connection.ConnWrapper
+	// lease is the per-consumer pool handle attached at Connect time.
+	// It is set once by Connect and never mutated afterwards.
+	lease *connection.ConnectionLease
 
 	// mu guards the lazily resolved pooled connection and the
 	// initial-report flag below. It is never held while waiting on
-	// cw.Wait/cw.WaitReady so a parked recovery cannot block Close or
+	// lease.Wait/lease.WaitReady so a parked recovery cannot block Close or
 	// concurrent lookups on the state itself.
 	mu   syncx.Mutex
 	conn *client2.SQLConnection
@@ -105,9 +103,10 @@ func (s *SqlLookupSource) Close(ctx api.StreamContext) error {
 	if conn := s.getConn(); conn != nil {
 		conn.DetachSub(ctx, s.props)
 	}
-	// Always detach with the refId saved by Connect, so a lookup whose
-	// pooled connection never became ready still releases its reference.
-	return connection.DetachConnectionByRef(ctx, s.conId, s.refId)
+	// Release always detaches the reference saved by Connect, so a
+	// lookup whose pooled connection never became ready still
+	// releases its reference.
+	return s.lease.Release(ctx)
 }
 
 // Connect only attaches to the pooled connection and returns immediately:
@@ -127,7 +126,7 @@ func (s *SqlLookupSource) Connect(ctx api.StreamContext, sc api.StatusChangeHand
 	if err != nil {
 		return err
 	}
-	cw, err := connection.FetchConnectionWithOptions(ctx, connection.FetchOptions{
+	lease, err := connection.FetchConnectionWithOptions(ctx, connection.FetchOptions{
 		ConnectionKey:   key,
 		RefID:           refID,
 		RequireExisting: requireExisting,
@@ -138,9 +137,7 @@ func (s *SqlLookupSource) Connect(ctx api.StreamContext, sc api.StatusChangeHand
 	if err != nil {
 		return err
 	}
-	s.cw = cw
-	s.conId = cw.ID
-	s.refId = refID
+	s.lease = lease
 	return nil
 }
 
@@ -160,7 +157,7 @@ func (s *SqlLookupSource) ensureConnection(
 	ctx api.StreamContext,
 ) (*client2.SQLConnection, error) {
 	if conn := s.getConn(); conn != nil {
-		if err := s.cw.WaitReady(ctx); err != nil {
+		if err := s.lease.WaitReady(ctx); err != nil {
 			return nil, err
 		}
 		return conn, nil
@@ -170,11 +167,11 @@ func (s *SqlLookupSource) ensureConnection(
 	// reports not-ready once (see the flag above); every later call
 	// waits for initial readiness bound to ctx. An already-published
 	// handle resolves through Wait immediately.
-	if !s.cw.IsInitialized() && !s.markInitialReported() {
+	if !s.lease.IsInitialized() && !s.markInitialReported() {
 		return nil, errorx.NewIOErr("sql client not ready")
 	}
 
-	c, err := s.cw.Wait(ctx)
+	c, err := s.lease.Wait(ctx)
 
 	// Do not depend on Wait returning ctx.Err() itself.
 	if ctx.Err() != nil {
@@ -254,7 +251,7 @@ func (s *SqlLookupSource) Lookup(ctx api.StreamContext, fields []string, keys []
 		// the Pool verifies and recovers while later lookups park
 		// on WaitReady. Query/validation errors below never report —
 		// only a failed QueryContext means the transport is suspect.
-		reportTransportFailure(ctx, s.cw)
+		reportTransportFailure(ctx, s.lease)
 		ctx.GetLogger().Errorf("sql look table failed, err:%v, query: %v, args: %v", err, query, args)
 		return nil, err
 	}

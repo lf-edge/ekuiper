@@ -40,15 +40,12 @@ type SQLSourceConnector struct {
 	Query sqlgen.SqlQueryGenerator
 	conn  *client2.SQLConnection
 	props map[string]any
-	conId string
-	// cw is the pooled connection attached at Connect time. The
+	// lease is the per-consumer pool handle acquired at Connect time.
+	// It binds this consumer's reference; Release it to detach. The
 	// pooled object identity is stable across recovery, so conn is
-	// resolved once while cw serves WaitReady parks and suspect
+	// resolved once while lease serves WaitReady parks and suspect
 	// reports for every poll.
-	cw *connection.ConnWrapper
-	// refID is the consumer identity attached at Connect time. It is
-	// passed back verbatim at Close; never re-derived from ctx.
-	refID   string
+	lease   *connection.ConnectionLease
 	columns []interface{}
 	stats   *sqlSourceStats
 	ruleID  string
@@ -143,7 +140,7 @@ func (s *SQLSourceConnector) Connect(ctx api.StreamContext, sc api.StatusChangeH
 		return err
 	}
 	refID := connection.ConsumerRefID(ctx)
-	cw, err := connection.FetchConnectionWithOptions(ctx, connection.FetchOptions{
+	lease, err := connection.FetchConnectionWithOptions(ctx, connection.FetchOptions{
 		ConnectionKey:   key,
 		RefID:           refID,
 		RequireExisting: requireExisting,
@@ -154,10 +151,8 @@ func (s *SQLSourceConnector) Connect(ctx api.StreamContext, sc api.StatusChangeH
 	if err != nil {
 		return err
 	}
-	s.conId = cw.ID
-	s.refID = refID
-	s.cw = cw
-	conn, err := cw.Wait(ctx)
+	s.lease = lease
+	conn, err := lease.Wait(ctx)
 	if conn == nil {
 		return fmt.Errorf("sql client not ready: %v", err)
 	}
@@ -173,7 +168,7 @@ func (s *SQLSourceConnector) Close(ctx api.StreamContext) error {
 	if s.conn != nil {
 		s.conn.DetachSub(ctx, s.props)
 	}
-	return connection.DetachConnectionByRef(ctx, s.conId, s.refID)
+	return s.lease.Release(ctx)
 }
 
 func (s *SQLSourceConnector) Pull(ctx api.StreamContext, recvTime time.Time, ingest api.TupleIngest, ingestError api.ErrorIngest) {
@@ -188,7 +183,7 @@ func (s *SQLSourceConnector) queryData(ctx api.StreamContext, rcvTime time.Time,
 	// a closed gate waits for the recovery worker. The first failed
 	// poll surfaces below and reports a suspect; later polls park
 	// here instead of retrying locally.
-	if err := s.cw.WaitReady(ctx); err != nil {
+	if err := s.lease.WaitReady(ctx); err != nil {
 		logger.Errorf("wait sql connection ready error %v", err)
 		ingestError(ctx, err)
 		return
@@ -217,7 +212,7 @@ func (s *SQLSourceConnector) queryData(ctx api.StreamContext, rcvTime time.Time,
 		// above. Only a failed QueryContext reports — statement,
 		// column-type and scan errors below are data errors, not
 		// transport.
-		reportTransportFailure(ctx, s.cw)
+		reportTransportFailure(ctx, s.lease)
 		ingestError(ctx, err)
 		return
 	}

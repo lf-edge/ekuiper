@@ -39,7 +39,7 @@ type AdConf struct {
 
 type Sink struct {
 	id     string
-	cw     *connection.ConnWrapper
+	lease  *connection.ConnectionLease
 	adconf *AdConf
 	config map[string]interface{}
 	cli    *Connection
@@ -76,14 +76,23 @@ func (ms *Sink) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) erro
 	ctx.GetLogger().Infof("Connecting to mqtt server")
 	var err error
 	ms.id = fmt.Sprintf("%s-%s-%s-mqtt-sink", ctx.GetRuleId(), ctx.GetOpId(), ms.adconf.Tpc)
-	ms.cw, err = connection.FetchConnection(ctx, ms.id, "mqtt", ms.config, sch)
+	key, requireExisting := connection.ResolveConnectionKey(ms.config, ms.id)
+	lease, err := connection.FetchConnectionWithOptions(ctx, connection.FetchOptions{
+		ConnectionKey:   key,
+		RefID:           connection.ConsumerRefID(ctx),
+		RequireExisting: requireExisting,
+		Type:            "mqtt",
+		Props:           ms.config,
+		StatusHandler:   sch,
+	})
 	if err != nil {
 		return err
 	}
+	ms.lease = lease
 	if ms.adconf.SelId != "" {
-		ctx.GetLogger().Infof("action=use_shared_mqtt_connection role=sink connId=%s connectionKey=%s rule=%s topic=%s", ms.cw.ID, ms.adconf.SelId, ctx.GetRuleId(), ms.adconf.Tpc)
+		ctx.GetLogger().Infof("action=use_shared_mqtt_connection role=sink connId=%s connectionKey=%s rule=%s topic=%s", ms.lease.ConnectionKey(), ms.adconf.SelId, ctx.GetRuleId(), ms.adconf.Tpc)
 	}
-	conn, err := ms.cw.Wait(ctx)
+	conn, err := ms.lease.Wait(ctx)
 	if conn == nil {
 		return fmt.Errorf("mqtt client not ready: %v", err)
 	}
@@ -139,8 +148,8 @@ func (ms *Sink) Collect(ctx api.StreamContext, item api.RawTuple) error {
 
 func (ms *Sink) Close(ctx api.StreamContext) error {
 	ctx.GetLogger().Infof("Closing mqtt sink connector, id:%v", ms.id)
-	if ms.cw != nil {
-		return connection.DetachConnection(ctx, ms.cw.ID)
+	if ms.lease != nil {
+		return ms.lease.Release(ctx)
 	}
 	return nil
 }

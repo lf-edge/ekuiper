@@ -58,7 +58,7 @@ type KafkaSink struct {
 	tlsConfig      *tls.Config
 	headersMap     map[string]string
 	headerTemplate string
-	cw             *connection.ConnWrapper
+	lease          *connection.ConnectionLease
 	saslConf       *saslConf
 	mechanism      sasl.Mechanism
 	LastStats      kafkago.WriterStats
@@ -254,11 +254,11 @@ func (k *KafkaSink) Close(ctx api.StreamContext) error {
 		k.transport.CloseIdleConnections()
 		k.transport = nil
 	}
-	if k.cw != nil {
-		if detachErr := connection.DetachConnection(ctx, k.cw.ID); detachErr != nil && err == nil {
+	if k.lease != nil {
+		if detachErr := k.lease.Release(ctx); detachErr != nil && err == nil {
 			err = detachErr
 		}
-		k.cw = nil
+		k.lease = nil
 	}
 	return err
 }
@@ -267,13 +267,19 @@ func (k *KafkaSink) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) 
 	k.ruleID = ctx.GetRuleId()
 	k.opID = ctx.GetOpId()
 	if k.kc.SelId != "" {
-		refID := fmt.Sprintf("%s_%s_%d", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId())
-		cw, err := connection.FetchConnection(ctx, refID, "kafka", k.props, sch)
+		lease, err := connection.FetchConnectionWithOptions(ctx, connection.FetchOptions{
+			ConnectionKey:   k.kc.SelId,
+			RefID:           connection.ConsumerRefID(ctx),
+			RequireExisting: true,
+			Type:            "kafka",
+			Props:           k.props,
+			StatusHandler:   sch,
+		})
 		if err != nil {
 			return err
 		}
-		k.cw = cw
-		ctx.GetLogger().Infof("action=use_shared_kafka_connection role=sink connId=%s connectionKey=%s rule=%s topic=%s", k.cw.ID, k.kc.SelId, ctx.GetRuleId(), k.kc.Topic)
+		k.lease = lease
+		ctx.GetLogger().Infof("action=use_shared_kafka_connection role=sink connId=%s connectionKey=%s rule=%s topic=%s", k.lease.ConnectionKey(), k.kc.SelId, ctx.GetRuleId(), k.kc.Topic)
 	}
 	k.buildKafkaWriter(ctx)
 	k.connected = true

@@ -15,6 +15,7 @@
 package client
 
 import (
+	"database/sql"
 	"path/filepath"
 	"testing"
 	"time"
@@ -33,17 +34,28 @@ func recoverTestConn(t *testing.T, url string) (*SQLConnection, api.StreamContex
 	return c, ctx
 }
 
+// installedDB returns the currently installed handle. Same-package
+// white-box read for tests: production code must go through the
+// QueryContext/ExecContext/BeginTx facade, which always routes to the
+// current handle.
+func installedDB(t *testing.T, c *SQLConnection) *sql.DB {
+	t.Helper()
+	c.RLock()
+	defer c.RUnlock()
+	return c.db
+}
+
 // TestRecoverInstallsVerifiedCandidate: Recover swaps in a fresh
 // Ping-verified handle; the new handle serves immediately.
 func TestRecoverInstallsVerifiedCandidate(t *testing.T) {
 	url := "sqlite3://" + filepath.Join(t.TempDir(), "recover.db")
 	c, ctx := recoverTestConn(t, url)
 	require.NoError(t, c.Dial(ctx))
-	old := c.GetDB()
+	old := installedDB(t, c)
 	require.NotNil(t, old)
 
 	require.NoError(t, c.Recover(ctx))
-	current := c.GetDB()
+	current := installedDB(t, c)
 	require.NotNil(t, current)
 	require.NotSame(t, old, current)
 	require.NoError(t, c.Ping(ctx))
@@ -57,7 +69,7 @@ func TestRecoverRetiresOldHandleAsync(t *testing.T) {
 	url := "sqlite3://" + filepath.Join(t.TempDir(), "retire.db")
 	c, ctx := recoverTestConn(t, url)
 	require.NoError(t, c.Dial(ctx))
-	old := c.GetDB()
+	old := installedDB(t, c)
 
 	require.NoError(t, c.Recover(ctx))
 	// The old pool drains asynchronously: closed eventually, while
@@ -75,11 +87,30 @@ func TestRecoverFailureKeepsOldHandle(t *testing.T) {
 	url := "sqlite3://" + filepath.Join(t.TempDir(), "keep.db")
 	c, ctx := recoverTestConn(t, url)
 	require.NoError(t, c.Dial(ctx))
-	old := c.GetDB()
+	old := installedDB(t, c)
 
 	c.url = "unknown-driver://unreachable"
 	require.Error(t, c.Recover(ctx))
-	require.Same(t, old, c.GetDB())
+	require.Same(t, old, installedDB(t, c))
+	require.NoError(t, c.Close(ctx))
+}
+
+// TestRecoverAfterBrokenHandleInstallsFreshCandidate: a broken installed
+// handle is replaced by Recover with a fresh verified one that serves.
+func TestRecoverAfterBrokenHandleInstallsFreshCandidate(t *testing.T) {
+	url := "sqlite3://" + filepath.Join(t.TempDir(), "broken.db")
+	c, ctx := recoverTestConn(t, url)
+	require.NoError(t, c.Dial(ctx))
+
+	// White-box breakage: close the installed handle so the next use
+	// fails like a dead transport. Recover must install a fresh handle
+	// on the same file that serves immediately.
+	require.NoError(t, installedDB(t, c).Close())
+	require.Error(t, c.Ping(ctx))
+	require.NoError(t, c.Recover(ctx))
+	require.NoError(t, c.Ping(ctx))
+	_, err := c.ExecContext(ctx, `CREATE TABLE t (a BIGINT)`)
+	require.NoError(t, err)
 	require.NoError(t, c.Close(ctx))
 }
 
@@ -97,7 +128,7 @@ func TestRecoverAfterCloseDisposesCandidate(t *testing.T) {
 }
 
 // TestFacadeRoutesCurrentHandle: Exec/Query/BeginTx go through the
-// installed handle without touching GetDB.
+// installed handle.
 func TestFacadeRoutesCurrentHandle(t *testing.T) {
 	url := "sqlite3://" + filepath.Join(t.TempDir(), "facade.db")
 	c, ctx := recoverTestConn(t, url)

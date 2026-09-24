@@ -100,14 +100,14 @@ func TestDeliverInitialSkipsDetached(t *testing.T) {
 
 	m.AddRef("gone", sc)
 	require.True(t, m.DeRef("gone"))
-	m.deliverInitial("gone", sc)
+	m.deliverInitial("gone", sc, 0)
 	m.drainEvents()
 	require.Equal(t, int32(0), calls.Load())
 
-	m.AddRef("live", sc)
+	liveToken := m.AddRef("live", sc)
 	// Snapshot content matches current state (connecting, no error).
 	var gotS, gotE string
-	m.deliverInitial("live", func(s, e string) { gotS, gotE = s, e })
+	m.deliverInitial("live", func(s, e string) { gotS, gotE = s, e }, liveToken)
 	m.drainEvents()
 	s, e := m.GetStatus()
 	require.Equal(t, s, gotS)
@@ -206,8 +206,8 @@ func TestInitialDeliveryJoinsEventSerialization(t *testing.T) {
 		newGot = append(newGot, statusEvent{s, e})
 		mu.Unlock()
 	}
-	m.AddRef("new", newHandler)
-	m.deliverInitial("new", newHandler)
+	newToken := m.AddRef("new", newHandler)
+	m.deliverInitial("new", newHandler, newToken)
 
 	close(release)
 	// The barrier flush makes the assertions deterministic: every

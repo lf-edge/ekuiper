@@ -110,7 +110,7 @@ func TestLookupCanceledBeforeIOLeavesGateOpen(t *testing.T) {
 	// Prime the cached handle with a successful lookup (no failure,
 	// no report): create the table through the pooled handle first.
 	live := mockContext.NewMockContext("prime", "op1")
-	c, err := ls.cw.Wait(ctx)
+	c, err := ls.lease.Wait(ctx)
 	require.NoError(t, err)
 	require.NotNil(t, c)
 	_, err = c.(*client2.SQLConnection).ExecContext(ctx, `CREATE TABLE t (a BIGINT)`)
@@ -124,5 +124,5 @@ func TestLookupCanceledBeforeIOLeavesGateOpen(t *testing.T) {
 	cancel()
 	_, err = ls.Lookup(ctx, []string{"a"}, []string{"a"}, []any{1})
 	require.Error(t, err)
-	require.NoError(t, ls.cw.WaitReady(live))
+	require.NoError(t, ls.lease.WaitReady(live))
 }

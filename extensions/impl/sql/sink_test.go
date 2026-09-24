@@ -17,15 +17,27 @@
 package sql
 
 import (
+	"database/sql"
 	"fmt"
 	"testing"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/stretchr/testify/require"
 
+	client "github.com/lf-edge/ekuiper/v2/extensions/impl/sql/client"
 	"github.com/lf-edge/ekuiper/v2/extensions/impl/sql/testx"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
+
+// queryRows runs a verification read through the facade so tests use
+// the same routing production uses.
+func queryRows(t *testing.T, ctx api.StreamContext, c *client.SQLConnection, query string) *sql.Rows {
+	t.Helper()
+	rows, err := c.QueryContext(ctx, query)
+	require.NoError(t, err)
+	return rows
+}
 
 func TestSQLSinkCollect(t *testing.T) {
 	connection.InitConnectionManager4Test()
@@ -94,8 +106,7 @@ func TestSQLSinkCollect(t *testing.T) {
 			// do nothing
 		}))
 		require.NoError(t, sqlSink.collect(ctx, tc.data))
-		rows, err := sqlSink.conn.GetDB().Query(fmt.Sprintf("select a,b from t where a = %v and b = %v", tc.a, tc.b))
-		require.NoError(t, err)
+		rows := queryRows(t, ctx, sqlSink.conn, fmt.Sprintf("select a,b from t where a = %v and b = %v", tc.a, tc.b))
 		count := 0
 		for rows.Next() {
 			count++
@@ -129,8 +140,7 @@ func TestSQLSinkCollect(t *testing.T) {
 		},
 	}))
 
-	rows, err := sqlSink.conn.GetDB().Query("select a,b from t where a >=5 and b >=5")
-	require.NoError(t, err)
+	rows := queryRows(t, ctx, sqlSink.conn, "select a,b from t where a >=5 and b >=5")
 	var got [][]int
 	for rows.Next() {
 		var a int
@@ -167,8 +177,7 @@ func TestSQLSinkCollect(t *testing.T) {
 	}))
 
 	got = [][]int{}
-	rows, err = sqlSink.conn.GetDB().Query("select a,b from t where a >=7 and b >=7")
-	require.NoError(t, err)
+	rows = queryRows(t, ctx, sqlSink.conn, "select a,b from t where a >=7 and b >=7")
 	for rows.Next() {
 		var a int
 		var b int
@@ -260,8 +269,7 @@ func TestSQLSinkAction(t *testing.T) {
 		"action": "update",
 	}))
 	got := [][]int{}
-	rows, err := sqlSink.conn.GetDB().Query("select a,b from t where a=1")
-	require.NoError(t, err)
+	rows := queryRows(t, ctx, sqlSink.conn, "select a,b from t where a=1")
 	for rows.Next() {
 		var a int
 		var b int
@@ -276,8 +284,7 @@ func TestSQLSinkAction(t *testing.T) {
 		"action": "delete",
 	}))
 	got = [][]int{}
-	rows, err = sqlSink.conn.GetDB().Query("select a,b from t where a=1")
-	require.NoError(t, err)
+	rows = queryRows(t, ctx, sqlSink.conn, "select a,b from t where a=1")
 	for rows.Next() {
 		var a int
 		var b int

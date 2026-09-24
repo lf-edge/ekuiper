@@ -61,15 +61,16 @@ type FetchOptions struct {
 
 // ConsumerRefID derives the stable Source/Sink consumer identity
 // (ruleID + opID + instanceID) for the current context. Connect must save
-// the returned value and pass it back verbatim to DetachConnectionByRef.
+// nothing: the returned Lease already binds it; Release detaches it.
 func ConsumerRefID(ctx api.StreamContext) string {
 	return extractRefId(ctx)
 }
 
 // FetchConnectionWithOptions is the explicit-identity fetch path. Callers
 // must canonicalize props/key and compute RefID before calling; Pool treats
-// ConnectionKey as an opaque identity.
-func FetchConnectionWithOptions(ctx api.StreamContext, opts FetchOptions) (*ConnWrapper, error) {
+// ConnectionKey as an opaque identity. Every successful fetch mints one
+// ConnectionLease binding this caller's reference; Release it to detach.
+func FetchConnectionWithOptions(ctx api.StreamContext, opts FetchOptions) (*ConnectionLease, error) {
 	failpoint.Inject("FetchConnectionErr", func() {
 		failpoint.Return(nil, fmt.Errorf("FetchConnectionErr"))
 	})
@@ -88,33 +89,22 @@ func FetchConnectionWithOptions(ctx api.StreamContext, opts FetchOptions) (*Conn
 	return fetchInternal(ctx, opts)
 }
 
-// FetchConnection is the legacy compatibility shim. It keeps the historical
-// connectionKey derivation (connectionSelector-or-refId) so unmigrated
-// connectors keep resolving the same logical connection. The consumer ref,
-// however, is normalized to ConsumerRefID(ctx): legacy DetachConnection
-// derives exactly that value, and the historical habit of passing
-// connection-identity material (endpoint/topic/URL) as refId never
-// identified the consumer. Without this normalization every legacy Close
-// would miss its ref and leak the reference. New code must use
-// FetchConnectionWithOptions instead.
-func FetchConnection(ctx api.StreamContext, refId, typ string, props map[string]interface{}, sc api.StatusChangeHandler) (*ConnWrapper, error) {
-	failpoint.Inject("FetchConnectionErr", func() {
-		failpoint.Return(nil, fmt.Errorf("FetchConnectionErr"))
-	})
-	if refId == "" {
-		return nil, fmt.Errorf("connection ref id should be defined")
+// ResolveConnectionKey derives the explicit pool identity for one fetch
+// from connector-local material: any non-empty string
+// props["connectionSelector"] selects the named connection
+// (RequireExisting=true, the fetch only attaches); otherwise the
+// caller-provided anonymous key is used and the fetch may create. An
+// empty selector counts as absent. The Pool treats the returned key
+// as opaque.
+func ResolveConnectionKey(props map[string]any, anonymous string) (key string, requireExisting bool) {
+	if len(props) > 0 {
+		if v, ok := props["connectionSelector"]; ok {
+			if id, ok := v.(string); ok && id != "" {
+				return id, true
+			}
+		}
 	}
-	conId := extractSelID(props, refId)
-	opts := FetchOptions{
-		ConnectionKey:   conId,
-		RefID:           ConsumerRefID(ctx),
-		RequireExisting: conId != refId,
-		Type:            typ,
-		Props:           props,
-		StatusHandler:   sc,
-	}
-	// Same as above: fetchInternal owns its locking.
-	return fetchInternal(ctx, opts)
+	return anonymous, false
 }
 
 // reserveCreating installs a creating reservation for key under one
@@ -153,8 +143,10 @@ type fetchPlan struct {
 	// fetchCreate: reserved entry plus the immutable props clone.
 	entry *poolEntry
 	props map[string]any
-	// fetchAttached: handle attached atomically under the lock.
-	cw *ConnWrapper
+	// fetchAttached: handle attached atomically under the lock, plus
+	// the attachment token minted by that attach.
+	cw    *connWrapper
+	token uint64
 	// fetchAttached: Meta owning the handle, for the post-unlock
 	// initial delivery (deliverInitial runs outside the Manager
 	// lock per the lock invariant; the plan only registers).
@@ -194,11 +186,11 @@ func (m *Manager) planFetch(ctx api.StreamContext, opts FetchOptions) fetchPlan 
 		if e.meta.ID != opts.RefID {
 			conf.Log.Infof("action=reuse_connection connId=%s type=%s connectionKey=%s rule=%s op=%s refId=%s", e.meta.ID, opts.Type, e.meta.ID, ctx.GetRuleId(), ctx.GetOpId(), opts.RefID)
 		}
-		cw, err := attachToMeta(e.meta, opts.RefID, opts.StatusHandler)
+		cw, token, err := attachToMeta(e.meta, opts.RefID, opts.StatusHandler)
 		if err != nil {
 			return fetchPlan{kind: fetchFailed, err: err}
 		}
-		return fetchPlan{kind: fetchAttached, cw: cw, attachedMeta: e.meta}
+		return fetchPlan{kind: fetchAttached, cw: cw, attachedMeta: e.meta, token: token}
 	case entryCreating:
 		return fetchPlan{kind: fetchWaitCreating, waitEntry: e, wait: e.ready}
 	default: // entryRemoving
@@ -237,26 +229,26 @@ func (m *Manager) planFetch(ctx api.StreamContext, opts FetchOptions) fetchPlan 
 //
 // fetchInternal itself never touches the Manager lock; every attempt goes
 // through planFetch.
-func fetchInternal(ctx api.StreamContext, opts FetchOptions) (*ConnWrapper, error) {
+func fetchInternal(ctx api.StreamContext, opts FetchOptions) (*ConnectionLease, error) {
 	for {
-		m := globalConnectionManager.Load()
+		m := globalConnectionManager
 		plan := m.planFetch(ctx, opts)
 		switch plan.kind {
 		case fetchAttached:
 			// Initial delivery runs outside the Manager lock
 			// (lock invariant): a slow consumer stalls only its
 			// own delivery, never the Pool.
-			plan.attachedMeta.deliverInitial(opts.RefID, opts.StatusHandler)
-			return plan.cw, nil
+			plan.attachedMeta.deliverInitial(opts.RefID, opts.StatusHandler, plan.token)
+			return newLease(plan.cw, opts.ConnectionKey, opts.RefID, plan.token), nil
 		case fetchFailed:
 			return nil, plan.err
 		case fetchCreate:
-			meta, err := m.runCreation(plan.entry, opts.ConnectionKey, opts.Type, plan.props, false, nil, opts.RefID, opts.StatusHandler)
+			meta, token, err := m.runCreation(plan.entry, opts.ConnectionKey, opts.Type, plan.props, false, nil, opts.RefID, opts.StatusHandler)
 			if err != nil {
 				return nil, err
 			}
 			conf.Log.Infof("FetchConnection return new conn %s", meta.ID)
-			return meta.cw, nil
+			return newLease(meta.cw, opts.ConnectionKey, opts.RefID, token), nil
 		case fetchWaitCreating:
 			select {
 			case <-ctx.Done():
@@ -278,22 +270,6 @@ func fetchInternal(ctx api.StreamContext, opts FetchOptions) (*ConnWrapper, erro
 			}
 		}
 	}
-}
-
-// Return the unique connection id and whether it is set explicitly
-func extractSelID(props map[string]interface{}, anomId string) string {
-	if len(props) < 1 {
-		return anomId
-	}
-	v, ok := props["connectionSelector"]
-	if !ok {
-		return anomId
-	}
-	id, ok := v.(string)
-	if !ok {
-		return anomId
-	}
-	return id
 }
 
 func extractRefId(ctx api.StreamContext) string {

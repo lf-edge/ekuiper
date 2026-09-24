@@ -62,11 +62,11 @@ func ConnectionHealthProbeJob(ctx context.Context) {
 // pointer read is synchronized with its publish.
 type probeTarget struct {
 	meta *Meta
-	cw   *ConnWrapper
+	cw   *connWrapper
 }
 
 func snapshotProbeTargets() []probeTarget {
-	m := globalConnectionManager.Load()
+	m := globalConnectionManager
 	if m == nil {
 		return nil
 	}
@@ -94,7 +94,7 @@ func probeConnections(timeout time.Duration) {
 	}
 }
 
-func probeOne(meta *Meta, cw *ConnWrapper, timeout time.Duration) {
+func probeOne(meta *Meta, cw *connWrapper, timeout time.Duration) {
 	// A dying Meta belongs to its stop path, not to the probe.
 	if meta.lifecycleCtx.Err() != nil {
 		return

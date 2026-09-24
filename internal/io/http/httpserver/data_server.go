@@ -36,8 +36,14 @@ import (
 
 type GlobalServerManager struct {
 	syncx.RWMutex
-	instanceID        int
-	endpoint          map[string]string
+	instanceID int
+	endpoint   map[string]string
+	// endpointRefs counts live registrations per endpoint key. Two pool
+	// connections (e.g. a named and an anonymous one) may register the
+	// same (endpoint, method); the route/pubsub is removed only when
+	// the last holder unregisters. Guarded by the manager lock, which
+	// both Register and Unregister already hold.
+	endpointRefs      map[string]int
 	server            *http.Server
 	router            *mux.Router
 	routes            map[string]http.HandlerFunc
@@ -74,6 +80,7 @@ func InitGlobalServerManager(ip string, port int, tlsConf *model.TlsConf) {
 	manager = &GlobalServerManager{
 		websocketEndpoint: map[string]*websocketEndpointContext{},
 		endpoint:          map[string]string{},
+		endpointRefs:      map[string]int{},
 		server:            s,
 		router:            r,
 		routes:            map[string]http.HandlerFunc{},
@@ -134,30 +141,52 @@ func (m *GlobalServerManager) RegisterEndpoint(endpoint string, method string) (
 	defer m.Unlock()
 	topic, ok = m.endpoint[key]
 	if ok {
+		// Shared endpoint: another live connection already owns the
+		// route; just record this holder.
+		m.endpointRefs[key]++
 		return topic, nil
 	} else {
 		topic = TopicPrefix + key
 		m.endpoint[key] = topic
-	}
-	pubsub.CreatePub(topic)
-	m.routes[endpoint] = func(w http.ResponseWriter, r *http.Request) {
-		defer r.Body.Close()
-		data, err := io.ReadAll(r.Body)
-		if err != nil {
-			handleError(w, err, "Fail to decode data")
-			return
+		m.endpointRefs[key] = 1
+		pubsub.CreatePub(topic)
+		// The mux registration is a permanent process-lifetime slot,
+		// installed once per key and never removed: unregister only
+		// clears the handler slot (requests then 404), so repeated
+		// start/stop cycles never accumulate routes. The named route
+		// doubles as the installed-once proof. The mux route dispatches
+		// through the per-method handler slot, not the bare endpoint:
+		// POST and PUT on the same path are independent registrations
+		// that must not overwrite or delete each other.
+		m.routes[key] = func(w http.ResponseWriter, r *http.Request) {
+			defer r.Body.Close()
+			data, err := io.ReadAll(r.Body)
+			if err != nil {
+				handleError(w, err, "Fail to decode data")
+				return
+			}
+			pubsub.ProduceAny(topoContext.Background(), topic, data)
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte("ok"))
 		}
-		pubsub.ProduceAny(topoContext.Background(), topic, data)
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte("ok"))
-	}
-	m.router.HandleFunc(endpoint, func(w http.ResponseWriter, r *http.Request) {
-		if h, ok := m.routes[endpoint]; ok {
-			h(w, r)
-		} else {
-			w.WriteHeader(http.StatusNotFound)
+		routeName := "httppush:" + key
+		if m.router.GetRoute(routeName) == nil {
+			m.router.HandleFunc(endpoint, func(w http.ResponseWriter, r *http.Request) {
+				// Snapshot under RLock, invoke after unlock: the handler runs
+				// arbitrary consumer time while Unregister may delete the
+				// slot concurrently. Never hold the lock across invocation,
+				// mirroring the websocket/SSE dispatch discipline.
+				m.RLock()
+				h, ok := m.routes[key]
+				m.RUnlock()
+				if ok {
+					h(w, r)
+				} else {
+					w.WriteHeader(http.StatusNotFound)
+				}
+			}).Methods(method).Name(routeName)
 		}
-	}).Methods(method)
+	}
 	return topic, nil
 }
 
@@ -170,8 +199,15 @@ func (m *GlobalServerManager) UnregisterEndpoint(endpoint, method string) {
 	if !ok {
 		return
 	}
+	// Only the last holder removes the route/pubsub; earlier leavers
+	// just drop their own reference.
+	if m.endpointRefs[key] > 1 {
+		m.endpointRefs[key]--
+		return
+	}
+	delete(m.endpointRefs, key)
 	delete(m.endpoint, key)
-	delete(m.routes, endpoint)
+	delete(m.routes, key)
 	pubsub.RemovePub(TopicPrefix + key)
 }
 

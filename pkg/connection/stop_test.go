@@ -32,6 +32,10 @@ import (
 var (
 	countCloseRelease = make(chan struct{}, 1)
 	countCloseCalls   atomic.Int32
+	// countCloseSawCancel records whether the last Close observed a
+	// canceled scope: normally false. The teardown-scope test sets and
+	// asserts it.
+	countCloseSawCancel atomic.Bool
 )
 
 type countCloseConnection struct {
@@ -57,6 +61,7 @@ func (c *countCloseConnection) Ping(ctx api.StreamContext) error {
 
 func (c *countCloseConnection) Close(ctx api.StreamContext) error {
 	countCloseCalls.Add(1)
+	countCloseSawCancel.Store(ctx.Err() != nil)
 	<-countCloseRelease
 	return nil
 }
@@ -89,12 +94,12 @@ func TestZeroRefRemovingFetchWaits(t *testing.T) {
 
 	stopDone := make(chan error, 1)
 	go func() {
-		stopDone <- DetachConnectionByRef(ctx, "stop-anon", "r1")
+		stopDone <- oldCW.Release(ctx)
 	}()
 	// Wait until the stopper owns the key: the entry flips to removing
 	// synchronously inside Detach, before Close blocks.
 	require.Eventually(t, func() bool {
-		m := globalConnectionManager.Load()
+		m := globalConnectionManager
 		m.RLock()
 		defer m.RUnlock()
 		e, ok := m.connectionPool["stop-anon"]
@@ -121,12 +126,12 @@ func TestZeroRefRemovingFetchWaits(t *testing.T) {
 	})
 	require.NoError(t, err)
 	require.NotSame(t, oldCW, newCW, "post-cleanup fetch must attach to the fresh generation")
-	_, ok := globalConnectionManager.Load().connectionPool["stop-anon"]
+	_, ok := globalConnectionManager.connectionPool["stop-anon"]
 	require.True(t, ok)
 
 	stopDone2 := make(chan error, 1)
 	go func() {
-		stopDone2 <- DetachConnectionByRef(ctx, "stop-anon", "r2")
+		stopDone2 <- newCW.Release(ctx)
 	}()
 	countCloseRelease <- struct{}{}
 	require.NoError(t, <-stopDone2)
@@ -142,17 +147,17 @@ func TestAttachVsZeroRefFetchWins(t *testing.T) {
 	countCloseCalls.Store(0)
 	ctx := mockContext.NewMockContext("stop", "op1")
 
-	_, err := FetchConnectionWithOptions(ctx, FetchOptions{
+	lA, err := FetchConnectionWithOptions(ctx, FetchOptions{
 		ConnectionKey: "fetch-wins", RefID: "rA", Type: "countclose",
 	})
 	require.NoError(t, err)
-	_, err = FetchConnectionWithOptions(ctx, FetchOptions{
+	lB, err := FetchConnectionWithOptions(ctx, FetchOptions{
 		ConnectionKey: "fetch-wins", RefID: "rB", Type: "countclose",
 	})
 	require.NoError(t, err)
 
 	// Fetch won: one detach leaves a live ref, so no stop runs.
-	require.NoError(t, DetachConnectionByRef(ctx, "fetch-wins", "rA"))
+	require.NoError(t, lA.Release(ctx))
 	require.Equal(t, 1, getConnectionRef("fetch-wins"))
 	require.Equal(t, int32(0), countCloseCalls.Load())
 	meta := getReadyTestMeta("fetch-wins")
@@ -161,12 +166,12 @@ func TestAttachVsZeroRefFetchWins(t *testing.T) {
 	// Last detach stops and removes; Close runs exactly once.
 	stopDone := make(chan error, 1)
 	go func() {
-		stopDone <- DetachConnectionByRef(ctx, "fetch-wins", "rB")
+		stopDone <- lB.Release(ctx)
 	}()
 	countCloseRelease <- struct{}{}
 	require.NoError(t, <-stopDone)
 	require.Equal(t, int32(1), countCloseCalls.Load())
-	_, ok := globalConnectionManager.Load().connectionPool["fetch-wins"]
+	_, ok := globalConnectionManager.connectionPool["fetch-wins"]
 	require.False(t, ok)
 }
 
@@ -190,7 +195,7 @@ func TestNamedDropRemovingRejectsNamedFetch(t *testing.T) {
 		stopDone <- DropNameConnection(ctx, "stop-named")
 	}()
 	require.Eventually(t, func() bool {
-		m := globalConnectionManager.Load()
+		m := globalConnectionManager
 		m.RLock()
 		defer m.RUnlock()
 		e, ok := m.connectionPool["stop-named"]
@@ -232,7 +237,7 @@ func TestConcurrentDropClosesOnce(t *testing.T) {
 	// A owns the stop: entry flips to removing synchronously, before
 	// Close blocks.
 	require.Eventually(t, func() bool {
-		m := globalConnectionManager.Load()
+		m := globalConnectionManager
 		m.RLock()
 		defer m.RUnlock()
 		e, ok := m.connectionPool["stop-once"]
@@ -245,21 +250,46 @@ func TestConcurrentDropClosesOnce(t *testing.T) {
 	countCloseRelease <- struct{}{}
 	require.NoError(t, <-stopDone)
 	require.Equal(t, int32(1), countCloseCalls.Load(), "Close runs exactly once")
-	_, ok := globalConnectionManager.Load().connectionPool["stop-once"]
+	_, ok := globalConnectionManager.connectionPool["stop-once"]
 	require.False(t, ok, "entry removed after stop completes")
 }
 
-// TestRepeatedDetachStaysNil verifies double-Close idempotency on the
-// public path: the second detach finds nothing and stays nil.
-func TestRepeatedDetachStaysNil(t *testing.T) {
+// TestTeardownRunsOnServerOwnedScope pins the teardown invariant: the
+// provider Close observes a live scope even when the releasing caller
+// ctx is already canceled. The caller ctx never propagates into
+// lifecycle teardown, so a future change passing it back into stop()
+// fails here instead of silently depending on providers tolerating
+// cancellation.
+func TestTeardownRunsOnServerOwnedScope(t *testing.T) {
+	require.NoError(t, InitConnectionManager4Test())
+	drainCountCloseRelease()
+	countCloseCalls.Store(0)
+	countCloseSawCancel.Store(false)
+	rootCtx := mockContext.NewMockContext("stop", "op1")
+	ctx, cancel := rootCtx.WithCancel()
+	lease, err := FetchConnectionWithOptions(ctx, FetchOptions{
+		ConnectionKey: "stop-scope", RefID: "r1", Type: "countclose",
+	})
+	require.NoError(t, err)
+	cancel()
+	// Pre-supply the blocking Close so Release runs synchronously.
+	countCloseRelease <- struct{}{}
+	require.NoError(t, lease.Release(ctx))
+	require.Equal(t, int32(1), countCloseCalls.Load())
+	require.False(t, countCloseSawCancel.Load(), "provider Close must not observe the canceled caller ctx")
+}
+
+// TestLeaseReleaseIsIdempotent verifies double-Release idempotency on
+// the public path: the second Release finds nothing and stays nil.
+func TestLeaseReleaseIsIdempotent(t *testing.T) {
 	require.NoError(t, InitConnectionManager4Test())
 	ctx := mockContext.NewMockContext("stop", "op1")
-	_, err := FetchConnectionWithOptions(ctx, FetchOptions{
+	lease, err := FetchConnectionWithOptions(ctx, FetchOptions{
 		ConnectionKey: "dbl", RefID: "r1", Type: "mock",
 	})
 	require.NoError(t, err)
-	require.NoError(t, DetachConnectionByRef(ctx, "dbl", "r1"))
-	require.NoError(t, DetachConnectionByRef(ctx, "dbl", "r1"))
+	require.NoError(t, lease.Release(ctx))
+	require.NoError(t, lease.Release(ctx))
 	require.Equal(t, 0, getConnectionRef("dbl"))
 }
 
@@ -294,7 +324,7 @@ func TestStopTwoPhaseDrain(t *testing.T) {
 	}
 	// Publish the handle and simulate an exited initial worker; a
 	// plain (non-recoverable) provider needs no recovery join.
-	m.cw = &ConnWrapper{ID: m.ID, meta: m, initialized: true, conn: fake, readCh: make(chan struct{})}
+	m.cw = &connWrapper{ID: m.ID, meta: m, initialized: true, conn: fake, readCh: make(chan struct{})}
 	close(m.cw.readCh)
 	close(m.done)
 

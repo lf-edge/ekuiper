@@ -20,13 +20,12 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	topoContext "github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
 )
 
-type ConnWrapper struct {
+type connWrapper struct {
 	ID          string
 	initialized bool
 	conn        modules.Connection
@@ -39,7 +38,7 @@ type ConnWrapper struct {
 	meta *Meta
 }
 
-func (cw *ConnWrapper) setConn(conn modules.Connection, err error) {
+func (cw *connWrapper) setConn(conn modules.Connection, err error) {
 	cw.l.Lock()
 	defer cw.l.Unlock()
 	cw.initialized = true
@@ -50,7 +49,7 @@ func (cw *ConnWrapper) setConn(conn modules.Connection, err error) {
 // returns (nil, nil). Precedence is fixed: a canceled caller always
 // observes ctx.Err() first, lifecycle termination yields
 // ErrConnectionClosed otherwise.
-func (cw *ConnWrapper) Wait(connectorCtx api.StreamContext) (modules.Connection, error) {
+func (cw *connWrapper) Wait(connectorCtx api.StreamContext) (modules.Connection, error) {
 	// Fixed precedence before the racing select below: when both scopes
 	// are already done, the caller sees its own cancellation.
 	if connectorCtx.Err() != nil {
@@ -109,7 +108,7 @@ func (cw *ConnWrapper) Wait(connectorCtx api.StreamContext) (modules.Connection,
 	return nil, ErrConnectionClosed
 }
 
-func (cw *ConnWrapper) IsInitialized() bool {
+func (cw *connWrapper) IsInitialized() bool {
 	cw.l.RLock()
 	defer cw.l.RUnlock()
 	return cw.initialized
@@ -118,7 +117,7 @@ func (cw *ConnWrapper) IsInitialized() bool {
 // peekConn returns the published logical connection, or nil when the
 // worker has not published yet or published a failure. Pure read for
 // the health probe: it never waits for readiness.
-func (cw *ConnWrapper) peekConn() modules.Connection {
+func (cw *connWrapper) peekConn() modules.Connection {
 	cw.l.RLock()
 	defer cw.l.RUnlock()
 	if !cw.initialized || cw.err != nil {
@@ -134,7 +133,7 @@ func (cw *ConnWrapper) peekConn() modules.Connection {
 // to the Pool worker. Non-blocking and coalesced: a storm of reports
 // collapses into one worker wakeup. Safe to call from any consumer;
 // it never performs I/O and never blocks.
-func (cw *ConnWrapper) ReportSuspectedFailure() {
+func (cw *connWrapper) ReportSuspectedFailure() {
 	cw.meta.reportSuspect()
 }
 
@@ -173,7 +172,7 @@ func (meta *Meta) reportSuspect() {
 
 // Status reports the last-known connection state, same pure-read
 // semantics as Meta.GetStatus: it never probes the provider.
-func (cw *ConnWrapper) Status() (string, string) {
+func (cw *connWrapper) Status() (string, string) {
 	return cw.meta.GetStatus()
 }
 
@@ -187,7 +186,7 @@ func (cw *ConnWrapper) Status() (string, string) {
 // canceled caller always observes ctx.Err() first, lifecycle
 // termination yields ErrConnectionClosed otherwise. Waking from a
 // generation channel always rechecks; a wake is never success.
-func (cw *ConnWrapper) WaitReady(ctx api.StreamContext) error {
+func (cw *connWrapper) WaitReady(ctx api.StreamContext) error {
 	// Fixed precedence before the loop: when the caller is already
 	// done, it sees its own cancellation.
 	if ctx.Err() != nil {
@@ -227,8 +226,8 @@ func (cw *ConnWrapper) WaitReady(ctx api.StreamContext) error {
 	}
 }
 
-func newConnWrapper(meta *Meta) *ConnWrapper {
-	cw := &ConnWrapper{
+func newConnWrapper(meta *Meta) *connWrapper {
+	cw := &connWrapper{
 		ID:     meta.ID,
 		readCh: make(chan struct{}),
 		meta:   meta,
@@ -284,37 +283,6 @@ func serverStreamContext(parent context.Context) api.StreamContext {
 // fixed as "recovering".
 const ConnectionRecovering = "recovering"
 
-// newMeta builds a Meta whose lifecycle derives from the owning Manager.
-// Caller ctx only decides whether the current API call keeps waiting;
-// it never parents the Meta worker. The state domain starts as
-// connecting with an open generation-0 readiness channel.
-func newMeta(manager *Manager, id, typ string, props map[string]any, named bool) *Meta {
-	parent := context.Background()
-	if manager != nil && manager.ctx != nil {
-		parent = manager.ctx
-	}
-	lifecycleCtx, cancel := context.WithCancel(parent)
-	m := &Meta{
-		ID:              id,
-		Typ:             typ,
-		Props:           props,
-		Named:           named,
-		lifecycleCtx:    lifecycleCtx,
-		lifecycleCancel: cancel,
-		done:            make(chan struct{}),
-		status:          api.ConnectionConnecting,
-		readyCh:         make(chan struct{}),
-		suspectCh:       make(chan struct{}, 1),
-		eventWake:       make(chan struct{}, 1),
-		dispatcherDone:  make(chan struct{}),
-	}
-	// The dispatcher owns all handler invocation from birth: every
-	// producer below only enqueues. It exits on the stop path after
-	// the second drain barrier (see stop).
-	go m.dispatchLoop()
-	return m
-}
-
 type Meta struct {
 	ID    string         `json:"id"`
 	Typ   string         `json:"typ"`
@@ -323,9 +291,14 @@ type Meta struct {
 	Named bool `json:"named"`
 
 	// refs is the single source of truth for consumer references.
-	// RefCount is always len(refs). Guarded by refMu.
-	refMu sync.Mutex
-	refs  map[string]api.StatusChangeHandler `json:"-"`
+	// RefCount is always len(refs). Guarded by refMu. refTokens holds
+	// the attachment token minted by each AddRef (guarded by the same
+	// refMu, updated atomically with refs): Release and initial
+	// delivery only honor the currently recorded token, so a stale
+	// attachment can never act on a later one.
+	refMu     sync.RWMutex
+	refs      map[string]api.StatusChangeHandler `json:"-"`
+	refTokens map[string]uint64                  `json:"-"`
 	// eventMu orders the observable status event stream per Meta.
 	// Producers (NotifyStatus, tryProbeDisconnect, deliverInitial)
 	// hold it only to transition state, freeze the handler snapshot
@@ -375,7 +348,7 @@ type Meta struct {
 	// queue is never closed, so a late enqueue can never panic —
 	// it is simply skipped once stopping is set.
 	dispatcherStopping bool         `json:"-"`
-	cw                 *ConnWrapper `json:"-"`
+	cw                 *connWrapper `json:"-"`
 	// lifecycleCtx parents the Meta worker. Derived from the Manager
 	// server ctx at creation; canceled on zero-ref/Drop/Update/shutdown
 	// or Manager re-init. Never a rule/request/first-fetcher ctx.
@@ -477,297 +450,15 @@ func (meta *Meta) setNotReadyLocked() {
 	}
 }
 
-// statusDispatch is one frozen status event in the per-Meta FIFO.
-// Transition events carry the handler membership frozen at enqueue
-// time: a ref attached after the enqueue never receives the earlier
-// transition, so a late attacher can never observe attach-before
-// history. Initial-delivery events carry exactly one handler plus
-// its refId; the dispatcher additionally verifies the ref is still
-// registered at dispatch time, so a ref detached between enqueue and
-// dispatch is skipped. A barrier event carries no status: the
-// dispatcher closes its channel once every event enqueued before it
-// is delivered, which is what makes the stop-path drain exact.
-type statusDispatch struct {
-	status, errMsg string
-	handlers       []api.StatusChangeHandler
-	refId          string
-	barrier        chan struct{}
-}
-
-func (meta *Meta) NotifyStatus(status string, s string) {
-	// eventMu orders producers: the transition, the exact event
-	// snapshot and the frozen handler membership are one atomic unit
-	// in enqueue order. The readiness generation still closes inside
-	// the transition (before any delivery), so WaitReady waiters wake
-	// promptly; delivery itself never blocks the next producer —
-	// that decoupling is what keeps a slow consumer from stalling
-	// the recovery worker.
-	meta.eventMu.Lock()
-	defer meta.eventMu.Unlock()
-	meta.stateMu.Lock()
-	switch status {
-	case api.ConnectionConnected:
-		// A new generation ends here: clear the previous
-		// generation's error even when the producer sends none,
-		// open the internal gate.
-		meta.status = api.ConnectionConnected
-		meta.lastError = ""
-		meta.setReadyLocked()
-	case api.ConnectionDisconnected:
-		// The gate closes at most once per outage: a verifying
-		// episode already parked waiters, so a subsequent
-		// connected->disconnected only records the fault. A
-		// probe-first disconnect (gate still open) parks here.
-		// Repeated disconnects within one episode only refresh
-		// the error.
-		meta.status = api.ConnectionDisconnected
-		meta.lastError = s
-		meta.verifying = false
-		meta.setNotReadyLocked()
-	case ConnectionRecovering:
-		// Runtime reconnect shares the episode: entering
-		// recovering concludes verification and parks the gate,
-		// never opening a second generation for one outage.
-		meta.status = ConnectionRecovering
-		if s != "" {
-			meta.lastError = s
-		}
-		meta.verifying = false
-		meta.setNotReadyLocked()
-	case api.ConnectionConnecting:
-		// Initial dial attempts re-report connecting; that is a
-		// no-op, not a new generation. Any other regression into
-		// connecting parks the gate defensively.
-		if meta.status != api.ConnectionConnecting {
-			meta.status = api.ConnectionConnecting
-			meta.verifying = false
-			meta.setNotReadyLocked()
-		}
-	default:
-		conf.Log.Warnf("conn %s ignoring unknown status %q", meta.ID, status)
-		meta.stateMu.Unlock()
-		return
-	}
-	effStatus, effErr := meta.status, meta.lastError
-	meta.stateMu.Unlock()
-	// Freeze the handler membership now, not at dispatch: the queue
-	// may hold a backlog, and a ref attached afterwards must not
-	// receive history from before its attach.
-	meta.refMu.Lock()
-	handlers := make([]api.StatusChangeHandler, 0, len(meta.refs))
-	for _, sc := range meta.refs {
-		handlers = append(handlers, sc)
-	}
-	meta.refMu.Unlock()
-	meta.enqueueLocked(statusDispatch{status: effStatus, errMsg: effErr, handlers: handlers})
-}
-
-// enqueueLocked appends one event to the FIFO and wakes the
-// dispatcher. Caller holds eventMu. After stop() sets
-// dispatcherStopping the event is dropped: state (already
-// transitioned by the caller) stays truthful, delivery is moot on a
-// dying Meta.
-func (meta *Meta) enqueueLocked(ev statusDispatch) {
-	if meta.dispatcherStopping {
-		return
-	}
-	meta.eventQueue = append(meta.eventQueue, ev)
-	select {
-	case meta.eventWake <- struct{}{}:
-	default:
-	}
-}
-
-// dispatchLoop delivers frozen events FIFO on a single goroutine,
-// which is the only delivery path: exactly once, in enqueue order,
-// never concurrent on one Meta. A wakeup against an empty queue is a
-// no-op. It holds no lock across a handler invocation (refMu briefly
-// for initial-event membership), so a blocked consumer stalls only
-// its own Meta's stream. Exits only after stop() sets
-// dispatcherStopping and the queue drains.
-func (meta *Meta) dispatchLoop() {
-	defer close(meta.dispatcherDone)
-	for {
-		meta.eventMu.Lock()
-		for len(meta.eventQueue) == 0 {
-			if meta.dispatcherStopping {
-				meta.eventMu.Unlock()
-				return
-			}
-			meta.eventMu.Unlock()
-			<-meta.eventWake
-			meta.eventMu.Lock()
-		}
-		ev := meta.eventQueue[0]
-		// Clear the popped slot so handler references do not linger
-		// in the backing array.
-		meta.eventQueue[0] = statusDispatch{}
-		meta.eventQueue = meta.eventQueue[1:]
-		meta.eventMu.Unlock()
-		if ev.barrier != nil {
-			close(ev.barrier)
-			continue
-		}
-		if ev.refId != "" {
-			meta.refMu.Lock()
-			_, ok := meta.refs[ev.refId]
-			meta.refMu.Unlock()
-			if !ok {
-				continue
-			}
-		}
-		for _, h := range ev.handlers {
-			if h != nil {
-				h(ev.status, ev.errMsg)
-			}
-		}
-	}
-}
-
-// drainEvents blocks until every event enqueued so far is delivered.
-// The barrier rides the same FIFO, so its completion means exactly
-// that. Only the stop path uses it (two phases, see stop).
-func (meta *Meta) drainEvents() {
-	done := make(chan struct{})
-	meta.eventMu.Lock()
-	meta.eventQueue = append(meta.eventQueue, statusDispatch{barrier: done})
-	select {
-	case meta.eventWake <- struct{}{}:
-	default:
-	}
-	meta.eventMu.Unlock()
-	<-done
-}
-
-// AddRef registers one consumer reference. It is structural only:
-// no status read, no callback, no I/O — safe under the Manager lock.
-// The initial state delivery is a separate step (deliverInitial) that
-// runs after the Manager lock is released, so a slow consumer can
-// never stall the Pool. Registration precedes delivery; combined with
-// per-Meta FIFO event order (eventMu) every handler observes each
-// transition exactly once and in order, never concurrently and never
-// inverted. A racing initial delivery may duplicate the latest state
-// (connected, connected) but never reports new-then-old and never
-// swallows a real transition.
-func (meta *Meta) AddRef(refId string, sc api.StatusChangeHandler) {
-	meta.refMu.Lock()
-	if meta.refs == nil {
-		meta.refs = make(map[string]api.StatusChangeHandler)
-	}
-	_, dup := meta.refs[refId]
-	meta.refs[refId] = sc
-	count := len(meta.refs)
-	meta.refMu.Unlock()
-	if dup {
-		conf.Log.Infof("conn %s re-attach existing reference %s, refs stay %d", meta.ID, refId, count)
-		return
-	}
-	conf.Log.Infof("conn %s add reference %s to %d refs", meta.ID, refId, count)
-}
-
-// deliverInitial enqueues the current state snapshot for a freshly
-// attached consumer. Call only after releasing the Manager lock, and
-// only once per attach. It joins the same eventMu enqueue order as
-// NotifyStatus, so a concurrent transition and this initial observe
-// a total order: initial-first sees the old state then the
-// transition, transition-first yields the transition then a
-// same-state initial duplicate. Never new-then-old, never swallowed.
-// A ref detached before the enqueue is skipped; a detach racing the
-// dispatch may still observe one benign same-state duplicate (status
-// sets are idempotent).
-func (meta *Meta) deliverInitial(refId string, sc api.StatusChangeHandler) {
-	if sc == nil {
-		return
-	}
-	meta.eventMu.Lock()
-	defer meta.eventMu.Unlock()
-	meta.refMu.Lock()
-	_, ok := meta.refs[refId]
-	meta.refMu.Unlock()
-	if !ok {
-		return
-	}
-	meta.stateMu.RLock()
-	s, e := meta.status, meta.lastError
-	meta.stateMu.RUnlock()
-	meta.enqueueLocked(statusDispatch{status: s, errMsg: e, handlers: []api.StatusChangeHandler{sc}, refId: refId})
-}
-
-func (meta *Meta) DeRef(refId string) bool {
-	meta.refMu.Lock()
-	defer meta.refMu.Unlock()
-	if _, ok := meta.refs[refId]; !ok {
-		conf.Log.Warnf("conn %s dereference missing %s, refs stay %d", meta.ID, refId, len(meta.refs))
-		return false
-	}
-	delete(meta.refs, refId)
-	count := len(meta.refs)
-	conf.Log.Infof("conn %s dereference %s to %d refs", meta.ID, refId, count)
-	return true
-}
-
-// stop terminates the Meta exactly once and joins every worker in
-// dependency order. It must run outside the Manager lock. Concurrent
-// stoppers converge on the first caller's execution; latecomers
-// return once it completes.
-//
-// Order: cancel the lifecycle, wait for the initial worker, join the
-// recovery worker (a Recover can never run concurrently with the
-// final Close below), drain the pre-Close backlog so no observed
-// state is lost, Close the provider, then drain again for finals
-// produced by provider teardown itself (a stateful client's teardown
-// event lands here). Only then is the dispatcher stopped and joined:
-// the queue is never closed, so a provider callback racing the end
-// drops its event instead of panicking — state stays truthful,
-// delivery is moot on a dying Meta.
-//
-// Teardown caveat: the drains wait for queued handlers, so a handler
-// blocked past teardown (downstream never unblocks, rule scope never
-// dies) stalls stop here. That matches the pre-existing rule-teardown
-// assumption (teardown unblocks blocked Broadcasts); the dispatcher
-// only narrows the blast radius from "recovery stalls forever" to
-// "stop waits for teardown to keep its promise".
-func (meta *Meta) stop(ctx api.StreamContext) {
-	meta.stopOnce.Do(func() {
-		meta.lifecycleCancel()
-		<-meta.done
-		// Hard invariant 2: the recovery worker belongs to this
-		// lifecycle. It closes recoveryDone on exit, so joining it
-		// here means a Recover can never run concurrently with the
-		// final Close below. Nil when no worker was started.
-		if meta.recoveryDone != nil {
-			<-meta.recoveryDone
-		}
-		meta.drainEvents()
-		// Safe without the cw lock: the worker wrote conn before
-		// closing readCh and done in the same goroutine, so the
-		// receive above happens after that write. The object is
-		// always non-nil here unless the worker panicked before
-		// publishing, in which case there is nothing to close.
-		if conn := meta.cw.conn; conn != nil {
-			_ = conn.Close(ctx)
-		}
-		meta.drainEvents()
-		meta.eventMu.Lock()
-		meta.dispatcherStopping = true
-		meta.eventMu.Unlock()
-		select {
-		case meta.eventWake <- struct{}{}:
-		default:
-		}
-		<-meta.dispatcherDone
-	})
-}
-
 func (meta *Meta) GetRefCount() int {
-	meta.refMu.Lock()
-	defer meta.refMu.Unlock()
+	meta.refMu.RLock()
+	defer meta.refMu.RUnlock()
 	return len(meta.refs)
 }
 
 func (meta *Meta) GetRefNames() (result []string) {
-	meta.refMu.Lock()
-	defer meta.refMu.Unlock()
+	meta.refMu.RLock()
+	defer meta.refMu.RUnlock()
 	for key := range meta.refs {
 		result = append(result, key)
 	}

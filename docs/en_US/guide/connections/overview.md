@@ -146,6 +146,11 @@ suspect; later operations wait until the pool recovery worker re-establishes the
 backoff until it succeeds, so a database outage delays rules instead of failing them. A lookup against a connection
 that never became ready reports unavailable once on first use instead of waiting.
 
+Runtime reconnection is owned by the connection pool: after the first failure is reported, later operations wait while
+the pool retries with backoff until the connection is re-established. Self-recovering clients such as MQTT keep their
+native auto-reconnect and report progress through the same status. Each rule holds its own reference to a shared
+connection; stopping the rule releases it, and an anonymous connection with no remaining references is removed.
+
 Users can retrieve the connection status via the connection API. Additionally, users can view the connection status in
 the rule's source/sink metrics, for example, the `source_demo_0_connection_status` metric indicates the connection
 status of the `demo` stream. For a complete list of supported connection metrics, please refer to

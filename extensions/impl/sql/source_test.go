@@ -172,7 +172,9 @@ func TestSQLConnectionNetworkErrorIsRetryable(t *testing.T) {
 	err := conn.Dial(ctx)
 	require.Error(t, err)
 	require.True(t, errorx.IsIOError(err))
-	require.Nil(t, conn.(*client.SQLConnection).GetDB())
+	// A failed Dial installs nothing: Ping reports the absent handle
+	// instead of dialing.
+	require.ErrorContains(t, conn.Ping(ctx), "no database handle")
 }
 
 func TestSQLNamedConnectionReconnectAfterStartupFailure(t *testing.T) {

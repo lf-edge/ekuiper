@@ -1,4 +1,4 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2026 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,19 +22,40 @@ import (
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
 
-func TestHttpConn(t *testing.T) {
-	ip := "127.0.0.1"
-	port := 10084
-	InitGlobalServerManager(ip, port, nil)
-	defer ShutDown()
-	ctx := mockContext.NewMockContext("1", "2")
-	props := map[string]any{
-		"datasource": "/post",
-		"method":     "POST",
-	}
-	c := CreateConnection(ctx)
-	err := c.Provision(ctx, "test", props)
-	require.NoError(t, err)
-	require.NoError(t, c.Ping(ctx))
-	require.NoError(t, c.Close(ctx))
+// TestHttpPushConnectionEndpointOwnership pins the Dial/Close
+// ownership: Dial registers, Close unregisters only what this
+// instance registered. A pre-Dial Close deletes nothing, a second
+// Dial does not double-count, and of two instances sharing one
+// endpoint the first Close leaves the route for the other.
+func TestHttpPushConnectionEndpointOwnership(t *testing.T) {
+	installTestManager(t)
+	ctx := mockContext.NewMockContext("push", "op1")
+	props := map[string]any{"datasource": "/owned", "method": "POST"}
+
+	// Pre-Dial Close is a no-op.
+	idle := &HttpPushConnection{}
+	require.NoError(t, idle.Provision(ctx, "idle", props))
+	require.NoError(t, idle.Close(ctx))
+	require.Equal(t, map[string]struct{}{}, GetEndpoints())
+
+	h1 := &HttpPushConnection{}
+	require.NoError(t, h1.Provision(ctx, "h1", props))
+	h2 := &HttpPushConnection{}
+	require.NoError(t, h2.Provision(ctx, "h2", props))
+	require.NoError(t, h1.Dial(ctx))
+	require.NoError(t, h2.Dial(ctx))
+	require.Equal(t, map[string]struct{}{"/owned$$POST": {}}, GetEndpoints())
+
+	// Dial re-entry on an already-registered instance counts nothing.
+	require.NoError(t, h1.Dial(ctx))
+
+	// First holder leaves: route stays for the other.
+	require.NoError(t, h1.Close(ctx))
+	require.Equal(t, map[string]struct{}{"/owned$$POST": {}}, GetEndpoints())
+
+	// Last holder leaves: no residue; a second Close is a no-op.
+	require.NoError(t, h2.Close(ctx))
+	require.Equal(t, map[string]struct{}{}, GetEndpoints())
+	require.NoError(t, h2.Close(ctx))
+	require.Equal(t, map[string]struct{}{}, GetEndpoints())
 }

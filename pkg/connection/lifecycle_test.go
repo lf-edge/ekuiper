@@ -16,7 +16,6 @@ package connection
 
 import (
 	goctx "context"
-	"sync"
 	"testing"
 	"time"
 
@@ -36,14 +35,15 @@ func isDoneClosed(ch <-chan struct{}) bool {
 	}
 }
 
-func fetchFailDial(t *testing.T, ctx api.StreamContext, key, ref string) {
+func fetchFailDial(t *testing.T, ctx api.StreamContext, key, ref string) *ConnectionLease {
 	t.Helper()
-	_, err := FetchConnectionWithOptions(ctx, FetchOptions{
+	lease, err := FetchConnectionWithOptions(ctx, FetchOptions{
 		ConnectionKey: key,
 		RefID:         ref,
 		Type:          "faildial",
 	})
 	require.NoError(t, err)
+	return lease
 }
 
 // TestMetaLifecycleIndependentOfFirstFetcher is the A1b core regression
@@ -56,8 +56,8 @@ func TestMetaLifecycleIndependentOfFirstFetcher(t *testing.T) {
 	ctxA, cancelA := rootA.WithCancel()
 	ctxB := mockContext.NewMockContext("ruleB", "op1")
 
-	fetchFailDial(t, ctxA, "lc-shared", "refA")
-	fetchFailDial(t, ctxB, "lc-shared", "refB")
+	lA := fetchFailDial(t, ctxA, "lc-shared", "refA")
+	lB := fetchFailDial(t, ctxB, "lc-shared", "refB")
 
 	meta := getReadyTestMeta("lc-shared")
 	require.NotNil(t, meta)
@@ -71,9 +71,9 @@ func TestMetaLifecycleIndependentOfFirstFetcher(t *testing.T) {
 
 	// Release both refs; the anonymous Meta is removed by the existing
 	// zero-ref path.
-	require.NoError(t, DetachConnectionByRef(ctxB, "lc-shared", "refA"))
-	require.NoError(t, DetachConnectionByRef(ctxB, "lc-shared", "refB"))
-	_, ok := globalConnectionManager.Load().connectionPool["lc-shared"]
+	require.NoError(t, lA.Release(ctxB))
+	require.NoError(t, lB.Release(ctxB))
+	_, ok := globalConnectionManager.connectionPool["lc-shared"]
 	require.False(t, ok)
 }
 
@@ -95,19 +95,19 @@ func TestManagerReinitTerminatesLifecycles(t *testing.T) {
 		return isDoneClosed(oldMeta.done)
 	}, 10*time.Second, 50*time.Millisecond, "old worker must exit after scope cancel")
 
-	// The replacement manager is fully functional and starts empty.
+	// The reset manager is fully functional and starts empty.
 	_, err := GetConnectionDetail(ctx, "lc-reinit")
 	require.Error(t, err)
-	fetchFailDial(t, ctx, "lc-new", "refN")
+	lNew := fetchFailDial(t, ctx, "lc-new", "refN")
 	require.True(t, checkConn("lc-new"))
-	require.NoError(t, DetachConnectionByRef(ctx, "lc-new", "refN"))
+	require.NoError(t, lNew.Release(ctx))
 }
 
 // TestManagerResetClosesPublishedConnections proves reset retires the
-// whole generation: a published named connection with zero refs — which
+// whole runtime: a published named connection with zero refs — which
 // no detach path would ever stop — is physically Closed exactly once,
 // while its KV record is left intact for the next bootstrap reload.
-// The replacement manager starts empty but fully usable.
+// The reset manager starts empty but fully usable.
 func TestManagerResetClosesPublishedConnections(t *testing.T) {
 	require.NoError(t, InitConnectionManager4Test())
 	drainCountCloseRelease()
@@ -127,7 +127,7 @@ func TestManagerResetClosesPublishedConnections(t *testing.T) {
 	require.NoError(t, InitConnectionManager4Test())
 	require.Equal(t, int32(1), countCloseCalls.Load(), "published named conn must be Closed exactly once")
 
-	// Old generation holds nothing anymore.
+	// Old runtime holds nothing anymore.
 	_, err = GetConnectionDetail(ctx, "reset-named")
 	require.Error(t, err)
 	_, err = GetConnectionDetail(ctx, "reset-anon")
@@ -139,11 +139,11 @@ func TestManagerResetClosesPublishedConnections(t *testing.T) {
 	require.NotEmpty(t, cfgs, "reset must not delete persistent records")
 
 	// Replacement manager works normally.
-	_, err = FetchConnectionWithOptions(ctx, FetchOptions{
+	lReset, err := FetchConnectionWithOptions(ctx, FetchOptions{
 		ConnectionKey: "reset-new", RefID: "r1", Type: "mock",
 	})
 	require.NoError(t, err)
-	require.NoError(t, DetachConnectionByRef(ctx, "reset-new", "r1"))
+	require.NoError(t, lReset.Release(ctx))
 
 	// Leave no persistent residue for other tests (a Drop on the new
 	// manager would find nothing to drop, so remove the record directly).
@@ -170,7 +170,7 @@ func TestWaitCallerCancelReturnsCtxErr(t *testing.T) {
 	// the caller ctx is done, deterministically.
 	_, err = cw.Wait(ctx)
 	require.ErrorIs(t, err, goctx.Canceled)
-	require.NoError(t, DetachConnectionByRef(ctx, "wait-cancel", "r1"))
+	require.NoError(t, cw.Release(ctx))
 }
 
 // TestWaitLifecycleStopReturnsClosed proves a waiter on a terminated
@@ -185,55 +185,9 @@ func TestWaitLifecycleStopReturnsClosed(t *testing.T) {
 		Type:          "faildial",
 	})
 	require.NoError(t, err)
-	require.NoError(t, DetachConnectionByRef(ctx, "wait-closed", "r1"))
+	require.NoError(t, cw.Release(ctx))
 	_, err = cw.Wait(ctx)
 	require.ErrorIs(t, err, ErrConnectionClosed)
-}
-
-// TestManagerResetRacingLateDetachIsRaceFree reproduces the detector
-// report where a rule teardown's DetachConnection raced
-// InitConnectionManager4Test on the global manager pointer. Only late
-// Detach runs concurrently with reset — Fetch/Create racing Init is
-// contractually unsupported, so this test must not imply it. Outcomes
-// stay benign on either generation (abandoned-map best-effort DeRef or
-// missing-key nil); the test exists so -race guards the pointer swap,
-// not to assert any particular interleaving.
-func TestManagerResetRacingLateDetachIsRaceFree(t *testing.T) {
-	require.NoError(t, InitConnectionManager4Test())
-	ctx := mockContext.NewMockContext("racer", "op1")
-
-	var wg sync.WaitGroup
-	stop := make(chan struct{})
-	for g := 0; g < 2; g++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			for i := 0; i < 20; i++ {
-				select {
-				case <-stop:
-					return
-				default:
-				}
-				// Late teardown of a ref that may live on the retired
-				// generation: must stay race-free and never panic.
-				_ = DetachConnectionByRef(ctx, "race-key", "race-ref")
-			}
-		}()
-	}
-	for k := 0; k < 5; k++ {
-		require.NoError(t, InitConnectionManager4Test())
-	}
-	close(stop)
-	wg.Wait()
-
-	// The current generation is fully usable afterwards.
-	require.NoError(t, InitConnectionManager4Test())
-	cw, err := FetchConnectionWithOptions(ctx, FetchOptions{
-		ConnectionKey: "race-final", RefID: "r", Type: "mock",
-	})
-	require.NoError(t, err)
-	require.NotNil(t, cw)
-	require.NoError(t, DetachConnectionByRef(ctx, "race-final", "r"))
 }
 
 // TestWaitBothDonePrefersCallerCancel pins the fixed precedence: when the
@@ -251,7 +205,7 @@ func TestWaitBothDonePrefersCallerCancel(t *testing.T) {
 	})
 	require.NoError(t, err)
 	cancel()
-	require.NoError(t, DetachConnectionByRef(ctx, "wait-both", "r1"))
+	require.NoError(t, cw.Release(ctx))
 	_, err = cw.Wait(ctx)
 	require.ErrorIs(t, err, goctx.Canceled)
 }

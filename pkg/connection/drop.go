@@ -15,6 +15,7 @@
 package connection
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
@@ -58,10 +59,15 @@ func dropNameConnection(m *Manager, ctx api.StreamContext, selId string) (meta *
 	return meta, meta.stop, nil
 }
 
-func finishStop(m *Manager, key string, stop func(api.StreamContext), ctx api.StreamContext) {
-	stop(ctx)
+func finishStop(m *Manager, key string, stop func(api.StreamContext)) {
+	// Teardown runs on a server-owned cleanup scope: rule/request
+	// scopes are frequently already canceled when Close/Drop/zero-ref
+	// fires, and provider Close must not depend on them. The caller
+	// ctx is not propagated into lifecycle teardown. Mirrors
+	// stopAllRuntime.
+	stop(serverStreamContext(context.Background()))
 	m.Lock()
-	// Delete only our own entry: a re-init swaps the whole manager, and
+	// Delete only our own entry: a reset retires all entries anyway, and
 	// a concurrent round cannot reuse the key while it is removing.
 	// Closing removed wakes Fetch waiters so they retry on the key.
 	if e, ok := m.connectionPool[key]; ok && e.state == entryRemoving {
@@ -149,14 +155,11 @@ func (m *Manager) planUpdateDrop(ctx api.StreamContext, id string) dropPlan {
 }
 
 // waitForRound waits out a creation round outside the Manager lock.
-func waitForRound(ctx api.StreamContext, m *Manager, wait <-chan struct{}) error {
+func waitForRound(ctx api.StreamContext, wait <-chan struct{}) error {
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
 	case <-wait:
-		if globalConnectionManager.Load() != m {
-			return ErrConnectionClosed
-		}
 		return nil
 	}
 }
@@ -165,26 +168,26 @@ func DropNameConnection(ctx api.StreamContext, selId string) error {
 	if selId == "" {
 		return fmt.Errorf("connection id should be defined")
 	}
-	m := globalConnectionManager.Load()
+	m := globalConnectionManager
 	for {
 		plan := m.planDrop(ctx, selId)
 		if plan.err != nil {
 			return plan.err
 		}
 		if plan.wait != nil {
-			if err := waitForRound(ctx, m, plan.wait); err != nil {
+			if err := waitForRound(ctx, plan.wait); err != nil {
 				return err
 			}
 			continue
 		}
 		if plan.stop != nil {
-			finishStop(m, selId, plan.stop, ctx)
+			finishStop(m, selId, plan.stop)
 		}
 		return nil
 	}
 }
 
-func UpdateConnection(ctx api.StreamContext, id, typ string, props map[string]any) (*ConnWrapper, error) {
+func UpdateConnection(ctx api.StreamContext, id, typ string, props map[string]any) (*ConnectionLease, error) {
 	if id == "" || typ == "" {
 		return nil, fmt.Errorf("connection id and type should be defined")
 	}
@@ -193,10 +196,10 @@ func UpdateConnection(ctx api.StreamContext, id, typ string, props map[string]an
 	// waited out and retried, consistent with DropNameConnection; a key
 	// already owned by teardown stays a hard error.
 	for {
-		m := globalConnectionManager.Load()
+		m := globalConnectionManager
 		plan := m.planUpdateDrop(ctx, id)
 		if plan.wait != nil {
-			if err := waitForRound(ctx, m, plan.wait); err != nil {
+			if err := waitForRound(ctx, plan.wait); err != nil {
 				return nil, err
 			}
 			continue
@@ -205,7 +208,7 @@ func UpdateConnection(ctx api.StreamContext, id, typ string, props map[string]an
 			return nil, plan.err
 		}
 		if plan.stop != nil {
-			finishStop(m, id, plan.stop, ctx)
+			finishStop(m, id, plan.stop)
 		}
 		return createNamedConnection(ctx, id, typ, props)
 	}
@@ -222,28 +225,20 @@ func isInternalConnection(m *Manager, id string) (bool, error) {
 	return !meta.Named, nil
 }
 
-func DetachConnection(ctx api.StreamContext, conId string) error {
-	return DetachConnectionByRef(ctx, conId, extractRefId(ctx))
-}
-
-// DetachConnectionByRef detaches a connection using the reference ID supplied
-// to FetchConnection.
-func DetachConnectionByRef(ctx api.StreamContext, conId, refId string) error {
-	if conId == "" {
-		return fmt.Errorf("connection id should be defined")
-	}
-	if refId == "" {
-		return fmt.Errorf("connection reference id should be defined")
-	}
-	m := globalConnectionManager.Load()
+// detachChecked detaches one Lease-owned reference. The recorded
+// attachment token must still match — otherwise this is a stale Lease
+// from an earlier attachment, and the release is a no-op that leaves
+// the current holder untouched.
+func detachChecked(ctx api.StreamContext, conId, refId string, token uint64) error {
+	m := globalConnectionManager
 	m.Lock()
-	_, stop, err := detachLocked(m, ctx, conId, refId)
+	_, stop, err := detachLocked(m, ctx, conId, refId, token)
 	m.Unlock()
 	if err != nil {
 		return err
 	}
 	if stop != nil {
-		finishStop(m, conId, stop, ctx)
+		finishStop(m, conId, stop)
 	}
 	return nil
 }
@@ -264,52 +259,16 @@ func readyMeta(m *Manager, key string) (*Meta, error) {
 	return e.meta, nil
 }
 
-func getConnectionRef(id string) int {
-	m := globalConnectionManager.Load()
-	m.RLock()
-	defer m.RUnlock()
-	meta, err := readyMeta(m, id)
-	if err != nil || meta == nil {
-		return 0
-	}
-	return meta.GetRefCount()
-}
-
-func attachConnection(conId string, refId string, sc api.StatusChangeHandler) (*ConnWrapper, error) {
-	if conId == "" {
-		return nil, fmt.Errorf("connection id should be defined")
-	}
-	// Test/compat helper: same atomic attach as the fast path, just
-	// resolved by key instead of by entry. No defer: the initial
-	// delivery must run after the Manager lock is released (lock
-	// invariant).
-	m := globalConnectionManager.Load()
-	m.Lock()
-	meta, err := readyMeta(m, conId)
-	if err != nil {
-		m.Unlock()
-		return nil, err
-	}
-	if meta == nil {
-		m.Unlock()
-		return nil, fmt.Errorf("connection %s not existed", conId)
-	}
-	meta.AddRef(refId, sc)
-	if conId != refId {
-		conf.Log.Infof("action=attach_connection_ref connId=%s type=%s connectionKey=%s refId=%s refCount=%d", conId, meta.Typ, conId, refId, meta.GetRefCount())
-	}
-	m.Unlock()
-	meta.deliverInitial(refId, sc)
-	return meta.cw, nil
-}
-
 // detachLocked removes one consumer reference. The caller must hold m's
-// lock and keep using m afterwards. If an anonymous Meta reaches zero
-// refs it flips to removing and hands out its stop ownership; the caller
-// must run the stop outside the lock and delete the entry after it
-// completes. Refs on an already-removing Meta are released best-effort
-// so repeated Close stays nil and never triggers a second stop.
-func detachLocked(m *Manager, ctx api.StreamContext, conId, refId string) (meta *Meta, stop func(api.StreamContext), err error) {
+// lock and keep using m afterwards. The recorded attachment token must
+// still match: a stale token means this release belongs to an earlier
+// attachment and must leave the current holder untouched. If an
+// anonymous Meta reaches zero refs it flips to removing and hands out
+// its stop ownership; the caller must run the stop outside the lock and
+// delete the entry after it completes. Refs on an already-removing Meta
+// are released best-effort so repeated Close stays nil and never
+// triggers a second stop.
+func detachLocked(m *Manager, ctx api.StreamContext, conId, refId string, token uint64) (meta *Meta, stop func(api.StreamContext), err error) {
 	e, ok := m.connectionPool[conId]
 	if !ok {
 		conf.Log.Infof("detachConnection not found:%v", conId)
@@ -317,12 +276,18 @@ func detachLocked(m *Manager, ctx api.StreamContext, conId, refId string) (meta 
 	}
 	if e.state != entryReady || e.meta == nil {
 		if e.state == entryRemoving && e.meta != nil {
+			if cur, ok := e.meta.refToken(refId); !ok || cur != token {
+				return nil, nil, nil
+			}
 			e.meta.DeRef(refId)
 			return nil, nil, nil
 		}
 		return nil, nil, ErrConnectionRemoving
 	}
 	meta = e.meta
+	if cur, ok := meta.refToken(refId); !ok || cur != token {
+		return nil, nil, nil
+	}
 	// Only an actually-removed ref can drive teardown: a stray detach
 	// for an unknown refId must neither decrement (DeRef already
 	// no-ops) nor retire a Meta nobody attached to yet.

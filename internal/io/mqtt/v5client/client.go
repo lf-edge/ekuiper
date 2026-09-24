@@ -46,6 +46,13 @@ type Client struct {
 	// record if already have subscription for a topic
 	subs                map[string]struct{}
 	EnableClientSession bool
+	// pendingCfg is built at Provision and consumed exactly once by the
+	// first Connect, which starts the background manager. Provision
+	// therefore performs no network I/O and captures no caller context;
+	// the manager lifetime parents the first Connect scope instead.
+	pendingCfg *autopaho.ClientConfig
+	onConnect  client.ConnectHandler
+	onLost     client.ConnectErrorHandler
 }
 
 type ConnectionConfig struct {
@@ -67,8 +74,10 @@ func Provision(ctx api.StreamContext, conId string, props map[string]any, onConn
 	}
 	r := paho.NewStandardRouter()
 	cli := &Client{
-		router: r,
-		subs:   make(map[string]struct{}),
+		router:    r,
+		subs:      make(map[string]struct{}),
+		onConnect: onConnect,
+		onLost:    onConnectLost,
 	}
 
 	cliCfg := autopaho.ClientConfig{
@@ -84,12 +93,6 @@ func Provision(ctx api.StreamContext, conId string, props map[string]any, onConn
 		// the server will not queue messages while it is down. The specific setting will depend upon your needs
 		// (60 = 1 minute, 3600 = 1 hour, 86400 = one day, 0xFFFFFFFE = 136 years, 0xFFFFFFFF = don't expire)
 		SessionExpiryInterval: uint32(cc.SessionExpiryIntervalSeconds),
-		OnConnectionUp: func(cm *autopaho.ConnectionManager, connAck *paho.Connack) {
-			onConnect(ctx)
-		},
-		OnConnectError: func(err error) {
-			onConnectLost(ctx, err)
-		},
 		// eclipse/paho.golang/paho provides base mqtt functionality, the below config will be passed in for each connection
 		ClientConfig: paho.ClientConfig{
 			// If you are using QOS 1/2, then it's important to specify a client id (which must be unique)
@@ -129,11 +132,10 @@ func Provision(ctx api.StreamContext, conId string, props map[string]any, onConn
 		cliCfg.ConnectPassword = []byte(cc.Password)
 	}
 	cli.EnableClientSession = cc.EnableClientSession
-	cm, err := autopaho.NewConnection(ctx, cliCfg) // starts process; will reconnect until context cancelled
-	if err != nil {
-		return nil, err
-	}
-	cli.cm = cm
+	// The background manager starts at the first Connect, not here:
+	// Provision stays local-only (validate + file stores) with no
+	// network activity and no caller context captured.
+	cli.pendingCfg = &cliCfg
 	return cli, nil
 }
 
@@ -151,7 +153,33 @@ func stateFilePrefix(conId, role string) string {
 }
 
 func (c *Client) Connect(ctx api.StreamContext) error {
-	if err := c.cm.AwaitConnection(ctx); err != nil {
+	// Start the background manager exactly once, parented on the first
+	// Connect scope (server-owned in the Pool path). Later Connects —
+	// e.g. a Ping-triggered redial — reuse it and only await.
+	c.Lock()
+	if c.cm == nil {
+		if c.pendingCfg == nil {
+			c.Unlock()
+			return fmt.Errorf("mqtt v5 client provision incomplete")
+		}
+		cfg := c.pendingCfg
+		cfg.OnConnectionUp = func(cm *autopaho.ConnectionManager, connAck *paho.Connack) {
+			c.onConnect(ctx)
+		}
+		cfg.OnConnectError = func(err error) {
+			c.onLost(ctx, err)
+		}
+		cm, err := autopaho.NewConnection(ctx, *cfg) // starts process; will reconnect until context cancelled
+		if err != nil {
+			c.Unlock()
+			return err
+		}
+		c.cm = cm
+		c.pendingCfg = nil
+	}
+	cm := c.cm
+	c.Unlock()
+	if err := cm.AwaitConnection(ctx); err != nil {
 		return errorx.NewIOErr(fmt.Sprintf("found error when connecting mqtt: %s", err))
 	}
 	return nil
@@ -227,6 +255,14 @@ func (c *Client) Publish(ctx api.StreamContext, topic string, qos byte, retained
 func (c *Client) Unsubscribe(ctx api.StreamContext, topic string) error {
 	c.Lock()
 	defer c.Unlock()
+	if c.cm == nil {
+		// Never connected: nothing was subscribed, just drop the
+		// local routing state below.
+		for _, subTopic := range strings.Split(topic, ",") {
+			delete(c.subs, subTopic)
+		}
+		return nil
+	}
 	topics := strings.Split(topic, ",")
 	for _, subTopic := range topics {
 		delete(c.subs, subTopic)
@@ -252,6 +288,9 @@ func (c *Client) Unsubscribe(ctx api.StreamContext, topic string) error {
 }
 
 func (c *Client) Disconnect(ctx api.StreamContext) {
+	if c.cm == nil {
+		return
+	}
 	dctx, dcancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer dcancel()
 	err := c.cm.Disconnect(dctx)
