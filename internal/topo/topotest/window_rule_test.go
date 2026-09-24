@@ -863,17 +863,20 @@ func TestEventWindow(t *testing.T) {
 					"color":        "red",
 					"ts":           1541152486013,
 				}},
+				{},
 				{{
 					"window_start": int64(1541152488000),
 					"window_end":   int64(1541152489000),
 					"color":        "yellow",
 					"ts":           1541152488442,
 				}},
+				{},
+				{},
 			},
 			M: map[string]interface{}{
 				"sink_memory_0_0_exceptions_total":  int64(0),
-				"sink_memory_0_0_records_in_total":  int64(2),
-				"sink_memory_0_0_records_out_total": int64(2),
+				"sink_memory_0_0_records_in_total":  int64(5),
+				"sink_memory_0_0_records_out_total": int64(5),
 
 				"source_demoE_0_exceptions_total":  int64(0),
 				"source_demoE_0_records_in_total":  int64(6),
@@ -882,10 +885,6 @@ func TestEventWindow(t *testing.T) {
 				"op_4_window_0_exceptions_total":  int64(0),
 				"op_4_window_0_records_in_total":  int64(4),
 				"op_4_window_0_records_out_total": int64(5),
-
-				"op_5_filter_0_exceptions_total":  int64(0),
-				"op_5_filter_0_records_in_total":  int64(5),
-				"op_5_filter_0_records_out_total": int64(2),
 			},
 		},
 		{
