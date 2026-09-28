@@ -51,6 +51,11 @@ common in many languages like Java, etc. The supported symbols in Kuiper are
 | Z      | 4 digits time zone offset | Z(-0700)                              |
 | X      | time zone offset          | X(-07), XX(-0700), XXX(-07:00)        |
 | \      | Escape character          | \Z(Z)  \X(X)                          |
+| `'...'` | Literal text | `'day'` → `day` |
+| `''` | Literal single quote | `'o''clock'` → `o'clock` |
+
+Single quotes quote literal text. Two consecutive single quotes represent one literal single quote,
+both inside and outside quoted text. Unclosed quoted text is invalid; for example, `yyyy'abc` returns an error.
 
 Examples:
 
