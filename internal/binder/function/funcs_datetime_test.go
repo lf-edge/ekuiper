@@ -918,3 +918,11 @@ func TestValidateFsp(t *testing.T) {
 	err := f(fctx, []ast.Expr{})
 	require.NoError(t, err)
 }
+
+func TestFormatTimeUnterminatedQuote(t *testing.T) {
+	got, ok := builtins["format_time"].exec(nil, []interface{}{time.Date(2020, 1, 16, 0, 0, 0, 0, time.UTC), "yyyy'"})
+	require.False(t, ok)
+	err, isError := got.(error)
+	require.True(t, isError, "expected error, got %v", got)
+	require.ErrorContains(t, err, "unterminated quote")
+}

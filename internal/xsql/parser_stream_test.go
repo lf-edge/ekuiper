@@ -58,7 +58,7 @@ func TestParser_ParseCreateStream(t *testing.T) {
 					data bytea,
 					Gender BOOLEAN,
 					ADDRESS STRUCT(STREET_NAME STRING, NUMBER BIGINT),
-				) WITH (DATASOURCE="users", FORMAT="JSON", KEY="USERID", CONF_KEY="srv1", type="MQTT", TIMESTAMP="USERID", TIMESTAMP_FORMAT="yyyy-MM-dd''T''HH:mm:ssX'");`,
+				) WITH (DATASOURCE="users", FORMAT="JSON", KEY="USERID", CONF_KEY="srv1", type="MQTT", TIMESTAMP="USERID", TIMESTAMP_FORMAT="yyyy-MM-dd'T'HH:mm:ssX");`,
 			stmt: &ast.StreamStmt{
 				Name: ast.StreamName("demo"),
 				StreamFields: []ast.StreamField{
@@ -82,7 +82,7 @@ func TestParser_ParseCreateStream(t *testing.T) {
 					CONF_KEY:         "srv1",
 					TYPE:             "MQTT",
 					TIMESTAMP:        "USERID",
-					TIMESTAMP_FORMAT: "yyyy-MM-dd''T''HH:mm:ssX'",
+					TIMESTAMP_FORMAT: "yyyy-MM-dd'T'HH:mm:ssX",
 				},
 			},
 		},

@@ -15,6 +15,7 @@
 package cast
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -349,4 +350,41 @@ func TestParseTimeIssue(t *testing.T) {
 	t1, err := ParseTime(target, format)
 	require.NoError(t, err)
 	require.Equal(t, "2025-06-04 08:54:00.753 +0000 UTC", t1.String())
+}
+
+func TestTimeFormatQuotes(t *testing.T) {
+	for _, format := range []string{"yyyy'", "yyyy'abc", "'", "yyyy'''", "'abc''"} {
+		t.Run(format, func(t *testing.T) {
+			_, err := convertFormat(format)
+			require.EqualError(t, err, fmt.Sprintf("invalid time format %q: unterminated quote", format))
+		})
+	}
+	for _, tt := range []struct{ format, want string }{
+		{"'day 'yyyy", "day 2006"},
+		{"yyyy''", "2006'"},
+		{"''", "'"},
+		{"'日期'yyyy", "日期2006"},
+		{"'o''clock'", "o'clock"},
+		{"'abc'''", "abc'"},
+		{"''''", "''"},
+		{`yyyy\'`, "2006'"},
+		{`'a\'yyyy`, `a\2006`},
+	} {
+		t.Run(tt.format, func(t *testing.T) {
+			got, err := convertFormat(tt.format)
+			require.NoError(t, err)
+			require.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestFormatTimeUnterminatedQuote(t *testing.T) {
+	_, err := FormatTime(time.Date(2020, 1, 16, 0, 0, 0, 0, time.UTC), "yyyy'")
+	require.ErrorContains(t, err, "unterminated quote")
+}
+
+func TestParseTimeUnterminatedQuote(t *testing.T) {
+	// Automatic parsing could accept this date, but the explicit format is invalid.
+	_, err := ParseTime("2020-01-16 02:14:24", "yyyy'abc")
+	require.ErrorContains(t, err, "unterminated quote")
 }
