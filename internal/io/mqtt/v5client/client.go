@@ -152,15 +152,18 @@ func (c *Client) Subscribe(ctx api.StreamContext, topic string, qos byte, callba
 	}
 	// register router first
 	for _, subTopic := range topics {
+		// Register the route once, but always send the subscription: onConnect re-subscribes
+		// every topic after a reconnect, and skipping known topics sent a SUBSCRIBE with no
+		// topic filter, which MQTT 5 forbids and brokers reject as a malformed packet.
 		if _, alreadySub := c.subs[subTopic]; !alreadySub {
 			c.subs[subTopic] = struct{}{}
 			c.router.RegisterHandler(subTopic, func(p *paho.Publish) {
 				callback(ctx, p)
 			})
-			s.Subscriptions = append(s.Subscriptions, paho.SubscribeOptions{
-				Topic: subTopic, QoS: qos,
-			})
 		}
+		s.Subscriptions = append(s.Subscriptions, paho.SubscribeOptions{
+			Topic: subTopic, QoS: qos,
+		})
 	}
 	suback, err := c.cm.Subscribe(ctx, s)
 	if err != nil {
