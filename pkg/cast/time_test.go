@@ -15,6 +15,7 @@
 package cast
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -297,25 +298,6 @@ func TestConvertFormat(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "2006-01-02 15:04:05.0000000-0700", s)
 
-	// a single quote at the end of the format is an unterminated text
-	// delimiter: consume it like an unterminated mid-format quote instead
-	// of panicking (matches the lenient behavior of "yyyy'abc" -> "2006abc")
-	s, err = convertFormat("yyyy'")
-	require.NoError(t, err)
-	require.Equal(t, "2006", s)
-
-	s, err = convertFormat("'day 'yyyy")
-	require.NoError(t, err)
-	require.Equal(t, "day 2006", s)
-
-	s, err = convertFormat("yyyy''")
-	require.NoError(t, err)
-	require.Equal(t, "2006'", s)
-
-	s, err = convertFormat("yyyy'abc")
-	require.NoError(t, err)
-	require.Equal(t, "2006abc", s)
-
 	d, err := time.Parse("2006-01-02 15:04:05.0000000-0700", `2024-06-10 05:54:39.6574979-0700`)
 	require.NoError(t, err)
 	require.Equal(t, int64(1718024079657497900), d.UnixNano())
@@ -368,4 +350,33 @@ func TestParseTimeIssue(t *testing.T) {
 	t1, err := ParseTime(target, format)
 	require.NoError(t, err)
 	require.Equal(t, "2025-06-04 08:54:00.753 +0000 UTC", t1.String())
+}
+
+func TestTimeFormatQuotes(t *testing.T) {
+	date := time.Date(2020, time.January, 16, 2, 14, 24, 0, time.UTC)
+	for _, format := range []string{"yyyy'", "yyyy'abc", "'"} {
+		t.Run(format, func(t *testing.T) {
+			want := fmt.Sprintf("invalid time format %s: unterminated quote", format)
+			_, err := convertFormat(format)
+			require.EqualError(t, err, want)
+			_, err = FormatTime(date, format)
+			require.EqualError(t, err, want)
+			// This date is otherwise accepted by automatic parsing.
+			_, err = ParseTime("2020-01-16 02:14:24", format)
+			require.EqualError(t, err, want)
+		})
+	}
+	for _, tt := range []struct{ format, want string }{
+		{"'day 'yyyy", "day 2006"},
+		{"yyyy''", "2006'"},
+		{"''", "'"},
+		{"'日期'yyyy", "日期2006"},
+		{"", ""},
+	} {
+		t.Run(tt.format, func(t *testing.T) {
+			got, err := convertFormat(tt.format)
+			require.NoError(t, err)
+			require.Equal(t, tt.want, got)
+		})
+	}
 }

@@ -364,6 +364,9 @@ func convertFormat(f string) (string, error) {
 				}
 				break
 			}
+			if i+j >= lenFormat {
+				return "", fmt.Errorf("invalid time format %s: unterminated quote", f)
+			}
 			i = i + j
 			out += string(tmp)
 		default:
