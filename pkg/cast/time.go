@@ -24,46 +24,6 @@ import (
 	"github.com/jinzhu/now"
 )
 
-//var (
-//	formats = map[string]string{
-//		"MMMM": "January",
-//		"MMM":  "Jan",
-//		"MM":   "01",
-//		"M":    "1",
-//		"YYYY": "2006",
-//		"yyyy": "2006",
-//		"YY":   "06",
-//		"yy":   "06",
-//		"G":    "AD",
-//		"EEEE": "Monday",
-//		"EEE":  "Mon",
-//		"dd":   "02",
-//		"d":    "2",
-//		"HH":   "15",
-//		"hh":   "03",
-//		"h":    "3",
-//		"mm":   "04",
-//		"m":    "4",
-//		"ss":   "05",
-//		"s":    "5",
-//		"a":    "PM",
-//		"S":    ".0",
-//		"SS":    ".00",
-//		"SSS":   ".000",
-//		"SSSN":  ".0000",
-//		"SSSNN": ".00000",
-//		"SSSNNN": ".000000",
-//		"SSSNNNN": ".0000000",
-//		"SSSNNNNN":".00000000",
-//		"SSSNNNNNN":".000000000",
-//		"z":    "MST",
-//		"Z":    "-0700",
-//		"X":    "-07",
-//		"XX":    "-0700",
-//		"XXX":  "-07:00",
-//	}
-//)
-
 const (
 	JSISO   = "2006-01-02T15:04:05.000Z07:00"
 	ISO8601 = "2006-01-02T15:04:05"
@@ -164,23 +124,37 @@ func FormatTime(time time.Time, f string) (string, error) {
 	}
 }
 
-//func convertFormat(f string) string {
-//	re := regexp.MustCompile(`(?m)(M{4})|(M{3})|(M{2})|(M{1})|(Y{4})|(Y{2})|(y{4})|(y{2})|(G{1})|(E{4})|(E{3})|(d{2})|(d{1})|(H{2})|(h{2})|(h{1})|(m{2})|(m{1})|(s{2})|(s{1})|(a{1})|(S{3}N{6})|(S{3}N{5})|(S{3}N{4})|(S{3}N{3})|(S{3}N{2})|(S{3}N{1})|(S{3})|(S{2})|(S{1})|(z{1})|(Z{1})|(X{3})|(X{2})|(X{1})`)
-//	for _, match := range re.FindAllString(f, -1) {
-//		for key, val := range formats {
-//			if match == key {
-//				f = strings.Replace(f, match, val, -1)
-//			}
-//		}
-//	}
-//	return f
-//}
-
 func convertFormat(f string) (string, error) {
 	formatRune := []rune(f)
 	lenFormat := len(formatRune)
 	out := ""
-	for i := 0; i < len(formatRune); i++ {
+	quoted := false
+	for i := 0; i < lenFormat; i++ {
+		if formatRune[i] == '\'' {
+			j := i + 1
+			for j < lenFormat && formatRune[j] == '\'' {
+				j++
+			}
+			// Each pair is literal; an odd remainder opens or closes quoted text.
+			count := j - i
+			for pairs := count / 2; pairs > 0; pairs-- {
+				out += "'"
+			}
+			if count%2 != 0 {
+				quoted = !quoted
+			}
+			i = j - 1
+			continue
+		}
+		if quoted {
+			j := i + 1
+			for j < lenFormat && formatRune[j] != '\'' {
+				j++
+			}
+			out += string(formatRune[i:j])
+			i = j - 1
+			continue
+		}
 		switch r := formatRune[i]; r {
 		case '\\':
 			i = i + 1
@@ -346,32 +320,12 @@ func convertFormat(f string) (string, error) {
 			case 3: // XXX
 				out += "-07:00"
 			}
-		case '\'': // ' (text delimiter)  or '' (real quote)
-
-			// real quote
-			if i+1 < lenFormat && formatRune[i+1] == r {
-				out += "'"
-				i = i + 1
-				continue
-			}
-
-			tmp := []rune{}
-			j := 1
-			for ; i+j < lenFormat; j++ {
-				if formatRune[i+j] != r {
-					tmp = append(tmp, formatRune[i+j])
-					continue
-				}
-				break
-			}
-			if i+j >= lenFormat {
-				return "", fmt.Errorf("invalid time format %s: unterminated quote", f)
-			}
-			i = i + j
-			out += string(tmp)
 		default:
 			out += string(r)
 		}
+	}
+	if quoted {
+		return "", fmt.Errorf("invalid time format %q: unterminated quote", f)
 	}
 	return out, nil
 }
