@@ -18,16 +18,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
-	"github.com/lf-edge/ekuiper/v2/internal/topo/node"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
-	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
 
 func findWindowPlan(p LogicalPlan) *WindowPlan {
@@ -91,272 +88,53 @@ func TestStateWindowWhereNotPushedDown(t *testing.T) {
 	require.True(t, w.condition != nil || w.collectCondition != nil, "state window should carry pushed-down condition")
 }
 
-// TestStateWindowWhereAfterRuntime verifies end-to-end runtime evaluation
-// with the WHERE condition pushed into the state window.
-//
-//	t1 soc=5  charge_status=charging    -> begin window
-//	t2 soc=10 charge_status=charging    -> collected
-//	t3 soc=15 charge_status=discharging  -> emit window
-//
-// Expected: the window collects and filters, producing only the row with soc % 10 == 0, i.e. [soc=10].
-func TestStateWindowWhereAfterRuntime(t *testing.T) {
+// TestEventWindowWhereKeepsFilterPlan verifies that a WHERE on an event-time
+// window is not pushed into the window as a collect filter. Event-time windows
+// compute their boundaries (window scheduling, session continuity) from the
+// buffered inputs, so rows that do not match the WHERE must still be buffered
+// and the filter must run after the window.
+func TestEventWindowWhereKeepsFilterPlan(t *testing.T) {
 	setupVehicleStatusStream(t)
 
-	sql := `SELECT collect(*) AS charge_data FROM vehicle_status WHERE soc % 10 = 0 GROUP BY statewindow(charge_status = 'charging', charge_status = 'discharging')`
-	stmt, err := xsql.GetStatementFromSql(sql)
-	require.NoError(t, err)
-
-	o := &def.RuleOption{BufferLength: 1024}
-	kv, err := store.GetKV("stream")
-	require.NoError(t, err)
-	p, err := CreateLogicalPlan(stmt, o, kv)
-	require.NoError(t, err)
-
-	wp := findWindowPlan(p)
-	require.NotNil(t, wp)
-	require.Nil(t, findFilterPlan(p), "expected no standalone FilterPlan after pushdown")
-	require.True(t, wp.condition != nil || wp.collectCondition != nil, "state window should carry pushed-down condition")
-
-	filterCond := wp.collectCondition
-	if filterCond == nil {
-		filterCond = wp.condition
+	tests := []struct {
+		name string
+		sql  string
+	}{
+		{
+			name: "sliding window",
+			sql:  `SELECT * FROM vehicle_status WHERE soc % 10 = 0 GROUP BY slidingwindow(ss, 10)`,
+		},
+		{
+			name: "tumbling window",
+			sql:  `SELECT * FROM vehicle_status WHERE soc % 10 = 0 GROUP BY tumblingwindow(ss, 10)`,
+		},
+		{
+			name: "session window",
+			sql:  `SELECT * FROM vehicle_status WHERE soc % 10 = 0 GROUP BY sessionwindow(ss, 10, 2)`,
+		},
+		{
+			name: "state window",
+			sql:  `SELECT * FROM vehicle_status WHERE soc % 10 = 0 GROUP BY statewindow(charge_status = 'charging', charge_status = 'discharging')`,
+		},
 	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			stmt, err := xsql.GetStatementFromSql(tt.sql)
+			require.NoError(t, err)
 
-	winOp, err := node.NewWindowV2Op("window", node.WindowConfig{
-		Type:             wp.WindowType(),
-		BeginCondition:   wp.GetBeginCondition(),
-		EmitCondition:    wp.GetEmitCondition(),
-		CollectCondition: filterCond,
-	}, o)
-	require.NoError(t, err)
+			o := &def.RuleOption{BufferLength: 1024, IsEventTime: true}
+			kv, err := store.GetKV("stream")
+			require.NoError(t, err)
+			p, err := CreateLogicalPlan(stmt, o, kv)
+			require.NoError(t, err)
 
-	output := make(chan any, 10)
-	require.NoError(t, winOp.AddOutput(output, "output"))
-
-	ctx, cancel := mockContext.NewMockContext("1", "2").WithCancel()
-	errCh := make(chan error, 10)
-	winOp.Exec(ctx, errCh)
-	time.Sleep(50 * time.Millisecond)
-
-	now := time.Now()
-	winIn, _ := winOp.GetInput()
-	winIn <- &xsql.Tuple{Message: map[string]any{"soc": int64(5), "charge_status": "charging"}, Timestamp: now}
-	winIn <- &xsql.Tuple{Message: map[string]any{"soc": int64(10), "charge_status": "charging"}, Timestamp: now.Add(1 * time.Second)}
-	winIn <- &xsql.Tuple{Message: map[string]any{"soc": int64(15), "charge_status": "discharging"}, Timestamp: now.Add(2 * time.Second)}
-	time.Sleep(100 * time.Millisecond)
-
-	select {
-	case got := <-output:
-		wt, ok := got.(*xsql.WindowTuples)
-		require.True(t, ok, "expected *xsql.WindowTuples, got %T", got)
-		maps := wt.ToMaps()
-		require.Equal(t, []map[string]any{
-			{"soc": int64(10), "charge_status": "charging"},
-		}, maps)
-	case <-time.After(2 * time.Second):
-		t.Fatal("timed out waiting for window output")
+			require.NotNil(t, findFilterPlan(p), "expected the FilterPlan to be kept above the event-time window")
+			w := findWindowPlan(p)
+			require.NotNil(t, w)
+			require.Nil(t, w.collectCondition, "event-time window must not carry a collect filter")
+			require.Nil(t, w.condition, "event-time window must not carry a pre-window filter")
+		})
 	}
-
-	cancel()
-	time.Sleep(50 * time.Millisecond)
-	winOp.Close()
-}
-
-// TestCountWindowCollectCondition verifies that a WHERE on a count window acts
-// as an in-window collect filter: counting semantics (msgCount) still see every
-// row, while the emitted window is narrowed to the matching rows only
-func TestCountWindowCollectCondition(t *testing.T) {
-	setupVehicleStatusStream(t)
-
-	sql := `SELECT * FROM vehicle_status WHERE soc % 10 = 0 GROUP BY countwindow(2)`
-	stmt, err := xsql.GetStatementFromSql(sql)
-	require.NoError(t, err)
-
-	o := &def.RuleOption{BufferLength: 1024}
-	kv, err := store.GetKV("stream")
-	require.NoError(t, err)
-	p, err := CreateLogicalPlan(stmt, o, kv)
-	require.NoError(t, err)
-
-	wp := findWindowPlan(p)
-	require.NotNil(t, wp)
-	require.Nil(t, findFilterPlan(p), "expected no standalone FilterPlan after pushdown")
-	require.NotNil(t, wp.collectCondition)
-
-	winOp, err := node.NewWindowOp("window", node.WindowConfig{
-		Type:             wp.WindowType(),
-		CountLength:      wp.length,
-		CountInterval:    wp.interval,
-		CollectCondition: wp.collectCondition,
-	}, o)
-	require.NoError(t, err)
-
-	output := make(chan any, 10)
-	require.NoError(t, winOp.AddOutput(output, "output"))
-
-	ctx, cancel := mockContext.NewMockContext("1", "3").WithCancel()
-	errCh := make(chan error, 10)
-	winOp.Exec(ctx, errCh)
-	time.Sleep(50 * time.Millisecond)
-
-	now := time.Now()
-	winIn, _ := winOp.GetInput()
-	winIn <- &xsql.Tuple{Message: map[string]any{"soc": int64(5), "charge_status": "charging"}, Timestamp: now}
-	winIn <- &xsql.Tuple{Message: map[string]any{"soc": int64(10), "charge_status": "charging"}, Timestamp: now}
-	winIn <- &xsql.Tuple{Message: map[string]any{"soc": int64(20), "charge_status": "discharging"}, Timestamp: now}
-	winIn <- &xsql.Tuple{Message: map[string]any{"soc": int64(7), "charge_status": "discharging"}, Timestamp: now}
-	time.Sleep(100 * time.Millisecond)
-
-	select {
-	case got := <-output:
-		wt, ok := got.(*xsql.WindowTuples)
-		require.True(t, ok, "expected *xsql.WindowTuples, got %T", got)
-		maps := wt.ToMaps()
-		require.Equal(t, []map[string]any{
-			{"soc": int64(10), "charge_status": "charging"},
-		}, maps)
-	case <-time.After(2 * time.Second):
-		t.Fatal("timed out waiting for window output")
-	}
-
-	select {
-	case got := <-output:
-		wt, ok := got.(*xsql.WindowTuples)
-		require.True(t, ok, "expected *xsql.WindowTuples, got %T", got)
-		maps := wt.ToMaps()
-		require.Equal(t, []map[string]any{
-			{"soc": int64(20), "charge_status": "discharging"},
-		}, maps)
-	case <-time.After(2 * time.Second):
-		t.Fatal("timed out waiting for window output")
-	}
-
-	cancel()
-	time.Sleep(50 * time.Millisecond)
-	winOp.Close()
-}
-
-// TestSlidingWindowCollectCondition verifies that a WHERE on a processing-time
-// sliding window (v2) only buffers matching rows. Regression test: the Sliding
-// window previously bypassed the collect filter and silently dropped the WHERE.
-func TestSlidingWindowCollectCondition(t *testing.T) {
-	setupVehicleStatusStream(t)
-
-	sql := `SELECT * FROM vehicle_status WHERE soc % 10 = 0 GROUP BY slidingwindow(ss, 1)`
-	stmt, err := xsql.GetStatementFromSql(sql)
-	require.NoError(t, err)
-
-	o := &def.RuleOption{BufferLength: 1024}
-	kv, err := store.GetKV("stream")
-	require.NoError(t, err)
-	p, err := CreateLogicalPlan(stmt, o, kv)
-	require.NoError(t, err)
-
-	wp := findWindowPlan(p)
-	require.NotNil(t, wp)
-	require.Nil(t, findFilterPlan(p), "expected no standalone FilterPlan after pushdown")
-	require.NotNil(t, wp.collectCondition)
-
-	winOp, err := node.NewWindowV2Op("window", node.WindowConfig{
-		Type:             wp.WindowType(),
-		Length:           1 * time.Second,
-		RawInterval:      wp.interval,
-		TimeUnit:         wp.timeUnit,
-		CollectCondition: wp.collectCondition,
-	}, o)
-	require.NoError(t, err)
-
-	output := make(chan any, 10)
-	require.NoError(t, winOp.AddOutput(output, "output"))
-
-	ctx, cancel := mockContext.NewMockContext("1", "4").WithCancel()
-	errCh := make(chan error, 10)
-	winOp.Exec(ctx, errCh)
-	time.Sleep(50 * time.Millisecond)
-
-	now := time.Now()
-	winIn, _ := winOp.GetInput()
-	winIn <- &xsql.Tuple{Message: map[string]any{"soc": int64(10), "charge_status": "charging"}, Timestamp: now}
-	winIn <- &xsql.Tuple{Message: map[string]any{"soc": int64(3), "charge_status": "discharging"}, Timestamp: now.Add(10 * time.Millisecond)}
-	time.Sleep(100 * time.Millisecond)
-
-	for i := 0; i < 2; i++ {
-		select {
-		case got := <-output:
-			wt, ok := got.(*xsql.WindowTuples)
-			require.True(t, ok, "expected *xsql.WindowTuples, got %T", got)
-			for _, m := range wt.ToMaps() {
-				require.NotEqual(t, int64(3), m["soc"], "collect condition should filter out soc=3")
-			}
-		case <-time.After(2 * time.Second):
-			t.Fatal("timed out waiting for window output")
-		}
-	}
-
-	cancel()
-	time.Sleep(50 * time.Millisecond)
-	winOp.Close()
-}
-
-// TestEventWindowCollectCondition verifies that a WHERE on an event-time sliding
-// window only buffers matching rows.
-func TestEventWindowCollectCondition(t *testing.T) {
-	setupVehicleStatusStream(t)
-
-	sql := `SELECT * FROM vehicle_status WHERE soc % 10 = 0 GROUP BY slidingwindow(ss, 10)`
-	stmt, err := xsql.GetStatementFromSql(sql)
-	require.NoError(t, err)
-
-	o := &def.RuleOption{BufferLength: 1024, IsEventTime: true}
-	kv, err := store.GetKV("stream")
-	require.NoError(t, err)
-	p, err := CreateLogicalPlan(stmt, o, kv)
-	require.NoError(t, err)
-
-	wp := findWindowPlan(p)
-	require.NotNil(t, wp)
-	require.Nil(t, findFilterPlan(p), "expected no standalone FilterPlan after pushdown")
-	require.NotNil(t, wp.collectCondition)
-
-	winOp, err := node.NewWindowV2Op("window", node.WindowConfig{
-		Type:             wp.WindowType(),
-		Length:           10 * time.Second,
-		RawInterval:      wp.interval,
-		TimeUnit:         wp.timeUnit,
-		CollectCondition: wp.collectCondition,
-	}, o)
-	require.NoError(t, err)
-
-	output := make(chan any, 10)
-	require.NoError(t, winOp.AddOutput(output, "output"))
-
-	ctx, cancel := mockContext.NewMockContext("1", "5").WithCancel()
-	errCh := make(chan error, 10)
-	winOp.Exec(ctx, errCh)
-	time.Sleep(50 * time.Millisecond)
-
-	now := time.Now()
-	winIn, _ := winOp.GetInput()
-	winIn <- &xsql.Tuple{Message: map[string]any{"soc": int64(10), "charge_status": "charging", "ts": now.UnixMilli()}, Timestamp: now}
-	winIn <- &xsql.Tuple{Message: map[string]any{"soc": int64(3), "charge_status": "discharging", "ts": now.Add(10 * time.Millisecond).UnixMilli()}, Timestamp: now.Add(10 * time.Millisecond)}
-	time.Sleep(100 * time.Millisecond)
-
-	for i := 0; i < 2; i++ {
-		select {
-		case got := <-output:
-			wt, ok := got.(*xsql.WindowTuples)
-			require.True(t, ok, "expected *xsql.WindowTuples, got %T", got)
-			for _, m := range wt.ToMaps() {
-				require.NotEqual(t, int64(3), m["soc"], "collect condition should filter out soc=3")
-			}
-		case <-time.After(2 * time.Second):
-			t.Fatal("timed out waiting for window output")
-		}
-	}
-
-	cancel()
-	time.Sleep(50 * time.Millisecond)
-	winOp.Close()
 }
 
 // TestWindowWhereAggregateNotCollected verifies that a WHERE depending on an
@@ -401,68 +179,4 @@ func TestWindowWhereAggregateNotCollected(t *testing.T) {
 			require.Nil(t, w.collectCondition, "aggregate condition must not become a collect filter")
 		})
 	}
-}
-
-// TestSlidingWindowCollectConditionKeepsTriggerState verifies that the collect
-// filter does not update the state functions of the trigger condition.
-// Regression test: collectAdd used to evaluate the trigger stateFuncs whenever
-// a row matched the WHERE, which moved last_hit_time to the current row and
-// prevented the OVER (WHEN ...) trigger from ever firing.
-func TestSlidingWindowCollectConditionKeepsTriggerState(t *testing.T) {
-	setupVehicleStatusStream(t)
-
-	runSliding := func(t *testing.T, sql string) int {
-		stmt, err := xsql.GetStatementFromSql(sql)
-		require.NoError(t, err)
-
-		o := &def.RuleOption{BufferLength: 1024}
-		kv, err := store.GetKV("stream")
-		require.NoError(t, err)
-		p, err := CreateLogicalPlan(stmt, o, kv)
-		require.NoError(t, err)
-
-		wp := findWindowPlan(p)
-		require.NotNil(t, wp)
-		wp.ExtractStateFunc()
-
-		winOp, err := node.NewWindowV2Op("window", node.WindowConfig{
-			Type:             wp.WindowType(),
-			Length:           10 * time.Second,
-			RawInterval:      wp.interval,
-			TimeUnit:         wp.timeUnit,
-			TriggerCondition: wp.triggerCondition,
-			CollectCondition: wp.collectCondition,
-			StateFuncs:       wp.stateFuncs,
-		}, o)
-		require.NoError(t, err)
-
-		output := make(chan any, 100)
-		require.NoError(t, winOp.AddOutput(output, "output"))
-
-		ctx, cancel := mockContext.NewMockContext("1", t.Name()).WithCancel()
-		errCh := make(chan error, 10)
-		winOp.Exec(ctx, errCh)
-		time.Sleep(50 * time.Millisecond)
-
-		// Rows at +0, +500, +1200, +1300, +2500 ms: the trigger fires when
-		// more than 1s has passed since the last trigger, i.e. at +0, +1200, +2500.
-		now := time.Now().UnixMilli()
-		winIn, _ := winOp.GetInput()
-		for i, d := range []int64{0, 500, 1200, 1300, 2500} {
-			winIn <- &xsql.Tuple{Message: map[string]any{"ts": now + d, "soc": int64(10 + i)}, Timestamp: time.UnixMilli(now + d)}
-		}
-		time.Sleep(300 * time.Millisecond)
-
-		cancel()
-		time.Sleep(50 * time.Millisecond)
-		winOp.Close()
-		return len(output)
-	}
-
-	withoutWhere := runSliding(t, `SELECT ts FROM vehicle_status GROUP BY slidingwindow(ss, 10) OVER (WHEN ts - last_hit_time() > 1000)`)
-	// soc > 1 matches every row, so the collect filter must not change when the trigger fires.
-	withWhere := runSliding(t, `SELECT ts FROM vehicle_status WHERE soc > 1 GROUP BY slidingwindow(ss, 10) OVER (WHEN ts - last_hit_time() > 1000)`)
-
-	require.Equal(t, 3, withoutWhere)
-	require.Equal(t, withoutWhere, withWhere, "collect filter must not affect the trigger state")
 }

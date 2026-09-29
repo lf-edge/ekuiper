@@ -100,7 +100,15 @@ func (p *WindowPlan) BuildExplainInfo() {
 }
 
 func (p *WindowPlan) PushDownPredicate(condition ast.Expr) (ast.Expr, LogicalPlan) {
-	if containsBypass(condition) || xsql.IsAggregate(condition) {
+	// Event-time windows compute their boundaries (window scheduling, session
+	// continuity) from the buffered inputs, so a row that does not match the
+	// WHERE may still affect the window. Keep the post-window filter for them.
+	if p.isEventTime {
+		// TODO event time filter, need event window op support
+		//p.condition = combine(condition, p.condition)
+		//// push nil condition won't return any
+		//p.baseLogicalPlan.PushDownPredicate(nil)
+		// return nil, p
 		return condition, p
 	}
 	// not time window depends on the event, so should not filter any.
@@ -109,16 +117,11 @@ func (p *WindowPlan) PushDownPredicate(condition ast.Expr) (ast.Expr, LogicalPla
 	// before it; otherwise rows that trigger a state change could be filtered
 	// out and the window would never open/close.
 	if p.wtype == ast.COUNT_WINDOW || p.wtype == ast.SLIDING_WINDOW || p.wtype == ast.STATE_WINDOW {
-		p.collectCondition = condition
-		return nil, p
-	} else if p.isEventTime {
-		// TODO event time filter, need event window op support
-		//p.condition = combine(condition, p.condition)
-		//// push nil condition won't return any
-		//p.baseLogicalPlan.PushDownPredicate(nil)
-		// return nil, p
-		p.collectCondition = condition
-		return nil, p
+		// The collect filter is evaluated per row inside the window, so only the
+		// parts of the condition that do not depend on an aggregate can move in.
+		unpushable, pushable := extractCollectCondition(condition)
+		p.collectCondition = pushable
+		return unpushable, p
 	} else {
 		// Presume window condition are only one table related.
 		// TODO window condition validation
@@ -194,19 +197,21 @@ func (p *WindowPlan) GenWindowConfig() *node.WindowConfig {
 	}
 }
 
-// containsBypass reports whether the condition references a bypass call
-// (i.e. Name == "bypass"). If the condition contains a bypass, it depends
-// on an aggregate result that is only available after the window has
-// closed, so the condition cannot be evaluated inside the window operator
-func containsBypass(condition ast.Expr) bool {
-	found := false
-	ast.WalkFunc(condition, func(n ast.Node) bool {
-		if f, ok := n.(*ast.Call); ok && f.Name == "bypass" {
-			found = true
-			return false
-		}
-
-		return true
-	})
-	return found
+// extractCollectCondition splits the AND parts of the condition into the ones
+// that can run as an in-window collect filter and the ones that must stay after
+// the window. A part that depends on an aggregate (for example through a select
+// alias such as avg(a) AS m) is only known once the window closes.
+func extractCollectCondition(condition ast.Expr) (unpushable ast.Expr, pushable ast.Expr) {
+	if condition == nil {
+		return nil, nil
+	}
+	if be, ok := condition.(*ast.BinaryExpr); ok && be.OP == ast.AND {
+		ul, pl := extractCollectCondition(be.LHS)
+		ur, pr := extractCollectCondition(be.RHS)
+		return combine(ul, ur), combine(pl, pr)
+	}
+	if xsql.IsAggregate(condition) {
+		return condition, nil
+	}
+	return nil, condition
 }
