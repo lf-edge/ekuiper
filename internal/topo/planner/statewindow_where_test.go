@@ -358,3 +358,111 @@ func TestEventWindowCollectCondition(t *testing.T) {
 	time.Sleep(50 * time.Millisecond)
 	winOp.Close()
 }
+
+// TestWindowWhereAggregateNotCollected verifies that a WHERE depending on an
+// aggregate result is never turned into an in-window collect filter, whether
+// the aggregate is written directly (rewritten into bypass) or reached through
+// a select alias. The aggregate value only exists after the window closes, so
+// the FilterPlan must be kept above the window.
+func TestWindowWhereAggregateNotCollected(t *testing.T) {
+	setupVehicleStatusStream(t)
+
+	tests := []struct {
+		name string
+		sql  string
+	}{
+		{
+			name: "direct aggregate",
+			sql:  `SELECT ts FROM vehicle_status WHERE soc > avg(soc) GROUP BY countwindow(5)`,
+		},
+		{
+			name: "aggregate alias",
+			sql:  `SELECT ts, avg(soc) AS a FROM vehicle_status WHERE soc > a GROUP BY countwindow(5)`,
+		},
+		{
+			name: "state aggregate alias",
+			sql:  `SELECT ts, last_agg_hit_count() AS c FROM vehicle_status WHERE c > 1 GROUP BY countwindow(5)`,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			stmt, err := xsql.GetStatementFromSql(tt.sql)
+			require.NoError(t, err)
+
+			o := &def.RuleOption{BufferLength: 1024}
+			kv, err := store.GetKV("stream")
+			require.NoError(t, err)
+			p, err := CreateLogicalPlan(stmt, o, kv)
+			require.NoError(t, err)
+
+			require.NotNil(t, findFilterPlan(p), "expected the FilterPlan to be kept above the window")
+			w := findWindowPlan(p)
+			require.NotNil(t, w)
+			require.Nil(t, w.collectCondition, "aggregate condition must not become a collect filter")
+		})
+	}
+}
+
+// TestSlidingWindowCollectConditionKeepsTriggerState verifies that the collect
+// filter does not update the state functions of the trigger condition.
+// Regression test: collectAdd used to evaluate the trigger stateFuncs whenever
+// a row matched the WHERE, which moved last_hit_time to the current row and
+// prevented the OVER (WHEN ...) trigger from ever firing.
+func TestSlidingWindowCollectConditionKeepsTriggerState(t *testing.T) {
+	setupVehicleStatusStream(t)
+
+	runSliding := func(t *testing.T, sql string) int {
+		stmt, err := xsql.GetStatementFromSql(sql)
+		require.NoError(t, err)
+
+		o := &def.RuleOption{BufferLength: 1024}
+		kv, err := store.GetKV("stream")
+		require.NoError(t, err)
+		p, err := CreateLogicalPlan(stmt, o, kv)
+		require.NoError(t, err)
+
+		wp := findWindowPlan(p)
+		require.NotNil(t, wp)
+		wp.ExtractStateFunc()
+
+		winOp, err := node.NewWindowV2Op("window", node.WindowConfig{
+			Type:             wp.WindowType(),
+			Length:           10 * time.Second,
+			RawInterval:      wp.interval,
+			TimeUnit:         wp.timeUnit,
+			TriggerCondition: wp.triggerCondition,
+			CollectCondition: wp.collectCondition,
+			StateFuncs:       wp.stateFuncs,
+		}, o)
+		require.NoError(t, err)
+
+		output := make(chan any, 100)
+		require.NoError(t, winOp.AddOutput(output, "output"))
+
+		ctx, cancel := mockContext.NewMockContext("1", t.Name()).WithCancel()
+		errCh := make(chan error, 10)
+		winOp.Exec(ctx, errCh)
+		time.Sleep(50 * time.Millisecond)
+
+		// Rows at +0, +500, +1200, +1300, +2500 ms: the trigger fires when
+		// more than 1s has passed since the last trigger, i.e. at +0, +1200, +2500.
+		now := time.Now().UnixMilli()
+		winIn, _ := winOp.GetInput()
+		for i, d := range []int64{0, 500, 1200, 1300, 2500} {
+			winIn <- &xsql.Tuple{Message: map[string]any{"ts": now + d, "soc": int64(10 + i)}, Timestamp: time.UnixMilli(now + d)}
+		}
+		time.Sleep(300 * time.Millisecond)
+
+		cancel()
+		time.Sleep(50 * time.Millisecond)
+		winOp.Close()
+		return len(output)
+	}
+
+	withoutWhere := runSliding(t, `SELECT ts FROM vehicle_status GROUP BY slidingwindow(ss, 10) OVER (WHEN ts - last_hit_time() > 1000)`)
+	// soc > 1 matches every row, so the collect filter must not change when the trigger fires.
+	withWhere := runSliding(t, `SELECT ts FROM vehicle_status WHERE soc > 1 GROUP BY slidingwindow(ss, 10) OVER (WHEN ts - last_hit_time() > 1000)`)
+
+	require.Equal(t, 3, withoutWhere)
+	require.Equal(t, withoutWhere, withWhere, "collect filter must not affect the trigger state")
+}

@@ -100,7 +100,7 @@ func (p *WindowPlan) BuildExplainInfo() {
 }
 
 func (p *WindowPlan) PushDownPredicate(condition ast.Expr) (ast.Expr, LogicalPlan) {
-	if containsBypass(condition) {
+	if containsBypass(condition) || xsql.IsAggregate(condition) {
 		return condition, p
 	}
 	// not time window depends on the event, so should not filter any.
@@ -137,21 +137,17 @@ func (p *WindowPlan) PruneColumns(fields []ast.Expr) error {
 
 func (p *WindowPlan) ExtractStateFunc() {
 	aliases := make(map[string]ast.Expr)
-	walkExpr := func(expr ast.Expr) {
-		ast.WalkFunc(expr, func(n ast.Node) bool {
-			switch f := n.(type) {
-			case *ast.Call:
-				p.transform(f)
-			case *ast.FieldRef:
-				if f.AliasRef != nil {
-					aliases[f.Name] = f.AliasRef.Expression
-				}
+	ast.WalkFunc(p.triggerCondition, func(n ast.Node) bool {
+		switch f := n.(type) {
+		case *ast.Call:
+			p.transform(f)
+		case *ast.FieldRef:
+			if f.AliasRef != nil {
+				aliases[f.Name] = f.AliasRef.Expression
 			}
-			return true
-		})
-	}
-	walkExpr(p.triggerCondition)
-	walkExpr(p.collectCondition)
+		}
+		return true
+	})
 	for _, ex := range aliases {
 		ast.WalkFunc(ex, func(n ast.Node) bool {
 			switch f := n.(type) {
