@@ -254,6 +254,7 @@ func getFirstTimer(ctx api.StreamContext, rawInerval int, timeUnit ast.Token) (t
 
 func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []xsql.EventRow, errCh chan<- error) {
 	log := ctx.GetLogger()
+	fv, _ := xsql.NewFunctionValuersForOp(ctx)
 	var (
 		timeoutTicker *clock.Timer
 		// The first ticker to align the first window to the nature time
@@ -371,7 +372,7 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []xs
 
 				if o.window.Type == ast.COUNT_WINDOW {
 					inputs = append(inputs, d)
-				} else if match, err := collectConditionMatch(ctx, d, o.window.CollectCondition, o.name); err != nil {
+				} else if match, err := collectConditionMatch(fv, d, o.window.CollectCondition, o.name); err != nil {
 					o.onError(ctx, err)
 				} else if match {
 					inputs = append(inputs, d)
@@ -423,7 +424,7 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []xs
 					}
 					o.msgCount = 0
 
-					if tl, er := NewTupleList(ctx, inputs, o.window.CountLength, o.window.CollectCondition); er != nil {
+					if tl, er := NewTupleList(fv, inputs, o.window.CountLength, o.window.CollectCondition); er != nil {
 						log.Error("Found error when trying to ")
 						infra.DrainError(ctx, er, errCh)
 						return
@@ -441,6 +442,9 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []xs
 							triggerTime = timex.GetNowInMilli()
 							windowEnd := triggerTime
 							tsets.WindowRange = xsql.NewWindowRange(windowStart, windowEnd, windowEnd)
+							if isFilteredEmptyWindow(o.window.CollectCondition, len(tsets.Content)) {
+								continue
+							}
 							log.Debugf("Sent: %v", tsets)
 							o.handleTraceEmitTuple(ctx, tsets)
 							o.Broadcast(tsets)
@@ -536,17 +540,17 @@ type TupleList struct {
 	tuples      []xsql.EventRow
 	index       int // Current index
 	size        int // The size for count window
-	ctx         api.StreamContext
+	fv          *xsql.FunctionValuer
 	tupleFilter ast.Expr
 }
 
-func NewTupleList(ctx api.StreamContext, tuples []xsql.EventRow, windowSize int, collectCondition ast.Expr) (TupleList, error) {
+func NewTupleList(fv *xsql.FunctionValuer, tuples []xsql.EventRow, windowSize int, collectCondition ast.Expr) (TupleList, error) {
 	if windowSize <= 0 {
 		return TupleList{}, fmt.Errorf("Window size should not be less than zero.")
 	} else if len(tuples) == 0 {
 		return TupleList{}, fmt.Errorf("The tuples should not be nil or empty.")
 	}
-	tl := TupleList{tuples: tuples, size: windowSize, ctx: ctx, tupleFilter: collectCondition}
+	tl := TupleList{tuples: tuples, size: windowSize, fv: fv, tupleFilter: collectCondition}
 	return tl, nil
 }
 
@@ -573,7 +577,7 @@ func (tl *TupleList) nextCountWindow() (*xsql.WindowTuples, error) {
 	tl.index = tl.index + 1
 
 	for _, tuple := range subT {
-		filterMatch, err := collectConditionMatch(tl.ctx, tuple, tl.tupleFilter, "count window")
+		filterMatch, err := collectConditionMatch(tl.fv, tuple, tl.tupleFilter, "count window")
 		if err != nil {
 			return nil, err
 		}
@@ -754,8 +758,10 @@ func (o *WindowOperator) scan(inputs []xsql.EventRow, triggerTime time.Time, ctx
 	}
 	log.Debugf("window %s triggered for %d tuples", o.name, len(inputs))
 
-	o.Broadcast(results)
-	o.onSend(ctx, results)
+	if !isFilteredEmptyWindow(o.window.CollectCondition, len(results.Content)) {
+		o.Broadcast(results)
+		o.onSend(ctx, results)
+	}
 
 	o.triggerTime = triggerTime
 	log.Debugf("new trigger time %d", o.triggerTime.UnixMilli())
@@ -780,12 +786,21 @@ func (o *WindowOperator) calDelta(triggerTime time.Time, log api.Logger) time.Du
 	return delta
 }
 
-func collectConditionMatch(ctx api.StreamContext, d xsql.EventRow, collectCondition ast.Expr, name string) (bool, error) {
+// isFilteredEmptyWindow reports whether a triggered window has no rows left
+// after the in-window collect filter. Such a window must not be sent
+// downstream: before the WHERE was fused into the window, the Filter operator
+// after the window suppressed it. The window trigger itself is unaffected.
+func isFilteredEmptyWindow(collectCondition ast.Expr, size int) bool {
+	return collectCondition != nil && size == 0
+}
+
+// collectConditionMatch evaluates the in-window collect filter against a row.
+// The FunctionValuer is created once by the caller and reused for every row.
+func collectConditionMatch(fv *xsql.FunctionValuer, d xsql.EventRow, collectCondition ast.Expr, name string) (bool, error) {
 	if collectCondition == nil {
 		return true, nil
 	}
 
-	fv, _ := xsql.NewFunctionValuersForOp(ctx)
 	ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(d, fv)}
 	result := ve.Eval(collectCondition)
 

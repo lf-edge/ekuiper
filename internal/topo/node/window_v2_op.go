@@ -96,6 +96,9 @@ func (o *WindowV2Operator) emitWindow(ctx api.StreamContext, startTime, endTime 
 		results.Content = append(results.Content, tuple)
 	}
 	results.WindowRange = xsql.NewWindowRange(startTime.UnixMilli(), endTime.UnixMilli(), endTime.UnixMilli())
+	if isFilteredEmptyWindow(o.windowConfig.CollectCondition, len(results.Content)) {
+		return
+	}
 	o.Broadcast(results)
 	o.onSend(ctx, results)
 }
@@ -142,6 +145,9 @@ func (s *StateWindowOp) emit(ctx api.StreamContext, status *StateWindowStatus) {
 		results.Content = append(results.Content, tuple)
 	}
 	results.WindowRange = xsql.NewWindowRange(status.StartTime.UnixMilli(), status.EndTime.UnixMilli(), status.EndTime.UnixMilli())
+	if isFilteredEmptyWindow(s.windowConfig.CollectCondition, len(results.Content)) {
+		return
+	}
 	s.Broadcast(results)
 	s.onSend(ctx, results)
 }
@@ -205,7 +211,12 @@ func (s *StateWindowOp) exec(ctx api.StreamContext, errCh chan<- error) {
 }
 
 func (s *StateWindowOp) collectAdd(ctx api.StreamContext, fv *xsql.FunctionValuer, row *xsql.Tuple, status *StateWindowStatus) {
-	if s.windowConfig.CollectCondition == nil || isMatchCondition(ctx, s.windowConfig.CollectCondition, fv, row, nil) {
+	match, err := collectConditionMatch(fv, row, s.windowConfig.CollectCondition, s.name)
+	if err != nil {
+		s.onError(ctx, err)
+		return
+	}
+	if match {
 		status.Scanner.addTuple(row)
 	}
 }
@@ -321,7 +332,12 @@ func (s *SlidingWindowOp) exec(ctx api.StreamContext, errCh chan<- error) {
 }
 
 func (s *SlidingWindowOp) collectAdd(ctx api.StreamContext, fv *xsql.FunctionValuer, row *xsql.Tuple) {
-	if s.windowConfig.CollectCondition == nil || isMatchCondition(ctx, s.windowConfig.CollectCondition, fv, row, nil) {
+	match, err := collectConditionMatch(fv, row, s.windowConfig.CollectCondition, s.name)
+	if err != nil {
+		s.onError(ctx, err)
+		return
+	}
+	if match {
 		s.scanner.addTuple(row)
 	}
 }

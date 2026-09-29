@@ -305,6 +305,23 @@ func TestExplainAggInWhere(t *testing.T) {
 					{"op":"WindowPlan_3","info":"{ length:2, windowType:COUNT_WINDOW, limit: 0 }"}
 							{"op":"DataSourcePlan_4","info":"StreamName: stream, StreamFields:[ a, b ]"}`,
 		},
+		{
+			// only the part without the aggregate is pushed into the window
+			sql: `select * from stream where a > 10 AND a > avg(a) group by countwindow(2)`,
+			explain: `{"op":"ProjectPlan_0","info":"Fields:[ * ]"}
+	{"op":"FilterPlan_1","info":"Condition:{ binaryExpr:{ stream.a > Call:{ name:bypass, args:[$$default.$$agg_ref_0] } } }, "}
+			{"op":"AggFunc_2","info":"aggFuncs:[$$agg_ref_0:Call:{ name:avg, args:[stream.a] }]"}
+					{"op":"WindowPlan_3","info":"{ length:2, windowType:COUNT_WINDOW, collectCondition: binaryExpr:{ stream.a > 10 }, limit: 0 }"}
+							{"op":"DataSourcePlan_4","info":"StreamName: stream, StreamFields:[ a, b ]"}`,
+		},
+		{
+			// an aggregate reached through an alias is kept after the window as well
+			sql: `select a, avg(a) as m from stream where a > 10 AND a > m group by countwindow(2)`,
+			explain: `{"op":"ProjectPlan_0","info":"Fields:[ $$alias.m,aliasRef:Call:{ name:avg, args:[stream.a] }, stream.a ]"}
+	{"op":"FilterPlan_1","info":"Condition:{ binaryExpr:{ stream.a > $$alias.m,aliasRef:Call:{ name:avg, args:[stream.a] } } }, "}
+			{"op":"WindowPlan_2","info":"{ length:2, windowType:COUNT_WINDOW, collectCondition: binaryExpr:{ stream.a > 10 }, limit: 0 }"}
+					{"op":"DataSourcePlan_3","info":"StreamName: stream, StreamFields:[ a ]"}`,
+		},
 	}
 	for _, tc := range testcases {
 		stmt, err := xsql.NewParser(strings.NewReader(tc.sql)).Parse()
