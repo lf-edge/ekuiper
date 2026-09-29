@@ -95,7 +95,7 @@ func (s *EventSlidingWindowOp) exec(ctx api.StreamContext, errCh chan<- error) {
 }
 
 func (s *EventSlidingWindowOp) collectAdd(ctx api.StreamContext, fv *xsql.FunctionValuer, row *xsql.Tuple) {
-	if s.windowConfig.CollectCondition == nil || isMatchCondition(ctx, s.windowConfig.CollectCondition, fv, row, s.stateFuncs) {
+	if s.windowConfig.CollectCondition == nil || isMatchCondition(ctx, s.windowConfig.CollectCondition, fv, row, nil) {
 		s.scanner.addTuple(row)
 	}
 }

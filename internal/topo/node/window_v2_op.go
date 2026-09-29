@@ -205,7 +205,7 @@ func (s *StateWindowOp) exec(ctx api.StreamContext, errCh chan<- error) {
 }
 
 func (s *StateWindowOp) collectAdd(ctx api.StreamContext, fv *xsql.FunctionValuer, row *xsql.Tuple, status *StateWindowStatus) {
-	if s.windowConfig.CollectCondition == nil || isMatchCondition(ctx, s.windowConfig.CollectCondition, fv, row, s.stateFuncs) {
+	if s.windowConfig.CollectCondition == nil || isMatchCondition(ctx, s.windowConfig.CollectCondition, fv, row, nil) {
 		status.Scanner.addTuple(row)
 	}
 }
@@ -321,7 +321,7 @@ func (s *SlidingWindowOp) exec(ctx api.StreamContext, errCh chan<- error) {
 }
 
 func (s *SlidingWindowOp) collectAdd(ctx api.StreamContext, fv *xsql.FunctionValuer, row *xsql.Tuple) {
-	if s.windowConfig.CollectCondition == nil || isMatchCondition(ctx, s.windowConfig.CollectCondition, fv, row, s.stateFuncs) {
+	if s.windowConfig.CollectCondition == nil || isMatchCondition(ctx, s.windowConfig.CollectCondition, fv, row, nil) {
 		s.scanner.addTuple(row)
 	}
 }
