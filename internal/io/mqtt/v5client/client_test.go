@@ -16,6 +16,7 @@ package v5client
 
 import (
 	"testing"
+	"time"
 
 	"github.com/eclipse/paho.golang/paho"
 	"github.com/lf-edge/ekuiper/contract/v2/api"
@@ -88,5 +89,68 @@ func TestV5MultiTopicSubscribe(t *testing.T) {
 	require.True(t, ok)
 	require.Equal(t, m2.Payload, []byte{42})
 	require.NoError(t, c.Unsubscribe(ctx, "test1,test2"))
+	c.Disconnect(ctx)
+}
+
+// TestV5ResubscribeSameTopic covers the reconnect path: onConnect calls Subscribe again for a topic
+// that is already known. The SUBSCRIBE must still carry the topic filter, because MQTT 5 forbids an
+// empty one and the broker closes the connection. See https://github.com/lf-edge/ekuiper/issues/4182
+func TestV5ResubscribeSameTopic(t *testing.T) {
+	server := mqtt.New(nil)
+	_ = server.AddHook(new(auth.AllowHook), nil)
+	tcp := listeners.NewTCP(listeners.Config{ID: "testresub", Address: ":12885"})
+	require.NoError(t, server.AddListener(tcp))
+	go func() {
+		_ = server.Serve()
+	}()
+	defer func() {
+		server.Close()
+	}()
+	dataDir, err := conf.GetDataLoc()
+	require.NoError(t, err)
+	require.NoError(t, store.SetupDefault(dataDir))
+	require.NoError(t, connection.InitConnectionManager4Test())
+	ctx, _ := mockContext.NewMockContext("ruleResub", "op1").WithCancel()
+	c, err := Provision(ctx, map[string]any{
+		"server":     "mqtt://127.0.0.1:12885",
+		"datasource": "resub",
+		"qos":        1,
+	}, func(ctx api.StreamContext) {
+	}, func(ctx api.StreamContext, e error) {
+	}, func(ctx api.StreamContext) {
+	})
+	require.NoError(t, err)
+	require.NoError(t, c.Connect(ctx))
+	resultCh := make(chan any, 10)
+	handler := func(ctx api.StreamContext, msg any) {
+		resultCh <- msg
+	}
+	require.NoError(t, c.Subscribe(ctx, "resub", 1, handler))
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- c.Subscribe(ctx, "resub", 1, handler)
+	}()
+	select {
+	case err := <-errCh:
+		require.NoError(t, err)
+	case <-time.After(5 * time.Second):
+		t.Fatal("re-subscribe did not complete")
+	}
+	require.NoError(t, c.Publish(ctx, "resub", 1, false, []byte{43}, nil))
+	select {
+	case v := <-resultCh:
+		m, ok := v.(*paho.Publish)
+		require.True(t, ok)
+		require.Equal(t, []byte{43}, m.Payload)
+	case <-time.After(5 * time.Second):
+		t.Fatal("no message received after re-subscribe")
+	}
+	// The route is registered once, so a re-subscribe does not deliver the message twice.
+	select {
+	case <-resultCh:
+		t.Fatal("message delivered twice after re-subscribe")
+	case <-time.After(500 * time.Millisecond):
+	}
+	require.NoError(t, c.Unsubscribe(ctx, "resub"))
 	c.Disconnect(ctx)
 }
