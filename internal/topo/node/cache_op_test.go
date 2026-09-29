@@ -23,10 +23,12 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/testx"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/node/cache"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
@@ -148,6 +150,51 @@ func TestCacheRun(t *testing.T) {
 			}
 			assert.Equal(t, tt.lastReceive, r)
 		})
+	}
+}
+
+func TestCacheRunRestored(t *testing.T) {
+	testx.InitEnv("cacheOpRestore")
+	deleteCachedb()
+	timex.Set(0)
+	ctx, cancel := mockContext.NewMockContext("testCacheRestore", "op1").WithCancel()
+	defer cancel()
+	conf := &model.SinkConf{
+		MemoryCacheThreshold: 2,
+		MaxDiskCache:         4,
+		BufferPageSize:       2,
+		EnableCache:          true,
+		ResendInterval:       cast.DurationConf(10 * time.Millisecond),
+	}
+	stored, err := cache.NewSyncCache(ctx, conf)
+	require.NoError(t, err)
+	require.NoError(t, stored.InitStore(ctx))
+	items := []any{
+		&xsql.Tuple{Message: map[string]any{"value": 1}},
+		&xsql.Tuple{Message: map[string]any{"value": 2}},
+	}
+	for _, item := range items {
+		require.NoError(t, stored.AddCache(ctx, item))
+	}
+	stored.Flush(ctx)
+
+	op, err := NewCacheOp(ctx, "test", &def.RuleOption{BufferLength: 10}, conf)
+	require.NoError(t, err)
+	out := make(chan any, 2)
+	require.NoError(t, op.AddOutput(out, "test"))
+	errCh := make(chan error, 1)
+	op.Exec(ctx, errCh)
+	require.Equal(t, 2, op.cache.CacheLength)
+	for _, want := range items {
+		timex.Add(20 * time.Millisecond)
+		select {
+		case got := <-out:
+			require.Equal(t, want, got)
+		case err := <-errCh:
+			t.Fatalf("cache op failed: %v", err)
+		case <-time.After(time.Second):
+			t.Fatal("restored cache was not resent")
+		}
 	}
 }
 
