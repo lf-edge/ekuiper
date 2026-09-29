@@ -28,4 +28,6 @@ func init() {
 	gob.Register(&JoinTuple{})
 	gob.Register([]any{})
 	gob.Register(&RawTuple{})
+	gob.Register(&WindowTuples{})
+	gob.Register(&TransformedTupleList{})
 }
