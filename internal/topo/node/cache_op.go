@@ -74,10 +74,19 @@ func (s *CacheOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 		infra.DrainError(ctx, fmt.Errorf("cache op init store error:%v", err), errCh)
 		return
 	}
+	// A restored cache needs the same resend state as a cache created by a full output queue.
+	if s.cache.CacheLength > 0 {
+		s.resendTicker = timex.GetTicker(time.Duration(s.cacheConf.ResendInterval))
+		s.resendTimerCh = s.resendTicker.C
+		s.hasCache = true
+	}
 	s.prepareExec(ctx, errCh, "op")
 	go func() {
 		err := infra.SafeRun(func() error {
 			defer func() {
+				if s.resendTicker != nil {
+					s.resendTicker.Stop()
+				}
 				s.Close()
 			}()
 			for {
