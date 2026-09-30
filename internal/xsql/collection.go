@@ -68,7 +68,7 @@ type Collection interface {
  */
 
 type WindowTuples struct {
-	Ctx     api.StreamContext
+	ctx     api.StreamContext
 	Content []Row // immutable
 	*WindowRange
 	contentBySrc map[string][]Row // volatile, temporary cache]
@@ -84,7 +84,7 @@ var (
 )
 
 type JoinTuples struct {
-	Ctx     api.StreamContext
+	ctx     api.StreamContext
 	Content []*JoinTuple
 	*WindowRange
 
@@ -94,11 +94,11 @@ type JoinTuples struct {
 }
 
 func (s *JoinTuples) GetTracerCtx() api.StreamContext {
-	return s.Ctx
+	return s.ctx
 }
 
 func (s *JoinTuples) SetTracerCtx(ctx api.StreamContext) {
-	s.Ctx = ctx
+	s.ctx = ctx
 }
 
 var (
@@ -107,17 +107,17 @@ var (
 )
 
 type GroupedTuplesSet struct {
-	Ctx    api.StreamContext
+	ctx    api.StreamContext
 	Groups []*GroupedTuples
 	*WindowRange
 }
 
 func (s *GroupedTuplesSet) GetTracerCtx() api.StreamContext {
-	return s.Ctx
+	return s.ctx
 }
 
 func (s *GroupedTuplesSet) SetTracerCtx(ctx api.StreamContext) {
-	s.Ctx = ctx
+	s.ctx = ctx
 }
 
 var _ Collection = &GroupedTuplesSet{}
@@ -127,11 +127,11 @@ var _ Collection = &GroupedTuplesSet{}
  */
 
 func (w *WindowTuples) GetTracerCtx() api.StreamContext {
-	return w.Ctx
+	return w.ctx
 }
 
 func (w *WindowTuples) SetTracerCtx(ctx api.StreamContext) {
-	w.Ctx = ctx
+	w.ctx = ctx
 }
 
 func (w *WindowTuples) Index(index int) Row {
@@ -613,18 +613,18 @@ func (r *WindowRange) FuncValue(key string) (interface{}, bool) {
 }
 
 type TransformedTupleList struct {
-	Ctx     api.StreamContext
+	ctx     api.StreamContext
 	Content []api.MessageTuple
 	Maps    []map[string]any
 	Props   map[string]string
 }
 
 func (l *TransformedTupleList) GetTracerCtx() api.StreamContext {
-	return l.Ctx
+	return l.ctx
 }
 
 func (l *TransformedTupleList) SetTracerCtx(ctx api.StreamContext) {
-	l.Ctx = ctx
+	l.ctx = ctx
 }
 
 func (l *TransformedTupleList) DynamicProps(template string) (string, bool) {
@@ -657,7 +657,7 @@ func (l *TransformedTupleList) Clone() *TransformedTupleList {
 		}
 	}
 	return &TransformedTupleList{
-		Ctx:     l.Ctx,
+		ctx:     l.ctx,
 		Content: ng,
 		Props:   l.Props,
 	}

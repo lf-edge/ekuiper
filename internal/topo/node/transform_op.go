@@ -250,15 +250,23 @@ func toSinkTuple(_, spanCtx api.StreamContext, bs any, props map[string]string) 
 	}
 	switch bt := bs.(type) {
 	case []byte:
-		return &xsql.RawTuple{Ctx: spanCtx, Rawdata: bt, Props: props, Timestamp: timex.GetNow()}
+		r := &xsql.RawTuple{Rawdata: bt, Props: props, Timestamp: timex.GetNow()}
+		r.SetTracerCtx(spanCtx)
+		return r
 	case map[string]any:
-		return &xsql.Tuple{Ctx: spanCtx, Message: bt, Timestamp: timex.GetNow(), Props: props}
+		t := &xsql.Tuple{Message: bt, Timestamp: timex.GetNow(), Props: props}
+		t.SetTracerCtx(spanCtx)
+		return t
 	case []map[string]any:
 		tuples := make([]api.MessageTuple, 0, len(bt))
 		for _, m := range bt {
-			tuples = append(tuples, &xsql.Tuple{Ctx: spanCtx, Message: m, Timestamp: timex.GetNow()})
+			t := &xsql.Tuple{Message: m, Timestamp: timex.GetNow()}
+			t.SetTracerCtx(spanCtx)
+			tuples = append(tuples, t)
 		}
-		return &xsql.TransformedTupleList{Ctx: spanCtx, Content: tuples, Maps: bt, Props: props}
+		list := &xsql.TransformedTupleList{Content: tuples, Maps: bt, Props: props}
+		list.SetTracerCtx(spanCtx)
+		return list
 	default:
 		return fmt.Errorf("invalid transform result type %v", bs)
 	}
