@@ -40,6 +40,24 @@ var commonCases = []any{
 	&xsql.WindowTuples{Content: []xsql.Row{}}, // empty data should be omitted if omitempty is true
 }
 
+func TestToSinkTupleKeepsTracerContext(t *testing.T) {
+	ctx := mockContext.NewMockContext("traceRule", "transform")
+	ctx.EnableTracer(true)
+	for _, input := range []any{
+		[]byte("payload"),
+		map[string]any{"value": 1},
+		[]map[string]any{{"value": 1}},
+	} {
+		got := toSinkTuple(nil, ctx, input, nil)
+		traced, ok := got.(xsql.HasTracerCtx)
+		require.True(t, ok)
+		require.Same(t, ctx, traced.GetTracerCtx())
+		if list, ok := got.(*xsql.TransformedTupleList); ok {
+			require.Same(t, ctx, list.Content[0].(*xsql.Tuple).GetTracerCtx())
+		}
+	}
+}
+
 func TestTransformRun(t *testing.T) {
 	timex.Set(0)
 	testcases := []struct {

@@ -195,7 +195,8 @@ func (m *SourceNode) ingestMap(t map[string]any, meta map[string]any, ts time.Ti
 }
 
 func (m *SourceNode) ingestTuple(t *xsql.Tuple, ts time.Time) {
-	tuple := &xsql.Tuple{Emitter: m.name, Message: t.Message, Timestamp: ts, Metadata: t.Metadata, Ctx: t.Ctx}
+	tuple := &xsql.Tuple{Emitter: m.name, Message: t.Message, Timestamp: ts, Metadata: t.Metadata}
+	tuple.SetTracerCtx(t.GetTracerCtx())
 	// If receiving tuple, its source is still in the system. So continue tracing
 	traced, spanCtx, span := tracenode.TraceInput(m.ctx, tuple, m.name)
 	if traced {

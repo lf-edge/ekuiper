@@ -15,6 +15,8 @@
 package cache
 
 import (
+	"bytes"
+	"encoding/gob"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -22,6 +24,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -408,6 +411,95 @@ func TestCacheInit(t *testing.T) {
 	})
 	assert.NoError(t, err)
 	assert.Equal(t, 0, s.CacheLength, "cache length after clean")
+}
+
+func TestCacheTupleListDiskSpill(t *testing.T) {
+	testx.InitEnv("cacheTupleList")
+	store, err := state.CreateStore("cacheTupleList", def.AtMostOnce)
+	require.NoError(t, err)
+	ctx := context.Background().WithMeta("cacheTupleList", "sink", store)
+	conf := &model.SinkConf{BufferPageSize: 1, MaxDiskCache: 4, CleanCacheAtStop: true}
+	windowRow := &xsql.Tuple{Message: xsql.Message{"value": 1}, Props: map[string]string{"topic": "window"}}
+	windowRow.SetTracerCtx(ctx)
+	window := &xsql.WindowTuples{Content: []xsql.Row{windowRow}, WindowRange: xsql.NewWindowRange(10, 20, 30)}
+	window.SetTracerCtx(ctx)
+	transformedRow := &xsql.Tuple{Message: xsql.Message{"value": 2}, Props: map[string]string{"topic": "nested"}}
+	transformedRow.SetTracerCtx(ctx)
+	transformed := &xsql.TransformedTupleList{
+		Content: []api.MessageTuple{transformedRow},
+		Maps:    []map[string]any{{"value": 2}},
+		Props:   map[string]string{"topic": "out"},
+	}
+	transformed.SetTracerCtx(ctx)
+	tests := []struct {
+		name string
+		item any
+	}{
+		{"window", window},
+		{"transformed", transformed},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c, err := NewSyncCache(ctx, conf)
+			require.NoError(t, err)
+			ctx := context.Background().WithMeta("cacheTupleList", tt.name, store)
+			require.NoError(t, c.InitStore(ctx))
+			require.NoError(t, c.AddCache(ctx, tt.item))
+			require.NoError(t, c.AddCache(ctx, tt.item)) // spills the first page to the real store
+			require.Equal(t, 1, c.diskSize)
+			got, ok := c.PopCache(ctx)
+			require.True(t, ok)
+			switch v := got.(type) {
+			case *xsql.WindowTuples:
+				require.Equal(t, 1, v.Content[0].ToMap()["value"])
+				require.Equal(t, "window", v.Content[0].(*xsql.Tuple).Props["topic"])
+				require.Nil(t, v.GetTracerCtx())
+				require.Nil(t, v.Content[0].GetTracerCtx())
+				start, ok := v.WindowRange.FuncValue("window_start")
+				require.True(t, ok)
+				require.Equal(t, int64(10), start)
+			case *xsql.TransformedTupleList:
+				require.Equal(t, 2, v.ToMaps()[0]["value"])
+				require.Equal(t, []map[string]any{{"value": 2}}, v.Maps)
+				require.Equal(t, 2, v.Content[0].ToMap()["value"])
+				require.Equal(t, "out", v.Props["topic"])
+				require.Equal(t, "nested", v.Content[0].(*xsql.Tuple).Props["topic"])
+				require.Nil(t, v.GetTracerCtx())
+				require.Nil(t, v.Content[0].(*xsql.Tuple).GetTracerCtx())
+			default:
+				t.Fatalf("unexpected restored type %T", got)
+			}
+			require.NotNil(t, tt.item.(interface{ GetTracerCtx() api.StreamContext }).GetTracerCtx())
+			c.Flush(ctx)
+		})
+	}
+}
+
+func TestTupleGobContextRoundTrip(t *testing.T) {
+	testx.InitEnv("tupleGob")
+	store, err := state.CreateStore("tupleGob", def.AtMostOnce)
+	require.NoError(t, err)
+	ctx := context.Background().WithMeta("tupleGob", "source", store)
+	tuple := &xsql.Tuple{
+		Emitter:   "source",
+		Message:   xsql.Message{"value": 1},
+		Timestamp: time.UnixMilli(123),
+		Metadata:  xsql.Metadata{"topic": "in"},
+		Props:     map[string]string{"destination": "out"},
+	}
+	tuple.SetTracerCtx(ctx)
+	input := map[string][]*xsql.Tuple{"source": {tuple}}
+	var encoded bytes.Buffer
+	require.NoError(t, gob.NewEncoder(&encoded).Encode(input))
+	var restored map[string][]*xsql.Tuple
+	require.NoError(t, gob.NewDecoder(&encoded).Decode(&restored))
+	got := restored["source"][0]
+	require.Nil(t, got.GetTracerCtx())
+	require.Equal(t, tuple.Emitter, got.Emitter)
+	require.Equal(t, tuple.Message, got.Message)
+	require.Equal(t, tuple.Timestamp, got.Timestamp)
+	require.Equal(t, tuple.Metadata, got.Metadata)
+	require.Equal(t, tuple.Props, got.Props)
 }
 
 func deleteCachedb() {
