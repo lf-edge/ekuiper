@@ -74,7 +74,8 @@ func (o *EncodeOp) Worker(ctx api.StreamContext, item any) []any {
 		if err != nil {
 			return []any{err}
 		} else {
-			r := &xsql.RawTuple{Rawdata: raw, Timestamp: timex.GetNow(), Ctx: ctx, Props: d.Props}
+			r := &xsql.RawTuple{Rawdata: raw, Timestamp: timex.GetNow(), Props: d.Props}
+			r.SetTracerCtx(ctx)
 			return []any{r}
 		}
 	case []*xsql.SliceTuple:
@@ -90,7 +91,8 @@ func (o *EncodeOp) Worker(ctx api.StreamContext, item any) []any {
 		if err != nil {
 			return []any{err}
 		} else {
-			r := &xsql.RawTuple{Rawdata: raw, Timestamp: timex.GetNow(), Ctx: ctx, Props: props}
+			r := &xsql.RawTuple{Rawdata: raw, Timestamp: timex.GetNow(), Props: props}
+			r.SetTracerCtx(ctx)
 			return []any{r}
 		}
 	case api.RawTuple:

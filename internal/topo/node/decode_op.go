@@ -391,12 +391,12 @@ func mergeTuple(ctx api.StreamContext, d *xsql.Tuple, result any) {
 
 func toTupleFromRawTuple(ctx api.StreamContext, v map[string]any, d *xsql.RawTuple) *xsql.Tuple {
 	t := &xsql.Tuple{
-		Ctx:       d.Ctx,
 		Message:   v,
 		Metadata:  d.Metadata,
 		Timestamp: d.Timestamp,
 		Emitter:   d.Emitter,
 	}
+	t.SetTracerCtx(d.GetTracerCtx())
 	return t
 }
 

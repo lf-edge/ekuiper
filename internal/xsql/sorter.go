@@ -26,7 +26,7 @@ import (
 
 // MultiSorter implements the Sort interface, sorting the changes within.
 type MultiSorter struct {
-	Ctx api.StreamContext
+	ctx api.StreamContext
 	SortingData
 	fields    ast.SortFields
 	valuer    *FunctionValuer
@@ -35,11 +35,11 @@ type MultiSorter struct {
 }
 
 func (ms *MultiSorter) GetTracerCtx() api.StreamContext {
-	return ms.Ctx
+	return ms.ctx
 }
 
 func (ms *MultiSorter) SetTracerCtx(ctx api.StreamContext) {
-	ms.Ctx = ctx
+	ms.ctx = ctx
 }
 
 // OrderedBy returns a Sorter that sorts using the less functions, in order.

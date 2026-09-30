@@ -73,6 +73,8 @@ type Row interface {
 	Clone() Row
 }
 
+// HasTracerCtx holds runtime tracing state. Implementations keep it in unexported fields
+// so gob persists tuple data without the context.
 type HasTracerCtx interface {
 	GetTracerCtx() api.StreamContext
 	SetTracerCtx(ctx api.StreamContext)
@@ -276,7 +278,7 @@ type Alias struct {
  */
 
 type RawTuple struct {
-	Ctx       api.StreamContext
+	ctx       api.StreamContext
 	Emitter   string
 	Timestamp time.Time
 	Rawdata   []byte
@@ -285,11 +287,11 @@ type RawTuple struct {
 }
 
 func (r *RawTuple) GetTracerCtx() api.StreamContext {
-	return r.Ctx
+	return r.ctx
 }
 
 func (r *RawTuple) SetTracerCtx(ctx api.StreamContext) {
-	r.Ctx = ctx
+	r.ctx = ctx
 }
 
 func (r *RawTuple) Replace(new []byte) {
@@ -331,7 +333,7 @@ var (
 
 // Tuple The input row, produced by the source
 type Tuple struct {
-	Ctx       api.StreamContext
+	ctx       api.StreamContext
 	Emitter   string
 	Message   Message // the original pointer is immutable & big; may be cloned.
 	Timestamp time.Time
@@ -344,11 +346,11 @@ type Tuple struct {
 }
 
 func (t *Tuple) GetTracerCtx() api.StreamContext {
-	return t.Ctx
+	return t.ctx
 }
 
 func (t *Tuple) SetTracerCtx(ctx api.StreamContext) {
-	t.Ctx = ctx
+	t.ctx = ctx
 }
 
 func (t *Tuple) Created() time.Time {
@@ -367,7 +369,7 @@ var (
 
 // JoinTuple is a row produced by a join operation
 type JoinTuple struct {
-	Ctx    api.StreamContext
+	ctx    api.StreamContext
 	Tuples []Row // The content is immutable, but the slice may be added or removed
 	AffiliateRow
 	lock      syncx.Mutex
@@ -375,18 +377,18 @@ type JoinTuple struct {
 }
 
 func (jt *JoinTuple) GetTracerCtx() api.StreamContext {
-	return jt.Ctx
+	return jt.ctx
 }
 
 func (jt *JoinTuple) SetTracerCtx(ctx api.StreamContext) {
-	jt.Ctx = ctx
+	jt.ctx = ctx
 }
 
 var _ Row = &JoinTuple{}
 
 // GroupedTuples is a collection of tuples grouped by a key
 type GroupedTuples struct {
-	Ctx     api.StreamContext
+	ctx     api.StreamContext
 	Content []Row
 	*WindowRange
 	AffiliateRow
@@ -395,11 +397,11 @@ type GroupedTuples struct {
 }
 
 func (s *GroupedTuples) GetTracerCtx() api.StreamContext {
-	return s.Ctx
+	return s.ctx
 }
 
 func (s *GroupedTuples) SetTracerCtx(ctx api.StreamContext) {
-	s.Ctx = ctx
+	s.ctx = ctx
 }
 
 var _ CollectionRow = &GroupedTuples{}

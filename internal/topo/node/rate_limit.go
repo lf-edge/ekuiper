@@ -206,7 +206,6 @@ func (o *RateLimitOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 							}
 						}
 						val := &xsql.Tuple{
-							Ctx:       rt.Ctx,
 							Emitter:   rt.Emitter,
 							Timestamp: t,
 							Metadata:  rt.Metadata,
@@ -214,6 +213,7 @@ func (o *RateLimitOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 								"frames": frames,
 							},
 						}
+						val.SetTracerCtx(rt.GetTracerCtx())
 						if o.span != nil {
 							o.span.End()
 						}
@@ -269,7 +269,6 @@ func (o *RateLimitOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 					if ok && o.latest != nil {
 						rt := o.latest.(*xsql.RawTuple)
 						val := &xsql.Tuple{
-							Ctx:       rt.Ctx,
 							Emitter:   rt.Emitter,
 							Timestamp: t,
 							Metadata:  rt.Metadata,
@@ -277,6 +276,7 @@ func (o *RateLimitOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 								"frames": frames,
 							},
 						}
+						val.SetTracerCtx(rt.GetTracerCtx())
 						if o.span != nil {
 							o.span.End()
 						}
