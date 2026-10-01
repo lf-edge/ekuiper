@@ -127,13 +127,18 @@ func getPrefix(p string) string {
 }
 
 func process(configMap map[string]interface{}, env map[string]string, prefix string, yamlPath string) error {
-	fileTypes := extractTypesFromJsonIfExists(yamlPath)
+	var fileTypes map[string]string
 	for key, value := range env {
 		if !strings.HasPrefix(key, prefix) {
 			continue
 		}
 		keys := nameToKeys(trimPrefix(key, prefix))
-		handle(configMap, keys, value, fileTypes)
+		if fileTypes == nil {
+			fileTypes = extractTypesFromJsonIfExists(yamlPath)
+		}
+		// The first key selects a configuration profile; all profiles share metadata.
+		schemaType := fileTypes[strings.Join(keys[1:], Separator)]
+		handle(configMap, keys, value, schemaType)
 		printableK := strings.Join(keys, ".")
 		printableV := value
 		if isSensitiveKey(printableK) || strings.Contains(strings.ToLower(printableK), "kuiper_props") {
@@ -148,21 +153,21 @@ func isSensitiveKey(key string) bool {
 	return replace.IsSensitiveKey(strings.ToLower(key))
 }
 
-func handle(conf map[string]interface{}, keysLeft []string, val string, types map[string]string) {
+func handle(conf map[string]interface{}, keysLeft []string, val string, schemaType string) {
 	key := getConfigKey(keysLeft[0])
 	if len(keysLeft) == 1 {
-		conf[key] = getValueType(val, types[key])
+		conf[key] = getValueType(val, schemaType)
 	} else if len(keysLeft) >= 2 {
 		if v, ok := conf[key]; ok {
 			if casted, castSuccess := v.(map[string]interface{}); castSuccess {
-				handle(casted, keysLeft[1:], val, types)
+				handle(casted, keysLeft[1:], val, schemaType)
 			} else {
 				panic("not expected type")
 			}
 		} else {
 			next := make(map[string]interface{})
 			conf[key] = next
-			handle(next, keysLeft[1:], val, types)
+			handle(next, keysLeft[1:], val, schemaType)
 		}
 	}
 }
@@ -181,10 +186,12 @@ func getConfigKey(key string) string {
 }
 
 func getValueType(val string, schemaType string) interface{} {
-	val = strings.Trim(val, " ")
-	switch strings.ToLower(schemaType) {
-	case "string", "text":
+	schemaType = strings.ToLower(schemaType)
+	if schemaType == "string" || schemaType == "text" {
 		return val
+	}
+	val = strings.Trim(val, " ")
+	switch schemaType {
 	case "int", "int64", "uint", "uint8":
 		if i, err := strconv.ParseInt(val, 10, 64); err == nil {
 			return i
@@ -252,35 +259,50 @@ func extractTypesFromJsonIfExists(yamlPath string) map[string]string {
 
 func extractTypesFromJsonFile(jsonFilePath string) map[string]string {
 	types := make(map[string]string)
-	if jsonFilePath == "" {
-		return types
-	}
-	if _, err := os.Stat(jsonFilePath); err != nil {
-		return types
-	}
 	m, err := loadJsonForYaml(jsonFilePath)
 	if err != nil {
 		return types
 	}
-	extractTypesFromValue(m, types)
+	properties := m["properties"]
+	if profiles, ok := properties.(map[string]interface{}); ok {
+		properties = profiles["default"]
+	}
+	extractTypesFromProperties(properties, "", types)
 	return types
 }
 
-func extractTypesFromValue(v interface{}, types map[string]string) {
-	switch t := v.(type) {
-	case map[string]interface{}:
-		name, nameOk := t["name"].(string)
-		typ, typeOk := t["type"].(string)
-		if nameOk && typeOk && name != "" && typ != "" {
-			types[strings.ToLower(name)] = strings.ToLower(typ)
-		}
-		for _, child := range t {
-			extractTypesFromValue(child, types)
-		}
+// extractTypesFromProperties follows only property definitions, keeping their
+// hierarchy. Defaults of scalar fields and unrelated metadata are not properties.
+func extractTypesFromProperties(properties interface{}, parent string, types map[string]string) {
+	switch properties := properties.(type) {
 	case []interface{}:
-		for _, child := range t {
-			extractTypesFromValue(child, types)
+		for _, property := range properties {
+			if field, ok := property.(map[string]interface{}); ok {
+				extractTypeFromProperty(field, parent, types)
+			}
 		}
+	case map[string]interface{}:
+		for _, property := range properties {
+			if field, ok := property.(map[string]interface{}); ok {
+				extractTypeFromProperty(field, parent, types)
+			}
+		}
+	}
+}
+
+func extractTypeFromProperty(field map[string]interface{}, parent string, types map[string]string) {
+	name, _ := field["name"].(string)
+	if name == "" {
+		return
+	}
+	path := strings.ToLower(name)
+	if parent != "" {
+		path = parent + Separator + path
+	}
+	typ, _ := field["type"].(string)
+	types[path] = strings.ToLower(typ)
+	if strings.EqualFold(typ, "object") {
+		extractTypesFromProperties(field["default"], path, types)
 	}
 }
 
