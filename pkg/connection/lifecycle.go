@@ -43,6 +43,7 @@ func newMeta(manager *Manager, id, typ string, props map[string]any, named bool)
 		suspectCh:       make(chan struct{}, 1),
 		eventWake:       make(chan struct{}, 1),
 		dispatcherDone:  make(chan struct{}),
+		stopDone:        make(chan struct{}),
 	}
 	// The dispatcher owns all handler invocation from birth: every
 	// producer below only enqueues. It exits on the stop path after
@@ -52,9 +53,15 @@ func newMeta(manager *Manager, id, typ string, props map[string]any, named bool)
 }
 
 // stop terminates the Meta exactly once and joins every worker in
-// dependency order. It must run outside the Manager lock. Concurrent
-// stoppers converge on the first caller's execution; latecomers
-// return once it completes.
+// dependency order. It must run outside the Manager lock.
+//
+// A status handler may release the last reference of an anonymous
+// connection, so teardown can be triggered on the dispatcher goroutine
+// itself. That caller cannot wait for the drain barriers or the
+// dispatcher exit it owns, so it only claims the teardown and returns
+// when done; external callers keep the full synchronous guarantee by
+// waiting stopDone and dispatcherDone. A latecomer never waits on the
+// owner, which is what keeps the re-entrant case deadlock-free.
 //
 // Order: cancel the lifecycle, wait for the initial worker, join the
 // recovery worker (a Recover can never run concurrently with the
@@ -73,33 +80,51 @@ func newMeta(manager *Manager, id, typ string, props map[string]any, named bool)
 // only narrows the blast radius from "recovery stalls forever" to
 // "stop waits for teardown to keep its promise".
 func (meta *Meta) stop(ctx api.StreamContext) {
-	meta.stopOnce.Do(func() {
-		meta.lifecycleCancel()
-		<-meta.done
-		// Hard invariant 2: the recovery worker belongs to this
-		// lifecycle. It closes recoveryDone on exit, so joining it
-		// here means a Recover can never run concurrently with the
-		// final Close below. Nil when no worker was started.
-		if meta.recoveryDone != nil {
-			<-meta.recoveryDone
-		}
-		meta.drainEvents()
-		// Safe without the cw lock: the worker wrote conn before
-		// closing readCh and done in the same goroutine, so the
-		// receive above happens after that write. The object is
-		// always non-nil here unless the worker panicked before
-		// publishing, in which case there is nothing to close.
-		if conn := meta.cw.conn; conn != nil {
-			_ = conn.Close(ctx)
-		}
-		meta.drainEvents()
-		meta.eventMu.Lock()
-		meta.dispatcherStopping = true
-		meta.eventMu.Unlock()
-		select {
-		case meta.eventWake <- struct{}{}:
-		default:
-		}
+	meta.claimStop(ctx)
+	if !meta.onDispatcher() {
+		<-meta.stopDone
 		<-meta.dispatcherDone
-	})
+	}
+}
+
+// claimStop runs the synchronous teardown exactly once. The first
+// caller executes it — skipping the dispatcher-owned drains when it is
+// the dispatcher itself, which must not wait on its own queue — and
+// closes stopDone. Latecomers return without waiting.
+func (meta *Meta) claimStop(ctx api.StreamContext) {
+	if !meta.stopState.CompareAndSwap(0, 1) {
+		return
+	}
+	self := meta.onDispatcher()
+	meta.lifecycleCancel()
+	<-meta.done
+	// Hard invariant 2: the recovery worker belongs to this
+	// lifecycle. It closes recoveryDone on exit, so joining it
+	// here means a Recover can never run concurrently with the
+	// final Close below. Nil when no worker was started.
+	if meta.recoveryDone != nil {
+		<-meta.recoveryDone
+	}
+	if !self {
+		meta.drainEvents()
+	}
+	// Safe without the cw lock: the worker wrote conn before
+	// closing readCh and done in the same goroutine, so the
+	// receive above happens after that write. The object is
+	// always non-nil here unless the worker panicked before
+	// publishing, in which case there is nothing to close.
+	if conn := meta.cw.conn; conn != nil {
+		_ = conn.Close(ctx)
+	}
+	if !self {
+		meta.drainEvents()
+	}
+	meta.eventMu.Lock()
+	meta.dispatcherStopping = true
+	meta.eventMu.Unlock()
+	select {
+	case meta.eventWake <- struct{}{}:
+	default:
+	}
+	close(meta.stopDone)
 }

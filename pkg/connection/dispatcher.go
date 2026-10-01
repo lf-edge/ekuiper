@@ -15,6 +15,9 @@
 package connection
 
 import (
+	"runtime"
+	"strconv"
+	"strings"
 	"sync/atomic"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
@@ -142,6 +145,9 @@ func (meta *Meta) enqueueLocked(ev statusDispatch) {
 // dispatcherStopping and the queue drains.
 func (meta *Meta) dispatchLoop() {
 	defer close(meta.dispatcherDone)
+	// Publish the dispatcher identity before processing any event, so
+	// a handler-triggered stop can always recognize its own goroutine.
+	meta.dispatcherGID.Store(curGoroutineID())
 	for {
 		meta.eventMu.Lock()
 		for len(meta.eventQueue) == 0 {
@@ -279,4 +285,35 @@ func (meta *Meta) DeRef(refId string) bool {
 	count := len(meta.refs)
 	conf.Log.Infof("conn %s dereference %s to %d refs", meta.ID, refId, count)
 	return true
+}
+
+// onDispatcher reports whether the caller runs on this Meta's
+// dispatcher goroutine. The dispatcher publishes its identity before
+// invoking any handler, so a stop initiated from a status handler is
+// always recognized: such a caller owns the drain and exit work and
+// must not wait for it.
+func (meta *Meta) onDispatcher() bool {
+	gid := meta.dispatcherGID.Load()
+	return gid != 0 && gid == curGoroutineID()
+}
+
+// curGoroutineID returns the calling goroutine's id. Go does not
+// expose goroutine identities; the runtime.Stack header is the
+// dependency-free way to read one. Used only on stop paths, never on
+// a hot path. A parse failure returns 0, which never matches the
+// dispatcher's published (non-zero) id, so a failure degrades to the
+// external-waiter behavior rather than to a missed self-join.
+func curGoroutineID() uint64 {
+	var buf [64]byte
+	n := runtime.Stack(buf[:], false)
+	// Header: "goroutine 123 [running]:".
+	fields := strings.Fields(string(buf[:n]))
+	if len(fields) < 2 {
+		return 0
+	}
+	id, err := strconv.ParseUint(fields[1], 10, 64)
+	if err != nil {
+		return 0
+	}
+	return id
 }

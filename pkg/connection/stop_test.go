@@ -15,6 +15,7 @@
 package connection
 
 import (
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -347,5 +348,68 @@ func TestStopTwoPhaseDrain(t *testing.T) {
 	case <-m.dispatcherDone:
 	default:
 		t.Fatal("dispatcher did not exit after stop")
+	}
+}
+
+// TestStopFromStatusHandlerNoDeadlock proves that teardown triggered
+// by a status handler cannot deadlock on the dispatcher it runs on:
+// the handler releases the last reference of an anonymous connection,
+// the synchronous teardown (provider Close exactly once, entry
+// removal) completes, and the dispatcher then drains and exits.
+func TestStopFromStatusHandlerNoDeadlock(t *testing.T) {
+	require.NoError(t, InitConnectionManager4Test())
+	drainCountCloseRelease()
+	countCloseCalls.Store(0)
+	ctx := mockContext.NewMockContext("stop", "op1")
+
+	var lease atomic.Pointer[ConnectionLease]
+	var releaseOnce sync.Once
+	released := make(chan error, 1)
+	l, err := FetchConnectionWithOptions(ctx, FetchOptions{
+		ConnectionKey: "disp-stop",
+		RefID:         "r1",
+		Type:          "countclose",
+		StatusHandler: func(status, _ string) {
+			if status != api.ConnectionDisconnected {
+				return
+			}
+			// Re-enter the Pool on the dispatcher goroutine: this is
+			// the zero-ref teardown path that must not wait for its
+			// own drain barrier or dispatcher join.
+			if lease := lease.Load(); lease != nil {
+				releaseOnce.Do(func() { released <- lease.Release(ctx) })
+			}
+		},
+	})
+	require.NoError(t, err)
+	lease.Store(l)
+
+	meta := getReadyTestMeta("disp-stop")
+	require.NotNil(t, meta)
+	// Supply the blocking provider Close token, then trigger the
+	// disconnect whose handler runs the teardown on the dispatcher.
+	countCloseRelease <- struct{}{}
+	meta.NotifyStatus(api.ConnectionDisconnected, "boom")
+
+	select {
+	case err := <-released:
+		require.NoError(t, err)
+	case <-time.After(5 * time.Second):
+		t.Fatal("handler-initiated Release deadlocked")
+	}
+	require.Equal(t, int32(1), countCloseCalls.Load(), "provider Close runs exactly once")
+
+	// Teardown completed synchronously: the entry is removed.
+	m := globalConnectionManager
+	m.RLock()
+	_, ok := m.connectionPool["disp-stop"]
+	m.RUnlock()
+	require.False(t, ok, "entry must be removed after teardown")
+
+	// The dispatcher drains the remaining events and exits on its own.
+	select {
+	case <-meta.dispatcherDone:
+	case <-time.After(5 * time.Second):
+		t.Fatal("dispatcher did not exit after re-entrant teardown")
 	}
 }

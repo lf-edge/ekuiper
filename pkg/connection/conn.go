@@ -17,6 +17,7 @@ package connection
 import (
 	"context"
 	"sync"
+	"sync/atomic"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
@@ -376,6 +377,12 @@ type Meta struct {
 	// dispatcherDone is closed by the dispatcher on exit; stop()
 	// joins it after the second drain barrier.
 	dispatcherDone chan struct{} `json:"-"`
+	// dispatcherGID is the dispatcher goroutine's identity, published
+	// before it processes any event. stop() compares it with its own
+	// goroutine to recognize a teardown initiated by a status handler:
+	// that caller must not wait for the drains or the dispatcher exit
+	// it owns (see stop). Zero before the dispatcher publishes.
+	dispatcherGID atomic.Uint64 `json:"-"`
 	// dispatcherStopping is set under eventMu by stop() before the
 	// final join. A producer callback arriving after Close (e.g. a
 	// stateful client's teardown event) still applies its state
@@ -390,7 +397,7 @@ type Meta struct {
 	// or Manager re-init. Never a rule/request/first-fetcher ctx.
 	lifecycleCtx context.Context `json:"-"`
 	// lifecycleCancel terminates the Meta scope. Invoked exactly once
-	// via stopOnce on the stop path.
+	// via claimStop on the stop path.
 	lifecycleCancel context.CancelFunc `json:"-"`
 	// done is closed by the Meta worker on exit. Observers (Manager
 	// re-init, stop paths) wait on it instead of polling.
@@ -399,9 +406,18 @@ type Meta struct {
 	// installed by the creation heavy phase and consumed exactly once by
 	// the worker at start. Never touched after worker start.
 	pendingConn modules.Connection `json:"-"`
-	// stopOnce makes the stop path idempotent: concurrent stoppers
-	// converge on the first execution.
-	stopOnce sync.Once `json:"-"`
+	// stopState claims the stop path: 0 = unclaimed, 1 = claimed.
+	// Exactly one caller executes the synchronous teardown; latecomers
+	// return and, when external, wait stopDone plus dispatcherDone.
+	// A plain sync.Once cannot serve here: the dispatcher itself may
+	// trigger a stop from a handler and must not block on a teardown
+	// it does not own.
+	stopState atomic.Uint32 `json:"-"`
+	// stopDone is closed by the teardown executor after the synchronous
+	// stop steps (lifecycle cancel, worker joins, provider Close).
+	// External stoppers wait it, then dispatcherDone; the dispatcher
+	// caller waits neither.
+	stopDone chan struct{} `json:"-"`
 	// The first connection status
 	// If connection is stateful, the status will update all the way
 	// For stateless connection, the status needs to ping
