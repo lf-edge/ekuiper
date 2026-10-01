@@ -97,6 +97,11 @@ type StatefulDialer interface {
 // HealthCheck is failure discovery only: a single pure check that
 // never dials, never reconnects, never mutates provider state, and
 // honors the caller deadline (the Pool already bounds it per round).
+// HealthCheck may race with connection teardown. Implementations must
+// therefore be safe to call concurrently with Close, and Close must
+// not release resources still in use by an in-flight HealthCheck. The
+// Pool bounds the check through ctx but does not otherwise serialize
+// HealthCheck with Close.
 // Whether a connection is probed is decided solely by this capability:
 // the probe never consults StatefulDialer and never falls back to
 // Connection.Ping. Providers whose state is self-reported through
