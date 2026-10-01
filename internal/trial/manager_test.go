@@ -296,6 +296,10 @@ func TestTrialReplacementReleasesOldLease(t *testing.T) {
 	id, err := TrialManager.CreateRule(mockDef)
 	require.NoError(t, err)
 	require.Equal(t, "leaserule", id)
+	// Guard the shared manager against mid-test failures below: the
+	// replacement cancels the old run, so always stop it on the way
+	// out instead of only on the success path.
+	defer TrialManager.StopRule("leaserule")
 
 	// Fail the replacement before it can attach anything.
 	require.NoError(t, failpoint.Enable("github.com/lf-edge/ekuiper/v2/pkg/connection/FetchConnectionErr", "return(true)"))
@@ -309,6 +313,4 @@ func TestTrialReplacementReleasesOldLease(t *testing.T) {
 	// gone instead of being held by the canceled run.
 	_, err = connection.GetConnectionDetail(context.Background(), "$$sse//test/leaserule")
 	require.ErrorContains(t, err, "not existed")
-
-	TrialManager.StopRule("leaserule")
 }
