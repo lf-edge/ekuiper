@@ -153,7 +153,7 @@ func (m *GlobalServerManager) RegisterEndpoint(endpoint string, method string) (
 		// The mux registration is a permanent process-lifetime slot,
 		// installed once per key and never removed: unregister only
 		// clears the handler slot (requests then 404), so repeated
-		// start/stop cycles never accumulate routes. The named route
+		// start/stop cycles for the same key never accumulate routes. The named route
 		// doubles as the installed-once proof. The mux route dispatches
 		// through the per-method handler slot, not the bare endpoint:
 		// POST and PUT on the same path are independent registrations

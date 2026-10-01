@@ -54,6 +54,12 @@ func (m *Manager) CreateRule(ruleDef string) (string, error) {
 	// If the rule exists, stop it first
 	if r, ok := m.runs[def.Id]; ok {
 		r.topo.Cancel()
+		// Release the old attachment here: a replaced run that was
+		// never started has no trialRun goroutine whose deferred
+		// Release could cover it, and a failed create() below must
+		// not leave the canceled run holding the connection.
+		// One-shot and idempotent with StopRule/trialRun releases.
+		_ = r.lease.Release(context.Background())
 		conf.Log.Warnf("stop last run of test rule %s", def.Id)
 	}
 	t, lease, err := create(def)

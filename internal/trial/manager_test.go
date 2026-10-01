@@ -21,6 +21,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/pingcap/failpoint"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -29,6 +30,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/io/simulator"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/v2/internal/processor"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
@@ -263,4 +265,50 @@ func testRealSourceTrial(t *testing.T) {
 	TrialManager.StopRule(id)
 	closeCh <- struct{}{}
 	resp.Body.Close()
+}
+
+// TestTrialReplacementReleasesOldLease pins the replacement ownership:
+// replacing a run that was never started still releases its attachment.
+// Without the release in CreateRule, failing the replacement's fetch
+// leaves the canceled run holding the shared SSE connection (no
+// trialRun goroutine exists yet to release on its behalf), so the pool
+// entry survives; with it, the entry is gone.
+func TestTrialReplacementReleasesOldLease(t *testing.T) {
+	ip := "127.0.0.1"
+	port := 10093
+	httpserver.InitGlobalServerManager(ip, port, nil)
+	defer httpserver.ShutDown()
+	connection.InitConnectionManager4Test()
+	conf.IsTesting = true
+	conf.InitConf()
+	dataDir, err := conf.GetDataLoc()
+	require.NoError(t, err)
+	require.NoError(t, store.SetupDefault(dataDir))
+	p := processor.NewStreamProcessor()
+	p.ExecStmt("DROP STREAM replacedemo")
+	_, err = p.ExecStmt(`CREATE STREAM replacedemo () WITH (DATASOURCE="replacedemo", TYPE="simulator", FORMAT="json", KEY="ts")`)
+	require.NoError(t, err)
+	defer p.ExecStmt("DROP STREAM replacedemo")
+
+	mockDef := `{"id":"leaserule","sql":"select * from replacedemo","mockSource":{"replacedemo":{"data":[{"name":"demo","value":1}],"interval":100,"loop":false}},"sinkProps":{"sendSingle":true}}`
+	// Create but never Start: no trialRun goroutine exists that could
+	// release the lease on this run's behalf.
+	id, err := TrialManager.CreateRule(mockDef)
+	require.NoError(t, err)
+	require.Equal(t, "leaserule", id)
+
+	// Fail the replacement before it can attach anything.
+	require.NoError(t, failpoint.Enable("github.com/lf-edge/ekuiper/v2/pkg/connection/FetchConnectionErr", "return(true)"))
+	defer func() {
+		_ = failpoint.Disable("github.com/lf-edge/ekuiper/v2/pkg/connection/FetchConnectionErr")
+	}()
+	_, err = TrialManager.CreateRule(mockDef)
+	require.ErrorContains(t, err, "FetchConnectionErr")
+
+	// The old attachment is released, so the shared SSE connection is
+	// gone instead of being held by the canceled run.
+	_, err = connection.GetConnectionDetail(context.Background(), "$$sse//test/leaserule")
+	require.ErrorContains(t, err, "not existed")
+
+	TrialManager.StopRule("leaserule")
 }
