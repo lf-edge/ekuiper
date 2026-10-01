@@ -23,6 +23,7 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/stretchr/testify/require"
 
+	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
@@ -193,4 +194,62 @@ func TestAnonymousReleaseDuringLateDial(t *testing.T) {
 	require.Equal(t, int32(1), old.closeCalls.Load(), "provider must be Closed exactly once")
 	require.False(t, checkConn("late-anon"), "pool entry must be gone after Release")
 	require.Equal(t, 0, getConnectionRef("late-anon"))
+}
+
+// flakyDialConnection fails its first Dial fast with an I/O error and
+// counts attempts, so tests can prove the retry loop never runs again.
+type flakyDialConnection struct {
+	mockConnection
+	dialCalls atomic.Int32
+	dialed    chan struct{}
+}
+
+func (c *flakyDialConnection) Dial(ctx api.StreamContext) error {
+	if c.dialCalls.Add(1) == 1 {
+		close(c.dialed)
+		return errorx.NewIOErr("dial down")
+	}
+	return nil
+}
+
+// TestDialInitialBackoffInterrupted pins the teardown contract fixed in
+// #4179: when the lifecycle dies while the worker sleeps between
+// retries, the backoff wait ends immediately instead of sleeping out
+// the interval. The existing late-Dial tests only cover cancellation
+// while Dial itself is blocked and never enter backoff, so they stay
+// green even without backoff.WithContext. Here the first Dial fails
+// fast, cancel lands before the retry wait, and dialInitial must exit
+// promptly with exactly one attempt.
+//
+// The 40ms bound is not arbitrary: without interruption the first
+// backoff sleep lasts at least 50ms (100ms initial interval with the
+// backoff default 0.5 randomization factor), so a return within 40ms
+// proves the wait was cut short. Do not relax it toward 100ms.
+func TestDialInitialBackoffInterrupted(t *testing.T) {
+	m := newStateMeta(t)
+	conn := &flakyDialConnection{dialed: make(chan struct{})}
+	ctx := mockContext.NewMockContext("backoff", "op1")
+	connCtx, cancel := ctx.WithCancel()
+
+	done := make(chan error, 1)
+	go func() {
+		_, err := dialInitial(connCtx, m, conn)
+		done <- err
+	}()
+	// Let the first Dial fail, then kill the lifecycle before retry.
+	select {
+	case <-conn.dialed:
+	case <-time.After(5 * time.Second):
+		t.Fatal("first Dial did not run")
+	}
+	cancel()
+	start := time.Now()
+	select {
+	case err := <-done:
+		require.Error(t, err)
+		require.Less(t, time.Since(start), 40*time.Millisecond)
+	case <-time.After(5 * time.Second):
+		t.Fatal("dialInitial did not exit after lifecycle cancel")
+	}
+	require.Equal(t, int32(1), conn.dialCalls.Load(), "no retry attempt may run after cancel")
 }
