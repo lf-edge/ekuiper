@@ -30,8 +30,10 @@ import (
 	"github.com/lf-edge/ekuiper/v2/extensions/impl/sql/testx"
 )
 
-const benchAddr = "localhost"
-const benchPort = 33071
+const (
+	benchAddr = "localhost"
+	benchPort = 33071
+)
 
 func openBenchDB(b *testing.B, dsn string) *sql.DB {
 	b.Helper()

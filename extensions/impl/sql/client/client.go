@@ -60,8 +60,10 @@ type SQLConnection struct {
 // Pool worker, never to consumer retry loops. It is also periodically
 // probed: a failed HealthCheck hands the episode to the same worker,
 // closing the probe -> disconnected -> Recover -> connected loop.
-var _ modules.PoolRecoverableConnection = (*SQLConnection)(nil)
-var _ modules.PeriodicHealthChecker = (*SQLConnection)(nil)
+var (
+	_ modules.PoolRecoverableConnection = (*SQLConnection)(nil)
+	_ modules.PeriodicHealthChecker     = (*SQLConnection)(nil)
+)
 
 // defaultAttemptTimeout bounds one Dial, Ping, or Recover attempt.
 // Retry cadence and total retry lifetime are owned by the caller.
