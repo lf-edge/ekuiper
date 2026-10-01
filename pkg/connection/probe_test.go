@@ -27,14 +27,16 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
 
-// probeConn is a controllable non-stateful provider: healthy Dial,
-// scripted Ping.
+// probeConn is a controllable opt-in provider: healthy Dial, scripted
+// HealthCheck. It also implements Ping so tests pin that the periodic
+// probe uses HealthCheck and never falls back to Ping.
 type probeConn struct {
-	id        string
-	pingErr   error
-	pingCalls *atomic.Int32
-	dialCalls *atomic.Int32
-	blockPing bool
+	id          string
+	healthErr   error
+	healthCalls *atomic.Int32
+	pingCalls   *atomic.Int32
+	dialCalls   *atomic.Int32
+	blockHealth bool
 }
 
 func (p *probeConn) Provision(ctx api.StreamContext, conId string, props map[string]any) error {
@@ -51,19 +53,53 @@ func (p *probeConn) GetId(ctx api.StreamContext) string { return p.id }
 
 func (p *probeConn) Ping(ctx api.StreamContext) error {
 	p.pingCalls.Add(1)
-	if p.blockPing {
+	return nil
+}
+
+func (p *probeConn) HealthCheck(ctx api.StreamContext) error {
+	p.healthCalls.Add(1)
+	if p.blockHealth {
 		<-ctx.Done()
 		return ctx.Err()
 	}
-	return p.pingErr
+	return p.healthErr
 }
 
 func (p *probeConn) Close(ctx api.StreamContext) error { return nil }
 
-// statefulProbeConn reports its own state through the Pool callback;
-// the probe must never second-guess it.
+// plainPingConn implements Connection.Ping but does NOT opt into
+// PeriodicHealthChecker: the probe must never call it, even when its
+// Ping would fail.
+type plainPingConn struct {
+	id        string
+	pingCalls *atomic.Int32
+	dialCalls *atomic.Int32
+}
+
+func (p *plainPingConn) Provision(ctx api.StreamContext, conId string, props map[string]any) error {
+	p.id = conId
+	return nil
+}
+
+func (p *plainPingConn) Dial(ctx api.StreamContext) error {
+	p.dialCalls.Add(1)
+	return nil
+}
+
+func (p *plainPingConn) GetId(ctx api.StreamContext) string { return p.id }
+
+func (p *plainPingConn) Ping(ctx api.StreamContext) error {
+	p.pingCalls.Add(1)
+	return errors.New("plainping down")
+}
+
+func (p *plainPingConn) Close(ctx api.StreamContext) error { return nil }
+
+// statefulProbeConn is a self-reporting client without the probe
+// capability (MQTT/NNG shape): the probe skips it because it does not
+// opt in, not because of any StatefulDialer special case.
 type statefulProbeConn struct {
-	probeConn
+	plainPingConn
 	handler api.StatusChangeHandler
 }
 
@@ -76,28 +112,36 @@ func (s *statefulProbeConn) Status(ctx api.StreamContext) modules.ConnectionStat
 }
 
 var (
-	probeFailPingCalls  atomic.Int32
-	probeFailDialCalls  atomic.Int32
-	probeOkPingCalls    atomic.Int32
-	probeOkDialCalls    atomic.Int32
-	probeBlockPingCalls atomic.Int32
-	probeBlockDialCalls atomic.Int32
-	probeStatePingCalls atomic.Int32
-	probeStateDialCalls atomic.Int32
+	probeFailHealthCalls  atomic.Int32
+	probeFailPingCalls    atomic.Int32
+	probeFailDialCalls    atomic.Int32
+	probeOkHealthCalls    atomic.Int32
+	probeOkPingCalls      atomic.Int32
+	probeOkDialCalls      atomic.Int32
+	probeBlockHealthCalls atomic.Int32
+	probeBlockPingCalls   atomic.Int32
+	probeBlockDialCalls   atomic.Int32
+	probePlainPingCalls   atomic.Int32
+	probePlainDialCalls   atomic.Int32
+	probeStatePingCalls   atomic.Int32
+	probeStateDialCalls   atomic.Int32
 )
 
 func registerProbeProviders() {
 	modules.RegisterConnection("failping", func(ctx api.StreamContext) modules.Connection {
-		return &probeConn{pingErr: errors.New("failping down"), pingCalls: &probeFailPingCalls, dialCalls: &probeFailDialCalls}
+		return &probeConn{healthErr: errors.New("failping down"), healthCalls: &probeFailHealthCalls, pingCalls: &probeFailPingCalls, dialCalls: &probeFailDialCalls}
 	})
 	modules.RegisterConnection("okping", func(ctx api.StreamContext) modules.Connection {
-		return &probeConn{pingCalls: &probeOkPingCalls, dialCalls: &probeOkDialCalls}
+		return &probeConn{healthCalls: &probeOkHealthCalls, pingCalls: &probeOkPingCalls, dialCalls: &probeOkDialCalls}
 	})
 	modules.RegisterConnection("blockping", func(ctx api.StreamContext) modules.Connection {
-		return &probeConn{blockPing: true, pingCalls: &probeBlockPingCalls, dialCalls: &probeBlockDialCalls}
+		return &probeConn{blockHealth: true, healthCalls: &probeBlockHealthCalls, pingCalls: &probeBlockPingCalls, dialCalls: &probeBlockDialCalls}
+	})
+	modules.RegisterConnection("plainping", func(ctx api.StreamContext) modules.Connection {
+		return &plainPingConn{pingCalls: &probePlainPingCalls, dialCalls: &probePlainDialCalls}
 	})
 	modules.RegisterConnection("statefulprobe", func(ctx api.StreamContext) modules.Connection {
-		return &statefulProbeConn{probeConn: probeConn{pingCalls: &probeStatePingCalls, dialCalls: &probeStateDialCalls}}
+		return &statefulProbeConn{plainPingConn: plainPingConn{pingCalls: &probeStatePingCalls, dialCalls: &probeStateDialCalls}}
 	})
 }
 
@@ -132,8 +176,8 @@ func probeMeta(t *testing.T, key string) *Meta {
 }
 
 // TestProbeFlipsConnectedToDisconnected is the core probe contract:
-// a failed Ping moves connected to disconnected with the Ping error,
-// opening a new parked generation. Nothing else happens.
+// a failed HealthCheck moves connected to disconnected with the check
+// error, opening a new parked generation. Nothing else happens.
 func TestProbeFlipsConnectedToDisconnected(t *testing.T) {
 	registerProbeProviders()
 	ctx := probeTestCtx()
@@ -154,8 +198,9 @@ func TestProbeFlipsConnectedToDisconnected(t *testing.T) {
 	require.False(t, isClosed(meta.readyCh))
 }
 
-// TestProbeLeavesHealthyConnected verifies a passing Ping changes
-// nothing: same state, cleared error, same generation.
+// TestProbeLeavesHealthyConnected verifies a passing HealthCheck
+// changes nothing: same state, cleared error, same generation. Ping
+// is never consulted by the probe.
 func TestProbeLeavesHealthyConnected(t *testing.T) {
 	registerProbeProviders()
 	ctx := probeTestCtx()
@@ -166,7 +211,8 @@ func TestProbeLeavesHealthyConnected(t *testing.T) {
 	requireConnected(t, "probe-ok")
 	meta := probeMeta(t, "probe-ok")
 	genBefore := meta.generation
-	callsBefore := probeOkPingCalls.Load()
+	healthBefore := probeOkHealthCalls.Load()
+	pingBefore := probeOkPingCalls.Load()
 
 	probeConnections(time.Second)
 
@@ -174,11 +220,33 @@ func TestProbeLeavesHealthyConnected(t *testing.T) {
 	require.Equal(t, api.ConnectionConnected, s)
 	require.Equal(t, "", e)
 	require.Equal(t, genBefore, meta.generation)
-	require.Greater(t, probeOkPingCalls.Load(), callsBefore)
+	require.Greater(t, probeOkHealthCalls.Load(), healthBefore)
+	require.Equal(t, pingBefore, probeOkPingCalls.Load())
+}
+
+// TestProbeSkipsNonOptIn proves a provider with Ping but without the
+// PeriodicHealthChecker capability is never probed, even when its Ping
+// would fail: no check call, no state change.
+func TestProbeSkipsNonOptIn(t *testing.T) {
+	registerProbeProviders()
+	ctx := probeTestCtx()
+	_, err := CreateNamedConnection(ctx, "probe-plain", "plainping", nil)
+	require.NoError(t, err)
+	defer DropNameConnection(ctx, "probe-plain")
+
+	requireConnected(t, "probe-plain")
+	meta := probeMeta(t, "probe-plain")
+	callsBefore := probePlainPingCalls.Load()
+
+	probeConnections(time.Second)
+
+	s, _ := meta.GetStatus()
+	require.Equal(t, api.ConnectionConnected, s)
+	require.Equal(t, callsBefore, probePlainPingCalls.Load())
 }
 
 // TestProbeSkipsNonConnected pins that only connected is probed: a
-// disconnected Meta is never Pinged and never recovered by the probe.
+// disconnected Meta is never HealthChecked and never recovered by the probe.
 func TestProbeSkipsNonConnected(t *testing.T) {
 	registerProbeProviders()
 	ctx := probeTestCtx()
@@ -189,7 +257,7 @@ func TestProbeSkipsNonConnected(t *testing.T) {
 	requireConnected(t, "probe-skip")
 	meta := probeMeta(t, "probe-skip")
 	meta.NotifyStatus(api.ConnectionDisconnected, "boom")
-	callsBefore := probeOkPingCalls.Load()
+	callsBefore := probeOkHealthCalls.Load()
 	dialBefore := probeOkDialCalls.Load()
 
 	probeConnections(time.Second)
@@ -197,12 +265,13 @@ func TestProbeSkipsNonConnected(t *testing.T) {
 	s, e := meta.GetStatus()
 	require.Equal(t, api.ConnectionDisconnected, s)
 	require.Equal(t, "boom", e)
-	require.Equal(t, callsBefore, probeOkPingCalls.Load())
+	require.Equal(t, callsBefore, probeOkHealthCalls.Load())
 	require.Equal(t, dialBefore, probeOkDialCalls.Load())
 }
 
-// TestProbeSkipsStateful proves the probe never second-guesses
-// self-recovering clients: no Ping, no state change.
+// TestProbeSkipsStateful proves the probe skips self-reporting clients
+// (MQTT/NNG shape): without the opt-in capability there is no check
+// and no state change.
 func TestProbeSkipsStateful(t *testing.T) {
 	registerProbeProviders()
 	ctx := probeTestCtx()
@@ -241,14 +310,14 @@ func TestProbeSkipsDyingLifecycle(t *testing.T) {
 	requireConnected(t, "probe-dying")
 	meta := probeMeta(t, "probe-dying")
 	meta.lifecycleCancel()
-	callsBefore := probeOkPingCalls.Load()
+	callsBefore := probeOkHealthCalls.Load()
 
 	probeConnections(time.Second)
-	require.Equal(t, callsBefore, probeOkPingCalls.Load())
+	require.Equal(t, callsBefore, probeOkHealthCalls.Load())
 }
 
-// TestProbePingBounded proves one hanging Ping cannot stall the
-// round: the attempt ctx fires and the round moves on.
+// TestProbeHealthCheckBounded proves one hanging HealthCheck cannot
+// stall the round: the attempt ctx fires and the round moves on.
 func TestProbePingBounded(t *testing.T) {
 	registerProbeProviders()
 	ctx := probeTestCtx()

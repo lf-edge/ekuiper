@@ -115,18 +115,32 @@ func (s *SQLConnection) GetDB() *sql.DB {
 }
 
 func (s *SQLConnection) Ping(ctx api.StreamContext) error {
-	// Pure health check: a single bounded attempt, never a dial. An
+	// On-demand bounded validation: Ping owns its own bound. An
 	// absent handle means Dial never succeeded (or Close already ran);
 	// creating the handle belongs to Dial/Reconnect, not to a status
-	// read. Read-locked: Ping observes but never mutates.
-	s.RLock()
-	defer s.RUnlock()
+	// read.
 	pingCtx, cancel := context.WithTimeout(ctx, defaultAttemptTimeout)
 	defer cancel()
+	return s.ping(pingCtx)
+}
+
+func (s *SQLConnection) HealthCheck(ctx api.StreamContext) error {
+	// Periodic probe path: the Pool already bounds the attempt scope,
+	// so use the caller context as-is. Shares the pure check below
+	// with Ping; never a dial. Read-locked: observes but never mutates.
+	return s.ping(ctx)
+}
+
+// ping is the shared pure check for Ping and HealthCheck: a single
+// db ping, never a dial. Callers own timeout ownership: Ping wraps
+// with its own bound, HealthCheck uses the Pool attempt scope.
+func (s *SQLConnection) ping(ctx context.Context) error {
+	s.RLock()
+	defer s.RUnlock()
 	if s.db == nil {
 		return fmt.Errorf("sql connection %s has no database handle", s.id)
 	}
-	return s.db.PingContext(pingCtx)
+	return s.db.PingContext(ctx)
 }
 
 func (s *SQLConnection) DetachSub(ctx api.StreamContext, props map[string]any) {
@@ -150,6 +164,8 @@ func (s *SQLConnection) Close(ctx api.StreamContext) error {
 func CreateConnection(ctx api.StreamContext) modules.Connection {
 	return &SQLConnection{}
 }
+
+var _ modules.PeriodicHealthChecker = (*SQLConnection)(nil)
 
 func (s *SQLConnection) dial(ctx context.Context) error {
 	db, err := openDB(s.url)

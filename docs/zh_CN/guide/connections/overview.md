@@ -102,9 +102,9 @@ demo2 (
 
 也可以在规则的 action 中，通过 `connectionSelector` 重用定义的连接资源。
 
-对于 Kafka sink，可以通过 `connectionSelector` 重用 Kafka 连接资源。Kafka 连接用于管理连接状态，并通过 ping 配置的 broker
-来验证连通性。当 Kafka sink 引用该连接时，`brokers`、SASL、TLS 等连接相关配置会从选中的连接中复制。sink 仍会创建自己的 Kafka
-producer 用于发送消息。
+对于 Kafka sink，可以通过 `connectionSelector` 重用 Kafka 连接资源。Kafka 连接是逻辑上的可复用配置：`brokers`、SASL、TLS
+等连接相关配置会从选中的连接中复制，sink 仍会创建自己的 Kafka producer 用于发送消息。它不拥有共享的 producer 传输层，
+因此不参与周期性健康探测。
 
 ## 连接状态
 
@@ -115,7 +115,7 @@ producer 用于发送消息。
 3. 未连接，指标中用 -1 表示。
 4. 恢复中，指标中用 0 表示。仅用于曾经连接成功的连接在运行时重建传输层（自恢复客户端）；此时连接仍不可用。
 
-上报的状态是连接池维护的最后已知状态，由驱动状态回调和周期性健康检查异步更新。读取状态（通过 API 或指标）本身不会触发网络探测。
+上报的状态是连接池维护的最后已知状态，由驱动状态回调和已接入检查能力的驱动的周期性健康检查异步更新。读取状态（通过 API 或指标）本身不会触发网络探测。探测只负责失败发现，不负责重连或恢复。
 
 用户可通过连接 API 获取连接的状态。同时，用户也可通过规则的指标查看规则 source/sink
 中连接的状态，例如 `source_demo_0_connection_status` 指标表示 demo

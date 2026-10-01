@@ -105,6 +105,11 @@ func (c *kafkaConnectionConf) pingBroker(ctx api.StreamContext, address string) 
 }
 
 type KafkaConnection struct {
+	// A named Kafka connection is a logical reusable configuration
+	// (brokers/SASL/TLS), not an owned producer transport: sinks
+	// create their own producers from the copied settings. It
+	// therefore does not implement PeriodicHealthChecker and never
+	// takes part in the periodic health probe.
 	id   string
 	conf *kafkaConnectionConf
 }

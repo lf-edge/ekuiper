@@ -30,20 +30,20 @@ const (
 	// configuring only arrives with the A3 recovery worker, which
 	// will unify monitoring configuration then.
 	defaultConnectionMonitorInterval = 15 * time.Second
-	// probePingTimeout bounds a single probe Ping. Providers must
+	// probePingTimeout bounds a single probe HealthCheck. Providers must
 	// answer health checks within it; a provider needing longer has
 	// a contract problem (c4), not a slower probe.
 	probePingTimeout = 5 * time.Second
 )
 
-// ConnectionHealthProbeJob periodically verifies the health of
-// connected named connections. It is failure discovery only: a
-// failed Ping flips connected to disconnected (opening a new
-// readiness generation for WaitReady waiters) and nothing else. It
-// never dials, never recovers, never reconnects — recovery belongs
-// to the A3 worker. It runs independent of the status Patrol: the
-// Patrol stays a pure-read metrics job that a slow probe can never
-// stall.
+// ConnectionHealthProbeJob periodically verifies the health of named
+// connections that opt into modules.PeriodicHealthChecker. It is
+// failure discovery only: a failed HealthCheck flips connected to
+// disconnected (opening a new readiness generation for WaitReady
+// waiters) and nothing else. It never recovers, never reconnects —
+// recovery belongs to the A3 worker. It runs independent of the status
+// Patrol: the Patrol stays a pure-read metrics job that a slow probe
+// can never stall.
 func ConnectionHealthProbeJob(ctx context.Context) {
 	ticker := time.NewTicker(defaultConnectionMonitorInterval)
 	defer ticker.Stop()
@@ -87,7 +87,7 @@ func snapshotProbeTargets() []probeTarget {
 	return targets
 }
 
-// probeConnections runs one probe round with the given per-Ping
+// probeConnections runs one probe round with the given per-check
 // timeout. Exported behavior lives here so tests drive it
 // deterministically without waiting for the job tick.
 func probeConnections(timeout time.Duration) {
@@ -111,14 +111,17 @@ func probeOne(meta *Meta, cw *ConnWrapper, timeout time.Duration) {
 	if conn == nil {
 		return
 	}
-	// Self-recovering clients report their own runtime state through
-	// status callbacks (c4 wiring); the probe must not second-guess
-	// them with a competing Ping verdict.
-	if _, isStateful := conn.(modules.StatefulDialer); isStateful {
+	// Whether a connection is probed is decided solely by the
+	// PeriodicHealthChecker capability: self-reporting transports
+	// (MQTT, NNG) and logical reusable configurations without an
+	// owned transport (Kafka) do not implement it and are skipped.
+	// The probe never falls back to Connection.Ping.
+	checker, ok := conn.(modules.PeriodicHealthChecker)
+	if !ok {
 		return
 	}
 	pingCtx, cancel := attemptStreamContext(meta.lifecycleCtx, timeout)
-	err := conn.Ping(pingCtx)
+	err := checker.HealthCheck(pingCtx)
 	cancel()
 	if err == nil {
 		return

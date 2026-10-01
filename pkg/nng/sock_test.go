@@ -15,6 +15,7 @@
 package nng
 
 import (
+	"sync"
 	"testing"
 	"time"
 
@@ -27,7 +28,6 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
-	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
 )
 
 func TestValidate(t *testing.T) {
@@ -74,12 +74,20 @@ func TestValidate(t *testing.T) {
 }
 
 func TestConStatus(t *testing.T) {
-	var statusHistory []modules.ConnectionStatus
-	var mu syncx.Mutex
+	// Synchronize only on the recovering callback we care about: the
+	// production path stores the status before invoking the handler,
+	// so observing Status() alone cannot prove the callback ran.
+	// close(channel) is the sync point; the recorder never blocks,
+	// needs no mutex, and ignores the initial connecting/connected
+	// deliveries.
+	recoveringCh := make(chan struct{})
+	var recoveringOnce sync.Once
 	scRecorder := func(status string, message string) {
-		mu.Lock()
-		statusHistory = append(statusHistory, modules.ConnectionStatus{Status: status, ErrMsg: message})
-		mu.Unlock()
+		if status == connection.ConnectionRecovering {
+			recoveringOnce.Do(func() {
+				close(recoveringCh)
+			})
+		}
 	}
 	ctx := mockContext.NewMockContext("testConStatus", "test")
 	c := CreateConnection(ctx).(*Sock)
@@ -129,17 +137,15 @@ func TestConStatus(t *testing.T) {
 	} else {
 		require.FailNow(t, "failed to connect")
 	}
-	// The Pool callback observed the same runtime transition.
-	mu.Lock()
-	sawRecovering := false
-	for _, h := range statusHistory {
-		if h.Status == connection.ConnectionRecovering {
-			sawRecovering = true
-			break
-		}
+	// The external callback observed the same runtime transition.
+	// Internal status and callback delivery are verified separately:
+	// the Status() assertion above covers the former, this wait
+	// covers the latter.
+	select {
+	case <-recoveringCh:
+	case <-time.After(5 * time.Second):
+		t.Fatal("recovering callback not observed after runtime detach")
 	}
-	mu.Unlock()
-	assert.True(t, sawRecovering, "expected a recovering callback after runtime detach, got %+v", statusHistory)
 	// ReConnect
 	sock, err = pair.NewSocket()
 	require.NoError(t, err)

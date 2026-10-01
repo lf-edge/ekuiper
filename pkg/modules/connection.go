@@ -47,14 +47,17 @@ type Connection interface {
 	// initially usable.
 	Dial(ctx api.StreamContext) error
 	GetId(ctx api.StreamContext) string
-	// Ping is a single bounded health-check attempt: no retry, no
-	// reconnect, no dial-on-empty. An absent handle (Dial never
+	// Ping is a single on-demand bounded validation attempt: no retry,
+	// no reconnect, no dial-on-empty. An absent handle (Dial never
 	// succeeded, or Close already ran) reports an error; creating
 	// the handle belongs to Dial/Reconnect, never to a status read.
-	// The Pool calls Ping on a bounded attempt scope; providers must
-	// honor its deadline rather than imposing their own unbounded
-	// block. Self-recovering clients (StatefulDialer) may answer
-	// from their local lifecycle flag instead of hitting the remote.
+	// It serves explicit callers (Test Connection, initial validation),
+	// never the periodic probe: periodic probing is opt-in via
+	// PeriodicHealthChecker below. The Pool calls Ping on a bounded
+	// attempt scope; providers must honor its deadline rather than
+	// imposing their own unbounded block. Self-recovering clients
+	// (StatefulDialer) may answer from their local lifecycle flag
+	// instead of hitting the remote.
 	Ping(ctx api.StreamContext) error
 	api.Closable
 }
@@ -79,6 +82,24 @@ type Connection interface {
 type StatefulDialer interface {
 	SetStatusChangeHandler(ctx api.StreamContext, handler api.StatusChangeHandler)
 	Status(ctx api.StreamContext) ConnectionStatus
+}
+
+// PeriodicHealthChecker is an opt-in capability for the Pool periodic
+// health probe. Only providers that hold a Pool-owned runtime resource
+// representative of the real transport state, and need the Pool to
+// actively verify it, implement this interface.
+//
+// HealthCheck is failure discovery only: a single pure check that
+// never dials, never reconnects, never mutates provider state, and
+// honors the caller deadline (the Pool already bounds it per round).
+// Whether a connection is probed is decided solely by this capability:
+// the probe never consults StatefulDialer and never falls back to
+// Connection.Ping. Providers whose state is self-reported through
+// transport callbacks (MQTT, NNG), or whose named connection is a
+// logical reusable configuration without an owned transport (Kafka),
+// simply do not implement it.
+type PeriodicHealthChecker interface {
+	HealthCheck(ctx api.StreamContext) error
 }
 
 type ConnectionProvider func(ctx api.StreamContext) Connection
