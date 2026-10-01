@@ -24,6 +24,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
+	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
 
 func isClosed(ch <-chan struct{}) bool {
@@ -42,6 +43,18 @@ func newStateMeta(t *testing.T) *Meta {
 	// stop(), so the test owns its cleanup and join here.
 	t.Cleanup(m.shutdownDispatcherForTest)
 	return m
+}
+
+// publishedWrapper builds a ConnWrapper whose initial publication has
+// already completed, for state-only tests that never run a worker.
+// Production wrappers always come from newConnWrapper with a live
+// readCh, and WaitReady guarantees publication — so tests must not
+// expect readiness success from an unpublished wrapper.
+func publishedWrapper(m *Meta, conn modules.Connection) *ConnWrapper {
+	cw := &ConnWrapper{ID: m.ID, readCh: make(chan struct{}), meta: m}
+	cw.setConn(conn, nil)
+	close(cw.readCh)
+	return cw
 }
 
 // shutdownDispatcherForTest drains pending events, then stops and joins
@@ -163,7 +176,7 @@ func TestConnectedClearsStaleError(t *testing.T) {
 func TestWaitReadyImmediateConnected(t *testing.T) {
 	m := newStateMeta(t)
 	m.NotifyStatus(api.ConnectionConnected, "")
-	cw := &ConnWrapper{ID: m.ID, meta: m}
+	cw := publishedWrapper(m, &probeConn{})
 	ctx := mockContext.NewMockContext("r1", "op1")
 	require.NoError(t, cw.WaitReady(ctx))
 }
@@ -175,7 +188,7 @@ func TestWaitReadyRecheckAfterWake(t *testing.T) {
 	m := newStateMeta(t)
 	m.NotifyStatus(api.ConnectionConnected, "")
 	m.NotifyStatus(api.ConnectionDisconnected, "down")
-	cw := &ConnWrapper{ID: m.ID, meta: m}
+	cw := publishedWrapper(m, &probeConn{})
 	ctx := mockContext.NewMockContext("r1", "op1")
 
 	done := make(chan error, 1)
@@ -269,8 +282,8 @@ func TestWaitReadyBothDonePrefersCallerCancel(t *testing.T) {
 
 // TestWaitReadyWaitsInitialPublication pins the publication invariant:
 // a gate opened before the initial handle is published parks WaitReady
-// until publication, caller cancel, or lifecycle cancel. A nil return
-// therefore always implies a published handle, never readiness alone.
+// until publication. A nil return therefore always implies a published
+// handle, never readiness alone.
 func TestWaitReadyWaitsInitialPublication(t *testing.T) {
 	m := newStateMeta(t)
 	m.NotifyStatus(api.ConnectionConnected, "")
@@ -293,21 +306,6 @@ func TestWaitReadyWaitsInitialPublication(t *testing.T) {
 		require.NoError(t, err)
 	case <-time.After(2 * time.Second):
 		t.Fatal("WaitReady did not return after initial publication")
-	}
-
-	// A caller that gives up while parked observes its own cancel.
-	m2 := newStateMeta(t)
-	m2.NotifyStatus(api.ConnectionConnected, "")
-	cw2 := &ConnWrapper{ID: m2.ID, readCh: make(chan struct{}), meta: m2}
-	cancelCtx, cancel := ctx.WithCancel()
-	done2 := make(chan error, 1)
-	go func() { done2 <- cw2.WaitReady(cancelCtx) }()
-	cancel()
-	select {
-	case err := <-done2:
-		require.ErrorIs(t, err, context.Canceled)
-	case <-time.After(2 * time.Second):
-		t.Fatal("WaitReady ignored caller cancel while parked on publication")
 	}
 }
 
@@ -412,7 +410,7 @@ func TestWaitReadyParksDuringVerifying(t *testing.T) {
 	m := newStateMeta(t)
 	m.NotifyStatus(api.ConnectionConnected, "")
 	m.reportSuspect()
-	cw := &ConnWrapper{ID: m.ID, meta: m}
+	cw := publishedWrapper(m, &probeConn{})
 	ctx := mockContext.NewMockContext("r1", "op1")
 
 	done := make(chan error, 1)

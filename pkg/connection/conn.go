@@ -207,33 +207,27 @@ func (cw *ConnWrapper) WaitReady(ctx api.StreamContext) error {
 			return ErrConnectionClosed
 		}
 		if ready {
+			// The gate opened before the initial handle was
+			// published (stateless initial-Dial path): success
+			// here would hand out readiness without a handle,
+			// so park on publication instead. Publication
+			// always happens (the worker publishes even when
+			// the lifecycle died mid-Dial), hence this park
+			// only ends via readCh, caller cancel, or
+			// lifecycle cancel — never by assuming success.
 			if !cw.IsInitialized() {
-				// The gate opened before the initial handle was
-				// published (stateless initial-Dial path): success
-				// here would hand out readiness without a handle,
-				// so park on publication instead. Publication
-				// always happens (the worker publishes even when
-				// the lifecycle died mid-Dial), hence this park
-				// only ends via readCh, caller cancel, or
-				// lifecycle cancel — never by assuming success.
-				// readCh is write-once at construction; a nil
-				// channel means a hand-built wrapper with no
-				// worker and therefore no future publication, so
-				// fall through to the ready return below.
-				if readCh := cw.readCh; readCh != nil {
-					select {
-					case <-ctx.Done():
+				select {
+				case <-ctx.Done():
+					return ctx.Err()
+				case <-cw.meta.lifecycleCtx.Done():
+					if ctx.Err() != nil {
 						return ctx.Err()
-					case <-cw.meta.lifecycleCtx.Done():
-						if ctx.Err() != nil {
-							return ctx.Err()
-						}
-						return ErrConnectionClosed
-					case <-readCh:
-						// Published: recheck from the top.
 					}
-					continue
+					return ErrConnectionClosed
+				case <-cw.readCh:
+					// Published: recheck from the top.
 				}
+				continue
 			}
 			// Final recheck with Wait() precedence: a caller that
 			// canceled between the snapshot and this return must

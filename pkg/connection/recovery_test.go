@@ -122,8 +122,9 @@ func newWorkerMeta(t *testing.T, fake *recoverableFakeConn) *Meta {
 	// worker tests drive suspects through the public ConnWrapper API.
 	// The worker is started directly (same package): recoveryDone is
 	// initialized here exactly as startRecoveryWorker would, and stop
-	// paths join it the same way.
-	m.cw = &ConnWrapper{ID: m.ID, meta: m}
+	// paths join it the same way. The wrapper is published up front,
+	// mirroring a worker-completed initial Dial.
+	m.cw = publishedWrapper(m, fake)
 	m.recoveryDone = make(chan struct{})
 	go m.recoveryLoop(fake, bo)
 	return m
