@@ -370,13 +370,7 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []xs
 			case xsql.EventRow:
 				o.handleTraceIngestTuple(ctx, d)
 
-				if o.window.Type == ast.COUNT_WINDOW {
-					inputs = append(inputs, d)
-				} else if match, err := collectConditionMatch(fv, d, o.window.CollectCondition, o.name); err != nil {
-					o.onError(ctx, err)
-				} else if match {
-					inputs = append(inputs, d)
-				}
+				inputs = o.collect(ctx, fv, inputs, d)
 
 				switch o.window.Type {
 				case ast.NOT_WINDOW:
@@ -577,7 +571,7 @@ func (tl *TupleList) nextCountWindow() (*xsql.WindowTuples, error) {
 	tl.index = tl.index + 1
 
 	for _, tuple := range subT {
-		filterMatch, err := collectConditionMatch(tl.fv, tuple, tl.tupleFilter, "count window")
+		filterMatch, err := collectConditionMatch(tl.fv, tuple, tl.tupleFilter)
 		if err != nil {
 			return nil, err
 		}
@@ -786,6 +780,26 @@ func (o *WindowOperator) calDelta(triggerTime time.Time, log api.Logger) time.Du
 	return delta
 }
 
+// collect adds the row to the window inputs if it matches the collect filter.
+// Count windows buffer every row because the filter is applied when the window
+// is emitted, so that every row is still counted.
+func (o *WindowOperator) collect(ctx api.StreamContext, fv *xsql.FunctionValuer, inputs []xsql.EventRow, d xsql.EventRow) []xsql.EventRow {
+	if o.window.Type == ast.COUNT_WINDOW {
+		return append(inputs, d)
+	}
+	match, err := collectConditionMatch(fv, d, o.window.CollectCondition)
+	if err != nil {
+		o.onError(ctx, err)
+	}
+	if match {
+		return append(inputs, d)
+	}
+	// The row never enters inputs, so it never reaches the gc/emit paths that
+	// end its trace span: end it here.
+	o.handleTraceDiscardTuple(ctx, []xsql.EventRow{d})
+	return inputs
+}
+
 // isFilteredEmptyWindow reports whether a triggered window has no rows left
 // after the in-window collect filter. Such a window must not be sent
 // downstream: before the WHERE was fused into the window, the Filter operator
@@ -796,25 +810,23 @@ func isFilteredEmptyWindow(collectCondition ast.Expr, size int) bool {
 
 // collectConditionMatch evaluates the in-window collect filter against a row.
 // The FunctionValuer is created once by the caller and reused for every row.
-func collectConditionMatch(fv *xsql.FunctionValuer, d xsql.EventRow, collectCondition ast.Expr, name string) (bool, error) {
+// The result handling and the errors are the same as in FilterOp, which ran the
+// WHERE after the window before it was fused into the window.
+func collectConditionMatch(fv *xsql.FunctionValuer, d xsql.EventRow, collectCondition ast.Expr) (bool, error) {
 	if collectCondition == nil {
 		return true, nil
 	}
 
 	ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(d, fv)}
-	result := ve.Eval(collectCondition)
-
-	if result == nil {
-		return false, nil
-	}
-
-	switch v := result.(type) {
+	switch r := ve.Eval(collectCondition).(type) {
 	case error:
-		return false, fmt.Errorf("window %s collect condition error: %v", name, v)
+		return false, fmt.Errorf("run Where error: %s", r)
 	case bool:
-		return v, nil
-	default:
+		return r, nil
+	case nil: // nil is false
 		return false, nil
+	default:
+		return false, fmt.Errorf("run Where error: invalid condition that returns non-bool value %[1]T(%[1]v)", r)
 	}
 }
 
