@@ -84,10 +84,10 @@ func (f *recoverableFakeConn) recordedEvents() []string {
 }
 
 // newRecoverableFake builds a fake with live counters (the embedded
-// probeConn counters must be non-nil before any Ping/Dial).
+// probeConn counters must be non-nil before any HealthCheck/Ping/Dial).
 func newRecoverableFake() *recoverableFakeConn {
 	return &recoverableFakeConn{
-		probeConn: probeConn{pingCalls: &atomic.Int32{}, dialCalls: &atomic.Int32{}},
+		probeConn: probeConn{healthCalls: &atomic.Int32{}, pingCalls: &atomic.Int32{}, dialCalls: &atomic.Int32{}},
 	}
 }
 
@@ -485,7 +485,8 @@ func TestProbeNudgesWorkerToRecover(t *testing.T) {
 }
 
 // episodeFakeConn is a scriptable PoolRecoverableConnection for the
-// end-to-end test: sickness toggles Ping/Recover outcomes at runtime.
+// end-to-end test: sickness toggles HealthCheck/Ping/Recover outcomes
+// at runtime.
 type episodeFakeConn struct {
 	id           string
 	sick         atomic.Bool
@@ -504,6 +505,13 @@ func (e *episodeFakeConn) GetId(ctx api.StreamContext) string { return e.id }
 
 func (e *episodeFakeConn) Ping(ctx api.StreamContext) error {
 	e.pingCalls.Add(1)
+	if e.sick.Load() {
+		return errors.New("episode down")
+	}
+	return nil
+}
+
+func (e *episodeFakeConn) HealthCheck(ctx api.StreamContext) error {
 	if e.sick.Load() {
 		return errors.New("episode down")
 	}

@@ -241,7 +241,7 @@ func (c *flipSilentCtx) Err() error {
 // consume the ctx wakeup first), so the silent ctx fixes the exact
 // losing interleaving: the lifecycle branch must recheck the caller.
 func TestWaitReadyBothDonePrefersCallerCancel(t *testing.T) {
-	m := newStateMeta()
+	m := newStateMeta(t)
 	cw := &ConnWrapper{ID: m.ID, meta: m}
 	ctx := mockContext.NewMockContext("r1", "op1")
 	fc := &flipSilentCtx{StreamContext: ctx}
@@ -259,7 +259,7 @@ func TestWaitReadyBothDonePrefersCallerCancel(t *testing.T) {
 	}
 
 	// Same precedence through the already-terminated snapshot path.
-	m2 := newStateMeta()
+	m2 := newStateMeta(t)
 	cw2 := &ConnWrapper{ID: m2.ID, meta: m2}
 	fc2 := &flipSilentCtx{StreamContext: ctx}
 	fc2.canceled.Store(true)

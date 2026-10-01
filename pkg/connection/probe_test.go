@@ -28,12 +28,14 @@ import (
 )
 
 // probeConn is a controllable opt-in provider: healthy Dial, scripted
-// HealthCheck. It also implements Ping so tests pin that the periodic
-// probe uses HealthCheck and never falls back to Ping.
+// HealthCheck. It also implements Ping (scripted separately, so the
+// recovery worker's verify path stays drivable) so tests pin that the
+// periodic probe uses HealthCheck and never falls back to Ping.
 type probeConn struct {
 	id          string
 	healthErr   error
 	healthCalls *atomic.Int32
+	pingErr     error
 	pingCalls   *atomic.Int32
 	dialCalls   *atomic.Int32
 	blockHealth bool
@@ -53,7 +55,7 @@ func (p *probeConn) GetId(ctx api.StreamContext) string { return p.id }
 
 func (p *probeConn) Ping(ctx api.StreamContext) error {
 	p.pingCalls.Add(1)
-	return nil
+	return p.pingErr
 }
 
 func (p *probeConn) HealthCheck(ctx api.StreamContext) error {
@@ -337,14 +339,14 @@ func TestProbePingBounded(t *testing.T) {
 	require.Equal(t, api.ConnectionDisconnected, s)
 }
 
-// TestProbeStaleVerdictDropped pins the generation guard: a probe Ping
-// that spans a completed recovery episode cannot overwrite the fresh
-// connected state, and emits no worker wakeup. The Ping is blocked
-// until its attempt scope fires; the recovery lands while it is in
-// flight, so the verdict arrives stale by construction.
+// TestProbeStaleVerdictDropped pins the generation guard: a probe
+// HealthCheck that spans a completed recovery episode cannot overwrite
+// the fresh connected state, and emits no worker wakeup. The check is
+// blocked until its attempt scope fires; the recovery lands while it
+// is in flight, so the verdict arrives stale by construction.
 func TestProbeStaleVerdictDropped(t *testing.T) {
-	var pingCalls, dialCalls atomic.Int32
-	fake := &probeConn{blockPing: true, pingCalls: &pingCalls, dialCalls: &dialCalls}
+	var healthCalls, pingCalls, dialCalls atomic.Int32
+	fake := &probeConn{blockHealth: true, healthCalls: &healthCalls, pingCalls: &pingCalls, dialCalls: &dialCalls}
 	m := newStateMeta(t)
 	m.NotifyStatus(api.ConnectionConnected, "")
 	cw := &ConnWrapper{ID: m.ID, meta: m}
@@ -355,9 +357,9 @@ func TestProbeStaleVerdictDropped(t *testing.T) {
 		defer close(done)
 		probeOne(m, cw, 300*time.Millisecond)
 	}()
-	// The Ping is in flight; a full recovery episode lands now.
+	// The check is in flight; a full recovery episode lands now.
 	require.Eventually(t, func() bool {
-		return pingCalls.Load() == 1
+		return healthCalls.Load() == 1
 	}, 5*time.Second, 5*time.Millisecond)
 	genBefore := m.generation
 	m.NotifyStatus(api.ConnectionDisconnected, "old outage")
