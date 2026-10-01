@@ -50,8 +50,9 @@ type SQLConnection struct {
 	closed bool
 	// retireWG tracks handles replaced by Recover and closed
 	// asynchronously. Add happens only under the write lock before
-	// closed is set; Close waits after setting it — so no Add can
-	// race the Wait. SQLConnection is always used by pointer.
+	// closed is set; every Close joins it after observing closed, so
+	// no Add can race any Wait and no handle outlives any Close
+	// caller. SQLConnection is always used by pointer.
 	retireWG sync.WaitGroup
 }
 
@@ -189,6 +190,11 @@ func (s *SQLConnection) Close(ctx api.StreamContext) error {
 	s.Lock()
 	if s.closed {
 		s.Unlock()
+		// Join the in-flight drain: the first Close may still be
+		// waiting out retired handles, and no handle may outlive
+		// any Close caller — so a second Close waits too instead
+		// of returning early.
+		s.retireWG.Wait()
 		return nil
 	}
 	ctx.GetLogger().Infof("close db with url:%v", s.url)

@@ -16,6 +16,7 @@ package client
 
 import (
 	"path/filepath"
+	"sync"
 	"testing"
 	"time"
 
@@ -94,6 +95,90 @@ func TestRecoverAfterCloseDisposesCandidate(t *testing.T) {
 	require.NoError(t, c.Close(ctx))
 	require.ErrorContains(t, c.Recover(ctx), "closed during recovery")
 	require.NoError(t, c.Close(ctx))
+}
+
+// TestConcurrentCloseJoinsRetireDrain: every Close caller waits out
+// retired handles, not just the first one. The test-held delta stands
+// in for a slow retire goroutine (Add under lock before closed is
+// exactly the retire contract), so no driver timing is involved: a
+// second Close observing closed must still be parked until the drain
+// completes.
+func TestConcurrentCloseJoinsRetireDrain(t *testing.T) {
+	url := "sqlite3://" + filepath.Join(t.TempDir(), "concurrent-close.db")
+	c, ctx := recoverTestConn(t, url)
+	require.NoError(t, c.Dial(ctx))
+
+	// Simulate one unretired handle: the first Close will block on it.
+	c.retireWG.Add(1)
+	firstDone := make(chan error, 1)
+	go func() { firstDone <- c.Close(ctx) }()
+
+	// Wait until the first Close owns the closed flag, so the second
+	// Close below is guaranteed to take the already-closed path.
+	require.Eventually(t, func() bool {
+		c.RLock()
+		defer c.RUnlock()
+		return c.closed
+	}, 5*time.Second, time.Millisecond)
+
+	secondDone := make(chan error, 1)
+	go func() { secondDone <- c.Close(ctx) }()
+
+	// The drain is still held: neither Close may have returned.
+	select {
+	case err := <-secondDone:
+		t.Fatalf("second Close returned early: %v", err)
+	case <-time.After(100 * time.Millisecond):
+	}
+	select {
+	case err := <-firstDone:
+		t.Fatalf("first Close returned before drain: %v", err)
+	case <-time.After(20 * time.Millisecond):
+	}
+
+	// Release the drain: both callers return together.
+	c.retireWG.Done()
+	select {
+	case err := <-firstDone:
+		require.NoError(t, err)
+	case <-time.After(5 * time.Second):
+		t.Fatal("first Close did not return after drain")
+	}
+	select {
+	case err := <-secondDone:
+		require.NoError(t, err)
+	case <-time.After(5 * time.Second):
+		t.Fatal("second Close did not return after drain")
+	}
+
+	// A Close after the drain completed still returns at once.
+	require.NoError(t, c.Close(ctx))
+}
+
+// TestConcurrentCloseStorm hammers Close from many goroutines while a
+// retire is in flight: all callers observe the same drained outcome
+// with no panic or WaitGroup misuse (run with -race).
+func TestConcurrentCloseStorm(t *testing.T) {
+	url := "sqlite3://" + filepath.Join(t.TempDir(), "close-storm.db")
+	c, ctx := recoverTestConn(t, url)
+	require.NoError(t, c.Dial(ctx))
+	require.NoError(t, c.Recover(ctx))
+
+	const callers = 8
+	var wg sync.WaitGroup
+	errs := make([]error, callers)
+	for i := 0; i < callers; i++ {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			errs[i] = c.Close(ctx)
+		}(i)
+	}
+	wg.Wait()
+	for i := 0; i < callers; i++ {
+		require.NoError(t, errs[i], "caller %d", i)
+	}
+	require.Error(t, c.Ping(ctx))
 }
 
 // TestFacadeRoutesCurrentHandle: Exec/Query/BeginTx go through the
