@@ -135,7 +135,7 @@ func TestV5ResubscribeSameTopic(t *testing.T) {
 	require.NoError(t, store.SetupDefault(dataDir))
 	require.NoError(t, connection.InitConnectionManager4Test())
 	ctx, _ := mockContext.NewMockContext("ruleResub", "op1").WithCancel()
-	c, err := Provision(ctx, map[string]any{
+	c, err := Provision(ctx, "ruleResub-op1-resub", map[string]any{
 		"server":     "mqtt://127.0.0.1:12885",
 		"datasource": "resub",
 		"qos":        1,
