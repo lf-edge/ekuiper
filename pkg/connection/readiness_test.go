@@ -267,6 +267,50 @@ func TestWaitReadyBothDonePrefersCallerCancel(t *testing.T) {
 	require.ErrorIs(t, cw2.WaitReady(fc2), context.Canceled)
 }
 
+// TestWaitReadyWaitsInitialPublication pins the publication invariant:
+// a gate opened before the initial handle is published parks WaitReady
+// until publication, caller cancel, or lifecycle cancel. A nil return
+// therefore always implies a published handle, never readiness alone.
+func TestWaitReadyWaitsInitialPublication(t *testing.T) {
+	m := newStateMeta(t)
+	m.NotifyStatus(api.ConnectionConnected, "")
+	cw := &ConnWrapper{ID: m.ID, readCh: make(chan struct{}), meta: m}
+	ctx := mockContext.NewMockContext("r1", "op1")
+
+	done := make(chan error, 1)
+	go func() { done <- cw.WaitReady(ctx) }()
+	// The gate is open but nothing is published: the waiter parks.
+	select {
+	case err := <-done:
+		t.Fatalf("WaitReady returned %v before initial publication", err)
+	case <-time.After(100 * time.Millisecond):
+	}
+	// Publication wakes it with success.
+	cw.setConn(&probeConn{}, nil)
+	close(cw.readCh)
+	select {
+	case err := <-done:
+		require.NoError(t, err)
+	case <-time.After(2 * time.Second):
+		t.Fatal("WaitReady did not return after initial publication")
+	}
+
+	// A caller that gives up while parked observes its own cancel.
+	m2 := newStateMeta(t)
+	m2.NotifyStatus(api.ConnectionConnected, "")
+	cw2 := &ConnWrapper{ID: m2.ID, readCh: make(chan struct{}), meta: m2}
+	cancelCtx, cancel := ctx.WithCancel()
+	done2 := make(chan error, 1)
+	go func() { done2 <- cw2.WaitReady(cancelCtx) }()
+	cancel()
+	select {
+	case err := <-done2:
+		require.ErrorIs(t, err, context.Canceled)
+	case <-time.After(2 * time.Second):
+		t.Fatal("WaitReady ignored caller cancel while parked on publication")
+	}
+}
+
 // TestWaitReadyLifecycleClosed maps termination to
 // ErrConnectionClosed, both before and during the wait.
 func TestWaitReadyLifecycleClosed(t *testing.T) {

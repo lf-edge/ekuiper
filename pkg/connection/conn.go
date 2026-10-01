@@ -183,7 +183,10 @@ func (cw *ConnWrapper) Status() (string, string) {
 // not-ready generation stays parked until some generation opens the
 // gate. Readiness is the internal gate, not the public status: a
 // connected status under verification still parks. It never returns
-// nil error without internal readiness. Precedence is fixed: a
+// nil error without internal readiness, and a nil return additionally
+// guarantees the initial handle is published: a gate opened by the
+// initial Dial before the worker publishes still parks the waiter on
+// publication. Precedence is fixed: a
 // canceled caller always observes ctx.Err() first, lifecycle
 // termination yields ErrConnectionClosed otherwise. Waking from a
 // generation channel always rechecks; a wake is never success.
@@ -204,6 +207,34 @@ func (cw *ConnWrapper) WaitReady(ctx api.StreamContext) error {
 			return ErrConnectionClosed
 		}
 		if ready {
+			if !cw.IsInitialized() {
+				// The gate opened before the initial handle was
+				// published (stateless initial-Dial path): success
+				// here would hand out readiness without a handle,
+				// so park on publication instead. Publication
+				// always happens (the worker publishes even when
+				// the lifecycle died mid-Dial), hence this park
+				// only ends via readCh, caller cancel, or
+				// lifecycle cancel — never by assuming success.
+				// readCh is write-once at construction; a nil
+				// channel means a hand-built wrapper with no
+				// worker and therefore no future publication, so
+				// fall through to the ready return below.
+				if readCh := cw.readCh; readCh != nil {
+					select {
+					case <-ctx.Done():
+						return ctx.Err()
+					case <-cw.meta.lifecycleCtx.Done():
+						if ctx.Err() != nil {
+							return ctx.Err()
+						}
+						return ErrConnectionClosed
+					case <-readCh:
+						// Published: recheck from the top.
+					}
+					continue
+				}
+			}
 			// Final recheck with Wait() precedence: a caller that
 			// canceled between the snapshot and this return must
 			// observe its own cancellation, and a lifecycle that
