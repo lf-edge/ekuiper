@@ -152,7 +152,7 @@ func (ms *Sink) Ping(ctx api.StreamContext, props map[string]any) error {
 		return err
 	}
 	defer cli.Close(ctx)
-	return cli.Ping(ctx)
+	return cli.Dial(ctx)
 }
 
 func GetSink() api.Sink {

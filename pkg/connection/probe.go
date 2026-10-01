@@ -75,8 +75,10 @@ func snapshotProbeTargets() []probeTarget {
 	var targets []probeTarget
 	for _, e := range m.connectionPool {
 		// Parity with the Patrol surface: named ready Metas only.
-		// Anonymous coverage arrives with the A3 recovery worker,
-		// which owns every ready Meta.
+		// Periodic probing is only for named connection resources.
+		// Anonymous connections are rule-owned runtimes; transport failures
+		// are discovered by their consumer I/O and handed to the recovery
+		// worker when applicable.
 		if e.state != entryReady || e.meta == nil || !e.meta.Named || e.meta.cw == nil {
 			continue
 		}

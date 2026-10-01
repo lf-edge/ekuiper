@@ -200,11 +200,11 @@ func (conn *Connection) Close(ctx api.StreamContext) error {
 	return nil
 }
 
-func (conn *Connection) Ping(ctx api.StreamContext) error {
-	if conn.connected.Load() {
-		return nil
+func (conn *Connection) Ping(_ api.StreamContext) error {
+	if !conn.connected.Load() {
+		return errorx.NewIOErr("mqtt client is not connected")
 	}
-	return conn.Dial(ctx)
+	return nil
 }
 
 // MQTT features
