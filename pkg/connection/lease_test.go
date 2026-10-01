@@ -68,3 +68,48 @@ func TestStaleLeaseAfterReattachCannotDetach(t *testing.T) {
 	require.NoError(t, l2.Release(ctx))
 	require.Equal(t, 0, getConnectionRef("reattach-key"))
 }
+
+// TestStaleLeaseReleaseDuringRecreation pins the ABA/new-generation
+// contract: a superseded Lease released while its key is mid-creation
+// is a no-op returning nil. A creating round has no published Meta,
+// so the stale token cannot own anything in it — unlike Drop/Update,
+// which operate on the key itself and wait the round out, a
+// token-bound release must neither disturb the creation nor wait.
+func TestStaleLeaseReleaseDuringRecreation(t *testing.T) {
+	require.NoError(t, InitConnectionManager4Test())
+	ctx := mockContext.NewMockContext("rule1", "op1")
+	opts := FetchOptions{ConnectionKey: "recreate-key", RefID: "r1", Type: "mock"}
+	l1, err := FetchConnectionWithOptions(ctx, opts)
+	require.NoError(t, err)
+	l2, err := FetchConnectionWithOptions(ctx, opts)
+	require.NoError(t, err)
+
+	// The current holder leaves; the old anonymous Meta is torn down
+	// and the key disappears.
+	require.NoError(t, l2.Release(ctx))
+	m := globalConnectionManager
+	m.RLock()
+	_, ok := m.connectionPool["recreate-key"]
+	m.RUnlock()
+	require.False(t, ok)
+
+	// A new creation round starts on the same key.
+	entry, reserved := m.reserveCreating("recreate-key")
+	require.True(t, reserved)
+
+	// The stale Lease releases nothing and reports no error; the
+	// ongoing creation is untouched.
+	require.NoError(t, l1.Release(ctx))
+	m.RLock()
+	cur, ok := m.connectionPool["recreate-key"]
+	m.RUnlock()
+	require.True(t, ok)
+	require.Same(t, entry, cur)
+	require.Equal(t, entryCreating, cur.state)
+	require.Nil(t, cur.meta)
+
+	// White-box cleanup: release the reservation for later tests.
+	m.Lock()
+	delete(m.connectionPool, "recreate-key")
+	m.Unlock()
+}

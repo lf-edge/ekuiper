@@ -282,6 +282,15 @@ func detachLocked(m *Manager, ctx api.StreamContext, conId, refId string, token 
 			e.meta.DeRef(refId)
 			return nil, nil, nil
 		}
+		if e.state == entryCreating {
+			// No published Meta exists in this round, so this token
+			// cannot own anything here. A late token-bound release
+			// belongs to an older attachment and is a no-op — it
+			// must not disturb the ongoing creation, and (unlike
+			// Drop/Update, which operate on the key itself and
+			// wait out the round) it must not wait or retry.
+			return nil, nil, nil
+		}
 		return nil, nil, ErrConnectionRemoving
 	}
 	meta = e.meta
