@@ -252,8 +252,9 @@ func (s *SqlLookupSource) Lookup(ctx api.StreamContext, fields []string, keys []
 		// First failure surfaces and reports a suspect, unless the
 		// caller itself is already gone (see reportTransportFailure):
 		// the Pool verifies and recovers while later lookups park
-		// on WaitReady. Query/validation errors below never report —
-		// only a failed QueryContext means the transport is suspect.
+		// on WaitReady. Query/validation errors below never report;
+		// transport failure is either a failed QueryContext here or a
+		// failed row iteration (rows.Err()) below.
 		reportTransportFailure(ctx, s.cw)
 		ctx.GetLogger().Errorf("sql look table failed, err:%v, query: %v, args: %v", err, query, args)
 		return nil, err
@@ -276,6 +277,14 @@ func (s *SqlLookupSource) Lookup(ctx api.StreamContext, fields []string, keys []
 		}
 		scanIntoMap(data, columns, cols, nil)
 		dataList = append(dataList, data)
+	}
+	if err := rows.Err(); err != nil {
+		// A transport failure during row iteration surfaces here, not
+		// from QueryContext: report the suspect through the same Pool
+		// path and fail instead of returning partial data as success.
+		reportTransportFailure(ctx, s.cw)
+		ctx.GetLogger().Errorf("sql look table failed during row iteration, err:%v, query: %v, args: %v", err, query, args)
+		return nil, err
 	}
 	return dataList, nil
 }

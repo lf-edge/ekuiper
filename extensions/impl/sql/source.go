@@ -214,9 +214,10 @@ func (s *SQLSourceConnector) queryData(ctx api.StreamContext, rcvTime time.Time,
 		// First failure surfaces and reports a suspect, unless the
 		// caller itself is already gone (see reportTransportFailure);
 		// the Pool verifies and recovers while later polls park
-		// above. Only a failed QueryContext reports — statement,
-		// column-type and scan errors below are data errors, not
-		// transport.
+		// above. Statement, column-type and scan errors below are data
+		// errors, not transport; transport failure is either a failed
+		// QueryContext here or a failed row iteration (rows.Err())
+		// below.
 		reportTransportFailure(ctx, s.cw)
 		ingestError(ctx, err)
 		return
@@ -254,6 +255,15 @@ func (s *SQLSourceConnector) queryData(ctx api.StreamContext, rcvTime time.Time,
 		ingest(ctx, data, nil, rcvTime)
 		s.stats.totalWaitDuration += time.Since(watiStart)
 		rowCount++
+	}
+	if err := rows.Err(); err != nil {
+		// A transport failure during row iteration surfaces here, not
+		// from QueryContext: report the suspect and fail the poll
+		// instead of recording it as successful below.
+		logger.Errorf("query %v row iteration error %v", query, err)
+		reportTransportFailure(ctx, s.cw)
+		ingestError(ctx, err)
+		return
 	}
 	SqlSourceGauge.WithLabelValues(LblQuery, s.ruleID, s.opID).Set(float64(rowCount))
 	SqlSourceQueryDurationHist.WithLabelValues(LblQuery, s.ruleID, s.opID).Observe(float64(time.Since(queryStart).Microseconds()))
