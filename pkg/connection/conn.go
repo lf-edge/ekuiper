@@ -150,6 +150,11 @@ func (cw *ConnWrapper) WaitReady(ctx api.StreamContext) error {
 	for {
 		status, ch, closed := cw.meta.snapshotReady()
 		if closed {
+			// Caller cancellation outranks a concurrently observed
+			// termination, same precedence as Wait().
+			if ctx.Err() != nil {
+				return ctx.Err()
+			}
 			return ErrConnectionClosed
 		}
 		if status == api.ConnectionConnected {
@@ -174,6 +179,12 @@ func (cw *ConnWrapper) WaitReady(ctx api.StreamContext) error {
 		case <-ctx.Done():
 			return ctx.Err()
 		case <-cw.meta.lifecycleCtx.Done():
+			// Both scopes may be done together and Go picks a ready
+			// case at random, so re-apply caller-first precedence
+			// instead of trusting the winning case.
+			if ctx.Err() != nil {
+				return ctx.Err()
+			}
 			return ErrConnectionClosed
 		case <-ch:
 			// Generation ended: recheck, never assume success.

@@ -15,6 +15,8 @@
 package connection
 
 import (
+	"context"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -182,6 +184,59 @@ func TestWaitReadyCallerCancelFirst(t *testing.T) {
 	// Even when connected is racing, a canceled caller wins.
 	m.NotifyStatus(api.ConnectionConnected, "")
 	require.ErrorIs(t, cw.WaitReady(canceled), canceled.Err())
+}
+
+// flipSilentCtx reports cancellation via Err while its Done never
+// fires. Flipping canceled mid-wait models a caller cancel racing
+// lifecycle termination where the ctx wakeup loses: only the
+// lifecycle branch/snapshot observes anything, so they must still
+// honor caller-first precedence instead of returning
+// ErrConnectionClosed.
+type flipSilentCtx struct {
+	api.StreamContext
+	canceled atomic.Bool
+}
+
+func (c *flipSilentCtx) Done() <-chan struct{} { return nil }
+func (c *flipSilentCtx) Err() error {
+	if c.canceled.Load() {
+		return context.Canceled
+	}
+	return nil
+}
+
+// TestWaitReadyBothDonePrefersCallerCancel pins the mid-wait
+// precedence: when caller cancellation and lifecycle termination
+// coincide, the waiter deterministically observes ctx.Err(), never
+// ErrConnectionClosed. A plain double-cancel cannot reproduce this
+// deterministically (the scheduler almost always lets the waiter
+// consume the ctx wakeup first), so the silent ctx fixes the exact
+// losing interleaving: the lifecycle branch must recheck the caller.
+func TestWaitReadyBothDonePrefersCallerCancel(t *testing.T) {
+	m := newStateMeta()
+	cw := &ConnWrapper{ID: m.ID, meta: m}
+	ctx := mockContext.NewMockContext("r1", "op1")
+	fc := &flipSilentCtx{StreamContext: ctx}
+	done := make(chan error, 1)
+	go func() { done <- cw.WaitReady(fc) }()
+	// Let the waiter park on the open generation with a live caller.
+	time.Sleep(50 * time.Millisecond)
+	fc.canceled.Store(true)
+	m.lifecycleCancel()
+	select {
+	case err := <-done:
+		require.ErrorIs(t, err, context.Canceled)
+	case <-time.After(2 * time.Second):
+		t.Fatal("WaitReady did not return after lifecycle termination")
+	}
+
+	// Same precedence through the already-terminated snapshot path.
+	m2 := newStateMeta()
+	cw2 := &ConnWrapper{ID: m2.ID, meta: m2}
+	fc2 := &flipSilentCtx{StreamContext: ctx}
+	fc2.canceled.Store(true)
+	m2.lifecycleCancel()
+	require.ErrorIs(t, cw2.WaitReady(fc2), context.Canceled)
 }
 
 // TestWaitReadyLifecycleClosed maps termination to
