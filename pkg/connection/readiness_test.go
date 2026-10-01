@@ -287,7 +287,7 @@ func TestWaitReadyBothDonePrefersCallerCancel(t *testing.T) {
 func TestWaitReadyWaitsInitialPublication(t *testing.T) {
 	m := newStateMeta(t)
 	m.NotifyStatus(api.ConnectionConnected, "")
-	cw := &ConnWrapper{ID: m.ID, readCh: make(chan struct{}), meta: m}
+	cw := &connWrapper{ID: m.ID, readCh: make(chan struct{}), meta: m}
 	ctx := mockContext.NewMockContext("r1", "op1")
 
 	done := make(chan error, 1)
