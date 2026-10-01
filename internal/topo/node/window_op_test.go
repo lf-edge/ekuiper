@@ -21,7 +21,9 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace/noop"
 
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
@@ -378,4 +380,67 @@ func TestGCInputsForConditionNotMatch(t *testing.T) {
 			Timestamp: time.UnixMilli(5000),
 		},
 	}, inputs)
+}
+
+func TestCollectConditionMatch(t *testing.T) {
+	fv, _ := xsql.NewFunctionValuersForOp(context.Background())
+	row := &xsql.Tuple{Message: map[string]any{"a": 1}}
+	field := &ast.FieldRef{Name: "a", StreamName: ast.DefaultStream}
+	missing := &ast.FieldRef{Name: "b", StreamName: ast.DefaultStream}
+	tests := []struct {
+		name      string
+		condition ast.Expr
+		match     bool
+		err       string
+	}{
+		{name: "no condition", condition: nil, match: true},
+		{name: "true", condition: &ast.BinaryExpr{OP: ast.EQ, LHS: field, RHS: &ast.IntegerLiteral{Val: 1}}, match: true},
+		{name: "false", condition: &ast.BinaryExpr{OP: ast.GT, LHS: field, RHS: &ast.IntegerLiteral{Val: 1}}, match: false},
+		{name: "nil is false", condition: missing, match: false},
+		// same error as FilterOp: a non-boolean result is not coerced to false
+		{name: "non-boolean", condition: field, err: "run Where error: invalid condition that returns non-bool value int(1)"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			match, err := collectConditionMatch(fv, row, tt.condition)
+			if tt.err != "" {
+				require.EqualError(t, err, tt.err)
+				return
+			}
+			require.NoError(t, err)
+			require.Equal(t, tt.match, match)
+		})
+	}
+}
+
+// TestCollectEndsSpanOfFilteredRow verifies that a row rejected by the collect
+// filter has its trace span removed from tupleSpanMap. The row never enters the
+// window inputs, so the gc/emit paths that normally clean the map never see it.
+func TestCollectEndsSpanOfFilteredRow(t *testing.T) {
+	o, err := NewWindowOp("window", WindowConfig{
+		Type:   ast.SLIDING_WINDOW,
+		Length: time.Second,
+		CollectCondition: &ast.BinaryExpr{
+			OP:  ast.GT,
+			LHS: &ast.FieldRef{Name: "a", StreamName: ast.DefaultStream},
+			RHS: &ast.IntegerLiteral{Val: 1},
+		},
+	}, &def.RuleOption{BufferLength: 10})
+	require.NoError(t, err)
+
+	ctx := context.Background()
+	ctx.EnableTracer(true)
+	fv, _ := xsql.NewFunctionValuersForOp(ctx)
+
+	kept := &xsql.Tuple{Message: map[string]any{"a": 2}}
+	filtered := &xsql.Tuple{Message: map[string]any{"a": 1}}
+	o.tupleSpanMap[kept] = noop.Span{}
+	o.tupleSpanMap[filtered] = noop.Span{}
+
+	inputs := o.collect(ctx, fv, nil, kept)
+	inputs = o.collect(ctx, fv, inputs, filtered)
+
+	require.Equal(t, []xsql.EventRow{kept}, inputs)
+	require.Contains(t, o.tupleSpanMap, xsql.EventRow(kept), "the span of a collected row is ended by the gc/emit paths")
+	require.NotContains(t, o.tupleSpanMap, xsql.EventRow(filtered), "the span of a filtered row must not stay in tupleSpanMap")
 }

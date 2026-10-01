@@ -715,12 +715,12 @@ func TestWindow(t *testing.T) {
 			M: map[string]interface{}{},
 		},
 		{
-			// size > 2 is collected inside the window, so avg(size) is computed
-			// over the collected rows [3, 6, 4]
+			// the WHERE depends on an aggregate, so it is not pushed into the window
+			// at all: avg(size) is computed over the full window [3, 6, 2, 4, 1]
 			Name: `TestWindowCollectCountAggRule`,
 			Sql:  `SELECT size FROM demo WHERE size > 2 AND size > avg(size) GROUP BY COUNTWINDOW(5)`,
 			R: [][]map[string]interface{}{
-				{{"size": 6}},
+				{{"size": 6}, {"size": 4}},
 			},
 			M: map[string]interface{}{},
 		},
