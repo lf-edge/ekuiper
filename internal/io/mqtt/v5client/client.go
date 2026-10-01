@@ -222,6 +222,14 @@ func (c *Client) Subscribe(ctx api.StreamContext, topic string, qos byte, callba
 }
 
 func (c *Client) Publish(ctx api.StreamContext, topic string, qos byte, retained bool, payload []byte, properties map[string]string) error {
+	// Same snapshot discipline as Disconnect: cm is assigned by the
+	// first Connect, never use it without holding (briefly) the lock.
+	c.Lock()
+	cm := c.cm
+	c.Unlock()
+	if cm == nil {
+		return fmt.Errorf("mqtt v5 client is not connected")
+	}
 	msg := &paho.Publish{
 		QoS:     qos,
 		Topic:   topic,
@@ -240,7 +248,7 @@ func (c *Client) Publish(ctx api.StreamContext, topic string, qos byte, retained
 			User: props,
 		}
 	}
-	resp, err := c.cm.Publish(ctx, msg)
+	resp, err := cm.Publish(ctx, msg)
 	if err != nil {
 		if resp != nil {
 			if resp.Properties != nil {
@@ -291,12 +299,17 @@ func (c *Client) Unsubscribe(ctx api.StreamContext, topic string) error {
 }
 
 func (c *Client) Disconnect(ctx api.StreamContext) {
-	if c.cm == nil {
+	// cm is assigned by the first Connect, so snapshot it under the
+	// client lock and disconnect the snapshot with the lock released.
+	c.Lock()
+	cm := c.cm
+	c.Unlock()
+	if cm == nil {
 		return
 	}
 	dctx, dcancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer dcancel()
-	err := c.cm.Disconnect(dctx)
+	err := cm.Disconnect(dctx)
 	if err != nil {
 		ctx.GetLogger().Warnf("disconnect error: %s", err)
 	}

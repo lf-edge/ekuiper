@@ -54,13 +54,15 @@ type Connection interface {
 	// not retry, reconnect/recover, or create/replace the provider's
 	// long-lived runtime transport.
 	//
-	// It serves explicit callers (Test Connection, initial validation).
-	// Periodic probing is a separate opt-in capability provided by
-	// PeriodicHealthChecker below. The Pool calls Ping on a bounded
-	// attempt scope; providers must honor its deadline rather than
-	// imposing their own unbounded block. Self-recovering clients
-	// (StatefulDialer) may answer from their local lifecycle flag
-	// instead of hitting the remote.
+	// It is an explicit-caller API (Test Connection, initial
+	// validation) on a caller-bounded scope: providers must honor the
+	// caller deadline rather than imposing their own unbounded block.
+	// Self-recovering clients (StatefulDialer) may answer from their
+	// local lifecycle flag instead of hitting the remote.
+	//
+	// Periodic monitoring is a separate opt-in capability provided by
+	// PeriodicHealthChecker below; implementing Ping alone never
+	// enrolls a provider in periodic checks.
 	Ping(ctx api.StreamContext) error
 	api.Closable
 }
