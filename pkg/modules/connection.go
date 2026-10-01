@@ -47,12 +47,15 @@ type Connection interface {
 	// initially usable.
 	Dial(ctx api.StreamContext) error
 	GetId(ctx api.StreamContext) string
-	// Ping is a single on-demand bounded validation attempt: no retry,
-	// no reconnect, no dial-on-empty. An absent handle (Dial never
-	// succeeded, or Close already ran) reports an error; creating
-	// the handle belongs to Dial/Reconnect, never to a status read.
-	// It serves explicit callers (Test Connection, initial validation),
-	// never the periodic probe: periodic probing is opt-in via
+	// Ping performs one on-demand bounded validation attempt.
+	//
+	// It may perform bounded remote I/O, including using an ephemeral
+	// connection when the provider has no persistent transport. It must
+	// not retry, reconnect/recover, or create/replace the provider's
+	// long-lived runtime transport.
+	//
+	// It serves explicit callers (Test Connection, initial validation).
+	// Periodic probing is a separate opt-in capability provided by
 	// PeriodicHealthChecker below. The Pool calls Ping on a bounded
 	// attempt scope; providers must honor its deadline rather than
 	// imposing their own unbounded block. Self-recovering clients

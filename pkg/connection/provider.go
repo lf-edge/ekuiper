@@ -31,8 +31,8 @@ import (
 // lifecycle context: timeout first, then the server-scoped
 // StreamContext adaptation. Every provider attempt runs under an
 // explicitly bounded, server-owned scope — never a rule/request
-// scope, never unbounded. Used for Ping (health probe) and later
-// Recover (A3 worker).
+// scope, never unbounded. Used for bounded Pool-owned attempts such
+// as the periodic HealthCheck and later Recover (A3 worker).
 //
 // Dial intentionally does NOT use this helper: Dial establishes or
 // waits for initial usability under plain cancellation (NNG async
