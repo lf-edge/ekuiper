@@ -242,7 +242,19 @@ func UpdateConnection(ctx api.StreamContext, id, typ string, props map[string]an
 			candidate.Close(serverStreamContext(m.ctx))
 		}
 	}()
-	plan := m.planUpdateDrop(ctx, id)
+	var plan dropPlan
+	for {
+		plan = m.planUpdateDrop(ctx, id)
+		if plan.wait == nil {
+			break
+		}
+		// Another creation may have taken the key during Provision. Wait on
+		// the caller scope, then recheck the current resource and references.
+		// The prepared candidate remains ours; cancellation releases it below.
+		if err := waitForRound(ctx, plan.wait); err != nil {
+			return nil, err
+		}
+	}
 	if plan.err != nil {
 		return nil, plan.err
 	}
