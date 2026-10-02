@@ -319,6 +319,20 @@ func TestSinkSqliteConnectorMisc(t *testing.T) {
 	require.False(t, errorx.IsIOError(err))
 	require.Equal(t, 0, queryScalar[int](t, ctx, s2.conn, `SELECT COUNT(*) FROM t WHERE id = 5`))
 
+	// Empty data in a later insert is a build error, before any row is written.
+	err = s2.CollectList(ctx, &xsql.TransformedTupleList{Maps: []map[string]any{
+		{"id": 5, "note": "first", "action": "insert"}, {},
+	}})
+	require.ErrorContains(t, err, "data is empty")
+	require.False(t, errorx.IsIOError(err))
+	require.Equal(t, 0, queryScalar[int](t, ctx, s2.conn, `SELECT COUNT(*) FROM t WHERE id = 5`))
+
+	// A one-row rowkind batch retains the single-statement path.
+	require.NoError(t, s2.CollectList(ctx, &xsql.TransformedTupleList{Maps: []map[string]any{
+		{"id": 7, "note": "single", "action": "insert"},
+	}}))
+	require.Equal(t, "single", queryScalar[string](t, ctx, s2.conn, `SELECT note FROM t WHERE id = 7`))
+
 	// Empty batch is a no-op.
 	require.NoError(t, s2.CollectList(ctx, &xsql.TransformedTupleList{}))
 
@@ -332,6 +346,14 @@ func TestSinkSqliteConnectorMisc(t *testing.T) {
 	require.Error(t, s3.CollectList(ctx, &xsql.TransformedTupleList{
 		Maps: []map[string]any{{"bad-key": 1, "action": "insert"}},
 	}))
+
+	// Dynamic-field validation must also inspect later rows before writing.
+	err = s3.CollectList(ctx, &xsql.TransformedTupleList{Maps: []map[string]any{
+		{"id": 8, "action": "insert"}, {"bad-key": 9, "action": "insert"},
+	}})
+	require.ErrorContains(t, err, "invalid dynamic field name")
+	require.False(t, errorx.IsIOError(err))
+	require.Equal(t, 0, queryScalar[int](t, ctx, s3.conn, `SELECT COUNT(*) FROM t WHERE id = 8`))
 
 	// Close on a never-provisioned connector must not panic.
 	require.NoError(t, (&SQLSinkConnector{}).Close(ctx))
