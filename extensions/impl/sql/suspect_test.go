@@ -15,6 +15,7 @@
 package sql
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -125,4 +126,43 @@ func TestLookupCanceledBeforeIOLeavesGateOpen(t *testing.T) {
 	_, err = ls.Lookup(ctx, []string{"a"}, []string{"a"}, []any{1})
 	require.Error(t, err)
 	require.NoError(t, ls.lease.WaitReady(live))
+}
+
+func TestLookupFirstResolutionWaitsForCurrentReadiness(t *testing.T) {
+	require.NoError(t, connection.InitConnectionManager4Test())
+	ctx := connection.WithLookupRefID(kctx.Background(), "lookup:firstreadiness")
+	ls := &SqlLookupSource{}
+	require.NoError(t, ls.Provision(ctx, map[string]any{
+		"dburl": fmt.Sprintf("sqlite://%s/first_readiness.db", t.TempDir()), "datasource": "t",
+	}))
+	require.NoError(t, ls.Connect(ctx, nil))
+	defer ls.Close(ctx)
+	require.NoError(t, ls.lease.WaitReady(ctx))
+	c, err := ls.lease.Wait(ctx)
+	require.NoError(t, err)
+	require.Nil(t, ls.getConn(), "lookup has not resolved its handle yet")
+	// A closed provider makes the gate stay closed: background Recover cannot
+	// install a new handle, so it cannot race the readiness assertion below.
+	require.NoError(t, c.(*client2.SQLConnection).Close(ctx))
+	ls.lease.ReportSuspectedFailure()
+	waitCtx, cancel := ctx.WithCancel()
+	defer cancel()
+	done := make(chan error, 1)
+	go func() {
+		_, err := ls.ensureConnection(waitCtx)
+		done <- err
+	}()
+	require.Eventually(t, func() bool { return ls.getConn() != nil }, 5*time.Second, time.Millisecond)
+	select {
+	case err := <-done:
+		t.Fatalf("first resolution bypassed the closed readiness gate: %v", err)
+	default:
+	}
+	cancel()
+	select {
+	case err := <-done:
+		require.ErrorIs(t, err, context.Canceled)
+	case <-time.After(5 * time.Second):
+		t.Fatal("caller cancellation did not release the readiness wait")
+	}
 }

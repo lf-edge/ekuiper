@@ -16,6 +16,7 @@ package client
 
 import (
 	"fmt"
+	"maps"
 
 	"github.com/edgexfoundry/go-mod-messaging/v4/messaging"
 	"github.com/edgexfoundry/go-mod-messaging/v4/pkg/types"
@@ -114,6 +115,8 @@ func printConf(mbconf types.MessageBusConfig) {
 }
 
 func (es *Client) CfgValidate(props map[string]interface{}) error {
+	// Normalization must not remove options from the persisted definition.
+	props = maps.Clone(props)
 	edgeAddr := "localhost"
 	c := &EdgexConf{
 		Protocol: "tcp",
@@ -125,7 +128,7 @@ func (es *Client) CfgValidate(props map[string]interface{}) error {
 	if o, ok := props["optional"]; ok {
 		switch ot := o.(type) {
 		case map[string]string:
-			c.Optional = ot
+			c.Optional = maps.Clone(ot)
 		case map[string]interface{}:
 			c.Optional = make(map[string]string)
 			for k, v := range ot {
