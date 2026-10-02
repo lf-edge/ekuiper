@@ -21,16 +21,31 @@ import (
 	"testing"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus/testutil"
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/stretchr/testify/require"
 	_ "modernc.org/sqlite"
 
+	client "github.com/lf-edge/ekuiper/v2/extensions/impl/sql/client"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
-	"github.com/lf-edge/ekuiper/v2/metrics"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
+
+// queryScalar runs a single-row, single-column verification read
+// through the facade and returns the scanned value. Test-only helper
+// so verification reads dogfood the same routing production uses
+// instead of reaching the deprecated raw handle.
+func queryScalar[T any](t *testing.T, ctx api.StreamContext, c *client.SQLConnection, query string) T {
+	t.Helper()
+	rows, err := c.QueryContext(ctx, query)
+	require.NoError(t, err)
+	defer rows.Close()
+	require.True(t, rows.Next(), "expected one row for %q", query)
+	var v T
+	require.NoError(t, rows.Scan(&v))
+	return v
+}
 
 func TestSinkBinderNumbering(t *testing.T) {
 	// Multi-row batch inserts share one statement, so postgres-style
@@ -183,7 +198,7 @@ func TestSinkSqliteConnectorEndToEnd(t *testing.T) {
 
 	s := newSink(map[string]any{"dburl": dburl, "table": "t"})
 	defer s.Close(ctx)
-	_, err := s.conn.GetDB().Exec(`CREATE TABLE t (id INTEGER PRIMARY KEY, note TEXT, ts DATETIME)`)
+	_, err := s.conn.ExecContext(ctx, `CREATE TABLE t (id INTEGER PRIMARY KEY, note TEXT, ts DATETIME)`)
 	require.NoError(t, err)
 
 	ts := time.Date(2019, 9, 19, 0, 55, 15, 0, time.UTC)
@@ -193,7 +208,11 @@ func TestSinkSqliteConnectorEndToEnd(t *testing.T) {
 	}))
 	var note string
 	var got time.Time
-	require.NoError(t, s.conn.GetDB().QueryRow(`SELECT note, ts FROM t WHERE id = 1`).Scan(&note, &got))
+	rows, err := s.conn.QueryContext(ctx, `SELECT note, ts FROM t WHERE id = 1`)
+	require.NoError(t, err)
+	require.True(t, rows.Next())
+	require.NoError(t, rows.Scan(&note, &got))
+	rows.Close()
 	require.Equal(t, "O'Brien", note)
 	require.True(t, got.Equal(ts))
 
@@ -205,7 +224,11 @@ func TestSinkSqliteConnectorEndToEnd(t *testing.T) {
 		},
 	}))
 	var nullNote sql.NullString
-	require.NoError(t, s.conn.GetDB().QueryRow(`SELECT note FROM t WHERE id = 3`).Scan(&nullNote))
+	nullRows, err := s.conn.QueryContext(ctx, `SELECT note FROM t WHERE id = 3`)
+	require.NoError(t, err)
+	require.True(t, nullRows.Next())
+	require.NoError(t, nullRows.Scan(&nullNote))
+	nullRows.Close()
 	require.False(t, nullNote.Valid)
 
 	// Unsafe dynamic key without configured fields must fail before touching SQL.
@@ -215,13 +238,18 @@ func TestSinkSqliteConnectorEndToEnd(t *testing.T) {
 	// Empty item fails in row building.
 	require.Error(t, s.collect(ctx, map[string]any{}))
 
-	// writeToDB error path sets needReconnect; breaking the pooled *sql.DB
-	// makes the next Exec fail, and Reconnect redials the sqlite file.
+	// writeToDB error path reports and recovers: breaking the pooled
+	// *sql.DB makes the next Exec fail and surface an IO error; the
+	// Pool worker opens a fresh handle on the same file, and the
+	// following write parks until it succeeds.
+	//
+	//nolint:staticcheck // white-box fault injection: the test deliberately
+	// breaks the pooled handle, which only the raw accessor reaches.
 	require.NoError(t, s.conn.GetDB().Close())
 	require.Error(t, s.Collect(ctx, &xsql.Tuple{Message: map[string]any{"id": 9}}))
-	require.True(t, s.needReconnect)
-	require.NoError(t, s.Collect(ctx, &xsql.Tuple{Message: map[string]any{"id": 9}}))
-	require.False(t, s.needReconnect)
+	require.Eventually(t, func() bool {
+		return s.Collect(ctx, &xsql.Tuple{Message: map[string]any{"id": 9}}) == nil
+	}, 30*time.Second, 200*time.Millisecond)
 
 	// Rowkind paths.
 	s2 := newSink(map[string]any{
@@ -231,11 +259,10 @@ func TestSinkSqliteConnectorEndToEnd(t *testing.T) {
 	defer s2.Close(ctx)
 	require.NoError(t, s2.collect(ctx, map[string]any{"id": 10, "note": "n", "action": "insert"}))
 	require.NoError(t, s2.collect(ctx, map[string]any{"id": 10, "note": "u", "action": "update"}))
-	require.NoError(t, s2.conn.GetDB().QueryRow(`SELECT note FROM t WHERE id = 10`).Scan(&note))
+	note = queryScalar[string](t, ctx, s2.conn, `SELECT note FROM t WHERE id = 10`)
 	require.Equal(t, "u", note)
 	require.NoError(t, s2.collect(ctx, map[string]any{"id": 10, "note": "u", "action": "delete"}))
-	var count int
-	require.NoError(t, s2.conn.GetDB().QueryRow(`SELECT COUNT(*) FROM t WHERE id = 10`).Scan(&count))
+	count := queryScalar[int](t, ctx, s2.conn, `SELECT COUNT(*) FROM t WHERE id = 10`)
 	require.Equal(t, 0, count)
 	require.Error(t, s2.collect(ctx, map[string]any{"id": 1, "action": "mock"}))
 	require.Error(t, s2.collect(ctx, map[string]any{"id": 1, "action": 123}))
@@ -267,19 +294,27 @@ func TestSinkSqliteConnectorMisc(t *testing.T) {
 	}))
 	require.NoError(t, s2.Connect(ctx, func(string, string) {}))
 	defer s2.Close(ctx)
-	_, err := s2.conn.GetDB().Exec(`CREATE TABLE t (id INTEGER PRIMARY KEY, note TEXT)`)
+	_, err := s2.conn.ExecContext(ctx, `CREATE TABLE t (id INTEGER PRIMARY KEY, note TEXT)`)
 	require.NoError(t, err)
 	require.NoError(t, s2.CollectList(ctx, &xsql.TransformedTupleList{
 		Maps: []map[string]any{
 			{"id": 1, "note": "a", "action": "insert"},
 			{"id": 1, "note": "b", "action": "update"},
-			// A bad row must not abort the batch; the error is only logged.
-			{"id": 2, "note": "c", "action": "mock"},
 		},
 	}))
-	var note string
-	require.NoError(t, s2.conn.GetDB().QueryRow(`SELECT note FROM t WHERE id = 1`).Scan(&note))
+	note := queryScalar[string](t, ctx, s2.conn, `SELECT note FROM t WHERE id = 1`)
 	require.Equal(t, "b", note)
+	// A bad row aborts the batch with a plain data error (no silent
+	// loss) that is not an IO error (poison rows must not loop in
+	// the sink replay); rows before it stay written.
+	err = s2.CollectList(ctx, &xsql.TransformedTupleList{
+		Maps: []map[string]any{
+			{"id": 5, "note": "a", "action": "insert"},
+			{"id": 6, "note": "c", "action": "mock"},
+		},
+	})
+	require.Error(t, err)
+	require.False(t, errorx.IsIOError(err))
 
 	// Empty batch is a no-op.
 	require.NoError(t, s2.CollectList(ctx, &xsql.TransformedTupleList{}))
@@ -339,7 +374,7 @@ func TestSinkChunkedBatchEndToEnd(t *testing.T) {
 	require.NoError(t, s.Provision(ctx, map[string]any{"dburl": dburl, "table": "t"}))
 	require.NoError(t, s.Connect(ctx, func(string, string) {}))
 	defer s.Close(ctx)
-	_, err := s.conn.GetDB().Exec(`CREATE TABLE t (a BIGINT, b BIGINT)`)
+	_, err := s.conn.ExecContext(ctx, `CREATE TABLE t (a BIGINT, b BIGINT)`)
 	require.NoError(t, err)
 
 	// Force chunking: 2 columns with a 4-param cap allow 2 rows per Exec.
@@ -349,8 +384,7 @@ func TestSinkChunkedBatchEndToEnd(t *testing.T) {
 		items = append(items, map[string]any{"a": i, "b": i})
 	}
 	require.NoError(t, s.collectList(ctx, items))
-	var count int
-	require.NoError(t, s.conn.GetDB().QueryRow(`SELECT COUNT(*) FROM t`).Scan(&count))
+	count := queryScalar[int](t, ctx, s.conn, `SELECT COUNT(*) FROM t`)
 	require.Equal(t, 5, count)
 }
 
@@ -362,7 +396,7 @@ func TestSinkChunkedTxRollbackEndToEnd(t *testing.T) {
 	require.NoError(t, s.Provision(ctx, map[string]any{"dburl": dburl, "table": "t"}))
 	require.NoError(t, s.Connect(ctx, func(string, string) {}))
 	defer s.Close(ctx)
-	_, err := s.conn.GetDB().Exec(`CREATE TABLE t (a BIGINT PRIMARY KEY, b BIGINT)`)
+	_, err := s.conn.ExecContext(ctx, `CREATE TABLE t (a BIGINT PRIMARY KEY, b BIGINT)`)
 	require.NoError(t, err)
 
 	// Force 2 chunks (2 columns, 4-param cap): chunk 1 is fully legal, chunk 2
@@ -375,8 +409,7 @@ func TestSinkChunkedTxRollbackEndToEnd(t *testing.T) {
 		{"a": 3, "b": 3},
 	})
 	require.Error(t, err)
-	var count int
-	require.NoError(t, s.conn.GetDB().QueryRow(`SELECT COUNT(*) FROM t`).Scan(&count))
+	count := queryScalar[int](t, ctx, s.conn, `SELECT COUNT(*) FROM t`)
 	require.Equal(t, 0, count, "chunk 1 rows must have been rolled back")
 
 	// A clean batch through the same tx path commits.
@@ -385,7 +418,7 @@ func TestSinkChunkedTxRollbackEndToEnd(t *testing.T) {
 		{"a": 2, "b": 2},
 		{"a": 3, "b": 3},
 	}))
-	require.NoError(t, s.conn.GetDB().QueryRow(`SELECT COUNT(*) FROM t`).Scan(&count))
+	count = queryScalar[int](t, ctx, s.conn, `SELECT COUNT(*) FROM t`)
 	require.Equal(t, 3, count)
 }
 
@@ -397,12 +430,12 @@ func TestSinkChunkedBuildErrorEndToEnd(t *testing.T) {
 	require.NoError(t, s.Provision(ctx, map[string]any{"dburl": dburl, "table": "t"}))
 	require.NoError(t, s.Connect(ctx, func(string, string) {}))
 	defer s.Close(ctx)
-	_, err := s.conn.GetDB().Exec(`CREATE TABLE t (a BIGINT, b BIGINT)`)
+	_, err := s.conn.ExecContext(ctx, `CREATE TABLE t (a BIGINT, b BIGINT)`)
 	require.NoError(t, err)
 
 	// Force 2 chunks with a deterministically bad row in the second one.
-	// The build error must surface raw: no reconnect flag, no IO error
-	// (hence no sink retry), and nothing reaches the database.
+	// The build error must surface raw: no IO error (hence no sink
+	// retry), and nothing reaches the database.
 	s.maxParams = 4
 	err = s.collectList(ctx, []map[string]any{
 		{"a": 1, "b": 1},
@@ -412,31 +445,8 @@ func TestSinkChunkedBuildErrorEndToEnd(t *testing.T) {
 	})
 	require.Error(t, err)
 	require.False(t, errorx.IsIOError(err))
-	require.False(t, s.needReconnect)
-	var count int
-	require.NoError(t, s.conn.GetDB().QueryRow(`SELECT COUNT(*) FROM t`).Scan(&count))
+	count := queryScalar[int](t, ctx, s.conn, `SELECT COUNT(*) FROM t`)
 	require.Equal(t, 0, count)
-}
-
-func TestSinkSingleWriteReconnectsOnce(t *testing.T) {
-	require.NoError(t, connection.InitConnectionManager4Test())
-	ctx := mockContext.NewMockContext("sink_once", "op1")
-	dburl := fmt.Sprintf("sqlite://%s", filepath.Join(t.TempDir(), "once.db"))
-	s := &SQLSinkConnector{}
-	require.NoError(t, s.Provision(ctx, map[string]any{"dburl": dburl, "table": "t"}))
-	require.NoError(t, s.Connect(ctx, func(string, string) {}))
-	defer s.Close(ctx)
-	_, err := s.conn.GetDB().Exec(`CREATE TABLE t (a BIGINT)`)
-	require.NoError(t, err)
-
-	before := testutil.ToFloat64(metrics.IOCounter.WithLabelValues(
-		LblSql, metrics.LblSinkIO, LblReconn, ctx.GetRuleId(), ctx.GetOpId()))
-	s.needReconnect = true
-	require.NoError(t, s.collectList(ctx, []map[string]any{{"a": 1}}))
-	require.False(t, s.needReconnect)
-	after := testutil.ToFloat64(metrics.IOCounter.WithLabelValues(
-		LblSql, metrics.LblSinkIO, LblReconn, ctx.GetRuleId(), ctx.GetOpId()))
-	require.Equal(t, float64(1), after-before, "single write must reconnect exactly once")
 }
 
 func TestSQLConnectionPrefersDburl(t *testing.T) {
