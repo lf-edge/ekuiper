@@ -250,6 +250,11 @@ func TestGetValueTypeBySchema(t *testing.T) {
 		{"boolean alias", "false", "boolean", false},
 		{"float field", "1.25", "float", 1.25},
 		{"list_string keeps numeric elements", "[1,2]", "list_string", []interface{}{"1", "2"}},
+		// Unsigned metadata types have no dedicated parser; preserve inference.
+		{"uint falls back for negative integer", "-1", "uint", int64(-1)},
+		{"uint8 falls back for large integer", "300", "uint8", int64(300)},
+		{"uint falls back for boolean", "true", "uint", true},
+		{"uint8 falls back for float", "1.5", "uint8", 1.5},
 		{"infer int without schema", "123456", "", int64(123456)},
 		{"infer bool without schema", "true", "", true},
 		{"infer array without schema", "[1,2]", "", []interface{}{int64(1), int64(2)}},

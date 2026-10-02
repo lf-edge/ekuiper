@@ -192,7 +192,7 @@ func getValueType(val string, schemaType string) interface{} {
 	}
 	val = strings.Trim(val, " ")
 	switch schemaType {
-	case "int", "int64", "uint", "uint8":
+	case "int", "int64":
 		if i, err := strconv.ParseInt(val, 10, 64); err == nil {
 			return i
 		}
