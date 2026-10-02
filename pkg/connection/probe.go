@@ -1,0 +1,135 @@
+// Copyright 2026 EMQ Technologies Co., Ltd.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package connection
+
+import (
+	"context"
+	"time"
+
+	"github.com/lf-edge/ekuiper/contract/v2/api"
+
+	"github.com/lf-edge/ekuiper/v2/pkg/modules"
+)
+
+const (
+	// defaultConnectionMonitorInterval paces both the status Patrol
+	// and the health probe. One shared constant, deliberately not a
+	// user configuration item in A2: a probe cadence worth
+	// configuring only arrives with the A3 recovery worker, which
+	// will unify monitoring configuration then.
+	defaultConnectionMonitorInterval = 15 * time.Second
+	// probePingTimeout bounds a single probe HealthCheck. Providers must
+	// answer health checks within it; a provider needing longer has
+	// a contract problem (c4), not a slower probe.
+	probePingTimeout = 5 * time.Second
+)
+
+// ConnectionHealthProbeJob periodically verifies the health of named
+// connections that opt into modules.PeriodicHealthChecker. It is
+// failure discovery only: a failed HealthCheck flips connected to
+// disconnected (opening a new readiness generation for WaitReady
+// waiters) and nothing else. It never recovers, never reconnects —
+// recovery belongs to the A3 worker. It runs independent of the status
+// Patrol: the Patrol stays a pure-read metrics job that a slow probe
+// can never stall.
+func ConnectionHealthProbeJob(ctx context.Context) {
+	ticker := time.NewTicker(defaultConnectionMonitorInterval)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			probeConnections(probePingTimeout)
+		}
+	}
+}
+
+// probeTarget is one snapshot entry: the Meta plus its published
+// handle, both captured under the Manager read lock so the handle
+// pointer read is synchronized with its publish.
+type probeTarget struct {
+	meta *Meta
+	cw   *ConnWrapper
+}
+
+func snapshotProbeTargets() []probeTarget {
+	m := globalConnectionManager.Load()
+	if m == nil {
+		return nil
+	}
+	m.RLock()
+	defer m.RUnlock()
+	var targets []probeTarget
+	for _, e := range m.connectionPool {
+		// Parity with the Patrol surface: named ready Metas only.
+		// Periodic probing is only for named connection resources.
+		// Anonymous connections are rule-owned runtimes; transport failures
+		// are discovered by their consumer I/O and handed to the recovery
+		// worker when applicable.
+		if e.state != entryReady || e.meta == nil || !e.meta.Named || e.meta.cw == nil {
+			continue
+		}
+		targets = append(targets, probeTarget{meta: e.meta, cw: e.meta.cw})
+	}
+	return targets
+}
+
+// probeConnections runs one probe round with the given per-check
+// timeout. Exported behavior lives here so tests drive it
+// deterministically without waiting for the job tick.
+func probeConnections(timeout time.Duration) {
+	for _, t := range snapshotProbeTargets() {
+		probeOne(t.meta, t.cw, timeout)
+	}
+}
+
+func probeOne(meta *Meta, cw *ConnWrapper, timeout time.Duration) {
+	// A dying Meta belongs to its stop path, not to the probe.
+	if meta.lifecycleCtx.Err() != nil {
+		return
+	}
+	// The probe only ever produces connected -> disconnected. Every
+	// other state already parks waiters on an open generation.
+	status, _ := meta.GetStatus()
+	if status != api.ConnectionConnected {
+		return
+	}
+	conn := cw.peekConn()
+	if conn == nil {
+		return
+	}
+	// Whether a connection is probed is decided solely by the
+	// PeriodicHealthChecker capability: self-reporting transports
+	// (MQTT, NNG) and logical reusable configurations without an
+	// owned transport (Kafka) do not implement it and are skipped.
+	// The probe never falls back to Connection.Ping.
+	checker, ok := conn.(modules.PeriodicHealthChecker)
+	if !ok {
+		return
+	}
+	pingCtx, cancel := attemptStreamContext(meta.lifecycleCtx, timeout)
+	err := checker.HealthCheck(pingCtx)
+	cancel()
+	if err == nil {
+		return
+	}
+	// Our own scope may have died during the Ping: that is lifecycle
+	// termination, never a provider fault to record.
+	if meta.lifecycleCtx.Err() != nil {
+		return
+	}
+	meta.NotifyStatus(api.ConnectionDisconnected, err.Error())
+}
