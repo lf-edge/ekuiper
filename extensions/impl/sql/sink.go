@@ -382,16 +382,20 @@ func (s *SQLSinkConnector) collectList(ctx api.StreamContext, items []map[string
 		}
 		return s.writeStmtsTx(ctx, stmts)
 	}
+	// Sink retries replay the entire list. Validate all rows first and commit
+	// their writes together so a failed row cannot leave a committed prefix.
+	stmts := make([]builtStmt, 0, len(items))
 	for _, el := range items {
-		// Propagate the first error: a transport failure surfaces
-		// as an IO error for the SinkNode replay, a data error as
-		// a plain error. Swallowing either would lose data or
-		// misroute poison rows into the IO retry.
-		if err := s.save(ctx, s.config.Table, el); err != nil {
+		stmt, err := s.buildSave(ctx, s.config.Table, el)
+		if err != nil {
 			return err
 		}
+		stmts = append(stmts, stmt)
 	}
-	return nil
+	if len(stmts) == 1 {
+		return s.writeToDB(ctx, stmts[0].sql, stmts[0].args...)
+	}
+	return s.writeStmtsTx(ctx, stmts)
 }
 
 // splitChunks groups items so each chunk fits the parameter and row budgets
@@ -458,22 +462,30 @@ func (s *SQLSinkConnector) writeStmtsTx(ctx api.StreamContext, stmts []builtStmt
 	return nil
 }
 
-// save save updatable data only to db
 func (s *SQLSinkConnector) save(ctx api.StreamContext, table string, data map[string]interface{}) error {
+	stmt, err := s.buildSave(ctx, table, data)
+	if err != nil {
+		return err
+	}
+	return s.writeToDB(ctx, stmt.sql, stmt.args...)
+}
+
+// buildSave validates and renders one rowkind operation without database I/O.
+func (s *SQLSinkConnector) buildSave(ctx api.StreamContext, table string, data map[string]interface{}) (builtStmt, error) {
 	rowkind := ast.RowkindInsert
 	c, ok := data[s.config.RowKindField]
 	if ok {
 		rowkind, ok = c.(string)
 		if !ok {
-			return fmt.Errorf("rowkind field %s is not a string in data %v", s.config.RowKindField, data)
+			return builtStmt{}, fmt.Errorf("rowkind field %s is not a string in data %v", s.config.RowKindField, data)
 		}
 		if rowkind != ast.RowkindInsert && rowkind != ast.RowkindUpdate && rowkind != ast.RowkindDelete {
-			return fmt.Errorf("invalid rowkind %s", rowkind)
+			return builtStmt{}, fmt.Errorf("invalid rowkind %s", rowkind)
 		}
 	}
 	keys, err := s.extractKeys(data)
 	if err != nil {
-		return err
+		return builtStmt{}, err
 	}
 	var sqlStr string
 	var args []any
@@ -482,7 +494,7 @@ func (s *SQLSinkConnector) save(ctx api.StreamContext, table string, data map[st
 	case ast.RowkindInsert:
 		row, err := s.config.buildInsertRow(ctx, b, data, keys)
 		if err != nil {
-			return err
+			return builtStmt{}, err
 		}
 		if len(keys) > 0 {
 			sqlStr = buildInsertSQL(table, keys, []string{row})
@@ -491,27 +503,27 @@ func (s *SQLSinkConnector) save(ctx api.StreamContext, table string, data map[st
 	case ast.RowkindUpdate:
 		keyval, ok := data[s.config.KeyField]
 		if !ok {
-			return fmt.Errorf("field %s does not exist in data %v", s.config.KeyField, data)
+			return builtStmt{}, fmt.Errorf("field %s does not exist in data %v", s.config.KeyField, data)
 		}
 		sqlStr, err = buildUpdateSQL(table, keys, b, data, s.config.KeyField, keyval)
 		if err != nil {
-			return err
+			return builtStmt{}, err
 		}
 		args = b.args
 	case ast.RowkindDelete:
 		keyval, ok := data[s.config.KeyField]
 		if !ok {
-			return fmt.Errorf("field %s does not exist in data %v", s.config.KeyField, data)
+			return builtStmt{}, fmt.Errorf("field %s does not exist in data %v", s.config.KeyField, data)
 		}
 		sqlStr, err = buildDeleteSQL(table, s.config.KeyField, keyval, b)
 		if err != nil {
-			return err
+			return builtStmt{}, err
 		}
 		args = b.args
 	default:
-		return fmt.Errorf("invalid rowkind %s", rowkind)
+		return builtStmt{}, fmt.Errorf("invalid rowkind %s", rowkind)
 	}
-	return s.writeToDB(ctx, sqlStr, args...)
+	return builtStmt{sql: sqlStr, args: args}, nil
 }
 
 // ensureConnected parks on the Pool gate: connected is a fast state

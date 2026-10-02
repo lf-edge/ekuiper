@@ -26,6 +26,7 @@ import (
 	_ "modernc.org/sqlite"
 
 	client "github.com/lf-edge/ekuiper/v2/extensions/impl/sql/client"
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
@@ -287,7 +288,7 @@ func TestSinkSqliteConnectorMisc(t *testing.T) {
 	s.Consume(props)
 	require.Equal(t, map[string]any{"table": "t"}, props)
 
-	// Close/CollectList on a rowkind sink: batch goes through save per row.
+	// Close/CollectList on a rowkind sink: batch commits all operations together.
 	s2 := &SQLSinkConnector{}
 	require.NoError(t, s2.Provision(ctx, map[string]any{
 		"dburl": dburl, "table": "t", "fields": []string{"id", "note"},
@@ -307,7 +308,7 @@ func TestSinkSqliteConnectorMisc(t *testing.T) {
 	require.Equal(t, "b", note)
 	// A bad row aborts the batch with a plain data error (no silent
 	// loss) that is not an IO error (poison rows must not loop in
-	// the sink replay); rows before it stay written.
+	// the sink replay); no rows in the batch are written.
 	err = s2.CollectList(ctx, &xsql.TransformedTupleList{
 		Maps: []map[string]any{
 			{"id": 5, "note": "a", "action": "insert"},
@@ -316,6 +317,21 @@ func TestSinkSqliteConnectorMisc(t *testing.T) {
 	})
 	require.Error(t, err)
 	require.False(t, errorx.IsIOError(err))
+	require.Equal(t, 0, queryScalar[int](t, ctx, s2.conn, `SELECT COUNT(*) FROM t WHERE id = 5`))
+
+	// Empty data in a later insert is a build error, before any row is written.
+	err = s2.CollectList(ctx, &xsql.TransformedTupleList{Maps: []map[string]any{
+		{"id": 5, "note": "first", "action": "insert"}, {},
+	}})
+	require.ErrorContains(t, err, "data is empty")
+	require.False(t, errorx.IsIOError(err))
+	require.Equal(t, 0, queryScalar[int](t, ctx, s2.conn, `SELECT COUNT(*) FROM t WHERE id = 5`))
+
+	// A one-row rowkind batch retains the single-statement path.
+	require.NoError(t, s2.CollectList(ctx, &xsql.TransformedTupleList{Maps: []map[string]any{
+		{"id": 7, "note": "single", "action": "insert"},
+	}}))
+	require.Equal(t, "single", queryScalar[string](t, ctx, s2.conn, `SELECT note FROM t WHERE id = 7`))
 
 	// Empty batch is a no-op.
 	require.NoError(t, s2.CollectList(ctx, &xsql.TransformedTupleList{}))
@@ -330,6 +346,14 @@ func TestSinkSqliteConnectorMisc(t *testing.T) {
 	require.Error(t, s3.CollectList(ctx, &xsql.TransformedTupleList{
 		Maps: []map[string]any{{"bad-key": 1, "action": "insert"}},
 	}))
+
+	// Dynamic-field validation must also inspect later rows before writing.
+	err = s3.CollectList(ctx, &xsql.TransformedTupleList{Maps: []map[string]any{
+		{"id": 8, "action": "insert"}, {"bad-key": 9, "action": "insert"},
+	}})
+	require.ErrorContains(t, err, "invalid dynamic field name")
+	require.False(t, errorx.IsIOError(err))
+	require.Equal(t, 0, queryScalar[int](t, ctx, s3.conn, `SELECT COUNT(*) FROM t WHERE id = 8`))
 
 	// Close on a never-provisioned connector must not panic.
 	require.NoError(t, (&SQLSinkConnector{}).Close(ctx))
@@ -481,4 +505,83 @@ func TestSQLConnectionPrefersDburl(t *testing.T) {
 		"url":   123,
 		"table": "t",
 	}))
+}
+
+func TestUpdateSQLStaticFailurePreservesConnection(t *testing.T) {
+	require.NoError(t, connection.InitConnectionManager4Test())
+	ctx := mockContext.NewMockContext("update_static", "op1")
+	props := map[string]any{"dburl": fmt.Sprintf("sqlite://%s", filepath.Join(t.TempDir(), "update.db"))}
+	lease, err := connection.CreateNamedConnection(ctx, "update-static", "sql", props)
+	require.NoError(t, err)
+	defer connection.DropNameConnection(ctx, "update-static")
+	c, err := lease.Wait(ctx)
+	require.NoError(t, err)
+	sqlConn := c.(*client.SQLConnection)
+	require.NoError(t, lease.WaitReady(ctx))
+	meta, err := connection.GetConnectionDetail(ctx, "update-static")
+	require.NoError(t, err)
+	stored, err := conf.GetCfgFromKVStorage("connections", "sql", "update-static")
+	require.NoError(t, err)
+	require.NotEmpty(t, stored)
+	for _, tc := range []struct {
+		name  string
+		typ   string
+		props map[string]any
+	}{
+		{"unknown_provider", "update-unknown-provider", props},
+		{"missing_dburl", "sql", nil},
+		{"invalid_dburl_type", "sql", map[string]any{"dburl": 123}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := connection.UpdateConnection(ctx, "update-static", tc.typ, tc.props)
+			require.Error(t, err)
+			current, err := connection.GetConnectionDetail(ctx, "update-static")
+			require.NoError(t, err)
+			require.Same(t, meta, current)
+			require.NoError(t, sqlConn.Ping(ctx), "old transport must still serve")
+			require.NoError(t, lease.WaitReady(ctx))
+			currentStore, err := conf.GetCfgFromKVStorage("connections", "sql", "update-static")
+			require.NoError(t, err)
+			require.Equal(t, stored, currentStore)
+		})
+	}
+}
+
+func TestSinkRowkindBatchRollbackAndRetry(t *testing.T) {
+	require.NoError(t, connection.InitConnectionManager4Test())
+	ctx := mockContext.NewMockContext("rowkind_retry", "op1")
+	s := &SQLSinkConnector{}
+	require.NoError(t, s.Provision(ctx, map[string]any{
+		"dburl": fmt.Sprintf("sqlite://%s", filepath.Join(t.TempDir(), "rowkind.db")),
+		"table": "t", "fields": []string{"id", "note"}, "rowKindField": "action", "keyField": "id",
+	}))
+	require.NoError(t, s.Connect(ctx, func(string, string) {}))
+	defer s.Close(ctx)
+	_, err := s.conn.ExecContext(ctx, `CREATE TABLE t (id INTEGER PRIMARY KEY, note TEXT)`)
+	require.NoError(t, err)
+	_, err = s.conn.ExecContext(ctx, `INSERT INTO t VALUES (1, 'original'), (2, 'keep')`)
+	require.NoError(t, err)
+	// A real database execution failure after an update, delete and insert.
+	_, err = s.conn.ExecContext(ctx, `CREATE TRIGGER reject_last BEFORE INSERT ON t
+		WHEN NEW.id = 4 BEGIN SELECT RAISE(ABORT, 'write failure'); END`)
+	require.NoError(t, err)
+	batch := &xsql.TransformedTupleList{Maps: []map[string]any{
+		{"id": 1, "note": "updated", "action": "update"},
+		{"id": 2, "action": "delete"},
+		{"id": 3, "note": "inserted", "action": "insert"},
+		{"id": 4, "note": "last", "action": "insert"},
+	}}
+	err = s.CollectList(ctx, batch)
+	require.Error(t, err)
+	require.True(t, errorx.IsIOError(err))
+	require.Equal(t, "original", queryScalar[string](t, ctx, s.conn, `SELECT note FROM t WHERE id = 1`))
+	require.Equal(t, "keep", queryScalar[string](t, ctx, s.conn, `SELECT note FROM t WHERE id = 2`))
+	require.Equal(t, 0, queryScalar[int](t, ctx, s.conn, `SELECT COUNT(*) FROM t WHERE id IN (3,4)`))
+	_, err = s.conn.ExecContext(ctx, `DROP TRIGGER reject_last`)
+	require.NoError(t, err)
+	// Replay the exact same batch, as SinkNode does on an IO error.
+	require.NoError(t, s.CollectList(ctx, batch))
+	require.Equal(t, "updated", queryScalar[string](t, ctx, s.conn, `SELECT note FROM t WHERE id = 1`))
+	require.Equal(t, 0, queryScalar[int](t, ctx, s.conn, `SELECT COUNT(*) FROM t WHERE id = 2`))
+	require.Equal(t, 2, queryScalar[int](t, ctx, s.conn, `SELECT COUNT(*) FROM t WHERE id IN (3,4)`))
 }

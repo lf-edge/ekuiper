@@ -117,7 +117,8 @@ func (ms *SourceConnector) Connect(ctx api.StreamContext, sch api.StatusChangeHa
 // Subscribe is a one time only operation for source. It connects to the mqtt broker and subscribe to the topic
 // Run open before subscribe
 func (ms *SourceConnector) Subscribe(ctx api.StreamContext, ingest api.BytesIngest, _ api.ErrorIngest) error {
-	return ms.cli.Subscribe(ctx, ms.tpc, byte(ms.cfg.Qos), func(ctx api.StreamContext, message any) {
+	return ms.cli.Subscribe(ctx, ms.tpc, byte(ms.cfg.Qos), func(_ api.StreamContext, message any) {
+		// Transport reconnects use a server scope; messages belong to this rule.
 		ms.onMessage(ctx, message, ingest)
 	})
 }

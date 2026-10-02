@@ -121,6 +121,8 @@ The following configuration will write telemetry field's values into database
 
 By specifying the `rowkindField` and `keyField`, the sink can generate insert, update or delete statement against the primary key.
 
+When a batch contains rowkind operations, all rows are validated before writing and executed in one transaction. A validation error writes no rows; a statement failure rolls back the batch. The target database and tables must support transactions. An uncertain commit result may still require application-level deduplication when retrying.
+
 ```json
 {
   "id": "ruleUpdateAlert",
