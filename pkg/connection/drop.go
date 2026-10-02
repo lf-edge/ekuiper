@@ -124,8 +124,8 @@ func (m *Manager) planDrop(ctx api.StreamContext, selId string) dropPlan {
 
 // planUpdateDrop decides the validate + drop handoff for Update under one
 // critical section, so no state change can slip between validation and the
-// drop. Creating yields wait (retry whole Update); removing yields err.
-func (m *Manager) planUpdateDrop(ctx api.StreamContext, id string) dropPlan {
+// drop. Creating yields wait; removing or a changed generation yields err.
+func (m *Manager) planUpdateDrop(ctx api.StreamContext, id string, expected *poolEntry) dropPlan {
 	m.Lock()
 	defer m.Unlock()
 	isInternal, err := isInternalConnection(m, id)
@@ -139,6 +139,9 @@ func (m *Manager) planUpdateDrop(ctx api.StreamContext, id string) dropPlan {
 	}
 	if isInternal {
 		return dropPlan{err: fmt.Errorf("internal connection %v can't be edit", id)}
+	}
+	if m.connectionPool[id] != expected {
+		return dropPlan{err: ErrConnectionClosed}
 	}
 	// The candidate has already passed Provision. Only runtime teardown
 	// and publication remain; the old generation must stop before Dial.
@@ -209,7 +212,7 @@ func (m *Manager) planUpdateValidation(id string) dropPlan {
 	if e.meta.GetRefCount() > 0 {
 		return dropPlan{err: fmt.Errorf("connection %s can't be dropped due to rule references %v", id, e.meta.GetRefNames())}
 	}
-	return dropPlan{}
+	return dropPlan{entry: e}
 }
 
 func UpdateConnection(ctx api.StreamContext, id, typ string, props map[string]any) (*ConnectionLease, error) {
@@ -217,6 +220,7 @@ func UpdateConnection(ctx api.StreamContext, id, typ string, props map[string]an
 		return nil, fmt.Errorf("connection id and type should be defined")
 	}
 	m := globalConnectionManager
+	var expected *poolEntry
 	for {
 		plan := m.planUpdateValidation(id)
 		if plan.err != nil {
@@ -228,6 +232,7 @@ func UpdateConnection(ctx api.StreamContext, id, typ string, props map[string]an
 			}
 			continue
 		}
+		expected = plan.entry
 		break
 	}
 	props = maps.Clone(props)
@@ -244,12 +249,12 @@ func UpdateConnection(ctx api.StreamContext, id, typ string, props map[string]an
 	}()
 	var plan dropPlan
 	for {
-		plan = m.planUpdateDrop(ctx, id)
+		plan = m.planUpdateDrop(ctx, id, expected)
 		if plan.wait == nil {
 			break
 		}
 		// Another creation may have taken the key during Provision. Wait on
-		// the caller scope, then recheck the current resource and references.
+		// the caller scope, then verify that our validated generation survived.
 		// The prepared candidate remains ours; cancellation releases it below.
 		if err := waitForRound(ctx, plan.wait); err != nil {
 			return nil, err
