@@ -16,20 +16,14 @@ package connection
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"maps"
-	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
 	"github.com/lf-edge/ekuiper/contract/v2/api"
-	"github.com/pingcap/failpoint"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
-	topoContext "github.com/lf-edge/ekuiper/v2/internal/topo/context"
-	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
-	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
 )
 
@@ -41,19 +35,71 @@ import (
 
 type Manager struct {
 	syncx.RWMutex
-	// key is selId(explicitly specified or anonymous)
-	connectionPool map[string]*Meta
+	// connectionPool maps a connectionKey to its coordination entry.
+	// Entries exist for creating, ready, and (from the A1b stop work)
+	// removing Metas alike, so concurrent Fetch/Create always observe
+	// one authoritative record per key.
+	connectionPool map[string]*poolEntry
+	// ctx is the server-scoped lifecycle root. Every Meta lifecycle
+	// derives from it; it is canceled on re-init/shutdown only, never
+	// by any rule, request, or first fetcher.
+	ctx context.Context
+	// cancel terminates the whole manager scope. Nil only before the
+	// first InitConnectionManager call.
+	cancel context.CancelFunc
 }
 
-var (
-	globalConnectionManager *Manager
-	mockErr                 = true
+// entryState is the lifecycle stage of a pooled key.
+type entryState int
+
+const (
+	// entryCreating reserves the key while the heavy creation
+	// transaction (provider/Provision/persist/Meta build) runs outside
+	// the Manager lock. Exactly one creator owns it.
+	entryCreating entryState = iota
+	// entryReady holds a published Meta ready for attach.
+	entryReady
+	// entryRemoving marks a key owned by teardown. Callers apply
+	// operation-specific policy: anonymous fetches wait for cleanup and
+	// retry, RequireExisting fetches and named creates fail fast with
+	// ErrConnectionRemoving.
+	entryRemoving
 )
 
+type poolEntry struct {
+	state entryState
+	// ready is closed exactly once when this creation round concludes
+	// (success or failure). It never signals connection readiness;
+	// use ConnWrapper.Wait / Meta readiness for that.
+	ready chan struct{}
+	// meta is set on successful creation before ready is closed.
+	meta *Meta
+	// err carries the creation failure to all waiters. Mutually
+	// exclusive with meta: exactly one of them is set at close.
+	err error
+	// removed is created when the entry flips to removing and closed
+	// after cleanup deletes the entry. Fetch waiters use it to wait
+	// out a teardown instead of failing, mirroring the old behavior
+	// where they blocked on the Manager lock until Close finished.
+	removed chan struct{}
+}
+
+// globalConnectionManager is swapped wholesale on Init/reset. The
+// pointer itself is synchronized so concurrent readers (e.g. a rule
+// teardown racing a test reset) never trip the memory model; every
+// mutation path still goes through the captured instance's own
+// lock. This does NOT make concurrent Init safe: Init/reset stays
+// contractually serialized with all mutations, it just fails
+// observably instead of racing.
+var globalConnectionManager atomic.Pointer[Manager]
+
 func init() {
-	globalConnectionManager = &Manager{
-		connectionPool: make(map[string]*Meta),
-	}
+	ctx, cancel := context.WithCancel(context.Background())
+	globalConnectionManager.Store(&Manager{
+		connectionPool: make(map[string]*poolEntry),
+		ctx:            ctx,
+		cancel:         cancel,
+	})
 }
 
 func InitConnectionManager4Test() error {
@@ -63,13 +109,59 @@ func InitConnectionManager4Test() error {
 }
 
 func InitConnectionManager(ctx context.Context) {
-	globalConnectionManager = &Manager{
-		connectionPool: make(map[string]*Meta),
+	// Bootstrap/reset only: must not race Fetch/Create/Update/Drop/
+	// Detach/Reload. The previous generation, if any, is retired
+	// serially first (scope canceled, every published runtime
+	// connection stopped and closed), and only then replaced.
+	// Persistent named records are left intact; the next bootstrap
+	// reloads them via ReloadNamedConnection. This is generation
+	// replacement, not process shutdown: server exit keeps relying on
+	// the existing rule teardown path and never calls into here.
+	if ctx == nil {
+		ctx = context.Background()
 	}
+	if prev := globalConnectionManager.Load(); prev != nil {
+		prev.stopAllRuntime()
+	}
+	mctx, cancel := context.WithCancel(ctx)
+	globalConnectionManager.Store(&Manager{
+		connectionPool: make(map[string]*poolEntry),
+		ctx:            mctx,
+		cancel:         cancel,
+	})
 	if conf.IsTesting {
 		return
 	}
 	go PatrolConnectionStatusJob(ctx)
+}
+
+// stopAllRuntime synchronously retires every published runtime
+// connection of this manager: cancel the scope, then Meta.stop each
+// (which waits worker exit and Closes exactly once via stopOnce).
+// Named and anonymous Metas are both stopped; no KV record is touched.
+// Init/reset is contractually serialized with mutations, so no new
+// Fetch/Create/Detach/Drop can interleave here and no waiter can be
+// parked on these entries — the runtime removing/waiter protocol is
+// deliberately not simulated on this path.
+func (m *Manager) stopAllRuntime() {
+	if m.cancel != nil {
+		m.cancel()
+	}
+	m.Lock()
+	var metas []*Meta
+	for _, e := range m.connectionPool {
+		if e.state == entryReady && e.meta != nil {
+			metas = append(metas, e.meta)
+		}
+	}
+	// Reset owns the whole map: drop every record now instead of
+	// transitioning through removing.
+	m.connectionPool = make(map[string]*poolEntry)
+	m.Unlock()
+	cleanupCtx := serverStreamContext(context.Background())
+	for _, meta := range metas {
+		meta.stop(cleanupCtx)
+	}
 }
 
 const (
@@ -91,14 +183,16 @@ func PatrolConnectionStatusJob(ctx context.Context) {
 }
 
 func patrolConnectionStatus() {
-	globalConnectionManager.RLock()
-	defer globalConnectionManager.RUnlock()
-	for connName, conn := range globalConnectionManager.connectionPool {
-		// For now, we only patrol named connection
-		if !conn.Named {
+	m := globalConnectionManager.Load()
+	m.RLock()
+	defer m.RUnlock()
+	for connName, e := range m.connectionPool {
+		// For now, we only patrol named connection. Creating entries
+		// have no Meta yet and report nothing.
+		if e.state != entryReady || e.meta == nil || !e.meta.Named {
 			continue
 		}
-		status, _ := conn.GetStatus()
+		status, _ := e.meta.GetStatus()
 		switch status {
 		case api.ConnectionConnected:
 			ConnStatusGauge.WithLabelValues(connName).Set(1)
@@ -122,205 +216,19 @@ func newExponentialBackOff(maxElapsedTime time.Duration) *backoff.ExponentialBac
 	)
 }
 
-// FetchOptions carries the explicit connection identity for the new fetch
-// path (DESIGN §8, A1a). ConnectionKey selects which logical connection to
-// share; RefID identifies which consumer holds it. The two must never be
-// mixed: Pool never derives one from the other.
-type FetchOptions struct {
-	// ConnectionKey is the opaque logical-connection identity. For named
-	// connections it is the connectionSelector; for anonymous ones it is
-	// the connector-provided canonical key (e.g. resolved SQL DB URL).
-	ConnectionKey string
-	// RefID identifies the holding consumer. Source/Sink use the
-	// rule+op+instance identity; lookup tables use the framework-injected
-	// lookup resource identity. It must be saved by the consumer at
-	// Connect time and passed back verbatim at detach time.
-	RefID string
-	// RequireExisting marks a fetch that may only attach to an already
-	// existing logical connection: a missing ConnectionKey is an error
-	// and anonymous creation is never performed. Used for
-	// connectionSelector/named references. False allows creating an
-	// anonymous Meta when the key is absent. This describes the fetch
-	// mode, not the Meta lifecycle type (Meta.Named).
-	RequireExisting bool
-	Type            string
-	Props           map[string]any
-	// StatusHandler receives connection status changes for this ref.
-	StatusHandler api.StatusChangeHandler
-}
-
-// ConsumerRefID derives the stable Source/Sink consumer identity
-// (ruleID + opID + instanceID) for the current context. Connect must save
-// the returned value and pass it back verbatim to DetachConnectionByRef.
-func ConsumerRefID(ctx api.StreamContext) string {
-	return extractRefId(ctx)
-}
-
-// FetchConnectionWithOptions is the explicit-identity fetch path. Callers
-// must canonicalize props/key and compute RefID before calling; Pool treats
-// ConnectionKey as an opaque identity.
-func FetchConnectionWithOptions(ctx api.StreamContext, opts FetchOptions) (*ConnWrapper, error) {
-	failpoint.Inject("FetchConnectionErr", func() {
-		failpoint.Return(nil, fmt.Errorf("FetchConnectionErr"))
-	})
-	if opts.ConnectionKey == "" {
-		return nil, fmt.Errorf("connection key should be defined")
-	}
-	if opts.RefID == "" {
-		return nil, fmt.Errorf("connection ref id should be defined")
-	}
-	if opts.Type == "" {
-		return nil, fmt.Errorf("connection type should be defined")
-	}
-	globalConnectionManager.Lock()
-	defer globalConnectionManager.Unlock()
-	return fetchInternal(ctx, opts)
-}
-
-// FetchConnection is the legacy compatibility shim. It keeps the historical
-// connectionKey derivation (connectionSelector-or-refId) so unmigrated
-// connectors keep resolving the same logical connection. The consumer ref,
-// however, is normalized to ConsumerRefID(ctx): legacy DetachConnection
-// derives exactly that value, and the historical habit of passing
-// connection-identity material (endpoint/topic/URL) as refId never
-// identified the consumer. Without this normalization every legacy Close
-// would miss its ref and leak the reference. New code must use
-// FetchConnectionWithOptions instead.
-func FetchConnection(ctx api.StreamContext, refId, typ string, props map[string]interface{}, sc api.StatusChangeHandler) (*ConnWrapper, error) {
-	failpoint.Inject("FetchConnectionErr", func() {
-		failpoint.Return(nil, fmt.Errorf("FetchConnectionErr"))
-	})
-	if refId == "" {
-		return nil, fmt.Errorf("connection ref id should be defined")
-	}
-	conId := extractSelID(props, refId)
-	opts := FetchOptions{
-		ConnectionKey:   conId,
-		RefID:           ConsumerRefID(ctx),
-		RequireExisting: conId != refId,
-		Type:            typ,
-		Props:           props,
-		StatusHandler:   sc,
-	}
-	globalConnectionManager.Lock()
-	defer globalConnectionManager.Unlock()
-	return fetchInternal(ctx, opts)
-}
-
-// fetchInternal implements lookup-or-create plus attach. Callers must hold
-// the Manager lock. A1a introduces no new plugin/network work here, but the
-// attach path still reaches the preexisting Meta.GetStatus behavior (which
-// may Ping for stateless connections); that is normalized in A2. The only
-// local addition is the synchronous compatibility comparison.
-func fetchInternal(ctx api.StreamContext, opts FetchOptions) (*ConnWrapper, error) {
-	conId := opts.ConnectionKey
-	if meta, ok := globalConnectionManager.connectionPool[conId]; ok {
-		if err := checkCompatible(meta, opts); err != nil {
-			return nil, err
-		}
-		conf.Log.Infof("FetchConnection return existed conn %s", conId)
-		if conId != opts.RefID {
-			conf.Log.Infof("action=reuse_connection connId=%s type=%s connectionKey=%s rule=%s op=%s refId=%s", conId, opts.Type, conId, ctx.GetRuleId(), ctx.GetOpId(), opts.RefID)
-		}
-		return attachConnection(conId, opts.RefID, opts.StatusHandler)
-	}
-	if opts.RequireExisting {
-		return nil, fmt.Errorf("connection %s not existed", conId)
-	}
-	meta := &Meta{
-		ID:  conId,
-		Typ: opts.Type,
-		// Shallow-copy the caller map: Meta.Props is immutable once
-		// inside the Pool. maps.Clone(nil) is nil, so no nil guard
-		// needed. Connectors requiring deep-copy semantics must
-		// normalize before fetching.
-		Props: maps.Clone(opts.Props),
-		Named: false,
-	}
-	meta.cw = newConnWrapper(ctx, meta)
-	globalConnectionManager.connectionPool[meta.ID] = meta
-	conf.Log.Infof("FetchConnection return new conn %s", conId)
-	return attachConnection(conId, opts.RefID, opts.StatusHandler)
-}
-
-// checkCompatible rejects sharing one logical connection between
-// incompatible definitions. The comparison is strictly local: identity
-// material already normalized by the caller, no plugin calls, no I/O.
-func checkCompatible(meta *Meta, opts FetchOptions) error {
-	if !strings.EqualFold(meta.Typ, opts.Type) {
-		return fmt.Errorf("connection %s type conflict: pooled %q vs requested %q", meta.ID, meta.Typ, opts.Type)
-	}
-	return nil
-}
-
-// ReloadNamedConnection is called when server starts. It initializes all stored named connections
-func ReloadNamedConnection() error {
-	globalConnectionManager.Lock()
-	defer globalConnectionManager.Unlock()
-	cfgs, err := conf.GetCfgFromKVStorage("connections", "", "")
-	if err != nil {
-		return err
-	}
-	for key, props := range cfgs {
-		names := strings.Split(key, ".")
-		if len(names) != 3 {
-			continue
-		}
-		typ := names[1]
-		id := names[2]
-		if _, ok := globalConnectionManager.connectionPool[id]; ok {
-			continue
-		}
-		meta := &Meta{
-			ID:    id,
-			Typ:   typ,
-			Props: props,
-			Named: true,
-		}
-		meta.cw = newConnWrapper(topoContext.WithContext(context.Background()), meta)
-		globalConnectionManager.connectionPool[id] = meta
-	}
-	return nil
-}
-
-// Connection API handlers
-
-func CreateNamedConnection(ctx api.StreamContext, id, typ string, props map[string]any) (*ConnWrapper, error) {
-	if id == "" || typ == "" {
-		return nil, fmt.Errorf("connection id and type should be defined")
-	}
-	globalConnectionManager.Lock()
-	defer globalConnectionManager.Unlock()
-	return createNamedConnection(ctx, id, typ, props)
-}
-
-func createNamedConnection(ctx api.StreamContext, id, typ string, props map[string]any) (*ConnWrapper, error) {
-	if _, ok := globalConnectionManager.connectionPool[id]; ok {
-		return nil, fmt.Errorf("connection %v already been created", id)
-	}
-	meta := &Meta{
-		ID:    id,
-		Typ:   typ,
-		Props: props,
-		Named: true,
-	}
-	meta.cw = newConnWrapper(ctx, meta)
-	if err := storeConnectionMeta(typ, id, props); err != nil {
-		return nil, err
-	}
-	globalConnectionManager.connectionPool[id] = meta
-	return meta.cw, nil
-}
-
 func GetAllConnectionsMeta(forceAll bool) []*Meta {
-	globalConnectionManager.RLock()
-	defer globalConnectionManager.RUnlock()
+	m := globalConnectionManager.Load()
+	m.RLock()
+	defer m.RUnlock()
 	metaList := make([]*Meta, 0)
-	for _, meta := range globalConnectionManager.connectionPool {
-		if !meta.Named && !forceAll {
+	for _, e := range m.connectionPool {
+		if e.state != entryReady || e.meta == nil {
 			continue
 		}
-		metaList = append(metaList, meta)
+		if !e.meta.Named && !forceAll {
+			continue
+		}
+		metaList = append(metaList, e.meta)
 	}
 	return metaList
 }
@@ -329,232 +237,12 @@ func GetConnectionDetail(_ api.StreamContext, id string) (*Meta, error) {
 	if id == "" {
 		return nil, fmt.Errorf("connection id should be defined")
 	}
-	globalConnectionManager.RLock()
-	defer globalConnectionManager.RUnlock()
-	meta, ok := globalConnectionManager.connectionPool[id]
-	if !ok {
+	m := globalConnectionManager.Load()
+	m.RLock()
+	defer m.RUnlock()
+	e, ok := m.connectionPool[id]
+	if !ok || e.state != entryReady || e.meta == nil {
 		return nil, fmt.Errorf("connection %s not existed", id)
 	}
-	return meta, nil
-}
-
-func DropNameConnection(ctx api.StreamContext, selId string) error {
-	if selId == "" {
-		return fmt.Errorf("connection id should be defined")
-	}
-	globalConnectionManager.Lock()
-	defer globalConnectionManager.Unlock()
-	return dropNameConnection(ctx, selId)
-}
-
-func dropNameConnection(ctx api.StreamContext, selId string) error {
-	meta, ok := globalConnectionManager.connectionPool[selId]
-	if !ok {
-		return nil
-	}
-	isInternal, err := isInternalConnection(selId)
-	if err != nil {
-		return err
-	}
-	if isInternal {
-		return fmt.Errorf("internal connection %v can't be edit", selId)
-	}
-	if meta.GetRefCount() > 0 {
-		return fmt.Errorf("connection %s can't be dropped due to rule references %v", selId, meta.GetRefNames())
-	}
-	err = dropConnectionStore(meta.Typ, selId)
-	if err != nil {
-		return fmt.Errorf("drop connection %s failed, err:%v", selId, err)
-	}
-	if meta.cw.IsInitialized() {
-		conn, err := meta.cw.Wait(ctx)
-		if conn != nil && err == nil {
-			conn.Close(ctx)
-		}
-	}
-	delete(globalConnectionManager.connectionPool, selId)
-	return nil
-}
-
-func UpdateConnection(ctx api.StreamContext, id, typ string, props map[string]any) (*ConnWrapper, error) {
-	if id == "" || typ == "" {
-		return nil, fmt.Errorf("connection id and type should be defined")
-	}
-	globalConnectionManager.Lock()
-	defer globalConnectionManager.Unlock()
-	isInternal, err := isInternalConnection(id)
-	if err != nil {
-		return nil, err
-	}
-	if isInternal {
-		return nil, fmt.Errorf("internal connection %v can't be edit", id)
-	}
-	if err := dropNameConnection(ctx, id); err != nil {
-		return nil, err
-	}
-	return createNamedConnection(ctx, id, typ, props)
-}
-
-func isInternalConnection(id string) (bool, error) {
-	meta, ok := globalConnectionManager.connectionPool[id]
-	if !ok {
-		return false, fmt.Errorf("connection %s not existed", id)
-	}
-	return !meta.Named, nil
-}
-
-func DetachConnection(ctx api.StreamContext, conId string) error {
-	return DetachConnectionByRef(ctx, conId, extractRefId(ctx))
-}
-
-// DetachConnectionByRef detaches a connection using the reference ID supplied
-// to FetchConnection.
-func DetachConnectionByRef(ctx api.StreamContext, conId, refId string) error {
-	if conId == "" {
-		return fmt.Errorf("connection id should be defined")
-	}
-	if refId == "" {
-		return fmt.Errorf("connection reference id should be defined")
-	}
-	globalConnectionManager.Lock()
-	defer globalConnectionManager.Unlock()
-	return detachConnection(ctx, conId, refId)
-}
-
-func getConnectionRef(id string) int {
-	globalConnectionManager.RLock()
-	defer globalConnectionManager.RUnlock()
-	meta, ok := globalConnectionManager.connectionPool[id]
-	if !ok {
-		return 0
-	}
-	return meta.GetRefCount()
-}
-
-func storeConnectionMeta(plugin, id string, props map[string]interface{}) error {
-	err := conf.WriteCfgIntoKVStorage("connections", plugin, id, props)
-	failpoint.Inject("storeConnectionErr", func() {
-		err = errors.New("storeConnectionErr")
-	})
-	return err
-}
-
-func dropConnectionStore(plugin, id string) error {
-	err := conf.DropCfgKeyFromStorage("connections", plugin, id)
-	failpoint.Inject("dropConnectionStoreErr", func() {
-		err = errors.New("dropConnectionStoreErr")
-	})
-	return err
-}
-
-func attachConnection(conId string, refId string, sc api.StatusChangeHandler) (*ConnWrapper, error) {
-	if conId == "" {
-		return nil, fmt.Errorf("connection id should be defined")
-	}
-	meta, ok := globalConnectionManager.connectionPool[conId]
-	if !ok {
-		return nil, fmt.Errorf("connection %s not existed", conId)
-	}
-	meta.AddRef(refId, sc)
-	if conId != refId {
-		conf.Log.Infof("action=attach_connection_ref connId=%s type=%s connectionKey=%s refId=%s refCount=%d", conId, meta.Typ, conId, refId, meta.GetRefCount())
-	}
-	return meta.cw, nil
-}
-
-func detachConnection(ctx api.StreamContext, conId, refId string) error {
-	meta, ok := globalConnectionManager.connectionPool[conId]
-	if !ok {
-		conf.Log.Infof("detachConnection not found:%v", conId)
-		return nil
-	}
-	meta.DeRef(refId)
-	globalConnectionManager.connectionPool[conId] = meta
-	conf.Log.Infof("detachConnection remove conn:%v,ref:%v", conId, refId)
-	if conId != refId {
-		conf.Log.Infof("action=detach_connection_ref connId=%s type=%s connectionKey=%s rule=%s op=%s refId=%s refCount=%d", conId, meta.Typ, conId, ctx.GetRuleId(), ctx.GetOpId(), refId, meta.GetRefCount())
-	}
-	if !meta.Named && meta.GetRefCount() == 0 {
-		if conId != refId {
-			conf.Log.Infof("action=close_connection connId=%s type=%s connectionKey=%s rule=%s op=%s reason=zero_ref", conId, meta.Typ, conId, ctx.GetRuleId(), ctx.GetOpId())
-		}
-		close(meta.cw.detachCh)
-		conn, err := meta.cw.Wait(ctx)
-		if conn != nil && err == nil {
-			conn.Close(ctx)
-		}
-		delete(globalConnectionManager.connectionPool, conId)
-		return nil
-	}
-	return nil
-}
-
-func createConnection(connCtx api.StreamContext, meta *Meta) (modules.Connection, error) {
-	var conn modules.Connection
-	var err error
-	connRegister, ok := modules.GetConnectionProvider(strings.ToLower(meta.Typ))
-	if !ok {
-		return nil, fmt.Errorf("unknown connection type")
-	}
-	conn = connRegister(connCtx)
-	sc, isStateful := conn.(modules.StatefulDialer)
-	err = conn.Provision(connCtx, meta.ID, meta.Props)
-	if err != nil {
-		return nil, err
-	}
-	if isStateful {
-		sc.SetStatusChangeHandler(connCtx, meta.NotifyStatus)
-	}
-	err = backoff.Retry(func() error {
-		select {
-		case <-connCtx.Done():
-			return nil
-		default:
-		}
-		meta.NotifyStatus(api.ConnectionConnecting, "")
-		connCtx.GetLogger().Debugf("connection retry: %s", meta.ID)
-		err = conn.Dial(connCtx)
-		failpoint.Inject("createConnectionErr", func() {
-			if mockErr {
-				err = errorx.NewIOErr("createConnectionErr")
-				mockErr = false
-			}
-		})
-		if err == nil {
-			if !isStateful {
-				meta.NotifyStatus(api.ConnectionConnected, "")
-			}
-			return nil
-		}
-		connCtx.GetLogger().Debugf("connection failed: %s, %v", meta.ID, err)
-		meta.NotifyStatus(api.ConnectionDisconnected, err.Error())
-		if errorx.IsIOError(err) {
-			return err
-		}
-		return backoff.Permanent(err)
-		// No max elapsed time: pooled connections keep retrying until their
-		// lifecycle context ends. Consumers decide whether and when to wait
-		// for the ConnWrapper to become ready.
-	}, NewExponentialBackOffWithMaxElapsedTime(0))
-	return conn, err
-}
-
-// Return the unique connection id and whether it is set explicitly
-func extractSelID(props map[string]interface{}, anomId string) string {
-	if len(props) < 1 {
-		return anomId
-	}
-	v, ok := props["connectionSelector"]
-	if !ok {
-		return anomId
-	}
-	id, ok := v.(string)
-	if !ok {
-		return anomId
-	}
-	return id
-}
-
-func extractRefId(ctx api.StreamContext) string {
-	return fmt.Sprintf("%s_%s_%d", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId())
+	return e.meta, nil
 }
