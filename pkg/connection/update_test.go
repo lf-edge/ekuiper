@@ -25,6 +25,7 @@ import (
 	"github.com/pingcap/failpoint"
 	"github.com/stretchr/testify/require"
 
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
@@ -325,12 +326,51 @@ func TestUpdateWaitsForCreationAfterProvision(t *testing.T) {
 			releaseOther()
 			require.NoError(t, awaitUpdateResult(t, creating))
 			if !cancelWait {
-				require.NoError(t, awaitUpdateResult(t, updating))
-				require.Equal(t, int32(1), other.closes.Load())
-				require.Zero(t, candidate.closes.Load())
+				require.ErrorIs(t, awaitUpdateResult(t, updating), ErrConnectionClosed)
+				require.Zero(t, other.closes.Load())
+				require.Equal(t, int32(1), candidate.closes.Load())
+				meta, err := GetConnectionDetail(ctx, "update-race")
+				require.NoError(t, err)
+				require.Equal(t, "update-other", meta.Typ)
 			}
 			require.Equal(t, int32(1), candidate.provisions.Load(), "do not repeat static provisioning")
 			require.Equal(t, int32(1), old.closes.Load())
 		})
 	}
+}
+
+func TestUpdateRejectsReplacedGeneration(t *testing.T) {
+	gate := make(chan struct{})
+	release := releaseUpdateGate(gate)
+	defer release()
+	ctx, old, candidate := updateFixture(t, nil, nil, gate)
+	_, err := CreateNamedConnection(ctx, "update-replaced", "update-old", nil)
+	require.NoError(t, err)
+	updating := runUpdateCall(t, func() error {
+		_, err := UpdateConnection(ctx, "update-replaced", "update-candidate", nil)
+		return err
+	})
+	select {
+	case <-candidate.provisionStarted:
+	case <-time.After(5 * time.Second):
+		t.Fatal("candidate was not provisioned")
+	}
+	require.NoError(t, DropNameConnection(ctx, "update-replaced"))
+	other := &updateTestConnection{
+		provisionStarted: make(chan struct{}), closeStarted: make(chan struct{}),
+	}
+	modules.RegisterConnection("update-other", func(api.StreamContext) modules.Connection { return other })
+	_, err = CreateNamedConnection(ctx, "update-replaced", "update-other", map[string]any{"generation": "new"})
+	require.NoError(t, err)
+	release()
+	require.ErrorIs(t, awaitUpdateResult(t, updating), ErrConnectionClosed)
+	require.Equal(t, int32(1), old.closes.Load())
+	require.Equal(t, int32(1), candidate.closes.Load())
+	require.Zero(t, other.closes.Load())
+	meta, err := GetConnectionDetail(ctx, "update-replaced")
+	require.NoError(t, err)
+	require.Equal(t, "update-other", meta.Typ)
+	stored, err := conf.GetCfgFromKVStorage("connections", "update-other", "update-replaced")
+	require.NoError(t, err)
+	require.Equal(t, "new", stored["connections.update-other.update-replaced"]["generation"])
 }
