@@ -42,12 +42,11 @@ const (
 
 type SQLSinkConnector struct {
 	config *sqlSinkConfig
-	cw     *connection.ConnWrapper
-	conn   *client.SQLConnection
-	props  map[string]any
-	// refID is the consumer identity attached at Connect time. It is
-	// passed back verbatim at Close; never re-derived from ctx.
-	refID string
+	// lease is the per-consumer pool handle acquired at Connect time.
+	// Release it to detach.
+	lease *connection.ConnectionLease
+	conn  *client.SQLConnection
+	props map[string]any
 	// bindNext renders the bind variable for the i-th (1-based) argument of
 	// the current statement, resolved from the driver in Provision.
 	bindNext func(i int) string
@@ -274,7 +273,7 @@ func (s *SQLSinkConnector) Connect(ctx api.StreamContext, sc api.StatusChangeHan
 		return err
 	}
 	refID := connection.ConsumerRefID(ctx)
-	cw, err := connection.FetchConnectionWithOptions(ctx, connection.FetchOptions{
+	lease, err := connection.FetchConnectionWithOptions(ctx, connection.FetchOptions{
 		ConnectionKey:   key,
 		RefID:           refID,
 		RequireExisting: requireExisting,
@@ -285,9 +284,8 @@ func (s *SQLSinkConnector) Connect(ctx api.StreamContext, sc api.StatusChangeHan
 	if err != nil {
 		return err
 	}
-	s.cw = cw
-	s.refID = refID
-	conn, err := s.cw.Wait(ctx)
+	s.lease = lease
+	conn, err := s.lease.Wait(ctx)
 	if conn == nil {
 		return fmt.Errorf("sql client not ready: %v", err)
 	}
@@ -299,8 +297,8 @@ func (s *SQLSinkConnector) Close(ctx api.StreamContext) error {
 	if s.config != nil {
 		ctx.GetLogger().Infof("Closing sql sink connector url:%v", s.config.DBUrl)
 	}
-	if s.cw != nil {
-		return connection.DetachConnectionByRef(ctx, s.cw.ID, s.refID)
+	if s.lease != nil {
+		return s.lease.Release(ctx)
 	}
 	return nil
 }
@@ -430,7 +428,7 @@ func (s *SQLSinkConnector) writeStmtsTx(ctx api.StreamContext, stmts []builtStmt
 		// itself is gone) and surface an IO error for the SinkNode
 		// replay. Validation errors never reach here — callers
 		// build all statements first.
-		reportTransportFailure(ctx, s.cw)
+		reportTransportFailure(ctx, s.lease)
 		return errorx.NewIOErr(err.Error())
 	}
 	committed := false
@@ -447,12 +445,12 @@ func (s *SQLSinkConnector) writeStmtsTx(ctx api.StreamContext, stmts []builtStmt
 			err = errors.New("dbErr")
 		})
 		if err != nil {
-			reportTransportFailure(ctx, s.cw)
+			reportTransportFailure(ctx, s.lease)
 			return errorx.NewIOErr(err.Error())
 		}
 	}
 	if err := tx.Commit(); err != nil {
-		reportTransportFailure(ctx, s.cw)
+		reportTransportFailure(ctx, s.lease)
 		return errorx.NewIOErr(err.Error())
 	}
 	committed = true
@@ -521,7 +519,7 @@ func (s *SQLSinkConnector) save(ctx api.StreamContext, table string, data map[st
 // failures below report a suspect and surface as IO errors for the
 // SinkNode replay; validation/statement errors never touch the gate.
 func (s *SQLSinkConnector) ensureConnected(ctx api.StreamContext) error {
-	if err := s.cw.WaitReady(ctx); err != nil {
+	if err := s.lease.WaitReady(ctx); err != nil {
 		return errorx.NewIOErr(err.Error())
 	}
 	return nil
@@ -538,7 +536,7 @@ func (s *SQLSinkConnector) writeToDB(ctx api.StreamContext, sqlStr string, args 
 		err = errors.New("dbErr")
 	})
 	if err != nil {
-		reportTransportFailure(ctx, s.cw)
+		reportTransportFailure(ctx, s.lease)
 		return errorx.NewIOErr(err.Error())
 	}
 	metrics.IODurationHist.WithLabelValues(LblSql, metrics.LblSinkIO, ctx.GetRuleId(), ctx.GetOpId()).Observe(float64(time.Since(start).Microseconds()))

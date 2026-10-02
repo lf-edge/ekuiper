@@ -50,8 +50,8 @@ func newStateMeta(t *testing.T) *Meta {
 // Production wrappers always come from newConnWrapper with a live
 // readCh, and WaitReady guarantees publication — so tests must not
 // expect readiness success from an unpublished wrapper.
-func publishedWrapper(m *Meta, conn modules.Connection) *ConnWrapper {
-	cw := &ConnWrapper{ID: m.ID, readCh: make(chan struct{}), meta: m}
+func publishedWrapper(m *Meta, conn modules.Connection) *connWrapper {
+	cw := &connWrapper{ID: m.ID, readCh: make(chan struct{}), meta: m}
 	cw.setConn(conn, nil)
 	close(cw.readCh)
 	return cw
@@ -216,7 +216,7 @@ func TestWaitReadyRecheckAfterWake(t *testing.T) {
 // observes ctx.Err(), never a state outcome.
 func TestWaitReadyCallerCancelFirst(t *testing.T) {
 	m := newStateMeta(t)
-	cw := &ConnWrapper{ID: m.ID, meta: m}
+	cw := &connWrapper{ID: m.ID, meta: m}
 	ctx := mockContext.NewMockContext("r1", "op1")
 	canceled, cancel := ctx.WithCancel()
 	cancel()
@@ -255,7 +255,7 @@ func (c *flipSilentCtx) Err() error {
 // losing interleaving: the lifecycle branch must recheck the caller.
 func TestWaitReadyBothDonePrefersCallerCancel(t *testing.T) {
 	m := newStateMeta(t)
-	cw := &ConnWrapper{ID: m.ID, meta: m}
+	cw := &connWrapper{ID: m.ID, meta: m}
 	ctx := mockContext.NewMockContext("r1", "op1")
 	fc := &flipSilentCtx{StreamContext: ctx}
 	done := make(chan error, 1)
@@ -273,7 +273,7 @@ func TestWaitReadyBothDonePrefersCallerCancel(t *testing.T) {
 
 	// Same precedence through the already-terminated snapshot path.
 	m2 := newStateMeta(t)
-	cw2 := &ConnWrapper{ID: m2.ID, meta: m2}
+	cw2 := &connWrapper{ID: m2.ID, meta: m2}
 	fc2 := &flipSilentCtx{StreamContext: ctx}
 	fc2.canceled.Store(true)
 	m2.lifecycleCancel()
@@ -287,7 +287,7 @@ func TestWaitReadyBothDonePrefersCallerCancel(t *testing.T) {
 func TestWaitReadyWaitsInitialPublication(t *testing.T) {
 	m := newStateMeta(t)
 	m.NotifyStatus(api.ConnectionConnected, "")
-	cw := &ConnWrapper{ID: m.ID, readCh: make(chan struct{}), meta: m}
+	cw := &connWrapper{ID: m.ID, readCh: make(chan struct{}), meta: m}
 	ctx := mockContext.NewMockContext("r1", "op1")
 
 	done := make(chan error, 1)
@@ -313,7 +313,7 @@ func TestWaitReadyWaitsInitialPublication(t *testing.T) {
 // ErrConnectionClosed, both before and during the wait.
 func TestWaitReadyLifecycleClosed(t *testing.T) {
 	m := newStateMeta(t)
-	cw := &ConnWrapper{ID: m.ID, meta: m}
+	cw := &connWrapper{ID: m.ID, meta: m}
 	ctx := mockContext.NewMockContext("r1", "op1")
 
 	m.lifecycleCancel()
@@ -321,7 +321,7 @@ func TestWaitReadyLifecycleClosed(t *testing.T) {
 
 	// A waiter parked in a dead generation is released as well.
 	m2 := newStateMeta(t)
-	cw2 := &ConnWrapper{ID: m2.ID, meta: m2}
+	cw2 := &connWrapper{ID: m2.ID, meta: m2}
 	done := make(chan error, 1)
 	go func() { done <- cw2.WaitReady(ctx) }()
 	time.Sleep(50 * time.Millisecond)

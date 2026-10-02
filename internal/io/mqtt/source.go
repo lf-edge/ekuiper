@@ -35,7 +35,7 @@ type SourceConnector struct {
 	props map[string]any
 
 	cli        *Connection
-	conId      string
+	lease      *connection.ConnectionLease
 	eof        api.EOFIngest
 	eofPayload []byte
 }
@@ -88,16 +88,24 @@ func (ms *SourceConnector) Connect(ctx api.StreamContext, sch api.StatusChangeHa
 	var cli *Connection
 	var err error
 	id := fmt.Sprintf("%s-%s-%s-mqtt-source", ctx.GetRuleId(), ctx.GetOpId(), ms.tpc)
-	cw, err := connection.FetchConnection(ctx, id, "mqtt", ms.props, sch)
+	key, requireExisting := connection.ResolveConnectionKey(ms.props, id)
+	lease, err := connection.FetchConnectionWithOptions(ctx, connection.FetchOptions{
+		ConnectionKey:   key,
+		RefID:           connection.ConsumerRefID(ctx),
+		RequireExisting: requireExisting,
+		Type:            "mqtt",
+		Props:           ms.props,
+		StatusHandler:   sch,
+	})
 	if err != nil {
 		return err
 	}
 	if ms.cfg.SelId != "" {
-		ctx.GetLogger().Infof("action=use_shared_mqtt_connection role=source connId=%s connectionKey=%s rule=%s stream=%s topic=%s", cw.ID, ms.cfg.SelId, ctx.GetRuleId(), ctx.GetOpId(), ms.tpc)
+		ctx.GetLogger().Infof("action=use_shared_mqtt_connection role=source connId=%s connectionKey=%s rule=%s stream=%s topic=%s", lease.ConnectionKey(), ms.cfg.SelId, ctx.GetRuleId(), ctx.GetOpId(), ms.tpc)
 	}
-	ms.conId = cw.ID
+	ms.lease = lease
 	// wait for connection
-	conn, err := cw.Wait(ctx)
+	conn, err := lease.Wait(ctx)
 	if conn == nil {
 		return fmt.Errorf("mqtt client not ready: %v", err)
 	}
@@ -136,7 +144,7 @@ func (ms *SourceConnector) Close(ctx api.StreamContext) error {
 	if ms.cli != nil {
 		ms.cli.DetachSub(ctx, ms.props)
 	}
-	return connection.DetachConnection(ctx, ms.conId)
+	return ms.lease.Release(ctx)
 }
 
 func (ms *SourceConnector) SetEofIngest(eof api.EOFIngest) {

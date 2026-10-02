@@ -238,17 +238,18 @@ func TestSinkSqliteConnectorEndToEnd(t *testing.T) {
 	// Empty item fails in row building.
 	require.Error(t, s.collect(ctx, map[string]any{}))
 
-	// writeToDB error path reports and recovers: breaking the pooled
-	// *sql.DB makes the next Exec fail and surface an IO error; the
-	// Pool worker opens a fresh handle on the same file, and the
-	// following write parks until it succeeds.
-	//
-	//nolint:staticcheck // white-box fault injection: the test deliberately
-	// breaks the pooled handle, which only the raw accessor reaches.
-	require.NoError(t, s.conn.GetDB().Close())
+	// False-positive suspect convergence: today the SQL sink
+	// conservatively reports any Exec failure as a suspect, so a
+	// duplicate-key error parks readiness. A healthy database must
+	// survive that false positive — Pool verification reopens the gate
+	// and subsequent writes resume. Error classification itself is not
+	// the contract under test.
+	require.NoError(t, s.Collect(ctx, &xsql.Tuple{Message: map[string]any{"id": 9}}))
 	require.Error(t, s.Collect(ctx, &xsql.Tuple{Message: map[string]any{"id": 9}}))
+	nextID := int64(100)
 	require.Eventually(t, func() bool {
-		return s.Collect(ctx, &xsql.Tuple{Message: map[string]any{"id": 9}}) == nil
+		nextID++
+		return s.Collect(ctx, &xsql.Tuple{Message: map[string]any{"id": nextID}}) == nil
 	}, 30*time.Second, 200*time.Millisecond)
 
 	// Rowkind paths.

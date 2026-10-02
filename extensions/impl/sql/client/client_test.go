@@ -49,7 +49,7 @@ func TestSQLClient(t *testing.T) {
 	require.True(t, ok)
 	err = conn.Dial(ctx)
 	require.NoError(t, err)
-	require.NotNil(t, sconn.GetDB())
+	require.NotNil(t, sconn.db)
 	require.NoError(t, conn.Ping(ctx))
 	conn.Close(ctx)
 }
@@ -75,7 +75,7 @@ func TestSQLReconnectFailureKeepsDBHandle(t *testing.T) {
 	sconn.url = fmt.Sprintf("mysql://root:@%v:%v/test", address, serverPort+1)
 
 	require.Error(t, sconn.Recover(ctx))
-	sharedDB := sconn.GetDB()
+	sharedDB := sconn.db
 	require.NotNil(t, sharedDB)
 	_, err = sharedDB.Query("select 1")
 	require.Error(t, err)

@@ -12,22 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package client
+package connection
 
-import (
-	"testing"
-
-	"github.com/stretchr/testify/require"
-
-	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
-)
-
-// TestPingWithoutHandleIsPureHealthCheck pins that Ping never dials:
-// an absent handle reports an error instead of creating the database
-// connection. Handle creation belongs to Dial/Recover.
-func TestPingWithoutHandleIsPureHealthCheck(t *testing.T) {
-	ctx := mockContext.NewMockContext("ping", "op1")
-	c := &SQLConnection{id: "no-handle"}
-	require.ErrorContains(t, c.Ping(ctx), "no database handle")
-	require.Nil(t, c.db)
+// Test-only read helper: reports the live reference count for key, or
+// 0 when the key is absent or mid-transition. Production code never
+// needs it — ownership flows through Lease Release.
+func getConnectionRef(id string) int {
+	m := globalConnectionManager
+	m.RLock()
+	defer m.RUnlock()
+	meta, err := readyMeta(m, id)
+	if err != nil || meta == nil {
+		return 0
+	}
+	return meta.GetRefCount()
 }
