@@ -48,7 +48,7 @@ func ComputeConnectionYamlHash() (string, error) {
 	}
 	configs := normalize(configMap)
 	prefix := getPrefix(yamlPath)
-	_ = process(configs, GetEnv(), prefix)
+	_ = process(configs, GetEnv(), prefix, yamlPath)
 	names, _ := extractKeysFromJsonIfExists(yamlPath)
 	applyKeys(configs, names)
 
