@@ -30,11 +30,15 @@ package conf
 
 import (
 	"os"
+	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
+	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/model"
 )
 
@@ -223,4 +227,161 @@ func TestIsSensitiveKey(t *testing.T) {
 			assert.Equal(t, tt.want, got)
 		})
 	}
+}
+
+func TestGetValueTypeBySchema(t *testing.T) {
+	tests := []struct {
+		name       string
+		val        string
+		schemaType string
+		want       interface{}
+	}{
+		{"string keeps whitespace", " \t123456 \n", "string", " \t123456 \n"},
+		{"text keeps whitespace", " 123456 ", "text", " 123456 "},
+		{"empty string stays string", "", "string", ""},
+		{"padded integer", " 2 ", "int", int64(2)},
+		{"numeric password stays string", "123456", "string", "123456"},
+		{"bool-like password stays string", "true", "string", "true"},
+		{"float-like username stays string", "1.5", "string", "1.5"},
+		{"list-like password stays string", "[1,2]", "string", "[1,2]"},
+		{"qos still int", "2", "int", int64(2)},
+		{"invalid int keeps string", "abc", "int", "abc"},
+		{"bool field", "true", "bool", true},
+		{"boolean alias", "false", "boolean", false},
+		{"float field", "1.25", "float", 1.25},
+		{"list_string keeps numeric elements", "[1,2]", "list_string", []interface{}{"1", "2"}},
+		// Unsigned metadata types have no dedicated parser; preserve inference.
+		{"uint falls back for negative integer", "-1", "uint", int64(-1)},
+		{"uint8 falls back for large integer", "300", "uint8", int64(300)},
+		{"uint falls back for boolean", "true", "uint", true},
+		{"uint8 falls back for float", "1.5", "uint8", 1.5},
+		{"infer int without schema", "123456", "", int64(123456)},
+		{"infer bool without schema", "true", "", true},
+		{"infer array without schema", "[1,2]", "", []interface{}{int64(1), int64(2)}},
+		{"plain string without schema", "abc123", "", "abc123"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := getValueType(tt.val, tt.schemaType)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestMqttNumericPasswordFromEnv(t *testing.T) {
+	for _, tt := range []struct {
+		profile  string
+		password string
+	}{
+		{"default", "123456"},
+		{"custom", " 123456 "},
+	} {
+		t.Run(tt.profile, func(t *testing.T) {
+			prefix := "MQTT_SOURCE__" + strings.ToUpper(tt.profile)
+
+			clearLoadConfigCache()
+			t.Cleanup(func() {
+				clearLoadConfigCache()
+				SetupEnv()
+			})
+			t.Setenv(prefix+"__PASSWORD", tt.password)
+			t.Setenv(prefix+"__USERNAME", "1001")
+			t.Setenv(prefix+"__CLIENTID", "9001")
+			t.Setenv(prefix+"__QOS", "2")
+			t.Setenv(prefix+"__INSECURESKIPVERIFY", "true")
+			SetupEnv()
+
+			c := make(map[string]interface{})
+			err := LoadConfigByName("mqtt_source.yaml", &c)
+			require.NoError(t, err)
+
+			def, ok := c[tt.profile].(map[string]interface{})
+			require.True(t, ok)
+			assert.Equal(t, tt.password, def["password"])
+			assert.Equal(t, "1001", def["username"])
+			assert.Equal(t, "9001", def["clientid"])
+			assert.Equal(t, int64(2), def["qos"])
+			assert.Equal(t, true, def["insecureSkipVerify"])
+
+			type mqttConn struct {
+				Password string `json:"password"`
+				Username string `json:"username"`
+				ClientId string `json:"clientid"`
+				Qos      int    `json:"qos"`
+			}
+			cfg := &mqttConn{}
+			require.NoError(t, cast.MapToStruct(def, cfg))
+			assert.Equal(t, tt.password, cfg.Password)
+			assert.Equal(t, "1001", cfg.Username)
+			assert.Equal(t, "9001", cfg.ClientId)
+			assert.Equal(t, 2, cfg.Qos)
+		})
+	}
+}
+
+func TestEnvTypesFollowPropertyPaths(t *testing.T) {
+	// Same leaf name at three depths, plus misleading metadata outside properties.
+	metadata := `{
+		"about": {"name": "value", "type": "bool"},
+		"properties": {"default": [
+			{"name": "value", "type": "string", "default": ""},
+			{"name": "nested", "type": "object", "default": {
+				"value": {"name": "value", "type": "int", "default": 0},
+				"inner": {"name": "inner", "type": "object", "default": [
+					{"name": "value", "type": "bool", "default": false}
+				]}
+			}}
+		]}
+	}`
+	p := filepath.Join(t.TempDir(), "example.yaml")
+	require.NoError(t, os.WriteFile(jsonPathForFile(p), []byte(metadata), 0o600))
+	for _, profile := range []string{"DEFAULT", "CUSTOM"} {
+		t.Run(profile, func(t *testing.T) {
+			config := make(map[string]interface{})
+			env := map[string]string{
+				"EXAMPLE__" + profile + "__VALUE":                " 123456 ",
+				"EXAMPLE__" + profile + "__NESTED__VALUE":        "2",
+				"EXAMPLE__" + profile + "__NESTED__INNER__VALUE": "true",
+				"EXAMPLE__" + profile + "__UNKNOWN__VALUE":       "3",
+			}
+			require.NoError(t, process(config, env, "EXAMPLE", p))
+			assert.Equal(t, map[string]interface{}{
+				"value": " 123456 ",
+				"nested": map[string]interface{}{
+					"value": int64(2),
+					"inner": map[string]interface{}{"value": true},
+				},
+				"unknown": map[string]interface{}{"value": int64(3)},
+			}, config[getConfigKey(profile)])
+		})
+	}
+}
+
+func TestEnvTypesWithListProperties(t *testing.T) {
+	p := filepath.Join(t.TempDir(), "example.yaml")
+	require.NoError(t, os.WriteFile(jsonPathForFile(p), []byte(`{
+		"properties": [{"name": "value", "type": "string"}]
+	}`), 0o600))
+	config := make(map[string]interface{})
+	require.NoError(t, process(config, map[string]string{
+		"EXAMPLE__CUSTOM__VALUE": "123456",
+	}, "EXAMPLE", p))
+	assert.Equal(t, map[string]interface{}{
+		"custom": map[string]interface{}{"value": "123456"},
+	}, config)
+}
+
+func TestEnvTypesWithoutMetadata(t *testing.T) {
+	config := make(map[string]interface{})
+	p := filepath.Join(t.TempDir(), "example.yaml")
+	require.NoError(t, process(config, map[string]string{
+		"EXAMPLE__CUSTOM__VALUE":          "123456",
+		"EXAMPLE__CUSTOM__PATTERN__COUNT": "50",
+	}, "EXAMPLE", p))
+	assert.Equal(t, map[string]interface{}{
+		"custom": map[string]interface{}{
+			"value":   int64(123456),
+			"pattern": map[string]interface{}{"count": int64(50)},
+		},
+	}, config)
 }
