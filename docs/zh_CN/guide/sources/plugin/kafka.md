@@ -46,3 +46,4 @@ default:
 | maxBytes           | 是    | 单个 kafka 消息批次最大所能携带的 bytes 数，默认为 1MB                                           |
 | groupID | 是    | eKuiper 消费 kafka 消息时所使用的 group ID。 |
 | partition | 是    | eKuiper 消费 kafka 消息时所指定的 partition |
+| offsetReset | 是    |  当没有已提交的 offset 时，自动将消费位置重置到何处，可选值为 `earliest` 和 `latest`，默认为 `latest` |
