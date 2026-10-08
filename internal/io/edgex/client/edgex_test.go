@@ -15,11 +15,13 @@
 package client
 
 import (
+	"encoding/json"
 	"reflect"
 	"testing"
 
 	"github.com/edgexfoundry/go-mod-messaging/v4/pkg/types"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/pkg/replace"
 )
@@ -212,5 +214,30 @@ func TestEdgex_CfgValidate(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+// The same definition is persisted after Provision and used again on reload.
+func TestEdgexCfgValidatePreservesOptional(t *testing.T) {
+	for _, optional := range []any{
+		map[string]string{"Username": "user", "Password": "secret", "KeepAlive": "30"},
+		map[string]any{"username": "user", "password": "secret", "keepalive": 30},
+	} {
+		props := map[string]any{"type": "mqtt", "server": "localhost", "optional": optional}
+		before, err := json.Marshal(props)
+		require.NoError(t, err)
+		c := &Client{}
+		require.NoError(t, c.CfgValidate(props))
+		after, err := json.Marshal(props)
+		require.NoError(t, err)
+		require.Equal(t, string(before), string(after))
+		reloaded := &Client{}
+		require.NoError(t, reloaded.CfgValidate(props))
+		require.Equal(t, c.mbconf, reloaded.mbconf)
+		// Provider-owned options must not alias a caller's string map either.
+		c.mbconf.Optional["Username"] = "changed"
+		after, err = json.Marshal(props)
+		require.NoError(t, err)
+		require.Equal(t, string(before), string(after))
 	}
 }

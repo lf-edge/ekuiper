@@ -27,6 +27,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/v2/internal/testx"
+	kctx "github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 	"github.com/lf-edge/ekuiper/v2/pkg/mock"
@@ -167,4 +168,40 @@ loop:
 	}
 
 	assert.Equal(t, data[:3], result)
+}
+
+func TestSourceResubscribePreservesRuleContext(t *testing.T) {
+	url, stopBroker, err := testx.InitBroker("TestSourceResubscribePreservesRuleContext")
+	require.NoError(t, err)
+	defer stopBroker()
+	require.NoError(t, connection.InitConnectionManager4Test())
+	ctx := mockContext.NewMockContext("mqtt_trace", "source1")
+	ctx.EnableTracer(true)
+	s := &SourceConnector{}
+	require.NoError(t, s.Provision(ctx, map[string]any{
+		"server": url, "datasource": "rule-context", "protocolVersion": "3.1.1", "qos": 1,
+	}))
+	require.NoError(t, s.Connect(ctx, func(string, string) {}))
+	defer s.Close(ctx)
+	received := make(chan api.StreamContext, 1)
+	require.NoError(t, s.Subscribe(ctx, func(deliveryCtx api.StreamContext, payload []byte, _ map[string]any, _ time.Time) {
+		if string(payload) == "after-resubscribe" {
+			received <- deliveryCtx
+		}
+	}, nil))
+	// Invoke the real reconnect subscription path with a server scope. Paho
+	// rebinds its callback to that scope; Source must keep the rule scope.
+	transportCtx := kctx.Background()
+	require.False(t, transportCtx.IsTraceEnabled())
+	s.cli.onConnect(transportCtx)
+	require.NoError(t, s.cli.Publish(transportCtx, "rule-context", 1, false, []byte("after-resubscribe"), nil))
+	select {
+	case deliveryCtx := <-received:
+		require.Same(t, ctx, deliveryCtx)
+		require.Equal(t, "mqtt_trace", deliveryCtx.GetRuleId())
+		require.Equal(t, "source1", deliveryCtx.GetOpId())
+		require.True(t, deliveryCtx.IsTraceEnabled())
+	case <-time.After(5 * time.Second):
+		t.Fatal("message was not delivered after resubscribe")
+	}
 }

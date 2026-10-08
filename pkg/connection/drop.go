@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/pingcap/failpoint"
@@ -89,9 +90,10 @@ func finishStop(m *Manager, key string, stop func(api.StreamContext)) {
 //   - otherwise (stop == nil, wait == nil, err == nil): key is
 //     missing/removing; Drop reports success, Update reports its own error.
 type dropPlan struct {
-	stop func(api.StreamContext)
-	wait <-chan struct{}
-	err  error
+	entry *poolEntry
+	stop  func(api.StreamContext)
+	wait  <-chan struct{}
+	err   error
 }
 
 // planDrop decides one Drop step under a single critical section.
@@ -122,8 +124,8 @@ func (m *Manager) planDrop(ctx api.StreamContext, selId string) dropPlan {
 
 // planUpdateDrop decides the validate + drop handoff for Update under one
 // critical section, so no state change can slip between validation and the
-// drop. Creating yields wait (retry whole Update); removing yields err.
-func (m *Manager) planUpdateDrop(ctx api.StreamContext, id string) dropPlan {
+// drop. Creating yields wait; removing or a changed generation yields err.
+func (m *Manager) planUpdateDrop(ctx api.StreamContext, id string, expected *poolEntry) dropPlan {
 	m.Lock()
 	defer m.Unlock()
 	isInternal, err := isInternalConnection(m, id)
@@ -138,10 +140,11 @@ func (m *Manager) planUpdateDrop(ctx api.StreamContext, id string) dropPlan {
 	if isInternal {
 		return dropPlan{err: fmt.Errorf("internal connection %v can't be edit", id)}
 	}
-	// Drop holds the lock only for validation and stop handoff; the
-	// previous generation is fully stopped and removed before creating
-	// the replacement, preserving drop-then-create ordering. Creation
-	// re-locks internally.
+	if m.connectionPool[id] != expected {
+		return dropPlan{err: ErrConnectionClosed}
+	}
+	// The candidate has already passed Provision. Only runtime teardown
+	// and publication remain; the old generation must stop before Dial.
 	_, stop, err := dropNameConnection(m, ctx, id)
 	if err != nil {
 		if errors.Is(err, ErrConnectionRemoving) {
@@ -151,7 +154,7 @@ func (m *Manager) planUpdateDrop(ctx api.StreamContext, id string) dropPlan {
 		}
 		return dropPlan{err: err}
 	}
-	return dropPlan{stop: stop}
+	return dropPlan{entry: m.connectionPool[id], stop: stop}
 }
 
 // waitForRound waits out a creation round outside the Manager lock.
@@ -187,31 +190,102 @@ func DropNameConnection(ctx api.StreamContext, selId string) error {
 	}
 }
 
+// planUpdateValidation checks the current resource without dropping its store
+// record or closing its lifecycle. Provider validation happens after this check
+// and outside the lock; planUpdateDrop rechecks references before mutation.
+func (m *Manager) planUpdateValidation(id string) dropPlan {
+	m.Lock()
+	defer m.Unlock()
+	e, ok := m.connectionPool[id]
+	if !ok {
+		return dropPlan{err: fmt.Errorf("connection %s not found", id)}
+	}
+	if e.state == entryCreating {
+		return dropPlan{wait: e.ready}
+	}
+	if e.state != entryReady || e.meta == nil {
+		return dropPlan{err: ErrConnectionRemoving}
+	}
+	if !e.meta.Named {
+		return dropPlan{err: fmt.Errorf("internal connection %v can't be edit", id)}
+	}
+	if e.meta.GetRefCount() > 0 {
+		return dropPlan{err: fmt.Errorf("connection %s can't be dropped due to rule references %v", id, e.meta.GetRefNames())}
+	}
+	return dropPlan{entry: e}
+}
+
 func UpdateConnection(ctx api.StreamContext, id, typ string, props map[string]any) (*ConnectionLease, error) {
 	if id == "" || typ == "" {
 		return nil, fmt.Errorf("connection id and type should be defined")
 	}
-	// Validation + drop run under one hold of a single captured manager;
-	// creation re-locks internally. A concurrent creation round is
-	// waited out and retried, consistent with DropNameConnection; a key
-	// already owned by teardown stays a hard error.
+	m := globalConnectionManager
+	var expected *poolEntry
 	for {
-		m := globalConnectionManager
-		plan := m.planUpdateDrop(ctx, id)
+		plan := m.planUpdateValidation(id)
+		if plan.err != nil {
+			return nil, plan.err
+		}
 		if plan.wait != nil {
 			if err := waitForRound(ctx, plan.wait); err != nil {
 				return nil, err
 			}
 			continue
 		}
-		if plan.err != nil {
-			return nil, plan.err
-		}
-		if plan.stop != nil {
-			finishStop(m, id, plan.stop)
-		}
-		return createNamedConnection(ctx, id, typ, props)
+		expected = plan.entry
+		break
 	}
+	props = maps.Clone(props)
+	candidate, err := provisionConnection(serverStreamContext(m.ctx), id, typ, props)
+	if err != nil {
+		// Static errors leave both the old resource and its persisted record intact.
+		return nil, err
+	}
+	owned := true
+	defer func() {
+		if owned {
+			candidate.Close(serverStreamContext(m.ctx))
+		}
+	}()
+	var plan dropPlan
+	for {
+		plan = m.planUpdateDrop(ctx, id, expected)
+		if plan.wait == nil {
+			break
+		}
+		// Another creation may have taken the key during Provision. Wait on
+		// the caller scope, then verify that our validated generation survived.
+		// The prepared candidate remains ours; cancellation releases it below.
+		if err := waitForRound(ctx, plan.wait); err != nil {
+			return nil, err
+		}
+	}
+	if plan.err != nil {
+		return nil, plan.err
+	}
+	if plan.stop == nil {
+		return nil, ErrConnectionRemoving
+	}
+	plan.stop(serverStreamContext(context.Background()))
+	// Preserve ownership of the key through teardown and publication, so a
+	// concurrent Fetch cannot create a different generation in the gap.
+	m.Lock()
+	if m.connectionPool[id] != plan.entry {
+		m.Unlock()
+		return nil, ErrConnectionClosed
+	}
+	e := &poolEntry{state: entryCreating, ready: make(chan struct{})}
+	m.connectionPool[id] = e
+	close(plan.entry.removed)
+	m.Unlock()
+	owned = false // finishCreation now owns candidate cleanup on every outcome.
+	meta, _, err := m.finishCreation(e, id, typ, props, true, candidate, nil, func() error {
+		return storeConnectionMeta(typ, id, props)
+	}, "", nil)
+	if err != nil {
+		return nil, err
+	}
+	return newLease(meta.cw, id, "", 0), nil
 }
 
 func isInternalConnection(m *Manager, id string) (bool, error) {

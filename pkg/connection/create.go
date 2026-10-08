@@ -54,6 +54,12 @@ import (
 func (m *Manager) runCreation(e *poolEntry, key, typ string, props map[string]any, named bool, persist func() error, attachRef string, sc api.StatusChangeHandler) (meta *Meta, token uint64, perr error) {
 	createCtx := serverStreamContext(m.ctx)
 	conn, err := provisionConnection(createCtx, key, typ, props)
+	return m.finishCreation(e, key, typ, props, named, conn, err, persist, attachRef, sc)
+}
+
+// finishCreation takes ownership of a prepared candidate, persists and publishes
+// it, or releases it on failure. Update prepares its candidate before teardown.
+func (m *Manager) finishCreation(e *poolEntry, key, typ string, props map[string]any, named bool, conn modules.Connection, err error, persist func() error, attachRef string, sc api.StatusChangeHandler) (meta *Meta, token uint64, perr error) {
 	if err == nil && persist != nil {
 		err = persist()
 	}

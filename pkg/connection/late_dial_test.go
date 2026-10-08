@@ -82,11 +82,30 @@ func waitRemoving(t *testing.T, key string) {
 	}, 5*time.Second, 10*time.Millisecond, "entry must flip to removing")
 }
 
+type orderedReplacementConnection struct {
+	mockConnection
+	events     chan string
+	provisions atomic.Int32
+	dials      atomic.Int32
+}
+
+func (c *orderedReplacementConnection) Provision(ctx api.StreamContext, id string, props map[string]any) error {
+	c.provisions.Add(1)
+	return c.mockConnection.Provision(ctx, id, props)
+}
+
+func (c *orderedReplacementConnection) Dial(api.StreamContext) error {
+	c.dials.Add(1)
+	c.events <- "new-dialed"
+	return nil
+}
+
 // TestNamedReplacementDuringLateDial pins the named-update teardown
 // contract when the old initial Dial outlives cancellation: Update
 // stays blocked on the initial worker, a late Dial success still
 // routes through Meta.stop (provider Close exactly once), and only
-// after old teardown completes may the replacement be created.
+// after old teardown completes may the replacement Dial. Static Provision
+// is allowed first so an invalid replacement cannot destroy the old resource.
 func TestNamedReplacementDuringLateDial(t *testing.T) {
 	require.NoError(t, InitConnectionManager4Test())
 	ctx := mockContext.NewMockContext("late", "op1")
@@ -97,10 +116,18 @@ func TestNamedReplacementDuringLateDial(t *testing.T) {
 		events:  events,
 		name:    "old",
 	}
+	replacement := &orderedReplacementConnection{events: events}
+	t.Cleanup(func() {
+		select {
+		case <-old.release:
+		default:
+			close(old.release)
+		}
+	})
 	modules.RegisterConnection("late-named", func(api.StreamContext) modules.Connection { return old })
 	modules.RegisterConnection("late-new", func(api.StreamContext) modules.Connection {
 		events <- "new-created"
-		return &mockConnection{}
+		return replacement
 	})
 	_, err := CreateNamedConnection(ctx, "late-named", "late-named", nil)
 	require.NoError(t, err)
@@ -126,8 +153,16 @@ func TestNamedReplacementDuringLateDial(t *testing.T) {
 	default:
 	}
 
+	// Static preparation completed before stopping the old generation.
+	select {
+	case got := <-events:
+		require.Equal(t, "new-created", got)
+	case <-time.After(2 * time.Second):
+		t.Fatal("replacement was not prepared before old teardown")
+	}
+
 	// Late success despite cancellation: the worker still routes
-	// through Meta.stop before the replacement is created.
+	// through Meta.stop before the replacement can Dial.
 	close(old.release)
 	select {
 	case err := <-updated:
@@ -144,10 +179,12 @@ func TestNamedReplacementDuringLateDial(t *testing.T) {
 	}
 	select {
 	case got := <-events:
-		require.Equal(t, "new-created", got)
+		require.Equal(t, "new-dialed", got)
 	case <-time.After(2 * time.Second):
-		t.Fatal("replacement was not created after old teardown")
+		t.Fatal("replacement did not Dial after old teardown")
 	}
+	require.Equal(t, int32(1), replacement.provisions.Load(), "reuse the prepared candidate")
+	require.Equal(t, int32(1), replacement.dials.Load())
 	require.True(t, checkConn("late-named"))
 	require.NoError(t, DropNameConnection(ctx, "late-named"))
 }

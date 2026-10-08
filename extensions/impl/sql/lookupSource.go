@@ -186,6 +186,10 @@ func (s *SqlLookupSource) ensureConnection(
 
 	sqlConn := c.(*client2.SQLConnection)
 	s.setConn(sqlConn)
+	// Wait resolves the stable object, not its current recovery generation.
+	if err := s.lease.WaitReady(ctx); err != nil {
+		return nil, err
+	}
 
 	return sqlConn, nil
 }
