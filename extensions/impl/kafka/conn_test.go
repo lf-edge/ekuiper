@@ -46,3 +46,14 @@ func TestKafkaConnectionRegistered(t *testing.T) {
 	require.True(t, ok)
 	require.NotNil(t, provider)
 }
+
+func TestKafkaConnectionNotPeriodicallyProbed(t *testing.T) {
+	// The named Kafka connection is a logical reusable configuration
+	// without an owned transport, so it must stay out of the periodic
+	// health probe. Placed here (not in pkg/connection tests) to avoid
+	// a test-time import cycle.
+	ctx := mockContext.NewMockContext("rule", "op")
+	conn := CreateConnection(ctx)
+	_, ok := any(conn).(modules.PeriodicHealthChecker)
+	require.False(t, ok)
+}

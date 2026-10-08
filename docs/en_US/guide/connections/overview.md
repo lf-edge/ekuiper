@@ -121,18 +121,25 @@ will trigger the subscription.
 
 You can also reuse the defined connection resource in the rule's action via `connectionSelector`.
 
-For Kafka sinks, `connectionSelector` can be used to reuse a Kafka connection resource. The Kafka connection is used to
-manage connection status and verify broker connectivity by pinging the configured brokers. When a Kafka sink references
-the connection, connection-related properties such as `brokers`, SASL, and TLS settings are copied from the selected
-connection. The sink still creates its own Kafka producer for publishing messages.
+For Kafka sinks, `connectionSelector` can be used to reuse a Kafka connection resource. The Kafka connection is a
+logical reusable configuration: connection-related properties such as `brokers`, SASL, and TLS settings are copied
+from the selected connection, and the sink still creates its own Kafka producer for publishing messages. It does not
+own a shared producer transport, so it does not take part in the periodic health probe.
 
 ## Connection Status
 
-Connection status is divided into three types:
+Connection status is divided into four types:
 
 1. **Connected**, represented by 1 in metrics.
-2. **Connecting**, represented by 0 in metrics.
-3. **Disconnected**, represented by 1 in metrics.
+2. **Connecting**, represented by 0 in metrics. Only used for the initial connection attempt.
+3. **Disconnected**, represented by -1 in metrics.
+4. **Recovering**, represented by 0 in metrics. Only used when a previously connected connection is
+   re-establishing its transport at runtime (self-recovering clients); the connection is still not serving.
+
+The reported status is the last-known state maintained by the connection pool: it is updated asynchronously by
+provider status callbacks and periodic health checks from providers that opt into the check capability. Reading the
+status (via API or metrics) never triggers a network probe by itself. The probe is failure discovery only; it never
+reconnects or recovers connections.
 
 Users can retrieve the connection status via the connection API. Additionally, users can view the connection status in
 the rule's source/sink metrics, for example, the `source_demo_0_connection_status` metric indicates the connection

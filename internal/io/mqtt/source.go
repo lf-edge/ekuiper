@@ -80,7 +80,7 @@ func (ms *SourceConnector) Ping(ctx api.StreamContext, props map[string]interfac
 		return err
 	}
 	defer cli.Close(ctx)
-	return cli.Ping(ctx)
+	return cli.Dial(ctx)
 }
 
 func (ms *SourceConnector) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) error {

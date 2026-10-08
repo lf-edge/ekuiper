@@ -24,6 +24,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/testx"
+	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
@@ -141,4 +142,23 @@ func TestNoClient(t *testing.T) {
 	assert.True(t, errorx.IsIOError(err))
 	err = c.Close(ctx)
 	assert.NoError(t, err)
+}
+
+// TestRuntimeReconnectReportsRecovering pins the four-state rule for
+// self-recovering clients without a broker: a runtime reconnect is
+// recovering (never connecting); only the initial dial uses
+// connecting. Both the stored status and the Pool callback observe it.
+func TestRuntimeReconnectReportsRecovering(t *testing.T) {
+	ctx := mockContext.NewMockContext("1", "2")
+	conn := &Connection{}
+	conn.status.Store(modules.ConnectionStatus{Status: api.ConnectionConnected})
+	var got []string
+	conn.scHandler = func(status string, _ string) { got = append(got, status) }
+
+	conn.onReconnecting(ctx)
+	require.Equal(t, []string{connection.ConnectionRecovering}, got)
+	require.Equal(t, connection.ConnectionRecovering, conn.Status(ctx).Status)
+
+	conn.onConnect(ctx)
+	require.Equal(t, api.ConnectionConnected, conn.Status(ctx).Status)
 }

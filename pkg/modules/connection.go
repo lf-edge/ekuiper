@@ -47,13 +47,69 @@ type Connection interface {
 	// initially usable.
 	Dial(ctx api.StreamContext) error
 	GetId(ctx api.StreamContext) string
+	// Ping performs one on-demand bounded validation attempt.
+	//
+	// It may perform bounded remote I/O, including using an ephemeral
+	// connection when the provider has no persistent transport. It must
+	// not retry, reconnect/recover, or create/replace the provider's
+	// long-lived runtime transport.
+	//
+	// It is an explicit-caller API (Test Connection, initial
+	// validation) on a caller-bounded scope: providers must honor the
+	// caller deadline rather than imposing their own unbounded block.
+	// Self-recovering clients (StatefulDialer) may answer from their
+	// local lifecycle flag instead of hitting the remote.
+	//
+	// Periodic monitoring is a separate opt-in capability provided by
+	// PeriodicHealthChecker below; implementing Ping alone never
+	// enrolls a provider in periodic checks.
 	Ping(ctx api.StreamContext) error
 	api.Closable
 }
 
+// Attempt and cancellation contract (Pool side, applies to Dial, Ping
+// and the A3 Recover):
+//
+//   - Every attempt runs under a server-owned scope, never a
+//     rule/request lifetime.
+//   - Dial runs under the connection lifecycle scope and must honor
+//     cancellation promptly or otherwise have a finite provider-side
+//     bound (no blanket Pool timeout: async dials and session
+//     startups wait for initial usability under plain cancellation).
+//   - Ping and Recover additionally run under an explicit
+//     per-attempt deadline on top of the lifecycle scope.
+//   - Caller cancellation surfaces as ctx.Err(); lifecycle termination
+//     surfaces as the Pool's ErrConnectionClosed. An attempt must never
+//     return (nil, nil): success and failure are distinguishable in
+//     every path, so waiters and the recovery worker never observe a
+//     vacuous outcome.
+
 type StatefulDialer interface {
 	SetStatusChangeHandler(ctx api.StreamContext, handler api.StatusChangeHandler)
 	Status(ctx api.StreamContext) ConnectionStatus
+}
+
+// PeriodicHealthChecker is an opt-in capability for the Pool periodic
+// health probe. Only providers that hold a Pool-owned runtime resource
+// representative of the real transport state, and need the Pool to
+// actively verify it, implement this interface.
+//
+// HealthCheck is failure discovery only: a single pure check that
+// never dials, never reconnects, never mutates provider state, and
+// honors the caller deadline (the Pool already bounds it per round).
+// HealthCheck may race with connection teardown. Implementations must
+// therefore be safe to call concurrently with Close, and Close must
+// not release resources still in use by an in-flight HealthCheck. The
+// Pool bounds the check through ctx but does not otherwise serialize
+// HealthCheck with Close.
+// Whether a connection is probed is decided solely by this capability:
+// the probe never consults StatefulDialer and never falls back to
+// Connection.Ping. Providers whose state is self-reported through
+// transport callbacks (MQTT, NNG), or whose named connection is a
+// logical reusable configuration without an owned transport (Kafka),
+// simply do not implement it.
+type PeriodicHealthChecker interface {
+	HealthCheck(ctx api.StreamContext) error
 }
 
 type ConnectionProvider func(ctx api.StreamContext) Connection
