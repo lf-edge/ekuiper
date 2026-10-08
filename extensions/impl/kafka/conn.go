@@ -71,7 +71,7 @@ func (c *kafkaConnectionConf) validate() error {
 	return nil
 }
 
-func (c *kafkaConnectionConf) ping() error {
+func (c *kafkaConnectionConf) ping(ctx api.StreamContext) error {
 	hasBroker := false
 	for _, broker := range strings.Split(c.Brokers, ",") {
 		broker = strings.TrimSpace(broker)
@@ -79,7 +79,7 @@ func (c *kafkaConnectionConf) ping() error {
 			continue
 		}
 		hasBroker = true
-		if err := c.pingBroker(broker); err != nil {
+		if err := c.pingBroker(ctx, broker); err != nil {
 			return err
 		}
 	}
@@ -89,12 +89,15 @@ func (c *kafkaConnectionConf) ping() error {
 	return nil
 }
 
-func (c *kafkaConnectionConf) pingBroker(address string) error {
+func (c *kafkaConnectionConf) pingBroker(ctx api.StreamContext, address string) error {
 	d := &kafkago.Dialer{
 		TLS:           c.tlsConfig,
 		SASLMechanism: c.mechanism,
 	}
-	conn, err := d.Dial("tcp", address)
+	// DialContext (not Dial): the Pool stops a lifecycle by canceling its
+	// scope and waiting for the worker, so an uncancellable Dial would hang
+	// every stop path. StreamContext embeds context.Context, pass it through.
+	conn, err := d.DialContext(ctx, "tcp", address)
 	if err != nil {
 		return errorx.NewIOErr(fmt.Sprintf("found error when connecting to kafka broker %s: %s", address, err))
 	}
@@ -136,7 +139,7 @@ func (k *KafkaConnection) Ping(ctx api.StreamContext) error {
 	if k.conf == nil {
 		return fmt.Errorf("kafka connection is not provisioned")
 	}
-	return k.conf.ping()
+	return k.conf.ping(ctx)
 }
 
 func (k *KafkaConnection) Close(_ api.StreamContext) error {

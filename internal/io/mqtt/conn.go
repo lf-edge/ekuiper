@@ -77,7 +77,7 @@ func (conn *Connection) Provision(ctx api.StreamContext, conId string, props map
 	case "3.1", "3.1.1", "4":
 		conn.Client, err = v4client.Provision(ctx, props, conn.onConnect, conn.onConnectLost, conn.onReconnecting)
 	case "5":
-		conn.Client, err = v5client.Provision(ctx, props, conn.onConnect, conn.onConnectLost, conn.onReconnecting)
+		conn.Client, err = v5client.Provision(ctx, conId, props, conn.onConnect, conn.onConnectLost, conn.onReconnecting)
 	default:
 		return fmt.Errorf("unsupported protocol version %s", c.PVersion)
 	}

@@ -16,6 +16,7 @@ package v5client
 
 import (
 	"context"
+	"crypto/sha256"
 	"crypto/tls"
 	"errors"
 	"fmt"
@@ -59,7 +60,7 @@ type ConnectionConfig struct {
 	tls                          *tls.Config
 }
 
-func Provision(ctx api.StreamContext, props map[string]any, onConnect client.ConnectHandler, onConnectLost client.ConnectErrorHandler, _ client.ConnectHandler) (*Client, error) {
+func Provision(ctx api.StreamContext, conId string, props map[string]any, onConnect client.ConnectHandler, onConnectLost client.ConnectErrorHandler, _ client.ConnectHandler) (*Client, error) {
 	cc, err := ValidateConfig(ctx, props)
 	if err != nil {
 		return nil, err
@@ -111,11 +112,11 @@ func Provision(ctx api.StreamContext, props map[string]any, onConnect client.Con
 		},
 	}
 	if cc.EnableClientSession {
-		cliState, err := storefile.New(cc.ClientStatePath, fmt.Sprintf("%v_%v_cli_", ctx.GetRuleId(), ctx.GetOpId()), ".pkt")
+		cliState, err := storefile.New(cc.ClientStatePath, stateFilePrefix(conId, "cli"), ".pkt")
 		if err != nil {
 			return nil, err
 		}
-		srvState, err := storefile.New(cc.ClientStatePath, fmt.Sprintf("%v_%v_srv_", ctx.GetRuleId(), ctx.GetOpId()), ".pkt")
+		srvState, err := storefile.New(cc.ClientStatePath, stateFilePrefix(conId, "srv"), ".pkt")
 		if err != nil {
 			return nil, err
 		}
@@ -134,6 +135,19 @@ func Provision(ctx api.StreamContext, props map[string]any, onConnect client.Con
 	}
 	cli.cm = cm
 	return cli, nil
+}
+
+// stateFilePrefix derives a filesystem-safe, collision-free namespace for
+// the local MQTT v5 session state files from the logical connection
+// identity (conId), not from the caller context: the Pool provisions
+// connections on the manager scope, so rule/op identity is intentionally
+// absent. The identity is hashed rather than sanitized because character
+// substitution can map two distinct keys onto the same name, while a hash
+// keeps them isolated and avoids leaking datasource/path characters into
+// file names.
+func stateFilePrefix(conId, role string) string {
+	sum := sha256.Sum256([]byte(conId))
+	return fmt.Sprintf("ekuiper_%x_%s_", sum, role)
 }
 
 func (c *Client) Connect(ctx api.StreamContext) error {

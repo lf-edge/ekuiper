@@ -98,12 +98,15 @@ func (s *Sock) Provision(ctx api.StreamContext, conId string, props map[string]a
 	sock.SetPipeEventHook(func(ev mangos.PipeEvent, p mangos.Pipe) {
 		switch ev {
 		case mangos.PipeEventAttached:
+			// Publish state before waking Dial: Dial returns on
+			// close(ready), so Store must happen first, otherwise
+			// Send right after Dial can observe connected==false.
+			s.connected.Store(true)
+			s.status.Store(modules.ConnectionStatus{Status: api.ConnectionConnected})
 			once.Do(func() {
 				ctx.GetLogger().Infof("nng connection is ready")
 				close(s.ready)
 			})
-			s.connected.Store(true)
-			s.status.Store(modules.ConnectionStatus{Status: api.ConnectionConnected})
 			if s.scHandler != nil {
 				s.scHandler(api.ConnectionConnected, "")
 			}
@@ -138,9 +141,15 @@ func (s *Sock) Dial(ctx api.StreamContext) error {
 	}); err != nil {
 		return fmt.Errorf("please make sure nng server side has started and configured, can't dial: %s", err.Error())
 	}
-	// make it block until first connected
-	<-s.ready
-	return nil
+	// make it block until first connected, but stay cancellable: the
+	// Pool stops a lifecycle by canceling its scope and waiting for the
+	// worker, so an uncancellable Dial would hang every stop path.
+	select {
+	case <-s.ready:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
 }
 
 var nngTimeout = 5 * time.Second
@@ -186,6 +195,9 @@ func (s *Sock) Ping(_ api.StreamContext) error {
 }
 
 func (s *Sock) Close(_ api.StreamContext) error {
+	if s.Socket == nil {
+		return nil
+	}
 	return s.Socket.Close()
 }
 
