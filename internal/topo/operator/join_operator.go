@@ -77,63 +77,23 @@ func (jp *JoinOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Functi
 	return result
 }
 
-func (jp *JoinOp) getStreamNames(join *ast.Join) ([]string, error) {
-	var srcs []string
-	keys := make(map[ast.StreamName]bool)
-	ast.WalkFunc(join, func(node ast.Node) bool {
-		if f, ok := node.(*ast.FieldRef); ok {
-			for _, v := range f.RefSources() {
-				// Exclude default stream as it is a virtual stream name.
-				if v == ast.DefaultStream {
-					continue
-				}
-				if _, ok := keys[v]; !ok {
-					srcs = append(srcs, string(v))
-					keys[v] = true
-				}
-			}
-		}
-		return true
-	})
-	if len(srcs) != 2 {
-		if jp.From.Alias != "" {
-			srcs = append(srcs, jp.From.Alias)
-		} else {
-			srcs = append(srcs, jp.From.Name)
-		}
-		if join.Alias != "" {
-			srcs = append(srcs, join.Alias)
-		} else {
-			srcs = append(srcs, join.Name)
-		}
+// getStreamNames returns the emitters of the two sides of the first join.
+// The left side is always the FROM table and the right side is the joined
+// table, regardless of the order in which the ON clause refers to them.
+func (jp *JoinOp) getStreamNames(join *ast.Join) (string, string) {
+	left := jp.From.Name
+	if jp.From.Alias != "" {
+		left = jp.From.Alias
 	}
-
-	return srcs, nil
+	right := join.Name
+	if join.Alias != "" {
+		right = join.Alias
+	}
+	return left, right
 }
 
 func (jp *JoinOp) evalSet(ctx api.StreamContext, input xsql.Collection, join ast.Join, fv *xsql.FunctionValuer) (*xsql.JoinTuples, error) {
-	var leftStream, rightStream string
-
-	if join.JoinType != ast.CROSS_JOIN {
-		streams, err := jp.getStreamNames(&join)
-		if err != nil {
-			return nil, err
-		}
-		leftStream = streams[0]
-		rightStream = streams[1]
-	} else {
-		if jp.From.Alias == "" {
-			leftStream = jp.From.Name
-		} else {
-			leftStream = jp.From.Alias
-		}
-
-		if join.Alias == "" {
-			rightStream = join.Name
-		} else {
-			rightStream = join.Alias
-		}
-	}
+	leftStream, rightStream := jp.getStreamNames(&join)
 
 	var lefts, rights []xsql.Row
 
@@ -224,12 +184,7 @@ func evalOn(join ast.Join, ve *xsql.ValuerEval, left interface{}, right xsql.Row
 }
 
 func (jp *JoinOp) evalSetWithRightJoin(input xsql.Collection, join ast.Join, excludeJoint bool, fv *xsql.FunctionValuer) (*xsql.JoinTuples, error) {
-	streams, err := jp.getStreamNames(&join)
-	if err != nil {
-		return nil, err
-	}
-	leftStream := streams[0]
-	rightStream := streams[1]
+	leftStream, rightStream := jp.getStreamNames(&join)
 	var lefts, rights []xsql.Row
 
 	lefts = input.GetBySrc(leftStream)
