@@ -17,11 +17,15 @@ package httpserver
 import (
 	"fmt"
 	"net/http"
+	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/require"
 
+	"github.com/lf-edge/ekuiper/v2/internal/io/memory/pubsub"
 	"github.com/lf-edge/ekuiper/v2/internal/testx"
 )
 
@@ -72,4 +76,121 @@ func (m *GlobalServerManager) GetEndpoints() map[string]struct{} {
 		ma[k] = struct{}{}
 	}
 	return ma
+}
+
+// installTestManager swaps in a real manager backed by a real mux
+// router, without listening on any port: HTTP-level assertions go
+// through m.router.ServeHTTP with httptest recorders. Restores the
+// previous global on cleanup.
+func installTestManager(t *testing.T) *GlobalServerManager {
+	t.Helper()
+	m := &GlobalServerManager{
+		router:            mux.NewRouter(),
+		routes:            map[string]http.HandlerFunc{},
+		endpoint:          map[string]string{},
+		endpointRefs:      map[string]int{},
+		websocketEndpoint: map[string]*websocketEndpointContext{},
+		sseEndpoint:       map[string]*sseEndpointContext{},
+	}
+	managerLock.Lock()
+	old := manager
+	manager = m
+	managerLock.Unlock()
+	t.Cleanup(func() {
+		managerLock.Lock()
+		manager = old
+		managerLock.Unlock()
+	})
+	return m
+}
+
+func serve(m *GlobalServerManager, method, path, body string) *httptest.ResponseRecorder {
+	req := httptest.NewRequest(method, path, strings.NewReader(body))
+	rec := httptest.NewRecorder()
+	m.router.ServeHTTP(rec, req)
+	return rec
+}
+
+// TestSamePathMethodsRouteIndependently pins the per-method routing:
+// POST and PUT on one path are independent registrations sharing only
+// the path. Each request must reach its own topic, and unregistering
+// POST must leave PUT serving (no 404 from a shared route slot).
+func TestSamePathMethodsRouteIndependently(t *testing.T) {
+	m := installTestManager(t)
+
+	postTopic, err := RegisterEndpoint("/dual", "POST")
+	require.NoError(t, err)
+	putTopic, err := RegisterEndpoint("/dual", "PUT")
+	require.NoError(t, err)
+	require.NotEqual(t, postTopic, putTopic)
+	postSub := pubsub.CreateSub(postTopic, nil, "dual-post", 16)
+	t.Cleanup(func() { pubsub.CloseSourceConsumerChannel(postTopic, "dual-post") })
+	putSub := pubsub.CreateSub(putTopic, nil, "dual-put", 16)
+	t.Cleanup(func() { pubsub.CloseSourceConsumerChannel(putTopic, "dual-put") })
+
+	require.Equal(t, http.StatusOK, serve(m, "POST", "/dual", "hello-post").Code)
+	require.Equal(t, http.StatusOK, serve(m, "PUT", "/dual", "hello-put").Code)
+
+	select {
+	case got := <-postSub:
+		require.Equal(t, []byte("hello-post"), got)
+	case <-time.After(2 * time.Second):
+		t.Fatal("POST request did not reach the POST topic")
+	}
+	select {
+	case got := <-putSub:
+		require.Equal(t, []byte("hello-put"), got)
+	case <-time.After(2 * time.Second):
+		t.Fatal("PUT request did not reach the PUT topic")
+	}
+
+	// Unregistering POST leaves PUT serving; POST goes 404.
+	UnregisterEndpoint("/dual", "POST")
+	require.Equal(t, http.StatusNotFound, serve(m, "POST", "/dual", "x").Code)
+	require.Equal(t, http.StatusOK, serve(m, "PUT", "/dual", "y").Code)
+
+	UnregisterEndpoint("/dual", "PUT")
+	require.Equal(t, map[string]struct{}{}, GetEndpoints())
+
+	// Unregister → re-register reactivates the same slot: the mux
+	// route was installed once (named route exists) and dispatches
+	// again after reactivation.
+	_, err = RegisterEndpoint("/dual", "POST")
+	require.NoError(t, err)
+	require.NotNil(t, m.router.GetRoute("httppush:/dual$$POST"))
+	require.Equal(t, http.StatusOK, serve(m, "POST", "/dual", "again").Code)
+	select {
+	case got := <-postSub:
+		require.Equal(t, []byte("again"), got)
+	case <-time.After(2 * time.Second):
+		t.Fatal("re-registered POST did not deliver")
+	}
+	UnregisterEndpoint("/dual", "POST")
+	require.Equal(t, map[string]struct{}{}, GetEndpoints())
+}
+
+// TestSharedEndpointRefcount pins the registry ownership backing
+// HttpPushConnection: two holders (e.g. a named and an anonymous
+// connection) may register the same endpoint; the first Unregister
+// only drops its own reference, and the route disappears only after
+// the last holder leaves. Unregistering a never-registered endpoint
+// is a no-op.
+func TestSharedEndpointRefcount(t *testing.T) {
+	installTestManager(t)
+
+	UnregisterEndpoint("/nope", "POST")
+	require.Equal(t, map[string]struct{}{}, GetEndpoints())
+
+	topic1, err := RegisterEndpoint("/shared", "POST")
+	require.NoError(t, err)
+	topic2, err := RegisterEndpoint("/shared", "POST")
+	require.NoError(t, err)
+	require.Equal(t, topic1, topic2)
+	require.Equal(t, map[string]struct{}{"/shared$$POST": {}}, GetEndpoints())
+
+	UnregisterEndpoint("/shared", "POST")
+	require.Equal(t, map[string]struct{}{"/shared$$POST": {}}, GetEndpoints())
+
+	UnregisterEndpoint("/shared", "POST")
+	require.Equal(t, map[string]struct{}{}, GetEndpoints())
 }

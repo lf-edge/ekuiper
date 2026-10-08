@@ -29,8 +29,8 @@ import (
 // caller dying between this check and the report still reports, and
 // the Pool's server-owned verification falsifies it — never a
 // correctness issue, at most one redundant verify.
-func reportTransportFailure(ctx api.StreamContext, cw *connection.ConnWrapper) {
+func reportTransportFailure(ctx api.StreamContext, lease *connection.ConnectionLease) {
 	if ctx.Err() == nil {
-		cw.ReportSuspectedFailure()
+		lease.ReportSuspectedFailure()
 	}
 }

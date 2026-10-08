@@ -36,6 +36,8 @@ type HttpPushSource struct {
 	ch       <-chan any
 	conf     *PushConf
 	props    map[string]any
+	// lease is the per-consumer pool handle; Release it to detach.
+	lease *connection.ConnectionLease
 }
 
 type PushConf struct {
@@ -68,16 +70,24 @@ func (h *HttpPushSource) Provision(ctx api.StreamContext, configs map[string]any
 
 func (h *HttpPushSource) Close(ctx api.StreamContext) error {
 	pubsub.CloseSourceConsumerChannel(h.topic, h.sourceID)
-	// TODO if supports to be resource, this should change to the unique conn id
-	return connection.DetachConnection(ctx, h.conf.DataSource)
+	return h.lease.Release(ctx)
 }
 
 func (h *HttpPushSource) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) error {
-	cw, err := connection.FetchConnection(ctx, h.conf.DataSource, "httppush", h.props, sch)
+	key, requireExisting := connection.ResolveConnectionKey(h.props, h.conf.DataSource)
+	lease, err := connection.FetchConnectionWithOptions(ctx, connection.FetchOptions{
+		ConnectionKey:   key,
+		RefID:           connection.ConsumerRefID(ctx),
+		RequireExisting: requireExisting,
+		Type:            "httppush",
+		Props:           h.props,
+		StatusHandler:   sch,
+	})
 	if err != nil {
 		return err
 	}
-	c, err := cw.Wait(ctx)
+	h.lease = lease
+	c, err := lease.Wait(ctx)
 	if c == nil {
 		return fmt.Errorf("http push endpoint not ready: %v", err)
 	}

@@ -38,7 +38,7 @@ type Source struct {
 	topic       string
 	messageType messageType
 	buflen      int
-	conId       string
+	lease       *connection.ConnectionLease
 }
 
 type SourceConf struct {
@@ -81,12 +81,20 @@ func (es *Source) Connect(ctx api.StreamContext, sc api.StatusChangeHandler) err
 	var cli *client.Client
 	var err error
 	id := fmt.Sprintf("%s-%s-%d-edgex-source", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId())
-	cw, err := connection.FetchConnection(ctx, id, "edgex", es.config, sc)
+	key, requireExisting := connection.ResolveConnectionKey(es.config, id)
+	lease, err := connection.FetchConnectionWithOptions(ctx, connection.FetchOptions{
+		ConnectionKey:   key,
+		RefID:           connection.ConsumerRefID(ctx),
+		RequireExisting: requireExisting,
+		Type:            "edgex",
+		Props:           es.config,
+		StatusHandler:   sc,
+	})
 	if err != nil {
 		return err
 	}
-	es.conId = cw.ID
-	conn, err := cw.Wait(ctx)
+	es.lease = lease
+	conn, err := lease.Wait(ctx)
 	if conn == nil {
 		return fmt.Errorf("edgex client not ready: %v", err)
 	}
@@ -305,10 +313,13 @@ func (es *Source) Close(ctx api.StreamContext) error {
 	log := ctx.GetLogger()
 	log.Infof("EdgeX Source instance %d Done.", ctx.GetInstanceId())
 	if es.cli != nil {
+		// Per-consumer cleanup only: unsubscribe this source's topic.
+		// The shared transport stays up for other holders; the Pool
+		// stop path disconnects it via Client.Close once the last
+		// Lease is released.
 		es.cli.DetachSub(ctx, es.config)
-		_ = es.cli.Disconnect()
 	}
-	return connection.DetachConnection(ctx, es.conId)
+	return es.lease.Release(ctx)
 }
 
 func GetSource() api.Source {

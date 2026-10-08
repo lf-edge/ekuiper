@@ -53,7 +53,7 @@ type EdgexMsgBusSink struct {
 	topic  string
 
 	id         string
-	cw         *connection.ConnWrapper
+	lease      *connection.ConnectionLease
 	cli        *client.Client
 	sendParams map[string]any
 }
@@ -107,17 +107,25 @@ func (ems *EdgexMsgBusSink) Connect(ctx api.StreamContext, sc api.StatusChangeHa
 	ctx.GetLogger().Infof("Connecting to edgex server")
 	var err error
 	ems.id = fmt.Sprintf("%s-%s-%d-edgex-sink", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId())
-	ems.cw, err = connection.FetchConnection(ctx, ems.id, "edgex", ems.config, sc)
+	key, requireExisting := connection.ResolveConnectionKey(ems.config, ems.id)
+	ems.lease, err = connection.FetchConnectionWithOptions(ctx, connection.FetchOptions{
+		ConnectionKey:   key,
+		RefID:           connection.ConsumerRefID(ctx),
+		RequireExisting: requireExisting,
+		Type:            "edgex",
+		Props:           ems.config,
+		StatusHandler:   sc,
+	})
 	if err != nil {
 		return err
 	}
-	conn, err := ems.cw.Wait(ctx)
+	conn, err := ems.lease.Wait(ctx)
 	if conn == nil {
 		return fmt.Errorf("edgex client not ready: %v", err)
 	}
 	c, ok := conn.(*client.Client)
 	if !ok {
-		return fmt.Errorf("connection %s should be edgex connection", ems.cw.ID)
+		return fmt.Errorf("connection %s should be edgex connection", ems.lease.ConnectionKey())
 	}
 	ems.cli = c
 	return err
@@ -511,11 +519,11 @@ func (ems *EdgexMsgBusSink) doCollect(ctx api.StreamContext, item any) error {
 func (ems *EdgexMsgBusSink) Close(ctx api.StreamContext) error {
 	logger := ctx.GetLogger()
 	logger.Infof("Closing edgex sink")
-	if ems.cli != nil {
-		_ = ems.cli.Disconnect()
-	}
-	if ems.cw != nil {
-		return connection.DetachConnection(ctx, ems.cw.ID)
+	// No transport teardown here: the shared connection may still serve
+	// other holders. The Pool stop path disconnects it via Client.Close
+	// once the last Lease is released.
+	if ems.lease != nil {
+		return ems.lease.Release(ctx)
 	}
 	return nil
 }

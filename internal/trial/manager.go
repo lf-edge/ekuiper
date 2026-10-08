@@ -38,8 +38,9 @@ type Manager struct {
 }
 
 type Run struct {
-	def  *RunDef
-	topo *topo.Topo
+	def   *RunDef
+	topo  *topo.Topo
+	lease *connection.ConnectionLease
 }
 
 func (m *Manager) CreateRule(ruleDef string) (string, error) {
@@ -53,15 +54,22 @@ func (m *Manager) CreateRule(ruleDef string) (string, error) {
 	// If the rule exists, stop it first
 	if r, ok := m.runs[def.Id]; ok {
 		r.topo.Cancel()
+		// Release the old attachment here: a replaced run that was
+		// never started has no trialRun goroutine whose deferred
+		// Release could cover it, and a failed create() below must
+		// not leave the canceled run holding the connection.
+		// One-shot and idempotent with StopRule/trialRun releases.
+		_ = r.lease.Release(context.Background())
 		conf.Log.Warnf("stop last run of test rule %s", def.Id)
 	}
-	t, err := create(def)
+	t, lease, err := create(def)
 	if err != nil {
 		return "", err
 	}
 	m.runs[def.Id] = Run{
-		def:  def,
-		topo: t,
+		def:   def,
+		topo:  t,
+		lease: lease,
 	}
 	return def.Id, nil
 }
@@ -72,7 +80,7 @@ func (m *Manager) StopRule(ruleId string) {
 	if r, ok := m.runs[ruleId]; ok {
 		r.topo.Cancel()
 		delete(m.runs, ruleId)
-		_ = connection.DetachConnection(context.Background(), r.def.endpoint)
+		_ = r.lease.Release(context.Background())
 	} else {
 		conf.Log.Warnf("try to stop test rule %s but it is not found", ruleId)
 	}
@@ -82,7 +90,7 @@ func (m *Manager) StartRule(ruleId string) error {
 	m.RLock()
 	defer m.RUnlock()
 	if r, ok := m.runs[ruleId]; ok {
-		trialRun(r.topo, r.def.endpoint)
+		trialRun(r.topo, r.lease)
 	} else {
 		return fmt.Errorf("try to start test rule %s but it is not found", ruleId)
 	}

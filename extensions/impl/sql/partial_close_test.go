@@ -45,7 +45,7 @@ func waitForPoolAttach(t *testing.T, ctx api.StreamContext, key string) {
 
 // TestSourceConnectWaitFailureReleasesRef locks in the partial-failure
 // contract: when Fetch attaches but the initial Wait fails, Connect must
-// have saved conId/refID already so Close releases the reference instead
+// have saved the lease already so Close releases the reference instead
 // of leaking it.
 func TestSourceConnectWaitFailureReleasesRef(t *testing.T) {
 	require.NoError(t, connection.InitConnectionManager4Test())
@@ -70,7 +70,7 @@ func TestSourceConnectWaitFailureReleasesRef(t *testing.T) {
 	}()
 	waitForPoolAttach(t, ctx, dburl)
 	// Cancel while Wait is blocked: Connect must fail, but the saved
-	// conId/refID must still release the attached ref.
+	// lease must still release the attached ref.
 	cancel()
 	select {
 	case err := <-connectErr:
@@ -78,8 +78,7 @@ func TestSourceConnectWaitFailureReleasesRef(t *testing.T) {
 	case <-time.After(5 * time.Second):
 		t.Fatal("Connect did not return after cancel")
 	}
-	require.NotEmpty(t, s.conId)
-	require.NotEmpty(t, s.refID)
+	require.NotNil(t, s.lease)
 
 	require.NoError(t, s.Close(ctx))
 	_, err := connection.GetConnectionDetail(ctx, dburl)
@@ -87,7 +86,7 @@ func TestSourceConnectWaitFailureReleasesRef(t *testing.T) {
 }
 
 // TestSinkConnectWaitFailureReleasesRef is the sink-side equivalent: the
-// saved cw/refID must detach the partially attached reference.
+// saved lease must detach the partially attached reference.
 func TestSinkConnectWaitFailureReleasesRef(t *testing.T) {
 	require.NoError(t, connection.InitConnectionManager4Test())
 	rootCtx := mockContext.NewMockContext("partial_close_sink", "op1")
@@ -113,8 +112,7 @@ func TestSinkConnectWaitFailureReleasesRef(t *testing.T) {
 	case <-time.After(5 * time.Second):
 		t.Fatal("Connect did not return after cancel")
 	}
-	require.NotNil(t, s.cw)
-	require.NotEmpty(t, s.refID)
+	require.NotNil(t, s.lease)
 
 	require.NoError(t, s.Close(ctx))
 	_, err := connection.GetConnectionDetail(ctx, dburl)

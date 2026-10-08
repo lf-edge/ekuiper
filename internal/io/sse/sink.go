@@ -31,7 +31,7 @@ type SseConfig struct {
 }
 
 type SSESink struct {
-	cw    *connection.ConnWrapper
+	lease *connection.ConnectionLease
 	cfg   *SseConfig
 	props map[string]any
 	topic string
@@ -52,17 +52,25 @@ func (s *SSESink) Provision(ctx api.StreamContext, configs map[string]any) error
 
 func (s *SSESink) Close(ctx api.StreamContext) error {
 	pubsub.RemovePub(s.topic)
-	return connection.DetachConnection(ctx, buildSseEpID(s.cfg.Endpoint))
+	return s.lease.Release(ctx)
 }
 
 func (s *SSESink) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) error {
 	var err error
 	// Connection pool will handle status change
-	s.cw, err = connection.FetchConnection(ctx, buildSseEpID(s.cfg.Endpoint), "sse", s.props, sch)
+	key, requireExisting := connection.ResolveConnectionKey(s.props, buildSseEpID(s.cfg.Endpoint))
+	s.lease, err = connection.FetchConnectionWithOptions(ctx, connection.FetchOptions{
+		ConnectionKey:   key,
+		RefID:           connection.ConsumerRefID(ctx),
+		RequireExisting: requireExisting,
+		Type:            "sse",
+		Props:           s.props,
+		StatusHandler:   sch,
+	})
 	if err != nil {
 		return err
 	}
-	conn, err := s.cw.Wait(ctx)
+	conn, err := s.lease.Wait(ctx)
 	if err != nil {
 		return err
 	}
