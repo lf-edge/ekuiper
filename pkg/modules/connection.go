@@ -112,6 +112,26 @@ type PeriodicHealthChecker interface {
 	HealthCheck(ctx api.StreamContext) error
 }
 
+// PoolRecoverableConnection is implemented by providers whose runtime
+// recovery is owned by the Pool (e.g. SQL). It is mutually exclusive
+// with StatefulDialer: a provider implementing both is treated as
+// self-recovering, and the Pool never starts its recovery worker.
+//
+// Recover performs a single bounded recovery attempt: build a
+// candidate, verify it, and install it so subsequent operations use
+// the new handle. It must not retry or back off internally (the Pool
+// worker owns the rhythm), must honor ctx (per-attempt deadline on
+// top of lifecycle cancellation), and must not invoke Pool status
+// callbacks or mutate Pool-visible status: recovering/disconnected/
+// connected transitions belong to the Pool. A nil return means the
+// new handle is installed and usable; an error return leaves prior
+// state untouched, and the Pool worker keeps owning the episode
+// (re-verify, then backoff and retry until success or lifecycle end).
+type PoolRecoverableConnection interface {
+	Connection
+	Recover(ctx api.StreamContext) error
+}
+
 type ConnectionProvider func(ctx api.StreamContext) Connection
 
 var (

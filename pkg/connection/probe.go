@@ -40,10 +40,11 @@ const (
 // connections that opt into modules.PeriodicHealthChecker. It is
 // failure discovery only: a failed HealthCheck flips connected to
 // disconnected (opening a new readiness generation for WaitReady
-// waiters) and nothing else. It never recovers, never reconnects —
-// recovery belongs to the A3 worker. It runs independent of the status
-// Patrol: the Patrol stays a pure-read metrics job that a slow probe
-// can never stall.
+// waiters) and hands the episode to the per-Meta recovery worker via
+// nudgeRecovery. It never recovers, never reconnects — recovery
+// belongs to the worker. It runs independent of the status Patrol:
+// the Patrol stays a pure-read metrics job that a slow probe can
+// never stall.
 func ConnectionHealthProbeJob(ctx context.Context) {
 	ticker := time.NewTicker(defaultConnectionMonitorInterval)
 	defer ticker.Stop()
@@ -101,10 +102,14 @@ func probeOne(meta *Meta, cw *ConnWrapper, timeout time.Duration) {
 	if meta.lifecycleCtx.Err() != nil {
 		return
 	}
-	// The probe only ever produces connected -> disconnected. Every
-	// other state already parks waiters on an open generation.
-	status, _ := meta.GetStatus()
-	if status != api.ConnectionConnected {
+	// The probe only ever Pings a connected+ready Meta: every other
+	// state already parks waiters on an open generation, and a
+	// verifying episode belongs to the recovery worker, not to a
+	// competing Ping verdict. The generation travels with the Ping:
+	// the verdict below only lands if none of the three moved while
+	// it was in flight.
+	status, ready, generation := meta.snapshotProbe()
+	if status != api.ConnectionConnected || !ready {
 		return
 	}
 	conn := cw.peekConn()
@@ -131,5 +136,10 @@ func probeOne(meta *Meta, cw *ConnWrapper, timeout time.Duration) {
 	if meta.lifecycleCtx.Err() != nil {
 		return
 	}
-	meta.NotifyStatus(api.ConnectionDisconnected, err.Error())
+	// A verdict superseded mid-Ping (e.g. by a completed recovery) is
+	// dropped: it must not overwrite fresh state. Only a real flip
+	// hands the episode to the recovery worker.
+	if meta.tryProbeDisconnect(generation, err.Error()) {
+		meta.nudgeRecovery()
+	}
 }

@@ -323,18 +323,18 @@ func TestSQLSinkReconnect(t *testing.T) {
 		"b":      2,
 		"action": "update",
 	}))
-	require.True(t, sqlSink.needReconnect)
 	s, err = testx.SetupEmbeddedMysqlServer(address, port)
 	require.NoError(t, err)
 	defer func() {
 		s.Close()
 	}()
+	// The failed write hands the episode to the Pool worker; this
+	// collect parks until recovery completes, then writes again.
 	require.NoError(t, sqlSink.collect(ctx, map[string]any{
 		"a":      1,
 		"b":      2,
 		"action": "update",
 	}))
-	require.False(t, sqlSink.needReconnect)
 }
 
 func TestConsume(t *testing.T) {
