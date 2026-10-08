@@ -83,14 +83,19 @@ func (s *TraceTestSuite) TestLookup() {
 	})
 
 	s.Run("init rate limit and lookup rule", func() {
+		// Use a dedicated conf key with a long interval so both test messages
+		// are guaranteed to fall into the first rate limit window. With a
+		// short interval (e.g. 500ms) the 20ms gap between the two sends can
+		// straddle a ticker boundary, emitting two complete traces instead of
+		// the expected one complete plus one rate-limited trace.
 		conf := map[string]any{
-			"interval": "500ms",
+			"interval": "5s",
 		}
-		resp, err := client.CreateConf("sources/httppush/confKeys/onesec", conf)
+		resp, err := client.CreateConf("sources/httppush/confKeys/lookuplimit", conf)
 		s.Require().NoError(err)
 		s.Require().Equal(http.StatusOK, resp.StatusCode)
 
-		streamSql := `{"sql":"CREATE STREAM pushStream2() WITH (TYPE=\"httppush\", DATASOURCE=\"/test/push2\", CONF_KEY=\"onesec\", FORMAT=\"json\")"}`
+		streamSql := `{"sql":"CREATE STREAM pushStream2() WITH (TYPE=\"httppush\", DATASOURCE=\"/test/push2\", CONF_KEY=\"lookuplimit\", FORMAT=\"json\")"}`
 		resp, err = client.CreateStream(streamSql)
 		s.Require().NoError(err)
 		s.T().Log(GetResponseText(resp))
@@ -131,7 +136,10 @@ func (s *TraceTestSuite) TestLookup() {
 			act       []byte
 			resultMap map[string]any
 		}
-		// Wait for 2 complete traces (at least one with non-empty ChildSpan)
+		// Wait for 2 traces including one fully processed trace. A
+		// rate-limited trace still has depth 1 (root -> ratelimit with empty
+		// children), so require depth > 2 to ensure the surviving message has
+		// passed the rate limiter and finished lookup, projection and sinks.
 		r := TryAssert(20, time.Second, func() bool {
 			resp, e := client.Get("trace/rule/ruleLookupMem1")
 			s.Require().NoError(e)
@@ -144,7 +152,7 @@ func (s *TraceTestSuite) TestLookup() {
 			if len(ruleIds) != 2 {
 				return false
 			}
-			// Fetch all traces and check if at least one has non-empty ChildSpan
+			// Fetch all traces and check if at least one is fully processed
 			results = nil
 			hasCompleteTrace := false
 			for _, tid := range ruleIds {
@@ -157,13 +165,13 @@ func (s *TraceTestSuite) TestLookup() {
 					act       []byte
 					resultMap map[string]any
 				}{act, resultMap})
-				if getMaxChildSpanDepth(resultMap) > 0 {
+				if getMaxChildSpanDepth(resultMap) > 2 {
 					hasCompleteTrace = true
 				}
 			}
 			return hasCompleteTrace
 		})
-		s.Require().True(r, "should have at least one complete trace with ChildSpan")
+		s.Require().True(r, "should have at least one fully processed trace")
 		// Match traces to expected files by ChildSpan depth
 		// lookup1.json expects deep nesting (full processing), lookup2.json expects shallow (rate-limited)
 		sort.Slice(results, func(i, j int) bool {
