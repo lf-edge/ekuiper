@@ -111,11 +111,9 @@ func (p *WindowPlan) PushDownPredicate(condition ast.Expr) (ast.Expr, LogicalPla
 		// return nil, p
 		return condition, p
 	}
-	// not time window depends on the event, so should not filter any.
-	// state window also needs to see every row to detect state transitions
-	// (begin/emit), so the WHERE filter must run after the window rather than
-	// before it; otherwise rows that trigger a state change could be filtered
-	// out and the window would never open/close.
+	// The control logic of count, sliding and state windows (count, trigger,
+	// begin/emit) must see every row, so the WHERE cannot be a pre-window filter.
+	// Evaluate it per row inside the window as collectCondition instead.
 	if p.wtype == ast.COUNT_WINDOW || p.wtype == ast.SLIDING_WINDOW || p.wtype == ast.STATE_WINDOW {
 		// A condition that depends on an aggregate (for example through a select
 		// alias such as avg(a) AS m) is only known once the window closes, and

@@ -16,7 +16,6 @@ package planner
 
 import (
 	"encoding/json"
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -62,9 +61,10 @@ func setupVehicleStatusStream(t *testing.T) {
 	require.NoError(t, kv.Set("vehicle_status", string(s)))
 }
 
-// TestStateWindowWhereNotPushedDown verifies that a WHERE clause on a state
-// window is pushed down into the WindowPlan (e.g. as collectCondition/condition).
-func TestStateWindowWhereNotPushedDown(t *testing.T) {
+// TestStateWindowWherePushedToCollect verifies that a WHERE clause on a state
+// window becomes the in-window collect filter (collectCondition) of the
+// WindowPlan, and not a pre-window filter.
+func TestStateWindowWherePushedToCollect(t *testing.T) {
 	setupVehicleStatusStream(t)
 
 	sql := `SELECT collect(*) AS charge_data FROM vehicle_status WHERE soc % 10 = 0 AND changed_col(true, soc % 10 = 0) GROUP BY statewindow(charge_status = 'charging', charge_status = 'discharging')`
@@ -78,14 +78,15 @@ func TestStateWindowWhereNotPushedDown(t *testing.T) {
 
 	explain, err := ExplainFromLogicalPlan(p, "charge_monitor")
 	require.NoError(t, err)
-	fmt.Println("==== EXPLAIN ====\n" + explain)
+	require.Contains(t, explain, "collectCondition")
 
 	// Standalone FilterPlan should be gone since condition was pushed into WindowPlan.
 	require.Nil(t, findFilterPlan(p), "expected no standalone FilterPlan after pushdown")
 
 	w := findWindowPlan(p)
 	require.NotNil(t, w)
-	require.True(t, w.condition != nil || w.collectCondition != nil, "state window should carry pushed-down condition")
+	require.NotNil(t, w.collectCondition, "state window should carry the WHERE as collect filter")
+	require.Nil(t, w.condition, "state window must not use the WHERE as a pre-window filter")
 }
 
 // TestEventWindowWhereKeepsFilterPlan verifies that a WHERE on an event-time

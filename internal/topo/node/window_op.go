@@ -810,8 +810,8 @@ func isFilteredEmptyWindow(collectCondition ast.Expr, size int) bool {
 
 // collectConditionMatch evaluates the in-window collect filter against a row.
 // The FunctionValuer is created once by the caller and reused for every row.
-// The result handling and the errors are the same as in FilterOp, which ran the
-// WHERE after the window before it was fused into the window.
+// Results are classified as in FilterOp. Unlike FilterOp, sliding and state
+// windows exclude only the failing row on error, not the whole window.
 func collectConditionMatch(fv *xsql.FunctionValuer, d xsql.EventRow, collectCondition ast.Expr) (bool, error) {
 	if collectCondition == nil {
 		return true, nil
