@@ -15,9 +15,12 @@
 package node
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 
 	"github.com/stretchr/testify/require"
 
@@ -96,4 +99,66 @@ func TestIncAggWindowCloneMarksDirty(t *testing.T) {
 	require.Len(t, c.dirtyDimensions, 1)
 	c.GenerateAllFunctionState()
 	require.NotNil(t, c.DimensionsIncAggRange["dim_a"].FunctionState)
+}
+
+// BenchmarkIncAggSnapshotDeferral contrasts the new per-row cost (publish
+// only) with the cost the old code paid per row (regenerate one dirty group)
+// and the barrier cost as a function of dirty groups at the checkpoint.
+func BenchmarkIncAggSnapshotDeferral(b *testing.B) {
+	aggFields := []*ast.Field{
+		{
+			Name: "inc_agg_col_1",
+			Expr: &ast.Call{
+				Name:     "inc_count",
+				FuncType: ast.FuncTypeScalar,
+				Args:     []ast.Expr{&ast.Wildcard{Token: ast.ASTERISK}},
+				FuncId:   1,
+			},
+		},
+	}
+	setup := func(groups int) (*CountWindowIncAggOp, api.StreamContext, []string) {
+		ctx := mockContext.NewMockContext("1", "2")
+		w := newIncAggWindow(ctx, time.Now())
+		dims := make([]string, groups)
+		for i := range dims {
+			dims[i] = fmt.Sprintf("dim_%d", i)
+			incAggCal(ctx, dims[i], &xsql.Tuple{Message: map[string]any{"a": int64(1)}}, w, aggFields)
+		}
+		// Baseline snapshots as if a checkpoint just completed.
+		w.GenerateAllFunctionState()
+		co := &CountWindowIncAggOp{}
+		co.CurrWindow = w
+		return co, ctx, dims
+	}
+
+	b.Run("RowPublish", func(b *testing.B) {
+		co, ctx, _ := setup(100)
+		b.ReportAllocs()
+		for b.Loop() {
+			co.PutState(ctx)
+		}
+	})
+
+	b.Run("RowRegenOldBehavior", func(b *testing.B) {
+		co, _, dims := setup(100)
+		b.ReportAllocs()
+		for b.Loop() {
+			// What the old per-row PutState paid: regenerate the touched group.
+			co.CurrWindow.markDimensionDirty(dims[0])
+			co.CurrWindow.GenerateAllFunctionState()
+		}
+	})
+
+	for _, dirty := range []int{1, 100} {
+		b.Run(fmt.Sprintf("BarrierSnapshot/Dirty_%d", dirty), func(b *testing.B) {
+			co, _, dims := setup(100)
+			b.ReportAllocs()
+			for b.Loop() {
+				for _, d := range dims[:dirty] {
+					co.CurrWindow.markDimensionDirty(d)
+				}
+				co.CurrWindow.GenerateAllFunctionState()
+			}
+		})
+	}
 }

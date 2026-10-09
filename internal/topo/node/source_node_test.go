@@ -516,6 +516,33 @@ func BenchmarkSourceOffsetUpdate(b *testing.B) {
 	}
 }
 
+// BenchmarkSourceOffsetFreeze measures the barrier-path cost of freezing a
+// mutable offset into an owned copy. The per-tuple row path (updateState,
+// covered by BenchmarkSourceOffsetUpdate) only publishes the live offset;
+// this gob round trip runs once per checkpoint instead of once per tuple.
+func BenchmarkSourceOffsetFreeze(b *testing.B) {
+	for _, size := range []int{1, 10000} {
+		offset := make(map[string]any, size)
+		for i := range size {
+			offset[fmt.Sprintf("partition-%d", i)] = int64(i)
+		}
+		b.Run(fmt.Sprintf("Mutable/%d", size), func(b *testing.B) {
+			source := &MutableRewindSource{offset: offset}
+			node := &SourceNode{s: source}
+			ctx := mockContext.NewMockContext("rule1", "src1")
+			b.ReportAllocs()
+			for b.Loop() {
+				if err := node.updateState(ctx); err != nil {
+					b.Fatal(err)
+				}
+				if err := node.freezeState(ctx); err != nil {
+					b.Fatal(err)
+				}
+			}
+		})
+	}
+}
+
 func TestSourceCheckpointErrorClearsAfterOffsetRecovery(t *testing.T) {
 	offsetErr := errors.New("offset unavailable")
 	source := &MutableRewindSource{
