@@ -184,12 +184,23 @@ type IncAggWindow struct {
 	StartTime             time.Time
 	EventTime             time.Time
 	DimensionsIncAggRange map[string]*IncAggRange
+	// dirtyDimensions tracks groups whose live function state changed since
+	// the last snapshot. GenerateAllFunctionState only regenerates those, so
+	// per-row PutState stays O(touched groups) instead of O(all groups).
+	// Unexported: skipped by gob checkpoint encoding.
+	dirtyDimensions map[string]struct{}
 }
 
 func (w *IncAggWindow) Clone(ctx api.StreamContext) *IncAggWindow {
 	c := &IncAggWindow{StartTime: w.StartTime, DimensionsIncAggRange: map[string]*IncAggRange{}}
 	for k, v := range w.DimensionsIncAggRange {
 		c.DimensionsIncAggRange[k] = v.Clone(ctx)
+	}
+	// The per-range Clone populates the live fctx but leaves FunctionState
+	// empty; mark everything dirty so the next generation backfills the
+	// snapshots (previously covered by the unconditional full regeneration).
+	for k := range c.DimensionsIncAggRange {
+		c.markDimensionDirty(k)
 	}
 	return c
 }
@@ -198,9 +209,28 @@ func (w *IncAggWindow) GenerateAllFunctionState() {
 	if w == nil {
 		return
 	}
-	for _, r := range w.DimensionsIncAggRange {
-		r.generateFunctionState()
+	// Only groups touched since the last generation need a fresh snapshot;
+	// untouched groups keep their last snapshot, which is still part of the
+	// persisted window. This keeps per-row PutState O(touched groups).
+	if len(w.dirtyDimensions) == 0 {
+		return
 	}
+	for d := range w.dirtyDimensions {
+		if r, ok := w.DimensionsIncAggRange[d]; ok {
+			r.generateFunctionState()
+		}
+	}
+	// Reset without reallocating when small enough to reuse.
+	for d := range w.dirtyDimensions {
+		delete(w.dirtyDimensions, d)
+	}
+}
+
+func (w *IncAggWindow) markDimensionDirty(dimension string) {
+	if w.dirtyDimensions == nil {
+		w.dirtyDimensions = make(map[string]struct{})
+	}
+	w.dirtyDimensions[dimension] = struct{}{}
 }
 
 func (w *IncAggWindow) restoreState(ctx api.StreamContext) {
@@ -352,6 +382,7 @@ func (co *CountWindowIncAggOp) incAggCal(ctx api.StreamContext, dimension string
 		}
 		dimensionsRange.Fields[colName] = vi
 	}
+	incAggWindow.markDimensionDirty(dimension)
 }
 
 func (co *CountWindowIncAggOp) emit(ctx api.StreamContext, errCh chan<- error) {
@@ -890,6 +921,7 @@ func incAggCal(ctx api.StreamContext, dimension string, row *xsql.Tuple, incAggW
 		}
 		dimensionsRange.Fields[colName] = vi
 	}
+	incAggWindow.markDimensionDirty(dimension)
 }
 
 func newIncAggRange(ctx api.StreamContext) *IncAggRange {
