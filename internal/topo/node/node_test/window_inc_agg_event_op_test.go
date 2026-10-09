@@ -190,6 +190,9 @@ func TestIncEventHoppingWindow(t *testing.T) {
 			"inc_agg_col_1": int64(1),
 		},
 	}, d)
+	// Simulate a checkpoint barrier: snapshots must be materialized before
+	// another operator can restore from this operator's published state.
+	require.NoError(t, op.PutState4Test(ctx))
 	cancel()
 	time.Sleep(10 * time.Millisecond)
 	op.Close()
@@ -462,6 +465,9 @@ func TestIncEventCountWindow(t *testing.T) {
 			"inc_agg_col_1": int64(1),
 		},
 	}, d)
+	// Simulate a checkpoint barrier: snapshots must be materialized before
+	// another operator can restore from this operator's published state.
+	require.NoError(t, op.PutState4Test(ctx))
 	cancel()
 	waitExecute()
 	op.Close()

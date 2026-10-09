@@ -491,6 +491,45 @@ func TestSourcePrepareCheckpointRefreshesOffsetWithoutAnotherIngest(t *testing.T
 	require.Equal(t, int64(20), saved)
 }
 
+// freezeState must skip sources that do not expose a rewindable offset.
+func TestSourceFreezeStateSkipsNonRewindableSource(t *testing.T) {
+	source := struct{ api.Source }{}
+	node := &SourceNode{s: source}
+	ctx := mockContext.NewMockContext("rule1", "src1")
+	require.NoError(t, node.freezeState(ctx))
+}
+
+type errStateContext struct {
+	api.StreamContext
+	err error
+}
+
+func (c *errStateContext) GetState(string) (any, error) {
+	return nil, c.err
+}
+
+// A state backend failure must propagate so the checkpoint path can record it.
+func TestSourceFreezeStatePropagatesStateErrors(t *testing.T) {
+	source := &MutableRewindSource{MockRewindSource: MockRewindSource{}}
+	node := &SourceNode{s: source}
+	ctx := &errStateContext{
+		StreamContext: mockContext.NewMockContext("rule1", "src1"),
+		err:           errors.New("state unavailable"),
+	}
+	require.ErrorContains(t, node.freezeState(ctx), "state unavailable")
+}
+
+// A missing offset is not an error: there is simply nothing to freeze.
+func TestSourceFreezeStateSkipsNilOffset(t *testing.T) {
+	source := &MutableRewindSource{MockRewindSource: MockRewindSource{}}
+	node := &SourceNode{s: source}
+	ctx := mockContext.NewMockContext("rule1", "src1")
+	require.NoError(t, node.freezeState(ctx))
+	saved, err := ctx.GetState(OffsetKey)
+	require.NoError(t, err)
+	require.Nil(t, saved)
+}
+
 func BenchmarkSourceOffsetUpdate(b *testing.B) {
 	for _, size := range []int{1, 10_000} {
 		offset := make(map[string]any, size)

@@ -23,6 +23,7 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/stretchr/testify/require"
 
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
@@ -160,4 +161,33 @@ func BenchmarkIncAggSnapshotDeferral(b *testing.B) {
 			}
 		})
 	}
+}
+
+// PrepareCheckpoint materializes snapshots for executors that support them
+// and skips the rest without failing the barrier.
+func TestWindowIncAggPrepareCheckpoint(t *testing.T) {
+	op, err := NewWindowIncAggOp("prepare", &WindowConfig{
+		Type:        ast.COUNT_WINDOW,
+		CountLength: 1,
+	}, nil, nil, &def.RuleOption{BufferLength: 1024})
+	require.NoError(t, err)
+	require.NoError(t, op.PrepareCheckpoint())
+
+	op.WindowExec = legacyWindowExec{}
+	require.NoError(t, op.PrepareCheckpoint())
+}
+
+// legacyWindowExec stands in for executors that predate snapshot support:
+// the barrier must skip them instead of failing.
+type legacyWindowExec struct{ windowIncAggExec }
+
+// Snapshot must materialize every buffered window, even when no watermark
+// has triggered an emit yet.
+func TestHoppingEventOpSnapshotMaterializesBufferedWindows(t *testing.T) {
+	ctx := mockContext.NewMockContext("1", "2")
+	op := &HoppingWindowIncAggEventOp{}
+	op.HoppingWindowIncAggEventOpState.CurrWindowList = []*IncAggWindow{
+		newIncAggWindow(ctx, time.Now()),
+	}
+	require.NoError(t, op.Snapshot(ctx))
 }
