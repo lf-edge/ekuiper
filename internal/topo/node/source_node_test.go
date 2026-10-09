@@ -450,10 +450,12 @@ func TestSourceOffsetIsOwnedByContext(t *testing.T) {
 		"partition": map[string]any{"position": 10},
 	}
 	source := &MutableRewindSource{MockRewindSource: MockRewindSource{}, offset: offset}
-	node := &SourceNode{s: source}
 	ctx := mockContext.NewMockContext("rule1", "src1")
+	node := &SourceNode{s: source, defaultNode: &defaultNode{ctx: ctx}}
 
 	require.NoError(t, node.updateState(ctx))
+	// Ownership is frozen at the checkpoint boundary, not per tuple.
+	require.NoError(t, node.PrepareCheckpoint())
 	offset["partition"].(map[string]any)["position"] = 20
 
 	saved, err := ctx.GetState(OffsetKey)

@@ -250,11 +250,22 @@ func (m *SourceNode) CheckpointError() error {
 
 // PrepareCheckpoint refreshes source-owned state after the ingest boundary is
 // locked. Some sources can advance an offset after their final ingest callback.
+// Mutable offsets are frozen into an owned copy here, so the per-tuple ingest
+// path only publishes the live offset without a gob round trip.
+//
+// Refresh and freeze stay best-effort: refresh failures are already recorded
+// as checkpointErr and surface through CheckpointError after the barrier
+// broadcast, while freeze failures deterministically resurface when Snapshot
+// encodes the same state. Failing fast here would skip the broadcast and
+// change checkpoint semantics.
 func (m *SourceNode) PrepareCheckpoint() error {
-	if _, ok := m.s.(immutableOffsetProvider); !ok {
-		return nil
+	if err := m.refreshCheckpointState(m.ctx); err != nil {
+		m.ctx.GetLogger().Debugf("source %s refresh offset at checkpoint: %v", m.name, err)
 	}
-	return m.refreshCheckpointState(m.ctx)
+	if err := m.freezeState(m.ctx); err != nil {
+		m.ctx.GetLogger().Debugf("source %s freeze offset at checkpoint: %v", m.name, err)
+	}
+	return nil
 }
 
 // GetSource only used for test
@@ -289,23 +300,39 @@ func (m *SourceNode) updateState(ctx api.StreamContext) error {
 		if err != nil {
 			return err
 		}
-		if state == nil {
-			return ctx.PutState(OffsetKey, nil)
-		}
-		if _, ok := rw.(immutableOffsetProvider); ok {
-			return ctx.PutState(OffsetKey, state)
-		}
-		frozen, err := checkpoint.EncodeState(map[string]interface{}{OffsetKey: state})
-		if err != nil {
-			return err
-		}
-		owned, err := checkpoint.DecodeState(frozen)
-		if err != nil {
-			return err
-		}
-		return ctx.PutState(OffsetKey, owned[OffsetKey])
+		return ctx.PutState(OffsetKey, state)
 	}
 	return nil
+}
+
+// freezeState replaces the published live offset with an owned copy, so a
+// later in-place mutation by the source cannot corrupt the frozen checkpoint
+// snapshot. Immutable offsets are already isolated by contract and skip this.
+func (m *SourceNode) freezeState(ctx api.StreamContext) error {
+	s := m.s
+	rw, ok := s.(api.Rewindable)
+	if !ok {
+		return nil
+	}
+	if _, ok := rw.(immutableOffsetProvider); ok {
+		return nil
+	}
+	v, err := ctx.GetState(OffsetKey)
+	if err != nil {
+		return err
+	}
+	if v == nil {
+		return nil
+	}
+	frozen, err := checkpoint.EncodeState(map[string]interface{}{OffsetKey: v})
+	if err != nil {
+		return err
+	}
+	owned, err := checkpoint.DecodeState(frozen)
+	if err != nil {
+		return err
+	}
+	return ctx.PutState(OffsetKey, owned[OffsetKey])
 }
 
 // immutableOffsetProvider mirrors api.ImmutableOffsetProvider structurally.
