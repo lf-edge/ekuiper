@@ -702,6 +702,69 @@ func TestWindow(t *testing.T) {
 			},
 			M: map[string]interface{}{},
 		},
+		// The cases below check that a WHERE fused into a count, sliding or state
+		// window (in-window collect filter) gives the same result as the Filter
+		// after the window: a window left without matching rows is not sent.
+		{
+			// the first window [3, 6] has no matching rows
+			Name: `TestWindowCollectCountRule`,
+			Sql:  `SELECT size FROM demo WHERE size < 3 GROUP BY COUNTWINDOW(2)`,
+			R: [][]map[string]interface{}{
+				{{"size": 2}},
+			},
+			M: map[string]interface{}{},
+		},
+		{
+			// the WHERE depends on an aggregate, so it is not pushed into the window
+			// at all: avg(size) is computed over the full window [3, 6, 2, 4, 1]
+			Name: `TestWindowCollectCountAggRule`,
+			Sql:  `SELECT size FROM demo WHERE size > 2 AND size > avg(size) GROUP BY COUNTWINDOW(5)`,
+			R: [][]map[string]interface{}{
+				{{"size": 6}, {"size": 4}},
+			},
+			M: map[string]interface{}{},
+		},
+		{
+			// the window triggered by the first row has no matching rows
+			Name: `TestWindowCollectSlidingRule`,
+			Sql:  `SELECT color, size FROM demo WHERE size > 5 GROUP BY SlidingWindow(ss, 1)`,
+			R: [][]map[string]interface{}{
+				{{"color": "blue", "size": 6}},
+				{{"color": "blue", "size": 6}},
+			},
+			M: map[string]interface{}{},
+		},
+		{
+			// the collect filter must not update the last_hit_time of the trigger:
+			// the result is the same as without the WHERE
+			Name: `TestWindowCollectSlidingTriggerRule`,
+			Sql:  `SELECT color FROM demo WHERE size > 0 GROUP BY SlidingWindow(ss, 2) OVER(WHEN ts - last_hit_time() > 1000)`,
+			R: [][]map[string]interface{}{
+				{{"color": "red"}},
+				{{"color": "red"}, {"color": "blue"}, {"color": "blue"}},
+				{{"color": "blue"}, {"color": "yellow"}, {"color": "red"}},
+			},
+			M: map[string]interface{}{},
+		},
+		{
+			// the begin (red) and emit (yellow) rows do not match the WHERE but
+			// must still open and close the window
+			Name: `TestWindowCollectStateRule`,
+			Sql:  `SELECT size FROM demo WHERE color = "blue" GROUP BY StateWindow(color = "red", color = "yellow")`,
+			R: [][]map[string]interface{}{
+				{{"size": 6}, {"size": 2}},
+			},
+			M: map[string]interface{}{},
+		},
+		{
+			// the first window [3, 6, 2] has no matching rows
+			Name: `TestWindowCollectStateEmptyRule`,
+			Sql:  `SELECT size FROM demo WHERE color = "yellow" GROUP BY StateWindow(size > 2, size < 3)`,
+			R: [][]map[string]interface{}{
+				{{"size": 4}},
+			},
+			M: map[string]interface{}{},
+		},
 	}
 	HandleStream(true, streamList, t)
 	options := []*def.RuleOption{

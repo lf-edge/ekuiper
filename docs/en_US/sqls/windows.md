@@ -192,6 +192,15 @@ The filter clause must follow the window function. The filter clause must be lik
 SELECT * FROM demo GROUP BY COUNTWINDOW(3,1) FILTER(where revenue > 100)
 ```
 
+## WHERE in Sliding, State and Count Windows
+
+For processing-time sliding, state and count windows, the `WHERE` clause is evaluated by the window itself. The window control logic (trigger, begin and emit conditions, count) still sees every row, and the `WHERE` clause only decides which rows the window outputs. A window without any matching row is not emitted.
+
+- Sliding and state windows evaluate the `WHERE` clause once per arriving row and keep only the matching rows. If the evaluation fails, the error is reported and only that row is excluded. Since a row in overlapping sliding windows is not evaluated again, time-dependent, non-deterministic or stateful functions may give different results than evaluating the `WHERE` clause on each emitted window.
+- Count windows still buffer every row and evaluate the `WHERE` clause on each emitted window.
+
+Event-time windows, and `WHERE` clauses that use an aggregate function (directly or through an alias), evaluate the `WHERE` clause on each emitted window.
+
 ## Timestamp Management
 
 Every event has a timestamp associated with it. The timestamp will be used to calculate the window. By default, a timestamp will be added when an event feed into the source which is called `processing time`. We also support to specify a field as the timestamp, which is called `event time`. The timestamp field is specified in the stream definition. In the below definition, the field `ts` is specified as the timestamp field.

@@ -16,19 +16,14 @@ package planner
 
 import (
 	"encoding/json"
-	"fmt"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
-	"github.com/lf-edge/ekuiper/v2/internal/topo/node"
-	"github.com/lf-edge/ekuiper/v2/internal/topo/operator"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
-	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
 
 func findWindowPlan(p LogicalPlan) *WindowPlan {
@@ -60,18 +55,16 @@ func setupVehicleStatusStream(t *testing.T) {
 	require.NoError(t, err)
 	s, err := json.Marshal(&xsql.StreamInfo{
 		StreamType: ast.TypeStream,
-		Statement:  `CREATE STREAM vehicle_status (soc BIGINT, charge_status string) WITH (DATASOURCE="vehicle_status", FORMAT="json");`,
+		Statement:  `CREATE STREAM vehicle_status (soc BIGINT, charge_status string, ts BIGINT) WITH (DATASOURCE="vehicle_status", FORMAT="json", TIMESTAMP="ts");`,
 	})
 	require.NoError(t, err)
 	require.NoError(t, kv.Set("vehicle_status", string(s)))
 }
 
-// TestStateWindowWhereNotPushedDown verifies that a WHERE clause on a state
-// window is NOT pushed below the window. The FilterPlan must sit above the
-// WindowPlan (so the filter runs after the window emits), and the WindowPlan
-// must not carry the WHERE as its own condition (which would create a
-// windowFilter operator before the window).
-func TestStateWindowWhereNotPushedDown(t *testing.T) {
+// TestStateWindowWherePushedToCollect verifies that a WHERE clause on a state
+// window becomes the in-window collect filter (collectCondition) of the
+// WindowPlan, and not a pre-window filter.
+func TestStateWindowWherePushedToCollect(t *testing.T) {
 	setupVehicleStatusStream(t)
 
 	sql := `SELECT collect(*) AS charge_data FROM vehicle_status WHERE soc % 10 = 0 AND changed_col(true, soc % 10 = 0) GROUP BY statewindow(charge_status = 'charging', charge_status = 'discharging')`
@@ -85,116 +78,106 @@ func TestStateWindowWhereNotPushedDown(t *testing.T) {
 
 	explain, err := ExplainFromLogicalPlan(p, "charge_monitor")
 	require.NoError(t, err)
-	fmt.Println("==== EXPLAIN ====\n" + explain)
+	require.Contains(t, explain, "collectCondition")
 
-	// Root is Project; its direct child must be the FilterPlan (WHERE after window).
-	root := p
-	require.IsType(t, &ProjectPlan{}, root)
-	var filterAbove *FilterPlan
-	for _, c := range root.Children() {
-		if fp, ok := c.(*FilterPlan); ok {
-			filterAbove = fp
-		}
-	}
-	require.NotNil(t, filterAbove, "expected FilterPlan directly under Project (WHERE after window)")
+	// Standalone FilterPlan should be gone since condition was pushed into WindowPlan.
+	require.Nil(t, findFilterPlan(p), "expected no standalone FilterPlan after pushdown")
 
 	w := findWindowPlan(p)
 	require.NotNil(t, w)
-	require.Nil(t, w.condition, "state window should not carry the WHERE condition")
-
-	// No FilterPlan may live below the window (the old windowFilter placement).
-	var hasFilterBelow func(LogicalPlan) bool
-	hasFilterBelow = func(n LogicalPlan) bool {
-		if _, ok := n.(*FilterPlan); ok {
-			return true
-		}
-		for _, c := range n.Children() {
-			if hasFilterBelow(c) {
-				return true
-			}
-		}
-		return false
-	}
-	require.False(t, hasFilterBelow(w), "state window should not have a FilterPlan descendant")
+	require.NotNil(t, w.collectCondition, "state window should carry the WHERE as collect filter")
+	require.Nil(t, w.condition, "state window must not use the WHERE as a pre-window filter")
 }
 
-// TestStateWindowWhereAfterRuntime verifies end-to-end that the WHERE clause
-// is evaluated AFTER the state window emits.
-//
-// The begin/emit rows deliberately have soc % 10 != 0 so that, under the old
-// WHERE-before-window behavior, the discharging row would be filtered out and
-// the window would never emit.
-//
-//	t1 soc=5  charge_status=charging     -> begin window
-//	t2 soc=10 charge_status=charging     -> collected
-//	t3 soc=15 charge_status=discharging  -> emit window
-//
-// Expected (WHERE after window): the window emits [soc=5, soc=10, soc=15] and
-// the filter keeps only the row with soc % 10 == 0, i.e. [soc=10].
-func TestStateWindowWhereAfterRuntime(t *testing.T) {
+// TestEventWindowWhereKeepsFilterPlan verifies that a WHERE on an event-time
+// window is not pushed into the window as a collect filter. Event-time windows
+// compute their boundaries (window scheduling, session continuity) from the
+// buffered inputs, so rows that do not match the WHERE must still be buffered
+// and the filter must run after the window.
+func TestEventWindowWhereKeepsFilterPlan(t *testing.T) {
 	setupVehicleStatusStream(t)
 
-	sql := `SELECT collect(*) AS charge_data FROM vehicle_status WHERE soc % 10 = 0 GROUP BY statewindow(charge_status = 'charging', charge_status = 'discharging')`
-	stmt, err := xsql.GetStatementFromSql(sql)
-	require.NoError(t, err)
-
-	o := &def.RuleOption{BufferLength: 1024}
-	kv, err := store.GetKV("stream")
-	require.NoError(t, err)
-	p, err := CreateLogicalPlan(stmt, o, kv)
-	require.NoError(t, err)
-
-	wp := findWindowPlan(p)
-	require.NotNil(t, wp)
-	fp := findFilterPlan(p)
-	require.NotNil(t, fp)
-	require.Nil(t, wp.condition)
-
-	winOp, err := node.NewWindowV2Op("window", node.WindowConfig{
-		Type:           wp.WindowType(),
-		BeginCondition: wp.GetBeginCondition(),
-		EmitCondition:  wp.GetEmitCondition(),
-	}, o)
-	require.NoError(t, err)
-
-	fp.ExtractStateFunc()
-	filterOp := Transform(&operator.FilterOp{
-		Condition:  fp.condition,
-		StateFuncs: fp.stateFuncs,
-	}, "filter", o)
-
-	filterInput, _ := filterOp.GetInput()
-	require.NoError(t, winOp.AddOutput(filterInput, "to_filter"))
-	output := make(chan any, 10)
-	require.NoError(t, filterOp.AddOutput(output, "output"))
-
-	ctx, cancel := mockContext.NewMockContext("1", "2").WithCancel()
-	errCh := make(chan error, 10)
-	winOp.Exec(ctx, errCh)
-	filterOp.Exec(ctx, errCh)
-	time.Sleep(50 * time.Millisecond)
-
-	now := time.Now()
-	winIn, _ := winOp.GetInput()
-	winIn <- &xsql.Tuple{Message: map[string]any{"soc": int64(5), "charge_status": "charging"}, Timestamp: now}
-	winIn <- &xsql.Tuple{Message: map[string]any{"soc": int64(10), "charge_status": "charging"}, Timestamp: now.Add(1 * time.Second)}
-	winIn <- &xsql.Tuple{Message: map[string]any{"soc": int64(15), "charge_status": "discharging"}, Timestamp: now.Add(2 * time.Second)}
-	time.Sleep(100 * time.Millisecond)
-
-	select {
-	case got := <-output:
-		wt, ok := got.(*xsql.WindowTuples)
-		require.True(t, ok, "expected *xsql.WindowTuples, got %T", got)
-		maps := wt.ToMaps()
-		require.Equal(t, []map[string]any{
-			{"soc": int64(10), "charge_status": "charging"},
-		}, maps)
-	case <-time.After(2 * time.Second):
-		t.Fatal("timed out waiting for window output")
+	tests := []struct {
+		name string
+		sql  string
+	}{
+		{
+			name: "sliding window",
+			sql:  `SELECT * FROM vehicle_status WHERE soc % 10 = 0 GROUP BY slidingwindow(ss, 10)`,
+		},
+		{
+			name: "tumbling window",
+			sql:  `SELECT * FROM vehicle_status WHERE soc % 10 = 0 GROUP BY tumblingwindow(ss, 10)`,
+		},
+		{
+			name: "session window",
+			sql:  `SELECT * FROM vehicle_status WHERE soc % 10 = 0 GROUP BY sessionwindow(ss, 10, 2)`,
+		},
+		{
+			name: "state window",
+			sql:  `SELECT * FROM vehicle_status WHERE soc % 10 = 0 GROUP BY statewindow(charge_status = 'charging', charge_status = 'discharging')`,
+		},
 	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			stmt, err := xsql.GetStatementFromSql(tt.sql)
+			require.NoError(t, err)
 
-	cancel()
-	time.Sleep(50 * time.Millisecond)
-	winOp.Close()
-	filterOp.Close()
+			o := &def.RuleOption{BufferLength: 1024, IsEventTime: true}
+			kv, err := store.GetKV("stream")
+			require.NoError(t, err)
+			p, err := CreateLogicalPlan(stmt, o, kv)
+			require.NoError(t, err)
+
+			require.NotNil(t, findFilterPlan(p), "expected the FilterPlan to be kept above the event-time window")
+			w := findWindowPlan(p)
+			require.NotNil(t, w)
+			require.Nil(t, w.collectCondition, "event-time window must not carry a collect filter")
+			require.Nil(t, w.condition, "event-time window must not carry a pre-window filter")
+		})
+	}
+}
+
+// TestWindowWhereAggregateNotCollected verifies that a WHERE depending on an
+// aggregate result is never turned into an in-window collect filter, whether
+// the aggregate is written directly (rewritten into bypass) or reached through
+// a select alias. The aggregate value only exists after the window closes, so
+// the FilterPlan must be kept above the window.
+func TestWindowWhereAggregateNotCollected(t *testing.T) {
+	setupVehicleStatusStream(t)
+
+	tests := []struct {
+		name string
+		sql  string
+	}{
+		{
+			name: "direct aggregate",
+			sql:  `SELECT ts FROM vehicle_status WHERE soc > avg(soc) GROUP BY countwindow(5)`,
+		},
+		{
+			name: "aggregate alias",
+			sql:  `SELECT ts, avg(soc) AS a FROM vehicle_status WHERE soc > a GROUP BY countwindow(5)`,
+		},
+		{
+			name: "state aggregate alias",
+			sql:  `SELECT ts, last_agg_hit_count() AS c FROM vehicle_status WHERE c > 1 GROUP BY countwindow(5)`,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			stmt, err := xsql.GetStatementFromSql(tt.sql)
+			require.NoError(t, err)
+
+			o := &def.RuleOption{BufferLength: 1024}
+			kv, err := store.GetKV("stream")
+			require.NoError(t, err)
+			p, err := CreateLogicalPlan(stmt, o, kv)
+			require.NoError(t, err)
+
+			require.NotNil(t, findFilterPlan(p), "expected the FilterPlan to be kept above the window")
+			w := findWindowPlan(p)
+			require.NotNil(t, w)
+			require.Nil(t, w.collectCondition, "aggregate condition must not become a collect filter")
+		})
+	}
 }

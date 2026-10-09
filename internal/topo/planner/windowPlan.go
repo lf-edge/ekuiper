@@ -30,6 +30,7 @@ type WindowPlan struct {
 	emitCondition    ast.Expr
 	triggerCondition ast.Expr
 	condition        ast.Expr
+	collectCondition ast.Expr // in-window collect filter, represent an inner WHERE filter
 	wtype            ast.WindowType
 	delay            int64
 	length           int
@@ -59,6 +60,10 @@ func (p *WindowPlan) GetBeginCondition() ast.Expr {
 	return p.beginCondition
 }
 
+func (p *WindowPlan) GetCollectCondition() ast.Expr {
+	return p.collectCondition
+}
+
 func (p *WindowPlan) GetSingleCondition() ast.Expr {
 	return p.singleCondition
 }
@@ -78,6 +83,11 @@ func (p *WindowPlan) BuildExplainInfo() {
 	if p.condition != nil {
 		info += ", condition:" + p.condition.String()
 	}
+
+	if p.collectCondition != nil {
+		info += ", collectCondition: " + p.collectCondition.String()
+	}
+
 	if len(p.stateFuncs) != 0 {
 		info += ", stateFuncs:[ "
 		for _, stateFunc := range p.stateFuncs {
@@ -90,20 +100,30 @@ func (p *WindowPlan) BuildExplainInfo() {
 }
 
 func (p *WindowPlan) PushDownPredicate(condition ast.Expr) (ast.Expr, LogicalPlan) {
-	// not time window depends on the event, so should not filter any.
-	// state window also needs to see every row to detect state transitions
-	// (begin/emit), so the WHERE filter must run after the window rather than
-	// before it; otherwise rows that trigger a state change could be filtered
-	// out and the window would never open/close.
-	if p.wtype == ast.COUNT_WINDOW || p.wtype == ast.SLIDING_WINDOW || p.wtype == ast.STATE_WINDOW {
-		return condition, p
-	} else if p.isEventTime {
+	// Event-time windows compute their boundaries (window scheduling, session
+	// continuity) from the buffered inputs, so a row that does not match the
+	// WHERE may still affect the window. Keep the post-window filter for them.
+	if p.isEventTime {
 		// TODO event time filter, need event window op support
 		//p.condition = combine(condition, p.condition)
 		//// push nil condition won't return any
 		//p.baseLogicalPlan.PushDownPredicate(nil)
 		// return nil, p
 		return condition, p
+	}
+	// The control logic of count, sliding and state windows (count, trigger,
+	// begin/emit) must see every row, so the WHERE cannot be a pre-window filter.
+	// Evaluate it per row inside the window as collectCondition instead.
+	if p.wtype == ast.COUNT_WINDOW || p.wtype == ast.SLIDING_WINDOW || p.wtype == ast.STATE_WINDOW {
+		// A condition that depends on an aggregate (for example through a select
+		// alias such as avg(a) AS m) is only known once the window closes, and
+		// pushing part of it into the window would change the aggregate input.
+		// Keep the whole condition after the window in that case.
+		if xsql.IsAggregate(condition) {
+			return condition, p
+		}
+		p.collectCondition = condition
+		return nil, p
 	} else {
 		// Presume window condition are only one table related.
 		// TODO window condition validation
@@ -116,6 +136,7 @@ func (p *WindowPlan) PushDownPredicate(condition ast.Expr) (ast.Expr, LogicalPla
 func (p *WindowPlan) PruneColumns(fields []ast.Expr) error {
 	f := getFields(p.condition)
 	f = append(f, getFields(p.triggerCondition)...)
+	f = append(f, getFields(p.collectCondition)...)
 	return p.baseLogicalPlan.PruneColumns(append(fields, f...))
 }
 
@@ -172,6 +193,7 @@ func (p *WindowPlan) GenWindowConfig() *node.WindowConfig {
 		CountLength:      p.length,
 		RawInterval:      rawInterval,
 		TimeUnit:         p.timeUnit,
+		CollectCondition: p.collectCondition,
 		TriggerCondition: p.triggerCondition,
 		StateFuncs:       p.stateFuncs,
 	}

@@ -31,6 +31,35 @@ func (p AggFuncPlan) Init() *AggFuncPlan {
 	return &p
 }
 
+// PushDownPredicate keeps the whole condition above this plan when it reads an
+// aggregate result computed here. The aggregate is computed over the rows below
+// this plan, so pushing down any part of the condition, even an AND part that
+// does not use the aggregate, would change the aggregate input and the result.
+func (p *AggFuncPlan) PushDownPredicate(condition ast.Expr) (ast.Expr, LogicalPlan) {
+	if p.refAggFields(condition) {
+		rest, _ := p.baseLogicalPlan.PushDownPredicate(nil)
+		return combine(condition, rest), p
+	}
+	rest, _ := p.baseLogicalPlan.PushDownPredicate(condition)
+	return rest, p
+}
+
+func (p *AggFuncPlan) refAggFields(expr ast.Expr) bool {
+	found := false
+	ast.WalkFunc(expr, func(n ast.Node) bool {
+		if f, ok := n.(*ast.FieldRef); ok && f.StreamName == ast.DefaultStream {
+			for _, aggField := range p.aggFields {
+				if aggField.Name == f.Name {
+					found = true
+					return false
+				}
+			}
+		}
+		return !found
+	})
+	return found
+}
+
 func (p *AggFuncPlan) BuildExplainInfo() {
 	info := ""
 	if len(p.aggFields) > 0 {

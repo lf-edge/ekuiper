@@ -21,7 +21,9 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace/noop"
 
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
@@ -128,13 +130,13 @@ func TestTime(t *testing.T) {
 }
 
 func TestNewTupleList(t *testing.T) {
-	_, e := NewTupleList(nil, 0)
+	_, e := NewTupleList(nil, nil, 0, nil)
 	es1 := "Window size should not be less than zero."
 	if !reflect.DeepEqual(es1, e.Error()) {
 		t.Errorf("error mismatch:\n  exp=%s\n  got=%s\n\n", es1, e)
 	}
 
-	_, e = NewTupleList(nil, 2)
+	_, e = NewTupleList(nil, nil, 2, nil)
 	es1 = "The tuples should not be nil or empty."
 	if !reflect.DeepEqual(es1, e.Error()) {
 		t.Errorf("error mismatch:\n  exp=%s\n  got=%s\n\n", es1, e)
@@ -330,7 +332,10 @@ func TestCountWindow(t *testing.T) {
 				if !tt.tuplelist.hasMoreCountWindow() {
 					t.Errorf("%d \n Expect more element, but cannot find more element.", i)
 				}
-				cw := tt.tuplelist.nextCountWindow()
+
+				cw, err := tt.tuplelist.nextCountWindow()
+				require.NoError(t, err)
+
 				if !reflect.DeepEqual(tt.winTupleSets[j].Content, cw.Content) {
 					t.Errorf("%d. \nresult mismatch:\n\nexp=%#v\n\ngot=%#v", i, tt.winTupleSets[j], cw) //nolint:govet
 				}
@@ -378,4 +383,67 @@ func TestGCInputsForConditionNotMatch(t *testing.T) {
 			Timestamp: time.UnixMilli(5000),
 		},
 	}, inputs)
+}
+
+func TestCollectConditionMatch(t *testing.T) {
+	fv, _ := xsql.NewFunctionValuersForOp(context.Background())
+	row := &xsql.Tuple{Message: map[string]any{"a": 1}}
+	field := &ast.FieldRef{Name: "a", StreamName: ast.DefaultStream}
+	missing := &ast.FieldRef{Name: "b", StreamName: ast.DefaultStream}
+	tests := []struct {
+		name      string
+		condition ast.Expr
+		match     bool
+		err       string
+	}{
+		{name: "no condition", condition: nil, match: true},
+		{name: "true", condition: &ast.BinaryExpr{OP: ast.EQ, LHS: field, RHS: &ast.IntegerLiteral{Val: 1}}, match: true},
+		{name: "false", condition: &ast.BinaryExpr{OP: ast.GT, LHS: field, RHS: &ast.IntegerLiteral{Val: 1}}, match: false},
+		{name: "nil is false", condition: missing, match: false},
+		// same error as FilterOp: a non-boolean result is not coerced to false
+		{name: "non-boolean", condition: field, err: "run Where error: invalid condition that returns non-bool value int(1)"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			match, err := collectConditionMatch(fv, row, tt.condition)
+			if tt.err != "" {
+				require.EqualError(t, err, tt.err)
+				return
+			}
+			require.NoError(t, err)
+			require.Equal(t, tt.match, match)
+		})
+	}
+}
+
+// TestCollectEndsSpanOfFilteredRow verifies that a row rejected by the collect
+// filter has its trace span removed from tupleSpanMap. The row never enters the
+// window inputs, so the gc/emit paths that normally clean the map never see it.
+func TestCollectEndsSpanOfFilteredRow(t *testing.T) {
+	o, err := NewWindowOp("window", WindowConfig{
+		Type:   ast.SLIDING_WINDOW,
+		Length: time.Second,
+		CollectCondition: &ast.BinaryExpr{
+			OP:  ast.GT,
+			LHS: &ast.FieldRef{Name: "a", StreamName: ast.DefaultStream},
+			RHS: &ast.IntegerLiteral{Val: 1},
+		},
+	}, &def.RuleOption{BufferLength: 10})
+	require.NoError(t, err)
+
+	ctx := context.Background()
+	ctx.EnableTracer(true)
+	fv, _ := xsql.NewFunctionValuersForOp(ctx)
+
+	kept := &xsql.Tuple{Message: map[string]any{"a": 2}}
+	filtered := &xsql.Tuple{Message: map[string]any{"a": 1}}
+	o.tupleSpanMap[kept] = noop.Span{}
+	o.tupleSpanMap[filtered] = noop.Span{}
+
+	inputs := o.collect(ctx, fv, nil, kept)
+	inputs = o.collect(ctx, fv, inputs, filtered)
+
+	require.Equal(t, []xsql.EventRow{kept}, inputs)
+	require.Contains(t, o.tupleSpanMap, xsql.EventRow(kept), "the span of a collected row is ended by the gc/emit paths")
+	require.NotContains(t, o.tupleSpanMap, xsql.EventRow(filtered), "the span of a filtered row must not stay in tupleSpanMap")
 }
