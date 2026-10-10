@@ -24,6 +24,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/checkpoint"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/lookup"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
@@ -855,5 +856,95 @@ func (m *MockLookupBytes) Lookup(ctx api.StreamContext, fields []string, keys []
 			[]byte(`{"la":2,"lb":2,"lc":1}`),
 			[]byte(`{"la":3,"lb":4,"lc":1}`),
 		}, nil
+	}
+}
+
+type noopResponder struct{}
+
+func (noopResponder) TriggerCheckpoint(int64) error { return nil }
+func (noopResponder) GetName() string               { return "test" }
+
+// TestLookupQos2BufferedInputs covers collection inputs arriving wrapped in
+// BufferOrEvent, as they do under QoS >= 1 and when replayed from the
+// checkpoint backlog. The lookup must use the unwrapped rows for both data
+// and WindowRange; asserting the old *xsql.JoinTuples shape against the
+// wrapper panics.
+func TestLookupQos2BufferedInputs(t *testing.T) {
+	modules.RegisterLookupSource("mock", func() api.Source {
+		return &MockLookupBytes{}
+	})
+
+	ctx, cancel := mockContext.NewMockContext("testRule", "test").WithCancel()
+	defer cancel()
+	op, err := NewLookupNode(ctx, "test2", true, []string{"la", "lb"}, []string{"test1"}, ast.LEFT_JOIN, []ast.Expr{&ast.FieldRef{
+		StreamName: "",
+		Name:       "a",
+	}}, &ast.Options{TYPE: "mock", FORMAT: "json"}, &def.RuleOption{BufferLength: 10, SendError: true}, map[string]any{})
+	assert.NoError(t, err)
+	op.SetQos(def.ExactlyOnce)
+	op.SetBarrierHandler(checkpoint.NewBarrierTracker(noopResponder{}, 1))
+	out := make(chan any, 100)
+	err = op.AddOutput(out, "test")
+	assert.NoError(t, err)
+	errCh := make(chan error, 10)
+	op.Exec(ctx, errCh)
+	err = lookup.CreateInstance("test2", "mock", &ast.Options{
+		DATASOURCE: "test2",
+		TYPE:       "mock",
+		KIND:       "lookup",
+		KEY:        "id",
+	})
+	assert.NoError(t, err)
+	op.Exec(ctx, errCh)
+
+	windowRange := xsql.NewWindowRange(1000, 2000, 2000)
+	inputs := []any{
+		&checkpoint.BufferOrEvent{
+			Channel: "left",
+			Data: &xsql.WindowTuples{
+				Content: []xsql.Row{
+					&xsql.Tuple{
+						Emitter: "stream1",
+						Message: map[string]any{"a": 2},
+					},
+				},
+				WindowRange: windowRange,
+			},
+		},
+		&checkpoint.BufferOrEvent{
+			Channel: "left",
+			Data: &xsql.JoinTuples{
+				Content: []*xsql.JoinTuple{
+					{
+						Tuples: []xsql.Row{
+							&xsql.Tuple{
+								Emitter: "stream1",
+								Message: map[string]any{"a": 2},
+							},
+						},
+					},
+				},
+				WindowRange: windowRange,
+			},
+		},
+	}
+	for _, input := range inputs {
+		op.input <- input
+		// Bound the wait: if the lookup mishandles the wrapper (e.g. by
+		// asserting it to a row type), the operator loop dies and no
+		// output ever arrives. Fail fast instead of hanging.
+		var r any
+		select {
+		case r = <-out:
+		case <-time.After(5 * time.Second):
+			t.Fatal("timed out waiting for lookup output; the operator loop may have died on the wrapped input")
+		}
+		boe, ok := r.(*checkpoint.BufferOrEvent)
+		assert.True(t, ok, "output must stay wrapped under QoS 2, got %#v", r)
+		sets, ok := boe.Data.(*xsql.JoinTuples)
+		assert.True(t, ok, "lookup output must be JoinTuples, got %#v", boe.Data)
+		assert.Equal(t, windowRange, sets.GetWindowRange())
+		// a=2 matches the three mock lookup rows.
+		assert.Len(t, sets.Content, 3)
 	}
 }

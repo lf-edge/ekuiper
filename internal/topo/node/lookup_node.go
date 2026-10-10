@@ -149,7 +149,7 @@ func (n *LookupNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 				n.onProcessStart(ctx, data)
 				switch d := data.(type) {
 				case *xsql.JoinTuples:
-					sets := &xsql.JoinTuples{Content: make([]*xsql.JoinTuple, 0), WindowRange: item.(*xsql.JoinTuples).GetWindowRange()}
+					sets := &xsql.JoinTuples{Content: make([]*xsql.JoinTuple, 0), WindowRange: d.GetWindowRange()}
 					err := d.Range(func(i int, r xsql.ReadonlyRow) (bool, error) {
 						tr, ok := r.(xsql.Row)
 						if !ok {
@@ -183,7 +183,7 @@ func (n *LookupNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 					}
 				case *xsql.WindowTuples:
 					log.Debugf("Lookup Node receive window input %v", d)
-					sets := &xsql.JoinTuples{Content: make([]*xsql.JoinTuple, 0), WindowRange: item.(*xsql.WindowTuples).GetWindowRange()}
+					sets := &xsql.JoinTuples{Content: make([]*xsql.JoinTuple, 0), WindowRange: d.GetWindowRange()}
 					err := d.Range(func(i int, r xsql.ReadonlyRow) (bool, error) {
 						tr, ok := r.(xsql.Row)
 						if !ok {
