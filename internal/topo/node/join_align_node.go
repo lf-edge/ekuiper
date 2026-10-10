@@ -91,45 +91,17 @@ func (n *JoinAlignNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 
 			for {
 				log.Debugf("JoinAlignNode %s is looping", n.name)
+				// Due backlog rows and barriers ordered by the checkpoint
+				// handler take priority over fresh input; the select below
+				// stays exactly as before.
+				if due, ok := n.nextDue(); ok {
+					n.handleJoinItem(ctx, due)
+					continue
+				}
 				select {
 				// process incoming item from both streams(transformed) and tables
 				case item := <-n.input:
-					data, processed := n.commonIngest(ctx, item)
-					if processed {
-						break
-					}
-					n.onProcessStart(ctx, data)
-					switch d := data.(type) {
-					case *xsql.Tuple:
-						log.Debugf("JoinAlignNode receive tuple input %v", d)
-						tryTakeBatch := func() bool {
-							n.mu.Lock()
-							defer n.mu.Unlock()
-
-							if b, ok := n.batch[d.Emitter]; ok {
-								s := n.size[d.Emitter]
-								if len(b) >= s {
-									b = b[s-len(b)+1:]
-								}
-								b = append(b, d)
-								n.batch[d.Emitter] = b
-								_ = ctx.PutState(BatchKey, n.copyImmutable(n.batch))
-								return true
-							}
-
-							return false
-						}
-
-						if !tryTakeBatch() {
-							n.alignBatch(ctx, d)
-						}
-					case *xsql.WindowTuples:
-						log.Debugf("JoinAlignNode receive window input %v", d)
-						n.alignBatch(ctx, d)
-					default:
-						n.onError(ctx, fmt.Errorf("run JoinAlignNode error: invalid input type but got %[1]T(%[1]v)", d))
-					}
-					n.onProcessEnd(ctx)
+					n.handleJoinItem(ctx, item)
 				case <-ctx.Done():
 					log.Info("Cancelling join align node....")
 					return nil
@@ -140,6 +112,45 @@ func (n *JoinAlignNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 			infra.DrainError(ctx, err, errCh)
 		}
 	}()
+}
+
+func (n *JoinAlignNode) handleJoinItem(ctx api.StreamContext, item any) {
+	data, processed := n.commonIngest(ctx, item)
+	if processed {
+		return
+	}
+	n.onProcessStart(ctx, data)
+	switch d := data.(type) {
+	case *xsql.Tuple:
+		ctx.GetLogger().Debugf("JoinAlignNode receive tuple input %v", d)
+		tryTakeBatch := func() bool {
+			n.mu.Lock()
+			defer n.mu.Unlock()
+
+			if b, ok := n.batch[d.Emitter]; ok {
+				s := n.size[d.Emitter]
+				if len(b) >= s {
+					b = b[s-len(b)+1:]
+				}
+				b = append(b, d)
+				n.batch[d.Emitter] = b
+				_ = ctx.PutState(BatchKey, n.copyImmutable(n.batch))
+				return true
+			}
+
+			return false
+		}
+
+		if !tryTakeBatch() {
+			n.alignBatch(ctx, d)
+		}
+	case *xsql.WindowTuples:
+		ctx.GetLogger().Debugf("JoinAlignNode receive window input %v", d)
+		n.alignBatch(ctx, d)
+	default:
+		n.onError(ctx, fmt.Errorf("run JoinAlignNode error: invalid input type but got %[1]T(%[1]v)", d))
+	}
+	n.onProcessEnd(ctx)
 }
 
 func (n *JoinAlignNode) alignBatch(ctx api.StreamContext, input any) {

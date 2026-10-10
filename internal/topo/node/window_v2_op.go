@@ -327,45 +327,55 @@ func (s *SlidingWindowOp) exec(ctx api.StreamContext, errCh chan<- error) {
 		return
 	}
 	fv, _ := xsql.NewFunctionValuersForOp(ctx)
+	handleItem := func(input any) {
+		data, processed := s.commonIngest(ctx, input)
+		if processed {
+			return
+		}
+		s.onProcessStart(ctx, input)
+		switch row := data.(type) {
+		case *xsql.Tuple:
+			windowEnd := row.Timestamp
+			windowStart := windowEnd.Add(-s.Length)
+			s.state.LatestWindowStart = windowStart
+			s.gcScanner()
+			s.collectAdd(ctx, fv, row)
+			sendWindow := true
+			if s.triggerCondition != nil {
+				sendWindow = isMatchCondition(ctx, s.triggerCondition, fv, row, s.stateFuncs)
+			}
+			if s.Delay > 0 && sendWindow {
+				sendWindow = false
+				pending := PendingSlidingWindow{
+					ID:        s.state.NextPendingID,
+					FireAt:    timex.GetNow().Add(s.Delay),
+					WindowEnd: windowEnd.Add(s.Delay),
+				}
+				s.state.NextPendingID++
+				s.state.Pending = append(s.state.Pending, pending)
+				s.schedulePendingWindow(ctx, pending)
+			}
+			if sendWindow {
+				s.emitWindow(ctx, windowStart, windowEnd)
+			}
+		}
+		s.onProcessEnd(ctx)
+	}
 	for {
+		// Due backlog rows and barriers ordered by the checkpoint handler
+		// take priority over fresh input; timer and control cases below
+		// stay exactly as before.
+		if due, ok := s.nextDue(); ok {
+			handleItem(due)
+			continue
+		}
 		select {
 		case <-ctx.Done():
 			return
 		case pendingID := <-s.delayNotify:
 			s.emitPendingWindow(ctx, pendingID)
 		case input := <-s.input:
-			data, processed := s.commonIngest(ctx, input)
-			if processed {
-				continue
-			}
-			s.onProcessStart(ctx, input)
-			switch row := data.(type) {
-			case *xsql.Tuple:
-				windowEnd := row.Timestamp
-				windowStart := windowEnd.Add(-s.Length)
-				s.state.LatestWindowStart = windowStart
-				s.gcScanner()
-				s.collectAdd(ctx, fv, row)
-				sendWindow := true
-				if s.triggerCondition != nil {
-					sendWindow = isMatchCondition(ctx, s.triggerCondition, fv, row, s.stateFuncs)
-				}
-				if s.Delay > 0 && sendWindow {
-					sendWindow = false
-					pending := PendingSlidingWindow{
-						ID:        s.state.NextPendingID,
-						FireAt:    timex.GetNow().Add(s.Delay),
-						WindowEnd: windowEnd.Add(s.Delay),
-					}
-					s.state.NextPendingID++
-					s.state.Pending = append(s.state.Pending, pending)
-					s.schedulePendingWindow(ctx, pending)
-				}
-				if sendWindow {
-					s.emitWindow(ctx, windowStart, windowEnd)
-				}
-			}
-			s.onProcessEnd(ctx)
+			handleItem(input)
 		}
 	}
 }

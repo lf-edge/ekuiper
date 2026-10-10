@@ -133,38 +133,48 @@ func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
 			o.onSend(ctx, val)
 		}
 	}
+	handleItem := func(item any) {
+		data, processed := o.commonIngestWithControl(ctx, item, func(marker interface{}) bool {
+			if watermark, ok := marker.(*xsql.WatermarkTuple); ok {
+				if handler, ok := o.op.(WatermarkOperation); ok {
+					adjusted, err := handler.Watermark(exeCtx, watermark)
+					if err != nil {
+						o.onError(ctx, err)
+					} else if adjusted != nil {
+						o.Broadcast(adjusted)
+					}
+					return true
+				}
+			}
+			if finalizer, ok := o.op.(FinalizableOperation); ok {
+				switch marker.(type) {
+				case xsql.EOFTuple, xsql.BatchEOFTuple:
+					emitResult(finalizer.Finalize(exeCtx, marker, fv, afv))
+				}
+			}
+			return false
+		})
+		if processed {
+			return
+		}
+		o.onProcessStart(ctx, data)
+		emitResult(o.op.Apply(exeCtx, data, fv, afv))
+		o.onProcessEnd(ctx)
+		o.statManager.SetBufferLength(int64(len(o.input)))
+	}
 
 	for {
+		// Due backlog rows and barriers ordered by the checkpoint handler
+		// take priority over fresh input without blocking timers or
+		// cancellation; the select below stays exactly as before.
+		if due, ok := o.nextDue(); ok {
+			handleItem(due)
+			continue
+		}
 		select {
 		// process incoming item
 		case item := <-o.input:
-			data, processed := o.commonIngestWithControl(ctx, item, func(marker interface{}) bool {
-				if watermark, ok := marker.(*xsql.WatermarkTuple); ok {
-					if handler, ok := o.op.(WatermarkOperation); ok {
-						adjusted, err := handler.Watermark(exeCtx, watermark)
-						if err != nil {
-							o.onError(ctx, err)
-						} else if adjusted != nil {
-							o.Broadcast(adjusted)
-						}
-						return true
-					}
-				}
-				if finalizer, ok := o.op.(FinalizableOperation); ok {
-					switch marker.(type) {
-					case xsql.EOFTuple, xsql.BatchEOFTuple:
-						emitResult(finalizer.Finalize(exeCtx, marker, fv, afv))
-					}
-				}
-				return false
-			})
-			if processed {
-				break
-			}
-			o.onProcessStart(ctx, data)
-			emitResult(o.op.Apply(exeCtx, data, fv, afv))
-			o.onProcessEnd(ctx)
-			o.statManager.SetBufferLength(int64(len(o.input)))
+			handleItem(item)
 		// is cancelling
 		case <-done:
 			logger.Infof("unary operator %s instance %d cancelling....", o.name, ctx.GetInstanceId())
