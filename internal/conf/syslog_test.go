@@ -19,6 +19,7 @@ package conf
 import (
 	"bytes"
 	"net"
+	"os"
 	"path/filepath"
 	"testing"
 	"time"
@@ -30,7 +31,11 @@ import (
 )
 
 func TestSetConsoleAndFileLogDisabledKeepsSyslog(t *testing.T) {
-	address := filepath.Join(t.TempDir(), "syslog.sock")
+	// Keep the socket path short enough for Unix socket limits on macOS.
+	dir, err := os.MkdirTemp(".", "ks-")
+	require.NoError(t, err)
+	t.Cleanup(func() { os.RemoveAll(dir) })
+	address := filepath.Join(dir, "s.sock")
 	listener, err := net.ListenUnixgram("unixgram", &net.UnixAddr{Name: address, Net: "unixgram"})
 	require.NoError(t, err)
 	t.Cleanup(func() { listener.Close() })
