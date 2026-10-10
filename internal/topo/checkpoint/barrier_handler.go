@@ -311,19 +311,6 @@ func (h *BarrierAligner) maybeCompleteLocked(ctx api.StreamContext) {
 	h.backlog = append(partitioned, rest...)
 }
 
-// serveBarrier applies a due barrier's alignment bookkeeping. Arrivals were
-// already recorded at enqueue time, so serving only advances epochs and
-// checks completion.
-func (h *BarrierAligner) serveBarrier(d *Barrier) {
-	if d.CheckpointId <= h.firedEpoch || d.CheckpointId < h.curEpoch {
-		return
-	}
-	if d.CheckpointId > h.curEpoch {
-		h.abortLocked(h.curEpoch)
-		h.curEpoch = d.CheckpointId
-	}
-}
-
 // fireLocked runs the checkpoint trigger and releases everything held for
 // that epoch, even when the trigger reports an error: the checkpoint is
 // dead but the stream must continue, matching the previous failure behavior
