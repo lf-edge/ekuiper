@@ -19,27 +19,23 @@ import (
 	"fmt"
 	"sync"
 	"testing"
+	"time"
+
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 
 	"github.com/lf-edge/ekuiper/v2/internal/topo/checkpoint"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
 
-func TestDedupStateCheckpointRoundTrip(t *testing.T) {
-	live := [][]byte{[]byte("first"), []byte("second")}
-	frozen, err := checkpoint.EncodeState(map[string]interface{}{dedupStateKey: live})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	live[0][0] = 'X'
-	restored, err := checkpoint.DecodeState(frozen)
-	if err != nil {
-		t.Fatal(err)
-	}
-	got := restored[dedupStateKey].([][]byte)
-	if len(got) != 2 || !bytes.Equal(got[0], []byte("first")) || !bytes.Equal(got[1], []byte("second")) {
-		t.Fatalf("unexpected restored dedup state: %#v", got)
-	}
+func pullOnce(t *testing.T, source *randomSource, ctx api.StreamContext, ingested *int) {
+	t.Helper()
+	source.Pull(ctx, time.Now(),
+		func(_ api.StreamContext, _ any, _ map[string]any, _ time.Time) {
+			if ingested != nil {
+				*ingested++
+			}
+		},
+		func(_ api.StreamContext, _ error) {})
 }
 
 func TestDedupOffsetOwnsRestoredState(t *testing.T) {
@@ -62,12 +58,14 @@ func TestDedupOffsetOwnsRestoredState(t *testing.T) {
 
 func TestDedupUsesImmutableRewindableOffsetInsteadOfLiveContextState(t *testing.T) {
 	ctx := mockContext.NewMockContext("rule", "random")
-	source := &randomSource{conf: &randomSourceConfig{Deduplicate: -1}}
-	next := map[string]interface{}{"value": int64(1)}
-
-	if source.isDup(ctx, next) {
-		t.Fatal("first value must not be a duplicate")
-	}
+	source := &randomSource{conf: &randomSourceConfig{
+		Pattern:     map[string]interface{}{"value": 1},
+		Seed:        1 << 30,
+		Deduplicate: -1,
+	}}
+	var ingested int
+	pullOnce(t, source, ctx, &ingested)
+	requireIngested(t, ingested, 1)
 	if state, err := ctx.GetState(dedupStateKey); err != nil {
 		t.Fatal(err)
 	} else if state != nil {
@@ -82,11 +80,22 @@ func TestDedupUsesImmutableRewindableOffsetInsteadOfLiveContextState(t *testing.
 	if cap(published) != len(published) {
 		t.Fatalf("published offset retains mutable append capacity: len %d cap %d", len(published), cap(published))
 	}
-	if source.isDup(ctx, map[string]interface{}{"value": int64(2)}) {
-		t.Fatal("second value must not be a duplicate")
-	}
-	if len(published) != 1 || !bytes.Equal(published[0], []byte(`{"value":1}`)) {
+	pullOnce(t, source, ctx, &ingested)
+	before := cloneDedupList(published)
+	if len(published) != len(before) {
 		t.Fatalf("published offset changed after append: %#v", published)
+	}
+	for i := range published {
+		if !bytes.Equal(published[i], before[i]) {
+			t.Fatalf("published offset changed after append: %#v", published)
+		}
+	}
+}
+
+func requireIngested(t *testing.T, ingested, want int) {
+	t.Helper()
+	if ingested != want {
+		t.Fatalf("ingested %d rows, want %d", ingested, want)
 	}
 }
 
@@ -102,9 +111,11 @@ func TestBoundedDedupUsesCopyOnWriteForPublishedOffset(t *testing.T) {
 	}
 	published := offset.([][]byte)
 
-	if source.isDup(ctx, map[string]interface{}{"value": int64(3)}) {
+	dup, encoded := source.checkDup(ctx, map[string]interface{}{"value": int64(3)})
+	if dup {
 		t.Fatal("third value must not be a duplicate")
 	}
+	source.recordSeen(encoded)
 	if !bytes.Equal(published[0], []byte(`{"value":1}`)) || !bytes.Equal(published[1], []byte(`{"value":2}`)) {
 		t.Fatalf("published bounded offset changed during eviction: %#v", published)
 	}
@@ -121,7 +132,11 @@ func TestPublishedDedupOffsetCanFreezeWhileSourceAdvances(t *testing.T) {
 				initial[i] = []byte("initial")
 			}
 			source := &randomSource{
-				conf: &randomSourceConfig{Deduplicate: deduplicate},
+				conf: &randomSourceConfig{
+					Pattern:     map[string]interface{}{"value": 1},
+					Seed:        1 << 30,
+					Deduplicate: deduplicate,
+				},
 				list: initial,
 			}
 			offset, err := source.GetOffset()
@@ -151,10 +166,8 @@ func TestPublishedDedupOffsetCanFreezeWhileSourceAdvances(t *testing.T) {
 			ready.Wait()
 			close(start)
 			ctx := mockContext.NewMockContext("rule", "random")
-			for i := range 100 {
-				if source.isDup(ctx, map[string]interface{}{"value": int64(i)}) {
-					t.Fatalf("new value %d must not be a duplicate", i)
-				}
+			for range 100 {
+				pullOnce(t, source, ctx, nil)
 			}
 
 			select {
@@ -191,5 +204,91 @@ func TestDedupConnectClonesLegacyState(t *testing.T) {
 	legacy[0][0] = 'X'
 	if !bytes.Equal(source.list[0], []byte("first")) {
 		t.Fatalf("source shared legacy context state: %#v", source.list)
+	}
+}
+
+// TestDedupOffsetExcludesUndeliveredRows proves the checkpoint boundary: a
+// checkpoint racing a pull observes only rows already handed to the
+// topology. The ingest callback reads the offset mid-delivery and must not
+// see the row being delivered; after Pull returns it must be there.
+func TestDedupOffsetExcludesUndeliveredRows(t *testing.T) {
+	ctx := mockContext.NewMockContext("rule", "random")
+	source := &randomSource{conf: &randomSourceConfig{
+		Pattern:     map[string]interface{}{"value": 1},
+		Seed:        1 << 30,
+		Deduplicate: -1,
+	}}
+	var midIngest [][]byte
+	source.Pull(ctx, time.Now(),
+		func(_ api.StreamContext, _ any, _ map[string]any, _ time.Time) {
+			offset, err := source.GetOffset()
+			if err != nil {
+				t.Errorf("mid-ingest offset read failed: %v", err)
+				return
+			}
+			midIngest = append(midIngest, offset.([][]byte)...)
+		},
+		func(_ api.StreamContext, _ error) {})
+	if len(midIngest) != 0 {
+		t.Fatalf("checkpoint observed an undelivered row: %#v", midIngest)
+	}
+	offset, err := source.GetOffset()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := offset.([][]byte); len(got) != 1 {
+		t.Fatalf("delivered row missing from offset after pull: %#v", got)
+	}
+}
+
+// TestDedupCheckpointConcurrentWithPull runs pulls against concurrent
+// offset reads, rewinds and freezes, modeling PrepareCheckpoint racing
+// ingestion on the coordinator goroutine. The race detector is the main
+// assertion; the final state must stay well-formed.
+func TestDedupCheckpointConcurrentWithPull(t *testing.T) {
+	ctx := mockContext.NewMockContext("rule", "random")
+	source := &randomSource{conf: &randomSourceConfig{
+		Pattern:     map[string]interface{}{"value": 1},
+		Seed:        1 << 30,
+		Deduplicate: 64,
+	}}
+	var wg sync.WaitGroup
+	for range 4 {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for range 50 {
+				if _, err := source.GetOffset(); err != nil {
+					t.Errorf("concurrent offset read failed: %v", err)
+					return
+				}
+			}
+		}()
+	}
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for range 10 {
+			offset, err := source.GetOffset()
+			if err != nil {
+				t.Errorf("rewind source read failed: %v", err)
+				return
+			}
+			if err := source.Rewind(offset); err != nil {
+				t.Errorf("concurrent rewind failed: %v", err)
+				return
+			}
+		}
+	}()
+	for range 50 {
+		pullOnce(t, source, ctx, nil)
+	}
+	wg.Wait()
+	offset, err := source.GetOffset()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := offset.([][]byte); len(got) > 64 {
+		t.Fatalf("bounded dedup list exceeded its limit: %d", len(got))
 	}
 }

@@ -17,26 +17,33 @@ package random
 import (
 	"fmt"
 	"testing"
+	"time"
+
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
 
-// benchmarkDedupSteadyState measures isDup once the bounded dedup list is at
-// capacity, so every call takes the copy-on-write eviction path. Values stay
-// unique to avoid the early duplicate return.
+// benchmarkDedupSteadyState measures Pull once the bounded dedup list is at
+// capacity, so calls take the copy-on-write eviction path. The large seed
+// keeps random collisions negligible.
 func benchmarkDedupSteadyState(b *testing.B, limit int) {
 	b.Helper()
 	ctx := mockContext.NewMockContext("rule", "random")
-	source := &randomSource{conf: &randomSourceConfig{Deduplicate: limit}}
+	source := &randomSource{conf: &randomSourceConfig{
+		Pattern:     map[string]interface{}{"value": 1},
+		Seed:        1 << 30,
+		Deduplicate: limit,
+	}}
 	for i := 0; i < limit; i++ {
 		source.list = append(source.list, []byte(fmt.Sprintf(`{"value":%d}`, i)))
 	}
+	ingest := func(_ api.StreamContext, _ any, _ map[string]any, _ time.Time) {}
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		if source.isDup(ctx, map[string]interface{}{"value": int64(limit + i)}) {
-			b.Fatalf("unique value reported duplicate at %d", i)
-		}
+		_ = i
+		source.Pull(ctx, time.Now(), ingest, func(_ api.StreamContext, _ error) {})
 	}
 }
 

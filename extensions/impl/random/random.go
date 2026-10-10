@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"math/rand"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
@@ -46,6 +47,10 @@ type randomSourceConfig struct {
 // Emit data randomly with only a string field
 type randomSource struct {
 	conf *randomSourceConfig
+	// mu serializes dedup list updates against checkpoint offset reads.
+	// Pulls run serially per source, while PrepareCheckpoint may read the
+	// offset concurrently from the coordinator goroutine.
+	mu   sync.Mutex
 	list [][]byte
 }
 
@@ -99,12 +104,24 @@ func (s *randomSource) Connect(ctx api.StreamContext, sch api.StatusChangeHandle
 
 func (s *randomSource) Pull(ctx api.StreamContext, trigger time.Time, ingest api.TupleIngest, ingestError api.ErrorIngest) {
 	next := randomize(s.conf.Pattern, s.conf.Seed)
-	if s.conf.Deduplicate != 0 && s.isDup(ctx, next) {
-		ctx.GetLogger().Debugf("find duplicate")
-		return
+	var serialized []byte
+	if s.conf.Deduplicate != 0 {
+		dup, encoded := s.checkDup(ctx, next)
+		if dup {
+			ctx.GetLogger().Debugf("find duplicate")
+			return
+		}
+		serialized = encoded
 	}
 	ctx.GetLogger().Debugf("Send out data %v", next)
 	ingest(ctx, next, nil, trigger)
+	if s.conf.Deduplicate != 0 {
+		// Record only after the row has been handed to the topology: a
+		// checkpoint racing this pull must never observe dedup progress
+		// for a row that was never delivered, otherwise a restore would
+		// skip it as a duplicate and the row would be lost.
+		s.recordSeen(serialized)
+	}
 }
 
 func randomize(p map[string]interface{}, seed int) map[string]interface{} {
@@ -120,21 +137,34 @@ func randomize(p map[string]interface{}, seed int) map[string]interface{} {
 	return r
 }
 
-func (s *randomSource) isDup(ctx api.StreamContext, next map[string]interface{}) bool {
+// checkDup reports whether next was already seen without modifying any
+// state, so a concurrent checkpoint offset read observes only rows that
+// were actually delivered.
+func (s *randomSource) checkDup(ctx api.StreamContext, next map[string]interface{}) (bool, []byte) {
 	logger := ctx.GetLogger()
 
 	ns, err := json.Marshal(next)
 	if err != nil {
 		logger.Warnf("invalid input data %v", next)
-		return true
+		return true, nil
 	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	for _, ps := range s.list {
 		if bytes.Equal(ns, ps) {
 			logger.Debugf("got duplicate %s", ns)
-			return true
+			return true, nil
 		}
 	}
 	logger.Debugf("no duplicate %s", ns)
+	return false, ns
+}
+
+// recordSeen remembers a delivered row for deduplication. It must run after
+// ingest returns so the checkpoint offset never advances past delivery.
+func (s *randomSource) recordSeen(ns []byte) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	if s.conf.Deduplicate > 0 && len(s.list) >= s.conf.Deduplicate {
 		// Offsets already published to SourceNode are immutable. Build a new
 		// outer slice before evicting an entry so a checkpoint cannot observe
@@ -145,16 +175,17 @@ func (s *randomSource) isDup(ctx api.StreamContext, next map[string]interface{})
 		copy(nextList, s.list[len(s.list)-(limit-1):])
 		nextList[limit-1] = ns
 		s.list = nextList
-		return false
+		return
 	}
 	s.list = append(s.list, ns)
-	return false
 }
 
 func (s *randomSource) GetOffset() (any, error) {
 	if s.conf.Deduplicate == 0 {
 		return nil, nil
 	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	// Restrict capacity so callers cannot reslice into storage that a later
 	// append may reuse. Existing entries are never modified.
 	return s.list[:len(s.list):len(s.list)], nil
@@ -170,6 +201,8 @@ func (s *randomSource) Rewind(offset any) error {
 	if !ok {
 		return fmt.Errorf("random source dedup offset has invalid type %T", offset)
 	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	s.list = cloneDedupList(list)
 	return nil
 }
