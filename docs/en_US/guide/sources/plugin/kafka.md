@@ -46,3 +46,4 @@ You can check the connectivity of the corresponding sink endpoint in advance thr
 | maxBytes           | true     | The maximum number of bytes that a single Kafka message batch can carry, the default is 1MB               |
 | groupID            | true     | The group ID used by eKuiper when consuming kafka messages. |
 | partition | true     | The partition specified when eKuiper consumes kafka messages |
+| offsetReset | true     | Specifies where to automatically reset the offset when there is no committed offset. Supported values are `earliest` and `latest`. Default to `latest` |

@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	"github.com/pingcap/failpoint"
+	kafkago "github.com/segmentio/kafka-go"
 	"github.com/stretchr/testify/require"
 
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
@@ -58,6 +59,13 @@ func TestKafkaSource(t *testing.T) {
 				"saslAuthType": "plain",
 			},
 		},
+		{
+			configs: map[string]any{
+				"datasource":  "t",
+				"brokers":     "localhost:9092",
+				"offsetReset": "foo",
+			},
+		},
 	}
 	ctx := mockContext.NewMockContext("1", "2")
 	for _, tc := range testcases {
@@ -68,10 +76,16 @@ func TestKafkaSource(t *testing.T) {
 		"brokers":    "localhost:9092",
 	}
 	require.NoError(t, ks.Provision(ctx, configs))
+	require.Equal(t, kafkago.LastOffset, ks.sc.GetReaderConfig().StartOffset)
 	require.NoError(t, ks.Connect(ctx, func(status string, message string) {
 		// do nothing
 	}))
 	require.NoError(t, ks.Close(ctx))
+
+	configs["offsetReset"] = OffsetResetEarliest
+	ks2 := &KafkaSource{}
+	require.NoError(t, ks2.Provision(ctx, configs))
+	require.Equal(t, kafkago.FirstOffset, ks2.sc.GetReaderConfig().StartOffset)
 
 	for i := mockErrStart + 1; i < mockErrEnd; i++ {
 		failpoint.Enable("github.com/lf-edge/ekuiper/v2/extensions/impl/kafka/kafkaErr", fmt.Sprintf("return(%v)", i))
