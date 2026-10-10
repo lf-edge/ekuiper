@@ -164,30 +164,55 @@ func BenchmarkIncAggSnapshotDeferral(b *testing.B) {
 }
 
 // PrepareCheckpoint materializes snapshots for executors that support them
-// and skips the rest without failing the barrier.
+// using real aggregated data: after rows flow through the aggregation path,
+// the barrier-time snapshot must capture their function state.
 func TestWindowIncAggPrepareCheckpoint(t *testing.T) {
+	ctx := mockContext.NewMockContext("1", "2")
+	aggFields := []*ast.Field{
+		{
+			Name: "inc_agg_col_1",
+			Expr: &ast.Call{
+				Name:     "inc_count",
+				FuncType: ast.FuncTypeScalar,
+				Args:     []ast.Expr{&ast.Wildcard{Token: ast.ASTERISK}},
+				FuncId:   1,
+			},
+		},
+	}
 	op, err := NewWindowIncAggOp("prepare", &WindowConfig{
 		Type:        ast.COUNT_WINDOW,
 		CountLength: 1,
-	}, nil, nil, &def.RuleOption{BufferLength: 1024})
+	}, nil, aggFields, &def.RuleOption{BufferLength: 1024})
 	require.NoError(t, err)
+	co, ok := op.WindowExec.(*CountWindowIncAggOp)
+	require.True(t, ok)
+	co.CurrWindow = newIncAggWindow(ctx, time.Now())
+	incAggCal(ctx, "dim", &xsql.Tuple{Message: map[string]any{"a": int64(1)}}, co.CurrWindow, aggFields)
 	require.NoError(t, op.PrepareCheckpoint())
-
-	op.WindowExec = legacyWindowExec{}
-	require.NoError(t, op.PrepareCheckpoint())
+	require.NotNil(t, co.CurrWindow.DimensionsIncAggRange["dim"].FunctionState)
+	require.Empty(t, co.CurrWindow.dirtyDimensions)
 }
-
-// legacyWindowExec stands in for executors that predate snapshot support:
-// the barrier must skip them instead of failing.
-type legacyWindowExec struct{ windowIncAggExec }
 
 // Snapshot must materialize every buffered window, even when no watermark
 // has triggered an emit yet.
 func TestHoppingEventOpSnapshotMaterializesBufferedWindows(t *testing.T) {
 	ctx := mockContext.NewMockContext("1", "2")
-	op := &HoppingWindowIncAggEventOp{}
-	op.HoppingWindowIncAggEventOpState.CurrWindowList = []*IncAggWindow{
-		newIncAggWindow(ctx, time.Now()),
+	window := newIncAggWindow(ctx, time.Now())
+	aggFields := []*ast.Field{
+		{
+			Name: "inc_agg_col_1",
+			Expr: &ast.Call{
+				Name:     "inc_count",
+				FuncType: ast.FuncTypeScalar,
+				Args:     []ast.Expr{&ast.Wildcard{Token: ast.ASTERISK}},
+				FuncId:   1,
+			},
+		},
 	}
+	incAggCal(ctx, "dim", &xsql.Tuple{Message: map[string]any{"a": int64(1)}}, window, aggFields)
+	op := &HoppingWindowIncAggEventOp{}
+	op.HoppingWindowIncAggEventOpState.CurrWindowList = []*IncAggWindow{window}
 	require.NoError(t, op.Snapshot(ctx))
+	require.NotNil(t, window.DimensionsIncAggRange["dim"].FunctionState)
+	require.Empty(t, window.dirtyDimensions)
 }
