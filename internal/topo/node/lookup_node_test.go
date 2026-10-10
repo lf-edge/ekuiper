@@ -889,7 +889,8 @@ func TestLookupQos2BufferedInputs(t *testing.T) {
 	err = op.AddOutput(out, "test")
 	assert.NoError(t, err)
 	errCh := make(chan error, 10)
-	op.Exec(ctx, errCh)
+	// Create the lookup table before the only Exec: starting the loop twice
+	// would run two goroutines racing on the same input channel.
 	err = lookup.CreateInstance("test2", "mock", &ast.Options{
 		DATASOURCE: "test2",
 		TYPE:       "mock",
