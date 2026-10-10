@@ -80,6 +80,14 @@ func TestIncAggCountWindowState(t *testing.T) {
 	time.Sleep(10 * time.Millisecond)
 	input <- &xsql.Tuple{Message: map[string]any{"a": int64(1)}}
 	time.Sleep(10 * time.Millisecond)
+	// Materialize function snapshots through the real checkpoint boundary,
+	// as a barrier would in production, so the second operator restored
+	// from the shared state continues the aggregation instead of
+	// restarting it. The row is fully handled (PutState precedes
+	// onProcessEnd) and this op has no timers, so the loop is parked and
+	// the off-loop call cannot race it.
+	waitForIncAggProcessed(t, op, 1)
+	require.NoError(t, op.PrepareCheckpoint())
 
 	op2, err := node.NewWindowIncAggOp("1", &node.WindowConfig{
 		Type:        incPlan.WType,
@@ -300,8 +308,13 @@ func TestIncAggSlidingWindowRestoreFromDecodedState(t *testing.T) {
 		return ok
 	})
 
-	frozen := freezeIncAggState(t, ctx)
+	// Materialize function snapshots through the real checkpoint boundary,
+	// as a barrier would in production, before freezing the state. The loop
+	// is stopped first: in production PrepareCheckpoint runs on the input
+	// loop itself, so calling it concurrently with a running loop would race.
 	stopIncAggOperator(t, ctx, cancel)
+	require.NoError(t, op.PrepareCheckpoint())
+	frozen := freezeIncAggState(t, ctx)
 	restoredCtx, restoredCancel := decodedIncAggContext(t, frozen, "decode_rule", "sliding")
 
 	restoredOp, err := node.NewWindowIncAggOp("checkpoint_test", config, incPlan.Dimensions, incPlan.IncAggFuncs, options)
