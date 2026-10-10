@@ -93,8 +93,8 @@ func TestResponderSendsDECOnPrepareFailure(t *testing.T) {
 	if task.guardDepth != 0 {
 		t.Fatalf("checkpoint guard was not released: depth %d", task.guardDepth)
 	}
-	if len(task.broadcasts) != 0 {
-		t.Fatalf("barrier must not propagate after prepare failure: %#v", task.broadcasts)
+	if len(task.broadcasts) != 1 {
+		t.Fatalf("barrier must propagate so downstream tasks can terminate the checkpoint: %#v", task.broadcasts)
 	}
 }
 

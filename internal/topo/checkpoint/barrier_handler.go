@@ -15,18 +15,24 @@
 package checkpoint
 
 import (
-	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"sync"
 
-	"github.com/lf-edge/ekuiper/v2/pkg/infra"
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 )
 
 type BarrierHandler interface {
 	Process(data *BufferOrEvent, ctx api.StreamContext) bool // If data is barrier return true, else return false
-	SetOutput(chan<- *BufferOrEvent)                         // It is using for block a channel
+	// NextDue returns the next backlog row or barrier the operator loop must
+	// handle before pulling fresh input, preserving arrival order. It is
+	// non-blocking and returns false when nothing is due. Operators that may
+	// observe more than one input must consult it on every loop iteration;
+	// see BarrierAligner for the ordering contract.
+	NextDue() (*BufferOrEvent, bool)
 }
 
 // For qos 1, simple track barriers
 type BarrierTracker struct {
+	mu                 sync.Mutex
 	responder          Responder
 	inputCount         int
 	pendingCheckpoints map[int64]int
@@ -41,6 +47,8 @@ func NewBarrierTracker(responder Responder, inputCount int) *BarrierTracker {
 }
 
 func (h *BarrierTracker) Process(data *BufferOrEvent, ctx api.StreamContext) bool {
+	h.mu.Lock()
+	defer h.mu.Unlock()
 	d := data.Data
 	if b, ok := d.(*Barrier); ok {
 		h.processBarrier(b, ctx)
@@ -49,8 +57,9 @@ func (h *BarrierTracker) Process(data *BufferOrEvent, ctx api.StreamContext) boo
 	return false
 }
 
-func (h *BarrierTracker) SetOutput(_ chan<- *BufferOrEvent) {
-	// do nothing, does not need it
+// NextDue always reports nothing: the tracker never holds rows back.
+func (h *BarrierTracker) NextDue() (*BufferOrEvent, bool) {
+	return nil, false
 }
 
 func (h *BarrierTracker) processBarrier(b *Barrier, ctx api.StreamContext) {
@@ -85,120 +94,275 @@ func (h *BarrierTracker) processBarrier(b *Barrier, ctx api.StreamContext) {
 	}
 }
 
-// For qos 2, block an input until all barriers are received
+// For qos 2, align barriers across inputs while preserving row order.
+//
+// Ordering contract: rows are snapshotted exactly when their channel's
+// barrier is snapshotted upstream. A row arriving after its channel's barrier
+// for epoch E must be processed after E's trigger fires; a row arriving
+// before it must be processed before. The aligner tags such rows (heldFor)
+// and positions the trigger as a marker inside a single arrival-ordered
+// backlog, so the operator loop drains rows strictly before the trigger by
+// consulting NextDue before pulling fresh input. No row is ever held past
+// the trigger it belongs after, and no trigger fires before its rows.
+//
+// Single-input operators keep the previous immediate behavior and never
+// queue: barriers trigger inline and rows always flow.
 type BarrierAligner struct {
-	responder           Responder
-	inputCount          int
-	currentCheckpointId int64
-	output              chan<- *BufferOrEvent
-	blockedChannels     map[string]bool
-	buffer              []*BufferOrEvent
+	mu         sync.Mutex
+	responder  Responder
+	inputCount int
+	// curEpoch is the epoch currently aligning or deferring; 0 means idle.
+	curEpoch int64
+	// firedEpoch is the last epoch whose trigger fired.
+	firedEpoch int64
+	// delivered tracks per-epoch barrier arrivals by channel.
+	delivered map[int64]map[string]bool
+	// armed marks epochs whose trigger marker is placed but not yet fired.
+	armed map[int64]bool
+	// backlog holds rows, barriers and trigger markers in arrival order.
+	backlog []backlogEntry
+	// inflight holds due items handed out via NextDue; when the operator
+	// loop feeds them back through Process they bypass queueing.
+	inflight map[*BufferOrEvent]bool
+}
+
+// backlogEntry is one queued item. Rows carry heldFor when they must follow
+// the trigger of that epoch; barriers carry their epoch for adoption and
+// completion bookkeeping; markers position a trigger after all preceding
+// rows have been processed.
+type backlogEntry struct {
+	item    *BufferOrEvent
+	heldFor int64
+	barrier bool
+	epoch   int64
+	marker  bool
+}
+
+// triggerMarker orders a checkpoint trigger inside the backlog. It fires
+// only after every row ahead of it has been processed by the operator.
+type triggerMarker struct {
+	checkpointID int64
 }
 
 func NewBarrierAligner(responder Responder, inputCount int) *BarrierAligner {
-	ba := &BarrierAligner{
-		responder:       responder,
-		inputCount:      inputCount,
-		blockedChannels: make(map[string]bool),
+	return &BarrierAligner{
+		responder:  responder,
+		inputCount: inputCount,
+		delivered:  make(map[int64]map[string]bool),
+		armed:      make(map[int64]bool),
+		inflight:   make(map[*BufferOrEvent]bool),
 	}
-	return ba
 }
 
 func (h *BarrierAligner) Process(data *BufferOrEvent, ctx api.StreamContext) bool {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	if h.inflight[data] {
+		delete(h.inflight, data)
+		return h.processDue(data, ctx)
+	}
+	// Single-input operators keep immediate behavior and never queue.
+	if h.inputCount == 1 {
+		if b, ok := data.Data.(*Barrier); ok {
+			if b.CheckpointId > h.firedEpoch {
+				h.firedEpoch = b.CheckpointId
+				if err := h.responder.TriggerCheckpoint(b.CheckpointId); err != nil {
+					ctx.GetLogger().Errorf("trigger checkpoint for %s err: %s", h.responder.GetName(), err)
+				}
+			}
+			return true
+		}
+		return false
+	}
 	switch d := data.Data.(type) {
 	case *Barrier:
-		h.processBarrier(d, ctx)
+		h.enqueueBarrier(data, d, ctx)
 		return true
 	default:
-		// If blocking, save to buffer
-		if h.inputCount > 1 && len(h.blockedChannels) > 0 {
-			if _, ok := h.blockedChannels[data.Channel]; ok {
-				h.buffer = append(h.buffer, data)
-				return true
-			}
-		}
+		return h.enqueueRow(data)
 	}
-	return false
 }
 
-func (h *BarrierAligner) processBarrier(b *Barrier, ctx api.StreamContext) {
+// processDue handles items previously handed out via NextDue. Rows flow
+// straight to the operator, barriers need no further bookkeeping because
+// arrivals were already recorded at enqueue time, and markers fire the
+// positioned trigger. None of them re-queue.
+func (h *BarrierAligner) processDue(data *BufferOrEvent, ctx api.StreamContext) bool {
+	switch d := data.Data.(type) {
+	case *Barrier:
+		_ = d
+		return true
+	case triggerMarker:
+		h.fireLocked(d.checkpointID, ctx)
+		return true
+	default:
+		return false
+	}
+}
+
+// enqueueRow holds a fresh row when ordering requires it, tagging rows that
+// arrived after their channel's barrier of the current epoch so they follow
+// that epoch's trigger. Otherwise the row flows immediately. It reports
+// whether the row was queued.
+func (h *BarrierAligner) enqueueRow(data *BufferOrEvent) bool {
+	if len(h.backlog) == 0 && !h.delivered[h.curEpoch][data.Channel] {
+		return false
+	}
+	var heldFor int64
+	if h.delivered[h.curEpoch][data.Channel] {
+		heldFor = h.curEpoch
+	}
+	h.backlog = append(h.backlog, backlogEntry{item: data, heldFor: heldFor})
+	return true
+}
+
+// enqueueBarrier records a fresh barrier arrival, advances epochs, and
+// completes the alignment when every input has delivered the epoch. Stale
+// barriers are dropped. Higher epochs preempt an incomplete alignment: rows
+// held for the preempted epoch are released as ordinary rows because that
+// checkpoint can never complete.
+func (h *BarrierAligner) enqueueBarrier(data *BufferOrEvent, b *Barrier, ctx api.StreamContext) {
 	logger := ctx.GetLogger()
-	logger.Debugf("Aligner process barrier %+v", b)
-	if h.inputCount == 1 {
-		if b.CheckpointId > h.currentCheckpointId {
-			h.currentCheckpointId = b.CheckpointId
-			err := h.responder.TriggerCheckpoint(b.CheckpointId)
-			if err != nil {
-				logger.Errorf("trigger checkpoint for %s err: %s", h.responder.GetName(), err)
-			}
-		}
+	if b.CheckpointId <= h.firedEpoch || b.CheckpointId < h.curEpoch {
+		logger.Debugf("Aligner drops stale barrier %+v", b)
 		return
 	}
-	if len(h.blockedChannels) > 0 {
-		if b.CheckpointId == h.currentCheckpointId {
-			h.onBarrier(b.OpId, ctx)
-		} else if b.CheckpointId > h.currentCheckpointId {
-			logger.Infof("Received checkpoint barrier for checkpoint %d before complete current checkpoint %d. Skipping current checkpoint.", b.CheckpointId, h.currentCheckpointId)
-			// TODO Abort checkpoint
+	if h.delivered[b.CheckpointId] == nil {
+		h.delivered[b.CheckpointId] = make(map[string]bool)
+	}
+	h.delivered[b.CheckpointId][data.Channel] = true
+	if b.CheckpointId > h.curEpoch {
+		h.abortLocked(h.curEpoch)
+		h.curEpoch = b.CheckpointId
+	}
+	h.backlog = append(h.backlog, backlogEntry{item: data, barrier: true, epoch: b.CheckpointId})
+	h.maybeCompleteLocked(ctx)
+}
 
-			h.releaseBlocksAndResetBarriers()
-			h.beginNewAlignment(b, ctx)
+// abortLocked retires an incomplete epoch: its held rows become ordinary
+// rows and its queued barriers are dropped because that checkpoint can
+// never complete once preempted.
+func (h *BarrierAligner) abortLocked(epoch int64) {
+	if epoch == 0 || h.armed[epoch] {
+		return
+	}
+	kept := h.backlog[:0]
+	for _, e := range h.backlog {
+		if e.barrier && e.epoch == epoch {
+			continue
+		}
+		if !e.barrier && !e.marker && e.heldFor == epoch {
+			e.heldFor = 0
+		}
+		kept = append(kept, e)
+	}
+	h.backlog = kept
+	delete(h.delivered, epoch)
+}
+
+// maybeCompleteLocked positions the trigger once every input has delivered
+// the current epoch. When no ordinary row precedes it, the trigger fires
+// immediately, preserving the previous trigger-then-replay behavior;
+// otherwise a marker orders it after the preceding rows.
+func (h *BarrierAligner) maybeCompleteLocked(ctx api.StreamContext) {
+	if h.armed[h.curEpoch] || len(h.delivered[h.curEpoch]) != h.inputCount {
+		return
+	}
+	logger := ctx.GetLogger()
+	logger.Debugf("Received all barriers, triggering checkpoint %d", h.curEpoch)
+	// Consume the epoch barriers: their bookkeeping is done.
+	kept := h.backlog[:0]
+	for _, e := range h.backlog {
+		if e.barrier && e.epoch == h.curEpoch {
+			continue
+		}
+		kept = append(kept, e)
+	}
+	h.backlog = kept
+	pre := 0
+	for _, e := range h.backlog {
+		if e.barrier || e.marker {
+			continue
+		}
+		if e.heldFor == 0 || e.heldFor <= h.firedEpoch {
+			pre++
+		}
+	}
+	if pre == 0 {
+		h.fireLocked(h.curEpoch, ctx)
+		return
+	}
+	h.armed[h.curEpoch] = true
+	// Stable partition: ordinary rows, then the marker, then everything else.
+	partitioned := make([]backlogEntry, 0, len(h.backlog)+1)
+	var rest []backlogEntry
+	for _, e := range h.backlog {
+		if !e.barrier && !e.marker && (e.heldFor == 0 || e.heldFor <= h.firedEpoch) {
+			partitioned = append(partitioned, e)
 		} else {
-			return
+			rest = append(rest, e)
 		}
-	} else if b.CheckpointId > h.currentCheckpointId {
-		logger.Debugf("Aligner process new alignment", b)
-		h.beginNewAlignment(b, ctx)
-	} else {
-		return
 	}
-	if len(h.blockedChannels) == h.inputCount {
-		logger.Debugf("Received all barriers, triggering checkpoint %d", b.CheckpointId)
-		err := h.responder.TriggerCheckpoint(b.CheckpointId)
-		if err != nil {
-			logger.Errorf("trigger checkpoint for %s err: %s", h.responder.GetName(), err)
-			h.releaseBlocksAndReplay()
-			return
-		}
-
-		h.releaseBlocksAndReplay()
-	}
-}
-
-func (h *BarrierAligner) onBarrier(name string, ctx api.StreamContext) {
-	logger := ctx.GetLogger()
-	if _, ok := h.blockedChannels[name]; !ok {
-		h.blockedChannels[name] = true
-		logger.Debugf("Received barrier from channel %s", name)
-	}
-}
-
-func (h *BarrierAligner) SetOutput(output chan<- *BufferOrEvent) {
-	h.output = output
-}
-
-func (h *BarrierAligner) releaseBlocksAndResetBarriers() {
-	h.blockedChannels = make(map[string]bool)
-}
-
-func (h *BarrierAligner) releaseBlocksAndReplay() {
-	h.releaseBlocksAndResetBarriers()
-	temp := append([]*BufferOrEvent(nil), h.buffer...)
-	h.buffer = make([]*BufferOrEvent, 0)
-	if len(temp) == 0 {
-		return
-	}
-	go infra.SafeRun(func() error {
-		for _, d := range temp {
-			h.output <- d
-		}
-		return nil
+	partitioned = append(partitioned, backlogEntry{
+		item:   &BufferOrEvent{Data: triggerMarker{checkpointID: h.curEpoch}},
+		marker: true,
+		epoch:  h.curEpoch,
 	})
+	h.backlog = append(partitioned, rest...)
 }
 
-func (h *BarrierAligner) beginNewAlignment(barrier *Barrier, ctx api.StreamContext) {
-	logger := ctx.GetLogger()
-	h.currentCheckpointId = barrier.CheckpointId
-	h.onBarrier(barrier.OpId, ctx)
-	logger.Debugf("Starting stream alignment for checkpoint %d", barrier.CheckpointId)
+// serveBarrier applies a due barrier's alignment bookkeeping. Arrivals were
+// already recorded at enqueue time, so serving only advances epochs and
+// checks completion.
+func (h *BarrierAligner) serveBarrier(d *Barrier) {
+	if d.CheckpointId <= h.firedEpoch || d.CheckpointId < h.curEpoch {
+		return
+	}
+	if d.CheckpointId > h.curEpoch {
+		h.abortLocked(h.curEpoch)
+		h.curEpoch = d.CheckpointId
+	}
+}
+
+// fireLocked runs the checkpoint trigger and releases everything held for
+// that epoch, even when the trigger reports an error: the checkpoint is
+// dead but the stream must continue, matching the previous failure behavior
+// of replaying the buffer and carrying on.
+func (h *BarrierAligner) fireLocked(checkpointID int64, ctx api.StreamContext) {
+	if err := h.responder.TriggerCheckpoint(checkpointID); err != nil {
+		ctx.GetLogger().Errorf("trigger checkpoint for %s err: %s", h.responder.GetName(), err)
+	}
+	delete(h.armed, checkpointID)
+	if checkpointID > h.firedEpoch {
+		h.firedEpoch = checkpointID
+	}
+	for i := range h.backlog {
+		if !h.backlog[i].barrier && !h.backlog[i].marker && h.backlog[i].heldFor <= checkpointID {
+			h.backlog[i].heldFor = 0
+		}
+	}
+	for epoch := range h.delivered {
+		if epoch <= checkpointID {
+			delete(h.delivered, epoch)
+		}
+	}
+}
+
+// NextDue returns the next backlog item the operator loop must handle
+// before pulling fresh input, or false when nothing is due. Head order is
+// strict: a row held for an unfired trigger stalls later items until its
+// marker fires, which the partition guarantees is positioned ahead of it.
+func (h *BarrierAligner) NextDue() (*BufferOrEvent, bool) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	if len(h.backlog) == 0 {
+		return nil, false
+	}
+	head := h.backlog[0]
+	if !head.barrier && !head.marker && head.heldFor > h.firedEpoch {
+		return nil, false
+	}
+	h.backlog = h.backlog[1:]
+	h.inflight[head.item] = true
+	return head.item, true
 }

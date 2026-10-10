@@ -67,17 +67,26 @@ func (re *ResponderExecutor) TriggerCheckpoint(checkpointId int64) error {
 		case <-ctx.Done():
 		}
 	}
-	if preparer, ok := re.task.(CheckpointPreparer); ok {
-		if err := preparer.PrepareCheckpoint(); err != nil {
-			unlockCheckpoint()
-			sendSignal(DEC)
-			return fmt.Errorf("task %s cannot prepare checkpoint: %w", name, err)
-		}
-	}
 	// create
 	barrier := &Barrier{
 		CheckpointId: checkpointId,
 		OpId:         name,
+	}
+	if preparer, ok := re.task.(CheckpointPreparer); ok {
+		if err := preparer.PrepareCheckpoint(); err != nil {
+			// Propagate the barrier downstream before reporting DEC, using
+			// the same input boundary as a normal checkpoint: the guard is
+			// still held here, exactly as on the success path below. This
+			// lets downstream alignments terminate instead of waiting for a
+			// barrier that never arrives. The coordinator discards the
+			// checkpoint on DEC, so it can never persist.
+			if nonSink, ok := re.task.(NonSinkTask); ok {
+				nonSink.Broadcast(barrier)
+			}
+			unlockCheckpoint()
+			sendSignal(DEC)
+			return fmt.Errorf("task %s cannot prepare checkpoint: %w", name, err)
+		}
 	}
 	// broadcast barrier
 	if nonSink, ok := re.task.(NonSinkTask); ok {

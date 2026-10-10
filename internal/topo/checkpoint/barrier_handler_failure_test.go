@@ -17,7 +17,6 @@ package checkpoint_test
 import (
 	"errors"
 	"testing"
-	"time"
 
 	"github.com/lf-edge/ekuiper/v2/internal/topo/checkpoint"
 	topoContext "github.com/lf-edge/ekuiper/v2/internal/topo/context"
@@ -25,8 +24,6 @@ import (
 
 func TestBarrierAlignerReleasesInputsOnCheckpointFailure(t *testing.T) {
 	aligner := checkpoint.NewBarrierAligner(&failingResponder{name: "window"}, 2)
-	output := make(chan *checkpoint.BufferOrEvent, 1)
-	aligner.SetOutput(output)
 	ctx := topoContext.Background()
 
 	aligner.Process(&checkpoint.BufferOrEvent{Channel: "left", Data: &checkpoint.Barrier{CheckpointId: 1, OpId: "left"}}, ctx)
@@ -36,16 +33,24 @@ func TestBarrierAlignerReleasesInputsOnCheckpointFailure(t *testing.T) {
 	}
 	aligner.Process(&checkpoint.BufferOrEvent{Channel: "right", Data: &checkpoint.Barrier{CheckpointId: 1, OpId: "right"}}, ctx)
 
+	// The failed checkpoint must not strand the buffered row: it drains via
+	// NextDue so the stream continues after the failure.
+	due, ok := aligner.NextDue()
+	if !ok {
+		t.Fatal("buffered row was not due after checkpoint failure")
+	}
+	if due != buffered {
+		t.Fatalf("unexpected due row: %#v", due)
+	}
+	if aligner.Process(due, ctx) {
+		t.Fatal("due row was not passed through to the operator")
+	}
+	if _, ok := aligner.NextDue(); ok {
+		t.Fatal("unexpected backlog after draining the failed checkpoint")
+	}
+	// Inputs are released: the next row flows without queueing.
 	if aligner.Process(&checkpoint.BufferOrEvent{Channel: "left", Data: "next-row"}, ctx) {
 		t.Fatal("input remained blocked after checkpoint failure")
-	}
-	select {
-	case got := <-output:
-		if got != buffered {
-			t.Fatalf("unexpected replayed row: %#v", got)
-		}
-	case <-time.After(time.Second):
-		t.Fatal("buffered row was not replayed after checkpoint failure")
 	}
 }
 
