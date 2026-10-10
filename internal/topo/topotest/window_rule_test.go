@@ -837,8 +837,8 @@ func TestIncAggTimeWindowRule(t *testing.T) {
 					},
 				},
 			},
-			M:               map[string]interface{}{},
-			CheckpointCount: 1,
+			M:                 map[string]interface{}{},
+			RequireCheckpoint: true,
 		},
 		{
 			Name: `TestIncAggHoppingTimeWindow`,
@@ -860,8 +860,8 @@ func TestIncAggTimeWindowRule(t *testing.T) {
 					},
 				},
 			},
-			M:               map[string]interface{}{},
-			CheckpointCount: 1,
+			M:                 map[string]interface{}{},
+			RequireCheckpoint: true,
 		},
 		{
 			Name: `TestIncAggSlidingDelayTimeWindow`,
@@ -881,8 +881,8 @@ func TestIncAggTimeWindowRule(t *testing.T) {
 					},
 				},
 			},
-			M:               map[string]interface{}{},
-			CheckpointCount: 1,
+			M:                 map[string]interface{}{},
+			RequireCheckpoint: true,
 		},
 	}
 	options := []*def.RuleOption{
@@ -942,8 +942,8 @@ func TestSlidingDelayV2Qos2(t *testing.T) {
 					},
 				},
 			},
-			M:               map[string]interface{}{},
-			CheckpointCount: 1,
+			M:                 map[string]interface{}{},
+			RequireCheckpoint: true,
 		},
 	}
 	opt := &def.RuleOption{

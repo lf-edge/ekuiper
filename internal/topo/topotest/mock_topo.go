@@ -49,12 +49,12 @@ type RuleTest struct {
 	T    *def.PrintableTopo // printable topo, an optional field
 	W    int                // wait time for each data sending, in milli
 	TL   int                // table load wait time before first data, in milli (for tests using lookup tables)
-	// CheckpointCount expects at least this many completed checkpoints by
-	// the end of the test. Zero skips the check. Set it on QoS 1/2 cases
-	// to prove a checkpoint really ran instead of only enabling QoS. The
-	// check is skipped for QoS 0 runs, where checkpointing cannot run by
-	// design; for QoS 1/2 a missing or inactive coordinator fails the test.
-	CheckpointCount int
+	// RequireCheckpoint proves that a checkpoint really completed during
+	// the test instead of only enabling QoS. Set it on QoS 1/2 cases; it
+	// is skipped for QoS 0 runs, where checkpointing cannot run by design.
+	// For QoS 1/2 a missing or inactive coordinator, or zero completed
+	// checkpoints, fails the test.
+	RequireCheckpoint bool
 }
 
 // CommonResultFunc A function to convert memory sink result to map slice
@@ -191,13 +191,13 @@ func DoRuleTestWithResultFunc(t *testing.T, tests []RuleTest, opt *def.RuleOptio
 			assert.Equal(t, tt.R, actual)
 			err := CompareMetrics(tp, tt.M)
 			assert.NoError(t, err)
-			if tt.CheckpointCount > 0 {
+			if tt.RequireCheckpoint {
 				if opt.Qos <= def.AtMostOnce {
 					// Checkpoints cannot run by design; nothing to prove.
 				} else if coordinator := tp.GetCoordinator(); coordinator == nil || !coordinator.IsActivated() {
-					t.Errorf("%s: expected at least %d completed checkpoints, but checkpointing is not active", tt.Name, tt.CheckpointCount)
-				} else if got := coordinator.GetCompleteCount(); got < tt.CheckpointCount {
-					t.Errorf("%s: expected at least %d completed checkpoints, got %d", tt.Name, tt.CheckpointCount, got)
+					t.Errorf("%s: expected a completed checkpoint, but checkpointing is not active", tt.Name)
+				} else if got := coordinator.GetCompleteCount(); got < 1 {
+					t.Errorf("%s: expected a completed checkpoint, got %d", tt.Name, got)
 				}
 			}
 		})
