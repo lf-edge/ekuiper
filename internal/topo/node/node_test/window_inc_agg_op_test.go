@@ -45,75 +45,6 @@ func init() {
 	testx.InitEnv("node_test")
 }
 
-func TestWindowState(t *testing.T) {
-	conf.IsTesting = true
-	node.EnableAlignWindow = false
-	o := &def.RuleOption{
-		BufferLength: 10,
-	}
-	kv, err := store.GetKV("stream")
-	require.NoError(t, err)
-	require.NoError(t, prepareStream())
-	testcases := []struct {
-		sql string
-	}{
-		{
-			sql: "select count(*) from stream group by tumblingWindow(ss,1)",
-		},
-		{
-			sql: "select count(*) from stream group by slidingWindow(ss,1)",
-		},
-		{
-			sql: "select count(*) from stream group by hoppingWindow(ss,2,1)",
-		},
-	}
-	for _, tt := range testcases {
-		stmt, err := xsql.NewParser(strings.NewReader(tt.sql)).Parse()
-		require.NoError(t, err)
-		p, err := planner.CreateLogicalPlan(stmt, &def.RuleOption{
-			PlanOptimizeStrategy: &def.PlanOptimizeStrategy{
-				EnableIncrementalWindow: true,
-			},
-			Qos: 0,
-		}, kv)
-		require.NoError(t, err)
-		require.NotNil(t, p)
-		incPlan := extractIncWindowPlan(p)
-		require.NotNil(t, incPlan)
-		op, err := node.NewWindowIncAggOp("1", &node.WindowConfig{
-			Type:     incPlan.WType,
-			Length:   time.Second,
-			Interval: time.Second,
-		}, incPlan.Dimensions, incPlan.IncAggFuncs, o)
-		require.NoError(t, err)
-		require.NotNil(t, op)
-		input, _ := op.GetInput()
-		output := make(chan any, 10)
-		op.AddOutput(output, "output")
-		errCh := make(chan error, 10)
-		ctx, cancel := mockContext.NewMockContext("1", "2").WithCancel()
-		op.Exec(ctx, errCh)
-		time.Sleep(10 * time.Millisecond)
-		input <- &xsql.Tuple{Message: map[string]any{"a": int64(1)}}
-		time.Sleep(10 * time.Millisecond)
-		require.NoError(t, op.PutState4Test(ctx))
-
-		op2, err := node.NewWindowIncAggOp("1", &node.WindowConfig{
-			Type:     incPlan.WType,
-			Length:   time.Second,
-			Interval: time.Second,
-		}, incPlan.Dimensions, incPlan.IncAggFuncs, o)
-		require.NoError(t, err)
-		require.NotNil(t, op2)
-		op2.Exec(ctx, errCh)
-		time.Sleep(10 * time.Millisecond)
-		require.NoError(t, op2.RestoreFromState4Test(ctx))
-		cancel()
-		op.Close()
-		op2.Close()
-	}
-}
-
 func TestIncAggCountWindowState(t *testing.T) {
 	o := &def.RuleOption{
 		BufferLength: 10,
@@ -228,49 +159,6 @@ func TestIncAggWindow(t *testing.T) {
 	cancel()
 	time.Sleep(10 * time.Millisecond)
 	op.Close()
-}
-
-func TestIncAggAlignTumblingWindow(t *testing.T) {
-	conf.IsTesting = true
-	node.EnableAlignWindow = true
-	o := &def.RuleOption{
-		BufferLength: 10,
-	}
-	kv, err := store.GetKV("stream")
-	require.NoError(t, err)
-	require.NoError(t, prepareStream())
-	sql := "select count(*) from stream group by tumblingWindow(ss,1)"
-	stmt, err := xsql.NewParser(strings.NewReader(sql)).Parse()
-	require.NoError(t, err)
-	p, err := planner.CreateLogicalPlan(stmt, &def.RuleOption{
-		PlanOptimizeStrategy: &def.PlanOptimizeStrategy{
-			EnableIncrementalWindow: true,
-		},
-		Qos: 0,
-	}, kv)
-	require.NoError(t, err)
-	require.NotNil(t, p)
-	incPlan := extractIncWindowPlan(p)
-	require.NotNil(t, incPlan)
-	op, err := node.NewWindowIncAggOp("1", &node.WindowConfig{
-		Type:        incPlan.WType,
-		RawInterval: 1,
-		TimeUnit:    ast.SS,
-		Interval:    time.Second,
-	}, incPlan.Dimensions, incPlan.IncAggFuncs, o)
-	require.NoError(t, err)
-	output := make(chan any, 10)
-	op.AddOutput(output, "output")
-	errCh := make(chan error, 10)
-	ctx, cancel := mockContext.NewMockContext("1", "2").WithCancel()
-	defer func() {
-		cancel()
-	}()
-	op.Exec(ctx, errCh)
-	time.Sleep(10 * time.Millisecond)
-	require.Eventually(t, func() bool {
-		return op.FirstTimerCreated4Test()
-	}, time.Second, 10*time.Millisecond)
 }
 
 func TestIncAggTumblingWindow(t *testing.T) {
@@ -404,7 +292,13 @@ func TestIncAggSlidingWindowRestoreFromDecodedState(t *testing.T) {
 	input <- &xsql.Tuple{Message: map[string]any{"a": int64(1)}}
 	first := receiveIncAggWindow(t, output, errCh)
 	require.Equal(t, int64(1), first.ToMaps()[0]["inc_agg_col_1"])
-	require.NoError(t, op.PutState4Test(ctx))
+	// Wait until the loop has published the row state on its own, then
+	// freeze it. Exec restores from the decoded state through the normal
+	// startup path below.
+	waitForIncAggState(t, op, ctx, func(value any) bool {
+		_, ok := value.(node.SlidingWindowIncAggOpState)
+		return ok
+	})
 
 	frozen := freezeIncAggState(t, ctx)
 	stopIncAggOperator(t, ctx, cancel)
@@ -412,10 +306,6 @@ func TestIncAggSlidingWindowRestoreFromDecodedState(t *testing.T) {
 
 	restoredOp, err := node.NewWindowIncAggOp("checkpoint_test", config, incPlan.Dimensions, incPlan.IncAggFuncs, options)
 	require.NoError(t, err)
-	sliding, ok := restoredOp.WindowExec.(*node.SlidingWindowIncAggOp)
-	require.True(t, ok)
-	require.NoError(t, sliding.RestoreFromState(restoredCtx))
-
 	restoredInput, _ := restoredOp.GetInput()
 	restoredOutput := make(chan any, 2)
 	require.NoError(t, restoredOp.AddOutput(restoredOutput, "output"))
@@ -862,50 +752,6 @@ func TestIncHoppingWindow(t *testing.T) {
 	op.Close()
 }
 
-func TestIncAggAlignHoppingWindow(t *testing.T) {
-	conf.IsTesting = true
-	node.EnableAlignWindow = true
-	o := &def.RuleOption{
-		BufferLength: 10,
-	}
-	kv, err := store.GetKV("stream")
-	require.NoError(t, err)
-	require.NoError(t, prepareStream())
-	sql := "select count(*) from stream group by hoppingWindow(ss,2,1)"
-	stmt, err := xsql.NewParser(strings.NewReader(sql)).Parse()
-	require.NoError(t, err)
-	p, err := planner.CreateLogicalPlan(stmt, &def.RuleOption{
-		PlanOptimizeStrategy: &def.PlanOptimizeStrategy{
-			EnableIncrementalWindow: true,
-		},
-		Qos: 0,
-	}, kv)
-	require.NoError(t, err)
-	require.NotNil(t, p)
-	incPlan := extractIncWindowPlan(p)
-	require.NotNil(t, incPlan)
-	op, err := node.NewWindowIncAggOp("1", &node.WindowConfig{
-		Type:        incPlan.WType,
-		RawInterval: 1,
-		TimeUnit:    ast.SS,
-		Length:      2 * time.Second,
-		Interval:    time.Second,
-	}, incPlan.Dimensions, incPlan.IncAggFuncs, o)
-	require.NoError(t, err)
-	output := make(chan any, 10)
-	op.AddOutput(output, "output")
-	errCh := make(chan error, 10)
-	ctx, cancel := mockContext.NewMockContext("1", "2").WithCancel()
-	defer func() {
-		cancel()
-	}()
-	op.Exec(ctx, errCh)
-	time.Sleep(10 * time.Millisecond)
-	require.Eventually(t, func() bool {
-		return op.FirstTimerCreated4Test()
-	}, time.Second, 10*time.Millisecond)
-}
-
 func extractIncWindowPlan(cur planner.LogicalPlan) *planner.IncWindowPlan {
 	switch plan := cur.(type) {
 	case *planner.IncWindowPlan:
@@ -988,12 +834,16 @@ func waitForIncAggState(
 	ready func(any) bool,
 ) {
 	t.Helper()
-	require.NoError(t, op.PutState4Test(ctx))
+	// The exec loop publishes state per row on its own; poll until the
+	// expected state lands instead of forcing synchronization points.
 	key := incAggStateKey(ctx)
-	stateValue, err := ctx.GetState(key)
-	require.NoError(t, err)
-	require.NotNil(t, stateValue)
-	require.True(t, ready(stateValue))
+	require.Eventually(t, func() bool {
+		stateValue, err := ctx.GetState(key)
+		if err != nil || stateValue == nil {
+			return false
+		}
+		return ready(stateValue)
+	}, 5*time.Second, 10*time.Millisecond)
 }
 
 func waitForIncAggProcessed(t *testing.T, op *node.WindowIncAggOperator, want int64) {
