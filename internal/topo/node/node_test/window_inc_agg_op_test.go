@@ -80,6 +80,14 @@ func TestIncAggCountWindowState(t *testing.T) {
 	time.Sleep(10 * time.Millisecond)
 	input <- &xsql.Tuple{Message: map[string]any{"a": int64(1)}}
 	time.Sleep(10 * time.Millisecond)
+	// Materialize function snapshots through the real checkpoint boundary,
+	// as a barrier would in production, so the second operator restored
+	// from the shared state continues the aggregation instead of
+	// restarting it. The row is fully handled (PutState precedes
+	// onProcessEnd) and this op has no timers, so the loop is parked and
+	// the off-loop call cannot race it.
+	waitForIncAggProcessed(t, op, 1)
+	require.NoError(t, op.PrepareCheckpoint())
 
 	op2, err := node.NewWindowIncAggOp("1", &node.WindowConfig{
 		Type:        incPlan.WType,
@@ -300,8 +308,13 @@ func TestIncAggSlidingWindowRestoreFromDecodedState(t *testing.T) {
 		return ok
 	})
 
-	frozen := freezeIncAggState(t, ctx)
+	// Materialize function snapshots through the real checkpoint boundary,
+	// as a barrier would in production, before freezing the state. The loop
+	// is stopped first: in production PrepareCheckpoint runs on the input
+	// loop itself, so calling it concurrently with a running loop would race.
 	stopIncAggOperator(t, ctx, cancel)
+	require.NoError(t, op.PrepareCheckpoint())
+	frozen := freezeIncAggState(t, ctx)
 	restoredCtx, restoredCancel := decodedIncAggContext(t, frozen, "decode_rule", "sliding")
 
 	restoredOp, err := node.NewWindowIncAggOp("checkpoint_test", config, incPlan.Dimensions, incPlan.IncAggFuncs, options)
@@ -345,8 +358,13 @@ func TestProcessingIncAggSlidingDelayCheckpointDeadlines(t *testing.T) {
 	})
 	requireNoIncAggOutput(t, output1, errCh1)
 	timex.Add(2 * time.Second)
-	frozen := freezeIncAggState(t, ctx1)
+	// Stop the loop first: in production PrepareCheckpoint runs on the
+	// input loop itself, so calling it concurrently with a running loop
+	// would race. Then materialize function snapshots through the real
+	// checkpoint boundary before freezing, as a barrier would.
 	stopIncAggOperator(t, ctx1, cancel1)
+	require.NoError(t, op1.PrepareCheckpoint())
+	frozen := freezeIncAggState(t, ctx1)
 
 	t.Run("future deadline", func(t *testing.T) {
 		mockclock.ResetClock(base.Add(4 * time.Second).UnixMilli())
@@ -396,8 +414,9 @@ func TestProcessingIncAggSlidingDelayCheckpointDeadlines(t *testing.T) {
 			return ok && len(state.Pending) == 2
 		})
 		requireNoIncAggOutput(t, output1, errCh1)
-		multiFrozen := freezeIncAggState(t, ctx1)
 		stopIncAggOperator(t, ctx1, cancel1)
+		require.NoError(t, op1.PrepareCheckpoint())
+		multiFrozen := freezeIncAggState(t, ctx1)
 
 		mockclock.ResetClock(multiBase.Add(20 * time.Second).UnixMilli())
 		ctx, cancel := decodedIncAggContext(t, multiFrozen, "sliding_multi_timer", "op")
@@ -453,8 +472,13 @@ func TestProcessingIncAggTumblingCheckpointDeadlines(t *testing.T) {
 		return ok && state.CurrWindow != nil && state.NextTriggerTime.Equal(base.Add(5*time.Second))
 	})
 	timex.Add(2 * time.Second)
-	frozen := freezeIncAggState(t, ctx1)
+	// Stop the loop first: in production PrepareCheckpoint runs on the
+	// input loop itself, so calling it concurrently with a running loop
+	// would race. Then materialize function snapshots through the real
+	// checkpoint boundary before freezing, as a barrier would.
 	stopIncAggOperator(t, ctx1, cancel1)
+	require.NoError(t, op1.PrepareCheckpoint())
+	frozen := freezeIncAggState(t, ctx1)
 
 	t.Run("future deadline", func(t *testing.T) {
 		mockclock.ResetClock(base.Add(4 * time.Second).UnixMilli())
@@ -517,8 +541,13 @@ func TestProcessingIncAggHoppingCheckpointDeadlines(t *testing.T) {
 			state.NextWindowTime.Equal(base.Add(2*time.Second))
 	})
 	timex.Add(time.Second)
-	frozen := freezeIncAggState(t, ctx1)
+	// Stop the loop first: in production PrepareCheckpoint runs on the
+	// input loop itself, so calling it concurrently with a running loop
+	// would race. Then materialize function snapshots through the real
+	// checkpoint boundary before freezing, as a barrier would.
 	stopIncAggOperator(t, ctx1, cancel1)
+	require.NoError(t, op1.PrepareCheckpoint())
+	frozen := freezeIncAggState(t, ctx1)
 
 	t.Run("future deadline", func(t *testing.T) {
 		mockclock.ResetClock(base.Add(4 * time.Second).UnixMilli())

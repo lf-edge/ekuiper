@@ -575,8 +575,13 @@ func TestIncEventSlidingWindowRestoreFromDecodedState(t *testing.T) {
 		state, ok := value.(node.SlidingWindowIncAggEventOpState)
 		return ok && len(state.CurrWindowList) == 1 && len(state.EmitList) == 1
 	})
-	frozen := freezeIncAggState(t, ctx)
+	// Materialize function snapshots through the real checkpoint boundary,
+	// as a barrier would in production, before freezing the state. The loop
+	// is stopped first: in production PrepareCheckpoint runs on the input
+	// loop itself, so calling it concurrently with a running loop would race.
 	stopIncAggOperator(t, ctx, cancel)
+	require.NoError(t, op.PrepareCheckpoint())
+	frozen := freezeIncAggState(t, ctx)
 
 	restoredCtx, restoredCancel := decodedIncAggContext(t, frozen, "event_sliding_decode", "op")
 	restoredOp, err := node.NewWindowIncAggOp(
@@ -587,9 +592,6 @@ func TestIncEventSlidingWindowRestoreFromDecodedState(t *testing.T) {
 		options,
 	)
 	require.NoError(t, err)
-	sliding, ok := restoredOp.WindowExec.(*node.SlidingWindowIncAggEventOp)
-	require.True(t, ok)
-	require.NoError(t, sliding.RestoreFromState(restoredCtx))
 
 	restoredInput, _ := restoredOp.GetInput()
 	restoredOutput := make(chan any, 4)
