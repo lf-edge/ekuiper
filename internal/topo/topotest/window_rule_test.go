@@ -806,6 +806,158 @@ func TestWindow(t *testing.T) {
 	}
 }
 
+// TestIncAggTimeWindowRule runs time-based windows end to end through SQL,
+// planner, operators and sink with incremental aggregation enabled. It
+// covers the three IncAgg time window implementations touched by the
+// checkpoint timer rework. Each case runs with QoS 0 and QoS 2; the QoS 2
+// runs additionally assert that a checkpoint really completed.
+func TestIncAggTimeWindowRule(t *testing.T) {
+	// Create (idempotent) instead of dropping: this test must run
+	// standalone as well as in the full suite.
+	streamList := []string{"demo"}
+	HandleStream(true, streamList, t)
+	tests := []RuleTest{
+		{
+			Name: `TestIncAggTumblingTimeWindow`,
+			Sql:  `SELECT COUNT(*) AS cnt FROM demo GROUP BY TUMBLINGWINDOW(ss, 1)`,
+			R: [][]map[string]interface{}{
+				{
+					{
+						"cnt": int64(2),
+					},
+				},
+				{
+					{
+						"cnt": int64(1),
+					},
+				},
+				{
+					{
+						"cnt": int64(1),
+					},
+				},
+			},
+			M:               map[string]interface{}{},
+			CheckpointCount: 1,
+		},
+		{
+			Name: `TestIncAggHoppingTimeWindow`,
+			Sql:  `SELECT COUNT(*) AS cnt FROM demo GROUP BY HOPPINGWINDOW(ss, 2, 1)`,
+			// Windows align to the first tuple: [d1,d2,d3], [d3,d4]. The
+			// trailing window only closes by timer after all data which
+			// races with EOF shutdown, so it is not asserted.
+			R: [][]map[string]interface{}{
+				{
+					{
+						"cnt": int64(3),
+					},
+				},
+				{
+					{
+						"cnt": int64(2),
+					},
+				},
+			},
+			M:               map[string]interface{}{},
+			CheckpointCount: 1,
+		},
+		{
+			Name: `TestIncAggSlidingDelayTimeWindow`,
+			Sql:  `SELECT COUNT(*) AS cnt FROM demo GROUP BY SLIDINGWINDOW(ss, 4, 2)`,
+			// Only the first delay tasks fire before EOF shutdown ends the
+			// mock clock; later pending windows never trigger here. Delay
+			// restore itself is covered by checkpoint unit tests.
+			R: [][]map[string]interface{}{
+				{
+					{
+						"cnt": int64(3),
+					},
+				},
+				{
+					{
+						"cnt": int64(4),
+					},
+				},
+			},
+			M:               map[string]interface{}{},
+			CheckpointCount: 1,
+		},
+	}
+	options := []*def.RuleOption{
+		{
+			BufferLength: 100,
+			SendError:    true,
+			PlanOptimizeStrategy: &def.PlanOptimizeStrategy{
+				EnableIncrementalWindow: true,
+			},
+			DisableBufferFullDiscard: true,
+		},
+		{
+			BufferLength:       100,
+			SendError:          true,
+			Qos:                def.ExactlyOnce,
+			CheckpointInterval: cast.DurationConf(time.Second),
+			PlanOptimizeStrategy: &def.PlanOptimizeStrategy{
+				EnableIncrementalWindow: true,
+			},
+			DisableBufferFullDiscard: true,
+		},
+	}
+	for _, opt := range options {
+		DoRuleTest(t, tests, opt, 15)
+	}
+}
+
+// TestSlidingDelayV2Qos2 reruns the TestSlidingDelay case with Window V2
+// under ExactlyOnce. TestWindow covers V2 only with QoS 0, so this is the
+// only rule-level run of a V2 delay window with checkpointing enabled. It
+// additionally asserts that a checkpoint really completed.
+func TestSlidingDelayV2Qos2(t *testing.T) {
+	// Reset
+	streamList := []string{"demo"}
+	HandleStream(true, streamList, t)
+	tests := []RuleTest{
+		{
+			Name: `TestSlidingDelay`,
+			Sql:  `SELECT size,color FROM demo GROUP BY SlidingWindow(ss, 5, 1) Over (when size = 2)`,
+			R: [][]map[string]interface{}{
+				{
+					{
+						"size":  3,
+						"color": "red",
+					},
+					{
+						"size":  6,
+						"color": "blue",
+					},
+					{
+						"size":  2,
+						"color": "blue",
+					},
+					{
+						"size":  4,
+						"color": "yellow",
+					},
+				},
+			},
+			M:               map[string]interface{}{},
+			CheckpointCount: 1,
+		},
+	}
+	opt := &def.RuleOption{
+		BufferLength:       100,
+		SendError:          true,
+		Qos:                def.ExactlyOnce,
+		CheckpointInterval: cast.DurationConf(time.Second),
+		PlanOptimizeStrategy: &def.PlanOptimizeStrategy{
+			WindowOption: &def.WindowOption{
+				WindowVersion: "v2",
+			},
+		},
+	}
+	DoRuleTest(t, tests, opt, 15)
+}
+
 func TestEventWindow(t *testing.T) {
 	// Reset
 	streamList := []string{"demoE", "demoErr", "demo1E", "sessionDemoE", "demoE2", "demoE3"}

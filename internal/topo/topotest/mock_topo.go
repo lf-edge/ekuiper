@@ -49,6 +49,12 @@ type RuleTest struct {
 	T    *def.PrintableTopo // printable topo, an optional field
 	W    int                // wait time for each data sending, in milli
 	TL   int                // table load wait time before first data, in milli (for tests using lookup tables)
+	// CheckpointCount expects at least this many completed checkpoints by
+	// the end of the test. Zero skips the check. Set it on QoS 1/2 cases
+	// to prove a checkpoint really ran instead of only enabling QoS. The
+	// check is skipped when checkpointing is not active (e.g. QoS 0 runs
+	// of the same case).
+	CheckpointCount int
 }
 
 // CommonResultFunc A function to convert memory sink result to map slice
@@ -185,6 +191,13 @@ func DoRuleTestWithResultFunc(t *testing.T, tests []RuleTest, opt *def.RuleOptio
 			assert.Equal(t, tt.R, actual)
 			err := CompareMetrics(tp, tt.M)
 			assert.NoError(t, err)
+			if tt.CheckpointCount > 0 {
+				if coordinator := tp.GetCoordinator(); coordinator != nil && coordinator.IsActivated() {
+					if got := coordinator.GetCompleteCount(); got < tt.CheckpointCount {
+						t.Errorf("%s: expected at least %d completed checkpoints, got %d", tt.Name, tt.CheckpointCount, got)
+					}
+				}
+			}
 		})
 	}
 }
