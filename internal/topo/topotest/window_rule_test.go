@@ -842,10 +842,12 @@ func TestIncAggTimeWindowRule(t *testing.T) {
 		},
 		{
 			Name: `TestIncAggHoppingTimeWindow`,
-			Sql:  `SELECT COUNT(*) AS cnt FROM demo GROUP BY HOPPINGWINDOW(ss, 2, 1)`,
-			// Windows align to the first tuple: [d1,d2,d3], [d3,d4]. The
-			// trailing window only closes by timer after all data which
-			// races with EOF shutdown, so it is not asserted.
+			Sql:  `SELECT COUNT(*) AS cnt FROM demo WHERE size = 2 OR size = 4 GROUP BY HOPPINGWINDOW(ss, 2, 1)`,
+			// Windows align to the first tuple: [d1,d2,d3] last d3(size 2),
+			// [d3,d4] last d4(size 4), [d4,d5] last d5(size 1). The post
+			// window filter drops whole windows by their last row, so the
+			// trailing window is excluded deterministically even if its
+			// timer fires after EOF shutdown.
 			R: [][]map[string]interface{}{
 				{
 					{
@@ -863,10 +865,10 @@ func TestIncAggTimeWindowRule(t *testing.T) {
 		},
 		{
 			Name: `TestIncAggSlidingDelayTimeWindow`,
-			Sql:  `SELECT COUNT(*) AS cnt FROM demo GROUP BY SLIDINGWINDOW(ss, 4, 2)`,
-			// Only the first delay tasks fire before EOF shutdown ends the
-			// mock clock; later pending windows never trigger here. Delay
-			// restore itself is covered by checkpoint unit tests.
+			Sql:  `SELECT COUNT(*) AS cnt FROM demo GROUP BY SLIDINGWINDOW(ss, 4, 2) OVER (WHEN size = 3 OR size = 6)`,
+			// Only d1(size 3) and d2(size 6) create delay tasks; the
+			// remaining rows still join the window computation but schedule
+			// nothing, so no timer can fire after EOF.
 			R: [][]map[string]interface{}{
 				{
 					{
