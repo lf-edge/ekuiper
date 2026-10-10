@@ -34,9 +34,16 @@ import (
 type loopResponder struct {
 	mu    sync.Mutex
 	fired []int64
+	// onFire runs inside TriggerCheckpoint, i.e. synchronously where the
+	// snapshot would be taken, so it observes exactly what a snapshot
+	// would capture.
+	onFire func(id int64)
 }
 
 func (r *loopResponder) TriggerCheckpoint(id int64) error {
+	if r.onFire != nil {
+		r.onFire(id)
+	}
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.fired = append(r.fired, id)
@@ -118,6 +125,82 @@ func TestWindowV2LoopDrainsAlignerBacklog(t *testing.T) {
 		{"a": int64(2)},
 	}, receiveWindowV2BarrierOutput(t, output).ToMaps())
 	waitWindowV2Processed(t, op, 2)
+	requireNoWindowV2Output(t, output)
+	stopWindowV2Operator(t, ctx, cancel)
+}
+
+// TestWindowV2LoopAbortReplaysBeforeNewSnapshot drives C1 preemption
+// through a real operator loop: the row held while aligning C1 must be
+// fully processed before the C2 snapshot fires after C2 completes. The
+// responder inspects the live window state at trigger time, proving the
+// snapshot would have captured the replayed row.
+func TestWindowV2LoopAbortReplaysBeforeNewSnapshot(t *testing.T) {
+	base := time.Unix(100, 0)
+	options := &def.RuleOption{BufferLength: 16}
+	config := node.WindowConfig{
+		Type:   ast.SLIDING_WINDOW,
+		Length: 10 * time.Second,
+	}
+	ctx, cancel := newWindowV2CheckpointContext(t, nil)
+	op, err := node.NewWindowV2Op("window", config, options)
+	require.NoError(t, err)
+	op.SetQos(def.ExactlyOnce)
+	op.AddInputCount()
+	op.AddInputCount()
+	responder := &loopResponder{}
+	var atTrigger []map[string]interface{}
+	responder.onFire = func(id int64) {
+		v, err := ctx.GetState(node.V2WindowInputsKey)
+		if err != nil {
+			return
+		}
+		state, ok := v.(*node.SlidingWindowV2State)
+		if !ok || state.Scanner == nil {
+			return
+		}
+		for _, tuple := range state.Scanner.Tuples {
+			atTrigger = append(atTrigger, map[string]interface{}(tuple.Message))
+		}
+	}
+	op.SetBarrierHandler(checkpoint.NewBarrierAligner(responder, 2))
+	input, _ := op.GetInput()
+	output := make(chan any, 16)
+	require.NoError(t, op.AddOutput(output, "output"))
+	op.Exec(ctx, make(chan error, 4))
+	waitWindowV2StateSaved(t, ctx)
+
+	input <- loopRow("left", 1, base)
+	require.Equal(t, []map[string]interface{}{
+		{"a": int64(1)},
+	}, receiveWindowV2BarrierOutput(t, output).ToMaps())
+	waitWindowV2Processed(t, op, 1)
+
+	// Align C1 on the left, hold the next row, then let C2 preempt it from
+	// the right. Neither checkpoint may trigger yet.
+	input <- loopBarrier("left", 1)
+	input <- loopRow("left", 2, base.Add(time.Second))
+	time.Sleep(100 * time.Millisecond)
+	requireNoWindowV2Output(t, output)
+	input <- loopBarrier("right", 2)
+	// The abort releases the held row for immediate replay through the
+	// normal emission path, still before any C2 trigger exists.
+	require.Equal(t, []map[string]interface{}{
+		{"a": int64(1)},
+		{"a": int64(2)},
+	}, receiveWindowV2BarrierOutput(t, output).ToMaps())
+	require.Empty(t, responder.triggers())
+
+	// Complete C2 from the left. The positioned trigger fires with the
+	// replayed row already reflected in the window state.
+	input <- loopBarrier("left", 2)
+	require.Eventually(t, func() bool {
+		return len(responder.triggers()) == 1
+	}, 2*time.Second, time.Millisecond)
+	require.Equal(t, []int64{2}, responder.triggers())
+	require.Equal(t, []map[string]interface{}{
+		{"a": int64(1)},
+		{"a": int64(2)},
+	}, atTrigger)
 	requireNoWindowV2Output(t, output)
 	stopWindowV2Operator(t, ctx, cancel)
 }
