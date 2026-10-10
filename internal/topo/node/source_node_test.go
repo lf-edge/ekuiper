@@ -450,12 +450,10 @@ func TestSourceOffsetIsOwnedByContext(t *testing.T) {
 		"partition": map[string]any{"position": 10},
 	}
 	source := &MutableRewindSource{MockRewindSource: MockRewindSource{}, offset: offset}
+	node := &SourceNode{s: source}
 	ctx := mockContext.NewMockContext("rule1", "src1")
-	node := &SourceNode{s: source, defaultNode: &defaultNode{ctx: ctx}}
 
 	require.NoError(t, node.updateState(ctx))
-	// Ownership is frozen at the checkpoint boundary, not per tuple.
-	require.NoError(t, node.PrepareCheckpoint())
 	offset["partition"].(map[string]any)["position"] = 20
 
 	saved, err := ctx.GetState(OffsetKey)
@@ -491,45 +489,6 @@ func TestSourcePrepareCheckpointRefreshesOffsetWithoutAnotherIngest(t *testing.T
 	require.Equal(t, int64(20), saved)
 }
 
-// freezeState must skip sources that do not expose a rewindable offset.
-func TestSourceFreezeStateSkipsNonRewindableSource(t *testing.T) {
-	source := struct{ api.Source }{}
-	node := &SourceNode{s: source}
-	ctx := mockContext.NewMockContext("rule1", "src1")
-	require.NoError(t, node.freezeState(ctx))
-}
-
-type errStateContext struct {
-	api.StreamContext
-	err error
-}
-
-func (c *errStateContext) GetState(string) (any, error) {
-	return nil, c.err
-}
-
-// A state backend failure must propagate so the checkpoint path can record it.
-func TestSourceFreezeStatePropagatesStateErrors(t *testing.T) {
-	source := &MutableRewindSource{MockRewindSource: MockRewindSource{}}
-	node := &SourceNode{s: source}
-	ctx := &errStateContext{
-		StreamContext: mockContext.NewMockContext("rule1", "src1"),
-		err:           errors.New("state unavailable"),
-	}
-	require.ErrorContains(t, node.freezeState(ctx), "state unavailable")
-}
-
-// A missing offset is not an error: there is simply nothing to freeze.
-func TestSourceFreezeStateSkipsNilOffset(t *testing.T) {
-	source := &MutableRewindSource{MockRewindSource: MockRewindSource{}}
-	node := &SourceNode{s: source}
-	ctx := mockContext.NewMockContext("rule1", "src1")
-	require.NoError(t, node.freezeState(ctx))
-	saved, err := ctx.GetState(OffsetKey)
-	require.NoError(t, err)
-	require.Nil(t, saved)
-}
-
 func BenchmarkSourceOffsetUpdate(b *testing.B) {
 	for _, size := range []int{1, 10_000} {
 		offset := make(map[string]any, size)
@@ -552,33 +511,6 @@ func BenchmarkSourceOffsetUpdate(b *testing.B) {
 				}
 			})
 		}
-	}
-}
-
-// BenchmarkSourceOffsetFreeze measures the barrier-path cost of freezing a
-// mutable offset into an owned copy. The per-tuple row path (updateState,
-// covered by BenchmarkSourceOffsetUpdate) only publishes the live offset;
-// this gob round trip runs once per checkpoint instead of once per tuple.
-func BenchmarkSourceOffsetFreeze(b *testing.B) {
-	for _, size := range []int{1, 10000} {
-		offset := make(map[string]any, size)
-		for i := range size {
-			offset[fmt.Sprintf("partition-%d", i)] = int64(i)
-		}
-		b.Run(fmt.Sprintf("Mutable/%d", size), func(b *testing.B) {
-			source := &MutableRewindSource{offset: offset}
-			node := &SourceNode{s: source}
-			ctx := mockContext.NewMockContext("rule1", "src1")
-			b.ReportAllocs()
-			for b.Loop() {
-				if err := node.updateState(ctx); err != nil {
-					b.Fatal(err)
-				}
-				if err := node.freezeState(ctx); err != nil {
-					b.Fatal(err)
-				}
-			}
-		})
 	}
 }
 
