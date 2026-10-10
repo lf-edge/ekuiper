@@ -22,6 +22,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/checkpoint"
@@ -865,10 +866,11 @@ func (noopResponder) TriggerCheckpoint(int64) error { return nil }
 func (noopResponder) GetName() string               { return "test" }
 
 // TestLookupQos2BufferedInputs covers collection inputs arriving wrapped in
-// BufferOrEvent, as they do under QoS >= 1 and when replayed from the
-// checkpoint backlog. The lookup must use the unwrapped rows for both data
-// and WindowRange; asserting the old *xsql.JoinTuples shape against the
-// wrapper panics.
+// BufferOrEvent, as they do under QoS >= 1. It uses a BarrierTracker, so it
+// validates unwrapping in the shared handleItem path, not the multi-input
+// aligner backlog replay timing (covered by the window backlog drain tests).
+// The lookup must use the unwrapped rows for both data and WindowRange;
+// asserting the old *xsql.JoinTuples shape against the wrapper panics.
 func TestLookupQos2BufferedInputs(t *testing.T) {
 	modules.RegisterLookupSource("mock", func() api.Source {
 		return &MockLookupBytes{}
@@ -940,9 +942,9 @@ func TestLookupQos2BufferedInputs(t *testing.T) {
 			t.Fatal("timed out waiting for lookup output; the operator loop may have died on the wrapped input")
 		}
 		boe, ok := r.(*checkpoint.BufferOrEvent)
-		assert.True(t, ok, "output must stay wrapped under QoS 2, got %#v", r)
+		require.True(t, ok, "output must stay wrapped under QoS 2, got %#v", r)
 		sets, ok := boe.Data.(*xsql.JoinTuples)
-		assert.True(t, ok, "lookup output must be JoinTuples, got %#v", boe.Data)
+		require.True(t, ok, "lookup output must be JoinTuples, got %#v", boe.Data)
 		assert.Equal(t, windowRange, sets.GetWindowRange())
 		// a=2 matches the three mock lookup rows.
 		assert.Len(t, sets.Content, 3)
