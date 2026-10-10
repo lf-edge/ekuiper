@@ -206,6 +206,8 @@ func SetConsoleAndFileLog(consoleLog, fileLog bool) error {
 	if !fileLog {
 		if consoleLog {
 			Log.SetOutput(os.Stdout)
+		} else {
+			Log.SetOutput(io.Discard)
 		}
 		return nil
 	}
