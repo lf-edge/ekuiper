@@ -80,8 +80,8 @@ func TestDedupUsesImmutableRewindableOffsetInsteadOfLiveContextState(t *testing.
 	if cap(published) != len(published) {
 		t.Fatalf("published offset retains mutable append capacity: len %d cap %d", len(published), cap(published))
 	}
-	pullOnce(t, source, ctx, &ingested)
 	before := cloneDedupList(published)
+	pullOnce(t, source, ctx, &ingested)
 	if len(published) != len(before) {
 		t.Fatalf("published offset changed after append: %#v", published)
 	}
