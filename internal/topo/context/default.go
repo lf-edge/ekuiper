@@ -391,10 +391,24 @@ func (c *DefaultContext) DeleteState(key string) error {
 	return nil
 }
 
+// unencodableStateKey diagnoses a failed snapshot by encoding keys one at a
+// time. It only runs on the failure path, so steady-state snapshots pay for
+// a single encoding.
+func unencodableStateKey(state map[string]interface{}) string {
+	for key, value := range state {
+		if _, err := checkpoint.EncodeState(map[string]interface{}{key: value}); err != nil {
+			return key
+		}
+	}
+	return ""
+}
+
 func (c *DefaultContext) Snapshot(checkpointID int64) error {
-	snapshot, err := checkpoint.EncodeState(c.GetAllState())
+	state := c.GetAllState()
+	snapshot, err := checkpoint.EncodeState(state)
 	if err != nil {
-		return err
+		return fmt.Errorf("encode checkpoint %d state for op %s: %w (offending key: %s)",
+			checkpointID, c.opId, err, unencodableStateKey(state))
 	}
 	if c.checkpoints == nil {
 		return fmt.Errorf("checkpoint context is not initialized")

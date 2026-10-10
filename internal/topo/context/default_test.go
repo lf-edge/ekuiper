@@ -23,6 +23,7 @@ import (
 	"path"
 	"reflect"
 	"runtime/pprof"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -471,4 +472,24 @@ func TestRuleBackground(t *testing.T) {
 	c := RuleBackground("test")
 	ctx := pprof.WithLabels(context.Background(), pprof.Labels("rule", "test"))
 	assert.Equal(t, c.ctx, ctx)
+}
+
+func TestSnapshotEncodeFailureIdentifiesOpCheckpointAndKey(t *testing.T) {
+	ctx := Background().WithMeta("snapshotRule", "op9", &state.MemoryStore{}).(*DefaultContext)
+	if err := ctx.PutState("good", map[string]interface{}{"value": 1}); err != nil {
+		t.Fatal(err)
+	}
+	if err := ctx.PutState("bad", make(chan int)); err != nil {
+		t.Fatal(err)
+	}
+	err := ctx.Snapshot(7)
+	if err == nil {
+		t.Fatal("snapshot of a non gob-encodable state must fail")
+	}
+	msg := err.Error()
+	for _, want := range []string{"op9", "7", "bad"} {
+		if !strings.Contains(msg, want) {
+			t.Fatalf("snapshot error must identify %q, got: %s", want, msg)
+		}
+	}
 }
