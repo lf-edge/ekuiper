@@ -100,7 +100,9 @@ func (m *MockSource) Rewind(offset interface{}) error {
 	if err != nil {
 		return fmt.Errorf("mock source fails to rewind: %s", err)
 	} else {
+		m.Lock()
 		m.offset = oi
+		m.Unlock()
 	}
 	return nil
 }
@@ -110,7 +112,9 @@ func (m *MockSource) ResetOffset(input map[string]interface{}) error {
 }
 
 func (m *MockSource) Close(_ api.StreamContext) error {
+	m.Lock()
 	m.offset = 0
+	m.Unlock()
 	return nil
 }
 
