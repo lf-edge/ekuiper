@@ -189,33 +189,43 @@ func (s *StateWindowOp) exec(ctx api.StreamContext, errCh chan<- error) {
 		return
 	}
 	fv, _ := xsql.NewFunctionValuersForOp(ctx)
+	handleItem := func(input any) {
+		data, processed := s.commonIngest(ctx, input)
+		if processed {
+			return
+		}
+		s.onProcessStart(ctx, input)
+		switch row := data.(type) {
+		case *xsql.Tuple:
+			name := calPartition(fv, s.PartitionExpr, row)
+			status, ok := s.status[name]
+			if !ok {
+				status = &StateWindowStatus{
+					Scanner: &WindowScanner{Tuples: make([]*xsql.Tuple, 0)},
+				}
+				s.status[name] = status
+			}
+			if s.BeginCondition != nil && s.EmitCondition != nil {
+				s.handleTupleWithBeginEmitCondition(ctx, fv, row, status)
+			} else if s.SingleCondition != nil {
+				s.handleTupleWithSingleCondition(ctx, fv, row, status)
+			}
+		}
+		s.onProcessEnd(ctx)
+	}
 	for {
+		// Due backlog rows and barriers ordered by the checkpoint handler
+		// take priority over fresh input; the select below stays exactly
+		// as before.
+		if due, ok := s.nextDue(); ok {
+			handleItem(due)
+			continue
+		}
 		select {
 		case <-ctx.Done():
 			return
 		case input := <-s.input:
-			data, processed := s.commonIngest(ctx, input)
-			if processed {
-				continue
-			}
-			s.onProcessStart(ctx, input)
-			switch row := data.(type) {
-			case *xsql.Tuple:
-				name := calPartition(fv, s.PartitionExpr, row)
-				status, ok := s.status[name]
-				if !ok {
-					status = &StateWindowStatus{
-						Scanner: &WindowScanner{Tuples: make([]*xsql.Tuple, 0)},
-					}
-					s.status[name] = status
-				}
-				if s.BeginCondition != nil && s.EmitCondition != nil {
-					s.handleTupleWithBeginEmitCondition(ctx, fv, row, status)
-				} else if s.SingleCondition != nil {
-					s.handleTupleWithSingleCondition(ctx, fv, row, status)
-				}
-			}
-			s.onProcessEnd(ctx)
+			handleItem(input)
 		}
 	}
 }

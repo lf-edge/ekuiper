@@ -60,51 +60,61 @@ func (s *EventSlidingWindowOp) exec(ctx api.StreamContext, errCh chan<- error) {
 		return
 	}
 	fv, _ := xsql.NewFunctionValuersForOp(ctx)
+	handleItem := func(input any) {
+		data, processed := s.ingest(ctx, input)
+		if processed {
+			return
+		}
+		switch tuple := data.(type) {
+		case *xsql.WatermarkTuple:
+			now := tuple.GetTimestamp()
+			consumed := 0
+			for _, delayTs := range s.state.DelayTS {
+				if delayTs.Before(now) || delayTs.Equal(now) {
+					windowStart := delayTs.Add(-s.Length).Add(-s.Delay)
+					windowEnd := now
+					s.emitWindow(ctx, windowStart, windowEnd)
+					consumed++
+				} else {
+					break
+				}
+			}
+			if consumed > 0 {
+				s.state.DelayTS = s.state.DelayTS[consumed:]
+			}
+			s.scanner.gc(now.Add(-s.Length).Add(-s.Delay))
+		case *xsql.Tuple:
+			s.onProcessStart(ctx, input)
+			windowEnd := tuple.Timestamp
+			windowStart := windowEnd.Add(-s.Length)
+			s.scanner.addTuple(tuple)
+			sendWindow := true
+			if s.triggerCondition != nil {
+				sendWindow = isMatchCondition(ctx, s.triggerCondition, fv, tuple, s.stateFuncs)
+			}
+			if s.Delay > 0 && sendWindow {
+				s.state.DelayTS = append(s.state.DelayTS, tuple.Timestamp.Add(s.Delay))
+				sendWindow = false
+			}
+			if sendWindow {
+				s.emitWindow(ctx, windowStart, windowEnd)
+			}
+			s.onProcessEnd(ctx)
+		}
+	}
 	for {
+		// Due backlog rows and barriers ordered by the checkpoint handler
+		// take priority over fresh input; the select below stays exactly
+		// as before.
+		if due, ok := s.nextDue(); ok {
+			handleItem(due)
+			continue
+		}
 		select {
 		case <-ctx.Done():
 			return
 		case input := <-s.input:
-			data, processed := s.ingest(ctx, input)
-			if processed {
-				continue
-			}
-			switch tuple := data.(type) {
-			case *xsql.WatermarkTuple:
-				now := tuple.GetTimestamp()
-				consumed := 0
-				for _, delayTs := range s.state.DelayTS {
-					if delayTs.Before(now) || delayTs.Equal(now) {
-						windowStart := delayTs.Add(-s.Length).Add(-s.Delay)
-						windowEnd := now
-						s.emitWindow(ctx, windowStart, windowEnd)
-						consumed++
-					} else {
-						break
-					}
-				}
-				if consumed > 0 {
-					s.state.DelayTS = s.state.DelayTS[consumed:]
-				}
-				s.scanner.gc(now.Add(-s.Length).Add(-s.Delay))
-			case *xsql.Tuple:
-				s.onProcessStart(ctx, input)
-				windowEnd := tuple.Timestamp
-				windowStart := windowEnd.Add(-s.Length)
-				s.scanner.addTuple(tuple)
-				sendWindow := true
-				if s.triggerCondition != nil {
-					sendWindow = isMatchCondition(ctx, s.triggerCondition, fv, tuple, s.stateFuncs)
-				}
-				if s.Delay > 0 && sendWindow {
-					s.state.DelayTS = append(s.state.DelayTS, tuple.Timestamp.Add(s.Delay))
-					sendWindow = false
-				}
-				if sendWindow {
-					s.emitWindow(ctx, windowStart, windowEnd)
-				}
-				s.onProcessEnd(ctx)
-			}
+			handleItem(input)
 		}
 	}
 }
