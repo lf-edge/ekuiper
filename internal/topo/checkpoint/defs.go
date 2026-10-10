@@ -1,4 +1,4 @@
-// Copyright 2021-2024 EMQ Technologies Co., Ltd.
+// Copyright 2021-2026 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -52,8 +52,24 @@ type BufferOrEvent struct {
 }
 
 type StreamCheckpointContext interface {
-	Snapshot() error
-	SaveState(checkpointId int64) error
+	Snapshot(checkpointID int64) error
+	SaveSnapshot(checkpointID int64) error
+}
+
+// CheckpointGuard serializes source ingestion with barrier emission and state
+// capture. Non-source tasks do not need to implement it because they process a
+// barrier on their event-loop goroutine.
+type CheckpointGuard interface {
+	LockCheckpoint()
+	UnlockCheckpoint()
+}
+
+// CheckpointStateValidator reports whether task state is safe to capture.
+// Responder calls it while the CheckpointGuard is held and after propagating
+// the barrier, so every downstream task can still terminate the checkpoint.
+type CheckpointStateValidator interface {
+	CheckpointGuard
+	CheckpointError() error
 }
 
 // CheckpointPreparer materializes operator state at the checkpoint boundary.

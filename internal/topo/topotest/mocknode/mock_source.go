@@ -57,9 +57,14 @@ func (m *MockSource) Subscribe(ctx api.StreamContext, ingest api.TupleIngest, in
 	log := ctx.GetLogger()
 	mockClock := timex.Clock
 	log.Infof("%d: mock source %s starts", timex.GetNowInMilli(), ctx.GetOpId())
-	log.Debugf("mock source %s starts with offset %d", ctx.GetOpId(), m.offset)
+	// Read the start offset once: Close and Rewind may rewrite it
+	// concurrently, so later uses observe a stable local value.
+	m.RLock()
+	startOffset := m.offset
+	m.RUnlock()
+	log.Debugf("mock source %s starts with offset %d", ctx.GetOpId(), startOffset)
 	for i, d := range m.data {
-		if i < m.offset {
+		if i < startOffset {
 			log.Debugf("mock source is skipping %d", i)
 			continue
 		}
@@ -100,7 +105,9 @@ func (m *MockSource) Rewind(offset interface{}) error {
 	if err != nil {
 		return fmt.Errorf("mock source fails to rewind: %s", err)
 	} else {
+		m.Lock()
 		m.offset = oi
+		m.Unlock()
 	}
 	return nil
 }
@@ -110,7 +117,9 @@ func (m *MockSource) ResetOffset(input map[string]interface{}) error {
 }
 
 func (m *MockSource) Close(_ api.StreamContext) error {
+	m.Lock()
 	m.offset = 0
+	m.Unlock()
 	return nil
 }
 

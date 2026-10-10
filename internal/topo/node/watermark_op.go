@@ -106,32 +106,42 @@ func (w *WatermarkOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 			w.Close()
 		}()
 		err := infra.SafeRun(func() error {
+			handleItem := func(item any) {
+				data, processed := w.commonIngest(ctx, item)
+				if processed {
+					return
+				}
+				w.onProcessStart(ctx, data)
+				if w.span != nil {
+					w.rowHandle[data] = w.span
+				}
+				switch d := data.(type) {
+				case *xsql.Tuple:
+					// whether to drop the late event
+					if w.track(ctx, d.Emitter, d.Timestamp) {
+						// If not drop, check if it can be sent out
+						w.addAndTrigger(ctx, d)
+					}
+				default:
+					w.onError(ctx, fmt.Errorf("run watermark op error: expect *xsql.Tuple type but got %[1]T(%[1]v)", d))
+				}
+				w.span = nil
+				w.onProcessEnd(ctx)
+			}
 			for {
+				// Due backlog rows and barriers ordered by the checkpoint
+				// handler take priority over fresh input; the select below
+				// stays exactly as before. Watermark allows multiple inputs.
+				if due, ok := w.nextDue(); ok {
+					handleItem(due)
+					continue
+				}
 				select {
 				case <-ctx.Done():
 					ctx.GetLogger().Infof("watermark node %s is finished", w.name)
 					return nil
 				case item := <-w.input:
-					data, processed := w.commonIngest(ctx, item)
-					if processed {
-						break
-					}
-					w.onProcessStart(ctx, data)
-					if w.span != nil {
-						w.rowHandle[data] = w.span
-					}
-					switch d := data.(type) {
-					case *xsql.Tuple:
-						// whether to drop the late event
-						if w.track(ctx, d.Emitter, d.Timestamp) {
-							// If not drop, check if it can be sent out
-							w.addAndTrigger(ctx, d)
-						}
-					default:
-						w.onError(ctx, fmt.Errorf("run watermark op error: expect *xsql.Tuple type but got %[1]T(%[1]v)", d))
-					}
-					w.span = nil
-					w.onProcessEnd(ctx)
+					handleItem(item)
 				}
 			}
 		})
