@@ -14,7 +14,9 @@
 package conf
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"os"
 	"path"
 	"sync"
@@ -28,6 +30,23 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
+
+func TestSetConsoleAndFileLogDisabled(t *testing.T) {
+	originalOutput := Log.Out
+	t.Cleanup(func() { Log.SetOutput(originalOutput) })
+
+	var output bytes.Buffer
+	Log.SetOutput(&output)
+	require.NoError(t, SetConsoleAndFileLog(false, false))
+	Log.Error("logging with console and file disabled")
+	require.Empty(t, output.String())
+	require.Equal(t, io.Discard, Log.Out)
+
+	require.NoError(t, SetConsoleAndFileLog(true, false))
+	require.Equal(t, os.Stdout, Log.Out)
+	require.NoError(t, SetConsoleAndFileLog(false, false))
+	require.Equal(t, io.Discard, Log.Out)
+}
 
 func TestSetLogFormatConcurrent(t *testing.T) {
 	originalFormatter := Log.Formatter
