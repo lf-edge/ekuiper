@@ -76,22 +76,71 @@ func TestKafkaSource(t *testing.T) {
 		"brokers":    "localhost:9092",
 	}
 	require.NoError(t, ks.Provision(ctx, configs))
-	require.Equal(t, kafkago.LastOffset, ks.sc.GetReaderConfig().StartOffset)
-	require.NoError(t, ks.Connect(ctx, func(status string, message string) {
-		// do nothing
-	}))
-	require.NoError(t, ks.Close(ctx))
-
-	configs["offsetReset"] = OffsetResetEarliest
-	ks2 := &KafkaSource{}
-	require.NoError(t, ks2.Provision(ctx, configs))
-	require.Equal(t, kafkago.FirstOffset, ks2.sc.GetReaderConfig().StartOffset)
-
 	for i := mockErrStart + 1; i < mockErrEnd; i++ {
 		failpoint.Enable("github.com/lf-edge/ekuiper/v2/extensions/impl/kafka/kafkaErr", fmt.Sprintf("return(%v)", i))
 		require.Error(t, ks.Provision(ctx, configs), i)
 	}
 	failpoint.Disable("github.com/lf-edge/ekuiper/v2/extensions/impl/kafka/kafkaErr")
+}
+
+func TestKafkaSourceOffsetReset(t *testing.T) {
+	ctx := mockContext.NewMockContext("1", "2")
+	testcases := []struct {
+		name        string
+		groupID     string
+		offsetReset string
+		expected    int64
+	}{
+		{
+			name:     "no groupID and no offsetReset, defaults to latest",
+			expected: kafkago.LastOffset,
+		},
+		{
+			name:        "no groupID and explicit earliest",
+			offsetReset: OffsetResetEarliest,
+			expected:    kafkago.FirstOffset,
+		},
+		{
+			name:     "groupID and no offsetReset, leaves StartOffset unset",
+			groupID:  "test-group",
+			expected: 0,
+		},
+		{
+			name:        "groupID and explicit latest",
+			groupID:     "test-group",
+			offsetReset: OffsetResetLatest,
+			expected:    kafkago.LastOffset,
+		},
+	}
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			configs := map[string]any{
+				"datasource": "t",
+				"brokers":    "localhost:9092",
+			}
+			if tc.groupID != "" {
+				configs["groupID"] = tc.groupID
+			}
+			if tc.offsetReset != "" {
+				configs["offsetReset"] = tc.offsetReset
+			}
+			ks := &KafkaSource{}
+			require.NoError(t, ks.Provision(ctx, configs))
+			if tc.groupID != "" {
+				// StartOffset 0 = unset; kafka-go treats it as FirstOffset for consumer groups.
+				require.Equal(t, tc.expected, ks.sc.GetReaderConfig().StartOffset)
+			}
+			require.NoError(t, ks.Connect(ctx, func(status string, message string) {
+				// do nothing
+			}))
+			if tc.groupID == "" {
+				// Without groupID, kafka-go's StartOffset config is unused;
+				// the reader actually starts from the offset set in Connect.
+				require.Equal(t, tc.expected, ks.reader.Offset())
+			}
+			require.NoError(t, ks.Close(ctx))
+		})
+	}
 }
 
 func TestKafkaPassword(t *testing.T) {

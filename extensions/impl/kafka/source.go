@@ -75,31 +75,28 @@ func (c *kafkaSourceConf) validate() error {
 	return nil
 }
 
-// Defaults to latest to keep the previous behavior.
-func (c *kafkaSourceConf) GetStartOffset() int64 {
-	if c.OffsetReset == OffsetResetEarliest {
-		return kafkago.FirstOffset
-	}
-	return kafkago.LastOffset
-}
-
 func (c *kafkaSourceConf) GetReaderConfig() *kafkago.ReaderConfig {
-	return &kafkago.ReaderConfig{
+	cfg := &kafkago.ReaderConfig{
 		Brokers:     strings.Split(c.Brokers, ","),
 		GroupID:     c.GroupID,
 		Topic:       c.Topic,
 		Partition:   c.Partition,
 		MaxBytes:    c.MaxBytes,
 		MaxAttempts: c.MaxAttempts,
-		StartOffset: c.GetStartOffset(),
 	}
+	switch c.OffsetReset {
+	case OffsetResetEarliest:
+		cfg.StartOffset = kafkago.FirstOffset
+	case OffsetResetLatest:
+		cfg.StartOffset = kafkago.LastOffset
+	}
+	return cfg
 }
 
 func getSourceConf(props map[string]interface{}) (*kafkaSourceConf, error) {
 	c := &kafkaSourceConf{
 		MaxBytes:    1e6,
 		MaxAttempts: 3,
-		OffsetReset: OffsetResetLatest,
 	}
 	err := cast.MapToStruct(props, c)
 	if err != nil {
@@ -199,7 +196,11 @@ func (k *KafkaSource) Connect(ctx api.StreamContext, sch api.StatusChangeHandler
 	reader := kafkago.NewReader(*readerConfig)
 	k.reader = reader
 	if len(k.sc.GroupID) < 1 {
-		err := k.reader.SetOffset(k.sc.GetStartOffset())
+		offset := kafkago.LastOffset
+		if k.sc.OffsetReset == OffsetResetEarliest {
+			offset = kafkago.FirstOffset
+		}
+		err := k.reader.SetOffset(offset)
 		if err != nil {
 			k.connected = false
 			sch(api.ConnectionDisconnected, err.Error())
