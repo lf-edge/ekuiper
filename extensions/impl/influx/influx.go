@@ -26,6 +26,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/util"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cert"
+	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	"github.com/lf-edge/ekuiper/v2/pkg/model"
 )
 
@@ -170,7 +171,9 @@ func (m *influxSink) collect(ctx api.StreamContext, data any) error {
 	err = m.cli.Write(m.bp)
 	if err != nil {
 		logger.Error(err)
-		return err
+		// Mark network/write failures as IO errors so that the sink cache
+		// retains the data and resends after recovery, same as influx2 sink
+		return errorx.NewIOErr(fmt.Sprintf("influx sink fails to send out the data. %v", err))
 	}
 	logger.Debug("influx insert success")
 	return nil
