@@ -15,6 +15,8 @@
 package influx
 
 import (
+	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
 
@@ -22,6 +24,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/lf-edge/ekuiper/v2/extensions/impl/tspoint"
+	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
@@ -462,4 +465,43 @@ func TestInfo(t *testing.T) {
 	s := &influxSink{}
 	info := s.Info()
 	assert.True(t, info.HasFields)
+}
+
+func TestCollectWriteIOError(t *testing.T) {
+	// The sink cache relies on sinks to identify recoverable failures by
+	// returning an IO error. A failed write (e.g. network down) must be an
+	// IO error so that the data is cached and resent after recovery, while
+	// a transform error is unrecoverable and the data should be dropped.
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	ctx := mockContext.NewMockContext("testcollectwriteioerror", "op")
+	s := &influxSink{}
+	err := s.Provision(ctx, map[string]any{
+		"addr":        server.URL,
+		"measurement": "test",
+		"database":    "db1",
+	})
+	assert.NoError(t, err)
+	err = s.Connect(ctx, func(status string, message string) {})
+	assert.NoError(t, err)
+
+	data := map[string]any{
+		"temperature": 20,
+		"humidity":    50,
+	}
+	// healthy server: write succeeds
+	assert.NoError(t, s.collect(ctx, data))
+
+	// transform error is not recoverable, must not be an IO error
+	err = s.collect(ctx, []byte{1, 2, 3})
+	assert.Error(t, err)
+	assert.False(t, errorx.IsIOError(err))
+
+	// server down: write failure must be an IO error so that the sink cache
+	// retains the data and resends it after the connection recovers
+	server.Close()
+	err = s.collect(ctx, data)
+	assert.Error(t, err)
+	assert.True(t, errorx.IsIOError(err))
 }
