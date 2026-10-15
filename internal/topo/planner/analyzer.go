@@ -52,6 +52,7 @@ func decorateStmt(s *ast.SelectStatement, opt *def.RuleOption, isTemp bool) ([]*
 			isSchemaless = true
 		}
 	}
+
 	// Validate temp streams can only be used by temp rules
 	for _, si := range streamStmts {
 		if si.stmt.Options.Temp && !isTemp {
@@ -251,6 +252,79 @@ func decorateStmt(s *ast.SelectStatement, opt *def.RuleOption, isTemp bool) ([]*
 		return nil, nil, nil, walkErr
 	}
 	return streamStmts, analyticFuncs, analyticFieldFuncs, walkErr
+}
+
+func getFieldType(projField ast.Field, schema map[string]*ast.JsonStreamField) string {
+	return getExprType(projField.Expr, schema)
+}
+
+// getExprType returns the declared type of expr, or "" when it is unknown.
+// Only references to a stream field have a known type.
+func getExprType(expr ast.Expr, schema map[string]*ast.JsonStreamField) string {
+	ref, ok := expr.(*ast.FieldRef)
+	if !ok || schema == nil {
+		return ""
+	}
+
+	// The analyzer binds an aliased field to an alias reference named after the
+	// alias, so follow it to the aliased expression. Alias cycles are rejected
+	// by the analyzer before this runs.
+	if ref.IsAlias() {
+		if ref.AliasRef == nil {
+			return ""
+		}
+		return getExprType(ref.AliasRef.Expression, schema)
+	}
+
+	streamField, ok := schema[ref.Name]
+	if !ok || streamField == nil {
+		return ""
+	}
+	return streamField.Type
+}
+
+func checkProjectionsTypeSafety(left, right *ast.SelectStatement, leftSchema, rightSchema *streamInfo) error {
+	var (
+		// invisible fields are not part of the output, so columns are
+		// matched by their position among the visible fields
+		leftFields        = left.Fields.Visible()
+		rightFields       = right.Fields.Visible()
+		leftStreamSchema  = leftSchema.schema.ToJsonSchema()
+		rightStreamSchema = rightSchema.schema.ToJsonSchema()
+	)
+
+	// the validator ensures both sides have the same number of visible columns
+	for i := range min(len(leftFields), len(rightFields)) {
+		leftType := getFieldType(leftFields[i], leftStreamSchema)
+		rightType := getFieldType(rightFields[i], rightStreamSchema)
+		if leftType == "" || rightType == "" {
+			continue // unknown type
+		}
+
+		if !areTypesCompatible(leftType, rightType) {
+			return fmt.Errorf("incompatible types in column %d of set operator: %s is %s but %s is %s",
+				i+1, leftFields[i].GetName(), leftType, rightFields[i].GetName(), rightType)
+		}
+	}
+
+	return nil
+}
+
+func areTypesCompatible(leftFieldType string, rightFieldType string) bool {
+	isNum := func(t string) bool {
+		return t == "bigint" || t == "float"
+	}
+	return leftFieldType == rightFieldType || (isNum(leftFieldType) && isNum(rightFieldType))
+}
+
+func loadStreamInfo(stmt *ast.SelectStatement) (*streamInfo, error) {
+	streamFromStmt := xsql.GetStreams(stmt)[0]
+	streamStmt, err := processor.GetStreamProcessorDataSource(streamFromStmt)
+	if err != nil {
+		return nil, fmt.Errorf("fail to get stream %s, please check if stream is created", streamFromStmt)
+	}
+
+	return convertStreamInfo(streamStmt)
 }
 
 type aliasTopoDegree struct {

@@ -446,7 +446,7 @@ func (rr *RuleRegistry) ValidateRule(name, ruleJson string) ([]string, bool, err
 		if err != nil {
 			return nil, false, err
 		}
-		sources = xsql.GetStreams(stmt)
+		sources = xsql.GetRuleStreams(stmt)
 		for _, result := range sources {
 			_, err := xsql.GetDataSource(s, result)
 			if err != nil {

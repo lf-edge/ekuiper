@@ -31,3 +31,39 @@ func TestParseLargeSQLDoesNotIncludeInputInError(t *testing.T) {
 	require.NotContains(t, err.Error(), strings.Repeat("field,", 10))
 	require.Less(t, len(err.Error()), 1024)
 }
+
+func TestGetRuleStreams(t *testing.T) {
+	tests := []struct {
+		sql     string
+		streams []string
+	}{
+		{
+			sql:     "SELECT device FROM roomA",
+			streams: []string{"roomA"},
+		},
+		{
+			sql:     "SELECT device FROM roomA UNION SELECT device FROM roomB",
+			streams: []string{"roomA", "roomB"},
+		},
+		{
+			sql:     "SELECT device FROM roomA UNION ALL SELECT device FROM roomB",
+			streams: []string{"roomA", "roomB"},
+		},
+		{
+			sql:     "SELECT device FROM roomA INTERSECT SELECT device FROM roomB",
+			streams: []string{"roomA", "roomB"},
+		},
+		{
+			sql:     "SELECT device FROM roomA WHERE temperature > 20 EXCEPT ALL SELECT device FROM roomB;",
+			streams: []string{"roomA", "roomB"},
+		},
+	}
+	for _, tt := range tests {
+		stmt, err := GetStatementFromSql(tt.sql)
+		require.NoError(t, err, tt.sql)
+		require.Equal(t, tt.streams, GetRuleStreams(stmt), tt.sql)
+		// GetStreams keeps returning the streams of the left statement only
+		require.Equal(t, tt.streams[:1], GetStreams(stmt), tt.sql)
+	}
+	require.Nil(t, GetRuleStreams(nil))
+}

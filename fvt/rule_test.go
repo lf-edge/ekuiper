@@ -36,7 +36,10 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/io/memory/pubsub"
 	"github.com/lf-edge/ekuiper/v2/internal/server"
+	"github.com/lf-edge/ekuiper/v2/internal/xsql"
+	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/syncx"
+	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 type RuleTestSuite struct {
@@ -1212,5 +1215,112 @@ func (s *RuleTestSuite) assertRecvMemTupleList(subCh chan any, expect []map[stri
 	s.Require().Len(mt, len(expect))
 	for i, e := range expect {
 		s.Require().Equal(e, mt[i].ToMap())
+	}
+}
+
+// TestSetOperators runs one rule per set operator over the same two memory
+// streams and checks the rows each rule sends to its sink.
+func (s *RuleTestSuite) TestSetOperators() {
+	const (
+		leftStream  = "setOpRoomA"
+		rightStream = "setOpRoomB"
+		leftTopic   = "setop/roomA"
+		rightTopic  = "setop/roomB"
+	)
+	for _, st := range []struct{ name, topic string }{{leftStream, leftTopic}, {rightStream, rightTopic}} {
+		resp, err := client.CreateStream(fmt.Sprintf(`{"sql":"CREATE STREAM %s () WITH (TYPE=\"memory\", DATASOURCE=\"%s\", FORMAT=\"json\")"}`, st.name, st.topic))
+		s.Require().NoError(err)
+		s.Require().Equal(http.StatusCreated, resp.StatusCode, mustReadResponseText(s.T(), resp))
+		defer client.DeleteStream(st.name)
+	}
+
+	// thermo-01 appears 3 times on the left and 2 times on the right, thermo-02
+	// only on the left and thermo-03 only on the right, so every operator gives
+	// a different result.
+	thermo01 := map[string]any{"device": "thermo-01", "temperature": 20.5}
+	thermo02 := map[string]any{"device": "thermo-02", "temperature": 21.0}
+	thermo03 := map[string]any{"device": "thermo-03", "temperature": 19.0}
+	leftRows := []map[string]any{thermo01, thermo01, thermo01, thermo02}
+	rightRows := []map[string]any{thermo01, thermo01, thermo03, thermo03}
+
+	tests := []struct {
+		name   string
+		op     string
+		expect []map[string]any
+	}{
+		{name: "Union", op: "UNION", expect: []map[string]any{thermo01, thermo02, thermo03}},
+		{name: "UnionAll", op: "UNION ALL", expect: []map[string]any{thermo01, thermo01, thermo01, thermo02, thermo01, thermo01, thermo03, thermo03}},
+		{name: "Intersect", op: "INTERSECT", expect: []map[string]any{thermo01}},
+		{name: "IntersectAll", op: "INTERSECT ALL", expect: []map[string]any{thermo01, thermo01}},
+		{name: "Except", op: "EXCEPT", expect: []map[string]any{thermo02}},
+		{name: "ExceptAll", op: "EXCEPT ALL", expect: []map[string]any{thermo01, thermo02}},
+	}
+
+	subChs := make([]chan any, len(tests))
+	for i, tt := range tests {
+		ruleID := "setOp" + tt.name
+		topic := "setop/result/" + tt.name
+		subChs[i] = pubsub.CreateSub(topic, nil, topic, 1024)
+		defer pubsub.CloseSourceConsumerChannel(topic, topic)
+		resp, err := client.CreateRule(fmt.Sprintf(`{
+  "id": %q,
+  "sql": "SELECT device, temperature FROM %s %s SELECT device, temperature FROM %s",
+  "actions": [{"memory": {"topic": %q}}],
+  "options": {"setOperatorWindowLength": 2, "setOperatorWindowUnit": "SS"}
+}`, ruleID, leftStream, tt.op, rightStream, topic))
+		s.Require().NoError(err)
+		s.Require().Equal(http.StatusCreated, resp.StatusCode, mustReadResponseText(s.T(), resp))
+		defer client.DeleteRule(ruleID)
+	}
+	for _, tt := range tests {
+		ruleID := "setOp" + tt.name
+		s.Require().True(TryAssert(50, ConstantInterval, func() bool {
+			status, err := client.GetRuleStatus(ruleID)
+			s.Require().NoError(err)
+			return status["status"] == "running"
+		}), "rule %s did not reach running state", ruleID)
+	}
+
+	// The set operator window is a 2 second tumbling window aligned to the
+	// clock, so send all rows just after a window starts: they then all fall
+	// into the same window.
+	windowStart := time.Now().Truncate(2 * time.Second).Add(2 * time.Second)
+	time.Sleep(time.Until(windowStart.Add(200 * time.Millisecond)))
+	ctx := mockContext.NewMockContext("setOperatorsFVT", "memoryProducer")
+	for _, row := range leftRows {
+		pubsub.Produce(ctx, leftTopic, &xsql.Tuple{Message: row, Timestamp: timex.GetNow()})
+	}
+	for _, row := range rightRows {
+		pubsub.Produce(ctx, rightTopic, &xsql.Tuple{Message: row, Timestamp: timex.GetNow()})
+	}
+
+	for i, tt := range tests {
+		s.Run(tt.name, func() {
+			s.Require().Equal(tt.expect, s.recvNonEmptyMemTuples(subChs[i], 10*time.Second))
+		})
+	}
+}
+
+// recvNonEmptyMemTuples returns the rows of the first non-empty result sent to
+// a memory sink, skipping the empty results of windows without data.
+func (s *RuleTestSuite) recvNonEmptyMemTuples(subCh chan any, timeout time.Duration) []map[string]any {
+	deadline := time.After(timeout)
+	for {
+		select {
+		case d := <-subCh:
+			mt, ok := d.([]pubsub.MemTuple)
+			s.Require().True(ok, "expected []pubsub.MemTuple but got %T", d)
+			if len(mt) == 0 {
+				continue
+			}
+			rows := make([]map[string]any, 0, len(mt))
+			for _, t := range mt {
+				rows = append(rows, t.ToMap())
+			}
+			return rows
+		case <-deadline:
+			s.FailNow("no result received from the set operator rule")
+			return nil
+		}
 	}
 }

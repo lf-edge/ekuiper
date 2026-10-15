@@ -253,6 +253,10 @@ func (s *Scanner) ScanIdent() (tok ast.Token, lit string) {
 		return ast.MS, lit
 	case "LIMIT":
 		return ast.LIMIT, lit
+	case "UNION":
+		return ast.UNION, lit
+	case "INTERSECT":
+		return ast.INTERSECT, lit
 	}
 	return ast.IDENT, word
 }

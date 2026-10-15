@@ -112,6 +112,8 @@ const (
 	PARTITION
 	INVISIBLE
 	DEFAULT
+	UNION
+	INTERSECT
 
 	TRUE
 	FALSE
@@ -192,6 +194,8 @@ var Tokens = []string{
 	PARTITION: "PARTITION",
 	INVISIBLE: "INVISIBLE",
 	DEFAULT:   "DEFAULT",
+	UNION:     "UNION",
+	INTERSECT: "INTERSECT",
 
 	AND:        "AND",
 	OR:         "OR",

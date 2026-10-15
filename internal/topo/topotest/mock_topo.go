@@ -276,7 +276,7 @@ func createTestRule(t *testing.T, id string, tt RuleTest, opt *def.RuleOption) (
 		if selectStmt, ok := stmt.(*ast.SelectStatement); !ok {
 			t.Errorf("sql %s is not a select statement", tt.Sql)
 		} else {
-			streams := xsql.GetStreams(selectStmt)
+			streams := xsql.GetRuleStreams(selectStmt)
 			for _, stream := range streams {
 				data, ok := mocknode.TestData[stream]
 				if !ok {

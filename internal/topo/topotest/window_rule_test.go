@@ -1708,3 +1708,104 @@ func TestEventSlidingWindow(t *testing.T) {
 		DoRuleTest(t, tests, opt, 10)
 	}
 }
+
+func TestSetOperatorWindow(t *testing.T) {
+	// Reset
+	streamList := []string{"demo", "demo1"}
+	HandleStream(false, streamList, t)
+	// size > 2 on demo and hum > 70 on demo1 give these rows per 1 second window:
+	//   ...486: demo [true, true]  demo1 [false, false]
+	//   ...487: demo [false]       demo1 [true]
+	//   ...488: demo [true]        demo1 [true]
+	// The window starting at ...489 is not closed before the mock sources end.
+	tests := []RuleTest{
+		{
+			Name: `TestSetOperatorUnion`,
+			Sql:  `SELECT size > 2 AS big FROM demo UNION SELECT hum > 70 AS big FROM demo1`,
+			R: [][]map[string]any{
+				{{"big": true}, {"big": false}},
+				{{"big": false}, {"big": true}},
+				{{"big": true}},
+			},
+			M: map[string]any{},
+		},
+		{
+			Name: `TestSetOperatorUnionAll`,
+			Sql:  `SELECT size > 2 AS big FROM demo UNION ALL SELECT hum > 70 AS big FROM demo1`,
+			R: [][]map[string]any{
+				{{"big": true}, {"big": true}, {"big": false}, {"big": false}},
+				{{"big": false}, {"big": true}},
+				{{"big": true}, {"big": true}},
+			},
+			M: map[string]any{},
+		},
+		{
+			Name: `TestSetOperatorIntersect`,
+			Sql:  `SELECT size > 2 AS big FROM demo INTERSECT SELECT hum > 70 AS big FROM demo1`,
+			R: [][]map[string]any{
+				{},
+				{},
+				{{"big": true}},
+			},
+			M: map[string]any{},
+		},
+		{
+			Name: `TestSetOperatorIntersectAll`,
+			Sql:  `SELECT size > 2 AS big FROM demo INTERSECT ALL SELECT hum > 70 AS big FROM demo1`,
+			R: [][]map[string]any{
+				{},
+				{},
+				{{"big": true}},
+			},
+			M: map[string]any{},
+		},
+		{
+			Name: `TestSetOperatorExcept`,
+			Sql:  `SELECT size > 2 AS big FROM demo EXCEPT SELECT hum > 70 AS big FROM demo1`,
+			R: [][]map[string]any{
+				{{"big": true}},
+				{{"big": false}},
+				{},
+			},
+			M: map[string]any{},
+		},
+		{
+			Name: `TestSetOperatorExceptAll`,
+			Sql:  `SELECT size > 2 AS big FROM demo EXCEPT ALL SELECT hum > 70 AS big FROM demo1`,
+			R: [][]map[string]any{
+				{{"big": true}, {"big": true}},
+				{{"big": false}},
+				{},
+			},
+			M: map[string]any{},
+		},
+	}
+	HandleStream(true, streamList, t)
+	options := []*def.RuleOption{
+		{
+			BufferLength:            100,
+			SendError:               true,
+			SetOperatorWindowLength: 1,
+			SetOperatorWindowUnit:   "SS",
+		},
+		{
+			BufferLength:            100,
+			SendError:               true,
+			Qos:                     def.AtLeastOnce,
+			CheckpointInterval:      cast.DurationConf(5 * time.Second),
+			SetOperatorWindowLength: 1,
+			SetOperatorWindowUnit:   "SS",
+		},
+		{
+			BufferLength:            100,
+			SendError:               true,
+			Qos:                     def.ExactlyOnce,
+			CheckpointInterval:      cast.DurationConf(5 * time.Second),
+			SetOperatorWindowLength: 1,
+			SetOperatorWindowUnit:   "SS",
+		},
+	}
+	for _, opt := range options {
+		DoRuleTest(t, tests, opt, 15)
+	}
+}

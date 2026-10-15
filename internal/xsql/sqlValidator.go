@@ -41,7 +41,96 @@ func Validate(stmt *ast.SelectStatement) error {
 	if err := validateWindowFunction(stmt); err != nil {
 		return err
 	}
-	return validateSRFForbidden(stmt)
+
+	if err := validateSRFForbidden(stmt); err != nil {
+		return err
+	}
+
+	if stmt.SetOp != nil {
+		if err := validateSetOperator(stmt); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func validateSetOperator(stmts *ast.SelectStatement) error {
+	setOp, ok := stmts.SetOp.(*ast.SetOpStmt)
+	if !ok {
+		return fmt.Errorf("unsupported set operator %T", stmts.SetOp)
+	}
+
+	leftStmt := stmts
+	rightStmt := setOp.RightStmt
+
+	// reject wildcards and functions that change the number of output columns
+	// or rows: they make the column count below meaningless, so they must be
+	// checked first
+	for _, query := range []*ast.SelectStatement{leftStmt, rightStmt} {
+		for _, projField := range query.Fields {
+			switch e := projField.Expr.(type) {
+			case *ast.Wildcard:
+				return fmt.Errorf("wildcard expressions are not allowed inside set operators")
+			case *ast.FieldRef:
+				if e.Name == "*" {
+					return fmt.Errorf("wildcard expressions are not allowed inside set operators")
+				}
+			}
+		}
+
+		var illegalCall string
+		ast.WalkFunc(query.Fields, func(n ast.Node) bool {
+			switch c := n.(type) {
+			case *ast.Call:
+				switch c.FuncType {
+				case ast.FuncTypeCols, ast.FuncTypeSrf:
+					illegalCall = c.Name
+					return false
+				}
+			}
+
+			return true
+		})
+
+		if illegalCall != "" {
+			return fmt.Errorf("function %s is not supported inside set operators: it changes the number of output columns or rows", illegalCall)
+		}
+	}
+
+	// invisible fields are not part of the output, so only visible columns count
+	leftColumns, rightColumns := len(leftStmt.Fields.Visible()), len(rightStmt.Fields.Visible())
+	if leftColumns != rightColumns {
+		return fmt.Errorf("column count mismatch between left and right statement, left has %d but right has %d", leftColumns, rightColumns)
+	}
+
+	if leftStmt.SortFields != nil || rightStmt.SortFields != nil {
+		return fmt.Errorf("ORDER BY clause is not supported inside set operators")
+	}
+
+	if leftStmt.Limit != nil || rightStmt.Limit != nil {
+		return fmt.Errorf("LIMIT clause is not supported inside set operators")
+	}
+
+	if len(leftStmt.Dimensions) > 0 || len(rightStmt.Dimensions) > 0 {
+		return fmt.Errorf("GROUP BY clause is not supported inside set operators")
+	}
+
+	// TODO: lookup joins could be supported once the rows they produce are
+	// converted into rows the set operator window accepts
+	if len(leftStmt.Joins) > 0 || len(rightStmt.Joins) > 0 {
+		return fmt.Errorf("JOIN clause is not supported inside set operators")
+	}
+
+	// The set operator tells its sides apart by stream name, so the same stream
+	// on both sides would mix their rows. Each side has a single stream, since
+	// joins are rejected above.
+	// TODO: lift this once the rows of each side are labelled.
+	if GetStreams(leftStmt)[0] == GetStreams(rightStmt)[0] {
+		return fmt.Errorf("the same stream on both sides of a set operator is not supported yet")
+	}
+
+	return nil
 }
 
 func validateCurrentRowContext(stmt *ast.SelectStatement) error {
