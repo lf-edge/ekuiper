@@ -36,6 +36,8 @@ var (
 	extStateStores   *stores = nil
 	checkpointStores *stores = nil
 
+	checkpointStoreErr error
+
 	TraceStores sql.Database
 )
 
@@ -163,6 +165,9 @@ func GetKV(table string) (kv.KeyValue, error) {
 }
 
 func GetTS(table string) (kv.Tskv, error) {
+	if checkpointStoreErr != nil {
+		return nil, fmt.Errorf("checkpoint store initialization failed: %v", checkpointStoreErr)
+	}
 	if checkpointStores != nil {
 		return checkpointStores.GetTS(table)
 	}
@@ -173,6 +178,9 @@ func GetTS(table string) (kv.Tskv, error) {
 }
 
 func DropTS(table string) error {
+	if checkpointStoreErr != nil {
+		return fmt.Errorf("checkpoint store initialization failed: %v", checkpointStoreErr)
+	}
 	if checkpointStores != nil {
 		return checkpointStores.DropTS(table)
 	}
@@ -218,4 +226,37 @@ func GetExtStateKV(table string) (kv.KeyValue, error) {
 		return nil, fmt.Errorf("extState stores are not initialized")
 	}
 	return extStateStores.GetKV(table)
+}
+
+func (s *stores) Disconnect() error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if dbGetter, ok := s.kvBuilder.(interface{ Database() sql.Database }); ok {
+		return dbGetter.Database().Disconnect()
+	}
+	return nil
+}
+
+func DisconnectAll() {
+	checkpointStoreErr = nil
+	if globalStores != nil {
+		_ = globalStores.Disconnect()
+		globalStores = nil
+	}
+	if checkpointStores != nil {
+		_ = checkpointStores.Disconnect()
+		checkpointStores = nil
+	}
+	if cacheStores != nil {
+		_ = cacheStores.Disconnect()
+		cacheStores = nil
+	}
+	if extStateStores != nil {
+		_ = extStateStores.Disconnect()
+		extStateStores = nil
+	}
+	if TraceStores != nil {
+		_ = TraceStores.Disconnect()
+		TraceStores = nil
+	}
 }

@@ -306,6 +306,8 @@ It has properties
 
 - name - name of database file - if left empty it will be `sqliteKV.db`
 
+> Note: eKuiper performs a fast integrity check (`PRAGMA quick_check(1)`) on SQLite databases during startup. If the main database fails to initialize, eKuiper enters [degraded mode](../api/restapi/overview.md#degraded-mode-and-storage-fault-handling) to keep the REST server available for diagnostics and remote reset (`POST /reset`). If an auxiliary database fails to initialize, eKuiper continues running in normal mode (best-effort) and logs the error. No database files are automatically discarded.
+
 ### Redis
 
 It has properties

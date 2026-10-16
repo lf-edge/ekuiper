@@ -16,6 +16,7 @@ package server
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -65,7 +66,17 @@ var (
 	ruleMigrationProcessor *RuleMigrationProcessor
 	stopSignal             chan struct{}
 	cpuProfiler            = &ekuiperProfile{}
+	isDegraded             bool
+	degradedReason         string
 )
+
+func IsDegraded() bool {
+	return isDegraded
+}
+
+func DegradedReason() string {
+	return degradedReason
+}
 
 // newNetListener allows EdgeX Foundry, protected by OpenZiti to override and obtain a transport
 // protected by OpenZiti's zero trust connectivity. See client_edgex.go where this function is
@@ -78,7 +89,12 @@ func newTcpListener(addr string, logger *logrus.Logger) (net.Listener, error) {
 }
 
 func stopEKuiper() {
-	stopSignal <- struct{}{}
+	if stopSignal != nil {
+		select {
+		case stopSignal <- struct{}{}:
+		default:
+		}
+	}
 }
 
 // Create path if mount an empty dir. For edgeX, all the folders must be created priorly
@@ -210,78 +226,93 @@ func StartUp(Version string) {
 	}
 	err = store.SetupWithConfig(sc, needSetup)
 	if err != nil {
-		panic(err)
-	}
-	if err := bump.InitBumpManager(); err != nil {
-		panic(err)
-	}
-	dataDir, _ := conf.GetDataLoc()
-	if err := bump.BumpToCurrentVersion(dataDir); err != nil {
-		panic(err)
-	}
-	if err := tracer.InitTracer(); err != nil {
-		conf.Log.Warn(err)
-	} else {
-		conf.Log.Infof("tracer init successfully")
-	}
-
-	keyedstate.InitKeyedStateKV()
-
-	meta2.InitYamlConfigManager()
-	httpserver.InitGlobalServerManager(conf.Config.Source.HttpServerIp, conf.Config.Source.HttpServerPort, conf.Config.Source.HttpServerTls)
-	ruleProcessor = processor.NewRuleProcessor()
-	streamProcessor = processor.NewStreamProcessor()
-	rulesetProcessor = processor.NewRulesetProcessor(ruleProcessor, streamProcessor)
-	ruleMigrationProcessor = NewRuleMigrationProcessor(ruleProcessor, streamProcessor)
-	sysMetrics = NewMetrics()
-
-	// register all extensions
-	for k, v := range components {
-		logger.Infof("register component %s", k)
-		v.register()
-	}
-
-	// Bind the source, function, sink
-	sort.Sort(entries)
-	err = function.Initialize(entries)
-	if err != nil {
-		panic(err)
-	}
-	err = io.Initialize(entries)
-	if err != nil {
-		panic(err)
-	}
-	meta.Bind()
-	connection.InitConnectionManager(serverCtx)
-	if err := connection.ReloadNamedConnection(); err != nil {
-		conf.Log.Warn(err)
-	}
-	initRuleset()
-
-	registry = &RuleRegistry{internal: make(map[string]*rule.State)}
-	// Start lookup tables
-	streamProcessor.RecoverLookupTable()
-	// Start rules
-	if rules, err := ruleProcessor.GetAllRules(); err != nil {
-		logger.Infof("Start rules error: %s", err)
-	} else {
-		logger.Info("Starting rules")
-		var reply string
-		for _, name := range rules {
-			rule, err := ruleProcessor.GetRuleById(name)
-			if err != nil {
-				logger.Error(err)
-				continue
-			}
-			reply = registry.RecoverRule(rule)
-			if len(reply) != 0 {
-				logger.Info(reply)
-			}
+		var mainErr *store.MainStoreError
+		if errors.As(err, &mainErr) && sc.Type == "sqlite" {
+			conf.Log.Errorf("main sqlite store setup failed: %v, server entering degraded mode", err)
+			isDegraded = true
+			degradedReason = err.Error()
+		} else {
+			panic(err)
 		}
 	}
-	go runScheduleRuleChecker(serverCtx)
-	metrics.InitMetricsDumpJob(serverCtx)
-	async.InitManager()
+	stopSignal = make(chan struct{}, 1)
+
+	if !isDegraded {
+		if err := bump.InitBumpManager(); err != nil {
+			panic(err)
+		}
+		dataDir, _ := conf.GetDataLoc()
+		if err := bump.BumpToCurrentVersion(dataDir); err != nil {
+			panic(err)
+		}
+		if err := tracer.InitTracer(); err != nil {
+			conf.Log.Warn(err)
+		} else {
+			conf.Log.Infof("tracer init successfully")
+		}
+
+		keyedstate.InitKeyedStateKV()
+
+		meta2.InitYamlConfigManager()
+		httpserver.InitGlobalServerManager(conf.Config.Source.HttpServerIp, conf.Config.Source.HttpServerPort, conf.Config.Source.HttpServerTls)
+		ruleProcessor = processor.NewRuleProcessor()
+		streamProcessor = processor.NewStreamProcessor()
+		rulesetProcessor = processor.NewRulesetProcessor(ruleProcessor, streamProcessor)
+		ruleMigrationProcessor = NewRuleMigrationProcessor(ruleProcessor, streamProcessor)
+		sysMetrics = NewMetrics()
+
+		// register all extensions
+		for k, v := range components {
+			logger.Infof("register component %s", k)
+			v.register()
+		}
+
+		// Bind the source, function, sink
+		sort.Sort(entries)
+		err = function.Initialize(entries)
+		if err != nil {
+			panic(err)
+		}
+		err = io.Initialize(entries)
+		if err != nil {
+			panic(err)
+		}
+		meta.Bind()
+		connection.InitConnectionManager(serverCtx)
+		if err := connection.ReloadNamedConnection(); err != nil {
+			conf.Log.Warn(err)
+		}
+		initRuleset()
+
+		registry = &RuleRegistry{internal: make(map[string]*rule.State)}
+		// Start lookup tables
+		streamProcessor.RecoverLookupTable()
+		// Start rules
+		if rules, err := ruleProcessor.GetAllRules(); err != nil {
+			logger.Infof("Start rules error: %s", err)
+		} else {
+			logger.Info("Starting rules")
+			var reply string
+			for _, name := range rules {
+				rule, err := ruleProcessor.GetRuleById(name)
+				if err != nil {
+					logger.Error(err)
+					continue
+				}
+				reply = registry.RecoverRule(rule)
+				if len(reply) != 0 {
+					logger.Info(reply)
+				}
+			}
+		}
+		go runScheduleRuleChecker(serverCtx)
+		metrics.InitMetricsDumpJob(serverCtx)
+		async.InitManager()
+	} else {
+		registry = &RuleRegistry{internal: make(map[string]*rule.State)}
+		sysMetrics = NewMetrics()
+		conf.Log.Warnf("running in degraded mode: %s", degradedReason)
+	}
 
 	// Start rest service
 	srvRest := createRestServer(conf.Config.Basic.RestIp, conf.Config.Basic.RestPort, conf.Config.Basic.Authentication)
@@ -301,20 +332,21 @@ func StartUp(Version string) {
 		}
 	}()
 
-	// Start extend services
-	for k, v := range servers {
-		logger.Infof("start service %s", k)
-		v.serve()
+	if !isDegraded {
+		// Start extend services
+		for k, v := range servers {
+			logger.Infof("start service %s", k)
+			v.serve()
+		}
+		// Register conf managers
+		InitConfManagers()
 	}
-	// Register conf managers
-	InitConfManagers()
 
 	// Startup message
 	restHttpType := "http"
 	if conf.Config.Basic.RestTls != nil {
 		restHttpType = "https"
 	}
-	stopSignal = make(chan struct{})
 	msg := fmt.Sprintf("Serving kuiper (version - %s) on port %d, and restful api on %s://%s.", Version, conf.Config.Basic.Port, restHttpType, cast.JoinHostPortInt(conf.Config.Basic.RestIp, conf.Config.Basic.RestPort))
 	logger.Info(msg)
 	fmt.Println(msg)
@@ -328,7 +360,11 @@ func StartUp(Version string) {
 	case <-stopSignal:
 		// sleep 1 sec in order to let stop request got response
 		time.Sleep(time.Second)
-		conf.Log.Info("eKuiper stopped by Stop request")
+		if IsResetting() {
+			conf.Log.Info("eKuiper stopped by Reset request")
+		} else {
+			conf.Log.Info("eKuiper stopped by Stop request")
+		}
 	}
 	serverCancel()
 	// wait rule checker exit
@@ -336,13 +372,15 @@ func StartUp(Version string) {
 
 	ctx, cancel := context.WithTimeout(context.TODO(), time.Duration(conf.Config.Basic.GracefulShutdownTimeout))
 	defer cancel()
-	waitRuleStopCh := make(chan any)
+	waitRuleStopCh := make(chan error, 1)
 	go func() {
 		conf.Log.Info("start to stop rest server")
-		if err = srvRest.Shutdown(ctx); err != nil {
-			logger.Errorf("rest server shutdown error: %v", err)
+		shutdownErr := srvRest.Shutdown(ctx)
+		if shutdownErr != nil {
+			logger.Errorf("rest server shutdown error: %v", shutdownErr)
+		} else {
+			logger.Info("rest server successfully shutdown.")
 		}
-		logger.Info("rest server successfully shutdown.")
 		wg := sync.WaitGroup{}
 		wg.Add(1)
 		go func() {
@@ -352,11 +390,17 @@ func StartUp(Version string) {
 			conf.Log.Info("stop all rules success")
 		}()
 		wg.Wait()
-		close(waitRuleStopCh)
+		waitRuleStopCh <- shutdownErr
 	}()
+	var stopTimedOut bool
+	var shutdownErr error
 	select {
-	case <-waitRuleStopCh:
+	case shutdownErr = <-waitRuleStopCh:
+		if ctx.Err() != nil {
+			stopTimedOut = true
+		}
 	case <-ctx.Done():
+		stopTimedOut = true
 		conf.Log.Info("wait rule graceful stop timeout")
 	}
 	// kill all plugin process
@@ -367,6 +411,20 @@ func StartUp(Version string) {
 		logger.Infof("start to close service %s", k)
 		v.close()
 		logger.Infof("close service %s successfully", k)
+	}
+
+	if IsResetting() {
+		if stopTimedOut || shutdownErr != nil {
+			conf.Log.Errorf("reset aborted: graceful shutdown timed out or rest server shutdown failed (restErr: %v, timedOut: %v), aborting data cleanup", shutdownErr, stopTimedOut)
+			os.Exit(1)
+		}
+		conf.Log.Info("performing factory reset data cleanup...")
+		store.DisconnectAll()
+		if err := cleanRuntimeData(); err != nil {
+			conf.Log.Errorf("failed to clean data during reset: %v", err)
+			os.Exit(1)
+		}
+		conf.Log.Info("factory reset data cleanup completed successfully")
 	}
 
 	os.Exit(0)

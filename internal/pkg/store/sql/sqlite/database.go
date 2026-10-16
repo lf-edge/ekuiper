@@ -20,7 +20,6 @@ import (
 	"os"
 	"path"
 
-	// introduce sqlite
 	_ "modernc.org/sqlite"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf/logger"
@@ -60,6 +59,18 @@ func (d *Database) Connect() error {
 	db.SetMaxIdleConns(1)
 	db.SetMaxOpenConns(1)
 	db.SetConnMaxLifetime(-1)
+
+	var result string
+	row := db.QueryRow("PRAGMA quick_check(1);")
+	if err := row.Scan(&result); err != nil {
+		_ = db.Close()
+		return err
+	}
+	if result != "ok" {
+		_ = db.Close()
+		return fmt.Errorf("sqlite integrity check failed: %s", result)
+	}
+
 	d.db = db
 	return nil
 }
@@ -69,8 +80,14 @@ func connectionString(dpath string) string {
 }
 
 func (d *Database) Disconnect() error {
-	err := d.db.Close()
-	return err
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	if d.db != nil {
+		err := d.db.Close()
+		d.db = nil
+		return err
+	}
+	return nil
 }
 
 func (d *Database) Apply(f func(db *sql.DB) error) error {

@@ -17,7 +17,6 @@ package cache
 import (
 	"bytes"
 	"encoding/gob"
-	"fmt"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -30,6 +29,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/v2/internal/testx"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/state"
@@ -124,7 +124,7 @@ func TestCache(t *testing.T) {
 	testx.InitEnv("cache")
 	tempStore, err := state.CreateStore("mock", def.AtMostOnce)
 	assert.NoError(t, err)
-	deleteCachedb()
+	deleteCachedb(t)
 	contextLogger := conf.Log.WithField("rule", "TestCache")
 	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger).WithMeta("TestCache", "op1", tempStore)
 	s, err := NewSyncCache(ctx, &model.SinkConf{
@@ -229,7 +229,7 @@ func TestCacheCase2(t *testing.T) {
 	testx.InitEnv("cache2")
 	tempStore, err := state.CreateStore("mock", def.AtMostOnce)
 	assert.NoError(t, err)
-	deleteCachedb()
+	deleteCachedb(t)
 	contextLogger := conf.Log.WithField("rule", "TestCache")
 	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger).WithMeta("TestCache", "op1", tempStore)
 	s, err := NewSyncCache(ctx, &model.SinkConf{
@@ -332,7 +332,7 @@ func TestCacheInit(t *testing.T) {
 	testx.InitEnv("cache3")
 	tempStore, err := state.CreateStore("mock", def.AtMostOnce)
 	assert.NoError(t, err)
-	deleteCachedb()
+	deleteCachedb(t)
 	contextLogger := conf.Log.WithField("rule", "TestCache")
 	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger).WithMeta("TestCache", "op1", tempStore)
 	s, err := NewSyncCache(ctx, &model.SinkConf{
@@ -502,13 +502,11 @@ func TestTupleGobContextRoundTrip(t *testing.T) {
 	require.Equal(t, tuple.Props, got.Props)
 }
 
-func deleteCachedb() {
+func deleteCachedb(t *testing.T) {
+	store.DisconnectAll()
 	loc, err := conf.GetDataLoc()
-	if err != nil {
-		fmt.Println(err)
-	}
+	require.NoError(t, err)
 	err = os.RemoveAll(filepath.Join(loc, "cache.db"))
-	if err != nil {
-		fmt.Println(err)
-	}
+	require.NoError(t, err)
+	require.NoError(t, store.SetupDefault(loc))
 }

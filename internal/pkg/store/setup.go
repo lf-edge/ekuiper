@@ -17,6 +17,7 @@ package store
 import (
 	"database/sql"
 
+	"github.com/lf-edge/ekuiper/v2/internal/conf/logger"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store/definition"
 	sqldb "github.com/lf-edge/ekuiper/v2/internal/pkg/store/sql"
 )
@@ -57,43 +58,97 @@ func SetupWithConfig(sc *StoreConf, setupCheckpointDB bool) error {
 	return Setup(c, setupCheckpointDB)
 }
 
+type MainStoreError struct {
+	Err error
+}
+
+func (e *MainStoreError) Error() string {
+	return e.Err.Error()
+}
+
+func (e *MainStoreError) Unwrap() error {
+	return e.Err
+}
+
 func Setup(config definition.Config, setupCheckpointDB bool) error {
 	s, err := newStores(config, "sqliteKV.db")
 	if err != nil {
-		return err
+		return &MainStoreError{Err: err}
 	}
 	globalStores = s
+
+	isSqlite := config.Type == "sqlite"
+
 	if setupCheckpointDB {
 		s, err = newStores(config, "checkpoint.db")
 		if err != nil {
-			return err
-		}
-		checkpointStores = s
-		db, err := checkpointStores.GetKV("init_checkpointdb")
-		if err != nil {
+			if !isSqlite {
+				return err
+			}
 			checkpointStores = nil
+			checkpointStoreErr = err
+			logger.Log.Errorf("failed to init checkpoint store: %v", err)
 		} else {
-			// write sth to ensure checkpoint.db created
-			db.Set("init", "init")
+			checkpointStores = s
+			db, err := checkpointStores.GetKV("init_checkpointdb")
+			if err != nil {
+				_ = s.Disconnect()
+				checkpointStores = nil
+				if !isSqlite {
+					return err
+				}
+				checkpointStoreErr = err
+				logger.Log.Errorf("failed to init checkpoint db kv: %v", err)
+			} else {
+				// write sth to ensure checkpoint.db created
+				err = db.Set("init", "init")
+				if err != nil {
+					_ = s.Disconnect()
+					checkpointStores = nil
+					if !isSqlite {
+						return err
+					}
+					checkpointStoreErr = err
+					logger.Log.Errorf("failed to set checkpoint init marker: %v", err)
+				}
+			}
 		}
 	}
 	s, err = newStores(config, "cache.db")
 	if err != nil {
-		return err
+		if !isSqlite {
+			return err
+		}
+		cacheStores = nil
+		logger.Log.Errorf("failed to init cache store: %v", err)
+	} else {
+		cacheStores = s
 	}
-	cacheStores = s
 	s, err = newExtStateStores(config, "extState.db")
 	if err != nil {
-		return err
+		if config.ExtStateType != "sqlite" {
+			return err
+		}
+		extStateStores = nil
+		logger.Log.Errorf("failed to init extState store: %v", err)
+	} else {
+		extStateStores = s
 	}
-	extStateStores = s
 	db, err := sqldb.BuildSqliteStore(config, "trace.db")
 	if err != nil {
-		return err
+		TraceStores = nil
+		logger.Log.Errorf("failed to init trace store: %v", err)
+	} else {
+		TraceStores = db
+		err = TraceStores.Apply(func(db *sql.DB) error {
+			_, err := db.Exec(`CREATE TABLE IF NOT EXISTS trace (traceID TEXT PRIMARY KEY, ruleID TEXT NOT NULL, value BLOB,createdtimestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP);`)
+			return err
+		})
+		if err != nil {
+			_ = TraceStores.Disconnect()
+			TraceStores = nil
+			logger.Log.Errorf("failed to apply trace schema: %v", err)
+		}
 	}
-	TraceStores = db
-	return TraceStores.Apply(func(db *sql.DB) error {
-		_, err := db.Exec(`CREATE TABLE IF NOT EXISTS trace (traceID TEXT PRIMARY KEY, ruleID TEXT NOT NULL, value BLOB,createdtimestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP);`)
-		return err
-	})
+	return nil
 }

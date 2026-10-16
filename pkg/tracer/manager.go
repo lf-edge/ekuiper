@@ -21,6 +21,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/pingcap/failpoint"
@@ -326,6 +327,9 @@ func (s *sqlSpanStorage) saveLocalSpan(span *LocalSpan) error {
 }
 
 func (s *sqlSpanStorage) loadTraceByRuleID(ruleID string) ([]string, error) {
+	if store.TraceStores == nil {
+		return nil, fmt.Errorf("trace store is not initialized")
+	}
 	traceIDList := make([]string, 0)
 	err := store.TraceStores.Apply(func(db *sql.DB) error {
 		stmt, err := db.Prepare("select traceID from trace where ruleID = ?")
@@ -364,6 +368,9 @@ func (s *sqlSpanStorage) loadTraceByRuleID(ruleID string) ([]string, error) {
 }
 
 func (s *sqlSpanStorage) loadTraceByTraceID(traceID string) (*LocalSpan, error) {
+	if store.TraceStores == nil {
+		return nil, fmt.Errorf("trace store is not initialized")
+	}
 	var valueList [][]byte
 	err := store.TraceStores.Apply(func(db *sql.DB) error {
 		stmt, err := db.Prepare("select value from trace where traceID = ?")
@@ -422,6 +429,9 @@ func (s *sqlSpanStorage) loadTraceByTraceID(traceID string) (*LocalSpan, error) 
 }
 
 func gcSqliteSpan() error {
+	if store.TraceStores == nil {
+		return nil
+	}
 	return store.TraceStores.Apply(func(db *sql.DB) error {
 		_, err := db.Exec("DELETE FROM trace WHERE createdtimestamp < datetime('now', '-1 day')")
 		return err

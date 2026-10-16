@@ -181,19 +181,21 @@ func createRestServer(ip string, port int, needToken bool) *http.Server {
 	uploadDir = filepath.Join(dataDir, "uploads")
 	uploadsDb, err = store.GetKV("uploads")
 	if err != nil {
-		panic(err)
+		conf.Log.Warnf("failed to init uploads store: %v", err)
 	}
 	uploadsStatusDb, err = store.GetKV("uploadsStatusDb")
 	if err != nil {
-		panic(err)
+		conf.Log.Warnf("failed to init uploadsStatusDb store: %v", err)
 	}
 
 	r := mux.NewRouter()
 	router = r
 	r.Use(traceMiddleware)
+	r.Use(degradedMiddleware)
 
 	r.HandleFunc("/", rootHandler).Methods(http.MethodGet, http.MethodPost)
 	r.HandleFunc("/stop", stopHandler).Methods(http.MethodGet, http.MethodPost)
+	r.HandleFunc("/reset", resetHandler).Methods(http.MethodPost)
 	r.HandleFunc("/ping", pingHandler).Methods(http.MethodGet)
 	r.HandleFunc("/streams", streamsHandler).Methods(http.MethodGet, http.MethodPost)
 	r.HandleFunc("/streamdetails", streamDetailsHandler).Methods(http.MethodGet)
@@ -316,10 +318,15 @@ func (f *fileContent) Validate() error {
 func upload(file *fileContent) error {
 	err := getFile(file)
 	if err != nil {
-		_ = uploadsStatusDb.Set(file.Name, err.Error())
+		if uploadsStatusDb != nil {
+			_ = uploadsStatusDb.Set(file.Name, err.Error())
+		}
 		return err
 	}
 
+	if uploadsDb == nil {
+		return errors.New("uploads storage not initialized")
+	}
 	return uploadsDb.Set(file.Name, file.InstallScript())
 }
 
@@ -502,13 +509,17 @@ func fileDeleteHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 type information struct {
-	Version       string `json:"version"`
-	Os            string `json:"os"`
-	Arch          string `json:"arch"`
-	UpTimeSeconds int64  `json:"upTimeSeconds"`
-	CpuUsage      string `json:"cpuUsage,omitempty"`
-	MemoryUsed    string `json:"memoryUsed,omitempty"`
-	MemoryTotal   string `json:"memoryTotal"`
+	Version        string `json:"version"`
+	Os             string `json:"os"`
+	Arch           string `json:"arch"`
+	UpTimeSeconds  int64  `json:"upTimeSeconds"`
+	CpuUsage       string `json:"cpuUsage,omitempty"`
+	MemoryUsed     string `json:"memoryUsed,omitempty"`
+	MemoryTotal    string `json:"memoryTotal"`
+	Status         string `json:"status,omitempty"`
+	Degraded       bool   `json:"degraded"`
+	DegradedReason string `json:"degradedReason,omitempty"`
+	Reason         string `json:"reason,omitempty"`
 }
 
 func stopHandler(w http.ResponseWriter, r *http.Request) {
@@ -536,6 +547,15 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 			info.MemoryUsed = sysMetrics.GetMemoryUsage()
 		}
 		info.MemoryTotal = fmt.Sprintf("%d", memory.GetMemoryTotal())
+		if isDegraded {
+			info.Status = "degraded"
+			info.Degraded = true
+			info.DegradedReason = degradedReason
+			info.Reason = degradedReason
+		} else {
+			info.Status = "running"
+			info.Degraded = false
+		}
 		byteInfo, _ := json.Marshal(info)
 		w.Write(byteInfo)
 	}
@@ -543,6 +563,34 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 
 func pingHandler(w http.ResponseWriter, _ *http.Request) {
 	w.WriteHeader(http.StatusOK)
+}
+
+func degradedMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		p := r.URL.Path
+		if IsResetting() && p != "/" && p != "/ping" && p != "/reset" {
+			w.Header().Set("Content-Type", "application/json; charset=utf-8")
+			w.WriteHeader(http.StatusServiceUnavailable)
+			_ = json.NewEncoder(w).Encode(map[string]string{
+				"error":   "server is shutting down for factory reset",
+				"message": "server is shutting down for factory reset",
+			})
+			return
+		}
+		if isDegraded {
+			if p != "/" && p != "/ping" && p != "/stop" && p != "/reset" {
+				w.Header().Set("Content-Type", "application/json; charset=utf-8")
+				w.WriteHeader(http.StatusServiceUnavailable)
+				msg := fmt.Sprintf("service is running in degraded mode: %s. Use POST /reset to restore.", degradedReason)
+				_ = json.NewEncoder(w).Encode(map[string]string{
+					"error":   msg,
+					"message": msg,
+				})
+				return
+			}
+		}
+		next.ServeHTTP(w, r)
+	})
 }
 
 func sourceDetailsManageHandler(w http.ResponseWriter, r *http.Request, st ast.StreamType) {

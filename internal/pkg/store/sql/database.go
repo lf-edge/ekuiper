@@ -17,9 +17,12 @@ package sql
 import (
 	"database/sql"
 	"regexp"
+
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/store/definition"
 )
 
 type Database interface {
+	definition.Database
 	Apply(f func(db *sql.DB) error) error
 }
 

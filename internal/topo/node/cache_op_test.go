@@ -15,7 +15,6 @@
 package node
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -27,6 +26,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/v2/internal/testx"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node/cache"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
@@ -38,7 +38,7 @@ import (
 
 func TestCacheRun(t *testing.T) {
 	testx.InitEnv("cacheOp")
-	deleteCachedb()
+	deleteCachedb(t)
 	timex.Set(0)
 	// prepare data
 	tuples := make([]any, 20)
@@ -155,7 +155,7 @@ func TestCacheRun(t *testing.T) {
 
 func TestCacheRunRestored(t *testing.T) {
 	testx.InitEnv("cacheOpRestore")
-	deleteCachedb()
+	deleteCachedb(t)
 	timex.Set(0)
 	ctx, cancel := mockContext.NewMockContext("testCacheRestore", "op1").WithCancel()
 	defer cancel()
@@ -231,13 +231,11 @@ func TestRunError(t *testing.T) {
 	assert.Equal(t, 0, len(errCh))
 }
 
-func deleteCachedb() {
+func deleteCachedb(t *testing.T) {
+	store.DisconnectAll()
 	loc, err := conf.GetDataLoc()
-	if err != nil {
-		fmt.Println(err)
-	}
+	require.NoError(t, err)
 	err = os.RemoveAll(filepath.Join(loc, "cache.db"))
-	if err != nil {
-		fmt.Println(err)
-	}
+	require.NoError(t, err)
+	require.NoError(t, store.SetupDefault(loc))
 }

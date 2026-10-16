@@ -15,6 +15,8 @@
 package keyedstate
 
 import (
+	"fmt"
+
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
 	kv2 "github.com/lf-edge/ekuiper/v2/pkg/kv"
 )
@@ -30,13 +32,22 @@ func InitKeyedStateKV() {
 }
 
 func GetKeyedState(key string) (interface{}, error) {
+	if kv == nil {
+		return nil, fmt.Errorf("keyed state store is not initialized")
+	}
 	return kv.GetKeyedState(key)
 }
 
 func SetKeyedState(key string, value interface{}) error {
+	if kv == nil {
+		return fmt.Errorf("keyed state store is not initialized")
+	}
 	return kv.SetKeyedState(key, value)
 }
 
 func ClearKeyedState() error {
+	if kv == nil {
+		return fmt.Errorf("keyed state store is not initialized")
+	}
 	return kv.Drop()
 }

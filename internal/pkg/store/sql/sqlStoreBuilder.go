@@ -31,3 +31,7 @@ func NewStoreBuilder(d Database) StoreBuilder {
 func (b StoreBuilder) CreateStore(table string) (kv.KeyValue, error) {
 	return createSqlKvStore(b.database, table)
 }
+
+func (b StoreBuilder) Database() Database {
+	return b.database
+}

@@ -293,6 +293,8 @@ basic:
 
 - name - 数据库文件名。若为空，则设置为默认名字 `sqliteKV.db`。
 
+> 注意: eKuiper 在启动时会自动执行快速完整性自检（`PRAGMA quick_check(1)`）。若主数据库初始化失败，eKuiper 将进入[降级模式](../api/restapi/overview.md#降级模式与存储故障处理)保活，以便通过 REST API 进行诊断或远程重置（`POST /reset`）；若辅助数据库初始化失败，eKuiper 采取 Best-effort 策略继续以正常模式启动，仅在日志中记录错误。任何故障均保留原始文件，不自动丢弃数据。
+
 ### Redis
 
 可配置如下属性：
