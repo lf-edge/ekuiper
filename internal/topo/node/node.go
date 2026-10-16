@@ -282,6 +282,19 @@ func (o *defaultSinkNode) SetBarrierHandler(bh checkpoint.BarrierHandler) {
 	o.barrierHandler = bh
 }
 
+// nextDue returns the next backlog item the barrier handler ordered before
+// any fresh input, preserving checkpoint row order. It is non-blocking and
+// reports false when nothing is due, so operator loops keep their select
+// structure (timers and control cases included) untouched and only consult
+// it first. Handlers that never hold rows back, like BarrierTracker,
+// always report nothing.
+func (o *defaultSinkNode) nextDue() (*checkpoint.BufferOrEvent, bool) {
+	if o.barrierHandler == nil {
+		return nil, false
+	}
+	return o.barrierHandler.NextDue()
+}
+
 func (o *defaultNode) prepareExec(ctx api.StreamContext, errCh chan<- error, opType string) {
 	o.mu.Lock()
 	defer o.mu.Unlock()

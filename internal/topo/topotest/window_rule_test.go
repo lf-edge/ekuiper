@@ -806,6 +806,160 @@ func TestWindow(t *testing.T) {
 	}
 }
 
+// TestIncAggTimeWindowRule runs time-based windows end to end through SQL,
+// planner, operators and sink with incremental aggregation enabled. It
+// covers the three IncAgg time window implementations touched by the
+// checkpoint timer rework. Each case runs with QoS 0 and QoS 2; the QoS 2
+// runs additionally assert that a checkpoint really completed.
+func TestIncAggTimeWindowRule(t *testing.T) {
+	// Create (idempotent) instead of dropping: this test must run
+	// standalone as well as in the full suite.
+	streamList := []string{"demo"}
+	HandleStream(true, streamList, t)
+	tests := []RuleTest{
+		{
+			Name: `TestIncAggTumblingTimeWindow`,
+			Sql:  `SELECT COUNT(*) AS cnt FROM demo GROUP BY TUMBLINGWINDOW(ss, 1)`,
+			R: [][]map[string]interface{}{
+				{
+					{
+						"cnt": int64(2),
+					},
+				},
+				{
+					{
+						"cnt": int64(1),
+					},
+				},
+				{
+					{
+						"cnt": int64(1),
+					},
+				},
+			},
+			M:                 map[string]interface{}{},
+			RequireCheckpoint: true,
+		},
+		{
+			Name: `TestIncAggHoppingTimeWindow`,
+			Sql:  `SELECT COUNT(*) AS cnt FROM demo WHERE size = 2 OR size = 4 GROUP BY HOPPINGWINDOW(ss, 2, 1)`,
+			// Windows align to the first tuple: [d1,d2,d3] last d3(size 2),
+			// [d3,d4] last d4(size 4), [d4,d5] last d5(size 1). The post
+			// window filter drops whole windows by their last row, so the
+			// trailing window is excluded deterministically even if its
+			// timer fires after EOF shutdown.
+			R: [][]map[string]interface{}{
+				{
+					{
+						"cnt": int64(3),
+					},
+				},
+				{
+					{
+						"cnt": int64(2),
+					},
+				},
+			},
+			M:                 map[string]interface{}{},
+			RequireCheckpoint: true,
+		},
+		{
+			Name: `TestIncAggSlidingDelayTimeWindow`,
+			Sql:  `SELECT COUNT(*) AS cnt FROM demo GROUP BY SLIDINGWINDOW(ss, 4, 2) OVER (WHEN size = 3 OR size = 6)`,
+			// Only d1(size 3) and d2(size 6) create delay tasks; the
+			// remaining rows still join the window computation but schedule
+			// nothing, so no timer can fire after EOF.
+			R: [][]map[string]interface{}{
+				{
+					{
+						"cnt": int64(3),
+					},
+				},
+				{
+					{
+						"cnt": int64(4),
+					},
+				},
+			},
+			M:                 map[string]interface{}{},
+			RequireCheckpoint: true,
+		},
+	}
+	options := []*def.RuleOption{
+		{
+			BufferLength: 100,
+			SendError:    true,
+			PlanOptimizeStrategy: &def.PlanOptimizeStrategy{
+				EnableIncrementalWindow: true,
+			},
+			DisableBufferFullDiscard: true,
+		},
+		{
+			BufferLength:       100,
+			SendError:          true,
+			Qos:                def.ExactlyOnce,
+			CheckpointInterval: cast.DurationConf(time.Second),
+			PlanOptimizeStrategy: &def.PlanOptimizeStrategy{
+				EnableIncrementalWindow: true,
+			},
+			DisableBufferFullDiscard: true,
+		},
+	}
+	for _, opt := range options {
+		DoRuleTest(t, tests, opt, 15)
+	}
+}
+
+// TestSlidingDelayV2Qos2 reruns the TestSlidingDelay case with Window V2
+// under ExactlyOnce. TestWindow covers V2 only with QoS 0, so this is the
+// only rule-level run of a V2 delay window with checkpointing enabled. It
+// additionally asserts that a checkpoint really completed.
+func TestSlidingDelayV2Qos2(t *testing.T) {
+	// Reset
+	streamList := []string{"demo"}
+	HandleStream(true, streamList, t)
+	tests := []RuleTest{
+		{
+			Name: `TestSlidingDelay`,
+			Sql:  `SELECT size,color FROM demo GROUP BY SlidingWindow(ss, 5, 1) Over (when size = 2)`,
+			R: [][]map[string]interface{}{
+				{
+					{
+						"size":  3,
+						"color": "red",
+					},
+					{
+						"size":  6,
+						"color": "blue",
+					},
+					{
+						"size":  2,
+						"color": "blue",
+					},
+					{
+						"size":  4,
+						"color": "yellow",
+					},
+				},
+			},
+			M:                 map[string]interface{}{},
+			RequireCheckpoint: true,
+		},
+	}
+	opt := &def.RuleOption{
+		BufferLength:       100,
+		SendError:          true,
+		Qos:                def.ExactlyOnce,
+		CheckpointInterval: cast.DurationConf(time.Second),
+		PlanOptimizeStrategy: &def.PlanOptimizeStrategy{
+			WindowOption: &def.WindowOption{
+				WindowVersion: "v2",
+			},
+		},
+	}
+	DoRuleTest(t, tests, opt, 15)
+}
+
 func TestEventWindow(t *testing.T) {
 	// Reset
 	streamList := []string{"demoE", "demoErr", "demo1E", "sessionDemoE", "demoE2", "demoE3"}

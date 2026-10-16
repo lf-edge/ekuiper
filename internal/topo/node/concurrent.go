@@ -84,24 +84,45 @@ func merge(ctx api.StreamContext, node *defaultSinkNode, sendInterval time.Durat
 
 func distribute(ctx api.StreamContext, node *defaultSinkNode, numWorkers int, workerChans []chan any) {
 	var counter int
-	for {
-		node.statManager.SetBufferLength(int64(len(node.input)))
+	// send routes one item to the next worker, preserving distribution
+	// order. It reports false when the context is done.
+	send := func(item any) bool {
 		// Round-robin
 		if counter == numWorkers {
 			counter = 0
+		}
+		select {
+		case workerChans[counter] <- item:
+		case <-ctx.Done():
+			return false
+		}
+		counter++
+		return true
+	}
+	for {
+		node.statManager.SetBufferLength(int64(len(node.input)))
+		// Due backlog rows and barriers ordered by the checkpoint handler
+		// take priority over fresh input. Barriers keep flowing through the
+		// workers' shared handler, which serializes them internally; rows
+		// keep distribution order so the merge stays ordered. Nodes using
+		// worker pools are single-input in practice and never queue, making
+		// this a no-op for them.
+		if due, ok := node.nextDue(); ok {
+			if !send(due) {
+				ctx.GetLogger().Infof("distribute done")
+				return
+			}
+			continue
 		}
 		select {
 		case <-ctx.Done():
 			ctx.GetLogger().Infof("distribute done")
 			return
 		case item := <-node.input: // Just send out all inputs even they are control tuples
-			select {
-			case workerChans[counter] <- item:
-			case <-ctx.Done():
+			if !send(item) {
 				return
 			}
 		}
-		counter++
 	}
 }
 

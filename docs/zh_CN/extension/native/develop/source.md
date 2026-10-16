@@ -136,6 +136,11 @@ Lookup(ctx StreamContext, fields []string, keys []string, values []any) ([][]byt
 
 一个典型的实现是将 "offset" 作为源的一个字段来保存。当读入新的值时更新偏移值。注意，当实现 GetOffset() 时，将被 eKuiper 系统调用，这意味着偏移值可以被多个 go routines 访问。因此，在读或写偏移量时，需要一个锁。
 
+默认情况下，eKuiper 会克隆 `GetOffset` 返回的 offset，以隔离 checkpoint
+和 source 后续的修改。如果返回的对象图在调用后保持不可变，可以实现
+`api.ImmutableOffsetProvider`，直接移交对象并避免逐 tuple 序列化。实现方必须
+保证 `GetOffset` 返回后，offset 可达的所有值都不再变化。
+
 ### 有界源
 
 有些数据源是有界的，例如文件；有些数据源本身是无界的，但在某些场景用户希望能够在读取一定数据后停止。eKuiper

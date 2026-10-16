@@ -32,6 +32,38 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
+var _ interface{ CheckpointOffsetIsImmutable() } = (*Source)(nil)
+
+func TestPublishedOffsetRemainsImmutableWhileFileSourceAdvances(t *testing.T) {
+	firstTime := time.UnixMilli(100)
+	secondTime := time.UnixMilli(200)
+	source := &Source{}
+	source.rewindMeta.Store(&FileDirSourceRewindMeta{LastModifyTime: firstTime})
+
+	publishedValue, err := source.GetOffset()
+	assert.NoError(t, err)
+	published := publishedValue.(*FileDirSourceRewindMeta)
+	source.updateRewindMeta("ignored", secondTime)
+	currentValue, err := source.GetOffset()
+	assert.NoError(t, err)
+	current := currentValue.(*FileDirSourceRewindMeta)
+
+	assert.NotSame(t, published, current)
+	assert.Equal(t, firstTime, published.LastModifyTime)
+	assert.Equal(t, secondTime, current.LastModifyTime)
+}
+
+func BenchmarkFileSourceGetOffset(b *testing.B) {
+	source := &Source{}
+	source.rewindMeta.Store(&FileDirSourceRewindMeta{LastModifyTime: time.UnixMilli(100)})
+	b.ReportAllocs()
+	for b.Loop() {
+		benchmarkFileOffset, _ = source.GetOffset()
+	}
+}
+
+var benchmarkFileOffset any
+
 func TestSourceProvision(t *testing.T) {
 	// Create and write temp file
 	tmpfile, err := os.CreateTemp("", "test.lines")

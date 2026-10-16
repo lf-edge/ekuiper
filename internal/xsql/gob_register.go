@@ -1,4 +1,4 @@
-// Copyright 2023 EMQ Technologies Co., Ltd.
+// Copyright 2023-2026 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ func init() {
 	gob.Register(time.Time{})
 	gob.Register(make(map[string]any))
 	gob.Register(make(map[string][]*Tuple))
+	gob.Register([]*Tuple{})
 	gob.Register(&Tuple{})
 	gob.Register(&SliceTuple{})
 	gob.Register(&JoinTuple{})

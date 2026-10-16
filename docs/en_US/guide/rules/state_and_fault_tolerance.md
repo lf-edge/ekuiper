@@ -45,3 +45,9 @@ type Rewindable interface {
 We cannot guarantee the sink to receive a data exactly once. If failures happen during the period of checkpointing, some states which have sent to the sink may not be checkpointed. And those states will be replayed as they are not restored because of not being checkpointed. In this case, the sink may receive them more than once.
 
 To implement exactly-once, the user will have to implement deduplication tailored to fit the various sinking system.
+
+#### State storage consideration
+
+Checkpoint state is serialized with Go's `encoding/gob` before it is handed to the state storage. This applies to the built-in storage as well as custom `api.Store` implementations: every operator state value and every source offset must be gob-encodable. Values that cannot be encoded fail the checkpoint with an error naming the operator, the checkpoint ID and the offending state key, instead of reaching `SaveState`.
+
+Custom sources must additionally be safe for concurrent use between teardown and checkpointing: `Close` may run while a checkpoint reads the offset through `GetOffset`, so offset state shared by these methods needs its own synchronization.

@@ -346,7 +346,115 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []xs
 		}
 	}
 	delayCh := make(chan time.Time, 100)
+	handleItem := func(item any) bool {
+		data, processed := o.commonIngest(ctx, item)
+		if processed {
+			return false
+		}
+		o.onProcessStart(ctx, data)
+		switch d := data.(type) {
+		case xsql.EventRow:
+			o.handleTraceIngestTuple(ctx, d)
+
+			inputs = o.collect(ctx, fv, inputs, d)
+
+			switch o.window.Type {
+			case ast.NOT_WINDOW:
+				inputs = o.scan(inputs, d.GetTimestamp(), ctx, o.window.Length+o.window.Delay, true)
+			case ast.SLIDING_WINDOW:
+				if o.isMatchCondition(ctx, d) {
+					if o.window.Delay > 0 {
+						if o.window.enableSlidingWindowSendTwice {
+							// send the first part
+							inputs = o.scan(inputs, d.GetTimestamp(), ctx, o.window.Length, true)
+						}
+						go func(ts time.Time) {
+							after := timex.After(o.window.Delay)
+							select {
+							case <-after:
+								delayCh <- ts
+							case <-ctx.Done():
+								return
+							}
+						}(d.GetTimestamp().Add(o.window.Delay))
+					} else {
+						inputs = o.scan(inputs, d.GetTimestamp(), ctx, o.window.Length+o.window.Delay, true)
+					}
+				} else {
+					// clear inputs if condition not matched
+					// TS add 1 to prevent remove current input
+					inputs = o.gcInputs(inputs, d.GetTimestamp().Add(1), ctx)
+				}
+			case ast.SESSION_WINDOW:
+				if timeoutTicker != nil {
+					timeoutTicker.Stop()
+					timeoutTicker.Reset(o.window.Interval)
+				} else {
+					timeoutTicker = timex.GetTimer(o.window.Interval)
+					timeout = timeoutTicker.C
+					o.triggerTime = d.GetTimestamp()
+					_ = ctx.PutState(TriggerTimeKey, o.triggerTime)
+					log.Debugf("Session window set start time %d", o.triggerTime.UnixMilli())
+				}
+			case ast.COUNT_WINDOW:
+				o.msgCount++
+				log.Debugf(fmt.Sprintf("msgCount: %d", o.msgCount))
+				if o.msgCount%o.window.CountInterval != 0 {
+					return false
+				}
+				o.msgCount = 0
+
+				if tl, er := NewTupleList(fv, inputs, o.window.CountLength, o.window.CollectCondition); er != nil {
+					log.Error("Found error when trying to ")
+					infra.DrainError(ctx, er, errCh)
+					return true
+				} else {
+					log.Debugf(fmt.Sprintf("It has %d of count window.", tl.count()))
+					triggerTime := timex.GetNowInMilli()
+					for tl.hasMoreCountWindow() {
+						tsets, err := tl.nextCountWindow()
+						if err != nil {
+							o.onError(ctx, err)
+							continue
+						}
+
+						windowStart := triggerTime
+						triggerTime = timex.GetNowInMilli()
+						windowEnd := triggerTime
+						tsets.WindowRange = xsql.NewWindowRange(windowStart, windowEnd, windowEnd)
+						if isFilteredEmptyWindow(o.window.CollectCondition, len(tsets.Content)) {
+							continue
+						}
+						log.Debugf("Sent: %v", tsets)
+						o.handleTraceEmitTuple(ctx, tsets)
+						o.Broadcast(tsets)
+						o.onSend(ctx, tsets)
+					}
+					inputs = tl.getRestTuples()
+				}
+			}
+			_ = ctx.PutState(WindowInputsKey, inputs)
+			_ = ctx.PutState(MsgCountKey, o.msgCount)
+		default:
+			o.onError(ctx, fmt.Errorf("run Window error: expect xsql.Tuple type but got %[1]T(%[1]v)", d))
+		}
+		// For batching operator, do not end the span immediately so set it to nil
+		o.span = nil
+		o.onProcessEnd(ctx)
+		o.statManager.SetBufferLength(int64(len(o.input)))
+		return false
+	}
 	for {
+		// Due backlog rows and barriers ordered by the checkpoint
+		// handler take priority over fresh input; timer and control cases
+		// in the select below stay exactly as before.
+		if due, ok := o.nextDue(); ok {
+			if stop := handleItem(due); stop {
+				return
+			}
+			o.statManager.SetBufferLength(int64(len(o.input)))
+			continue
+		}
 		select {
 		case delayTS := <-delayCh:
 			o.statManager.ProcessTimeStart()
@@ -360,102 +468,11 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []xs
 			_ = ctx.PutState(WindowInputsKey, inputs)
 			_ = ctx.PutState(MsgCountKey, o.msgCount)
 		// process incoming item
+		// process incoming item
 		case item := <-o.input:
-			data, processed := o.commonIngest(ctx, item)
-			if processed {
-				break
+			if stop := handleItem(item); stop {
+				return
 			}
-			o.onProcessStart(ctx, data)
-			switch d := data.(type) {
-			case xsql.EventRow:
-				o.handleTraceIngestTuple(ctx, d)
-
-				inputs = o.collect(ctx, fv, inputs, d)
-
-				switch o.window.Type {
-				case ast.NOT_WINDOW:
-					inputs = o.scan(inputs, d.GetTimestamp(), ctx, o.window.Length+o.window.Delay, true)
-				case ast.SLIDING_WINDOW:
-					if o.isMatchCondition(ctx, d) {
-						if o.window.Delay > 0 {
-							if o.window.enableSlidingWindowSendTwice {
-								// send the first part
-								inputs = o.scan(inputs, d.GetTimestamp(), ctx, o.window.Length, true)
-							}
-							go func(ts time.Time) {
-								after := timex.After(o.window.Delay)
-								select {
-								case <-after:
-									delayCh <- ts
-								case <-ctx.Done():
-									return
-								}
-							}(d.GetTimestamp().Add(o.window.Delay))
-						} else {
-							inputs = o.scan(inputs, d.GetTimestamp(), ctx, o.window.Length+o.window.Delay, true)
-						}
-					} else {
-						// clear inputs if condition not matched
-						// TS add 1 to prevent remove current input
-						inputs = o.gcInputs(inputs, d.GetTimestamp().Add(1), ctx)
-					}
-				case ast.SESSION_WINDOW:
-					if timeoutTicker != nil {
-						timeoutTicker.Stop()
-						timeoutTicker.Reset(o.window.Interval)
-					} else {
-						timeoutTicker = timex.GetTimer(o.window.Interval)
-						timeout = timeoutTicker.C
-						o.triggerTime = d.GetTimestamp()
-						_ = ctx.PutState(TriggerTimeKey, o.triggerTime)
-						log.Debugf("Session window set start time %d", o.triggerTime.UnixMilli())
-					}
-				case ast.COUNT_WINDOW:
-					o.msgCount++
-					log.Debugf(fmt.Sprintf("msgCount: %d", o.msgCount))
-					if o.msgCount%o.window.CountInterval != 0 {
-						continue
-					}
-					o.msgCount = 0
-
-					if tl, er := NewTupleList(fv, inputs, o.window.CountLength, o.window.CollectCondition); er != nil {
-						log.Error("Found error when trying to ")
-						infra.DrainError(ctx, er, errCh)
-						return
-					} else {
-						log.Debugf(fmt.Sprintf("It has %d of count window.", tl.count()))
-						triggerTime := timex.GetNowInMilli()
-						for tl.hasMoreCountWindow() {
-							tsets, err := tl.nextCountWindow()
-							if err != nil {
-								o.onError(ctx, err)
-								continue
-							}
-
-							windowStart := triggerTime
-							triggerTime = timex.GetNowInMilli()
-							windowEnd := triggerTime
-							tsets.WindowRange = xsql.NewWindowRange(windowStart, windowEnd, windowEnd)
-							if isFilteredEmptyWindow(o.window.CollectCondition, len(tsets.Content)) {
-								continue
-							}
-							log.Debugf("Sent: %v", tsets)
-							o.handleTraceEmitTuple(ctx, tsets)
-							o.Broadcast(tsets)
-							o.onSend(ctx, tsets)
-						}
-						inputs = tl.getRestTuples()
-					}
-				}
-				_ = ctx.PutState(WindowInputsKey, inputs)
-				_ = ctx.PutState(MsgCountKey, o.msgCount)
-			default:
-				o.onError(ctx, fmt.Errorf("run Window error: expect xsql.Tuple type but got %[1]T(%[1]v)", d))
-			}
-			// For batching operator, do not end the span immediately so set it to nil
-			o.span = nil
-			o.onProcessEnd(ctx)
-			o.statManager.SetBufferLength(int64(len(o.input)))
 		case now := <-firstC:
 			log.Infof("First tick at %v(%d), defined at %d", now, now.UnixMilli(), firstTime.UnixMilli())
 			firstTicker.Stop()

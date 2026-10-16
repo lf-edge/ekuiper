@@ -1,4 +1,4 @@
-// Copyright 2022-2024 EMQ Technologies Co., Ltd.
+// Copyright 2022-2026 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,8 +21,36 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
+
+func TestAggregateEvalDoesNotMutateInputAliasState(t *testing.T) {
+	tuple := &Tuple{Message: Message{"value": 1}}
+	window := &WindowTuples{Content: []Row{tuple}}
+	expr := &ast.FieldRef{
+		Name:       "derived",
+		StreamName: ast.AliasStream,
+		AliasRef: &ast.AliasRef{
+			Expression: &ast.IntegerLiteral{Val: 42},
+		},
+	}
+
+	result := window.AggregateEval(expr, nil)
+	if !reflect.DeepEqual([]interface{}{int64(42)}, result) {
+		t.Fatalf("unexpected aggregate result: %#v", result)
+	}
+	if _, ok := tuple.AliasValue("derived"); ok {
+		t.Fatal("aggregate evaluation cached an alias on the input tuple")
+	}
+
+	tuple.AppendAlias("existing", int64(7))
+	expr.Name = "existing"
+	result = window.AggregateEval(expr, nil)
+	if !reflect.DeepEqual([]interface{}{int64(7)}, result) {
+		t.Fatalf("existing input alias was hidden by transient cache: %#v", result)
+	}
+}
 
 func TestCollectionAgg(t *testing.T) {
 	// broadcast -> range func -> broadcast -> group aggregate -> map

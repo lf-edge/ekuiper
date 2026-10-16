@@ -1,4 +1,4 @@
-// Copyright 2022-2024 EMQ Technologies Co., Ltd.
+// Copyright 2022-2026 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -215,8 +215,14 @@ func (w *WindowTuples) AddTuple(tuple Row) *WindowTuples {
 
 func (w *WindowTuples) AggregateEval(expr ast.Expr, v CallValuer) []interface{} {
 	var result []interface{}
+	aliases := &transientAliasValuer{}
+	wildcard := &WildcardValuer{}
+	valuers := MultiValuerList{aliases, nil, &WindowRangeValuer{WindowRange: w.WindowRange}, v, wildcard}
 	for _, t := range w.Content {
-		result = append(result, Eval(expr, MultiValuer(t, &WindowRangeValuer{WindowRange: w.WindowRange}, v, &WildcardValuer{t})))
+		aliases.reset()
+		valuers[1] = t
+		wildcard.Data = t
+		result = append(result, Eval(expr, valuers))
 	}
 	return result
 }
@@ -328,8 +334,14 @@ func (s *JoinTuples) Index(i int) Row { return s.Content[i] }
 
 func (s *JoinTuples) AggregateEval(expr ast.Expr, v CallValuer) []interface{} {
 	var result []interface{}
+	aliases := &transientAliasValuer{}
+	wildcard := &WildcardValuer{}
+	valuers := MultiValuerList{aliases, nil, &WindowRangeValuer{WindowRange: s.WindowRange}, v, wildcard}
 	for _, t := range s.Content {
-		result = append(result, Eval(expr, MultiValuer(t, &WindowRangeValuer{WindowRange: s.WindowRange}, v, &WildcardValuer{t})))
+		aliases.reset()
+		valuers[1] = t
+		wildcard.Data = t
+		result = append(result, Eval(expr, valuers))
 	}
 	return result
 }

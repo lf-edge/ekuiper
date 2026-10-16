@@ -141,77 +141,87 @@ func (n *LookupNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 				defer c.Close()
 			}
 			// Start the lookup source loop
+			handleItem := func(item any) {
+				data, processed := n.commonIngest(ctx, item)
+				if processed {
+					return
+				}
+				n.onProcessStart(ctx, data)
+				switch d := data.(type) {
+				case *xsql.JoinTuples:
+					sets := &xsql.JoinTuples{Content: make([]*xsql.JoinTuple, 0), WindowRange: d.GetWindowRange()}
+					err := d.Range(func(i int, r xsql.ReadonlyRow) (bool, error) {
+						tr, ok := r.(xsql.Row)
+						if !ok {
+							return false, fmt.Errorf("Invalid window element, must be a tuple row but got %v", r)
+						}
+						err := n.lookup(ctx, tr, fv, ns, sets, c)
+						if err != nil {
+							return false, err
+						}
+						return true, nil
+					})
+					if err != nil {
+						n.onError(ctx, err)
+					} else if sets.Len() > 0 {
+						n.Broadcast(sets)
+						n.statManager.IncTotalRecordsOut()
+					} else {
+						ctx.GetLogger().Debugf("lookup return nil")
+					}
+				case xsql.Row:
+					log.Debugf("Lookup Node receive tuple input %s", d)
+					sets := &xsql.JoinTuples{Content: make([]*xsql.JoinTuple, 0)}
+					err := n.lookup(ctx, d, fv, ns, sets, c)
+					if err != nil {
+						n.onError(ctx, err)
+					} else if sets.Len() > 0 {
+						n.Broadcast(sets)
+						n.onSend(ctx, sets)
+					} else {
+						ctx.GetLogger().Debugf("lookup return nil")
+					}
+				case *xsql.WindowTuples:
+					log.Debugf("Lookup Node receive window input %v", d)
+					sets := &xsql.JoinTuples{Content: make([]*xsql.JoinTuple, 0), WindowRange: d.GetWindowRange()}
+					err := d.Range(func(i int, r xsql.ReadonlyRow) (bool, error) {
+						tr, ok := r.(xsql.Row)
+						if !ok {
+							return false, fmt.Errorf("Invalid window element, must be a tuple row but got %v", r)
+						}
+						err := n.lookup(ctx, tr, fv, ns, sets, c)
+						if err != nil {
+							return false, err
+						}
+						return true, nil
+					})
+					if err != nil {
+						n.onError(ctx, err)
+					} else if sets.Len() > 0 {
+						n.Broadcast(sets)
+						n.statManager.IncTotalRecordsOut()
+					} else {
+						ctx.GetLogger().Debugf("lookup return nil")
+					}
+				default:
+					n.onError(ctx, fmt.Errorf("run lookup node error: invalid input type but got %[1]T(%[1]v)", d))
+				}
+				n.onProcessEnd(ctx)
+				n.statManager.SetBufferLength(int64(len(n.input)))
+			}
 			for {
 				log.Debugf("LookupNode %s is looping", n.name)
+				// Due backlog rows and barriers ordered by the checkpoint
+				// handler take priority over fresh input; the select below
+				// stays exactly as before.
+				if due, ok := n.nextDue(); ok {
+					handleItem(due)
+					continue
+				}
 				select {
 				// process incoming item from both streams(transformed) and tables
 				case item := <-n.input:
-					data, processed := n.commonIngest(ctx, item)
-					if processed {
-						break
-					}
-					n.onProcessStart(ctx, data)
-					switch d := data.(type) {
-					case *xsql.JoinTuples:
-						sets := &xsql.JoinTuples{Content: make([]*xsql.JoinTuple, 0), WindowRange: item.(*xsql.JoinTuples).GetWindowRange()}
-						err := d.Range(func(i int, r xsql.ReadonlyRow) (bool, error) {
-							tr, ok := r.(xsql.Row)
-							if !ok {
-								return false, fmt.Errorf("Invalid window element, must be a tuple row but got %v", r)
-							}
-							err := n.lookup(ctx, tr, fv, ns, sets, c)
-							if err != nil {
-								return false, err
-							}
-							return true, nil
-						})
-						if err != nil {
-							n.onError(ctx, err)
-						} else if sets.Len() > 0 {
-							n.Broadcast(sets)
-							n.statManager.IncTotalRecordsOut()
-						} else {
-							ctx.GetLogger().Debugf("lookup return nil")
-						}
-					case xsql.Row:
-						log.Debugf("Lookup Node receive tuple input %s", d)
-						sets := &xsql.JoinTuples{Content: make([]*xsql.JoinTuple, 0)}
-						err := n.lookup(ctx, d, fv, ns, sets, c)
-						if err != nil {
-							n.onError(ctx, err)
-						} else if sets.Len() > 0 {
-							n.Broadcast(sets)
-							n.onSend(ctx, sets)
-						} else {
-							ctx.GetLogger().Debugf("lookup return nil")
-						}
-					case *xsql.WindowTuples:
-						log.Debugf("Lookup Node receive window input %v", d)
-						sets := &xsql.JoinTuples{Content: make([]*xsql.JoinTuple, 0), WindowRange: item.(*xsql.WindowTuples).GetWindowRange()}
-						err := d.Range(func(i int, r xsql.ReadonlyRow) (bool, error) {
-							tr, ok := r.(xsql.Row)
-							if !ok {
-								return false, fmt.Errorf("Invalid window element, must be a tuple row but got %v", r)
-							}
-							err := n.lookup(ctx, tr, fv, ns, sets, c)
-							if err != nil {
-								return false, err
-							}
-							return true, nil
-						})
-						if err != nil {
-							n.onError(ctx, err)
-						} else if sets.Len() > 0 {
-							n.Broadcast(sets)
-							n.statManager.IncTotalRecordsOut()
-						} else {
-							ctx.GetLogger().Debugf("lookup return nil")
-						}
-					default:
-						n.onError(ctx, fmt.Errorf("run lookup node error: invalid input type but got %[1]T(%[1]v)", d))
-					}
-					n.onProcessEnd(ctx)
-					n.statManager.SetBufferLength(int64(len(n.input)))
+					handleItem(item)
 				case <-ctx.Done():
 					log.Info("Cancelling lookup node....")
 					return nil
