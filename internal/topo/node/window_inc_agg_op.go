@@ -24,6 +24,7 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/checkpoint"
 	topoContext "github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/state"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
@@ -123,6 +124,18 @@ func (o *WindowIncAggOperator) Exec(ctx api.StreamContext, errCh chan<- error) {
 			infra.DrainError(ctx, err, errCh)
 		}
 	}()
+}
+
+var _ checkpoint.CheckpointPreparer = (*WindowIncAggOperator)(nil)
+
+// PrepareCheckpoint materializes function state snapshots once at the
+// checkpoint boundary, so the per-row PutState below stays a cheap publish
+// of live state. It runs on the input loop before the synchronous freeze.
+func (o *WindowIncAggOperator) PrepareCheckpoint() error {
+	if op, ok := o.WindowExec.(SnapshotOperation); ok {
+		return op.Snapshot(o.ctx)
+	}
+	return nil
 }
 
 type windowIncAggExec interface {
@@ -248,8 +261,14 @@ type CountWindowIncAggOpState struct {
 	CurrWindowSize int
 }
 
-func (co *CountWindowIncAggOp) PutState(ctx api.StreamContext) {
+// Snapshot materializes function state snapshots at the checkpoint boundary.
+// See WindowIncAggOperator.PrepareCheckpoint.
+func (co *CountWindowIncAggOp) Snapshot(_ api.StreamContext) error {
 	co.CountWindowIncAggOpState.CurrWindow.GenerateAllFunctionState()
+	return nil
+}
+
+func (co *CountWindowIncAggOp) PutState(ctx api.StreamContext) {
 	ctx.PutState(buildStateKey(ctx), co.CountWindowIncAggOpState)
 }
 
@@ -349,8 +368,14 @@ func NewTumblingWindowIncAggOp(o *WindowIncAggOperator) *TumblingWindowIncAggOp 
 	return op
 }
 
-func (to *TumblingWindowIncAggOp) PutState(ctx api.StreamContext) {
+// Snapshot materializes function state snapshots at the checkpoint boundary.
+// See WindowIncAggOperator.PrepareCheckpoint.
+func (to *TumblingWindowIncAggOp) Snapshot(_ api.StreamContext) error {
 	to.CurrWindow.GenerateAllFunctionState()
+	return nil
+}
+
+func (to *TumblingWindowIncAggOp) PutState(ctx api.StreamContext) {
 	ctx.PutState(buildStateKey(ctx), to.TumblingWindowIncAggOpState)
 }
 
@@ -519,11 +544,16 @@ func NewSlidingWindowIncAggOp(o *WindowIncAggOperator) *SlidingWindowIncAggOp {
 	return op
 }
 
-func (so *SlidingWindowIncAggOp) PutState(ctx api.StreamContext) {
-	for index, window := range so.CurrWindowList {
+// Snapshot materializes function state snapshots at the checkpoint boundary.
+// See WindowIncAggOperator.PrepareCheckpoint.
+func (so *SlidingWindowIncAggOp) Snapshot(_ api.StreamContext) error {
+	for _, window := range so.CurrWindowList {
 		window.GenerateAllFunctionState()
-		so.CurrWindowList[index] = window
 	}
+	return nil
+}
+
+func (so *SlidingWindowIncAggOp) PutState(ctx api.StreamContext) {
 	ctx.PutState(buildStateKey(ctx), so.SlidingWindowIncAggOpState)
 }
 
@@ -756,11 +786,16 @@ func NewHoppingWindowIncAggOp(o *WindowIncAggOperator) *HoppingWindowIncAggOp {
 	return op
 }
 
-func (ho *HoppingWindowIncAggOp) PutState(ctx api.StreamContext) {
-	for index, window := range ho.CurrWindowList {
+// Snapshot materializes function state snapshots at the checkpoint boundary.
+// See WindowIncAggOperator.PrepareCheckpoint.
+func (ho *HoppingWindowIncAggOp) Snapshot(_ api.StreamContext) error {
+	for _, window := range ho.CurrWindowList {
 		window.GenerateAllFunctionState()
-		ho.CurrWindowList[index] = window
 	}
+	return nil
+}
+
+func (ho *HoppingWindowIncAggOp) PutState(ctx api.StreamContext) {
 	ctx.PutState(buildStateKey(ctx), ho.HoppingWindowIncAggOpState)
 }
 

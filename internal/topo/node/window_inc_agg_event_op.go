@@ -40,11 +40,14 @@ func NewHoppingWindowIncAggEventOp(o *WindowIncAggOperator) *HoppingWindowIncAgg
 	return op
 }
 
-func (ho *HoppingWindowIncAggEventOp) PutState(ctx api.StreamContext) {
-	for index, window := range ho.CurrWindowList {
+func (ho *HoppingWindowIncAggEventOp) Snapshot(_ api.StreamContext) error {
+	for _, window := range ho.CurrWindowList {
 		window.GenerateAllFunctionState()
-		ho.CurrWindowList[index] = window
 	}
+	return nil
+}
+
+func (ho *HoppingWindowIncAggEventOp) PutState(ctx api.StreamContext) {
 	ctx.PutState(buildStateKey(ctx), ho.HoppingWindowIncAggEventOpState)
 }
 
@@ -153,15 +156,17 @@ func NewSlidingWindowIncAggEventOp(o *WindowIncAggOperator) *SlidingWindowIncAgg
 	return op
 }
 
+func (so *SlidingWindowIncAggEventOp) Snapshot(_ api.StreamContext) error {
+	for _, window := range so.CurrWindowList {
+		window.GenerateAllFunctionState()
+	}
+	for _, window := range so.EmitList {
+		window.GenerateAllFunctionState()
+	}
+	return nil
+}
+
 func (so *SlidingWindowIncAggEventOp) PutState(ctx api.StreamContext) {
-	for index, window := range so.CurrWindowList {
-		window.GenerateAllFunctionState()
-		so.CurrWindowList[index] = window
-	}
-	for index, window := range so.EmitList {
-		window.GenerateAllFunctionState()
-		so.EmitList[index] = window
-	}
 	ctx.PutState(buildStateKey(ctx), so.SlidingWindowIncAggEventOpState)
 }
 
@@ -415,8 +420,12 @@ func (co *CountWindowIncAggEventOp) emitWindow(ctx api.StreamContext, errCh chan
 	co.op.onSend(ctx, results)
 }
 
-func (co *CountWindowIncAggEventOp) PutState(ctx api.StreamContext) {
+func (co *CountWindowIncAggEventOp) Snapshot(_ api.StreamContext) error {
 	co.CurrWindow.GenerateAllFunctionState()
+	return nil
+}
+
+func (co *CountWindowIncAggEventOp) PutState(ctx api.StreamContext) {
 	ctx.PutState(buildStateKey(ctx), co.CountWindowIncAggEventOpState)
 }
 
