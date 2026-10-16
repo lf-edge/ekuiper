@@ -69,3 +69,14 @@ func TestFieldResult(t *testing.T) {
 		}
 	}
 }
+
+func TestFieldsVisible(t *testing.T) {
+	device := Field{Name: "device", Expr: &FieldRef{Name: "device"}}
+	ts := Field{Name: "ts", Expr: &FieldRef{Name: "ts"}, Invisible: true}
+	temperature := Field{Name: "temperature", Expr: &FieldRef{Name: "temperature"}}
+
+	assert.Equal(t, Fields{device, temperature}, Fields{device, ts, temperature}.Visible())
+	assert.Equal(t, Fields{device, temperature}, Fields{device, temperature}.Visible())
+	assert.Equal(t, Fields{}, Fields{ts}.Visible())
+	assert.Equal(t, Fields{}, Fields{}.Visible())
+}

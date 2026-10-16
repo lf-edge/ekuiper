@@ -631,3 +631,251 @@ func TestValidateStmt(t *testing.T) {
 	err = validate(stmt)
 	require.Error(t, err)
 }
+
+func TestAreTypesCompatible(t *testing.T) {
+	testcases := []struct {
+		left  string
+		right string
+		ok    bool
+	}{
+		{left: "bigint", right: "bigint", ok: true},
+		{left: "float", right: "float", ok: true},
+		{left: "bigint", right: "float", ok: true},
+		{left: "float", right: "bigint", ok: true},
+		{left: "string", right: "string", ok: true},
+		{left: "boolean", right: "boolean", ok: true},
+		{left: "datetime", right: "datetime", ok: true},
+		{left: "bytea", right: "bytea", ok: true},
+		{left: "array", right: "array", ok: true},
+		{left: "struct", right: "struct", ok: true},
+		{left: "string", right: "bigint", ok: false},
+		{left: "float", right: "string", ok: false},
+		{left: "boolean", right: "bigint", ok: false},
+		{left: "datetime", right: "string", ok: false},
+		{left: "bytea", right: "string", ok: false},
+		{left: "array", right: "struct", ok: false},
+		{left: "struct", right: "string", ok: false},
+	}
+	for _, tc := range testcases {
+		require.Equal(t, tc.ok, areTypesCompatible(tc.left, tc.right), "%s vs %s", tc.left, tc.right)
+	}
+}
+
+func TestGetFieldType(t *testing.T) {
+	schema := map[string]*ast.JsonStreamField{
+		"id":   {Type: "bigint"},
+		"name": {Type: "string"},
+	}
+	testcases := []struct {
+		name   string
+		field  ast.Field
+		schema map[string]*ast.JsonStreamField
+		typ    string
+	}{
+		{
+			name:   "field in schema",
+			field:  ast.Field{Name: "id", Expr: &ast.FieldRef{StreamName: "s1", Name: "id"}},
+			schema: schema,
+			typ:    "bigint",
+		},
+		{
+			name:   "field not in schema",
+			field:  ast.Field{Name: "missing", Expr: &ast.FieldRef{StreamName: "s1", Name: "missing"}},
+			schema: schema,
+			typ:    "",
+		},
+		{
+			name:   "schemaless stream",
+			field:  ast.Field{Name: "id", Expr: &ast.FieldRef{StreamName: "s1", Name: "id"}},
+			schema: nil,
+			typ:    "",
+		},
+		{
+			name: "alias of a field resolves to the aliased field",
+			field: ast.Field{Name: "id", AName: "id", Expr: &ast.FieldRef{
+				StreamName: ast.AliasStream,
+				Name:       "id",
+				AliasRef:   &ast.AliasRef{Expression: &ast.FieldRef{StreamName: "s1", Name: "name"}},
+			}},
+			schema: schema,
+			typ:    "string",
+		},
+		{
+			name: "alias of a function call is unknown",
+			field: ast.Field{Name: "x", AName: "x", Expr: &ast.FieldRef{
+				StreamName: ast.AliasStream,
+				Name:       "x",
+				AliasRef:   &ast.AliasRef{Expression: &ast.Call{Name: "abs", Args: []ast.Expr{&ast.FieldRef{StreamName: "s1", Name: "id"}}}},
+			}},
+			schema: schema,
+			typ:    "",
+		},
+		{
+			name:   "function call is unknown",
+			field:  ast.Field{Name: "abs", Expr: &ast.Call{Name: "abs", Args: []ast.Expr{&ast.FieldRef{StreamName: "s1", Name: "id"}}}},
+			schema: schema,
+			typ:    "",
+		},
+		{
+			name:   "literal is unknown",
+			field:  ast.Field{Name: "kuiper_field_0", Expr: &ast.IntegerLiteral{Val: 1}},
+			schema: schema,
+			typ:    "",
+		},
+	}
+	for _, tc := range testcases {
+		require.Equal(t, tc.typ, getFieldType(tc.field, tc.schema), tc.name)
+	}
+}
+
+func TestSetOperatorTypeCheck(t *testing.T) {
+	kv, err := store.GetKV("stream")
+	require.NoError(t, err)
+	streamSqls := map[string]string{
+		"typedLeft": `CREATE STREAM typedLeft (
+					id BIGINT,
+					temp FLOAT,
+					name STRING,
+					ts DATETIME,
+					tags ARRAY(STRING),
+					info STRUCT(city STRING, zip BIGINT),
+				) WITH (DATASOURCE="src1");`,
+		"typedRight": `CREATE STREAM typedRight (
+					id BIGINT,
+					temp BIGINT,
+					name STRING,
+					online BOOLEAN,
+					raw BYTEA,
+					tags ARRAY(BIGINT),
+					info STRUCT(n BIGINT),
+				) WITH (DATASOURCE="src2");`,
+		"schemalessRight": `CREATE STREAM schemalessRight () WITH (DATASOURCE="src3");`,
+		"typedLeftCopy": `CREATE STREAM typedLeftCopy (
+					id BIGINT,
+					temp FLOAT,
+					name STRING,
+					ts DATETIME,
+					tags ARRAY(STRING),
+					info STRUCT(city STRING, zip BIGINT),
+				) WITH (DATASOURCE="src4");`,
+	}
+	for name, sql := range streamSqls {
+		s, err := json.Marshal(&xsql.StreamInfo{
+			StreamType: ast.TypeStream,
+			Statement:  sql,
+		})
+		require.NoError(t, err)
+		require.NoError(t, kv.Set(name, string(s)))
+	}
+
+	testcases := []struct {
+		sql string
+		err string
+	}{
+		// compatible projections
+		{
+			sql: `SELECT id, name FROM typedLeft UNION SELECT id, name FROM typedRight`,
+		},
+		{
+			sql: `SELECT temp FROM typedLeft UNION ALL SELECT temp FROM typedRight`,
+		},
+		{
+			sql: `SELECT typedLeft.id, typedLeft.name FROM typedLeft UNION SELECT typedRight.id, typedRight.name FROM typedRight`,
+		},
+		{
+			sql: `SELECT id AS key, name AS label FROM typedLeft INTERSECT SELECT temp AS key, name AS label FROM typedRight`,
+		},
+		{
+			sql: `SELECT temp FROM typedLeft WHERE id > 3 AND name = "a" UNION SELECT temp FROM typedRight WHERE online = true`,
+		},
+		{
+			sql: `SELECT id, temp, name, ts, tags, info FROM typedLeft UNION SELECT id, temp, name, ts, tags, info FROM typedLeftCopy`,
+		},
+		// unknown types are skipped
+		{
+			sql: `SELECT abs(temp), name FROM typedLeft UNION SELECT name, name FROM typedRight`,
+		},
+		{
+			sql: `SELECT temp * 2 + 1, info->city FROM typedLeft UNION SELECT name, online FROM typedRight`,
+		},
+		{
+			sql: `SELECT CASE WHEN temp > 1 THEN name ELSE "x" END, 1, "x" FROM typedLeft UNION SELECT online, name, id FROM typedRight`,
+		},
+		{
+			sql: `SELECT name FROM typedLeft UNION SELECT whatever FROM schemalessRight`,
+		},
+		{
+			sql: `SELECT upper(name) AS u FROM typedLeft UNION SELECT id FROM typedRight`,
+		},
+		// arrays and structs are only compared by their top-level type
+		{
+			sql: `SELECT tags, info FROM typedLeft UNION SELECT tags, info FROM typedRight`,
+		},
+		// incompatible projections
+		{
+			sql: `SELECT name FROM typedLeft INTERSECT SELECT id FROM typedRight`,
+			err: "incompatible types in column 1 of set operator: name is string but id is bigint",
+		},
+		{
+			sql: `SELECT id, temp FROM typedLeft EXCEPT SELECT id, online FROM typedRight`,
+			err: "incompatible types in column 2 of set operator: temp is float but online is boolean",
+		},
+		{
+			sql: `SELECT ts FROM typedLeft UNION SELECT name FROM typedRight`,
+			err: "incompatible types in column 1 of set operator: ts is datetime but name is string",
+		},
+		{
+			sql: `SELECT name FROM typedLeft UNION ALL SELECT raw FROM typedRight`,
+			err: "incompatible types in column 1 of set operator: name is string but raw is bytea",
+		},
+		{
+			sql: `SELECT tags FROM typedLeft UNION SELECT info FROM typedRight`,
+			err: "incompatible types in column 1 of set operator: tags is array but info is struct",
+		},
+		{
+			sql: `SELECT abs(temp), name, id, ts FROM typedLeft UNION SELECT temp, name, id, online FROM typedRight`,
+			err: "incompatible types in column 4 of set operator: ts is datetime but online is boolean",
+		},
+		{
+			sql: `SELECT typedLeft.name FROM typedLeft EXCEPT ALL SELECT typedRight.temp FROM typedRight`,
+			err: "incompatible types in column 1 of set operator: name is string but temp is bigint",
+		},
+		// invisible fields are skipped, so columns are matched among the visible ones
+		{
+			sql: `SELECT id, ts INVISIBLE, name FROM typedLeft UNION SELECT id, name FROM typedRight`,
+		},
+		{
+			sql: `SELECT id, ts INVISIBLE, temp FROM typedLeft UNION SELECT id, name FROM typedRight`,
+			err: "incompatible types in column 2 of set operator: temp is float but name is string",
+		},
+		// aliases are resolved to the aliased field, not looked up by alias name
+		{
+			sql: `SELECT name AS id FROM typedLeft UNION SELECT name FROM typedRight`,
+		},
+		{
+			sql: `SELECT name AS id FROM typedLeft UNION SELECT id FROM typedRight`,
+			err: "incompatible types in column 1 of set operator: id is string but id is bigint",
+		},
+		{
+			sql: `SELECT id AS a, a FROM typedLeft UNION SELECT id, name FROM typedRight`,
+			err: "incompatible types in column 2 of set operator: a is bigint but name is string",
+		},
+		{
+			sql: `SELECT name FROM typedLeft UNION SELECT online AS flag FROM typedRight`,
+			err: "incompatible types in column 1 of set operator: name is string but flag is boolean",
+		},
+	}
+	for _, tc := range testcases {
+		stmt, err := xsql.NewParser(strings.NewReader(tc.sql)).Parse()
+		require.NoError(t, err, tc.sql)
+		_, err = CreateLogicalPlan(stmt, &def.RuleOption{
+			SetOperatorWindowLength: 10,
+			SetOperatorWindowUnit:   "SS",
+		}, kv)
+		if tc.err == "" {
+			require.NoError(t, err, tc.sql)
+		} else {
+			require.EqualError(t, err, tc.err, tc.sql)
+		}
+	}
+}

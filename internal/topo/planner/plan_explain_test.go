@@ -368,3 +368,93 @@ func TestStreamJoinTableLookup(t *testing.T) {
 		require.Equal(t, tc.explain, explain, tc.sql)
 	}
 }
+
+func TestExplainSetOperator(t *testing.T) {
+	kv, err := store.GetKV("stream")
+	require.NoError(t, err)
+	streamSqls := map[string]string{
+		"leftStream": `CREATE STREAM leftStream (
+					a BIGINT,
+					b BIGINT,
+				) WITH (DATASOURCE="src1");`,
+		"rightStream": `CREATE STREAM rightStream (
+					a BIGINT,
+					b BIGINT,
+				) WITH (DATASOURCE="src2");`,
+	}
+	for name, sql := range streamSqls {
+		s, err := json.Marshal(&xsql.StreamInfo{
+			StreamType: ast.TypeStream,
+			Statement:  sql,
+		})
+		require.NoError(t, err)
+		require.NoError(t, kv.Set(name, string(s)))
+	}
+
+	testcases := []struct {
+		sql     string
+		explain string
+	}{
+		{
+			sql: `SELECT a FROM leftStream UNION SELECT a FROM rightStream`,
+			explain: `{"op":"SetOperatorPlan_0","info":"SetOperator:{ UNION_OP }"}
+	{"op":"WindowPlan_1","info":"{ length:10, windowType:TUMBLING_WINDOW, limit: 0 }"}
+			{"op":"ProjectPlan_2","info":"Fields:[ leftStream.a ]"}
+					{"op":"DataSourcePlan_3","info":"StreamName: leftStream, StreamFields:[ a ]"}
+
+			{"op":"ProjectPlan_3","info":"Fields:[ rightStream.a ]"}
+					{"op":"DataSourcePlan_4","info":"StreamName: rightStream, StreamFields:[ a ]"}`,
+		},
+	}
+	for _, tc := range testcases {
+		stmt, err := xsql.NewParser(strings.NewReader(tc.sql)).Parse()
+		require.NoError(t, err)
+		p, err := CreateLogicalPlan(stmt, &def.RuleOption{
+			SetOperatorWindowLength: 10,
+			SetOperatorWindowUnit:   "SS",
+		}, kv)
+		require.NoError(t, err)
+		explain, err := ExplainFromLogicalPlan(p, "")
+		require.NoError(t, err)
+		require.Equal(t, tc.explain, explain, tc.sql)
+	}
+}
+
+func TestSetOperatorSendMetaToSink(t *testing.T) {
+	kv, err := store.GetKV("stream")
+	require.NoError(t, err)
+	streamSqls := map[string]string{
+		"leftStream": `CREATE STREAM leftStream (
+					a BIGINT,
+					b BIGINT,
+				) WITH (DATASOURCE="src1");`,
+		"rightStream": `CREATE STREAM rightStream (
+					a BIGINT,
+					b BIGINT,
+				) WITH (DATASOURCE="src2");`,
+	}
+	for name, sql := range streamSqls {
+		s, err := json.Marshal(&xsql.StreamInfo{
+			StreamType: ast.TypeStream,
+			Statement:  sql,
+		})
+		require.NoError(t, err)
+		require.NoError(t, kv.Set(name, string(s)))
+	}
+
+	rule := &def.Rule{
+		Id:  "setOpSendMeta",
+		Sql: `SELECT a FROM leftStream UNION SELECT a FROM rightStream`,
+		Options: &def.RuleOption{
+			SendMetaToSink:          true,
+			SetOperatorWindowLength: 10,
+			SetOperatorWindowUnit:   "SS",
+		},
+	}
+
+	_, err = GetExplainInfoFromLogicalPlan(rule)
+	require.EqualError(t, err, "invalid option sendMetaToSink, it can not be applied to window")
+
+	_, _, err = PlanSQLWithSourcesAndSinks(rule, nil)
+	require.EqualError(t, err, "Invalid option sendMetaToSink, it can not be applied to window")
+}

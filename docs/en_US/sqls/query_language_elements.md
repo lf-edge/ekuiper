@@ -13,6 +13,12 @@ eKuiper provides a variety of elements for building queries. They are summarized
 | [ORDER BY](#order-by) | Order the rows by values of one or more columns.                                                                                                                                                                                              |
 | [HAVING](#having)     | HAVING specifies a search condition for a group or an aggregate. HAVING can be used only with the SELECT expression.                                                                                                                          |
 | [LIMIT](#limit) | LIMIT will limit the number of output data. |
+| [UNION](#union) | Combines the rows of two streams and removes duplicates. |
+| [UNION ALL](#union-all) | Combines the rows of two streams and keeps duplicates. |
+| [INTERSECT](#intersect) | Returns the distinct rows of the left stream that also appear in the right one. |
+| [INTERSECT ALL](#intersect-all) | Like INTERSECT, but keeps duplicates. |
+| [EXCEPT](#except) | Returns the distinct rows of the left stream that don't appear in the right one. |
+| [EXCEPT ALL](#except-all) | Like EXCEPT, but keeps duplicates. |
 
 ## SELECT
 
@@ -545,6 +551,118 @@ SELECT CASE
     ELSE "XL" END as sizeLabel
 FROM tbl
 ```
+
+## Set operators
+
+Set operators combine the results of two SELECT statements, each reading from its own stream:
+
+```sql
+SELECT <columns> FROM <left stream> [WHERE ...]
+UNION | UNION ALL | INTERSECT | INTERSECT ALL | EXCEPT | EXCEPT ALL
+SELECT <columns> FROM <right stream> [WHERE ...]
+```
+
+Streams never end, so the two statements are compared within a processing-time tumbling [window](./windows.md): the rows of both streams are collected for the length of the window, and the set operator then produces one result for that window. The length of the window is set by the rule options `setOperatorWindowLength` and `setOperatorWindowUnit`, which are required for rules with a set operator. See [rule options](../guide/rules/overview.md#fine-tuning) for details.
+
+### UNION
+
+UNION combines the rows of two streams and removes duplicates: the result contains every distinct row from the left stream and every distinct row from the right stream, each one only once.
+
+**Example**:
+
+```sql
+SELECT name FROM demoStream
+UNION
+SELECT surname FROM mockStream
+```
+
+### UNION ALL
+
+UNION ALL works like UNION, but keeps duplicates: the result contains every row from both streams.
+
+**Example**:
+
+```sql
+SELECT name FROM demoStream
+UNION ALL
+SELECT surname FROM mockStream
+```
+
+### INTERSECT
+
+INTERSECT returns the distinct rows of the left stream that also appear in the right stream.
+
+**Example**:
+
+```sql
+SELECT name FROM demoStream
+INTERSECT
+SELECT surname FROM mockStream
+```
+
+### INTERSECT ALL
+
+INTERSECT ALL works like INTERSECT, but keeps duplicates: if a row appears m times in the left stream and n times in the right stream, it appears min(m, n) times in the result.
+
+**Example**:
+
+```sql
+SELECT name FROM demoStream
+INTERSECT ALL
+SELECT surname FROM mockStream
+```
+
+### EXCEPT
+
+EXCEPT returns the distinct rows of the left stream that don't appear in the right stream.
+
+**Example**:
+
+```sql
+SELECT name FROM demoStream
+EXCEPT
+SELECT surname FROM mockStream
+```
+
+### EXCEPT ALL
+
+EXCEPT ALL works like EXCEPT, but keeps duplicates: if a row appears m times in the left stream and n times in the right stream, it appears m - n times in the result, or not at all if n is greater than or equal to m.
+
+**Example**:
+
+```sql
+SELECT name FROM demoStream
+EXCEPT ALL
+SELECT surname FROM mockStream
+```
+
+### Matching columns and rows
+
+The two SELECT statements must produce compatible rows:
+
+- **Same number of columns.** Both statements must select the same number of columns. Fields marked as `INVISIBLE` are not part of the output, so they are not counted. For example, `SELECT device, ts INVISIBLE FROM roomA` has one column and can be combined with `SELECT device FROM roomB`.
+- **Columns are matched by position, not by name.** The first visible column of the left statement is compared with the first visible column of the right statement, and so on. The names don't need to match: `SELECT device AS id FROM roomA UNION SELECT device FROM roomB` compares `id` with `device`.
+- **Compatible types.** When the type of both columns is known, they must have the same type, except that `bigint` and `float` are compatible with each other. Otherwise the rule is rejected, for example: `incompatible types in column 1 of set operator: name is string but id is bigint`. A type is known only when the column is a field of a stream with a schema, directly or through an alias. Columns computed by functions or expressions, and fields of schemaless streams, are not checked.
+
+Two rows are equal when all their visible columns are equal:
+
+- Numbers are compared by value, so `12` equals `12.0`.
+- NULL values are equal to each other.
+- Structs and arrays are compared by their content.
+- Datetime values are equal when they represent the same instant, in any time zone.
+
+### Limitations
+
+Set operators currently have these limitations. A rule that doesn't follow them is rejected when it is created.
+
+- A rule can contain only one set operator, so it combines exactly two SELECT statements.
+- The two statements must read from different streams.
+- Each statement reads from a single stream: JOIN is not supported.
+- Each statement can't use `*` (or `stream.*`), ORDER BY, LIMIT or GROUP BY.
+- Functions that change the number of output columns or rows, such as `changed_cols` and `unnest`, are not supported.
+- Aggregate functions are allowed, but there is no GROUP BY window inside the statements, so they are computed for each message, not over the set operator window. For example, `count(*)` is always 1.
+- Event time is not supported: the rule option `isEventTime` must be false.
+- The rule option `sendMetaToSink` is not supported.
 
 ## Use reserved keywords or special characters
 
