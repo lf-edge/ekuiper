@@ -232,6 +232,9 @@ func (p *RuleProcessor) GetRuleByJson(id, ruleJson string) (*def.Rule, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Rule %s has invalid options: %s.", rule.Id, err)
 	}
+	if rule.Temp && rule.Options != nil && (rule.IsScheduleRule() || rule.IsDurationRule() || len(rule.Options.Cron) > 0) {
+		return nil, fmt.Errorf("temporary rules do not support scheduled execution")
+	}
 	return rule, nil
 }
 
