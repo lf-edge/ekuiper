@@ -216,6 +216,21 @@ func TestRuleValidation(t *testing.T) {
 			ruleStr: "{\n  \"sql\": \"SELECT * FROM my_stream\",\n  \"actions\": [\n    {\n      \"log\": {\n      }\n    }\n  ]\n}",
 			err:     "Missing rule id.",
 		},
+		{
+			name:    "temp schedule rule not supported",
+			ruleStr: `{"id":"temp1","sql":"select * from demo","actions":[{"log":{}}],"temp":true,"options":{"cronDatetimeRange":[{"begin":"2020-01-01 00:00:00","end":"2020-01-01 00:01:00"}]}}`,
+			err:     "temporary rules do not support scheduled execution",
+		},
+		{
+			name:    "temp duration rule not supported",
+			ruleStr: `{"id":"temp2","sql":"select * from demo","actions":[{"log":{}}],"temp":true,"options":{"duration":"10s"}}`,
+			err:     "temporary rules do not support scheduled execution",
+		},
+		{
+			name:    "temp cron rule not supported",
+			ruleStr: `{"id":"temp3","sql":"select * from demo","actions":[{"log":{}}],"temp":true,"options":{"cron":"* * * * *"}}`,
+			err:     "temporary rules do not support scheduled execution",
+		},
 	}
 	p := NewRuleProcessor()
 	for _, tt := range tests {

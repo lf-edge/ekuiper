@@ -37,13 +37,23 @@ func (s *State) doValidateAndRun(newRule *def.Rule) (err error) {
 	}
 	// start new rule
 	if newRule.Triggered {
-		s.topology = tp
-		panicOrError := infra.SafeRun(func() error {
-			// Start the rule which runs async
-			return s.doStart()
-		})
-		if panicOrError != nil {
-			s.logger.Errorf("Rule %s start failed: %s", s.Rule.Id, panicOrError)
+		// A schedule rule is governed by the rule patrol checker. Like the external Start action,
+		// it does not run immediately upon creation or update. Otherwise, the rule may emit
+		// real-time data before the checker stops it when out of the schedule range.
+		if newRule.IsScheduleRule() {
+			// Discard the temp topo. It will be planned again when the checker starts it
+			s.topoGraph = tp.GetTopo()
+			tp.Cancel()
+			s.transitState(machine.ScheduledStop, "")
+		} else {
+			s.topology = tp
+			panicOrError := infra.SafeRun(func() error {
+				// Start the rule which runs async
+				return s.doStart()
+			})
+			if panicOrError != nil {
+				s.logger.Errorf("Rule %s start failed: %s", s.Rule.Id, panicOrError)
+			}
 		}
 	} else {
 		// Discard the temp topo
