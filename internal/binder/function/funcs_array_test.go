@@ -1218,3 +1218,46 @@ func TestArrayNil(t *testing.T) {
 		require.Equal(t, tt.result, r)
 	}
 }
+
+func TestArrayCompareUncomparableValue(t *testing.T) {
+	contextLogger := conf.Log.WithField("rule", "testExec")
+	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+	tempStore, _ := state.CreateStore("mockRule0", def.AtMostOnce)
+	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
+	nested := []interface{}{2, 3}
+	tests := []struct {
+		name   string
+		args   []interface{}
+		result interface{}
+	}{
+		{ // array_position must find an array element instead of panicking
+			name:   "array_position",
+			args:   []interface{}{[]interface{}{1, nested}, nested},
+			result: 1,
+		},
+		{ // array_last_position must find an array element instead of panicking
+			name:   "array_last_position",
+			args:   []interface{}{[]interface{}{nested, 1}, nested},
+			result: 0,
+		},
+		{ // array_contains must find an array element instead of panicking
+			name:   "array_contains",
+			args:   []interface{}{[]interface{}{1, nested}, nested},
+			result: true,
+		},
+		{ // array_contains_any must compare elements of the two arrays
+			name:   "array_contains_any",
+			args:   []interface{}{[]interface{}{nested}, []interface{}{[]interface{}{2, 3}}},
+			result: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			f, ok := builtins[tt.name]
+			require.True(t, ok)
+			result, ok := f.exec(fctx, tt.args)
+			require.True(t, ok)
+			require.Equal(t, tt.result, result)
+		})
+	}
+}
