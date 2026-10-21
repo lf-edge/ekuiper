@@ -47,7 +47,7 @@ require (
 	github.com/jinzhu/now v1.1.5
 	github.com/jmrobles/h2go v0.5.0
 	github.com/keepeye/logrus-filename v0.0.0-20190711075016-ce01a4391dd1
-	github.com/klauspost/compress v1.18.4
+	github.com/klauspost/compress v1.18.7
 	github.com/lf-edge/ekuiper/contract/v2 v2.3.1
 	github.com/lib/pq v1.10.9
 	github.com/mattn/go-adodb v0.0.1
@@ -147,7 +147,6 @@ require (
 	github.com/klauspost/asmfmt v1.3.2 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
-	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/minio/asm2plan9s v0.0.0-20200509001527-cdd76441f9d8 // indirect
 	github.com/minio/c2goasm v0.0.0-20190812172519-36a3d3bbc4f3 // indirect
 	github.com/moby/moby/api v1.54.0 // indirect
