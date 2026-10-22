@@ -109,6 +109,9 @@ func registerStrFunc() {
 			if err != nil {
 				return err, false
 			}
+			if arg1 < 0 {
+				return fmt.Errorf("pad length must be greater than or equal to 0"), false
+			}
 			return strings.Repeat(" ", arg1) + arg0, true
 		},
 		val:   ValidateOneStrOneInt,
@@ -201,6 +204,9 @@ func registerStrFunc() {
 			arg1, err := cast.ToInt(args[1], cast.STRICT)
 			if err != nil {
 				return err, false
+			}
+			if arg1 < 0 {
+				return fmt.Errorf("pad length must be greater than or equal to 0"), false
 			}
 			return arg0 + strings.Repeat(" ", arg1), true
 		},

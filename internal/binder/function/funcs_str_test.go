@@ -359,3 +359,76 @@ func TestStringFuncVal(t *testing.T) {
 		})
 	}
 }
+
+func TestPadNegativeLength(t *testing.T) {
+	contextLogger := conf.Log.WithField("rule", "testExec")
+	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+	tempStore, _ := state.CreateStore("mockRule0", def.AtMostOnce)
+	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
+	oldBuiltins := builtins
+	defer func() {
+		builtins = oldBuiltins
+	}()
+	builtins = map[string]builtinFunc{}
+	registerStrFunc()
+
+	tests := []struct {
+		name     string
+		funcName string
+		pad      int
+		result   interface{}
+		ok       bool
+	}{
+		{
+			name:     "lpad normal",
+			funcName: "lpad",
+			pad:      2,
+			result:   "  abc",
+			ok:       true,
+		},
+		{
+			name:     "lpad negative",
+			funcName: "lpad",
+			pad:      -2,
+			result:   errors.New("pad length must be greater than or equal to 0"),
+			ok:       false,
+		},
+		{
+			name:     "rpad normal",
+			funcName: "rpad",
+			pad:      3,
+			result:   "abc   ",
+			ok:       true,
+		},
+		{
+			name:     "rpad negative",
+			funcName: "rpad",
+			pad:      -3,
+			result:   errors.New("pad length must be greater than or equal to 0"),
+			ok:       false,
+		},
+		{
+			name:     "lpad zero",
+			funcName: "lpad",
+			pad:      0,
+			result:   "abc",
+			ok:       true,
+		},
+		{
+			name:     "rpad zero",
+			funcName: "rpad",
+			pad:      0,
+			result:   "abc",
+			ok:       true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			f, ok := builtins[tt.funcName]
+			require.True(t, ok)
+			result, ok := f.exec(fctx, []interface{}{"abc", tt.pad})
+			require.Equal(t, tt.ok, ok)
+			require.Equal(t, tt.result, result)
+		})
+	}
+}
