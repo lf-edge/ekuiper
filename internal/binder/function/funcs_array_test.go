@@ -1250,6 +1250,11 @@ func TestArrayCompareUncomparableValue(t *testing.T) {
 			args:   []interface{}{[]interface{}{nested}, []interface{}{[]interface{}{2, 3}}},
 			result: true,
 		},
+		{ // array_remove must drop an array element instead of panicking
+			name:   "array_remove",
+			args:   []interface{}{[]interface{}{[]interface{}{1, nested}, nested}, nested},
+			result: []interface{}{[]interface{}{1, nested}},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

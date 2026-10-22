@@ -186,7 +186,7 @@ func registerArrayFunc() {
 			index := 0
 
 			for _, item := range array {
-				if item != args[1] {
+				if !changedValueEqual(item, args[1]) {
 					array[index] = item
 					index++
 				}
