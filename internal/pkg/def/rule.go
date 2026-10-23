@@ -46,6 +46,8 @@ type RuleOption struct {
 	EnableSaveStateBeforeStop bool                     `json:"enableSaveStateBeforeStop,omitempty" yaml:"enableSaveStateBeforeStop,omitempty"`
 	ForceExitTimeout          cast.DurationConf        `json:"forceExitTimeout,omitempty" yaml:"forceExitTimeout,omitempty"`
 	Experiment                *ExpOpts                 `json:"experiment,omitempty" yaml:"experiment,omitempty"`
+	SetOperatorWindowLength   int                      `json:"setOperatorWindowLength,omitempty" yaml:"setOperatorWindowLength,omitempty"`
+	SetOperatorWindowUnit     string                   `json:"setOperatorWindowUnit,omitempty" yaml:"setOperatorWindowUnit,omitempty"`
 	// bufferFullPolicy is derived from the stream definitions and the legacy
 	// DisableBufferFullDiscard option during planning. It is runtime-only and
 	// must not be persisted as part of the rule configuration.
