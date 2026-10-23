@@ -65,25 +65,28 @@ Run "kubectl apply -f [podnetwork].yaml" with one of the options listed at:
 You can now join any number of control-plane nodes by copying certificate authorities
 and service account keys on each node and then running the following as root:
 
-  kubeadm join 34.209.219.149:6443 --token i24p5i.nz1feykoggszwxpq \
-    --discovery-token-ca-cert-hash sha256:3aacafdd44d1136808271ad4aafa34e5e9e3553f3b6f21f972d29b8093554325 \
+  kubeadm join 34.209.219.149:6443 --token <bootstrap-token> \
+    --discovery-token-ca-cert-hash sha256:<ca-cert-hash> \
     --control-plane
 
 Then you can join any number of worker nodes by running the following on each as root:
 
-kubeadm join 34.209.219.149:6443 --token i24p5i.nz1feykoggszwxpq \
-    --discovery-token-ca-cert-hash sha256:3aacafdd44d1136808271ad4aafa34e5e9e3553f3b6f21f972d29b8093554325
+kubeadm join 34.209.219.149:6443 --token <bootstrap-token> \
+    --discovery-token-ca-cert-hash sha256:<ca-cert-hash>
 ```
 
 通过命令，我们指定外部 ip 作为控制平面端点，以便边缘节点可以访问，并将 kubernetes 版本指定为 1.20，这是 OpenYurt 中支持的最新版本。
 
 按照输出中的说明设置 kubeconfig。 然后复制要在边缘节点中使用的 `kubeadm join` 命令。
 
+下文中的 `<bootstrap-token>` 和 `<ca-cert-hash>` 是占位符，请使用自己集群中的实际值。
+在控制平面节点运行 `kubeadm token create --print-join-command`，可生成新的加入命令。
+
 **在边缘节点**，运行复制的命令：
 
 ```shell
-sudo kubeadm join 34.209.219.149:6443 --token i24p5i.nz1feykoggszwxpq \
-    --discovery-token-ca-cert-hash sha256:3aacafdd44d1136808271ad4aafa34e5e9e3553f3b6f21f972d29b8093554325
+sudo kubeadm join 34.209.219.149:6443 --token <bootstrap-token> \
+    --discovery-token-ca-cert-hash sha256:<ca-cert-hash>
 ```
 
 如果一切顺利，返回云节点并输入以下命令以获取 k8s 节点列表，确保您可以获得 2 个节点：

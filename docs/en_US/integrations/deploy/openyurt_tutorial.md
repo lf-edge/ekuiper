@@ -81,14 +81,14 @@ Run "kubectl apply -f [podnetwork].yaml" with one of the options listed at:
 You can now join any number of control-plane nodes by copying certificate authorities
 and service account keys on each node and then running the following as root:
 
-  kubeadm join 34.209.219.149:6443 --token i24p5i.nz1feykoggszwxpq \
-    --discovery-token-ca-cert-hash sha256:3aacafdd44d1136808271ad4aafa34e5e9e3553f3b6f21f972d29b8093554325 \
+  kubeadm join 34.209.219.149:6443 --token <bootstrap-token> \
+    --discovery-token-ca-cert-hash sha256:<ca-cert-hash> \
     --control-plane
 
 Then you can join any number of worker nodes by running the following on each as root:
 
-kubeadm join 34.209.219.149:6443 --token i24p5i.nz1feykoggszwxpq \
-    --discovery-token-ca-cert-hash sha256:3aacafdd44d1136808271ad4aafa34e5e9e3553f3b6f21f972d29b8093554325
+kubeadm join 34.209.219.149:6443 --token <bootstrap-token> \
+    --discovery-token-ca-cert-hash sha256:<ca-cert-hash>
 ```
 
 In the command we specify the external ip as the control plane endpoint so that the edge node can access and also
@@ -97,11 +97,15 @@ specify the kubernetes version to 1.20 which is the latest supported version in 
 Follow the instruction in the output to set the kubeconfig. And then copy the `kubeadm join` command to be used in the
 edge node.
 
+The `<bootstrap-token>` and `<ca-cert-hash>` below are placeholders. Use the values
+from your own cluster. On the control-plane node, run `kubeadm token create --print-join-command`
+to generate a fresh join command.
+
 **In the edge node**, run the copied command:
 
 ```shell
-sudo kubeadm join 34.209.219.149:6443 --token i24p5i.nz1feykoggszwxpq \
-    --discovery-token-ca-cert-hash sha256:3aacafdd44d1136808271ad4aafa34e5e9e3553f3b6f21f972d29b8093554325
+sudo kubeadm join 34.209.219.149:6443 --token <bootstrap-token> \
+    --discovery-token-ca-cert-hash sha256:<ca-cert-hash>
 ```
 
 If everything goes well, go back to the cloud node and type the below command to get the k8s node list and make sure you
