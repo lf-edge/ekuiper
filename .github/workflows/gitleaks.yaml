@@ -1,0 +1,53 @@
+name: Gitleaks
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gitleaks-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  scan:
+    name: Scan for secrets
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Install Gitleaks
+        shell: bash
+        run: |
+          set -euo pipefail
+          install_dir="$RUNNER_TEMP/gitleaks"
+          mkdir -p "$install_dir"
+          curl --fail --silent --show-error --location --retry 3 \
+            https://github.com/gitleaks/gitleaks/releases/download/v8.30.0/gitleaks_8.30.0_linux_x64.tar.gz \
+            --output "$install_dir/gitleaks.tar.gz"
+          echo "79a3ab579b53f71efd634f3aaf7e04a0fa0cf206b7ed434638d1547a2470a66e  $install_dir/gitleaks.tar.gz" | sha256sum --check
+          tar -xzf "$install_dir/gitleaks.tar.gz" -C "$install_dir" gitleaks
+          echo "$install_dir" >> "$GITHUB_PATH"
+
+      - name: Scan current source
+        run: gitleaks dir . --redact=100 --no-banner --ignore-gitleaks-allow --gitleaks-ignore-path=/dev/null
+
+      # Scan every PR commit, including secrets removed by a later commit.
+      # Existing findings in the base branch's history are outside this range.
+      - name: Scan PR commits
+        if: ${{ !cancelled() && github.event_name == 'pull_request' }}
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: >-
+          gitleaks git . --log-opts="$PR_BASE_SHA..$PR_HEAD_SHA"
+          --redact=100 --no-banner --ignore-gitleaks-allow --gitleaks-ignore-path=/dev/null
