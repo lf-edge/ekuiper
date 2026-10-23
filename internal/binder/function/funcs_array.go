@@ -86,7 +86,7 @@ func registerArrayFunc() {
 				return errorArrayFirstArgumentNotArrayError, false
 			}
 			for i, item := range array {
-				if item == args[1] {
+				if changedValueEqual(item, args[1]) {
 					return i, true
 				}
 			}
@@ -162,7 +162,7 @@ func registerArrayFunc() {
 				return errorArrayFirstArgumentNotArrayError, false
 			}
 			for _, item := range array {
-				if item == args[1] {
+				if changedValueEqual(item, args[1]) {
 					return true, true
 				}
 			}
@@ -186,7 +186,7 @@ func registerArrayFunc() {
 			index := 0
 
 			for _, item := range array {
-				if item != args[1] {
+				if !changedValueEqual(item, args[1]) {
 					array[index] = item
 					index++
 				}
@@ -209,7 +209,7 @@ func registerArrayFunc() {
 			}
 			lastPos := -1
 			for i := len(array) - 1; i >= 0; i-- {
-				if array[i] == args[1] {
+				if changedValueEqual(array[i], args[1]) {
 					lastPos = i
 					break
 				}
@@ -237,7 +237,7 @@ func registerArrayFunc() {
 
 			for _, a := range array1 {
 				for _, b := range array2 {
-					if a == b {
+					if changedValueEqual(a, b) {
 						return true, true
 					}
 				}
