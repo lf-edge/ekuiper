@@ -36,12 +36,14 @@ There is an example in json format
 
 ```json
 {
-  "iss": "sample_key.pub",
-  "adu": "eKuiper"
+  "iss": "ekuiper-jwt.pub",
+  "aud": "eKuiper"
 }
 ```
 
-When use this format, user must make sure the correct Public key file `sample_key.pub` are under `etc/mgmt` .
+Generate your own RSA key pair and place only the public key, `ekuiper-jwt.pub`,
+in `etc/mgmt`. No sample key pair is shipped. Keep the private key in the external
+service that signs tokens. See the [management key setup instructions](../../../../etc/mgmt/README.md).
 
 ### JWT Signature
 
