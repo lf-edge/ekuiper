@@ -36,12 +36,14 @@ JWT Payload 应使用以下格式
 
 ```json
 {
-  "iss": "sample_key.pub",
-  "adu": "eKuiper"
+  "iss": "ekuiper-jwt.pub",
+  "aud": "eKuiper"
 }
 ```
 
-使用此格式时，用户必须确保正确的公钥文件 `sample_key.pub` 位于 `etc/mgmt` 下。
+请自行生成 RSA 密钥对，并仅将公钥 `ekuiper-jwt.pub` 放在 `etc/mgmt` 下。
+eKuiper 不提供示例密钥对；私钥应保留在签发令牌的外部服务中。
+具体步骤参见[管理密钥配置说明](../../../../etc/mgmt/README.md)。
 
 ### JWT Signature
 

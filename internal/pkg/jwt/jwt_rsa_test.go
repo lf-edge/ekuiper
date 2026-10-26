@@ -31,17 +31,12 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 )
 
-var (
-	expiredToken   = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJlS3VpcGVyIiwiZXhwIjoxNjM2MDExMzQxLCJpc3MiOiJzYW1wbGVfa2V5LnB1YiJ9.qm5Pq9VxDC10qbOM081U5NwScTOxYV_F5vyqbU9rXB2ebz4kDio_R2tgEgGyJ41lwD7gFl1quBjp_EgokPZNOoGRg5R1Ygf7iF8XJSDxYkspSCsBtZAuMCo3MCz3slQyvnr24qv3idUDhlwO6FPHGLaLHEyvrETSl1ZcECq2wvW01Tc2Jmg0-Kpp6TmEbH5aD-L0or5Bfy0ytBQ64nd2hKVaoADZZOXSt1iH2-1R35fEc_lBw7zs4QpCC2R--muoqYsYkESR08o6wIKAxRJvqeWab3C9k_g0zaPhwa7ZQ9wRzah-tc6PdotZkAyH7BCx-f7llO7UT47k0GnrhBe21g"
-	badFormatToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmb28iOiJiYXIiLCJleHAiOjE1MDAwLCJpc3MiOiJ0ZXN0In0"
-)
-
-func genTokenWithKey(t *testing.T, key *rsa.PrivateKey, issuer string, aud []string) string {
+func genTokenWithKey(t *testing.T, key *rsa.PrivateKey, issuer string, aud []string, ttl time.Duration) string {
 	t.Helper()
 	tk := &Token{}
 	tk.Issuer = issuer
 	tk.Audience = aud
-	tk.ExpiresAt = gojwt.NewNumericDate(time.Now().Add(10 * time.Minute))
+	tk.ExpiresAt = gojwt.NewNumericDate(time.Now().Add(ttl))
 	token := gojwt.NewWithClaims(gojwt.SigningMethodRS256, tk)
 	tkStr, err := token.SignedString(key)
 	if err != nil {
@@ -79,42 +74,44 @@ func TestParseToken(t *testing.T) {
 		th string
 	}
 	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
+		name        string
+		args        args
+		wantErr     bool
+		errContains string
 	}{
 		{
 			name: "pass: have issuer public key",
 			args: args{
-				th: genTokenWithKey(t, privateKey, "test_issuer", []string{"eKuiper"}),
+				th: genTokenWithKey(t, privateKey, "test_issuer", []string{"eKuiper"}, 10*time.Minute),
 			},
 			wantErr: false,
 		},
 		{
-			name: "fail: token expired",
+			name:        "fail: token expired",
+			errContains: gojwt.ErrTokenExpired.Error(),
 			args: args{
-				th: expiredToken,
+				th: genTokenWithKey(t, privateKey, "test_issuer", []string{"eKuiper"}, -10*time.Minute),
 			},
 			wantErr: true,
 		},
 		{
 			name: "fail: token sign error",
 			args: args{
-				th: genTokenWithKey(t, privateKey, "test_issuer", []string{"eKuiper"}) + "badSign",
+				th: genTokenWithKey(t, privateKey, "test_issuer", []string{"eKuiper"}, 10*time.Minute) + "badSign",
 			},
 			wantErr: true,
 		},
 		{
 			name: "fail: do not have issuer's public key",
 			args: args{
-				th: genTokenWithKey(t, privateKey, "notexist.pub", []string{"eKuiper"}),
+				th: genTokenWithKey(t, privateKey, "notexist.pub", []string{"eKuiper"}, 10*time.Minute),
 			},
 			wantErr: true,
 		},
 		{
 			name: "bad token format",
 			args: args{
-				th: badFormatToken,
+				th: "invalid.token",
 			},
 			wantErr: true,
 		},
@@ -124,6 +121,9 @@ func TestParseToken(t *testing.T) {
 			_, err := ParseToken(tt.args.th)
 			if tt.wantErr {
 				assert.Error(t, err)
+				if tt.errContains != "" {
+					assert.ErrorContains(t, err, tt.errContains)
+				}
 			} else {
 				assert.NoError(t, err)
 			}
