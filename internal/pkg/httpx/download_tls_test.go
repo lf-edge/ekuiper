@@ -21,6 +21,7 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
+	"flag"
 	"fmt"
 	"io"
 	"log"
@@ -51,6 +52,11 @@ func TestDownloadFileTLS(t *testing.T) {
 	const childEnv = "EKUIPER_DOWNLOAD_TLS_TEST_CHILD"
 	if os.Getenv(childEnv) != "1" {
 		cmd := exec.Command(os.Args[0], "-test.run=^TestDownloadFileTLS$", "-test.v")
+		// Share the parent's coverage directory so go test merges the child's
+		// counters into the final profile along with the parent's counters.
+		if coverDir := flag.Lookup("test.gocoverdir"); coverDir != nil && coverDir.Value.String() != "" {
+			cmd.Args = append(cmd.Args, "-test.gocoverdir="+coverDir.Value.String())
+		}
 		cmd.Env = append(os.Environ(), childEnv+"=1")
 		output, err := cmd.CombinedOutput()
 		require.NoError(t, err, "%s", output)
