@@ -179,3 +179,74 @@ func TestKafkaPassword(t *testing.T) {
 		require.Equal(t, tc.expectPassword, sconf.SaslPassword)
 	}
 }
+
+func TestMessageMeta(t *testing.T) {
+	testcases := []struct {
+		name   string
+		msg    kafkago.Message
+		expect map[string]any
+	}{
+		{
+			name: "full",
+			msg: kafkago.Message{
+				Topic:     "demo",
+				Partition: 2,
+				Offset:    10,
+				Key:       []byte("device1"),
+				Headers: []kafkago.Header{
+					{Key: "traceId", Value: []byte("abc")},
+					{Key: "type", Value: []byte("temp")},
+				},
+				Value: []byte(`{"a":1}`),
+			},
+			expect: map[string]any{
+				"topic":     "demo",
+				"partition": 2,
+				"offset":    int64(10),
+				"key":       "device1",
+				"headers": map[string]any{
+					"traceId": "abc",
+					"type":    "temp",
+				},
+			},
+		},
+		{
+			name: "no key and headers",
+			msg: kafkago.Message{
+				Topic:  "demo",
+				Offset: 0,
+				Value:  []byte(`{"a":1}`),
+			},
+			expect: map[string]any{
+				"topic":     "demo",
+				"partition": 0,
+				"offset":    int64(0),
+			},
+		},
+		{
+			name: "empty key and duplicated header",
+			msg: kafkago.Message{
+				Topic: "demo",
+				Key:   []byte{},
+				Headers: []kafkago.Header{
+					{Key: "h", Value: []byte("1")},
+					{Key: "h", Value: []byte("2")},
+				},
+			},
+			expect: map[string]any{
+				"topic":     "demo",
+				"partition": 0,
+				"offset":    int64(0),
+				"key":       "",
+				"headers": map[string]any{
+					"h": "2",
+				},
+			},
+		},
+	}
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			require.Equal(t, tc.expect, messageMeta(tc.msg))
+		})
+	}
+}

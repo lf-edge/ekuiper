@@ -244,8 +244,28 @@ func (k *KafkaSource) Subscribe(ctx api.StreamContext, ingest api.BytesIngest, i
 		KafkaSourceCounter.WithLabelValues(LblMsg, ctx.GetRuleId(), ctx.GetOpId()).Inc()
 		KafkaSourceCounter.WithLabelValues(LblBytes, ctx.GetRuleId(), ctx.GetOpId()).Add(float64(len(msg.Value)))
 		KafkaSourceGauge.WithLabelValues(LblOffset, ctx.GetRuleId(), ctx.GetOpId()).Set(float64(msg.Offset))
-		ingest(ctx, msg.Value, nil, timex.GetNow())
+		ingest(ctx, msg.Value, messageMeta(msg), timex.GetNow())
 	}
+}
+
+// messageMeta exposes the Kafka record information as the message metadata, so it can be read by meta() in rules
+func messageMeta(msg kafkago.Message) map[string]any {
+	meta := map[string]any{
+		"topic":     msg.Topic,
+		"partition": msg.Partition,
+		"offset":    msg.Offset,
+	}
+	if msg.Key != nil {
+		meta["key"] = string(msg.Key)
+	}
+	if len(msg.Headers) > 0 {
+		headers := make(map[string]any, len(msg.Headers))
+		for _, h := range msg.Headers {
+			headers[h.Key] = string(h.Value)
+		}
+		meta["headers"] = headers
+	}
+	return meta
 }
 
 func (k *KafkaSource) Rewind(offset interface{}) error {
