@@ -227,6 +227,40 @@ func TestRestSink_Apply(t *testing.T) {
 	}
 }
 
+func TestRestSinkReusesConnection(t *testing.T) {
+	for _, status := range []int{http.StatusCreated, http.StatusBadRequest} {
+		t.Run(fmt.Sprint(status), func(t *testing.T) {
+			addresses := make(chan string, 2)
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				_, _ = io.Copy(io.Discard, r.Body)
+				addresses <- r.RemoteAddr
+				w.WriteHeader(status)
+				_, _ = io.WriteString(w, `{"ok":true}`)
+			}))
+			defer server.Close()
+
+			ctx := mockContext.NewMockContext("reuse", "sink")
+			s := &RestSink{}
+			require.NoError(t, s.Provision(ctx, map[string]any{
+				"url":       server.URL,
+				"method":    "post",
+				"debugResp": false,
+			}))
+			defer s.client.CloseIdleConnections()
+			require.NoError(t, s.Connect(ctx, func(string, string) {}))
+			for i := 0; i < 2; i++ {
+				err := s.Collect(ctx, &xsql.RawTuple{Rawdata: []byte(`{"value":1}`)})
+				if status == http.StatusCreated {
+					require.NoError(t, err)
+				} else {
+					require.ErrorContains(t, err, fmt.Sprintf("%s: %d", CODE_ERR, status))
+				}
+			}
+			require.Equal(t, <-addresses, <-addresses, "requests should reuse the same TCP connection")
+		})
+	}
+}
+
 func TestRestSinkProvision(t *testing.T) {
 	s := &RestSink{}
 	require.EqualError(t, s.Provision(context.Background(), map[string]any{
