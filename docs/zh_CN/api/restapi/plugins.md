@@ -38,6 +38,11 @@ POST http://localhost:9081/plugins/portables
 1. name：插件的唯一名称。 名称必须采用首字母小写的驼峰命名法。 例如，如果导出的插件名称为 `Random`，则此插件的名称为 `random`。
 2. file：插件文件的 URL。URL 支持 http 和 https 以及 file 模式。当使用 file 模式时，该文件必须在 eKuiper 服务器所在的机器上。它必须是一个 zip 文件，其中包含：编译后的 so 文件和yaml 文件（仅源必需）。 如果插件依赖于某些外部依赖项，则可以提供一个名为install.sh 的 bash 脚本来进行依赖项安装。 文件名称必须与插件名称匹配。 请参考 [扩展](../../extension/overview.md) 了解命名规则。
 
+HTTPS 下载使用 eKuiper 进程的系统信任库校验服务器证书链和主机名。
+如果安装包服务器使用私有 CA，请将该 CA 安装到运行 eKuiper 的主机或容器的信任库中。
+证书无效时，下载会在安装开始前失败。HTTPS 重定向到 HTTP 会被拒绝；
+允许重定向到证书有效的其他 HTTPS 主机。
+
 ### 插件文件格式
 
 `注意`：针对`便捷插件`类型的文件格式，请参考这篇[文章](../../extension/portable/overview.md#打包发布)

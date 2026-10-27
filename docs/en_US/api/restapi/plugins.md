@@ -39,6 +39,11 @@ Request Sample for files locates in the same machine of the eKuiper server.
 1. name: a unique name of the plugin. The name must be the same as the camel case version of the plugin with lowercase first letter. For example, if the exported plugin name is `Random`, then the name of this plugin is `random`.
 2. file: the url of the plugin files. The url can be `http` or `https` scheme or `file` scheme to refer to a local file path of the eKuiper server. It must be a zip file with: a compiled so file and the yaml file(only required for sources). If the plugin depends on some external dependencies, a bash script named install.sh can be provided to do the dependency installation. The name of the files must match the name of the plugin. Please check [Extension](../../extension/overview.md) for the naming rule.
 
+HTTPS downloads verify the server certificate chain and hostname using the system trust store of the eKuiper process.
+For package servers using a private CA, install that CA in the trust store of the host or container running eKuiper.
+Invalid certificates cause the download to fail before installation. HTTPS redirects to HTTP are rejected;
+redirects to other HTTPS hosts are supported when their certificates are valid.
+
 ### Plugin File Format
 
 `Note`: For `portables` type, please refer to this [format](../../extension/portable/overview.md#package).

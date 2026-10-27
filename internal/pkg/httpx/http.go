@@ -17,7 +17,6 @@ package httpx
 import (
 	"bytes"
 	"context"
-	"crypto/tls"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -199,9 +198,17 @@ func ReadFile(uri string) (io.ReadCloser, error) {
 		timeout := 5 * time.Minute
 		client := &http.Client{
 			Timeout: timeout,
+			CheckRedirect: func(req *http.Request, via []*http.Request) error {
+				if len(via) >= 10 {
+					return fmt.Errorf("stopped after 10 redirects")
+				}
+				if via[len(via)-1].URL.Scheme == "https" && req.URL.Scheme != "https" {
+					return fmt.Errorf("cannot redirect HTTPS download to %s", req.URL.Scheme)
+				}
+				return nil
+			},
 			Transport: &http.Transport{
-				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-				DialContext:     GetSSRFDialContext(timeout),
+				DialContext: GetSSRFDialContext(timeout),
 			},
 		}
 		resp, err := client.Get(uri)
