@@ -543,7 +543,8 @@ func parseSource(nodeName string, gn *def.GraphNode, rule *def.Rule, tp *topo.To
 			}.Init()
 
 			if sInfo.stmt.StreamType == ast.TypeStream {
-				err = p.PruneColumns(nil)
+				// Graph nodes do not report the columns they reference, so keep all fields like SELECT *
+				err = p.PruneColumns([]ast.Expr{&ast.Wildcard{Token: ast.ASTERISK}})
 				if err != nil {
 					return nil, ILLEGAL, "", nil, err
 				}

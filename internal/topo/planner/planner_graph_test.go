@@ -22,12 +22,16 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/v2/internal/testx"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/node"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
 
 func TestPlannerGraphValidate(t *testing.T) {
@@ -1120,5 +1124,104 @@ func TestPlanByGraphRejectSliceTuple(t *testing.T) {
 	}
 	if err.Error() != "graph mode does not support slice-tuple mode" {
 		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestPlanByGraphStreamKeepsAllFields(t *testing.T) {
+	kv, err := store.GetKV("stream")
+	require.NoError(t, err)
+	streamSqls := map[string]string{
+		"graphSchemaless": `CREATE STREAM graphSchemaless () WITH (DATASOURCE="graphSchemaless", FORMAT="json");`,
+		"graphTyped":      `CREATE STREAM graphTyped (id BIGINT, temp FLOAT) WITH (DATASOURCE="graphTyped", FORMAT="json");`,
+	}
+	for name, sql := range streamSqls {
+		s, err := json.Marshal(&xsql.StreamInfo{
+			StreamType: ast.TypeStream,
+			Statement:  sql,
+		})
+		require.NoError(t, err)
+		require.NoError(t, kv.Set(name, string(s)))
+	}
+	defer func() {
+		for name := range streamSqls {
+			_ = kv.Delete(name)
+		}
+	}()
+	tests := []struct {
+		name   string
+		stream string
+		exp    map[string]any
+	}{
+		{
+			name:   "schemaless",
+			stream: "graphSchemaless",
+			exp:    map[string]any{"id": 1.0, "temp": 25.5, "other": "x"},
+		},
+		{
+			name:   "typed",
+			stream: "graphTyped",
+			exp:    map[string]any{"id": int64(1), "temp": 25.5},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tp, err := PlanByGraph(&def.Rule{
+				Id: "graphKeepFields_" + tt.name,
+				Graph: &def.RuleGraph{
+					Nodes: map[string]*def.GraphNode{
+						"src": {
+							Type:     "source",
+							NodeType: "mqtt",
+							Props: map[string]any{
+								"sourceType": "stream",
+								"sourceName": tt.stream,
+							},
+						},
+						"log": {
+							Type:     "sink",
+							NodeType: "log",
+							Props:    map[string]any{},
+						},
+					},
+					Topo: &def.PrintableTopo{
+						Sources: []string{"src"},
+						Edges: map[string][]any{
+							"src": {"log"},
+						},
+					},
+				},
+				Options: &def.RuleOption{
+					BufferLength: 1024,
+					Concurrency:  1,
+					SendError:    true,
+					Qos:          def.AtMostOnce,
+				},
+			})
+			require.NoError(t, err)
+			defer tp.Cancel()
+			var decoder *node.DecodeOp
+			for _, op := range tp.GetOperators() {
+				if d, ok := op.(*node.DecodeOp); ok {
+					decoder = d
+					break
+				}
+			}
+			require.NotNil(t, decoder)
+			out := make(chan any, 1)
+			require.NoError(t, decoder.AddOutput(out, "test"))
+			ctx, cancel := mockContext.NewMockContext(tp.GetName(), "decoder").WithCancel()
+			defer cancel()
+			decoder.Exec(ctx, make(chan error, 1))
+			in, _ := decoder.GetInput()
+			in <- &xsql.RawTuple{Emitter: tt.stream, Rawdata: []byte(`{"id":1,"temp":25.5,"other":"x"}`), Timestamp: time.UnixMilli(1)}
+			select {
+			case r := <-out:
+				tuple, ok := r.(*xsql.Tuple)
+				require.True(t, ok, "expect *xsql.Tuple but got %T(%v)", r, r)
+				require.Equal(t, tt.exp, tuple.ToMap())
+			case <-time.After(5 * time.Second):
+				t.Fatal("timeout waiting for decoded tuple")
+			}
+		})
 	}
 }
