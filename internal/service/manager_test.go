@@ -23,8 +23,11 @@ import (
 	"reflect"
 	"sort"
 	"strings"
+	"sync"
 	"testing"
+	"time"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -572,6 +575,70 @@ func TestServiceUpdateRefreshesExecutor(t *testing.T) {
 		File: dynamicServiceZip(t, "tcp://localhost:60053"),
 	}))
 	assert.Equal(t, "localhost:60053", functionAddr(t, "SayHello2"))
+}
+
+func TestServiceUpdateWaitsForFunctionResolution(t *testing.T) {
+	kconf.Config.Basic.AllowExternalFileAccess = true
+	t.Cleanup(func() {
+		_ = m.Delete("dynamic")
+	})
+	require.NoError(t, m.Create(&ServiceCreationRequest{
+		Name: "dynamic",
+		File: dynamicServiceZip(t, "tcp://localhost:60051"),
+	}))
+	updateReq := &ServiceCreationRequest{
+		Name: "dynamic",
+		File: dynamicServiceZip(t, "tcp://localhost:60052"),
+	}
+
+	// Pause the first resolution after it has read the old definition and
+	// before its executor is published to the pool.
+	reached, release := make(chan struct{}), make(chan struct{})
+	var once sync.Once
+	newGrpc := executors[GRPC]
+	executors[GRPC] = func(desc descriptor, opt *interfaceOpt, i *interfaceInfo) (executor, error) {
+		once.Do(func() {
+			close(reached)
+			<-release
+		})
+		return newGrpc(desc, opt, i)
+	}
+	t.Cleanup(func() {
+		executors[GRPC] = newGrpc
+	})
+
+	type result struct {
+		f   api.Function
+		err error
+	}
+	resolved := make(chan result, 1)
+	go func() {
+		f, err := m.Function("SayHello2")
+		resolved <- result{f, err}
+	}()
+	select {
+	case <-reached:
+	case r := <-resolved:
+		t.Fatalf("function resolved without building an executor: %v", r.err)
+	}
+
+	updated := make(chan error, 1)
+	go func() {
+		updated <- m.Update(updateReq)
+	}()
+	select {
+	case err := <-updated:
+		close(release)
+		t.Fatalf("update finished during a function resolution: %v", err)
+	case <-time.After(100 * time.Millisecond):
+	}
+	close(release)
+
+	r := <-resolved
+	require.NoError(t, r.err)
+	assert.Equal(t, "localhost:60051", r.f.(*ExternalFunc).exe.(*grpcExecutor).addr.Host)
+	require.NoError(t, <-updated)
+	assert.Equal(t, "localhost:60052", functionAddr(t, "SayHello2"))
 }
 
 func functionAddr(t *testing.T, name string) string {

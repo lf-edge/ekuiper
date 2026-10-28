@@ -46,6 +46,9 @@ var (
 )
 
 type Manager struct {
+	// mu serializes service mutations with the lookups that fill the buffers
+	// and the executor pool, so no stale definition is cached after a change
+	mu           syncx.RWMutex
 	executorPool *sync.Map // The pool of executors, keyed by executorKey
 	loaded       bool
 	serviceBuf   *sync.Map
@@ -225,6 +228,8 @@ func (m *Manager) HasFunctionSet(_ string) bool {
 }
 
 func (m *Manager) Function(name string) (api.Function, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
 	f, ok := m.getFunction(name)
 	if !ok {
 		return nil, fmt.Errorf("service function %s not found", name)
@@ -246,6 +251,8 @@ func (m *Manager) Function(name string) (api.Function, error) {
 }
 
 func (m *Manager) FunctionPluginInfo(funcName string) (plugin.EXTENSION_TYPE, string, string) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
 	funcContainer, ok := m.getFunction(funcName)
 	if ok {
 		installScript := ""
@@ -257,6 +264,8 @@ func (m *Manager) FunctionPluginInfo(funcName string) (plugin.EXTENSION_TYPE, st
 }
 
 func (m *Manager) ConvName(funcName string) (string, bool) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
 	_, ok := m.getFunction(funcName)
 	return funcName, ok
 }
@@ -264,6 +273,8 @@ func (m *Manager) ConvName(funcName string) (string, bool) {
 // End Implement FunctionFactory
 
 func (m *Manager) HasService(name string) bool {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
 	_, ok := m.getService(name)
 	kconf.Log.Debugf("found external service %s? %v ", name, ok)
 	return ok
@@ -351,9 +362,13 @@ func (m *Manager) deleteServiceFuncs(service string) error {
 }
 
 func (m *Manager) deleteFunc(service, name string) error {
-	f, err := m.GetFunction(name)
-	if err != nil {
+	if err := validate.ValidateID(name); err != nil {
 		return err
+	}
+	// Runs under the write lock, so it cannot use GetFunction
+	f, ok := m.getFunction(name)
+	if !ok {
+		return fmt.Errorf("can't get the service function %s", name)
 	}
 	if f.ServiceName == service {
 		m.functionBuf.Delete(name)
@@ -382,6 +397,12 @@ func (m *Manager) List() ([]string, error) {
 }
 
 func (m *Manager) Create(r *ServiceCreationRequest) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.createService(r)
+}
+
+func (m *Manager) createService(r *ServiceCreationRequest) error {
 	name, uri := r.Name, r.File
 	if err := validate.ValidateID(r.Name); err != nil {
 		return err
@@ -411,6 +432,12 @@ func (m *Manager) Create(r *ServiceCreationRequest) error {
 }
 
 func (m *Manager) Delete(name string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.deleteService(name)
+}
+
+func (m *Manager) deleteService(name string) error {
 	if err := validate.ValidateID(name); err != nil {
 		return err
 	}
@@ -434,6 +461,8 @@ func (m *Manager) Get(name string) (*serviceInfo, error) {
 	if err := validate.ValidateID(name); err != nil {
 		return nil, err
 	}
+	m.mu.RLock()
+	defer m.mu.RUnlock()
 	r, ok := m.getService(name)
 	if !ok {
 		return nil, fmt.Errorf("can't get the service %s", name)
@@ -442,11 +471,13 @@ func (m *Manager) Get(name string) (*serviceInfo, error) {
 }
 
 func (m *Manager) Update(req *ServiceCreationRequest) error {
-	err := m.Delete(req.Name)
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	err := m.deleteService(req.Name)
 	if err != nil {
 		return err
 	}
-	return m.Create(req)
+	return m.createService(req)
 }
 
 func (m *Manager) unzip(name, src string) error {
@@ -494,6 +525,8 @@ func (m *Manager) GetFunction(name string) (*functionContainer, error) {
 	if err := validate.ValidateID(name); err != nil {
 		return nil, err
 	}
+	m.mu.RLock()
+	defer m.mu.RUnlock()
 	r, ok := m.getFunction(name)
 	if !ok {
 		return nil, fmt.Errorf("can't get the service function %s", name)
