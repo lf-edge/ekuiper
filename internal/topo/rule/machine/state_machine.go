@@ -118,7 +118,7 @@ func (s *StateMachine) TriggerAction(action ActionSignal) bool {
 			s.currentState = Stopping
 			return false
 		case ScheduledStop, Stopped, StoppedByErr:
-			s.logger.Infof("ignore schedule stop action, because current RunState is %s", StateName[ss])
+			s.logger.Debugf("ignore schedule stop action, because current RunState is %s", StateName[ss])
 			return true
 		case Starting, Stopping:
 			s.actionQ = append(s.actionQ, action)
