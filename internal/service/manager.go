@@ -397,31 +397,56 @@ func (m *Manager) List() ([]string, error) {
 }
 
 func (m *Manager) Create(r *ServiceCreationRequest) error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	return m.createService(r)
-}
-
-func (m *Manager) createService(r *ServiceCreationRequest) error {
-	name, uri := r.Name, r.File
-	if err := validate.ValidateID(r.Name); err != nil {
+	name := r.Name
+	if err := validate.ValidateID(name); err != nil {
 		return err
 	}
 	if ok, _ := m.serviceKV.Get(name, &serviceInfo{}); ok {
 		return fmt.Errorf("service %s exist", name)
 	}
-	if !httpx.IsValidUrl(uri) {
-		return fmt.Errorf("invalid file path %s", uri)
-	}
-	// download
-	zipPath, err := httpx.DownloadFile(m.etcDir, name+".zip", uri)
+	zipPath, cleanup, err := m.downloadService(r)
 	if err != nil {
-		return fmt.Errorf("fail to download file %s: %s", uri, err)
+		return err
 	}
-	// clean up: delete zip file and unzip files in error
-	defer os.Remove(zipPath)
+	defer cleanup()
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	// The same service may have been created during the download
+	if ok, _ := m.serviceKV.Get(name, &serviceInfo{}); ok {
+		return fmt.Errorf("service %s exist", name)
+	}
+	return m.installService(r, zipPath)
+}
+
+// downloadService downloads the service zip into its own staging folder and
+// returns its path with a function to remove the folder. It runs without the
+// lock, so a slow download does not block the other services.
+func (m *Manager) downloadService(r *ServiceCreationRequest) (string, func(), error) {
+	uri := r.File
+	if !httpx.IsValidUrl(uri) {
+		return "", nil, fmt.Errorf("invalid file path %s", uri)
+	}
+	stageDir, err := os.MkdirTemp(m.etcDir, ".service-download-")
+	if err != nil {
+		return "", nil, fmt.Errorf("fail to create the download folder: %v", err)
+	}
+	cleanup := func() {
+		_ = os.RemoveAll(stageDir)
+	}
+	zipPath, err := httpx.DownloadFile(stageDir, r.Name+".zip", uri)
+	if err != nil {
+		cleanup()
+		return "", nil, fmt.Errorf("fail to download file %s: %s", uri, err)
+	}
+	return zipPath, cleanup, nil
+}
+
+// installService unzips the downloaded service and registers it. It must run
+// under the write lock.
+func (m *Manager) installService(r *ServiceCreationRequest, zipPath string) error {
+	name := r.Name
 	// unzip and copy to destination
-	err = m.unzip(name, zipPath)
+	err := m.unzip(name, zipPath)
 	if err != nil {
 		return err
 	}
@@ -471,13 +496,21 @@ func (m *Manager) Get(name string) (*serviceInfo, error) {
 }
 
 func (m *Manager) Update(req *ServiceCreationRequest) error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	err := m.deleteService(req.Name)
+	if err := validate.ValidateID(req.Name); err != nil {
+		return err
+	}
+	zipPath, cleanup, err := m.downloadService(req)
 	if err != nil {
 		return err
 	}
-	return m.createService(req)
+	defer cleanup()
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	err = m.deleteService(req.Name)
+	if err != nil {
+		return err
+	}
+	return m.installService(req, zipPath)
 }
 
 func (m *Manager) unzip(name, src string) error {

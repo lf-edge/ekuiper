@@ -17,6 +17,8 @@ package service
 import (
 	"archive/zip"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -639,6 +641,59 @@ func TestServiceUpdateWaitsForFunctionResolution(t *testing.T) {
 	assert.Equal(t, "localhost:60051", r.f.(*ExternalFunc).exe.(*grpcExecutor).addr.Host)
 	require.NoError(t, <-updated)
 	assert.Equal(t, "localhost:60052", functionAddr(t, "SayHello2"))
+}
+
+func TestServiceDownloadDoesNotBlockOtherServices(t *testing.T) {
+	kconf.Config.Basic.AllowExternalFileAccess = true
+	t.Cleanup(func() {
+		_ = m.Delete("dynamic")
+	})
+	zipURL, err := url.Parse(dynamicServiceZip(t, "tcp://localhost:60051"))
+	require.NoError(t, err)
+	zipFile, err := os.ReadFile(zipURL.Path)
+	require.NoError(t, err)
+
+	// Pause the download of the dynamic service until it is released.
+	reached, release := make(chan struct{}), make(chan struct{})
+	var once sync.Once
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		once.Do(func() {
+			close(reached)
+		})
+		<-release
+		_, _ = w.Write(zipFile)
+	}))
+	t.Cleanup(server.Close)
+
+	created := make(chan error, 1)
+	go func() {
+		created <- m.Create(&ServiceCreationRequest{
+			Name: "dynamic",
+			File: server.URL + "/dynamic.zip",
+		})
+	}()
+	select {
+	case <-reached:
+	case err := <-created:
+		t.Fatalf("service created without downloading: %v", err)
+	}
+
+	resolved := make(chan error, 1)
+	go func() {
+		_, err := m.Function("helloFromGrpc")
+		resolved <- err
+	}()
+	select {
+	case err := <-resolved:
+		require.NoError(t, err)
+	case <-time.After(5 * time.Second):
+		close(release)
+		t.Fatal("function resolution of another service waited for the download")
+	}
+	close(release)
+
+	require.NoError(t, <-created)
+	assert.Equal(t, "localhost:60051", functionAddr(t, "SayHello2"))
 }
 
 func functionAddr(t *testing.T, name string) string {
