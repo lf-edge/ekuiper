@@ -17,6 +17,7 @@ package http
 import (
 	"errors"
 	"fmt"
+	"io"
 	"regexp"
 	"strings"
 
@@ -237,6 +238,12 @@ func (r *RestSink) Collect(ctx api.StreamContext, item api.RawTuple) error {
 	})
 	defer func() {
 		if resp != nil && resp.Body != nil {
+			// Reuse successful connections within the configured request timeout.
+			// Error responses must return promptly, and timeout=0 must not make
+			// an otherwise unused response body block Collect indefinitely.
+			if resp.StatusCode >= 200 && resp.StatusCode < 300 && r.client.Timeout > 0 {
+				_, _ = io.Copy(io.Discard, resp.Body)
+			}
 			resp.Body.Close()
 		}
 	}()
