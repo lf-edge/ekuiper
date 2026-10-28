@@ -544,6 +544,75 @@ func TestManage(t *testing.T) {
 	}
 }
 
+func TestServiceUpdateRefreshesExecutor(t *testing.T) {
+	kconf.Config.Basic.AllowExternalFileAccess = true
+	t.Cleanup(func() {
+		_ = m.Delete("dynamic")
+	})
+	// Pool the executor of the tsrpc interface of the sample service first.
+	// The dynamic service also has an interface named tsrpc.
+	require.Equal(t, "localhost:50051", functionAddr(t, "helloFromGrpc"))
+
+	require.NoError(t, m.Create(&ServiceCreationRequest{
+		Name: "dynamic",
+		File: dynamicServiceZip(t, "tcp://localhost:60051"),
+	}))
+	assert.Equal(t, "localhost:60051", functionAddr(t, "SayHello2"))
+	assert.Equal(t, "localhost:50051", functionAddr(t, "helloFromGrpc"))
+
+	require.NoError(t, m.Update(&ServiceCreationRequest{
+		Name: "dynamic",
+		File: dynamicServiceZip(t, "tcp://localhost:60052"),
+	}))
+	assert.Equal(t, "localhost:60052", functionAddr(t, "SayHello2"))
+
+	require.NoError(t, m.Delete("dynamic"))
+	require.NoError(t, m.Create(&ServiceCreationRequest{
+		Name: "dynamic",
+		File: dynamicServiceZip(t, "tcp://localhost:60053"),
+	}))
+	assert.Equal(t, "localhost:60053", functionAddr(t, "SayHello2"))
+}
+
+func functionAddr(t *testing.T, name string) string {
+	t.Helper()
+	f, err := m.Function(name)
+	require.NoError(t, err)
+	return f.(*ExternalFunc).exe.(*grpcExecutor).addr.Host
+}
+
+// dynamicServiceZip packs the dynamic service in the toadd folder with the given
+// interface address and returns the file URL of the zip.
+func dynamicServiceZip(t *testing.T, addr string) string {
+	t.Helper()
+	baseFolder := filepath.Join(m.etcDir, "toadd")
+	desc, err := os.ReadFile(filepath.Join(baseFolder, "dynamic.json"))
+	require.NoError(t, err)
+	desc = []byte(strings.Replace(string(desc), "tcp://localhost:60051", addr, 1))
+	protoFile, err := os.ReadFile(filepath.Join(baseFolder, "schemas", "hw2.proto"))
+	require.NoError(t, err)
+
+	outPath := filepath.Join(t.TempDir(), "dynamic.zip")
+	outFile, err := os.Create(outPath)
+	require.NoError(t, err)
+	defer outFile.Close()
+	w := zip.NewWriter(outFile)
+	for name, content := range map[string][]byte{
+		"dynamic.json":      desc,
+		"schemas/hw2.proto": protoFile,
+	} {
+		f, err := w.Create(name)
+		require.NoError(t, err)
+		_, err = f.Write(content)
+		require.NoError(t, err)
+	}
+	require.NoError(t, w.Close())
+
+	u, err := urlFromFilePath(outPath)
+	require.NoError(t, err)
+	return u.String()
+}
+
 func addFiles(w *zip.Writer, basePath, baseInZip string) {
 	// Open the Directory
 	files, err := os.ReadDir(basePath)

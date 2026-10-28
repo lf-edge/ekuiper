@@ -46,7 +46,7 @@ var (
 )
 
 type Manager struct {
-	executorPool *sync.Map // The pool of executors
+	executorPool *sync.Map // The pool of executors, keyed by executorKey
 	loaded       bool
 	serviceBuf   *sync.Map
 	functionBuf  *sync.Map
@@ -238,7 +238,7 @@ func (m *Manager) Function(name string) (api.Function, error) {
 		return nil, fmt.Errorf("service function %s's interface %s not found", name, f.InterfaceName)
 	}
 	// executor is gotten from pool, so all externalFuncs with the same interface share the same executor instance
-	e, err := m.getExecutor(f.InterfaceName, i)
+	e, err := m.getExecutor(f.ServiceName, f.InterfaceName, i)
 	if err != nil {
 		return nil, fmt.Errorf("fail to initiate the executor for %s: %v", f.InterfaceName, err)
 	}
@@ -307,17 +307,36 @@ func (m *Manager) getService(name string) (*serviceInfo, bool) {
 	}
 }
 
+// executorKey identifies an interface of a service. Interface names are only
+// unique inside a service, so the service name is part of the key.
+type executorKey struct {
+	service string
+	iface   string
+}
+
 // Each interface maps to an executor
-func (m *Manager) getExecutor(name string, info *interfaceInfo) (executor, error) {
-	e, ok := m.executorPool.Load(name)
+func (m *Manager) getExecutor(service, iface string, info *interfaceInfo) (executor, error) {
+	key := executorKey{service: service, iface: iface}
+	e, ok := m.executorPool.Load(key)
 	if !ok {
 		ne, err := NewExecutor(info)
 		if err != nil {
 			return nil, err
 		}
-		e, _ = m.executorPool.LoadOrStore(name, ne)
+		e, _ = m.executorPool.LoadOrStore(key, ne)
 	}
 	return e.(executor), nil
+}
+
+// deleteServiceExecutors drops the pooled executors of the service so that
+// functions resolved later use the current service definition.
+func (m *Manager) deleteServiceExecutors(service string) {
+	m.executorPool.Range(func(k, _ any) bool {
+		if k.(executorKey).service == service {
+			m.executorPool.Delete(k)
+		}
+		return true
+	})
 }
 
 func (m *Manager) deleteServiceFuncs(service string) error {
@@ -396,6 +415,7 @@ func (m *Manager) Delete(name string) error {
 		return err
 	}
 	m.deleteServiceFuncs(name)
+	m.deleteServiceExecutors(name)
 	m.serviceBuf.Delete(name)
 	err := m.serviceKV.Delete(name)
 	if err != nil {
