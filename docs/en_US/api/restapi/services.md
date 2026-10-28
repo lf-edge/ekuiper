@@ -83,6 +83,9 @@ PUT http://localhost:9081/services/{name}
 }
 ```
 
+Rules started after the update use the new service definition. Running rules keep using the previous definition until
+they are restarted.
+
 ## Display all external functions
 
 Each service can contain multiple functions. This API is used to display the names of all external functions that can be used in SQL.

@@ -46,7 +46,10 @@ var (
 )
 
 type Manager struct {
-	executorPool *sync.Map // The pool of executors
+	// mu serializes service mutations with the lookups that fill the buffers
+	// and the executor pool, so no stale definition is cached after a change
+	mu           syncx.RWMutex
+	executorPool *sync.Map // The pool of executors, keyed by executorKey
 	loaded       bool
 	serviceBuf   *sync.Map
 	functionBuf  *sync.Map
@@ -225,6 +228,8 @@ func (m *Manager) HasFunctionSet(_ string) bool {
 }
 
 func (m *Manager) Function(name string) (api.Function, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
 	f, ok := m.getFunction(name)
 	if !ok {
 		return nil, fmt.Errorf("service function %s not found", name)
@@ -238,7 +243,7 @@ func (m *Manager) Function(name string) (api.Function, error) {
 		return nil, fmt.Errorf("service function %s's interface %s not found", name, f.InterfaceName)
 	}
 	// executor is gotten from pool, so all externalFuncs with the same interface share the same executor instance
-	e, err := m.getExecutor(f.InterfaceName, i)
+	e, err := m.getExecutor(f.ServiceName, f.InterfaceName, i)
 	if err != nil {
 		return nil, fmt.Errorf("fail to initiate the executor for %s: %v", f.InterfaceName, err)
 	}
@@ -246,6 +251,8 @@ func (m *Manager) Function(name string) (api.Function, error) {
 }
 
 func (m *Manager) FunctionPluginInfo(funcName string) (plugin.EXTENSION_TYPE, string, string) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
 	funcContainer, ok := m.getFunction(funcName)
 	if ok {
 		installScript := ""
@@ -257,6 +264,8 @@ func (m *Manager) FunctionPluginInfo(funcName string) (plugin.EXTENSION_TYPE, st
 }
 
 func (m *Manager) ConvName(funcName string) (string, bool) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
 	_, ok := m.getFunction(funcName)
 	return funcName, ok
 }
@@ -264,6 +273,8 @@ func (m *Manager) ConvName(funcName string) (string, bool) {
 // End Implement FunctionFactory
 
 func (m *Manager) HasService(name string) bool {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
 	_, ok := m.getService(name)
 	kconf.Log.Debugf("found external service %s? %v ", name, ok)
 	return ok
@@ -307,17 +318,36 @@ func (m *Manager) getService(name string) (*serviceInfo, bool) {
 	}
 }
 
+// executorKey identifies an interface of a service. Interface names are only
+// unique inside a service, so the service name is part of the key.
+type executorKey struct {
+	service string
+	iface   string
+}
+
 // Each interface maps to an executor
-func (m *Manager) getExecutor(name string, info *interfaceInfo) (executor, error) {
-	e, ok := m.executorPool.Load(name)
+func (m *Manager) getExecutor(service, iface string, info *interfaceInfo) (executor, error) {
+	key := executorKey{service: service, iface: iface}
+	e, ok := m.executorPool.Load(key)
 	if !ok {
 		ne, err := NewExecutor(info)
 		if err != nil {
 			return nil, err
 		}
-		e, _ = m.executorPool.LoadOrStore(name, ne)
+		e, _ = m.executorPool.LoadOrStore(key, ne)
 	}
 	return e.(executor), nil
+}
+
+// deleteServiceExecutors drops the pooled executors of the service so that
+// functions resolved later use the current service definition.
+func (m *Manager) deleteServiceExecutors(service string) {
+	m.executorPool.Range(func(k, _ any) bool {
+		if k.(executorKey).service == service {
+			m.executorPool.Delete(k)
+		}
+		return true
+	})
 }
 
 func (m *Manager) deleteServiceFuncs(service string) error {
@@ -332,9 +362,13 @@ func (m *Manager) deleteServiceFuncs(service string) error {
 }
 
 func (m *Manager) deleteFunc(service, name string) error {
-	f, err := m.GetFunction(name)
-	if err != nil {
+	if err := validate.ValidateID(name); err != nil {
 		return err
+	}
+	// Runs under the write lock, so it cannot use GetFunction
+	f, ok := m.getFunction(name)
+	if !ok {
+		return fmt.Errorf("can't get the service function %s", name)
 	}
 	if f.ServiceName == service {
 		m.functionBuf.Delete(name)
@@ -363,25 +397,56 @@ func (m *Manager) List() ([]string, error) {
 }
 
 func (m *Manager) Create(r *ServiceCreationRequest) error {
-	name, uri := r.Name, r.File
-	if err := validate.ValidateID(r.Name); err != nil {
+	name := r.Name
+	if err := validate.ValidateID(name); err != nil {
 		return err
 	}
 	if ok, _ := m.serviceKV.Get(name, &serviceInfo{}); ok {
 		return fmt.Errorf("service %s exist", name)
 	}
-	if !httpx.IsValidUrl(uri) {
-		return fmt.Errorf("invalid file path %s", uri)
-	}
-	// download
-	zipPath, err := httpx.DownloadFile(m.etcDir, name+".zip", uri)
+	zipPath, cleanup, err := m.downloadService(r)
 	if err != nil {
-		return fmt.Errorf("fail to download file %s: %s", uri, err)
+		return err
 	}
-	// clean up: delete zip file and unzip files in error
-	defer os.Remove(zipPath)
+	defer cleanup()
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	// The same service may have been created during the download
+	if ok, _ := m.serviceKV.Get(name, &serviceInfo{}); ok {
+		return fmt.Errorf("service %s exist", name)
+	}
+	return m.installService(r, zipPath)
+}
+
+// downloadService downloads the service zip into its own staging folder and
+// returns its path with a function to remove the folder. It runs without the
+// lock, so a slow download does not block the other services.
+func (m *Manager) downloadService(r *ServiceCreationRequest) (string, func(), error) {
+	uri := r.File
+	if !httpx.IsValidUrl(uri) {
+		return "", nil, fmt.Errorf("invalid file path %s", uri)
+	}
+	stageDir, err := os.MkdirTemp(m.etcDir, ".service-download-")
+	if err != nil {
+		return "", nil, fmt.Errorf("fail to create the download folder: %v", err)
+	}
+	cleanup := func() {
+		_ = os.RemoveAll(stageDir)
+	}
+	zipPath, err := httpx.DownloadFile(stageDir, r.Name+".zip", uri)
+	if err != nil {
+		cleanup()
+		return "", nil, fmt.Errorf("fail to download file %s: %s", uri, err)
+	}
+	return zipPath, cleanup, nil
+}
+
+// installService unzips the downloaded service and registers it. It must run
+// under the write lock.
+func (m *Manager) installService(r *ServiceCreationRequest, zipPath string) error {
+	name := r.Name
 	// unzip and copy to destination
-	err = m.unzip(name, zipPath)
+	err := m.unzip(name, zipPath)
 	if err != nil {
 		return err
 	}
@@ -392,10 +457,17 @@ func (m *Manager) Create(r *ServiceCreationRequest) error {
 }
 
 func (m *Manager) Delete(name string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.deleteService(name)
+}
+
+func (m *Manager) deleteService(name string) error {
 	if err := validate.ValidateID(name); err != nil {
 		return err
 	}
 	m.deleteServiceFuncs(name)
+	m.deleteServiceExecutors(name)
 	m.serviceBuf.Delete(name)
 	err := m.serviceKV.Delete(name)
 	if err != nil {
@@ -414,6 +486,8 @@ func (m *Manager) Get(name string) (*serviceInfo, error) {
 	if err := validate.ValidateID(name); err != nil {
 		return nil, err
 	}
+	m.mu.RLock()
+	defer m.mu.RUnlock()
 	r, ok := m.getService(name)
 	if !ok {
 		return nil, fmt.Errorf("can't get the service %s", name)
@@ -422,11 +496,21 @@ func (m *Manager) Get(name string) (*serviceInfo, error) {
 }
 
 func (m *Manager) Update(req *ServiceCreationRequest) error {
-	err := m.Delete(req.Name)
+	if err := validate.ValidateID(req.Name); err != nil {
+		return err
+	}
+	zipPath, cleanup, err := m.downloadService(req)
 	if err != nil {
 		return err
 	}
-	return m.Create(req)
+	defer cleanup()
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	err = m.deleteService(req.Name)
+	if err != nil {
+		return err
+	}
+	return m.installService(req, zipPath)
 }
 
 func (m *Manager) unzip(name, src string) error {
@@ -474,6 +558,8 @@ func (m *Manager) GetFunction(name string) (*functionContainer, error) {
 	if err := validate.ValidateID(name); err != nil {
 		return nil, err
 	}
+	m.mu.RLock()
+	defer m.mu.RUnlock()
 	r, ok := m.getFunction(name)
 	if !ok {
 		return nil, fmt.Errorf("can't get the service function %s", name)

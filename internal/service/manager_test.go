@@ -17,14 +17,19 @@ package service
 import (
 	"archive/zip"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"os"
 	"path/filepath"
 	"reflect"
 	"sort"
 	"strings"
+	"sync"
 	"testing"
+	"time"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -542,6 +547,192 @@ func TestManage(t *testing.T) {
 	if !reflect.DeepEqual(initServices, list) {
 		t.Errorf("Get service list error, \nexpect\t\t%v, \nbut got\t\t%v", initServices, list)
 	}
+}
+
+func TestServiceUpdateRefreshesExecutor(t *testing.T) {
+	kconf.Config.Basic.AllowExternalFileAccess = true
+	t.Cleanup(func() {
+		_ = m.Delete("dynamic")
+	})
+	// Pool the executor of the tsrpc interface of the sample service first.
+	// The dynamic service also has an interface named tsrpc.
+	require.Equal(t, "localhost:50051", functionAddr(t, "helloFromGrpc"))
+
+	require.NoError(t, m.Create(&ServiceCreationRequest{
+		Name: "dynamic",
+		File: dynamicServiceZip(t, "tcp://localhost:60051"),
+	}))
+	assert.Equal(t, "localhost:60051", functionAddr(t, "SayHello2"))
+	assert.Equal(t, "localhost:50051", functionAddr(t, "helloFromGrpc"))
+
+	require.NoError(t, m.Update(&ServiceCreationRequest{
+		Name: "dynamic",
+		File: dynamicServiceZip(t, "tcp://localhost:60052"),
+	}))
+	assert.Equal(t, "localhost:60052", functionAddr(t, "SayHello2"))
+
+	require.NoError(t, m.Delete("dynamic"))
+	require.NoError(t, m.Create(&ServiceCreationRequest{
+		Name: "dynamic",
+		File: dynamicServiceZip(t, "tcp://localhost:60053"),
+	}))
+	assert.Equal(t, "localhost:60053", functionAddr(t, "SayHello2"))
+}
+
+func TestServiceUpdateWaitsForFunctionResolution(t *testing.T) {
+	kconf.Config.Basic.AllowExternalFileAccess = true
+	t.Cleanup(func() {
+		_ = m.Delete("dynamic")
+	})
+	require.NoError(t, m.Create(&ServiceCreationRequest{
+		Name: "dynamic",
+		File: dynamicServiceZip(t, "tcp://localhost:60051"),
+	}))
+	updateReq := &ServiceCreationRequest{
+		Name: "dynamic",
+		File: dynamicServiceZip(t, "tcp://localhost:60052"),
+	}
+
+	// Pause the first resolution after it has read the old definition and
+	// before its executor is published to the pool.
+	reached, release := make(chan struct{}), make(chan struct{})
+	var once sync.Once
+	newGrpc := executors[GRPC]
+	executors[GRPC] = func(desc descriptor, opt *interfaceOpt, i *interfaceInfo) (executor, error) {
+		once.Do(func() {
+			close(reached)
+			<-release
+		})
+		return newGrpc(desc, opt, i)
+	}
+	t.Cleanup(func() {
+		executors[GRPC] = newGrpc
+	})
+
+	type result struct {
+		f   api.Function
+		err error
+	}
+	resolved := make(chan result, 1)
+	go func() {
+		f, err := m.Function("SayHello2")
+		resolved <- result{f, err}
+	}()
+	select {
+	case <-reached:
+	case r := <-resolved:
+		t.Fatalf("function resolved without building an executor: %v", r.err)
+	}
+
+	updated := make(chan error, 1)
+	go func() {
+		updated <- m.Update(updateReq)
+	}()
+	select {
+	case err := <-updated:
+		close(release)
+		t.Fatalf("update finished during a function resolution: %v", err)
+	case <-time.After(100 * time.Millisecond):
+	}
+	close(release)
+
+	r := <-resolved
+	require.NoError(t, r.err)
+	assert.Equal(t, "localhost:60051", r.f.(*ExternalFunc).exe.(*grpcExecutor).addr.Host)
+	require.NoError(t, <-updated)
+	assert.Equal(t, "localhost:60052", functionAddr(t, "SayHello2"))
+}
+
+func TestServiceDownloadDoesNotBlockOtherServices(t *testing.T) {
+	kconf.Config.Basic.AllowExternalFileAccess = true
+	t.Cleanup(func() {
+		_ = m.Delete("dynamic")
+	})
+	zipURL, err := url.Parse(dynamicServiceZip(t, "tcp://localhost:60051"))
+	require.NoError(t, err)
+	zipFile, err := os.ReadFile(zipURL.Path)
+	require.NoError(t, err)
+
+	// Pause the download of the dynamic service until it is released.
+	reached, release := make(chan struct{}), make(chan struct{})
+	var once sync.Once
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		once.Do(func() {
+			close(reached)
+		})
+		<-release
+		_, _ = w.Write(zipFile)
+	}))
+	t.Cleanup(server.Close)
+
+	created := make(chan error, 1)
+	go func() {
+		created <- m.Create(&ServiceCreationRequest{
+			Name: "dynamic",
+			File: server.URL + "/dynamic.zip",
+		})
+	}()
+	select {
+	case <-reached:
+	case err := <-created:
+		t.Fatalf("service created without downloading: %v", err)
+	}
+
+	resolved := make(chan error, 1)
+	go func() {
+		_, err := m.Function("helloFromGrpc")
+		resolved <- err
+	}()
+	select {
+	case err := <-resolved:
+		require.NoError(t, err)
+	case <-time.After(5 * time.Second):
+		close(release)
+		t.Fatal("function resolution of another service waited for the download")
+	}
+	close(release)
+
+	require.NoError(t, <-created)
+	assert.Equal(t, "localhost:60051", functionAddr(t, "SayHello2"))
+}
+
+func functionAddr(t *testing.T, name string) string {
+	t.Helper()
+	f, err := m.Function(name)
+	require.NoError(t, err)
+	return f.(*ExternalFunc).exe.(*grpcExecutor).addr.Host
+}
+
+// dynamicServiceZip packs the dynamic service in the toadd folder with the given
+// interface address and returns the file URL of the zip.
+func dynamicServiceZip(t *testing.T, addr string) string {
+	t.Helper()
+	baseFolder := filepath.Join(m.etcDir, "toadd")
+	desc, err := os.ReadFile(filepath.Join(baseFolder, "dynamic.json"))
+	require.NoError(t, err)
+	desc = []byte(strings.Replace(string(desc), "tcp://localhost:60051", addr, 1))
+	protoFile, err := os.ReadFile(filepath.Join(baseFolder, "schemas", "hw2.proto"))
+	require.NoError(t, err)
+
+	outPath := filepath.Join(t.TempDir(), "dynamic.zip")
+	outFile, err := os.Create(outPath)
+	require.NoError(t, err)
+	defer outFile.Close()
+	w := zip.NewWriter(outFile)
+	for name, content := range map[string][]byte{
+		"dynamic.json":      desc,
+		"schemas/hw2.proto": protoFile,
+	} {
+		f, err := w.Create(name)
+		require.NoError(t, err)
+		_, err = f.Write(content)
+		require.NoError(t, err)
+	}
+	require.NoError(t, w.Close())
+
+	u, err := urlFromFilePath(outPath)
+	require.NoError(t, err)
+	return u.String()
 }
 
 func addFiles(w *zip.Writer, basePath, baseInZip string) {
