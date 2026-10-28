@@ -17,6 +17,7 @@ package http
 import (
 	"errors"
 	"fmt"
+	"io"
 	"regexp"
 	"strings"
 
@@ -237,6 +238,9 @@ func (r *RestSink) Collect(ctx api.StreamContext, item api.RawTuple) error {
 	})
 	defer func() {
 		if resp != nil && resp.Body != nil {
+			// Drain unused response content so HTTP/1.1 connections can be reused,
+			// including when debugResp is disabled or the status code is not 2xx.
+			_, _ = io.Copy(io.Discard, resp.Body)
 			resp.Body.Close()
 		}
 	}()
