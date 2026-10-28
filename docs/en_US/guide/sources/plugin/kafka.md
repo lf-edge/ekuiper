@@ -47,3 +47,23 @@ You can check the connectivity of the corresponding sink endpoint in advance thr
 | groupID            | true     | The group ID used by eKuiper when consuming kafka messages. |
 | partition | true     | The partition specified when eKuiper consumes kafka messages |
 | offsetReset | true     | Specifies where to start consuming when there is no committed offset. Supported values are `earliest` and `latest`. If not set, the default depends on the consumption mode: without `groupID`, it starts from the latest offset; with `groupID`, it starts from the earliest offset. |
+
+## Metadata
+
+The source adds the information of each received Kafka message into the message metadata (`meta`). The available keys are:
+
+| Key       | Type                | Description                                                                                                  |
+|-----------|---------------------|--------------------------------------------------------------------------------------------------------------|
+| topic     | string              | The topic of the message                                                                                     |
+| partition | int                 | The partition of the message                                                                                 |
+| offset    | int64               | The offset of the message in the partition                                                                   |
+| key       | string              | The message key. It is absent if the message has no key                                                      |
+| headers   | map                 | The message headers as a map of header key to string value. It is absent if the message has no headers. For duplicated header keys, the last one wins |
+
+As `partition` is a keyword in SQL, quote it with backticks when referring to it.
+
+Example:
+
+```sql
+SELECT meta(key) AS key, meta(`partition`) AS `partition`, meta(offset) AS offset, meta(headers)->traceId AS traceId FROM demo
+```

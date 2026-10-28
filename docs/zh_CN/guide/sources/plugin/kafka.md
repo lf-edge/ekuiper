@@ -47,3 +47,23 @@ default:
 | groupID | 是    | eKuiper 消费 kafka 消息时所使用的 group ID。 |
 | partition | 是    | eKuiper 消费 kafka 消息时所指定的 partition |
 | offsetReset | 是    |  当没有已提交的 offset 时，从何处开始消费，可选值为 `earliest` 和 `latest`。未设置时默认值与消费模式相关：未配置 `groupID` 时默认为 `latest`，配置了 `groupID` 时默认为 `earliest` |
+
+## 元数据
+
+该源会将接收到的每条 Kafka 消息的信息写入消息元数据 `meta` 中，可用的 key 如下：
+
+| Key       | 类型                | 说明                                                      |
+|-----------|---------------------|---------------------------------------------------------|
+| topic     | string              | 消息所属的 topic                                            |
+| partition | int                 | 消息所属的 partition                                        |
+| offset    | int64               | 消息在 partition 中的 offset                                |
+| key       | string              | 消息的 key。消息没有 key 时不包含该字段                              |
+| headers   | map                 | 消息的 headers，key 为 header 名称，value 为字符串。消息没有 headers 时不包含该字段。header key 重复时以最后一个为准 |
+
+由于 `partition` 是 SQL 关键字，引用时需要使用反引号。
+
+示例：
+
+```sql
+SELECT meta(key) AS key, meta(`partition`) AS `partition`, meta(offset) AS offset, meta(headers)->traceId AS traceId FROM demo
+```
