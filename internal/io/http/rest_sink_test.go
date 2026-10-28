@@ -227,6 +227,83 @@ func TestRestSink_Apply(t *testing.T) {
 	}
 }
 
+func TestRestSinkReusesConnection(t *testing.T) {
+	for _, status := range []int{http.StatusCreated, http.StatusBadRequest} {
+		t.Run(fmt.Sprint(status), func(t *testing.T) {
+			addresses := make(chan string, 2)
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				_, _ = io.Copy(io.Discard, r.Body)
+				addresses <- r.RemoteAddr
+				w.WriteHeader(status)
+				_, _ = io.WriteString(w, `{"ok":true}`)
+			}))
+			defer server.Close()
+
+			ctx := mockContext.NewMockContext("reuse", "sink")
+			s := &RestSink{}
+			require.NoError(t, s.Provision(ctx, map[string]any{
+				"url":       server.URL,
+				"method":    "post",
+				"debugResp": false,
+			}))
+			defer s.client.CloseIdleConnections()
+			require.NoError(t, s.Connect(ctx, func(string, string) {}))
+			for i := 0; i < 2; i++ {
+				err := s.Collect(ctx, &xsql.RawTuple{Rawdata: []byte(`{"value":1}`)})
+				if status == http.StatusCreated {
+					require.NoError(t, err)
+				} else {
+					require.ErrorContains(t, err, fmt.Sprintf("%s: %d", CODE_ERR, status))
+				}
+			}
+			first, second := <-addresses, <-addresses
+			if status == http.StatusCreated {
+				require.Equal(t, first, second, "successful requests should reuse the same TCP connection")
+			}
+		})
+	}
+}
+
+func TestRestSinkUnusedBodyReturnsPromptly(t *testing.T) {
+	for _, tc := range []struct {
+		status  int
+		timeout string
+	}{{http.StatusBadRequest, "5s"}, {http.StatusOK, "0s"}} {
+		t.Run(fmt.Sprint(tc.status), func(t *testing.T) {
+			release := make(chan struct{})
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(tc.status)
+				_, _ = io.WriteString(w, "unfinished body")
+				w.(http.Flusher).Flush()
+				select {
+				case <-release:
+				case <-r.Context().Done():
+				}
+			}))
+			defer func() { close(release); server.Close() }()
+			ctx := mockContext.NewMockContext(t.Name(), "sink")
+			s := &RestSink{}
+			require.NoError(t, s.Provision(ctx, map[string]any{
+				"url": server.URL, "method": "post", "timeout": tc.timeout, "debugResp": false,
+			}))
+			defer s.client.CloseIdleConnections()
+			require.NoError(t, s.Connect(ctx, func(string, string) {}))
+			done := make(chan error, 1)
+			go func() { done <- s.Collect(ctx, &xsql.RawTuple{Rawdata: []byte(`{"value":1}`)}) }()
+			select {
+			case err := <-done:
+				if tc.status == http.StatusOK {
+					require.NoError(t, err)
+				} else {
+					require.ErrorContains(t, err, fmt.Sprintf("%s: %d", CODE_ERR, tc.status))
+				}
+			case <-time.After(time.Second):
+				t.Fatal("an unused slow body delayed Collect")
+			}
+		})
+	}
+}
+
 func TestRestSinkProvision(t *testing.T) {
 	s := &RestSink{}
 	require.EqualError(t, s.Provision(context.Background(), map[string]any{
