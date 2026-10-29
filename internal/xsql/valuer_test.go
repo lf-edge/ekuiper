@@ -28,6 +28,15 @@ import (
 )
 
 func TestComparison(t *testing.T) {
+	// The expected errors print times in UTC, so pin the configured timezone
+	// instead of depending on the TZ of the machine running the test.
+	loc := cast.GetConfiguredTimeZone()
+	if err := cast.SetTimeZone("UTC"); err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		_ = cast.SetTimeZone(loc.String())
+	}()
 	testTime, _ := cast.InterfaceToTime(1541152488442, "")
 	data := []struct {
 		m Message
