@@ -25,7 +25,8 @@ func init() {
 	gob.Register(make(map[string][]*Tuple))
 	gob.Register(&Tuple{})
 	gob.Register(&SliceTuple{})
-	gob.Register(&JoinTuple{})
+	// JoinTuple is intentionally not registered: persisting join state
+	// through gob (checkpoint, sink cache spill) is not supported.
 	gob.Register([]any{})
 	gob.Register(&RawTuple{})
 }
