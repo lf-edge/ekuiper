@@ -1,4 +1,4 @@
-// Copyright 2021-2025 EMQ Technologies Co., Ltd.
+// Copyright 2021-2026 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import (
 const (
 	FormatBinary     = "binary"
 	FormatJson       = "json"
+	FormatJsonLines  = "jsonl"
 	FormatProtobuf   = "protobuf"
 	FormatDelimited  = "delimited"
 	FormatUrlEncoded = "urlencoded"

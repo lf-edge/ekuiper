@@ -265,7 +265,7 @@ Golang 还内置提供了一些函数，用户可以参考[更多 Golang 内置�
 |------|------|
 | `sendSingle` | 控制 `dataTemplate` 的输入粒度。值为 `false` 时，模板接收当前的映射数组；值为 `true` 时，eKuiper 遍历数组并对每个映射分别执行一次模板。 |
 | `dataTemplate` | 转换 `sendSingle` 选出的每个输入。在批量模式下，模板应描述一个批次元素，而不是完整批次。模板输出被视为已经编码的数据，不会再次编码。用户需要负责保证输出符合 `format`。 |
-| `format` | 控制普通数据的编码方式；启用批量处理后，还控制如何将多个转换结果组织为一个批次。JSON Writer 会添加逗号和外层数组，Delimited Writer 会添加换行符，URL-encoded Writer 会在模板结果之间添加 `&`。 |
+| `format` | 控制普通数据的编码方式；启用批量处理后，还控制如何将多个转换结果组织为一个批次。JSON Writer 会添加逗号和外层数组，Delimited Writer 和 JSON Lines Writer 会添加换行符，URL-encoded Writer 会在模板结果之间添加 `&`。 |
 | `batchSize` / `lingerInterval` | 控制何时将转换后的元素发送到 sink。批量处理不会把累计完成的批次暴露给 `dataTemplate`，也不会改变模板输入。 |
 
 实际处理顺序为：

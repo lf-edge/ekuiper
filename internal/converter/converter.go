@@ -1,4 +1,4 @@
-// Copyright 2022-2025 EMQ Technologies Co., Ltd.
+// Copyright 2022-2026 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -35,6 +35,9 @@ func init() {
 	modules.RegisterConverter(message.FormatJson, func(_ api.StreamContext, _ string, schema map[string]*ast.JsonStreamField, props map[string]any) (message.Converter, error) {
 		return json.NewFastJsonConverter(schema, props), nil
 	})
+	modules.RegisterConverter(message.FormatJsonLines, func(_ api.StreamContext, _ string, schema map[string]*ast.JsonStreamField, props map[string]any) (message.Converter, error) {
+		return json.NewLinesConverter(schema, props), nil
+	})
 	modules.RegisterConverter(message.FormatBinary, func(_ api.StreamContext, _ string, _ map[string]*ast.JsonStreamField, props map[string]any) (message.Converter, error) {
 		return binary.GetConverter()
 	})
@@ -49,6 +52,9 @@ func init() {
 	})
 	modules.RegisterWriterConverter(message.FormatJson, func(ctx api.StreamContext, _ string, schema map[string]*ast.JsonStreamField, props map[string]any) (message.ConvertWriter, error) {
 		return json.NewFastJsonConverter(schema, props), nil
+	})
+	modules.RegisterWriterConverter(message.FormatJsonLines, func(ctx api.StreamContext, _ string, schema map[string]*ast.JsonStreamField, props map[string]any) (message.ConvertWriter, error) {
+		return json.NewLinesConverter(schema, props), nil
 	})
 	modules.RegisterWriterConverter(message.FormatUrlEncoded, func(ctx api.StreamContext, _ string, _ map[string]*ast.JsonStreamField, props map[string]any) (message.ConvertWriter, error) {
 		return urlencoded.NewWriter(ctx, props)

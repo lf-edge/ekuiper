@@ -5,7 +5,7 @@ The eKuiper uses a map based data structure internally during computation, so so
 ## Format
 
 There are two types of formats for codecs: schema and schema-less formats. The formats currently supported by eKuiper
-are `json`, `binary`, `delimiter`, `protobuf` and `custom`. Among them, `protobuf` is the schema format.
+are `json`, `jsonl`, `binary`, `delimiter`, `protobuf` and `custom`. Among them, `protobuf` is the schema format.
 The schema format requires registering the schema first, and then setting the referenced schema along with the format.
 For example, when using mqtt sink, the format and schema can be configured as follows
 
@@ -27,10 +27,24 @@ All currently supported formats, their supported codec methods and modes are sho
 | Format    | Codec                               | Custom Codec           | Schema                 |
 |-----------|-------------------------------------|------------------------|------------------------|
 | json      | Built-in                            | Unsupported            | Unsupported            |
+| jsonl     | Built-in                            | Unsupported            | Unsupported            |
 | binary    | Built-in                            | Unsupported            | Unsupported            |
 | delimiter | Built-in, need to specify delimiter | Unsupported            | Unsupported            |
 | protobuf  | Built-in                            | Supported              | Supported and required |
 | custom    | Not Built-in                        | Supported and required | Supported and optional |
+
+### JSON Lines
+
+The `jsonl` format reads and writes [JSON Lines](https://jsonlines.org/), also known as newline-delimited JSON. Many log and observability tools, such as the Fluent Bit `json_lines` and `json_stream` HTTP output formats, send data in this format.
+
+When decoding, each JSON object in the payload becomes one record, so a single message can carry many records. The objects can be separated by newlines, by other whitespace, or by nothing at all. Blank lines and `\r\n` line endings are accepted. Every value must be a JSON object. The stream schema and the JSON format properties such as `useInt64ForWholeNumber` are applied to each record in the same way as for the `json` format.
+
+```text
+{"temperature":23.4,"humidity":76}
+{"temperature":25.1,"humidity":70}
+```
+
+When encoding, each record is written as a JSON object on its own line. A list of records or a batch becomes several lines separated by `\n`, without a trailing newline.
 
 ### Format Extension
 

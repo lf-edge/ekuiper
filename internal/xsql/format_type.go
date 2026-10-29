@@ -1,4 +1,4 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2026 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,5 +17,5 @@ package xsql
 import "github.com/lf-edge/ekuiper/v2/pkg/message"
 
 func IsTextFormat(format string) bool {
-	return format == message.FormatJson || format == message.FormatDelimited || format == message.FormatUrlEncoded
+	return format == message.FormatJson || format == message.FormatJsonLines || format == message.FormatDelimited || format == message.FormatUrlEncoded
 }
