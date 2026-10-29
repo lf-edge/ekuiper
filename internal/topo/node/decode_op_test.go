@@ -17,6 +17,7 @@ package node
 import (
 	"errors"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -24,6 +25,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
+	topoContext "github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
@@ -123,7 +125,22 @@ func TestJSON(t *testing.T) {
 }
 
 func TestJSONLines(t *testing.T) {
-	ctx := mockContext.NewMockContext("test1", "decode_test")
+	wg := &sync.WaitGroup{}
+	mctx := mockContext.NewMockContext("test1", "decode_test").(*topoContext.DefaultContext)
+	ctx, cancel := topoContext.WithValue(mctx, topoContext.RuleWaitGroupKey, wg).WithCancel()
+	t.Cleanup(func() {
+		cancel()
+		done := make(chan struct{})
+		go func() {
+			wg.Wait()
+			close(done)
+		}()
+		select {
+		case <-done:
+		case <-time.After(time.Second):
+			t.Error("timed out waiting for decode op to stop")
+		}
+	})
 	op, err := NewDecodeOp(ctx, false, "test", &def.RuleOption{BufferLength: 10, SendError: true}, map[string]*ast.JsonStreamField{"a": {Type: "bigint"}}, map[string]any{
 		"format": "jsonl",
 	})

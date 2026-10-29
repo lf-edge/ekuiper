@@ -240,6 +240,67 @@ func TestLinesSliceEncode(t *testing.T) {
 	require.Equal(t, "{\"a\":2,\"b\":4}\n{\"a\":6,\"b\":5}", string(v))
 }
 
+func TestLinesEncodeError(t *testing.T) {
+	testcases := []struct {
+		name   string
+		schema map[string]*ast.JsonStreamField
+		data   any
+		err    string
+	}{
+		{
+			name: "scalar",
+			data: 1,
+			err:  "JSON Lines record 1 must be an object but got int",
+		},
+		{
+			name: "nil",
+			data: nil,
+			err:  "JSON Lines record 1 must be an object but got <nil>",
+		},
+		{
+			name: "nil map",
+			data: map[string]any(nil),
+			err:  "JSON Lines record 1 must be an object but got nil map",
+		},
+		{
+			name: "nil map in list",
+			data: []map[string]any{{"a": 1}, nil},
+			err:  "JSON Lines record 2 must be an object but got nil map",
+		},
+		{
+			name: "scalar in any list",
+			data: []any{map[string]any{"a": 1}, "x"},
+			err:  "JSON Lines record 2 must be an object but got string",
+		},
+		{
+			name: "nested list in any list",
+			data: []any{[]any{map[string]any{"a": 1}}},
+			err:  "JSON Lines record 1 must be an object but got []interface {}",
+		},
+		{
+			name: "slice without index",
+			data: model.SliceVal{1},
+			err:  "JSON Lines record 1 is a slice value but the schema has no index",
+		},
+		{
+			name:   "slice without index in list",
+			schema: map[string]*ast.JsonStreamField{"a": {Type: "bigint"}},
+			data:   []model.SliceVal{{1}},
+			err:    "JSON Lines record 1 is a slice value but the schema has no index",
+		},
+	}
+	ctx := mockContext.NewMockContext("test", "op1")
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			c := NewLinesConverter(tc.schema, nil)
+			_, err := c.Encode(ctx, tc.data)
+			require.EqualError(t, err, tc.err)
+			require.NoError(t, c.New(ctx))
+			require.EqualError(t, c.Write(ctx, tc.data), tc.err)
+		})
+	}
+}
+
 func TestLinesRoundTrip(t *testing.T) {
 	ctx := mockContext.NewMockContext("test", "op1")
 	c := NewLinesConverter(nil, nil)
@@ -258,15 +319,66 @@ func TestLinesRoundTrip(t *testing.T) {
 func TestLinesWrite(t *testing.T) {
 	ctx := mockContext.NewMockContext("test", "op1")
 	w := NewLinesConverter(nil, nil)
-	for i := 0; i < 2; i++ {
-		require.NoError(t, w.New(ctx))
-		require.NoError(t, w.Write(ctx, map[string]any{"id": 1}))
-		require.NoError(t, w.Write(ctx, []map[string]any{{"id": 2}, {"id": 3}}))
-		require.NoError(t, w.Write(ctx, []map[string]any{}))
-		require.NoError(t, w.WriteRaw(ctx, []byte(`{"id":4}`)))
-		r, err := w.Flush(ctx)
-		require.NoError(t, err)
-		require.Equal(t, "{\"id\":1}\n{\"id\":2}\n{\"id\":3}\n{\"id\":4}", string(r))
+	require.NoError(t, w.New(ctx))
+	require.NoError(t, w.Write(ctx, map[string]any{"id": 1}))
+	require.NoError(t, w.Write(ctx, []map[string]any{{"id": 2}, {"id": 3}}))
+	require.NoError(t, w.Write(ctx, []map[string]any{}))
+	require.NoError(t, w.WriteRaw(ctx, []byte(`{"id":4}`)))
+	r, err := w.Flush(ctx)
+	require.NoError(t, err)
+	require.Equal(t, "{\"id\":1}\n{\"id\":2}\n{\"id\":3}\n{\"id\":4}", string(r))
+
+	// The writer is reused after Flush and must not carry over the previous batch.
+	require.NoError(t, w.New(ctx))
+	require.NoError(t, w.WriteRaw(ctx, []byte(`{"id":5}`)))
+	require.NoError(t, w.Write(ctx, map[string]any{"id": 6}))
+	r, err = w.Flush(ctx)
+	require.NoError(t, err)
+	require.Equal(t, "{\"id\":5}\n{\"id\":6}", string(r))
+}
+
+func TestLinesWriteRaw(t *testing.T) {
+	testcases := []struct {
+		name   string
+		raws   []string
+		result string
+	}{
+		{
+			name:   "unterminated",
+			raws:   []string{`{"a":1}`, `{"a":2}`},
+			result: "{\"a\":1}\n{\"a\":2}",
+		},
+		{
+			name:   "LF terminated",
+			raws:   []string{"{\"a\":1}\n", "{\"a\":2}\n"},
+			result: "{\"a\":1}\n{\"a\":2}",
+		},
+		{
+			name:   "CRLF terminated",
+			raws:   []string{"{\"a\":1}\r\n", "{\"a\":2}\r\n"},
+			result: "{\"a\":1}\n{\"a\":2}",
+		},
+		{
+			name:   "mixed and blank",
+			raws:   []string{"{\"a\":1}\n\n", "\r\n", `{"a":2}`, "{\"a\":3}\r\n"},
+			result: "{\"a\":1}\n{\"a\":2}\n{\"a\":3}",
+		},
+	}
+	ctx := mockContext.NewMockContext("test", "op1")
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			w := NewLinesConverter(nil, nil)
+			require.NoError(t, w.New(ctx))
+			for _, raw := range tc.raws {
+				require.NoError(t, w.WriteRaw(ctx, []byte(raw)))
+			}
+			r, err := w.Flush(ctx)
+			require.NoError(t, err)
+			require.Equal(t, tc.result, string(r))
+			v, err := w.Decode(ctx, r)
+			require.NoError(t, err)
+			require.Len(t, v, len(strings.Split(tc.result, "\n")))
+		})
 	}
 }
 

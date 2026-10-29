@@ -94,37 +94,51 @@ func (c *LinesConverter) Decode(_ api.StreamContext, b []byte) (m any, err error
 }
 
 // Encode writes a single record as one JSON line and a list of records as one
-// line per record.
+// line per record. Every record must encode to a JSON object so that the output
+// can be decoded again: a non-nil map, or a slice value when the schema has
+// indexes.
 func (c *LinesConverter) Encode(ctx api.StreamContext, d any) ([]byte, error) {
 	var buf bytes.Buffer
 	switch dt := d.(type) {
 	case []map[string]any:
-		for _, r := range dt {
-			if err := c.writeRecord(ctx, &buf, r); err != nil {
+		for i, r := range dt {
+			if err := c.writeRecord(ctx, &buf, i+1, r); err != nil {
 				return nil, err
 			}
 		}
 	case []model.SliceVal:
-		for _, r := range dt {
-			if err := c.writeRecord(ctx, &buf, r); err != nil {
+		for i, r := range dt {
+			if err := c.writeRecord(ctx, &buf, i+1, r); err != nil {
 				return nil, err
 			}
 		}
 	case []any:
-		for _, r := range dt {
-			if err := c.writeRecord(ctx, &buf, r); err != nil {
+		for i, r := range dt {
+			if err := c.writeRecord(ctx, &buf, i+1, r); err != nil {
 				return nil, err
 			}
 		}
 	default:
-		if err := c.writeRecord(ctx, &buf, d); err != nil {
+		if err := c.writeRecord(ctx, &buf, 1, d); err != nil {
 			return nil, err
 		}
 	}
 	return buf.Bytes(), nil
 }
 
-func (c *LinesConverter) writeRecord(ctx api.StreamContext, buf *bytes.Buffer, d any) error {
+func (c *LinesConverter) writeRecord(ctx api.StreamContext, buf *bytes.Buffer, n int, d any) error {
+	switch dt := d.(type) {
+	case map[string]any:
+		if dt == nil {
+			return fmt.Errorf("JSON Lines record %d must be an object but got nil map", n)
+		}
+	case model.SliceVal:
+		if !c.converter.isSlice {
+			return fmt.Errorf("JSON Lines record %d is a slice value but the schema has no index", n)
+		}
+	default:
+		return fmt.Errorf("JSON Lines record %d must be an object but got %T", n, d)
+	}
 	b, err := c.converter.Encode(ctx, d)
 	if err != nil {
 		return err
@@ -147,8 +161,11 @@ func (c *LinesConverter) Write(ctx api.StreamContext, d any) error {
 	return nil
 }
 
+// WriteRaw appends an already encoded record. The record may end with line
+// terminators (LF or CRLF); they are dropped so that records in a batch are
+// always separated by exactly one newline and the batch has no trailing newline.
 func (c *LinesConverter) WriteRaw(_ api.StreamContext, raw []byte) error {
-	writeLine(&c.buffer, raw)
+	writeLine(&c.buffer, bytes.TrimRight(raw, "\r\n"))
 	return nil
 }
 

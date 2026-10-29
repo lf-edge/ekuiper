@@ -44,7 +44,7 @@ When decoding, each JSON object in the payload becomes one record, so a single m
 {"temperature":25.1,"humidity":70}
 ```
 
-When encoding, each record is written as a JSON object on its own line. A list of records or a batch becomes several lines separated by `\n`, without a trailing newline.
+When encoding, each record is written as a JSON object on its own line. A list of records or a batch becomes several lines separated by `\n`, without a trailing newline. Every record must be an object, so other values such as numbers or `null` are rejected. When data template results are batched, a trailing `\n` or `\r\n` in each result is dropped, so the results are still separated by exactly one newline.
 
 ### Format Extension
 

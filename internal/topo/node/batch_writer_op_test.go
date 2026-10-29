@@ -229,6 +229,26 @@ func TestBatchWriterRun(t *testing.T) {
 			raw:    true,
 			expect: "{\"a\":1}\n{\"a\":2}",
 		},
+		{
+			name: "LF terminated raw tuple to JSON Lines",
+			input: []any{
+				&xsql.RawTuple{Rawdata: []byte("{\"a\":1}\n")},
+				&xsql.RawTuple{Rawdata: []byte("{\"a\":2}\n")},
+			},
+			format: "jsonl",
+			raw:    true,
+			expect: "{\"a\":1}\n{\"a\":2}",
+		},
+		{
+			name: "CRLF terminated raw tuple to JSON Lines",
+			input: []any{
+				&xsql.RawTuple{Rawdata: []byte("{\"a\":1}\r\n")},
+				&xsql.RawTuple{Rawdata: []byte("{\"a\":2}\r\n")},
+			},
+			format: "jsonl",
+			raw:    true,
+			expect: "{\"a\":1}\n{\"a\":2}",
+		},
 	}
 	mc := mockclock.GetMockClock()
 	ctx := mockContext.NewMockContext("testNewErr", "op1")
