@@ -91,21 +91,30 @@ func PatrolConnectionStatusJob(ctx context.Context) {
 
 func patrolConnectionStatus() {
 	globalConnectionManager.RLock()
-	defer globalConnectionManager.RUnlock()
-	for connName, conn := range globalConnectionManager.connectionPool {
-		// For now, we only patrol named connection
-		if !conn.Named {
+	connections := make([]*Meta, 0, len(globalConnectionManager.connectionPool))
+	for _, conn := range globalConnectionManager.connectionPool {
+		if conn.Named {
+			connections = append(connections, conn)
+		}
+	}
+	globalConnectionManager.RUnlock()
+	for _, conn := range connections {
+		// GetStatus may perform network I/O. Do not hold the pool lock here.
+		status, _ := conn.GetStatus()
+		globalConnectionManager.RLock()
+		if globalConnectionManager.connectionPool[conn.ID] != conn {
+			globalConnectionManager.RUnlock()
 			continue
 		}
-		status, _ := conn.GetStatus()
 		switch status {
 		case api.ConnectionConnected:
-			ConnStatusGauge.WithLabelValues(connName).Set(1)
+			ConnStatusGauge.WithLabelValues(conn.ID).Set(1)
 		case api.ConnectionDisconnected:
-			ConnStatusGauge.WithLabelValues(connName).Set(-1)
+			ConnStatusGauge.WithLabelValues(conn.ID).Set(-1)
 		case api.ConnectionConnecting:
-			ConnStatusGauge.WithLabelValues(connName).Set(0)
+			ConnStatusGauge.WithLabelValues(conn.ID).Set(0)
 		}
+		globalConnectionManager.RUnlock()
 	}
 }
 
