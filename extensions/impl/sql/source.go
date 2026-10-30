@@ -131,10 +131,16 @@ func (s *SQLSourceConnector) Connect(ctx api.StreamContext, sc api.StatusChangeH
 	}
 	s.conId = cw.ID
 	conn, err := cw.Wait(ctx)
+	if err != nil {
+		return err
+	}
 	if conn == nil {
 		return fmt.Errorf("sql client not ready: %v", err)
 	}
 	cli = conn.(*client2.SQLConnection)
+	if cli.GetDB() == nil {
+		return fmt.Errorf("sql client not ready")
+	}
 	s.conn = cli
 	s.ruleID = ctx.GetRuleId()
 	s.opID = ctx.GetOpId()
@@ -159,8 +165,11 @@ func (s *SQLSourceConnector) queryData(ctx api.StreamContext, rcvTime time.Time,
 	logger := ctx.GetLogger()
 	if s.needReconnect {
 		SqlSourceCounter.WithLabelValues(LblRecon, ctx.GetRuleId(), ctx.GetOpId()).Inc()
-		err := s.conn.Reconnect()
+		err := s.conn.Reconnect(ctx)
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			logger.Errorf("reconnect db error %v", err)
 			ingestError(ctx, err)
 			return
@@ -178,11 +187,14 @@ func (s *SQLSourceConnector) queryData(ctx api.StreamContext, rcvTime time.Time,
 	logger.Debugf("Query the database with %s", query)
 
 	queryStart := time.Now()
-	rows, err := s.conn.GetDB().Query(query)
+	rows, err := s.conn.GetDB().QueryContext(ctx, query)
 	failpoint.Inject("QueryErr", func() {
 		err = errors.New("QueryErr")
 	})
 	if err != nil {
+		if ctx.Err() != nil {
+			return
+		}
 		logger.Errorf("query sql error %v", err)
 		s.needReconnect = true
 		ingestError(ctx, err)
@@ -190,12 +202,16 @@ func (s *SQLSourceConnector) queryData(ctx api.StreamContext, rcvTime time.Time,
 	} else if s.needReconnect {
 		s.needReconnect = false
 	}
+	defer rows.Close()
 	cols, _ := rows.Columns()
 	types, err := rows.ColumnTypes()
 	failpoint.Inject("ColumnTypesErr", func() {
 		err = errors.New("ColumnTypesErr")
 	})
 	if err != nil {
+		if ctx.Err() != nil {
+			return
+		}
 		logger.Errorf("query %v row ColumnTypes error %v", query, err)
 		ingestError(ctx, err)
 		return
@@ -213,6 +229,9 @@ func (s *SQLSourceConnector) queryData(ctx api.StreamContext, rcvTime time.Time,
 			err = errors.New("ScanErr")
 		})
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			logger.Errorf("Run sql scan(%s) error %v", query, err)
 			ingestError(ctx, err)
 			return
@@ -223,6 +242,14 @@ func (s *SQLSourceConnector) queryData(ctx api.StreamContext, rcvTime time.Time,
 		ingest(ctx, data, nil, rcvTime)
 		s.stats.totalWaitDuration += time.Since(watiStart)
 		rowCount++
+	}
+	if err := rows.Err(); err != nil {
+		if ctx.Err() != nil {
+			return
+		}
+		logger.Errorf("query %v row iteration error %v", query, err)
+		ingestError(ctx, err)
+		return
 	}
 	SqlSourceGauge.WithLabelValues(LblQuery, s.ruleID, s.opID).Set(float64(rowCount))
 	SqlSourceQueryDurationHist.WithLabelValues(LblQuery, s.ruleID, s.opID).Observe(float64(time.Since(queryStart).Microseconds()))

@@ -73,7 +73,7 @@ func TestSQLReconnectFailureKeepsDBHandle(t *testing.T) {
 	_ = sconn.db.Close()
 	sconn.url = fmt.Sprintf("mysql://root:@%v:%v/test", address, serverPort+1)
 
-	require.Error(t, sconn.Reconnect())
+	require.Error(t, sconn.Reconnect(ctx))
 	sharedDB := sconn.GetDB()
 	require.NotNil(t, sharedDB)
 	_, err = sharedDB.Query("select 1")
