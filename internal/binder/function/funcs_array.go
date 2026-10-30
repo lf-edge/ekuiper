@@ -410,9 +410,12 @@ func registerArrayFunc() {
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			elemt := args[0]
-			count, ok := args[1].(int)
-			if !ok {
+			count, err := cast.ToInt(args[1], cast.STRICT)
+			if err != nil {
 				return errorArraySecondArgumentNotIntError, false
+			}
+			if count < 0 {
+				return fmt.Errorf("count must be greater than or equal to 0"), false
 			}
 
 			arr := make([]interface{}, count)
@@ -431,23 +434,29 @@ func registerArrayFunc() {
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			var step, start, stop int
-			var ok bool
-			start, ok = args[0].(int)
-			if !ok {
+			var err error
+			start, err = cast.ToInt(args[0], cast.STRICT)
+			if err != nil {
 				return errorArrayFirstArgumentNotIntError, false
 			}
-			stop, ok = args[1].(int)
-			if !ok {
+			stop, err = cast.ToInt(args[1], cast.STRICT)
+			if err != nil {
 				return errorArraySecondArgumentNotIntError, false
 			}
 			if len(args) == 3 {
-				step, ok = args[2].(int)
-				if !ok {
+				step, err = cast.ToInt(args[2], cast.STRICT)
+				if err != nil {
 					return errorArrayThirdArgumentNotIntError, false
 				}
 
 				if step == 0 {
 					return fmt.Errorf("invalid step: should not be zero"), false
+				}
+				if start < stop && step < 0 {
+					return fmt.Errorf("invalid step: should be positive when start is less than stop"), false
+				}
+				if start > stop && step > 0 {
+					return fmt.Errorf("invalid step: should be negative when start is greater than stop"), false
 				}
 
 			} else {

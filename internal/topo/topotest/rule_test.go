@@ -689,6 +689,26 @@ func TestSingleSQL(t *testing.T) {
 			},
 		},
 		{
+			Name: `TestSingleSQLRule25`,
+			Sql:  `SELECT sequence(1, 5) as s, sequence(x, 7, 3) as s2, repeat('a', y) as r FROM demoArr`,
+			R: [][]map[string]interface{}{
+				{{
+					"s":  []interface{}{1, 2, 3, 4, 5},
+					"s2": []interface{}{1, 4, 7},
+					"r":  []interface{}{"a", "a"},
+				}},
+			},
+		},
+		{
+			Name: `TestSingleSQLRule26`,
+			Sql:  `SELECT sequence(x, 5, -1) as s FROM demoArr`,
+			R: [][]map[string]interface{}{
+				{{
+					"error": "run Select error: alias: s expr: Call:{ name:sequence, args:[demoArr.x, 5, -1] } meet error, err:call func sequence error: invalid step: should be positive when start is less than stop",
+				}},
+			},
+		},
+		{
 			Name: `TestSingleSQLRule2`,
 			Sql:  `SELECT color, ts, last_hit_count() + 1 as lc FROM demo where size > 3`,
 			R: [][]map[string]interface{}{
