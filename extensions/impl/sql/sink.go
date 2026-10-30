@@ -311,13 +311,13 @@ func (s *SQLSinkConnector) writeToDB(ctx api.StreamContext, sqlStr string) error
 	ctx.GetLogger().Debugf(sqlStr)
 	if s.needReconnect {
 		metrics.IOCounter.WithLabelValues(LblSql, metrics.LblSinkIO, LblReconn, ctx.GetRuleId(), ctx.GetOpId()).Inc()
-		err := s.conn.Reconnect()
+		err := s.conn.Reconnect(ctx)
 		if err != nil {
 			return errorx.NewIOErr(err.Error())
 		}
 	}
 	start := time.Now()
-	r, err := s.conn.GetDB().Exec(sqlStr)
+	r, err := s.conn.GetDB().ExecContext(ctx, sqlStr)
 	failpoint.Inject("dbErr", func() {
 		err = errors.New("dbErr")
 	})
