@@ -15,6 +15,7 @@
 package client
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 
@@ -62,16 +63,18 @@ func (s *SQLConnection) Dial(ctx api.StreamContext) error {
 	return s.dial(ctx)
 }
 
-func (s *SQLConnection) Reconnect() error {
+func (s *SQLConnection) Reconnect(ctx api.StreamContext) error {
 	s.Lock()
 	defer s.Unlock()
 	if s.db != nil {
-		if err := s.db.Ping(); err == nil {
+		if err := s.db.PingContext(ctx); err == nil {
 			return nil
+		} else if ctx.Err() != nil {
+			return ctx.Err()
 		}
 		_ = s.db.Close()
 	}
-	if err := s.dial(nil); err != nil {
+	if err := s.dial(ctx); err != nil {
 		return fmt.Errorf("reconnect sql err:%v", err)
 	}
 	return nil
@@ -117,12 +120,12 @@ func CreateConnection(ctx api.StreamContext) modules.Connection {
 	return &SQLConnection{}
 }
 
-func (s *SQLConnection) dial(ctx api.StreamContext) error {
+func (s *SQLConnection) dial(ctx context.Context) error {
 	db, err := openDB(s.url)
 	if err != nil {
 		return fmt.Errorf("create connection err:%v", err)
 	}
-	if err := db.Ping(); err != nil {
+	if err := db.PingContext(ctx); err != nil {
 		_ = db.Close()
 		// A database URL can be syntactically valid while the database is
 		// temporarily unreachable. Let the connection pool retry this case.
