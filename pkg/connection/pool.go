@@ -128,13 +128,22 @@ func NewExponentialBackOff() *backoff.ExponentialBackOff {
 
 // FetchConnection is called by source/sink to get or create an anonymous connection instance in the pool
 func FetchConnection(ctx api.StreamContext, refId, typ string, props map[string]interface{}, sc api.StatusChangeHandler) (*ConnWrapper, error) {
+	return FetchConnectionWithRef(ctx, refId, refId, typ, props, sc)
+}
+
+// FetchConnectionWithRef shares a connection by selector or connectionKey while
+// tracking the consumer independently by refId.
+func FetchConnectionWithRef(ctx api.StreamContext, connectionKey, refId, typ string, props map[string]interface{}, sc api.StatusChangeHandler) (*ConnWrapper, error) {
 	failpoint.Inject("FetchConnectionErr", func() {
 		failpoint.Return(nil, fmt.Errorf("FetchConnectionErr"))
 	})
 	if refId == "" {
 		return nil, fmt.Errorf("connection ref id should be defined")
 	}
-	conId := extractSelID(props, refId)
+	if connectionKey == "" {
+		return nil, fmt.Errorf("connection key should be defined")
+	}
+	conId := extractSelID(props, connectionKey)
 	globalConnectionManager.Lock()
 	defer globalConnectionManager.Unlock()
 	if _, ok := globalConnectionManager.connectionPool[conId]; ok {
@@ -143,7 +152,7 @@ func FetchConnection(ctx api.StreamContext, refId, typ string, props map[string]
 			conf.Log.Infof("action=reuse_connection connId=%s type=%s connectionKey=%s rule=%s op=%s refId=%s", conId, typ, conId, ctx.GetRuleId(), ctx.GetOpId(), refId)
 		}
 	} else {
-		if conId != refId {
+		if conId != connectionKey {
 			return nil, fmt.Errorf("connection %s not existed", conId)
 		}
 		meta := &Meta{
@@ -310,12 +319,20 @@ func isInternalConnection(id string) (bool, error) {
 }
 
 func DetachConnection(ctx api.StreamContext, conId string) error {
+	return DetachConnectionByRef(ctx, conId, extractRefId(ctx))
+}
+
+// DetachConnectionByRef releases the reference supplied to FetchConnection.
+func DetachConnectionByRef(ctx api.StreamContext, conId, refId string) error {
 	if conId == "" {
 		return fmt.Errorf("connection id should be defined")
 	}
+	if refId == "" {
+		return fmt.Errorf("connection reference id should be defined")
+	}
 	globalConnectionManager.Lock()
 	defer globalConnectionManager.Unlock()
-	return detachConnection(ctx, conId)
+	return detachConnectionByRef(ctx, conId, refId)
 }
 
 func getConnectionRef(id string) int {
@@ -360,12 +377,15 @@ func attachConnection(conId string, refId string, sc api.StatusChangeHandler) (*
 }
 
 func detachConnection(ctx api.StreamContext, conId string) error {
+	return detachConnectionByRef(ctx, conId, extractRefId(ctx))
+}
+
+func detachConnectionByRef(ctx api.StreamContext, conId, refId string) error {
 	meta, ok := globalConnectionManager.connectionPool[conId]
 	if !ok {
 		conf.Log.Infof("detachConnection not found:%v", conId)
 		return nil
 	}
-	refId := extractRefId(ctx)
 	meta.DeRef(refId)
 	globalConnectionManager.connectionPool[conId] = meta
 	conf.Log.Infof("detachConnection remove conn:%v,ref:%v", conId, refId)

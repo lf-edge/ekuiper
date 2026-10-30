@@ -15,10 +15,13 @@
 package sql
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
+	"github.com/google/uuid"
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/pingcap/failpoint"
 
@@ -29,6 +32,8 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 )
 
+const lookupConnectTimeout = 10 * time.Second
+
 type SqlLookupSource struct {
 	conf          *SQLConf
 	conn          *client2.SQLConnection
@@ -38,6 +43,7 @@ type SqlLookupSource struct {
 	needReconnect bool
 	gen           sqlQueryGen
 	conId         string
+	refId         string
 }
 
 func (s *SqlLookupSource) Ping(ctx api.StreamContext, m map[string]any) error {
@@ -75,28 +81,66 @@ func (s *SqlLookupSource) Provision(ctx api.StreamContext, configs map[string]an
 }
 
 func (s *SqlLookupSource) Close(ctx api.StreamContext) error {
+	if s.conId == "" {
+		return nil
+	}
 	ctx.GetLogger().Infof("Closing sql source connector url:%v", s.conf.DBUrl)
 	if s.conn != nil {
 		s.conn.DetachSub(ctx, s.props)
 	}
-	return connection.DetachConnection(ctx, s.conId)
+	if err := connection.DetachConnectionByRef(ctx, s.conId, s.refId); err != nil {
+		return err
+	}
+	s.conId, s.refId = "", ""
+	s.conn = nil
+	return nil
 }
 
 func (s *SqlLookupSource) Connect(ctx api.StreamContext, sc api.StatusChangeHandler) error {
 	ctx.GetLogger().Infof("Connecting to sql server")
-	var cli *client2.SQLConnection
-	var err error
-	id := s.conf.DBUrl
-	cw, err := connection.FetchConnection(ctx, id, "sql", s.props, sc)
+	refId := uuid.New().String()
+	cw, err := connection.FetchConnectionWithRef(ctx, s.conf.DBUrl, refId, "sql", s.props, sc)
 	if err != nil {
 		return err
 	}
 	s.conId = cw.ID
-	conn, err := cw.Wait(ctx)
-	if conn == nil {
-		return fmt.Errorf("sql client not ready: %v", err)
+	s.refId = refId
+	meta, err := connection.GetConnectionDetail(ctx, cw.ID)
+	if err != nil {
+		return errors.Join(err, s.Close(ctx))
 	}
-	cli = conn.(*client2.SQLConnection)
+	waitCtx := ctx
+	if meta.Named {
+		// Bound only this lookup's wait. The named connection keeps its
+		// original lifetime and background retries.
+		var cancel context.CancelFunc
+		waitCtx, cancel = ctx.WithCancel()
+		timer := time.AfterFunc(lookupConnectTimeout, cancel)
+		defer func() {
+			timer.Stop()
+			cancel()
+		}()
+	}
+	conn, err := cw.Wait(waitCtx)
+	if ctx.Err() != nil {
+		err = ctx.Err()
+	} else if waitCtx.Err() != nil {
+		err = context.DeadlineExceeded
+	}
+	if err == nil && conn == nil {
+		err = errors.New("sql client not ready")
+	}
+	if err != nil {
+		return fmt.Errorf("sql client not ready: %w", errors.Join(err, s.Close(ctx)))
+	}
+	cli, ok := conn.(*client2.SQLConnection)
+	if !ok {
+		err = fmt.Errorf("connection %s is not a SQL connection", cw.ID)
+		return errors.Join(err, s.Close(ctx))
+	}
+	if cli.GetDB() == nil {
+		return errors.Join(errors.New("sql client not ready"), s.Close(ctx))
+	}
 	s.conn = cli
 	return err
 }
