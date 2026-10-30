@@ -1,4 +1,4 @@
-// Copyright 2021-2025 EMQ Technologies Co., Ltd.
+// Copyright 2021-2026 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package node
 import (
 	"errors"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -24,6 +25,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
+	topoContext "github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
@@ -119,6 +121,61 @@ func TestJSON(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestJSONLines(t *testing.T) {
+	wg := &sync.WaitGroup{}
+	mctx := mockContext.NewMockContext("test1", "decode_test").(*topoContext.DefaultContext)
+	ctx, cancel := topoContext.WithValue(mctx, topoContext.RuleWaitGroupKey, wg).WithCancel()
+	t.Cleanup(func() {
+		cancel()
+		done := make(chan struct{})
+		go func() {
+			wg.Wait()
+			close(done)
+		}()
+		select {
+		case <-done:
+		case <-time.After(time.Second):
+			t.Error("timed out waiting for decode op to stop")
+		}
+	})
+	op, err := NewDecodeOp(ctx, false, "test", &def.RuleOption{BufferLength: 10, SendError: true}, map[string]*ast.JsonStreamField{"a": {Type: "bigint"}}, map[string]any{
+		"format": "jsonl",
+	})
+	require.NoError(t, err)
+	out := make(chan any, 100)
+	err = op.AddOutput(out, "test")
+	require.NoError(t, err)
+	errCh := make(chan error)
+	op.Exec(ctx, errCh)
+
+	meta := map[string]any{"topic": "demo"}
+	cases := []any{
+		&xsql.RawTuple{Emitter: "test", Rawdata: []byte("{\"a\":1,\"b\":2}\n{\"a\":3}\n"), Timestamp: time.UnixMilli(111), Metadata: meta},
+		&xsql.RawTuple{Emitter: "test", Rawdata: []byte("{\"a\":4}"), Timestamp: time.UnixMilli(112), Metadata: meta},
+		&xsql.RawTuple{Emitter: "test", Rawdata: []byte("{\"a\":5}\n[{\"a\":6}]"), Timestamp: time.UnixMilli(113), Metadata: meta},
+	}
+	expects := [][]any{
+		{
+			&xsql.Tuple{Emitter: "test", Message: map[string]any{"a": int64(1)}, Timestamp: time.UnixMilli(111), Metadata: meta},
+			&xsql.Tuple{Emitter: "test", Message: map[string]any{"a": int64(3)}, Timestamp: time.UnixMilli(111), Metadata: meta},
+		},
+		{&xsql.Tuple{Emitter: "test", Message: map[string]any{"a": int64(4)}, Timestamp: time.UnixMilli(112), Metadata: meta}},
+		{errors.New("JSON Lines record 2 must be an object but got array")},
+	}
+	for i, c := range cases {
+		op.input <- c
+		for _, e := range expects[i] {
+			r := <-out
+			switch tr := r.(type) {
+			case error:
+				require.Equal(t, e.(error).Error(), tr.Error())
+			default:
+				require.Equal(t, e, r)
+			}
+		}
 	}
 }
 

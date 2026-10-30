@@ -1,4 +1,4 @@
-// Copyright 2024-2025 EMQ Technologies Co., Ltd.
+// Copyright 2024-2026 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -194,6 +194,60 @@ func TestBatchWriterRun(t *testing.T) {
 			format: "urlencoded",
 			raw:    true,
 			expect: "a=1&b=two+words",
+		},
+		{
+			name: "multiple single to JSON Lines",
+			input: []any{
+				&xsql.Tuple{
+					Emitter: "test",
+					Message: map[string]any{
+						"b": 12,
+					},
+				},
+				&xsql.TransformedTupleList{
+					Maps: []map[string]any{
+						{
+							"a": "a",
+							"b": 20,
+						},
+						{
+							"a": "a2",
+						},
+					},
+				},
+			},
+			format: "jsonl",
+			expect: "{\"b\":12}\n{\"a\":\"a\",\"b\":20}\n{\"a\":\"a2\"}",
+		},
+		{
+			name: "raw tuple from JSON Lines data template",
+			input: []any{
+				&xsql.RawTuple{Rawdata: []byte(`{"a":1}`)},
+				&xsql.RawTuple{Rawdata: []byte(`{"a":2}`)},
+			},
+			format: "jsonl",
+			raw:    true,
+			expect: "{\"a\":1}\n{\"a\":2}",
+		},
+		{
+			name: "LF terminated raw tuple to JSON Lines",
+			input: []any{
+				&xsql.RawTuple{Rawdata: []byte("{\"a\":1}\n")},
+				&xsql.RawTuple{Rawdata: []byte("{\"a\":2}\n")},
+			},
+			format: "jsonl",
+			raw:    true,
+			expect: "{\"a\":1}\n{\"a\":2}",
+		},
+		{
+			name: "CRLF terminated raw tuple to JSON Lines",
+			input: []any{
+				&xsql.RawTuple{Rawdata: []byte("{\"a\":1}\r\n")},
+				&xsql.RawTuple{Rawdata: []byte("{\"a\":2}\r\n")},
+			},
+			format: "jsonl",
+			raw:    true,
+			expect: "{\"a\":1}\n{\"a\":2}",
 		},
 	}
 	mc := mockclock.GetMockClock()

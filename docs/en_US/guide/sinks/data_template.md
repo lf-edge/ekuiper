@@ -271,7 +271,7 @@ These properties control different stages of sink processing:
 |----------|----------------|
 | `sendSingle` | Controls the input granularity of `dataTemplate`. When `false`, the template receives the current array of maps. When `true`, eKuiper iterates the array and invokes the template once for each map. |
 | `dataTemplate` | Transforms each input selected by `sendSingle`. In batch mode, write the template for one batch element, not for the completed batch. Its output is considered already encoded and is not encoded again. The user is responsible for producing data that conforms to `format`. |
-| `format` | Controls normal data encoding and, when batching is enabled, how transformed results are framed into one batch. The JSON writer adds commas and an outer array, the delimited writer adds newlines, and the URL-encoded writer adds `&` between template results. |
+| `format` | Controls normal data encoding and, when batching is enabled, how transformed results are framed into one batch. The JSON writer adds commas and an outer array, the delimited and JSON Lines writers add newlines, and the URL-encoded writer adds `&` between template results. |
 | `batchSize` / `lingerInterval` | Controls when transformed elements are flushed to the sink. Batching does not expose the accumulated batch to `dataTemplate` and does not change its input. |
 
 The effective processing order is:

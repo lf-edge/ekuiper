@@ -4,7 +4,7 @@ eKuiper 计算过程中使用的是基于 Map 的数据结构，因此 source/si
 
 ## 格式
 
-编解码的格式分为两种：有模式和无模式的格式。当前 eKuiper 支持的格式有 `json`，`binary`，`delimiter`，`protobuf`
+编解码的格式分为两种：有模式和无模式的格式。当前 eKuiper 支持的格式有 `json`，`jsonl`，`binary`，`delimiter`，`protobuf`
 和 `custom`。其中，`protobuf` 为有模式的格式。
 有模式的格式需要先注册模式，然后在设置格式的同时，设置引用的模式。例如，在使用 mqtt sink 时，可配置格式和模式：
 
@@ -26,10 +26,24 @@ eKuiper 计算过程中使用的是基于 Map 的数据结构，因此 source/si
 | 格式        | 编解码                    | 自定义编解码 | 模式    |
 |-----------|------------------------|--------|-------|
 | json      | 内置                     | 不支持    | 不支持   |
+| jsonl     | 内置                     | 不支持    | 不支持   |
 | binary    | 内置                     | 不支持    | 不支持   |
 | delimiter | 内置，必须配置 `delimiter` 属性 | 不支持    | 不支持   |
 | protobuf  | 内置                     | 支持     | 支持且必需 |
 | custom    | 无内置                    | 支持且必需  | 支持且可选 |
+
+### JSON Lines
+
+`jsonl` 格式用于读写 [JSON Lines](https://jsonlines.org/)，即以换行符分隔的 JSON。许多日志和可观测性工具都使用这种格式发送数据，例如 Fluent Bit HTTP 输出的 `json_lines` 和 `json_stream` 格式。
+
+解码时，载荷中的每个 JSON 对象都会成为一条记录，因此一条消息可以包含多条记录。对象之间可以用换行符或其他空白字符分隔，也可以没有分隔符。空行和 `\r\n` 换行符都可以正常解析。每个值都必须是 JSON 对象。流的 schema 以及 `useInt64ForWholeNumber` 等 JSON 格式属性会像 `json` 格式一样应用到每条记录。
+
+```text
+{"temperature":23.4,"humidity":76}
+{"temperature":25.1,"humidity":70}
+```
+
+编码时，每条记录会被写成单独一行的 JSON 对象。记录列表或批量数据会被写成以 `\n` 分隔的多行，末尾不添加换行符。每条记录都必须是对象，数字或 `null` 等其他值会被拒绝。批量处理数据模板结果时，每个结果末尾的 `\n` 或 `\r\n` 会被去掉，因此结果之间仍然只用一个换行符分隔。
 
 ### 格式扩展
 
