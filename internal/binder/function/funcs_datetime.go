@@ -480,7 +480,11 @@ func execGetCurrentDateTime(timeOnly bool) funcExe {
 		case 0:
 			fsp = 0
 		default:
-			fsp = args[0].(int)
+			v, err := cast.ToInt(args[0], cast.STRICT)
+			if err != nil {
+				return err, false
+			}
+			fsp = v
 		}
 		formatted, err := getCurrentWithFsp(fsp, timeOnly)
 		if err != nil {
@@ -494,19 +498,20 @@ func execGetCurrentDateTime(timeOnly bool) funcExe {
 func getCurrentWithFsp(fsp int, timeOnly bool) (string, error) {
 	format := "yyyy-MM-dd HH:mm:ss"
 	now := timex.GetNow().In(cast.GetConfiguredTimeZone())
+	// The S pattern writes the decimal point itself
 	switch fsp {
 	case 1:
-		format += ".S"
+		format += "S"
 	case 2:
-		format += ".SS"
+		format += "SS"
 	case 3:
-		format += ".SSS"
+		format += "SSS"
 	case 4:
-		format += ".SSSS"
+		format += "SSSS"
 	case 5:
-		format += ".SSSSS"
+		format += "SSSSS"
 	case 6:
-		format += ".SSSSSS"
+		format += "SSSSSS"
 	default:
 	}
 

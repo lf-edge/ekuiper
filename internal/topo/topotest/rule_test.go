@@ -724,6 +724,16 @@ func TestSingleSQL(t *testing.T) {
 			},
 		},
 		{
+			Name: `TestSingleSQLRule27`,
+			Sql:  `SELECT length(now(3)) as n, length(cur_time(2)) as c FROM demoArr`,
+			R: [][]map[string]interface{}{
+				{{
+					"n": 23,
+					"c": 11,
+				}},
+			},
+		},
+		{
 			Name: `TestSingleSQLRule3`,
 			Sql:  `SELECT size as Int8, ts FROM demo where size > 3`,
 			R: [][]map[string]interface{}{
