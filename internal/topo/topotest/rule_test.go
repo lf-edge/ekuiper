@@ -627,6 +627,16 @@ func TestSingleSQL(t *testing.T) {
 			},
 		},
 		{
+			Name: `TestSingleSQLRule22`,
+			Sql:  `SELECT array_remove(arr3, x) as removed, arr3 FROM demoArr`,
+			R: [][]map[string]interface{}{
+				{{
+					"removed": []interface{}{2, 3},
+					"arr3":    []interface{}{1, 2, 3},
+				}},
+			},
+		},
+		{
 			Name: `TestSingleSQLRule1`,
 			Sql:  `SELECT *, upper(color), event_time() FROM demo`,
 			R: [][]map[string]interface{}{
