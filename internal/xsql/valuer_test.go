@@ -21,14 +21,16 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
-	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 func TestComparison(t *testing.T) {
-	testTime, _ := cast.InterfaceToTime(1541152488442, "")
+	// The expected errors print times in UTC, so build the fixture in UTC
+	// instead of depending on the TZ of the machine running the test.
+	testTime := time.UnixMilli(1541152488442).UTC()
 	data := []struct {
 		m Message
 		r []interface{}
