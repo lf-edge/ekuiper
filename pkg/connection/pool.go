@@ -310,12 +310,20 @@ func isInternalConnection(id string) (bool, error) {
 }
 
 func DetachConnection(ctx api.StreamContext, conId string) error {
+	return DetachConnectionByRef(ctx, conId, extractRefId(ctx))
+}
+
+// DetachConnectionByRef releases the reference supplied to FetchConnection.
+func DetachConnectionByRef(ctx api.StreamContext, conId, refId string) error {
 	if conId == "" {
 		return fmt.Errorf("connection id should be defined")
 	}
+	if refId == "" {
+		return fmt.Errorf("connection reference id should be defined")
+	}
 	globalConnectionManager.Lock()
 	defer globalConnectionManager.Unlock()
-	return detachConnection(ctx, conId)
+	return detachConnectionByRef(ctx, conId, refId)
 }
 
 func getConnectionRef(id string) int {
@@ -360,12 +368,15 @@ func attachConnection(conId string, refId string, sc api.StatusChangeHandler) (*
 }
 
 func detachConnection(ctx api.StreamContext, conId string) error {
+	return detachConnectionByRef(ctx, conId, extractRefId(ctx))
+}
+
+func detachConnectionByRef(ctx api.StreamContext, conId, refId string) error {
 	meta, ok := globalConnectionManager.connectionPool[conId]
 	if !ok {
 		conf.Log.Infof("detachConnection not found:%v", conId)
 		return nil
 	}
-	refId := extractRefId(ctx)
 	meta.DeRef(refId)
 	globalConnectionManager.connectionPool[conId] = meta
 	conf.Log.Infof("detachConnection remove conn:%v,ref:%v", conId, refId)

@@ -19,6 +19,7 @@ package client
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -71,11 +72,33 @@ func TestSQLReconnectFailureKeepsDBHandle(t *testing.T) {
 	// Simulate a runtime disconnect and make the replacement endpoint fail.
 	// The second consumer shares the same SQLConnection instance.
 	_ = sconn.db.Close()
-	sconn.url = fmt.Sprintf("mysql://root:@%v:%v/test", address, serverPort+1)
+	sconn.url = fmt.Sprintf("mysql://root:@%v:%v/test?timeout=1s", address, serverPort+1)
 
 	require.Error(t, sconn.Reconnect(ctx))
 	sharedDB := sconn.GetDB()
 	require.NotNil(t, sharedDB)
 	_, err = sharedDB.Query("select 1")
 	require.Error(t, err)
+}
+
+func TestSQLAuthenticationFailureReturnsPromptly(t *testing.T) {
+	s, err := testx.SetupEmbeddedMysqlServer(address, 33065)
+	require.NoError(t, err)
+	defer s.Close()
+	auth := s.Engine.Analyzer.Catalog.MySQLDb
+	editor := auth.Editor()
+	auth.AddSuperUser(editor, "root", "%", "correct-password")
+	editor.Close()
+	auth.SetEnabled(true)
+	ctx := mockContext.NewMockContext(t.Name(), "sql")
+	conn := &SQLConnection{}
+	require.NoError(t, conn.Provision(ctx, "authentication", map[string]any{
+		"dburl": fmt.Sprintf("mysql://root:wrong-password@%s:33065/test?timeout=1s", address),
+	}))
+	t.Cleanup(func() { require.NoError(t, conn.Close(ctx)) })
+	started := time.Now()
+	err = conn.Dial(ctx)
+	require.ErrorContains(t, err, "Access denied")
+	require.Less(t, time.Since(started), time.Second)
+	require.Nil(t, conn.GetDB())
 }
