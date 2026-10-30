@@ -83,7 +83,7 @@ func ruleTraverse(rule *def.Rule, de *dependencies) {
 			return
 		}
 		// streams
-		streamsFromStmt := xsql.GetStreams(stmt)
+		streamsFromStmt := xsql.GetRuleStreams(stmt)
 		for _, s := range streamsFromStmt {
 			streamStmt, err := xsql.GetDataSource(store, s)
 			if err != nil {

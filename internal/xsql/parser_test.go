@@ -4556,3 +4556,289 @@ func TestParser_ParseLimit(t *testing.T) {
 		require.Equal(t, tt.stmt, stmt)
 	}
 }
+
+func TestParser_ParseSetOperators(t *testing.T) {
+	tests := []struct {
+		s    string
+		stmt *ast.SelectStatement
+		err  string
+	}{
+		{
+			s: "SELECT name FROM s1 UNION SELECT name FROM s2",
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						Expr:  &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream},
+						Name:  "name",
+						AName: "",
+					},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "s1"}},
+				SetOp: &ast.SetOpStmt{
+					SetOpType: ast.UNION_OP,
+					RightStmt: &ast.SelectStatement{
+						Fields: []ast.Field{
+							{
+								Expr:  &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream},
+								Name:  "name",
+								AName: "",
+							},
+						},
+						Sources: []ast.Source{&ast.Table{Name: "s2"}},
+					},
+				},
+			},
+		},
+		{
+			s: "SELECT name FROM s1 UNION ALL SELECT name FROM s2",
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						Expr:  &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream},
+						Name:  "name",
+						AName: "",
+					},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "s1"}},
+				SetOp: &ast.SetOpStmt{
+					SetOpType: ast.UNION_ALL,
+					RightStmt: &ast.SelectStatement{
+						Fields: []ast.Field{
+							{
+								Expr:  &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream},
+								Name:  "name",
+								AName: "",
+							},
+						},
+						Sources: []ast.Source{&ast.Table{Name: "s2"}},
+					},
+				},
+			},
+		},
+		{
+			s: "SELECT name FROM s1 INTERSECT SELECT name FROM s2",
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						Expr:  &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream},
+						Name:  "name",
+						AName: "",
+					},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "s1"}},
+				SetOp: &ast.SetOpStmt{
+					SetOpType: ast.INTERSECT_OP,
+					RightStmt: &ast.SelectStatement{
+						Fields: []ast.Field{
+							{
+								Expr:  &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream},
+								Name:  "name",
+								AName: "",
+							},
+						},
+						Sources: []ast.Source{&ast.Table{Name: "s2"}},
+					},
+				},
+			},
+		},
+		{
+			s: "SELECT name FROM s1 INTERSECT ALL SELECT name FROM s2",
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						Expr:  &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream},
+						Name:  "name",
+						AName: "",
+					},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "s1"}},
+				SetOp: &ast.SetOpStmt{
+					SetOpType: ast.INTERSECT_ALL,
+					RightStmt: &ast.SelectStatement{
+						Fields: []ast.Field{
+							{
+								Expr:  &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream},
+								Name:  "name",
+								AName: "",
+							},
+						},
+						Sources: []ast.Source{&ast.Table{Name: "s2"}},
+					},
+				},
+			},
+		},
+		{
+			s: "SELECT name FROM s1 EXCEPT SELECT name FROM s2",
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						Expr:  &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream},
+						Name:  "name",
+						AName: "",
+					},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "s1"}},
+				SetOp: &ast.SetOpStmt{
+					SetOpType: ast.EXCEPT_OP,
+					RightStmt: &ast.SelectStatement{
+						Fields: []ast.Field{
+							{
+								Expr:  &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream},
+								Name:  "name",
+								AName: "",
+							},
+						},
+						Sources: []ast.Source{&ast.Table{Name: "s2"}},
+					},
+				},
+			},
+		},
+		{
+			s: "SELECT name FROM s1 EXCEPT ALL SELECT name FROM s2",
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						Expr:  &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream},
+						Name:  "name",
+						AName: "",
+					},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "s1"}},
+				SetOp: &ast.SetOpStmt{
+					SetOpType: ast.EXCEPT_ALL,
+					RightStmt: &ast.SelectStatement{
+						Fields: []ast.Field{
+							{
+								Expr:  &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream},
+								Name:  "name",
+								AName: "",
+							},
+						},
+						Sources: []ast.Source{&ast.Table{Name: "s2"}},
+					},
+				},
+			},
+		},
+		{
+			s: "select name from s1 union all select name from s2",
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						Expr:  &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream},
+						Name:  "name",
+						AName: "",
+					},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "s1"}},
+				SetOp: &ast.SetOpStmt{
+					SetOpType: ast.UNION_ALL,
+					RightStmt: &ast.SelectStatement{
+						Fields: []ast.Field{
+							{
+								Expr:  &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream},
+								Name:  "name",
+								AName: "",
+							},
+						},
+						Sources: []ast.Source{&ast.Table{Name: "s2"}},
+					},
+				},
+			},
+		},
+		{
+			s: "SELECT name FROM s1 UNION SELECT name FROM s2;",
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						Expr:  &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream},
+						Name:  "name",
+						AName: "",
+					},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "s1"}},
+				SetOp: &ast.SetOpStmt{
+					SetOpType: ast.UNION_OP,
+					RightStmt: &ast.SelectStatement{
+						Fields: []ast.Field{
+							{
+								Expr:  &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream},
+								Name:  "name",
+								AName: "",
+							},
+						},
+						Sources: []ast.Source{&ast.Table{Name: "s2"}},
+					},
+				},
+			},
+		},
+		{
+			s: "SELECT name FROM s1 WHERE age > 18 EXCEPT SELECT name FROM s2",
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						Expr:  &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream},
+						Name:  "name",
+						AName: "",
+					},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "s1"}},
+				Condition: &ast.BinaryExpr{
+					OP:  ast.GT,
+					LHS: &ast.FieldRef{Name: "age", StreamName: ast.DefaultStream},
+					RHS: &ast.IntegerLiteral{Val: 18},
+				},
+				SetOp: &ast.SetOpStmt{
+					SetOpType: ast.EXCEPT_OP,
+					RightStmt: &ast.SelectStatement{
+						Fields: []ast.Field{
+							{
+								Expr:  &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream},
+								Name:  "name",
+								AName: "",
+							},
+						},
+						Sources: []ast.Source{&ast.Table{Name: "s2"}},
+					},
+				},
+			},
+		},
+		{
+			s: "SELECT name FROM s1",
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						Expr:  &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream},
+						Name:  "name",
+						AName: "",
+					},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "s1"}},
+			},
+		},
+		{
+			s:    "SELECT name FROM s1 UNION",
+			stmt: nil,
+			err:  "expected SELECT after set operator",
+		},
+		{
+			s:    "SELECT name FROM s1 INTERSECT ALL",
+			stmt: nil,
+			err:  "expected SELECT after set operator",
+		},
+		{
+			s:    "SELECT name FROM s1 EXCEPT FROM s2",
+			stmt: nil,
+			err:  "Found \"FROM\", Expected SELECT.\n",
+		},
+	}
+
+	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
+	for i, tt := range tests {
+		stmt, err := NewParser(strings.NewReader(tt.s)).Parse()
+		if !reflect.DeepEqual(tt.err, testx.Errstring(err)) {
+			t.Errorf("%d. %q: error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.s, tt.err, err)
+		} else if tt.err == "" && !reflect.DeepEqual(tt.stmt, stmt) {
+			t.Errorf("%d. %q\n\nstmt mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.s, tt.stmt, stmt)
+		}
+	}
+}

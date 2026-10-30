@@ -43,6 +43,20 @@ func GetStreams(stmt *ast.SelectStatement) (result []string) {
 	return
 }
 
+// GetRuleStreams returns every stream a rule reads: the streams of stmt and,
+// when stmt has a set operator, those of its right statement.
+// Use GetStreams to get the streams of a single statement.
+func GetRuleStreams(stmt *ast.SelectStatement) []string {
+	if stmt == nil {
+		return nil
+	}
+	result := GetStreams(stmt)
+	if op, ok := stmt.SetOp.(*ast.SetOpStmt); ok {
+		result = append(result, GetStreams(op.RightStmt)...)
+	}
+	return result
+}
+
 func GetStatementFromSql(sql string) (stmt *ast.SelectStatement, err error) {
 	defer func() {
 		if err != nil {

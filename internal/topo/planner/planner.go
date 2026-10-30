@@ -61,7 +61,7 @@ func PlanSQLWithSourcesAndSinks(rule *def.Rule, mockSourcesProp map[string]map[s
 		return nil, stmt, err
 	}
 	// validation
-	streamsFromStmt := xsql.GetStreams(stmt)
+	streamsFromStmt := xsql.GetRuleStreams(stmt)
 	// validate stmt
 	if err := validateStmt(stmt); err != nil {
 		return nil, stmt, err
@@ -69,7 +69,7 @@ func PlanSQLWithSourcesAndSinks(rule *def.Rule, mockSourcesProp map[string]map[s
 	//if len(sources) > 0 && len(sources) != len(streamsFromStmt) {
 	//	return nil, fmt.Errorf("Invalid parameter sources or streams, the length cannot match the statement, expect %d sources.", len(streamsFromStmt))
 	//}
-	if rule.Options.SendMetaToSink && (len(streamsFromStmt) > 1 || stmt.Dimensions != nil) {
+	if rule.Options.SendMetaToSink && (len(streamsFromStmt) > 1 || stmt.Dimensions != nil || stmt.SetOp != nil) {
 		return nil, stmt, fmt.Errorf("Invalid option sendMetaToSink, it can not be applied to window")
 	}
 	store, err := store2.GetKV("stream")
@@ -301,7 +301,7 @@ func createTopo(rule *def.Rule, lp LogicalPlan, mockSourcesProp map[string]map[s
 		}
 	}()
 
-	input, _, err := buildOps(lp, tp, rule.Options, mockSourcesProp, streamsFromStmt, 0)
+	input, _, _, err := buildOps(lp, tp, rule.Options, mockSourcesProp, streamsFromStmt, 0)
 	if err != nil {
 		return nil, err
 	}
@@ -324,9 +324,9 @@ func GetExplainInfoFromLogicalPlan(rule *def.Rule) (string, error) {
 		return "", err
 	}
 	// validation
-	streamsFromStmt := xsql.GetStreams(stmt)
+	streamsFromStmt := xsql.GetRuleStreams(stmt)
 
-	if rule.Options.SendMetaToSink && (len(streamsFromStmt) > 1 || stmt.Dimensions != nil) {
+	if rule.Options.SendMetaToSink && (len(streamsFromStmt) > 1 || stmt.Dimensions != nil || stmt.SetOp != nil) {
 		return "", fmt.Errorf("invalid option sendMetaToSink, it can not be applied to window")
 	}
 	store, err := store2.GetKV("stream")
@@ -379,16 +379,23 @@ func ExplainFromLogicalPlan(lp LogicalPlan, ruleID string) (string, error) {
 }
 
 // return the last schema if there are multiple sources
-func buildOps(lp LogicalPlan, tp *topo.Topo, options *def.RuleOption, sources map[string]map[string]any, streamsFromStmt []string, index int) (node.Emitter, int, error) {
-	var inputs []node.Emitter
+func buildOps(lp LogicalPlan, tp *topo.Topo, options *def.RuleOption, sources map[string]map[string]any, streamsFromStmt []string, index int) (node.Emitter, int, []ast.Fields, error) {
+	var (
+		inputs         []node.Emitter
+		projFieldsList []ast.Fields
+	)
 	newIndex := index
 	for _, c := range lp.Children() {
-		input, ni, err := buildOps(c, tp, options, sources, streamsFromStmt, newIndex)
+		input, ni, fields, err := buildOps(c, tp, options, sources, streamsFromStmt, newIndex)
 		if err != nil {
-			return nil, 0, err
+			return nil, 0, nil, err
 		}
 		newIndex = ni
 		inputs = append(inputs, input)
+
+		if len(fields) > 0 {
+			projFieldsList = append(projFieldsList, fields...)
+		}
 	}
 	newIndex++
 	var (
@@ -399,7 +406,7 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *def.RuleOption, sources ma
 	case *DataSourcePlan:
 		srcNode, emitters, indexInc, err := transformSourceNode(tp.GetContext(), t, sources, tp.GetName(), options, newIndex)
 		if err != nil {
-			return nil, 0, err
+			return nil, 0, nil, err
 		}
 		tp.AddSrc(srcNode)
 		inputs = []node.Emitter{srcNode}
@@ -418,6 +425,13 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *def.RuleOption, sources ma
 		}
 	case *WatermarkPlan:
 		op = node.NewWatermarkOp(fmt.Sprintf("%d_watermark", newIndex), t.SendWatermark, t.Emitters, options)
+	case *SetOperatorPlan:
+		if len(projFieldsList) != 2 {
+			err = fmt.Errorf("set operator expects the projections of exactly two statements, got %d", len(projFieldsList))
+			break
+		}
+
+		op = Transform(&operator.SetOperator{OpType: t.setOpType, LeftSelectFields: projFieldsList[0], RightSelectFields: projFieldsList[1], Streams: streamsFromStmt}, fmt.Sprintf("%d_setop", newIndex), options)
 	case *AnalyticFuncsPlan:
 		op = Transform(&operator.AnalyticFuncsOp{Funcs: t.funcs, FieldFuncs: t.fieldFuncs}, fmt.Sprintf("%d_analytic", newIndex), options)
 	case *IncWindowPlan:
@@ -445,7 +459,7 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *def.RuleOption, sources ma
 			TimeUnit:         t.TimeUnit,
 		}, t.Dimensions, t.IncAggFuncs, options)
 		if err != nil {
-			return nil, 0, err
+			return nil, 0, nil, err
 		}
 	case *WindowPlan:
 		if t.condition != nil {
@@ -483,18 +497,18 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *def.RuleOption, sources ma
 		if wc.Type == ast.STATE_WINDOW {
 			op, err = node.NewWindowV2Op(fmt.Sprintf("%d_window", newIndex), wc, options)
 			if err != nil {
-				return nil, 0, err
+				return nil, 0, nil, err
 			}
 		} else {
 			if options.PlanOptimizeStrategy.GetWindowVersion() == "v2" {
 				op, err = node.NewWindowV2Op(fmt.Sprintf("%d_window", newIndex), wc, options)
 				if err != nil {
-					return nil, 0, err
+					return nil, 0, nil, err
 				}
 			} else {
 				op, err = node.NewWindowOp(fmt.Sprintf("%d_window", newIndex), wc, options)
 				if err != nil {
-					return nil, 0, err
+					return nil, 0, nil, err
 				}
 			}
 		}
@@ -519,6 +533,7 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *def.RuleOption, sources ma
 	case *OrderPlan:
 		op = Transform(&operator.OrderOp{SortFields: t.SortFields}, fmt.Sprintf("%d_order", newIndex), options)
 	case *ProjectPlan:
+		projFieldsList = []ast.Fields{t.fields}
 		op = Transform(&operator.ProjectOp{Fields: t.fields, FieldLen: t.fieldLen, ColNames: t.colNames, AliasFields: t.aliasFields, ExprFields: t.exprFields, ExprIndices: t.exprIndices, ExceptNames: t.exceptNames, IsAggregate: t.isAggregate, AllWildcard: t.allWildcard, WildcardEmitters: t.wildcardEmitters, SendMeta: t.sendMeta, SendNil: t.sendNil, LimitCount: t.limitCount, EnableLimit: t.enableLimit}, fmt.Sprintf("%d_project", newIndex), options)
 	case *ProjectSetPlan:
 		op = Transform(&operator.ProjectSetOperator{SrfMapping: t.SrfMapping, LimitCount: t.limitCount, EnableLimit: t.enableLimit}, fmt.Sprintf("%d_projectset", newIndex), options)
@@ -528,12 +543,12 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *def.RuleOption, sources ma
 		err = fmt.Errorf("unknown logical plan %v", t)
 	}
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, nil, err
 	}
 	if onode, ok := op.(node.OperatorNode); ok {
 		tp.AddOperator(inputs, onode)
 	}
-	return op, newIndex, nil
+	return op, newIndex, projFieldsList, nil
 }
 
 func convertFromDuration(timeUnit ast.Token, length, interval int, delay int64) (time.Duration, time.Duration, time.Duration) {
@@ -944,7 +959,84 @@ func createLogicalPlanFull(stmt *ast.SelectStatement, opt *def.RuleOption, store
 	}
 
 	lp, err := optimize(p, opt)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	// the set operator is planned after optimisation so that
+	// each side is optimized once (the recursive call optimises the right side)
+	if stmt.SetOp != nil {
+		if opt.Experiment != nil && opt.Experiment.UseSliceTuple {
+			return nil, nil, nil, errors.New("slice tuple mode do not support set operators yet")
+		}
+		var wp LogicalPlan
+
+		op, ok := stmt.SetOp.(*ast.SetOpStmt)
+		if !ok {
+			return nil, nil, nil, fmt.Errorf("unsupported set operator %T", stmt.SetOp)
+		}
+
+		if opt.SetOperatorWindowLength <= 0 {
+			return nil, nil, nil, fmt.Errorf("setOperatorWindowLength must be greater than 0, got %d", opt.SetOperatorWindowLength)
+		}
+
+		tu, err := setOperatorTimeUnit(opt.SetOperatorWindowUnit)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+		if opt.IsEventTime {
+			return nil, nil, nil, errors.New("event time is not supported for set operators yet")
+		}
+		wp = WindowPlan{
+			wtype:    ast.TUMBLING_WINDOW,
+			length:   opt.SetOperatorWindowLength,
+			timeUnit: tu,
+		}.Init()
+
+		// analytic funcs are only needed by slice tuple mode, which is rejected above
+		rightStmtPlan, _, _, err := createLogicalPlanFull(op.RightStmt, opt, store, isTemp)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+
+		streamStmt, err := loadStreamInfo(op.RightStmt)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+		err = checkProjectionsTypeSafety(stmt, op.RightStmt, streamStmts[0], streamStmt)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+
+		wp.SetChildren(append([]LogicalPlan{lp}, rightStmtPlan))
+
+		sp := SetOperatorPlan{
+			setOpType: op.SetOpType,
+		}.Init()
+		sp.SetChildren([]LogicalPlan{wp})
+		lp = sp
+	}
+
 	return lp, analyticFuncs, analyticFieldFuncs, err
+}
+
+// setOperatorTimeUnit converts the setOperatorWindowUnit rule option into
+// the time unit token of the set operator's window.
+func setOperatorTimeUnit(unit string) (ast.Token, error) {
+	switch unit {
+	case "DD":
+		return ast.DD, nil
+	case "HH":
+		return ast.HH, nil
+	case "MI":
+		return ast.MI, nil
+	case "SS":
+		return ast.SS, nil
+	case "MS":
+		return ast.MS, nil
+	default:
+		return 0, fmt.Errorf("invalid setOperatorWindowUnit %q, expected one of DD, HH, MI, SS, MS", unit)
+	}
 }
 
 func resolveBufferFullPolicy(streams []*streamInfo, opt *def.RuleOption) error {

@@ -30,7 +30,7 @@ type SelectStatement struct {
 	Dimensions Dimensions
 	Having     Expr
 	SortFields SortFields
-
+	SetOp      SetOp // if a SET operator is present the current struct acts as the left SelectStatement, while SetOp stores the right SelectStatement.
 	Statement
 }
 
@@ -40,6 +40,17 @@ func (f Fields) node() {}
 
 func (f Fields) Len() int {
 	return len(f)
+}
+
+// Visible returns the fields that are part of the output, in their order.
+func (f Fields) Visible() Fields {
+	visible := make(Fields, 0, len(f))
+	for _, field := range f {
+		if !field.Invisible {
+			visible = append(visible, field)
+		}
+	}
+	return visible
 }
 
 func (f Fields) Swap(i, j int) {
@@ -252,6 +263,49 @@ func (wd *Window) String() string {
 type SortFields []SortField
 
 func (d SortFields) node() {}
+
+type SetOp interface {
+	Node
+	setOp()
+}
+
+type SetOpStmt struct {
+	SetOpType SetOpType
+	RightStmt *SelectStatement
+}
+
+func (s *SetOpStmt) node()  {}
+func (s *SetOpStmt) setOp() {}
+
+type SetOpType int
+
+const (
+	UNION_OP SetOpType = iota
+	UNION_ALL
+	INTERSECT_OP
+	INTERSECT_ALL
+	EXCEPT_OP
+	EXCEPT_ALL
+)
+
+func (s SetOpType) String() string {
+	switch s {
+	case UNION_OP:
+		return "UNION_OP"
+	case UNION_ALL:
+		return "UNION_ALL"
+	case INTERSECT_OP:
+		return "INTERSECT_OP"
+	case INTERSECT_ALL:
+		return "INTERSECT_ALL"
+	case EXCEPT_OP:
+		return "EXCEPT_OP"
+	case EXCEPT_ALL:
+		return "EXCEPT_ALL"
+	default:
+		return ""
+	}
+}
 
 const (
 	RowkindInsert = "insert"

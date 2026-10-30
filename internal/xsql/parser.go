@@ -16,6 +16,7 @@ package xsql
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"math"
@@ -213,9 +214,21 @@ func (p *Parser) Parse() (*ast.SelectStatement, error) {
 			selects.Limit = expr
 		}
 	}
+
+	p.clause = "setop"
+	if setop, err := p.parseSetOperators(); err != nil {
+		return nil, err
+	} else {
+		selects.SetOp = setop
+	}
+
 	p.clause = ""
 	if tok, lit := p.scanIgnoreWhitespace(); tok == ast.SEMICOLON {
+		if err := Validate(selects); err != nil {
+			return nil, err
+		}
 		validateFields(selects, p.sourceNames)
+
 		p.unscan()
 		return selects, nil
 	} else if tok != ast.EOF {
@@ -294,6 +307,58 @@ func (p *Parser) parseFieldNameSections(isSubField bool) ([]string, error) {
 	}
 
 	return fieldNameSects, nil
+}
+
+func (p *Parser) parseSetOperators() (ast.SetOp, error) {
+	var (
+		setOp     ast.SetOpStmt
+		setOpType ast.SetOpType
+		err       error
+		rightStmt *ast.SelectStatement
+	)
+
+	tok1, _ := p.scanIgnoreWhitespace()
+	switch tok1 {
+	case ast.UNION:
+		setOpType = ast.UNION_OP
+	case ast.EXCEPT:
+		setOpType = ast.EXCEPT_OP
+	case ast.INTERSECT:
+		setOpType = ast.INTERSECT_OP
+	default:
+		p.unscan()
+		return nil, nil
+	}
+
+	tok2, lit := p.scanIgnoreWhitespace()
+	if tok2 == ast.IDENT && strings.EqualFold(lit, "ALL") {
+		setOpType += 1
+	} else {
+		p.unscan()
+	}
+
+	setOp.SetOpType = setOpType
+
+	// recursively call the Parse function to parse the right select statement
+	leftSources := p.sourceNames
+	p.sourceNames = nil
+	rightStmt, err = p.Parse()
+	if err != nil {
+		return nil, err
+	}
+
+	p.sourceNames = leftSources
+
+	if rightStmt == nil {
+		return nil, errors.New("expected SELECT after set operator")
+	}
+
+	if rightStmt.SetOp != nil {
+		return nil, errors.New("multiple set operators are not supported: a query can combine only two SELECT statements")
+	}
+
+	setOp.RightStmt = rightStmt
+	return &setOp, nil
 }
 
 func (p *Parser) parseJoins() (ast.Joins, error) {
@@ -539,7 +604,7 @@ func (p *Parser) ParseExpr() (ast.Expr, error) {
 
 	for {
 		op, _ := p.scanIgnoreWhitespace()
-		if !op.IsOperator() {
+		if !op.IsOperator() || op == ast.EXCEPT {
 			p.unscan()
 			return root.RHS, nil
 		} else if op == ast.ASTERISK { // Change the asterisk to Mul token.
