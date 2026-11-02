@@ -1266,3 +1266,18 @@ func TestArrayCompareUncomparableValue(t *testing.T) {
 		})
 	}
 }
+
+func TestArrayRemoveKeepsInput(t *testing.T) {
+	contextLogger := conf.Log.WithField("rule", "testExec")
+	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+	tempStore, _ := state.CreateStore("mockRule0", def.AtMostOnce)
+	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
+	input := []interface{}{1, 2, 3, 2}
+	f, ok := builtins["array_remove"]
+	require.True(t, ok)
+	result, ok := f.exec(fctx, []interface{}{input, 2})
+	require.True(t, ok)
+	require.Equal(t, []interface{}{1, 3}, result)
+	// The input array may be referenced by other fields or rules, so it must not be modified
+	require.Equal(t, []interface{}{1, 2, 3, 2}, input)
+}

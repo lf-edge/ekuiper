@@ -183,15 +183,14 @@ func registerArrayFunc() {
 				return errorArrayFirstArgumentNotArrayError, false
 			}
 
-			index := 0
-
+			// Build a new array; the input may be shared with other fields or rules
+			result := make([]interface{}, 0, len(array))
 			for _, item := range array {
 				if !changedValueEqual(item, args[1]) {
-					array[index] = item
-					index++
+					result = append(result, item)
 				}
 			}
-			return array[:index], true
+			return result, true
 		},
 		val: func(ctx api.FunctionContext, args []ast.Expr) error {
 			return ValidateLen(2, len(args))
