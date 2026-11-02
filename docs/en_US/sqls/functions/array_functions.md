@@ -130,15 +130,17 @@ Returns an array of elements that are in array1 but not in array2, without dupli
 repeat(string, count)
 ```
 
-Constructs an array of val repeated count times.
+Constructs an array of val repeated count times. The count must be greater than or equal to 0.
 
 ## SEQUENCE
 
 ```text
-sequence(start, stop, step)
+sequence(start, stop[, step])
 ```
 
-Returns an array of integers from start to stop, incrementing by step.
+Returns an array of integers from start to stop, incrementing by step. If step is not provided, it defaults to 1 when
+start is less than stop, or -1 otherwise. The step must not be 0, must be positive when start is less than stop, and must
+be negative when start is greater than stop.
 
 ## ARRAY_CARDINALITY
 
