@@ -472,6 +472,20 @@ func TestArrayCommonFunctions(t *testing.T) {
 			result: []interface{}{},
 		},
 		{
+			name: "repeat",
+			args: []interface{}{
+				"a", int64(2),
+			},
+			result: []interface{}{"a", "a"},
+		},
+		{
+			name: "repeat",
+			args: []interface{}{
+				"a", int64(-1),
+			},
+			result: fmt.Errorf("count must be greater than or equal to 0"),
+		},
+		{
 			name: "sequence",
 			args: []interface{}{
 				1, 5,
@@ -512,6 +526,48 @@ func TestArrayCommonFunctions(t *testing.T) {
 				10, 1, -3,
 			},
 			result: []interface{}{10, 7, 4, 1},
+		},
+		{
+			name: "sequence",
+			args: []interface{}{
+				int64(1), int64(7), int64(3),
+			},
+			result: []interface{}{1, 4, 7},
+		},
+		{
+			name: "sequence",
+			args: []interface{}{
+				int64(3), float64(1),
+			},
+			result: []interface{}{3, 2, 1},
+		},
+		{
+			name: "sequence",
+			args: []interface{}{
+				1.5, 3,
+			},
+			result: errorArrayFirstArgumentNotIntError,
+		},
+		{
+			name: "sequence",
+			args: []interface{}{
+				int64(1), int64(5), int64(-1),
+			},
+			result: fmt.Errorf("invalid step: should be positive when start is less than stop"),
+		},
+		{
+			name: "sequence",
+			args: []interface{}{
+				int64(5), int64(1), int64(1),
+			},
+			result: fmt.Errorf("invalid step: should be negative when start is greater than stop"),
+		},
+		{
+			name: "sequence",
+			args: []interface{}{
+				2, 2, -1,
+			},
+			result: []interface{}{2},
 		},
 		{
 			name: "array_cardinality",
