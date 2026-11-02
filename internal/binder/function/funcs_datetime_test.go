@@ -68,7 +68,7 @@ func TestDateTimeFunctions(t *testing.T) {
 			funcName:     "now",
 			execArgs:     []interface{}{1},
 			valFunc: func(t interface{}) error {
-				_, err := cast.ParseTime(t.(string), "yyyy-MM-dd HH:mm:ss.S")
+				_, err := cast.ParseTime(t.(string), "yyyy-MM-dd HH:mm:ssS")
 				return err
 			},
 			execTest: true,
@@ -78,7 +78,7 @@ func TestDateTimeFunctions(t *testing.T) {
 			funcName:     "now",
 			execArgs:     []interface{}{2},
 			valFunc: func(t interface{}) error {
-				_, err := cast.ParseTime(t.(string), "yyyy-MM-dd HH:mm:ss.SS")
+				_, err := cast.ParseTime(t.(string), "yyyy-MM-dd HH:mm:ssSS")
 				return err
 			},
 			execTest: true,
@@ -88,7 +88,7 @@ func TestDateTimeFunctions(t *testing.T) {
 			funcName:     "now",
 			execArgs:     []interface{}{3},
 			valFunc: func(t interface{}) error {
-				_, err := cast.ParseTime(t.(string), "yyyy-MM-dd HH:mm:ss.SSS")
+				_, err := cast.ParseTime(t.(string), "yyyy-MM-dd HH:mm:ssSSS")
 				return err
 			},
 			execTest: true,
@@ -98,7 +98,7 @@ func TestDateTimeFunctions(t *testing.T) {
 			funcName:     "now",
 			execArgs:     []interface{}{4},
 			valFunc: func(t interface{}) error {
-				_, err := cast.ParseTime(t.(string), "yyyy-MM-dd HH:mm:ss.SSSS")
+				_, err := cast.ParseTime(t.(string), "yyyy-MM-dd HH:mm:ssSSSS")
 				return err
 			},
 			execTest: true,
@@ -108,7 +108,7 @@ func TestDateTimeFunctions(t *testing.T) {
 			funcName:     "now",
 			execArgs:     []interface{}{5},
 			valFunc: func(t interface{}) error {
-				_, err := cast.ParseTime(t.(string), "yyyy-MM-dd HH:mm:ss.SSSSS")
+				_, err := cast.ParseTime(t.(string), "yyyy-MM-dd HH:mm:ssSSSSS")
 				return err
 			},
 			execTest: true,
@@ -118,8 +118,30 @@ func TestDateTimeFunctions(t *testing.T) {
 			funcName:     "now",
 			execArgs:     []interface{}{6},
 			valFunc: func(t interface{}) error {
-				_, err := cast.ParseTime(t.(string), "yyyy-MM-dd HH:mm:ss.SSSSSS")
+				_, err := cast.ParseTime(t.(string), "yyyy-MM-dd HH:mm:ssSSSSSS")
 				return err
+			},
+			execTest: true,
+		},
+		{
+			testCaseName: "test now() with int64 fsp",
+			funcName:     "now",
+			execArgs:     []interface{}{int64(3)},
+			valFunc: func(t interface{}) error {
+				_, err := cast.ParseTime(t.(string), "yyyy-MM-dd HH:mm:ssSSS")
+				return err
+			},
+			execTest: true,
+		},
+		{
+			testCaseName: "test now() with non-integer fsp",
+			funcName:     "now",
+			execArgs:     []interface{}{"3"},
+			valFunc: func(t interface{}) error {
+				if _, ok := t.(error); !ok {
+					return fmt.Errorf("expect error, got %v", t)
+				}
+				return nil
 			},
 			execTest: true,
 		},
@@ -173,7 +195,17 @@ func TestDateTimeFunctions(t *testing.T) {
 			execTest:     true,
 			execArgs:     []interface{}{1},
 			valFunc: func(t interface{}) error {
-				_, err := cast.ParseTime(t.(string), "HH:mm:ss.S")
+				_, err := cast.ParseTime(t.(string), "HH:mm:ssS")
+				return err
+			},
+		},
+		{
+			testCaseName: "test cur_time() with int64 fsp",
+			funcName:     "cur_time",
+			execTest:     true,
+			execArgs:     []interface{}{int64(2)},
+			valFunc: func(t interface{}) error {
+				_, err := cast.ParseTime(t.(string), "HH:mm:ssSS")
 				return err
 			},
 		},
