@@ -380,6 +380,41 @@ func TestFuncValidator(t *testing.T) {
 
 		///
 		{
+			s: `SELECT dec2hex(255) FROM tbl`,
+			stmt: &ast.SelectStatement{
+				Fields:  []ast.Field{{AName: "", Name: "dec2hex", Expr: &ast.Call{Name: "dec2hex", Args: []ast.Expr{&ast.IntegerLiteral{Val: 255}}}}},
+				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
+			},
+		},
+
+		{
+			s: `SELECT dec2hex(field) FROM tbl`,
+			stmt: &ast.SelectStatement{
+				Fields:  []ast.Field{{AName: "", Name: "dec2hex", Expr: &ast.Call{Name: "dec2hex", Args: []ast.Expr{&ast.FieldRef{Name: "field", StreamName: ast.DefaultStream}}}}},
+				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
+			},
+		},
+
+		{
+			s:    `SELECT dec2hex("10") FROM tbl`,
+			stmt: nil,
+			err:  "validate function dec2hex error: Expect int type for parameter 1",
+		},
+
+		{
+			s:    `SELECT dec2hex(1.5) FROM tbl`,
+			stmt: nil,
+			err:  "validate function dec2hex error: Expect int type for parameter 1",
+		},
+
+		{
+			s:    `SELECT dec2hex(true) FROM tbl`,
+			stmt: nil,
+			err:  "validate function dec2hex error: Expect int type for parameter 1",
+		},
+
+		///
+		{
 			s: `SELECT encode(field, "base64") FROM tbl`,
 			stmt: &ast.SelectStatement{
 				Fields:  []ast.Field{{AName: "", Name: "encode", Expr: &ast.Call{Name: "encode", Args: []ast.Expr{&ast.FieldRef{Name: "field", StreamName: ast.DefaultStream}, &ast.StringLiteral{Val: "base64"}}}}},
