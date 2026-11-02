@@ -478,6 +478,41 @@ func TestMathAndConversionFunc_Apply1(t *testing.T) {
 				"a": float64(3.00),
 			}},
 		},
+
+		{
+			sql: `SELECT dec2hex(255) as a FROM test`,
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: nil,
+			},
+			result: []map[string]interface{}{{
+				"a": "0xff",
+			}},
+		},
+
+		{
+			sql: `SELECT dec2hex(a) as a FROM test`,
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"a": int64(16),
+				},
+			},
+			result: []map[string]interface{}{{
+				"a": "0x10",
+			}},
+		},
+
+		{
+			sql: `SELECT hex2dec(dec2hex(4096)) as a FROM test`,
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: nil,
+			},
+			result: []map[string]interface{}{{
+				"a": int64(4096),
+			}},
+		},
 	}
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))

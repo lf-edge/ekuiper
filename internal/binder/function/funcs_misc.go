@@ -674,7 +674,15 @@ func registerMiscFunc() {
 			hex := "0x" + strconv.FormatInt(int64(dec), 16)
 			return hex, true
 		},
-		val:   ValidateOneStrArg,
+		val: func(_ api.FunctionContext, args []ast.Expr) error {
+			if err := ValidateLen(1, len(args)); err != nil {
+				return err
+			}
+			if ast.IsFloatArg(args[0]) || ast.IsTimeArg(args[0]) || ast.IsBooleanArg(args[0]) || ast.IsStringArg(args[0]) {
+				return ProduceErrInfo(0, "int")
+			}
+			return nil
+		},
 		check: returnNilIfHasAnyNil,
 	}
 }
