@@ -25,6 +25,8 @@ import (
 )
 
 type SinkConf struct {
+	// SinkType is set by the planner, independently of the node name.
+	SinkType         string            `json:"-"`
 	Concurrency      int               `json:"concurrency"`
 	Omitempty        bool              `json:"omitIfEmpty"`
 	SendSingle       bool              `json:"sendSingle"`

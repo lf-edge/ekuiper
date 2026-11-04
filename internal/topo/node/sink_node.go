@@ -38,6 +38,7 @@ import (
 type SinkNode struct {
 	*defaultSinkNode
 	sink           api.Sink
+	sinkType       string
 	eoflimit       int
 	currentEof     int
 	resendInterval time.Duration
@@ -67,12 +68,14 @@ func newSinkNode(ctx api.StreamContext, name string, rOpt def.RuleOption, eoflim
 	return &SinkNode{
 		defaultSinkNode: newDefaultSinkNode(name, &rOpt),
 		eoflimit:        eoflimit,
+		sinkType:        sc.SinkType,
 		resendInterval:  retry,
 	}
 }
 
 func (s *SinkNode) setKafkaSinkStatsManager(ctx api.StreamContext) {
-	if strings.Contains(strings.ToLower(s.name), "kafka") {
+	// Retain name-based detection for callers that do not supply the type.
+	if s.sinkType == "kafka" || (s.sinkType == "" && strings.Contains(strings.ToLower(s.name), "kafka")) {
 		dctx, ok := ctx.(*kctx.DefaultContext)
 		if ok {
 			kctx.WithValue(dctx, "$statManager", s.statManager)

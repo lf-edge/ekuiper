@@ -22,6 +22,8 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
+	kctx "github.com/lf-edge/ekuiper/v2/internal/topo/context"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/node/metric"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
@@ -378,4 +380,29 @@ func TestCreateTupleCollect(t *testing.T) {
 		err := collectFn(ctx, sink, "unknown type")
 		assert.Error(t, err)
 	})
+}
+
+func TestNamedSinkStatsManager(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		sinkType string
+		hosted   bool
+	}{
+		{"archive", "kafka", true},
+		{"kafka_archive", "rest", false},
+		{"kafka_0", "", true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			ctx := kctx.Background()
+			n := newSinkNode(ctx, tc.name, def.RuleOption{}, 1, &SinkConf{SinkType: tc.sinkType}, false)
+			n.statManager = metric.NewStatManager(ctx, "sink")
+			n.setKafkaSinkStatsManager(ctx)
+			assert.Equal(t, tc.hosted, n.isStatManagerHostBySink)
+			if tc.hosted {
+				assert.Same(t, n.statManager, ctx.Value("$statManager"))
+			} else {
+				assert.Nil(t, ctx.Value("$statManager"))
+			}
+		})
+	}
 }

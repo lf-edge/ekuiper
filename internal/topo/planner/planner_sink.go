@@ -29,6 +29,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node/conf"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/model"
+	idvalidate "github.com/lf-edge/ekuiper/v2/pkg/validate"
 )
 
 const sinkDisableKey = "disable"
@@ -40,6 +41,14 @@ var errNoActiveSinkActions = errors.New("rule has no active sink actions")
 
 func buildActions(tp *topo.Topo, rule *def.Rule, inputs []node.Emitter, streamCount int, schema map[string]*ast.JsonStreamField) error {
 	enabledCount := 0
+	// Checkpoints and state use a shared node-name namespace for the rule.
+	usedNames := make(map[string]struct{})
+	for _, source := range tp.GetSourceNodes() {
+		usedNames[source.GetName()] = struct{}{}
+	}
+	for _, op := range tp.GetOperators() {
+		usedNames[op.GetName()] = struct{}{}
+	}
 	for i, m := range rule.Actions {
 		for name, action := range m {
 			props, ok := action.(map[string]any)
@@ -53,15 +62,33 @@ func buildActions(tp *topo.Topo, rule *def.Rule, inputs []node.Emitter, streamCo
 			if disabled {
 				continue
 			}
+			sinkName := fmt.Sprintf("%s_%d", name, i)
+			if raw, exists := props["name"]; exists {
+				customName, ok := raw.(string)
+				if !ok {
+					return fmt.Errorf("sink name must be string, but found %v", raw)
+				}
+				if err := idvalidate.ValidateID(customName); err != nil {
+					return fmt.Errorf("invalid sink name: %w", err)
+				}
+				sinkName = customName
+			}
 			enabledCount++
 			props, err = conf.OverwriteByConnectionConf(name, props)
 			if err != nil {
 				return err
 			}
-			sinkName := fmt.Sprintf("%s_%d", name, i)
 			cn, err := SinkToComp(tp, name, sinkName, copyProps(props), rule, streamCount, schema)
 			if err != nil {
 				return err
+			}
+			// Include generated operators and resend sinks: they also use names
+			// as runtime identifiers for metrics and state.
+			for _, n := range cn.Nodes() {
+				if _, exists := usedNames[n.GetName()]; exists {
+					return fmt.Errorf("duplicate sink pipeline node name %q", n.GetName())
+				}
+				usedNames[n.GetName()] = struct{}{}
 			}
 			PlanSinkOps(tp, inputs, cn)
 		}
@@ -134,6 +161,7 @@ func SinkToComp(tp *topo.Topo, sinkType string, sinkName string, props map[strin
 	if err != nil {
 		return nil, fmt.Errorf("fail to parse sink configuration: %v", err)
 	}
+	commonConf.SinkType = sinkType
 	templates := findTemplateProps(props)
 	// Split sink node
 	sinkOps, err := splitSink(tp, s, sinkName, rule.Options, commonConf, templates, schema)
