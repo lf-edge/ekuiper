@@ -209,7 +209,7 @@ func (s *Topo) GracefulStop(timeout time.Duration) error {
 	}
 }
 
-// GetSourceNodes only for test
+// GetSourceNodes returns the source nodes in this topology.
 func (s *Topo) GetSourceNodes() []node.DataSourceNode {
 	return s.sources
 }
@@ -234,6 +234,14 @@ func (s *Topo) GetStreams() []string {
 		return nil
 	}
 	return s.streams
+}
+
+func (s *Topo) GetOperators() []node.OperatorNode {
+	if s == nil {
+		return nil
+	}
+
+	return s.ops
 }
 
 func (s *Topo) SetSinkSchema(sinkSchema map[string]*ast.JsonStreamField) {
