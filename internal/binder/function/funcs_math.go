@@ -333,7 +333,7 @@ func registerMathFunc() {
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			if v, e := cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND); e == nil {
-				if v1, e1 := cast.ToFloat64(args[1], cast.CONVERT_SAMEKIND); e == nil {
+				if v1, e1 := cast.ToFloat64(args[1], cast.CONVERT_SAMEKIND); e1 == nil {
 					return math.Mod(v, v1), true
 				} else {
 					return e1, false
