@@ -178,6 +178,9 @@ func registerMiscFunc() {
 				if len(v) > 1 {
 					return fmt.Errorf("Parameter length cannot larger than 1."), false
 				}
+				if len(v) == 0 {
+					return fmt.Errorf("Parameter length cannot be zero."), false
+				}
 				r := []rune(v)
 				return r[0], true
 			default:
