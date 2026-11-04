@@ -632,3 +632,35 @@ func TestRoundFunc(t *testing.T) {
 		})
 	}
 }
+
+func TestModInvalidSecondArg(t *testing.T) {
+	contextLogger := conf.Log.WithField("rule", "testExec")
+	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+	tempStore, _ := state.CreateStore("mockRule0", def.AtMostOnce)
+	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
+	oldBuiltins := builtins
+	defer func() {
+		builtins = oldBuiltins
+	}()
+	builtins = map[string]builtinFunc{}
+	registerMathFunc()
+
+	f, ok := builtins["mod"]
+	require.True(t, ok)
+	// invalid second arg must yield an error, not a silent NaN result
+	res, ok := f.exec(fctx, []interface{}{10, "abc"})
+	require.False(t, ok)
+	_, isErr := res.(error)
+	require.True(t, isErr)
+	res, ok = f.exec(fctx, []interface{}{10, true})
+	require.False(t, ok)
+	_, isErr = res.(error)
+	require.True(t, isErr)
+	// normal cases still work
+	res, ok = f.exec(fctx, []interface{}{10, 3.0})
+	require.True(t, ok)
+	require.Equal(t, 1.0, res)
+	res, ok = f.exec(fctx, []interface{}{10.5, 3})
+	require.True(t, ok)
+	require.Equal(t, 1.5, res)
+}
