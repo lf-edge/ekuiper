@@ -225,3 +225,36 @@ func TestFetchConnectionNotExist(t *testing.T) {
 	_, err := FetchConnection(ctx, "2222", "mock", map[string]interface{}{"connectionSelector": "id2"}, nil)
 	require.Error(t, err)
 }
+
+type canceledProvisionConnection struct {
+	mockConnection
+	cancel     func()
+	closeCount int
+}
+
+func (c *canceledProvisionConnection) Provision(api.StreamContext, string, map[string]any) error {
+	c.cancel()
+	return nil
+}
+
+func (c *canceledProvisionConnection) Close(api.StreamContext) error {
+	c.closeCount++
+	return nil
+}
+
+func TestCanceledCreationPreservesProviderLifecycle(t *testing.T) {
+	require.NoError(t, InitConnectionManager4Test())
+	root := mockContext.NewMockContext(t.Name(), "provision")
+	ctx, cancel := root.WithCancel()
+	defer cancel()
+	c := &canceledProvisionConnection{cancel: cancel}
+	modules.RegisterConnection("canceled-provision-test", func(api.StreamContext) modules.Connection { return c })
+	cw, err := CreateNamedConnection(ctx, "canceled-provision", "canceled-provision-test", nil)
+	require.NoError(t, err)
+	_, err = cw.Wait(root)
+	// Keep the released pool behavior: cleanup happens on drop, not creation.
+	require.NoError(t, err)
+	require.Zero(t, c.closeCount)
+	require.NoError(t, DropNameConnection(root, cw.ID))
+	require.Equal(t, 1, c.closeCount, "a canceled provider must be closed exactly once")
+}

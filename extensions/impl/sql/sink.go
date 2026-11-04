@@ -167,10 +167,16 @@ func (s *SQLSinkConnector) Connect(ctx api.StreamContext, sc api.StatusChangeHan
 	}
 	s.cw = cw
 	conn, err := s.cw.Wait(ctx)
+	if err != nil {
+		return err
+	}
 	if conn == nil {
 		return fmt.Errorf("sql client not ready: %v", err)
 	}
 	s.conn = conn.(*client.SQLConnection)
+	if s.conn.GetDB() == nil {
+		return fmt.Errorf("sql client not ready")
+	}
 	return err
 }
 
@@ -311,13 +317,13 @@ func (s *SQLSinkConnector) writeToDB(ctx api.StreamContext, sqlStr string) error
 	ctx.GetLogger().Debugf(sqlStr)
 	if s.needReconnect {
 		metrics.IOCounter.WithLabelValues(LblSql, metrics.LblSinkIO, LblReconn, ctx.GetRuleId(), ctx.GetOpId()).Inc()
-		err := s.conn.Reconnect()
+		err := s.conn.Reconnect(ctx)
 		if err != nil {
 			return errorx.NewIOErr(err.Error())
 		}
 	}
 	start := time.Now()
-	r, err := s.conn.GetDB().Exec(sqlStr)
+	r, err := s.conn.GetDB().ExecContext(ctx, sqlStr)
 	failpoint.Inject("dbErr", func() {
 		err = errors.New("dbErr")
 	})
