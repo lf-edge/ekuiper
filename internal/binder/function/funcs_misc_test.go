@@ -670,3 +670,31 @@ func TestProps(t *testing.T) {
 	require.True(t, ok)
 	require.Equal(t, strconv.FormatInt(tt, 10), et)
 }
+
+func TestChrInvalidInput(t *testing.T) {
+	contextLogger := conf.Log.WithField("rule", "testExec")
+	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+	tempStore, _ := state.CreateStore("mockRule0", def.AtMostOnce)
+	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
+	oldBuiltins := builtins
+	defer func() {
+		builtins = oldBuiltins
+	}()
+	builtins = map[string]builtinFunc{}
+	registerMiscFunc()
+
+	f, ok := builtins["chr"]
+	require.True(t, ok)
+	// empty string input must yield an error instead of a panic
+	res, ok := f.exec(fctx, []interface{}{""})
+	require.False(t, ok)
+	_, isErr := res.(error)
+	require.True(t, isErr)
+	// valid inputs still work
+	res, ok = f.exec(fctx, []interface{}{"A"})
+	require.True(t, ok)
+	require.Equal(t, 'A', res)
+	res, ok = f.exec(fctx, []interface{}{65})
+	require.True(t, ok)
+	require.Equal(t, 'A', res)
+}
