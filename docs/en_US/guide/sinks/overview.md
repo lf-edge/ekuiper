@@ -68,6 +68,7 @@ Each action can define its own properties. There are several common properties:
 
 | property name        | Type & Default Value                 | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 |----------------------|--------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| name | string: optional | Name of this sink action in SQL rules, used in logs, topology and metrics. When omitted, the name remains `<sink type>_<action index>` (zero-based). If supplied, it must be non-empty and contain only ASCII letters, digits, underscores or hyphens. Names must not conflict with any other runtime node in the rule, including sources, SQL operators and generated sink pipeline nodes such as resend nodes. Graph rules use their existing node IDs. |
 | bufferLength         | int: 1024                            | Specify how many messages can be buffered in memory. If the buffered messages exceed the limit, the sink will block message receiving until the buffered messages have been sent out so that the buffered size is less than the limit.                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | disable              | bool: false                          | Whether to disable this sink action. If set to true, the rule planner skips this sink and does not create its sink pipeline. At least one sink action in a rule must not be disabled.                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | omitIfEmpty          | bool: false                          | If the configuration item is set to true, when SELECT result is empty, then the result will not feed to sink operator.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
@@ -136,6 +137,19 @@ In the sink, it is common to fetch a property value from the result data to achi
 ```
 
 In the above example, `sendSingle` property is used, so the sink data is a map by default. If not using `sendSingle`, you can get the topic by index with data template <code v-pre>{{index . 0 "topic"}}</code>.
+
+### Naming sink actions
+
+Give sinks descriptive names to distinguish destinations of the same type:
+
+```json
+{"actions": [
+  {"rest": {"name": "archive", "url": "http://localhost:8080/archive", "method": "post"}},
+  {"rest": {"name": "alerts", "url": "http://localhost:8080/alerts", "method": "post"}}
+]}
+```
+
+The topology identifies these sinks as `sink_archive` and `sink_alerts`. Metric keys use these names too, for example `sink_archive_0_records_in_total`. Renaming a sink changes its metric and persistent state identifiers; keep names stable when using sink caching or checkpoints.
 
 ## Caching
 

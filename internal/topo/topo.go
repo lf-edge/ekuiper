@@ -209,7 +209,7 @@ func (s *Topo) GracefulStop(timeout time.Duration) error {
 	}
 }
 
-// GetSourceNodes only for test
+// GetSourceNodes returns the source nodes in this topology.
 func (s *Topo) GetSourceNodes() []node.DataSourceNode {
 	return s.sources
 }
