@@ -55,6 +55,54 @@ func isDistinctComparableValue(value interface{}) bool {
 	}
 }
 
+// valueSet is a set of array elements. Elements that can be map keys are stored in a map.
+// The others, such as arrays and objects, would panic as map keys, so they are stored in
+// a slice and compared with changedValueEqual.
+type valueSet struct {
+	hashable   map[interface{}]struct{}
+	unhashable []interface{}
+}
+
+func newValueSet() *valueSet {
+	return &valueSet{hashable: make(map[interface{}]struct{})}
+}
+
+// add puts v into the set and returns false if v was already in it
+func (s *valueSet) add(v interface{}) bool {
+	if isDistinctComparableValue(v) {
+		if _, ok := s.hashable[v]; ok {
+			return false
+		}
+		s.hashable[v] = struct{}{}
+		return true
+	}
+	for _, e := range s.unhashable {
+		if changedValueEqual(e, v) {
+			return false
+		}
+	}
+	s.unhashable = append(s.unhashable, v)
+	return true
+}
+
+// remove deletes v from the set and returns false if v was not in it
+func (s *valueSet) remove(v interface{}) bool {
+	if isDistinctComparableValue(v) {
+		if _, ok := s.hashable[v]; !ok {
+			return false
+		}
+		delete(s.hashable, v)
+		return true
+	}
+	for i, e := range s.unhashable {
+		if changedValueEqual(e, v) {
+			s.unhashable = append(s.unhashable[:i], s.unhashable[i+1:]...)
+			return true
+		}
+	}
+	return false
+}
+
 func registerArrayFunc() {
 	builtins["array_create"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
@@ -266,16 +314,15 @@ func registerArrayFunc() {
 			}
 
 			intersection := make([]interface{}, 0, capacity)
-			set := make(map[interface{}]bool)
+			set := newValueSet()
 
 			for _, a := range array1 {
-				set[a] = true
+				set.add(a)
 			}
 
 			for _, b := range array2 {
-				if set[b] {
+				if set.remove(b) {
 					intersection = append(intersection, b)
-					set[b] = false
 				}
 			}
 
@@ -304,17 +351,15 @@ func registerArrayFunc() {
 				}
 			}
 			union := make([]interface{}, 0, len(array1)+len(array2))
-			set := make(map[interface{}]bool)
+			set := newValueSet()
 
 			for _, a := range array1 {
-				if !set[a] {
+				if set.add(a) {
 					union = append(union, a)
-					set[a] = true
 				}
 			}
 			for _, b := range array2 {
-				if !set[b] {
-					set[b] = true
+				if set.add(b) {
 					union = append(union, b)
 				}
 			}
@@ -386,16 +431,15 @@ func registerArrayFunc() {
 				}
 			}
 			except := make([]interface{}, 0, len(array1))
-			set := make(map[interface{}]bool)
+			set := newValueSet()
 
 			for _, v := range array2 {
-				set[v] = true
+				set.add(v)
 			}
 
 			for _, v := range array1 {
-				if !set[v] {
+				if set.add(v) {
 					except = append(except, v)
-					set[v] = true
 				}
 			}
 
