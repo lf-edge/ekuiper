@@ -63,8 +63,8 @@ type valueSet struct {
 	unhashable []interface{}
 }
 
-func newValueSet(capacity int) *valueSet {
-	return &valueSet{hashable: make(map[interface{}]struct{}, capacity)}
+func newValueSet() *valueSet {
+	return &valueSet{hashable: make(map[interface{}]struct{})}
 }
 
 // add puts v into the set and returns false if v was already in it
@@ -314,7 +314,7 @@ func registerArrayFunc() {
 			}
 
 			intersection := make([]interface{}, 0, capacity)
-			set := newValueSet(len(array1))
+			set := newValueSet()
 
 			for _, a := range array1 {
 				set.add(a)
@@ -351,7 +351,7 @@ func registerArrayFunc() {
 				}
 			}
 			union := make([]interface{}, 0, len(array1)+len(array2))
-			set := newValueSet(len(array1) + len(array2))
+			set := newValueSet()
 
 			for _, a := range array1 {
 				if set.add(a) {
@@ -431,7 +431,7 @@ func registerArrayFunc() {
 				}
 			}
 			except := make([]interface{}, 0, len(array1))
-			set := newValueSet(len(array1) + len(array2))
+			set := newValueSet()
 
 			for _, v := range array2 {
 				set.add(v)
