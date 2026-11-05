@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"reflect"
 	"sort"
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -777,6 +778,46 @@ func TestObjectPick(t *testing.T) {
 				"k4": map[string]any{"embed": map[string]any{"ff": map[string]any{"gg": 23}}},
 			},
 		},
+		{
+			name: "pick embed keys with the same parent",
+			args: []interface{}{
+				map[string]interface{}{"k1": map[string]any{"temp": 23, "hum": 34, "co2": 400}, "k2": "2"},
+				"k1.temp", "k1.hum",
+			},
+			result: map[string]interface{}{
+				"k1": map[string]any{"temp": 23, "hum": 34},
+			},
+		},
+		{
+			name: "pick embed keys with the same parent by array",
+			args: []interface{}{
+				map[string]interface{}{"k4": map[string]any{"embed": map[string]any{"ee": 23, "ff": map[string]any{"gg": 23, "hh": 24}, "ii": 25}, "jj": 26}},
+				[]string{"k4.embed.ee", "k4.embed.ff.gg", "k4.jj"},
+			},
+			result: map[string]interface{}{
+				"k4": map[string]any{"embed": map[string]any{"ee": 23, "ff": map[string]any{"gg": 23}}, "jj": 26},
+			},
+		},
+		{
+			name: "pick object then its embed key",
+			args: []interface{}{
+				map[string]interface{}{"k1": map[string]any{"temp": 23, "hum": 34}, "k2": "2"},
+				"k1", "k1.temp",
+			},
+			result: map[string]interface{}{
+				"k1": map[string]any{"temp": 23, "hum": 34},
+			},
+		},
+		{
+			name: "pick embed key then its object",
+			args: []interface{}{
+				map[string]interface{}{"k1": map[string]any{"temp": 23, "hum": 34}, "k2": "2"},
+				"k1.temp", "k1",
+			},
+			result: map[string]interface{}{
+				"k1": map[string]any{"temp": 23, "hum": 34},
+			},
+		},
 	}
 	for _, tt := range tests {
 		f, ok := builtins["object_pick"]
@@ -791,6 +832,33 @@ func TestObjectPick(t *testing.T) {
 			require.Equal(t, tt.result, r)
 		})
 	}
+}
+
+// The input object may be shared by other rules, so picking must only read it.
+// Run with -race to catch writes to the input.
+func TestObjectPickSharedInput(t *testing.T) {
+	f, ok := builtins["object_pick"]
+	require.True(t, ok)
+	contextLogger := conf.Log.WithField("rule", "testExec")
+	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+	tempStore, _ := state.CreateStore("mockRule0", def.AtMostOnce)
+	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
+	input := map[string]any{"k1": map[string]any{"temp": 23, "hum": 34, "embed": map[string]any{"ee": 23}}}
+	expected := map[string]any{"k1": map[string]any{"temp": 23, "hum": 34, "embed": map[string]any{"ee": 23}}}
+	var wg sync.WaitGroup
+	for i := 0; i < 4; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for j := 0; j < 100; j++ {
+				r, ok := f.exec(fctx, []any{input, "k1", "k1.temp", "k1.embed.ee"})
+				assert.True(t, ok)
+				assert.Equal(t, expected, r)
+			}
+		}()
+	}
+	wg.Wait()
+	require.Equal(t, expected, input)
 }
 
 func TestVal(t *testing.T) {

@@ -325,26 +325,37 @@ func pick(ctx api.FunctionContext, res map[string]any, argMap map[string]any, k 
 		return
 	}
 	keys := strings.Split(k, ".")
+	parents := keys[:len(keys)-1]
+	// srcs[i] is the object at path keys[:i+1] of the input
+	srcs := make([]map[string]any, len(parents))
 	r := argMap
 	var ok bool
-	for i := 0; i < len(keys)-1; i++ {
-		r, ok = r[keys[i]].(map[string]any)
+	for i, key := range parents {
+		r, ok = r[key].(map[string]any)
 		if !ok {
 			ctx.GetLogger().Warnf("object_pick cannot pick key %s for %v", k, argMap)
 			return
 		}
+		srcs[i] = r
 	}
 	v, ok := r[keys[len(keys)-1]]
-	if ok {
-		rr := res
-		for i := 0; i < len(keys)-1; i++ {
-			if rr[keys[i]] == nil {
-				rr[keys[i]] = make(map[string]any)
-				rr = rr[keys[i]].(map[string]any)
-			}
-		}
-		rr[keys[len(keys)-1]] = v
+	if !ok {
+		return
 	}
+	rr := res
+	for i, key := range parents {
+		next, exists := rr[key].(map[string]any)
+		if !exists {
+			next = make(map[string]any)
+			rr[key] = next
+		} else if reflect.ValueOf(next).UnsafePointer() == reflect.ValueOf(srcs[i]).UnsafePointer() {
+			// An earlier key already picked the whole input object at this path.
+			// It contains v, and it must not be modified because it belongs to the input.
+			return
+		}
+		rr = next
+	}
+	rr[keys[len(keys)-1]] = v
 }
 
 func sliceStringContains(s []string, target string) bool {
