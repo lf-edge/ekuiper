@@ -51,6 +51,7 @@ func TestSourceConnectorCompare(t *testing.T, r api.Source, props map[string]any
 	assert.NoError(t, err)
 	// provision
 	ctx, cancel := mockContext.NewMockContext(fmt.Sprintf("rule%d", c), "op1").WithCancel()
+	defer cancel()
 	err = r.Provision(ctx, props)
 	assert.NoError(t, err)
 	// connect, subscribe and read data
@@ -76,20 +77,35 @@ func TestSourceConnectorCompare(t *testing.T, r api.Source, props map[string]any
 		t.Fatal("invalid expected type")
 	}
 	var (
-		wg     sync.WaitGroup
+		mu     sync.Mutex
 		result []api.MessageTuple
 		e      error
 	)
-	wg.Add(1)
+	finished := make(chan struct{})
+	if limit == 0 {
+		close(finished)
+	}
+	// Sources can invoke callbacks concurrently or after cancellation. Collect only
+	// the expected number of events and protect all collector state with mu.
 	ingestErr := func(ctx api.StreamContext, err error) {
+		mu.Lock()
+		defer mu.Unlock()
+		if limit == 0 {
+			return
+		}
 		ctx.GetLogger().Error(err)
 		e = err
 		limit--
 		if limit == 0 {
-			wg.Done()
+			close(finished)
 		}
 	}
 	ingestBytes := func(ctx api.StreamContext, payload []byte, meta map[string]any, ts time.Time) {
+		mu.Lock()
+		defer mu.Unlock()
+		if limit == 0 {
+			return
+		}
 		if cc.IgnoreTs {
 			result = append(result, model.NewDefaultRawTupleIgnoreTs(payload, meta))
 		} else {
@@ -98,10 +114,15 @@ func TestSourceConnectorCompare(t *testing.T, r api.Source, props map[string]any
 
 		limit--
 		if limit == 0 {
-			wg.Done()
+			close(finished)
 		}
 	}
 	ingestTuples := func(ctx api.StreamContext, message any, meta map[string]any, ts time.Time) {
+		mu.Lock()
+		defer mu.Unlock()
+		if limit == 0 {
+			return
+		}
 		switch mt := message.(type) {
 		case []byte:
 			if cc.IgnoreTs {
@@ -118,7 +139,7 @@ func TestSourceConnectorCompare(t *testing.T, r api.Source, props map[string]any
 		}
 		limit--
 		if limit == 0 {
-			wg.Done()
+			close(finished)
 		}
 	}
 	go func() {
@@ -164,11 +185,6 @@ func TestSourceConnectorCompare(t *testing.T, r api.Source, props map[string]any
 	}()
 
 	ticker := time.After(60 * time.Second)
-	finished := make(chan struct{})
-	go func() {
-		wg.Wait()
-		close(finished)
-	}()
 	select {
 	case <-ctx.Done():
 	case <-finished:
@@ -178,10 +194,15 @@ func TestSourceConnectorCompare(t *testing.T, r api.Source, props map[string]any
 		assert.Fail(t, "timeout")
 		return
 	}
+	// Freeze collection even if the source cancelled the context before the limit.
+	mu.Lock()
+	limit = 0
+	got, gotErr := result, e
+	mu.Unlock()
 	if ee, ok := expected.(error); ok {
-		assert.Equal(t, ee, e)
+		assert.Equal(t, ee, gotErr)
 	} else {
-		assert.True(t, compare(expected, result))
+		assert.True(t, compare(expected, got))
 	}
 }
 
