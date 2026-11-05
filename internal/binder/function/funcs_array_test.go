@@ -1311,6 +1311,30 @@ func TestArrayCompareUncomparableValue(t *testing.T) {
 			args:   []interface{}{[]interface{}{[]interface{}{1, nested}, nested}, nested},
 			result: []interface{}{[]interface{}{1, nested}},
 		},
+		{ // array_intersect must keep array and object elements found in both arrays instead of panicking
+			name: "array_intersect",
+			args: []interface{}{
+				[]interface{}{[]interface{}{2, 3}, map[string]interface{}{"a": 1}, 1, []interface{}{2, 3}},
+				[]interface{}{nested, []interface{}{4}, map[string]interface{}{"a": 1}, nested},
+			},
+			result: []interface{}{nested, map[string]interface{}{"a": 1}},
+		},
+		{ // array_union must remove duplicated array and object elements instead of panicking
+			name: "array_union",
+			args: []interface{}{
+				[]interface{}{nested, 1, map[string]interface{}{"a": 1}},
+				[]interface{}{[]interface{}{2, 3}, map[string]interface{}{"a": 1}, 1, []interface{}{4}, []interface{}{4}},
+			},
+			result: []interface{}{nested, 1, map[string]interface{}{"a": 1}, []interface{}{4}},
+		},
+		{ // array_except must drop array and object elements of the second array instead of panicking
+			name: "array_except",
+			args: []interface{}{
+				[]interface{}{nested, []interface{}{4}, map[string]interface{}{"a": 1}, []interface{}{4}, 2},
+				[]interface{}{[]interface{}{2, 3}, map[string]interface{}{"a": 2}},
+			},
+			result: []interface{}{[]interface{}{4}, map[string]interface{}{"a": 1}, 2},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
