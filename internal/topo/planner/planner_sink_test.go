@@ -15,7 +15,9 @@
 package planner
 
 import (
+	"fmt"
 	"sort"
+	"strings"
 	"testing"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
@@ -27,6 +29,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/topo"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/operator"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/model"
@@ -699,4 +702,96 @@ func TestSinkPlan_HasFields(t *testing.T) {
 
 	// Since we cannot verify internal state easily, we verify that the code runs.
 	// We also implicitly verify that HashFields=true path was taken if we could check coverage.
+}
+
+func TestSinkActionNames(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		sinkType string
+		props    []map[string]any
+		want     []string
+		wantErr  string
+	}{
+		{name: "named REST sinks", sinkType: "rest", props: []map[string]any{{"name": "archive", "url": "http://localhost/archive"}, {"name": "alerts", "url": "http://localhost/alerts"}}, want: []string{"sink_archive", "sink_alerts"}},
+		{name: "named sinks", props: []map[string]any{{"name": "archive"}, {"name": "alerts"}}, want: []string{"sink_archive", "sink_alerts"}},
+		{name: "default names", props: []map[string]any{{}, {}}, want: []string{"sink_log_0", "sink_log_1"}},
+		{name: "mixed names", props: []map[string]any{{"name": "archive"}, {}}, want: []string{"sink_archive", "sink_log_1"}},
+		{name: "invalid type", props: []map[string]any{{"name": 42}}, wantErr: "sink name must be string"},
+		{name: "empty name", props: []map[string]any{{"name": ""}}, wantErr: "invalid sink name"},
+		{name: "invalid characters", props: []map[string]any{{"name": "../archive"}}, wantErr: "invalid sink name"},
+		{name: "duplicate names", props: []map[string]any{{"name": "archive"}, {"name": "archive"}}, wantErr: "duplicate sink pipeline node name"},
+		{name: "default name collision", props: []map[string]any{{"name": "log_1"}, {}}, wantErr: "duplicate sink pipeline node name"},
+		{name: "resend name collision", props: []map[string]any{{"name": "archive", "enableCache": true, "resendAlterQueue": true}, {"name": "archive_resend"}}, wantErr: "duplicate sink pipeline node name"},
+		{name: "disabled name ignored", props: []map[string]any{{"name": 42, "disable": true}, {"name": "archive"}}, want: []string{"sink_archive"}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			rule := &def.Rule{Options: defaultOption}
+			sinkType := tc.sinkType
+			if sinkType == "" {
+				sinkType = "log"
+			}
+			for _, props := range tc.props {
+				rule.Actions = append(rule.Actions, map[string]any{sinkType: props})
+			}
+			tp, err := topo.NewWithNameAndOptions("test", rule.Options)
+			require.NoError(t, err)
+			err = buildActions(tp, rule, nil, 1, nil)
+			if tc.wantErr != "" {
+				require.ErrorContains(t, err, tc.wantErr)
+				return
+			}
+			require.NoError(t, err)
+			var sinks []string
+			for _, targets := range tp.GetTopo().Edges {
+				for _, target := range targets {
+					if name, ok := target.(string); ok && strings.HasPrefix(name, "sink_") {
+						sinks = append(sinks, name)
+					}
+				}
+			}
+			require.ElementsMatch(t, tc.want, sinks)
+		})
+	}
+}
+
+func TestSinkNamesConflictWithUpstreamNodes(t *testing.T) {
+	for _, tc := range []struct {
+		name       string
+		sourceName string
+		sinkName   string
+		resend     bool
+		conflict   string
+	}{
+		{name: "source", sourceName: "src1", sinkName: "src1", conflict: "src1"},
+		{name: "SQL operator", sourceName: "src1", sinkName: "1_project", conflict: "1_project"},
+		{name: "generated transform", sourceName: "archive_0_transform", sinkName: "archive", conflict: "archive_0_transform"},
+		{name: "generated resend", sourceName: "archive_resend", sinkName: "archive", resend: true, conflict: "archive_resend"},
+		{name: "distinct names", sourceName: "src1", sinkName: "archive"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			tp, err := topo.NewWithNameAndOptions("test", defaultOption)
+			require.NoError(t, err)
+			si, err := io.Source("memory")
+			require.NoError(t, err)
+			src, err := node.NewSourceNode(tp.GetContext(), tc.sourceName, si, map[string]any{"datasource": "demo"}, defaultOption)
+			require.NoError(t, err)
+			tp.AddSrc(src)
+			project := Transform(&operator.ProjectOp{AllWildcard: true}, "1_project", defaultOption)
+			tp.AddOperator([]node.Emitter{src}, project)
+			rule := &def.Rule{
+				Options: defaultOption,
+				Actions: []map[string]any{{"log": map[string]any{
+					"name":             tc.sinkName,
+					"enableCache":      tc.resend,
+					"resendAlterQueue": tc.resend,
+				}}},
+			}
+			err = buildActions(tp, rule, []node.Emitter{project}, 1, nil)
+			if tc.conflict != "" {
+				require.EqualError(t, err, fmt.Sprintf("duplicate sink pipeline node name %q", tc.conflict))
+				return
+			}
+			require.NoError(t, err)
+		})
+	}
 }
