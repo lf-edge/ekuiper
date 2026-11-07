@@ -18,12 +18,11 @@ import (
 	"fmt"
 	"testing"
 
-	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
-
+	sqlmock "github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	sqlmock "github.com/DATA-DOG/go-sqlmock"
+	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
 
 func testProps() map[string]any {

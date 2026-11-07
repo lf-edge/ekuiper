@@ -132,7 +132,7 @@ func (s *lookupSource) Ping(ctx api.StreamContext, props map[string]any) error {
 		payload["dbName"] = s.c.Database
 	}
 	var out struct {
-		Code    int  `json:"code"`
+		Code    int `json:"code"`
 		Message string
 		Has     bool `json:"has"`
 	}

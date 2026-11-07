@@ -197,4 +197,3 @@ func TestPing(t *testing.T) {
 	defer ts2.Close()
 	assert.Error(t, s.Ping(mockContext.NewMockContext("test", "tt"), testProps(ts2.URL)))
 }
-

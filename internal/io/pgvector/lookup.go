@@ -46,9 +46,8 @@ import (
 	"strings"
 	"time"
 
-	_ "github.com/lib/pq"
-
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	_ "github.com/lib/pq"
 
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/util"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
@@ -66,11 +65,11 @@ type conf struct {
 }
 
 type lookupSource struct {
-	c        *conf
-	metric   vector.Metric
-	db       *sql.DB
-	dsn      string
-	op       string // pgvector distance operator for the configured metric
+	c      *conf
+	metric vector.Metric
+	db     *sql.DB
+	dsn    string
+	op     string // pgvector distance operator for the configured metric
 }
 
 const (
