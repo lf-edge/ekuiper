@@ -13,6 +13,7 @@
 - [Redis sink](./builtin/redis.md): 写入 Redis 。
 - [RedisPub sink](./builtin/redisPub.md): 输出到 Redis 消息频道。
 - [File sink](./builtin/file.md)： 写入文件。
+- [Parquet sink](./builtin/parquet.md)：写入 Parquet 文件。此动作仅在启用 parquet 或 full 构建标签时存在。
 - [Memory sink](./builtin/memory.md)：输出到 eKuiper 内存主题以形成规则管道。
 - [Log sink](./builtin/log.md)：写入日志，通常只用于调试。
 - [Nop sink](./builtin/nop.md)：不输出，用于性能测试。
