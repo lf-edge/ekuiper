@@ -52,6 +52,10 @@ type rpcComp struct {
 func (r *rpcComp) register() {}
 
 func (r *rpcComp) serve() {
+	if conf.Config.Basic.DisableRpc {
+		logger.Info("RPC service disabled")
+		return
+	}
 	// Start rpc service
 	server := new(Server)
 	portRpc := conf.Config.Basic.Port
@@ -68,6 +72,7 @@ func (r *rpcComp) serve() {
 		IdleTimeout:  time.Second * 60,
 		Handler:      rpcSrv,
 	}
+	logger.Infof("Starting RPC service on %s", srvRpc.Addr)
 	r.s = srvRpc
 	go func() {
 		if err = srvRpc.ListenAndServe(); err != nil && err != http.ErrServerClosed {

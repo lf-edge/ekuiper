@@ -171,14 +171,31 @@ The global time zone configuration based on the [IANA time zone database](https:
 
 > Note: To use time zone configuration in an alpine-based environment, you need to ensure that the time zone data has been properly installed (e.g. `apk add tzdata`).
 
+## Deployment trust boundary
+
+eKuiper is intended for a trusted internal network. Callers creating rules through REST or RPC are trusted administrators. Data sources, including MQTT and HTTP push, are assumed to provide trusted internal input. Sinks write to downstream systems with the permissions of their service accounts.
+
+For external networks or untrusted sources, operators must:
+
+- Enable `basic.authentication: true` and configure `basic.restTls` for REST access.
+- Isolate RPC port 20498 with a firewall or VPN, or set `basic.disableRpc: true`. REST authentication and TLS do not protect RPC; RPC has no authentication. Disabling RPC also disables CLI access.
+- Apply source-side ACLs and restrict who can publish or push data.
+- Use least-privilege downstream accounts, including TDengine accounts.
+- Use a dedicated directory for file sinks and restrict filesystem permissions.
+
+RPC, REST, HTTP ingestion, Prometheus and pprof default to `127.0.0.1`, including when their bind addresses are omitted or empty. To permit remote access, explicitly set the relevant address (`basic.ip`, `basic.restIp`, `source.httpServerIp`, `basic.prometheusIp` or `basic.pprofIp`) to an appropriate trusted interface IP and apply the controls above. Container port publishing and Kubernetes Services require a reachable container or Pod bind address. Existing explicit bind addresses remain effective.
+
+`basic.disableRpc` defaults to `false`, preserving local CLI access. When Prometheus shares the REST port, it uses the REST listener and `basic.restIp`; `basic.prometheusIp` applies only to a separate metrics listener.
+
 ## Cli Addr
 
 ```yaml
 basic:
   # CLI bind IP
-  ip: 0.0.0.0
+  ip: 127.0.0.1
   # CLI port
   port: 20498
+  disableRpc: false
 ```
 
 ## Rest Service Configuration
@@ -186,7 +203,7 @@ basic:
 ```yaml
 basic:
   # REST service bind IP
-  restIp: 0.0.0.0
+  restIp: 127.0.0.1
   # REST service port
   restPort: 9081
   restTls:
@@ -225,6 +242,7 @@ eKuiper can export metrics to prometheus if `prometheus` option is true. The pro
 ```yaml
 basic:
   prometheus: true
+  prometheusIp: 127.0.0.1
   prometheusPort: 20499
 ```
 

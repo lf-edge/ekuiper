@@ -161,14 +161,31 @@ timezone: UTC
 
 > 注意：在基于 alpine 的环境里使用时区配置，需要确保已经正确安装（`apk add tzdata`）了时区数据。
 
+## 部署信任边界
+
+eKuiper 面向可信内网部署。通过 REST 或 RPC 创建规则的调用者视为管理员，必须可信；MQTT、HTTP push 等数据源默认视为内网可信输入；sink 按服务账号权限写入下游。
+
+外网或不可信源场景由用户侧保障：
+
+- REST 启用 `basic.authentication: true` 并配置 `basic.restTls`。
+- RPC 20498 端口通过防火墙或 VPN 隔离，或设置 `basic.disableRpc: true`。REST 的认证和 TLS 不保护 RPC；RPC 没有认证。禁用 RPC 后 CLI 也不可用。
+- 源端配置 ACL，限制发布或推送数据的主体。
+- TDengine 等下游使用最小授权账号。
+- 文件类 sink 使用独立目录，并限制文件系统权限。
+
+RPC、REST、HTTP 数据接入、Prometheus 和 pprof 的默认监听地址均为 `127.0.0.1`，地址省略或留空时也使用此默认值。需要远程接入时，显式将对应地址（`basic.ip`、`basic.restIp`、`source.httpServerIp`、`basic.prometheusIp` 或 `basic.pprofIp`）设为合适的可信网卡 IP，并落实上述措施。容器端口映射和 Kubernetes Service 需要可达的容器或 Pod 监听地址。已有显式地址配置保持有效。
+
+`basic.disableRpc` 默认为 `false`，保留本机 CLI 访问。Prometheus 与 REST 共用端口时使用 REST 监听器及 `basic.restIp`；`basic.prometheusIp` 仅适用于独立指标监听器。
+
 ## Cli 地址
 
 ```yaml
 basic:
   # CLI 绑定 IP
-  ip: 0.0.0.0
+  ip: 127.0.0.1
   # CLI port
   port: 20498
+  disableRpc: false
 ```
 
 ## REST 服务配置
@@ -176,7 +193,7 @@ basic:
 ```yaml
 basic:
   # REST service 绑定 IP
-  restIp: 0.0.0.0
+  restIp: 127.0.0.1
   # REST service port
   restPort: 9081
   restTls:
@@ -215,6 +232,7 @@ basic:
 ```yaml
 basic:
   prometheus: true
+  prometheusIp: 127.0.0.1
   prometheusPort: 20499
 ```
 

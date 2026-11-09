@@ -157,11 +157,11 @@ basic:
   # Maximum file storage hours
   maxAge: 72
   # CLI ip
-  ip: 0.0.0.0
+  ip: 127.0.0.1
   # CLI port
   port: 20498
   # REST service ip
-  restIp: 0.0.0.0
+  restIp: 127.0.0.1
   # REST service port
   restPort: 59720
   # true|false, when true, will check the RSA jwt token for rest api

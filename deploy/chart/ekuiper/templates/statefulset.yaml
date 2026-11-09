@@ -95,10 +95,15 @@ spec:
           {{- if .Values.containerSecurityContext.enabled }}
           securityContext: {{- omit .Values.containerSecurityContext "enabled" | toYaml | nindent 12 }}
           {{- end }}
-          {{- if .Values.ekuiperEnv.enabled }}
+          {{- if or .Values.ekuiperEnv.enabled .Values.extraEnv }}
           env:
+          {{- if .Values.ekuiperEnv.enabled }}
           - name: {{ .Values.ekuiperEnv.key.mqttDefaultServer }}
             value: {{ .Values.ekuiperEnv.value.mqttDefaultServer }}
+          {{- end }}
+          {{- with .Values.extraEnv }}
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
           {{- end }}
           command:
           - /bin/sh
@@ -107,11 +112,26 @@ spec:
             mkdir -p /kuiper/plugins/functions /kuiper/plugins/portable /kuiper/plugins/sinks /kuiper/plugins/sources /kuiper/plugins/wasm
             /kuiper/bin/kuiperd
           readinessProbe:
+            {{- if .Values.readinessProbe }}
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
+            {{- else }}
+            {{- $restPort := index .Values "kuiperConfig" "kuiper.yaml" "basic" "restPort" }}
+            {{- $restIp := index .Values "kuiperConfig" "kuiper.yaml" "basic" "restIp" | default "127.0.0.1" }}
+            {{- if eq $restIp "127.0.0.1" }}
+            exec:
+              command:
+                - wget
+                - -q
+                - -O
+                - /dev/null
+                - {{ printf "http://127.0.0.1:%v/" ($restPort | default 9081) | quote }}
+            {{- else }}
             httpGet:
-              {{- $restPort := index .Values "kuiperConfig" "kuiper.yaml" "basic" "restPort" }}
               port: {{ $restPort | default 9081 }}
+            {{- end }}
             initialDelaySeconds: 5
             periodSeconds: 5
+            {{- end }}
           ports:
             {{- $restPort := index .Values "kuiperConfig" "kuiper.yaml" "basic" "restPort" }}
             - name: restapi

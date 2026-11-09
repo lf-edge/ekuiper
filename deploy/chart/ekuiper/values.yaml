@@ -18,6 +18,13 @@ serviceAccount:
   # If not set and create is true, a name is generated using the fullname template
   name: ""
 
+# -- Additional container environment variables, including valueFrom references.
+# If overriding the REST bind address, also set a matching readinessProbe.
+extraEnv: []
+
+# -- Override the default REST readiness probe (for example for TLS or Pod IP binding).
+readinessProbe: {}
+
 service:
   # -- service type
   type: ClusterIP
@@ -153,11 +160,13 @@ kuiperConfig:
       # Maximum log file count
       rotateCount: 3
       # CLI ip
-      ip: 0.0.0.0
+      ip: 127.0.0.1
       # CLI port
       port: 20498
+      # Disable the unauthenticated RPC service and CLI access
+      disableRpc: false
       # REST service ip
-      restIp: 0.0.0.0
+      restIp: 127.0.0.1
       # REST service port
       restPort: 9081
       # The global time zone from the IANA time zone database, or Local if not set.
@@ -169,6 +178,7 @@ kuiperConfig:
       #    keyfile: /var/https-server.key
       # Prometheus settings
       prometheus: false
+      prometheusIp: 127.0.0.1
       prometheusPort: 20499
       # pprof settings
       pprof: true
@@ -242,7 +252,7 @@ kuiperConfig:
     source:
       ## Configurations for the global http data server for httppush source
       # HTTP data service ip
-      httpServerIp: 0.0.0.0
+      httpServerIp: 127.0.0.1
       # HTTP data service port
       httpServerPort: 10081
       # httpServerTls:
