@@ -15,11 +15,17 @@
 package tdengine3
 
 import (
+	"database/sql"
+	"encoding/json"
 	"fmt"
+	"math"
+	"os"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/testx"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
@@ -260,5 +266,129 @@ func TestBuildSql(t *testing.T) {
 		} else if test.error == "" && !reflect.DeepEqual(test.expected, sql) {
 			t.Errorf("%d\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, test.expected, sql)
 		}
+	}
+}
+
+type streamNumber int
+
+func (streamNumber) String() string { return "1); DROP TABLE t; --" }
+
+func TestStreamValues(t *testing.T) {
+	for _, fields := range [][]string{nil, {"v"}} {
+		cfg := TaosConfig{Table: "t", STable: "st", TsFieldName: "ts", Fields: fields, TagFields: []string{"tag"}}
+		for _, tc := range []struct {
+			value any
+			want  string
+		}{
+			{`a\"), (now, "injected'); --`, `"a\\\"), (now, \"injected'); --"`},
+			{"line\n\r\t末尾\\", `"line\n\r\t末尾\\"`},
+			{nil, "NULL"},
+			{true, "true"},
+			{int64(-42), "-42"},
+			{uint64(42), "42"},
+			{streamNumber(7), "7"},
+			{float32(1.25), "1.25"},
+			{json.Number("1e2"), "1e2"},
+		} {
+			query, err := cfg.buildSql(testx.MockTuple{Map: map[string]any{"v": tc.value, "tag": tc.value}})
+			require.NoError(t, err)
+			assert.Equal(t, "INSERT INTO t (ts,v) USING st TAGS("+tc.want+") values (now,"+tc.want+")", query)
+		}
+		for _, value := range []any{math.NaN(), math.Inf(1), json.Number("1); --"), []byte("payload"), map[string]any{}, "nul\x00"} {
+			for _, field := range []string{"v", "tag"} {
+				data := map[string]any{"v": 1, "tag": 1}
+				data[field] = value
+				_, err := cfg.buildSql(testx.MockTuple{Map: data})
+				require.Error(t, err, "%s: %v", field, value)
+			}
+		}
+	}
+}
+
+func TestStreamTimestamps(t *testing.T) {
+	cfg := TaosConfig{Table: "t", TsFieldName: "ts", ProvideTs: true}
+	for _, tc := range []struct {
+		value any
+		want  string
+	}{
+		{int64(1737628594255), "1737628594255"},
+		{"1737628594255", "1737628594255"},
+		{json.Number("1737628594255"), "1737628594255"},
+		{"2025-01-23T09:16:34.255Z", `"2025-01-23T09:16:34.255Z"`},
+		{"2025-01-23 09:16:34.255", `"2025-01-23 09:16:34.255"`},
+		{`'2025-01-23 09:16:34.255'`, `"2025-01-23 09:16:34.255"`},
+		{`"2025-01-23T09:16:34.255Z"`, `"2025-01-23T09:16:34.255Z"`},
+	} {
+		query, err := cfg.buildSql(testx.MockTuple{Map: map[string]any{"ts": tc.value, "v": 1}})
+		require.NoError(t, err)
+		assert.Equal(t, "INSERT INTO t (ts,v) values ("+tc.want+",1)", query)
+	}
+	for _, value := range []any{
+		nil, true, "now", "0, 1); --", "2025-01-23\"), (now", math.NaN(),
+		`'2025-01-23 09:16:34.255"`, `'2025-01-23 09:16:34.255`,
+		`'2025-01-23 09:16:34.255', 1); --'`, `"2025-01-23T09:16:34.255Z", 1); --"`,
+		`''2025-01-23 09:16:34.255''`, `''`, `'now'`,
+	} {
+		_, err := cfg.buildSql(testx.MockTuple{Map: map[string]any{"ts": value, "v": 1}})
+		require.Error(t, err, "%v", value)
+	}
+}
+
+func TestStreamIdentifiers(t *testing.T) {
+	for _, name := range []string{"t", "Db.t_1", "`My table`", "db.`t;--`"} {
+		cfg := TaosConfig{Table: "{{.table}}", STable: "{{.stable}}", TsFieldName: "ts", TagFields: []string{"tag"}}
+		query, err := cfg.buildSql(testx.MockTuple{Map: map[string]any{"v": 1}, Template: map[string]string{"{{.table}}": name, "{{.stable}}": name}})
+		require.NoError(t, err)
+		assert.Contains(t, query, "INSERT INTO "+name+" (ts,v) USING "+name)
+	}
+	for _, name := range []string{"", "t; DROP TABLE t", "t (ts) values(now)--", "`a`b`", "`a\\`", "a.b.c", "1t", "`a\n`"} {
+		for _, template := range []string{"{{.table}}", "{{.stable}}"} {
+			cfg := TaosConfig{Table: "{{.table}}", STable: "{{.stable}}", TsFieldName: "ts", TagFields: []string{"tag"}}
+			props := map[string]string{"{{.table}}": "t", "{{.stable}}": "st"}
+			props[template] = name
+			_, err := cfg.buildSql(testx.MockTuple{Map: map[string]any{"v": 1}, Template: props})
+			require.Error(t, err, "%s: %q", template, name)
+		}
+	}
+	cfg := TaosConfig{Table: "t", TsFieldName: "ts"}
+	for _, name := range []string{"v) values(now, 1)--", "db.v", "`v`);--"} {
+		_, err := cfg.buildSql(testx.MockTuple{Map: map[string]any{name: 1}})
+		require.Error(t, err)
+	}
+}
+
+// Set TDENGINE_TEST_DSN to run against a disposable TDengine 3 instance.
+func TestStreamValuesRoundTrip(t *testing.T) {
+	dsn := os.Getenv("TDENGINE_TEST_DSN")
+	if dsn == "" {
+		t.Skip("TDENGINE_TEST_DSN is not set")
+	}
+	db, err := sql.Open("taosWS", dsn)
+	require.NoError(t, err)
+	defer db.Close()
+	name := fmt.Sprintf("ekuiper_values_%d", time.Now().UnixNano())
+	_, err = db.Exec("CREATE DATABASE " + name)
+	require.NoError(t, err)
+	defer func() {
+		_, err := db.Exec("DROP DATABASE " + name)
+		assert.NoError(t, err)
+	}()
+	_, err = db.Exec("CREATE STABLE " + name + ".st (ts TIMESTAMP, v NCHAR(256)) TAGS (label NCHAR(256))")
+	require.NoError(t, err)
+	ctx := mockContext.NewMockContext("roundtrip", "sink")
+	for i, value := range []string{`a\"), (now, "injected'); --`, "引号'\"和反斜杠\\", "line\n\r\tend", `\n`, `ends\`} {
+		table := fmt.Sprintf("%s.`t%d;--`", name, i)
+		timestamps := []any{
+			time.Now().UnixMilli(), "2025-01-23T09:16:34.255Z", "2025-01-23 09:16:34.255",
+			`'2025-01-23 09:16:34.255'`, `"2025-01-23T09:16:34.255Z"`,
+		}
+		cfg := &TaosConfig{Table: "{{.table}}", STable: "{{.stable}}", TsFieldName: "ts", TagFields: []string{"tag"}, ProvideTs: true}
+		sink := tdengineSink3{cfg: cfg, cli: db}
+		tuple := testx.MockTuple{Map: map[string]any{"ts": timestamps[i%len(timestamps)], "v": value, "tag": value}, Template: map[string]string{"{{.table}}": table, "{{.stable}}": name + ".st"}}
+		require.NoError(t, sink.Collect(ctx, tuple))
+		var gotValue, gotTag string
+		require.NoError(t, db.QueryRow("SELECT v, label FROM "+table).Scan(&gotValue, &gotTag))
+		assert.Equal(t, value, gotValue)
+		assert.Equal(t, value, gotTag)
 	}
 }
