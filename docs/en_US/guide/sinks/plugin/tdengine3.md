@@ -26,6 +26,12 @@ As the tdengine database requires a timestamp field in the table, the user must 
 | sTable      | String   | false    | The super table to be use, could be a [dynamic property](../overview.md#dynamic-properties).                                                                  |
 | tagFields   | []String | false    | The result fields to be used as the tag values in order. If sTable is specified, this is required.                                                            |
 
+Stream field and tag values are written as literals: strings are escaped, numbers and booleans retain their types, and null becomes SQL `NULL`. Composite values and non-finite numbers are rejected. Strings must not contain NUL.
+
+With `provideTs: true`, timestamps accept numbers, integer strings, RFC3339 strings, or date-time strings such as `2025-01-23 09:16:34.255`. Date-time strings enclosed in one matching pair of single or double quotes are also accepted and safely re-encoded. SQL expressions in timestamp data are not supported; use `provideTs: false` for the database-generated current time.
+
+Dynamic `table` and `sTable` results must be table names, optionally qualified by a database name. When `fields` is omitted, input keys must be column names. Unquoted names use ASCII letters, digits and underscores and must not start with a digit. Backtick-quoted names are also accepted, but cannot contain dots, backticks, backslashes or control characters. Static rule configuration remains trusted administrator input.
+
 Other common sink properties are supported. Please refer to the sink common properties for more information.
 
 ## Operation example
