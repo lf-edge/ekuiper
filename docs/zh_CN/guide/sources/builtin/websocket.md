@@ -53,7 +53,7 @@ CREATE STREAM demo'() with(CONF_KEY="default", datasource="/api/data", type="web
 source:
   ## Configurations for the global websocket server for websocket source
   # HTTP data service ip
-  httpServerIp: 0.0.0.0
+  httpServerIp: 127.0.0.1
   # HTTP data service port
   httpServerPort: 10081
   # httpServerTls:

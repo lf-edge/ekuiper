@@ -78,10 +78,17 @@ func InitConf() {
 	}
 	Config = &kc
 	if len(Config.Basic.Ip) == 0 {
-		Config.Basic.Ip = "0.0.0.0"
+		Config.Basic.Ip = "127.0.0.1"
 	}
 	if len(Config.Basic.RestIp) == 0 {
-		Config.Basic.RestIp = "0.0.0.0"
+		Config.Basic.RestIp = "127.0.0.1"
+	}
+
+	if Config.Basic.PrometheusIp == "" {
+		Config.Basic.PrometheusIp = "127.0.0.1"
+	}
+	if Config.Basic.PprofIp == "" {
+		Config.Basic.PprofIp = "127.0.0.1"
 	}
 
 	if time.Duration(Config.Basic.RulePatrolInterval) < time.Second {

@@ -44,7 +44,7 @@ To set up eKuiper as an Websocket endpoint, configure the server settings in `et
 source:
   ## Configurations for the global websocket server for websocket source
   # HTTP data service ip
-  httpServerIp: 0.0.0.0
+  httpServerIp: 127.0.0.1
   # HTTP data service port
   httpServerPort: 10081
   # httpServerTls:

@@ -17,7 +17,7 @@ To set up eKuiper as an HTTP endpoint, configure the server settings in `etc/sou
 source:
   ## Configurations for the global http data server for httppush source
   # HTTP data service ip
-  httpServerIp: 0.0.0.0
+  httpServerIp: 127.0.0.1
   # HTTP data service port
   httpServerPort: 10081
   # httpServerTls:
