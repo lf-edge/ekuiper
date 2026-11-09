@@ -37,7 +37,7 @@ func TestSourceConfValidate(t *testing.T) {
 		{
 			s: &SourceConf{},
 			e: &SourceConf{
-				HttpServerIp:   "0.0.0.0",
+				HttpServerIp:   "127.0.0.1",
 				HttpServerPort: 10081,
 			},
 			err: "invalidHttpServerPort:httpServerPort must between 0 and 65535",
@@ -55,7 +55,7 @@ func TestSourceConfValidate(t *testing.T) {
 				HttpServerPort: 99999,
 			},
 			e: &SourceConf{
-				HttpServerIp:   "0.0.0.0",
+				HttpServerIp:   "127.0.0.1",
 				HttpServerPort: 10081,
 			},
 			err: "invalidHttpServerPort:httpServerPort must between 0 and 65535",
@@ -68,7 +68,7 @@ func TestSourceConfValidate(t *testing.T) {
 				},
 			},
 			e: &SourceConf{
-				HttpServerIp:   "0.0.0.0",
+				HttpServerIp:   "127.0.0.1",
 				HttpServerPort: 9090,
 				HttpServerTls: &TlsConf{
 					Certfile: "certfile",

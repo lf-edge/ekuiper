@@ -315,7 +315,7 @@ func StartUp(Version string) {
 		restHttpType = "https"
 	}
 	stopSignal = make(chan struct{})
-	msg := fmt.Sprintf("Serving kuiper (version - %s) on port %d, and restful api on %s://%s.", Version, conf.Config.Basic.Port, restHttpType, cast.JoinHostPortInt(conf.Config.Basic.RestIp, conf.Config.Basic.RestPort))
+	msg := fmt.Sprintf("Serving kuiper (version - %s), restful api on %s://%s.", Version, restHttpType, cast.JoinHostPortInt(conf.Config.Basic.RestIp, conf.Config.Basic.RestPort))
 	logger.Info(msg)
 	fmt.Println(msg)
 

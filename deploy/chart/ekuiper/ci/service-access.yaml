@@ -1,0 +1,13 @@
+# CI uses the Pod IP explicitly so the Service can reach REST.
+# Production deployments must also apply appropriate access controls.
+extraEnv:
+  - name: KUIPER__BASIC__RESTIP
+    valueFrom:
+      fieldRef:
+        fieldPath: status.podIP
+readinessProbe:
+  httpGet:
+    path: /ping
+    port: 9081
+  initialDelaySeconds: 5
+  periodSeconds: 5
