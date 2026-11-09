@@ -16,9 +16,13 @@ package tdengine3
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
+	"math"
 	"reflect"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	_ "github.com/taosdata/driver-go/v3/taosWS"
@@ -132,6 +136,9 @@ func (cfg *TaosConfig) buildSql(item api.MessageTuple) (string, error) {
 	if dp, ok := item.(api.HasDynamicProps); ok {
 		temp, transformed := dp.DynamicProps(table)
 		if transformed {
+			if !isDataIdentifier(temp, true) {
+				return "", fmt.Errorf("invalid dynamic table name: %q", temp)
+			}
 			table = temp
 		}
 	}
@@ -140,6 +147,9 @@ func (cfg *TaosConfig) buildSql(item api.MessageTuple) (string, error) {
 	if dp, ok := item.(api.HasDynamicProps); ok {
 		temp, transformed := dp.DynamicProps(sTable)
 		if transformed {
+			if !isDataIdentifier(temp, true) {
+				return "", fmt.Errorf("invalid dynamic super table name: %q", temp)
+			}
 			sTable = temp
 		}
 	}
@@ -148,23 +158,24 @@ func (cfg *TaosConfig) buildSql(item api.MessageTuple) (string, error) {
 		if v, ok := mapData[cfg.TsFieldName]; !ok {
 			return "", fmt.Errorf("timestamp field not found : %s", cfg.TsFieldName)
 		} else {
+			value, err := sqlTimestamp(v)
+			if err != nil {
+				return "", fmt.Errorf("timestamp field %q: %w", cfg.TsFieldName, err)
+			}
 			keys = append(keys, cfg.TsFieldName)
-			vals = append(vals, fmt.Sprintf(`%v`, v))
+			vals = append(vals, value)
 		}
 	} else {
 		vals = append(vals, "now")
 		keys = append(keys, cfg.TsFieldName)
 	}
 
-	if len(cfg.TagFields) > 0 {
-		for _, v := range cfg.TagFields {
-			switch mapData[v].(type) {
-			case string:
-				tags = append(tags, fmt.Sprintf(`"%s"`, mapData[v]))
-			default:
-				tags = append(tags, fmt.Sprintf(`%v`, mapData[v]))
-			}
+	for _, k := range cfg.TagFields {
+		value, err := sqlValue(mapData[k])
+		if err != nil {
+			return "", fmt.Errorf("tag field %q: %w", k, err)
 		}
+		tags = append(tags, value)
 	}
 
 	if len(cfg.Fields) != 0 {
@@ -176,12 +187,12 @@ func (cfg *TaosConfig) buildSql(item api.MessageTuple) (string, error) {
 				continue
 			}
 			if v, ok := mapData[k]; ok {
-				keys = append(keys, k)
-				if reflect.String == reflect.TypeOf(v).Kind() {
-					vals = append(vals, fmt.Sprintf(`"%v"`, v))
-				} else {
-					vals = append(vals, fmt.Sprintf(`%v`, v))
+				value, err := sqlValue(v)
+				if err != nil {
+					return "", fmt.Errorf("field %q: %w", k, err)
 				}
+				keys = append(keys, k)
+				vals = append(vals, value)
 			} else {
 				return "", fmt.Errorf("field not found : %s", k)
 			}
@@ -194,12 +205,15 @@ func (cfg *TaosConfig) buildSql(item api.MessageTuple) (string, error) {
 			if contains(cfg.TagFields, k) {
 				continue
 			}
-			keys = append(keys, k)
-			if reflect.String == reflect.TypeOf(v).Kind() {
-				vals = append(vals, fmt.Sprintf(`"%v"`, v))
-			} else {
-				vals = append(vals, fmt.Sprintf(`%v`, v))
+			if !isDataIdentifier(k, false) {
+				return "", fmt.Errorf("invalid data field name: %q", k)
 			}
+			value, err := sqlValue(v)
+			if err != nil {
+				return "", fmt.Errorf("field %q: %w", k, err)
+			}
+			keys = append(keys, k)
+			vals = append(vals, value)
 		}
 	}
 
@@ -212,6 +226,112 @@ func (cfg *TaosConfig) buildSql(item api.MessageTuple) (string, error) {
 	}
 	sqlStr += " values (" + strings.Join(vals, ",") + ")"
 	return sqlStr, nil
+}
+
+// TDengine string literals use backslash escapes. Escape the backslash itself
+// as well as the delimiter so input cannot close the surrounding literal.
+var sqlStringEscaper = strings.NewReplacer(
+	`\`, `\\`, `"`, `\"`, "\n", `\n`, "\r", `\r`, "\t", `\t`,
+)
+
+func sqlValue(v any) (string, error) {
+	if v == nil {
+		return "NULL", nil
+	}
+	if n, ok := v.(json.Number); ok {
+		f, err := n.Float64()
+		if err != nil || !json.Valid([]byte(n)) || math.IsNaN(f) || math.IsInf(f, 0) {
+			return "", fmt.Errorf("invalid number: %q", n)
+		}
+		return string(n), nil
+	}
+	// Use the underlying primitive, never a Stringer implementation supplied by
+	// an input type. Unsupported values must not become raw SQL through fmt.
+	rv := reflect.ValueOf(v)
+	switch rv.Kind() {
+	case reflect.String:
+		s := rv.String()
+		if strings.IndexByte(s, 0) >= 0 {
+			return "", fmt.Errorf("string contains NUL")
+		}
+		return `"` + sqlStringEscaper.Replace(s) + `"`, nil
+	case reflect.Bool:
+		return strconv.FormatBool(rv.Bool()), nil
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return strconv.FormatInt(rv.Int(), 10), nil
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		return strconv.FormatUint(rv.Uint(), 10), nil
+	case reflect.Float32, reflect.Float64:
+		f := rv.Float()
+		if math.IsNaN(f) || math.IsInf(f, 0) {
+			return "", fmt.Errorf("non-finite number")
+		}
+		return strconv.FormatFloat(f, 'g', -1, rv.Type().Bits()), nil
+	default:
+		return "", fmt.Errorf("unsupported value type %T", v)
+	}
+}
+
+func sqlTimestamp(v any) (string, error) {
+	if v == nil {
+		return "", fmt.Errorf("timestamp is null")
+	}
+	if n, ok := v.(json.Number); ok {
+		v = string(n)
+	}
+	rv := reflect.ValueOf(v)
+	switch rv.Kind() {
+	case reflect.String:
+		s := rv.String()
+		if n, err := strconv.ParseInt(s, 10, 64); err == nil {
+			return strconv.FormatInt(n, 10), nil
+		}
+		// Older rules may supply an already quoted date. Validate its contents
+		// and encode it again instead of treating the supplied quotes as SQL.
+		if len(s) >= 2 && (s[0] == '\'' || s[0] == '"') && s[len(s)-1] == s[0] {
+			s = s[1 : len(s)-1]
+		}
+		for _, layout := range []string{time.RFC3339Nano, "2006-01-02 15:04:05.999999999", "2006-01-02T15:04:05.999999999"} {
+			if _, err := time.Parse(layout, s); err == nil {
+				return sqlValue(s)
+			}
+		}
+		return "", fmt.Errorf("invalid timestamp: %q", s)
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64,
+		reflect.Float32, reflect.Float64:
+		return sqlValue(v)
+	default:
+		return "", fmt.Errorf("unsupported timestamp type %T", v)
+	}
+}
+
+// Only stream-derived identifiers are checked. Static rule configuration is
+// trusted. Preserve TDengine's unquoted case folding and backtick quoting.
+func isDataIdentifier(name string, qualified bool) bool {
+	parts := strings.Split(name, ".")
+	if len(parts) > 2 || (!qualified && len(parts) != 1) {
+		return false
+	}
+	for _, part := range parts {
+		if len(part) == 0 {
+			return false
+		}
+		if len(part) >= 3 && part[0] == '`' && part[len(part)-1] == '`' {
+			for _, c := range part[1 : len(part)-1] {
+				if c == '`' || c == '\\' || c < ' ' || c == 127 {
+					return false
+				}
+			}
+			continue
+		}
+		for i, c := range []byte(part) {
+			if c != '_' && !(c >= 'a' && c <= 'z') && !(c >= 'A' && c <= 'Z') && !(i > 0 && c >= '0' && c <= '9') {
+				return false
+			}
+		}
+	}
+	return true
 }
 
 func contains(slice []string, target string) bool {
