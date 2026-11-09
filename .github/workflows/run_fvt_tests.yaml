@@ -347,7 +347,7 @@ jobs:
     - name: run kuiper for chart
       env:
         KUBECONFIG: "/etc/rancher/k3s/k3s.yaml"
-      timeout-minutes: 5
+      timeout-minutes: 10
       run: |
         version=$(git describe --tags --always --match 'v[0-9]*.[0-9]*.[0-9]*' | sed 's/^v//g')
         emqx_address=$(kubectl get svc --namespace default emqx -o jsonpath="{.spec.clusterIP}")
@@ -355,18 +355,22 @@ jobs:
         sudo docker save lfedge/ekuiper:$version -o kuier.tar.gz
         sudo k3s ctr image import kuier.tar.gz
 
-        sed -i -r "s/^appVersion: .*$/appVersion: \"${version}\"/g" deploy/chart/ekuiper/Chart.yaml
-        sed -i -r 's/  pullPolicy: .*$/  pullPolicy: Never/g' deploy/chart/ekuiper/values.yaml
+        # Verify the default loopback listener and in-container readiness probe first.
+        helm install ekuiper deploy/chart/ekuiper \
+          --set-string image.tag="$version" --set image.pullPolicy=Never \
+          --wait --timeout 120s
+        ekuiper_pod=$(kubectl get pod -l app.kubernetes.io/instance=ekuiper -o jsonpath="{.items[0].metadata.name}")
+        kubectl exec "$ekuiper_pod" -- wget -q -O /dev/null http://127.0.0.1:9081/ping
 
-        helm install ekuiper deploy/chart/ekuiper --debug --dry-run
-        helm install ekuiper deploy/chart/ekuiper
-        while [ "$(kubectl get pods -l app.kubernetes.io/name=ekuiper -o json | jq '.items[0].status.containerStatuses[] | select(.ready==true) | .containerID')" = "" ]; do
-            echo "=============================="
-            kubectl get pods
-            echo "=============================="
-            echo "waiting ekuiper started"
-            sleep 10
-        done
+        # Opt in to a reachable listener using the Downward API, then verify Service access.
+        helm upgrade ekuiper deploy/chart/ekuiper \
+          --set-string image.tag="$version" --set image.pullPolicy=Never \
+          -f deploy/chart/ekuiper/ci/service-access.yaml \
+          --wait --timeout 120s
+        kubectl rollout status statefulset/ekuiper --timeout=120s
+        ekuiper_pod=$(kubectl get pod -l app.kubernetes.io/instance=ekuiper -o jsonpath="{.items[0].metadata.name}")
+        pod_ip=$(kubectl get pod "$ekuiper_pod" -o jsonpath="{.status.podIP}")
+        test "$(kubectl exec "$ekuiper_pod" -- printenv KUIPER__BASIC__RESTIP)" = "$pod_ip"
         ekuiper_address=$(kubectl get svc --namespace default ekuiper -o jsonpath="{.spec.clusterIP}")
         if [ $(curl -w %{http_code} -fsSL -o /dev/null $ekuiper_address:9081) != 200 ];then
           ekuiper_pod=$(kubectl get pod -l app.kubernetes.io/instance=ekuiper -o jsonpath="{.items[0].metadata.name}")

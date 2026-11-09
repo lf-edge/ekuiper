@@ -155,6 +155,8 @@ jobs:
             docker logs ekuiper
             exit 1
         fi
+        # All official image variants must support the Helm loopback probe.
+        docker exec ekuiper wget -q -O /dev/null http://127.0.0.1:9081/
     - uses: docker/metadata-action@v5
       id: meta
       with:

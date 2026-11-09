@@ -18,6 +18,13 @@ serviceAccount:
   # If not set and create is true, a name is generated using the fullname template
   name: ""
 
+# -- Additional container environment variables, including valueFrom references.
+# If overriding the REST bind address, also set a matching readinessProbe.
+extraEnv: []
+
+# -- Override the default REST readiness probe (for example for TLS or Pod IP binding).
+readinessProbe: {}
+
 service:
   # -- service type
   type: ClusterIP
@@ -29,8 +36,6 @@ service:
       name: "ekuiper"
       # -- eKuiper port
       port: 20498
-      # Disable the unauthenticated RPC service and CLI access
-      disableRpc: false
     restapi:
       # -- eKuiper restapi port name
       name: "restapi"

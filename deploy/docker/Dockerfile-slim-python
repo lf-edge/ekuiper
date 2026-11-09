@@ -44,6 +44,11 @@ RUN pip wheel .
 
 FROM python:3.12-slim-bookworm
 
+# The Helm loopback readiness probe executes wget inside the container.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends wget \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY --from=python-builder /sdk/python /sdk/python
 WORKDIR /sdk/python
 RUN pip install *.whl

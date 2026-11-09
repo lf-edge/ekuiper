@@ -95,10 +95,15 @@ spec:
           {{- if .Values.containerSecurityContext.enabled }}
           securityContext: {{- omit .Values.containerSecurityContext "enabled" | toYaml | nindent 12 }}
           {{- end }}
-          {{- if .Values.ekuiperEnv.enabled }}
+          {{- if or .Values.ekuiperEnv.enabled .Values.extraEnv }}
           env:
+          {{- if .Values.ekuiperEnv.enabled }}
           - name: {{ .Values.ekuiperEnv.key.mqttDefaultServer }}
             value: {{ .Values.ekuiperEnv.value.mqttDefaultServer }}
+          {{- end }}
+          {{- with .Values.extraEnv }}
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
           {{- end }}
           command:
           - /bin/sh
