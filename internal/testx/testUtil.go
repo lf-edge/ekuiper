@@ -60,7 +60,7 @@ func InitBroker(id string) (string, func(), error) {
 	_ = server.AddHook(new(auth.AllowHook), nil)
 
 	// Create a TCP listener on a standard port.
-	tcp := listeners.NewTCP(listeners.Config{ID: id, Address: ":0"})
+	tcp := listeners.NewTCP(listeners.Config{ID: id, Address: "127.0.0.1:0"})
 	err := server.AddListener(tcp)
 	if err != nil {
 		return "", nil, err

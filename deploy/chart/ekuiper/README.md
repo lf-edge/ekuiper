@@ -23,6 +23,18 @@ helm install my-ekuiper oci://ghcr.io/lf-edge/ekuiper-charts/ekuiper
 helm uninstall my-ekuiper
 ```
 
+## Listener configuration
+
+Listeners default to `127.0.0.1`. Kubernetes Services cannot reach these listeners
+through the Pod IP. For remote access, explicitly configure the appropriate trusted
+interface IP under `kuiperConfig["kuiper.yaml"]` and enforce network access controls.
+Enable REST authentication and TLS for external access. Isolate RPC port 20498 with
+a firewall/VPN or set `basic.disableRpc: true`; this also disables the CLI.
+
+The default readiness probe runs inside the container for the loopback REST listener
+and requires `wget`. When configuring REST TLS or authentication, provide a suitable
+`readinessProbe` override for your deployment.
+
 ## Values
 
 | Key | Type | Default | Description |

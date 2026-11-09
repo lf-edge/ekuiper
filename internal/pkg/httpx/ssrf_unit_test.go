@@ -68,7 +68,7 @@ func TestIsInternalIP_SSRFTransitionAddresses(t *testing.T) {
 		{"ipv4 private 172", "172.16.0.1"},
 		{"ipv4 private 192", "192.168.1.1"},
 		{"ipv4 link-local metadata", "169.254.169.254"},
-		{"ipv4 unspecified", "0.0.0.0"},
+		{"ipv4 unspecified", net.IPv4zero.String()},
 		{"ipv4 multicast", "224.0.0.1"},
 		{"ipv4 cgnat", "100.64.0.1"},
 		{"ipv4 cgnat edge low", "100.64.0.0"},

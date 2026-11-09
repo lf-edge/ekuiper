@@ -34,6 +34,8 @@ basic:
   ip: 127.0.0.1
   # CLI port
   port: 20498
+  # Disable the unauthenticated RPC service and CLI access
+  disableRpc: false
   # REST service ip
   restIp: 127.0.0.1
   # REST service port
@@ -51,6 +53,7 @@ basic:
   #    keyfile: /var/https-server.key
   # Prometheus settings
   prometheus: false
+  prometheusIp: 127.0.0.1
   prometheusPort: 20499
   # pprof settings
   pprof: true

@@ -77,5 +77,5 @@ func main() {
 	http.HandleFunc("/alert", alert)
 	http.HandleFunc("/pull", pullSrv)
 
-	http.ListenAndServe(":9090", nil)
+	http.ListenAndServe("127.0.0.1:9090", nil)
 }

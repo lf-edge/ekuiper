@@ -102,8 +102,8 @@ Users can follow these steps to set up the environment.
 
 eKuiper subscribe messages by topic and by default edgex is using redis as message bus. This guide will use redis as
 example to show how to expose message bus.
-In the docker-compose file, find the redis service and in ports part change 127.0.0.1:6379
-to 0.0.0.0:6379, then restart all the services.
+In the docker-compose file, set the Redis port mapping to `127.0.0.1:6379:6379/tcp`,
+then restart the service.
 
 ```yaml
  database:
@@ -122,7 +122,7 @@ to 0.0.0.0:6379, then restart all the services.
    networks:
      edgex-network: { }
    ports:
-     - 0.0.0.0:6379:6379/tcp
+     - 127.0.0.1:6379:6379/tcp
    read_only: true
    restart: always
    security_opt:
@@ -140,16 +140,16 @@ the file locates in `etc/sources/edgex.yaml`.
 
 | message bus   | type  | protocol | server       | port |
 |---------------|-------|----------|--------------|------|
-| redis  server | redis | redis    | 10.65.38.224 | 6379 |
-| mqtt  broker  | mqtt  | tcp      | 10.65.38.224 | 1883 |
-| zemo mq       | zero  | tcp      | 10.65.38.224 | 5566 |
+| redis  server | redis | redis    | 127.0.0.1 | 6379 |
+| mqtt  broker  | mqtt  | tcp      | 127.0.0.1 | 1883 |
+| zemo mq       | zero  | tcp      | 127.0.0.1 | 5566 |
 
-Take the redis as example, the following config will let eKuiper connect to 10.65.38.224's 6379 port.
+Take the redis as example, the following config will let eKuiper connect to 127.0.0.1's 6379 port.
 
 ```yaml
 default:
   protocol: redis
-  server: 10.65.38.224
+  server: 127.0.0.1
   port: 6379
   topic: rules-events
   type: redis
@@ -159,9 +159,8 @@ default:
   messageType: event
 ```
 
-After changing this, redis will listen on the host 6379 port, developers can connect to the machine that edgex runs
-remotely by the server address.
-For example, the host ip address is 10.65.38.224 , users can connect to this machine by the ip address.
+Redis now listens on the host loopback interface. Connect locally using `127.0.0.1:6379`.
+For remote debugging, explicitly bind a trusted interface IP and restrict access with a firewall or VPN.
 
 #### enable eKuiper console log and set rest api port
 
@@ -180,11 +179,11 @@ basic:
   # Maximum file storage hours
   maxAge: 72
   # CLI ip
-  ip: 0.0.0.0
+  ip: 127.0.0.1
   # CLI port
   port: 20498
   # REST service ip
-  restIp: 0.0.0.0
+  restIp: 127.0.0.1
   # REST service port
   restPort: 59720
   # true|false, when true, will check the RSA jwt token for rest api

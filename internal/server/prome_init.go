@@ -24,6 +24,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
 
 func init() {
@@ -63,7 +64,7 @@ func (p *promeComp) serve() {
 			mux := http.NewServeMux()
 			mux.Handle("/metrics", promhttp.Handler())
 			srvPrometheus := &http.Server{
-				Addr:         fmt.Sprintf("0.0.0.0:%d", portPrometheus),
+				Addr:         cast.JoinHostPortInt(conf.Config.Basic.PrometheusIp, portPrometheus),
 				WriteTimeout: time.Second * 15,
 				ReadTimeout:  time.Second * 15,
 				IdleTimeout:  time.Second * 60,
@@ -75,7 +76,7 @@ func (p *promeComp) serve() {
 				}
 			}()
 			p.s = srvPrometheus
-			msg := fmt.Sprintf("Serving prometheus metrics on port http://localhost:%d/metrics", portPrometheus)
+			msg := fmt.Sprintf("Serving prometheus metrics on http://%s/metrics", srvPrometheus.Addr)
 			logger.Info(msg)
 			fmt.Println(msg)
 		}

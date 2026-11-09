@@ -38,7 +38,7 @@ func TestSourceSink(t *testing.T) {
 	// Allow all connections.
 	_ = server.AddHook(new(auth.AllowHook), nil)
 	// Create a TCP listener on a standard port.
-	tcp := listeners.NewTCP(listeners.Config{ID: "testcon", Address: ":2883"})
+	tcp := listeners.NewTCP(listeners.Config{ID: "testcon", Address: "127.0.0.1:2883"})
 	err := server.AddListener(tcp)
 	require.NoError(t, err)
 	go func() {

@@ -50,10 +50,12 @@ type KuiperConf struct {
 		TimeZone                string                `yaml:"timezone"`
 		Ip                      string                `yaml:"ip"`
 		Port                    int                   `yaml:"port"`
+		DisableRpc              bool                  `yaml:"disableRpc"`
 		RestIp                  string                `yaml:"restIp"`
 		RestPort                int                   `yaml:"restPort"`
 		RestTls                 *TlsConf              `yaml:"restTls"`
 		Prometheus              bool                  `yaml:"prometheus"`
+		PrometheusIp            string                `yaml:"prometheusIp"`
 		PrometheusPort          int                   `yaml:"prometheusPort"`
 		Pprof                   bool                  `yaml:"pprof"`
 		PprofIp                 string                `yaml:"pprofIp"`
@@ -184,7 +186,7 @@ type SourceConf struct {
 func (sc *SourceConf) Validate(logger api.Logger) error {
 	var errs error
 	if sc.HttpServerIp == "" {
-		sc.HttpServerIp = "0.0.0.0"
+		sc.HttpServerIp = "127.0.0.1"
 	}
 	if sc.HttpServerPort <= 0 || sc.HttpServerPort > 65535 {
 		logger.Warnf("invalid source.httpServerPort configuration %d, set to 10081", sc.HttpServerPort)

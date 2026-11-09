@@ -671,7 +671,7 @@ func (s *server) GetStatus(context.Context, *empty.Empty) (*wrappers.BoolValue, 
 }
 
 func TestGrpcService(t *testing.T) {
-	lis, err := net.Listen("tcp", ":50051")
+	lis, err := net.Listen("tcp", "127.0.0.1:50051")
 	if err != nil {
 		kconf.Log.Fatalf("failed to listen: %v", err)
 	}
