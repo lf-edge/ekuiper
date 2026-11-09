@@ -160,7 +160,7 @@ jobs:
       - name: Start Redpanda
         run: |
           docker run -d --name redpanda \
-            --network host \
+            -p 9092:9092 \
             docker.redpanda.com/redpandadata/redpanda:v24.3.6 \
             redpanda start \
             --overprovisioned \
@@ -169,7 +169,7 @@ jobs:
             --reserve-memory 0M \
             --node-id 0 \
             --check=false \
-            --kafka-addr PLAINTEXT://127.0.0.1:9092 \
+            --kafka-addr PLAINTEXT://0.0.0.0:9092 \
             --advertise-kafka-addr PLAINTEXT://127.0.0.1:9092 \
             --set redpanda.auto_create_topics_enabled=true
       - name: Wait for Redpanda

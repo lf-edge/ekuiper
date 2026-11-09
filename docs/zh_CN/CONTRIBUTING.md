@@ -80,7 +80,8 @@ import (
 #### 暴露消息总线
 
 eKuiper 按主题订阅消息，默认情况下，edgex 使用 redis 作为消息总线。本指南将使用 redis 作为示例来展示如何公开消息总线。
-在 docker-compose 文件中，将 redis 服务的端口映射设为 `127.0.0.1:6379:6379/tcp`，然后重启服务。
+在 docker-compose 文件中，找到 redis 服务并在端口部分更改 127.0.0.1:6379
+到 0.0.0.0:6379，然后重启所有服务。
 
 ```yaml
  database:
@@ -99,7 +100,7 @@ eKuiper 按主题订阅消息，默认情况下，edgex 使用 redis 作为消�
     networks:
       edgex-network: {}
     ports:
-    - 127.0.0.1:6379:6379/tcp
+    - 0.0.0.0:6379:6379/tcp
     read_only: true
     restart: always
     security_opt:
@@ -117,16 +118,16 @@ eKuiper 按主题订阅消息，默认情况下，edgex 使用 redis 作为消�
 
 | message bus   | type  | protocol | server       | port |
 |---------------|-------|----------|--------------|------|
-| redis  server | redis | redis    | 127.0.0.1 | 6379 |
-| mqtt  broker  | mqtt  | tcp      | 127.0.0.1 | 1883 |
-| zemo mq       | zero  | tcp      | 127.0.0.1 | 5566 |
+| redis  server | redis | redis    | 10.65.38.224 | 6379 |
+| mqtt  broker  | mqtt  | tcp      | 10.65.38.224 | 1883 |
+| zemo mq       | zero  | tcp      | 10.65.38.224 | 5566 |
 
-以 redis 为例，下面的配置会让 eKuiper 连接到 127.0.0.1 的 6379 端口。
+以 redis 为例，下面的配置会让 eKuiper 连接到 10.65.38.224 的 6379 端口。
 
 ```yaml
 default:
   protocol: redis
-  server: 127.0.0.1
+  server: 10.65.38.224
   port: 6379
   topic: rules-events
   type: redis
@@ -136,8 +137,8 @@ default:
   messageType: event
 ```
 
-修改后 Redis 仅在主机本地监听 6379 端口，开发者可通过 `127.0.0.1:6379` 连接。
-需要远程调试时，显式绑定可信网卡 IP，并使用防火墙或 VPN 限制访问。
+修改后 redis 会监听主机的 6379 端口，开发者可以通过服务器地址连接到 edgex 远程运行的机器。
+例如机器 ip 地址为 10.65.38.224 ，用户可以通过该 ip 地址连接。
 
 #### 打开 eKuiper 的控制台日志，修改 rest 端口
 

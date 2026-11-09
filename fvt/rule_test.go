@@ -263,7 +263,7 @@ func (s *RuleTestSuite) TestUpsert() {
 		// Allow all connections.
 		_ = server.AddHook(new(auth.AllowHook), nil)
 		// Create a TCP listener on a standard port.
-		tcp := listeners.NewTCP(listeners.Config{ID: "upsert0", Address: "127.0.0.1:4883"})
+		tcp := listeners.NewTCP(listeners.Config{ID: "upsert0", Address: ":4883"})
 		err := server.AddListener(tcp)
 		s.Require().NoError(err)
 		go func() {

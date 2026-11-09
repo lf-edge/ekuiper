@@ -144,9 +144,9 @@ func TestToString(t *testing.T) {
 		},
 		{
 			// Stringer test case
-			net.IPv4(127, 0, 0, 1),
+			net.IPv4(0, 0, 0, 0),
 			CONVERT_ALL,
-			"127.0.0.1",
+			"0.0.0.0",
 		},
 		{
 			errors.New("test"),

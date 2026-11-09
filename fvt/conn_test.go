@@ -111,7 +111,7 @@ func (s *ConnectionTestSuite) TestConnStatus() {
 		// Allow all connections.
 		_ = server.AddHook(new(auth.AllowHook), nil)
 		// Create a TCP listener on a standard port.
-		tcp = listeners.NewTCP(listeners.Config{ID: "testcon", Address: "127.0.0.1:3883"})
+		tcp = listeners.NewTCP(listeners.Config{ID: "testcon", Address: ":3883"})
 		err := server.AddListener(tcp)
 		s.Require().NoError(err)
 		go func() {
@@ -201,7 +201,7 @@ func (s *ConnectionTestSuite) TestConnStatus() {
 		// Allow all connections.
 		_ = server.AddHook(new(auth.AllowHook), nil)
 		// Create a TCP listener on a standard port.
-		tcp = listeners.NewTCP(listeners.Config{ID: "testcon", Address: "127.0.0.1:3883"})
+		tcp = listeners.NewTCP(listeners.Config{ID: "testcon", Address: ":3883"})
 		err := server.AddListener(tcp)
 		s.Require().NoError(err)
 		go func() {
@@ -523,7 +523,7 @@ func (s *ConnectionTestSuite) TestSharedConnE2E() {
 	// Start a local mock MQTT broker for this test.
 	mockBroker := mqtt.New(nil)
 	_ = mockBroker.AddHook(new(auth.AllowHook), nil)
-	mockTCP := listeners.NewTCP(listeners.Config{ID: "sharedE2EBroker", Address: "127.0.0.1:1884"})
+	mockTCP := listeners.NewTCP(listeners.Config{ID: "sharedE2EBroker", Address: ":1884"})
 	s.Require().NoError(mockBroker.AddListener(mockTCP))
 	go func() { _ = mockBroker.Serve() }()
 	defer mockBroker.Close()
@@ -747,7 +747,7 @@ func (s *ConnectionTestSuite) TestSharedConnStaleSubscription() {
 	// Start a local mock MQTT broker for this test.
 	mockBroker := mqtt.New(nil)
 	_ = mockBroker.AddHook(new(auth.AllowHook), nil)
-	mockTCP := listeners.NewTCP(listeners.Config{ID: "staleBroker", Address: "127.0.0.1:1885"})
+	mockTCP := listeners.NewTCP(listeners.Config{ID: "staleBroker", Address: ":1885"})
 	s.Require().NoError(mockBroker.AddListener(mockTCP))
 	go func() { _ = mockBroker.Serve() }()
 	defer mockBroker.Close()

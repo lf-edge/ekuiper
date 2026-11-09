@@ -35,7 +35,7 @@ func TestMsgpackService(t *testing.T) {
 	// mock server
 	res := Resolver{"SayHello": reflect.ValueOf(SayHello), "object_detection": reflect.ValueOf(object_detection), "get_feature": reflect.ValueOf(get_feature), "getStatus": reflect.ValueOf(getStatus)}
 	serv := rpc.NewServer(res, true, nil)
-	l, _ := net.Listen("tcp", "127.0.0.1:50000")
+	l, _ := net.Listen("tcp", ":50000")
 	serv.Listen(l)
 	go serv.Run()
 	// Comment out because the bug in the msgpack rpc

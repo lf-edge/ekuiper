@@ -72,7 +72,7 @@ func TestV5MultiTopicSubscribe(t *testing.T) {
 	// Allow all connections.
 	_ = server.AddHook(new(auth.AllowHook), nil)
 	// Create a TCP listener on a standard port.
-	tcp := listeners.NewTCP(listeners.Config{ID: "testcon", Address: "127.0.0.1:12884"})
+	tcp := listeners.NewTCP(listeners.Config{ID: "testcon", Address: ":12884"})
 	err := server.AddListener(tcp)
 	require.NoError(t, err)
 	go func() {
@@ -122,7 +122,7 @@ func TestV5MultiTopicSubscribe(t *testing.T) {
 func TestV5ResubscribeSameTopic(t *testing.T) {
 	server := mqtt.New(nil)
 	_ = server.AddHook(new(auth.AllowHook), nil)
-	tcp := listeners.NewTCP(listeners.Config{ID: "testresub", Address: "127.0.0.1:12885"})
+	tcp := listeners.NewTCP(listeners.Config{ID: "testresub", Address: ":12885"})
 	require.NoError(t, server.AddListener(tcp))
 	go func() {
 		_ = server.Serve()

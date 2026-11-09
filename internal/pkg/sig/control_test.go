@@ -48,7 +48,7 @@ func TestInstances(ta *testing.T) {
 		}
 		server = mqtt.New(nil)
 		_ = server.AddHook(new(auth.AllowHook), nil)
-		tcp = listeners.NewTCP(listeners.Config{ID: "testcon", Address: "127.0.0.1:4883"})
+		tcp = listeners.NewTCP(listeners.Config{ID: "testcon", Address: ":4883"})
 		err := server.AddListener(tcp)
 		if err != nil {
 			panic(err)

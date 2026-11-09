@@ -146,9 +146,10 @@ jobs:
     - name: Test docker image
       run: |
         # REST API binds to 127.0.0.1 by default for security.
-        # Share the runner network so the smoke test can use loopback.
-        docker run -d --network host --name ekuiper docker.io/lfedge/ekuiper
-        ip_address=127.0.0.1
+        # Expose it on all interfaces for the smoke test, which reaches it
+        # from the host via the container's bridge network address.
+        docker run -d -e KUIPER__BASIC__RESTIP=0.0.0.0 --name ekuiper docker.io/lfedge/ekuiper
+        ip_address=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ekuiper)
         sleep 5
         if ! curl ${ip_address}:9081  >/dev/null 2>&1; then
             echo "docker image failed"
@@ -264,9 +265,10 @@ jobs:
           plugin_name=$(echo ${PLUGIN##*/})
           
           # REST API binds to 127.0.0.1 by default for security.
-          # Share the runner network so plugin tests can use loopback.
-          container_id=$(docker run -u 0 --network host -e KUIPER__BASIC__ALLOWEXTERNALFILEACCESS=true -d -v $(pwd)/_plugins:/var/plugins docker.io/lfedge/ekuiper-${{ matrix.os[0] }})
-          ip_address=127.0.0.1
+          # Expose it on all interfaces for the test, which reaches it from
+          # the host via the container's bridge network address.
+          container_id=$(docker run -u 0 -e KUIPER__BASIC__RESTIP=0.0.0.0 -e KUIPER__BASIC__ALLOWEXTERNALFILEACCESS=true -d -v $(pwd)/_plugins:/var/plugins docker.io/lfedge/ekuiper-${{ matrix.os[0] }})
+          ip_address=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $container_id)
           os=$(docker exec -i ${container_id} sh -c "sed -n '/^ID=/p' /etc/os-release | sed -r 's/ID=(.*)/\1/g'" )
           sleep 5
           if ! curl ${ip_address}:9081  >/dev/null 2>&1; then echo "docker image failed"; exit 1; fi
