@@ -15,13 +15,19 @@
 package image
 
 import (
+	"bytes"
+	"image/jpeg"
+	"image/png"
 	"io/fs"
 	"os"
 	"path/filepath"
+	"runtime"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
@@ -303,4 +309,137 @@ func countFiles(dir string) (int, error) {
 		return nil
 	})
 	return count, err
+}
+
+func TestImagePathContainment(t *testing.T) {
+	for _, format := range []string{"png", "jpeg"} {
+		t.Run(format, func(t *testing.T) {
+			fixture := "ekuiper.jpg"
+			if format == "png" {
+				fixture = "../../../docs/en_US/wechat.png"
+			}
+			data, err := os.ReadFile(fixture)
+			require.NoError(t, err)
+			for _, key := range []string{"image", "图片", "sub/image", "../escape", "sub/../../escape", filepath.Join(t.TempDir(), "absolute")} {
+				t.Run(key, func(t *testing.T) {
+					base := t.TempDir()
+					dir := filepath.Join(base, "images")
+					require.NoError(t, os.MkdirAll(filepath.Join(dir, "sub"), 0o755))
+					sink := &imageSink{c: &c{Path: dir, ImageFormat: format}}
+					ctx := mockContext.NewMockContext("containment", "image")
+					err := sink.Collect(ctx, &xsql.Tuple{Message: map[string]any{key: data}})
+					if strings.Contains(key, "..") || filepath.IsAbs(key) {
+						require.Error(t, err)
+						count, err := countFiles(base)
+						require.NoError(t, err)
+						assert.Zero(t, count)
+						return
+					}
+					require.NoError(t, err)
+					files, err := filepath.Glob(filepath.Join(dir, key+"*."+format))
+					require.NoError(t, err)
+					require.Len(t, files, 1)
+					encoded, err := os.ReadFile(files[0])
+					require.NoError(t, err)
+					if format == "png" {
+						_, err = png.Decode(bytes.NewReader(encoded))
+					} else {
+						_, err = jpeg.Decode(bytes.NewReader(encoded))
+					}
+					require.NoError(t, err)
+				})
+			}
+		})
+	}
+}
+
+func TestImageSymlinkContainment(t *testing.T) {
+	data, err := os.ReadFile("../../../docs/en_US/wechat.png")
+	require.NoError(t, err)
+	base := t.TempDir()
+	dir := filepath.Join(base, "images")
+	outside := filepath.Join(base, "outside")
+	require.NoError(t, os.Mkdir(dir, 0o755))
+	require.NoError(t, os.Mkdir(outside, 0o755))
+	sentinel := filepath.Join(outside, "sentinel.png")
+	require.NoError(t, os.WriteFile(sentinel, []byte("unchanged"), 0o600))
+	symlink := func(target, link string) {
+		t.Helper()
+		err := os.Symlink(target, link)
+		if err != nil && runtime.GOOS == "windows" {
+			t.Skipf("symlink unavailable: %v", err)
+		}
+		require.NoError(t, err)
+	}
+	symlink(outside, filepath.Join(dir, "link"))
+	sink := &imageSink{c: &c{Path: dir, ImageFormat: "png"}}
+	require.Error(t, sink.saveFiles(map[string]any{"link/escape": data}))
+	entries, err := os.ReadDir(outside)
+	require.NoError(t, err)
+	require.Len(t, entries, 1)
+
+	// Exercise an existing file symlink with a deterministic name at the writer.
+	symlink(sentinel, filepath.Join(dir, "existing.png"))
+	root, err := os.OpenRoot(dir)
+	require.NoError(t, err)
+	defer root.Close()
+	require.Error(t, sink.saveFile(root, data, "existing.png"))
+	content, err := os.ReadFile(sentinel)
+	require.NoError(t, err)
+	assert.Equal(t, "unchanged", string(content))
+
+	// Links within the output tree must use relative targets, even when an
+	// absolute target would point to another directory inside the same tree.
+	inside := filepath.Join(dir, "inside")
+	require.NoError(t, os.Mkdir(inside, 0o755))
+	symlink(inside, filepath.Join(dir, "absolute-link"))
+	require.Error(t, sink.saveFiles(map[string]any{"absolute-link/image": data}))
+	entries, err = os.ReadDir(inside)
+	require.NoError(t, err)
+	require.Empty(t, entries)
+	symlink("inside", filepath.Join(dir, "relative-link"))
+	require.NoError(t, sink.saveFiles(map[string]any{"relative-link/image": data}))
+	entries, err = os.ReadDir(inside)
+	require.NoError(t, err)
+	require.Len(t, entries, 1)
+	encoded, err := os.ReadFile(filepath.Join(inside, entries[0].Name()))
+	require.NoError(t, err)
+	_, err = png.Decode(bytes.NewReader(encoded))
+	require.NoError(t, err)
+
+	// An administrator-configured directory may itself be a symlink.
+	alias := filepath.Join(base, "alias")
+	symlink(dir, alias)
+	sink.c.Path = alias
+	require.NoError(t, sink.saveFiles(map[string]any{"normal": data}))
+	files, err := filepath.Glob(filepath.Join(dir, "normal*.png"))
+	require.NoError(t, err)
+	assert.Len(t, files, 1)
+}
+
+func TestImageOutputDirectory(t *testing.T) {
+	base := t.TempDir()
+	missing := filepath.Join(base, "missing")
+	sink := &imageSink{c: &c{Path: missing, ImageFormat: "png"}}
+	for _, input := range []map[string]any{nil, {}} {
+		require.NoError(t, sink.saveFiles(input))
+		_, err := os.Stat(missing)
+		require.True(t, os.IsNotExist(err))
+	}
+	data, err := os.ReadFile("../../../docs/en_US/wechat.png")
+	require.NoError(t, err)
+	err = sink.saveFiles(map[string]any{"image": data})
+	require.Error(t, err)
+	require.True(t, os.IsNotExist(err))
+
+	file := filepath.Join(base, "file")
+	require.NoError(t, os.WriteFile(file, []byte("unchanged"), 0o600))
+	sink.c.Path = file
+	require.Error(t, sink.saveFiles(map[string]any{"image": data}))
+	content, err := os.ReadFile(file)
+	require.NoError(t, err)
+	assert.Equal(t, "unchanged", string(content))
+	entries, err := os.ReadDir(base)
+	require.NoError(t, err)
+	require.Len(t, entries, 1)
 }
