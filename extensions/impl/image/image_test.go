@@ -416,3 +416,30 @@ func TestImageSymlinkContainment(t *testing.T) {
 	require.NoError(t, err)
 	assert.Len(t, files, 1)
 }
+
+func TestImageOutputDirectory(t *testing.T) {
+	base := t.TempDir()
+	missing := filepath.Join(base, "missing")
+	sink := &imageSink{c: &c{Path: missing, ImageFormat: "png"}}
+	for _, input := range []map[string]any{nil, {}} {
+		require.NoError(t, sink.saveFiles(input))
+		_, err := os.Stat(missing)
+		require.True(t, os.IsNotExist(err))
+	}
+	data, err := os.ReadFile("../../../docs/en_US/wechat.png")
+	require.NoError(t, err)
+	err = sink.saveFiles(map[string]any{"image": data})
+	require.Error(t, err)
+	require.True(t, os.IsNotExist(err))
+
+	file := filepath.Join(base, "file")
+	require.NoError(t, os.WriteFile(file, []byte("unchanged"), 0o600))
+	sink.c.Path = file
+	require.Error(t, sink.saveFiles(map[string]any{"image": data}))
+	content, err := os.ReadFile(file)
+	require.NoError(t, err)
+	assert.Equal(t, "unchanged", string(content))
+	entries, err := os.ReadDir(base)
+	require.NoError(t, err)
+	require.Len(t, entries, 1)
+}
