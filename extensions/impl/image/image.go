@@ -146,7 +146,7 @@ func (m *imageSink) getSuffix() string {
 	return fmt.Sprintf(`%d-%d-%d_%d-%d-%d-%d`, year, month, day, hour, minute, second, nsecond)
 }
 
-func (m *imageSink) saveFile(b []byte, fpath string) error {
+func (m *imageSink) saveFile(root *os.Root, b []byte, fname string) error {
 	reader := bytes.NewReader(b)
 	switch m.c.ImageFormat {
 	case "png":
@@ -154,14 +154,14 @@ func (m *imageSink) saveFile(b []byte, fpath string) error {
 		if err != nil {
 			return err
 		}
-		fp, err := os.Create(fpath)
+		fp, err := root.OpenFile(fname, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0o666)
 		if nil != err {
 			return err
 		}
 		defer fp.Close()
 		err = png.Encode(fp, img)
 		if err != nil {
-			os.Remove(fpath)
+			root.Remove(fname)
 			return err
 		}
 	case "jpeg":
@@ -169,14 +169,14 @@ func (m *imageSink) saveFile(b []byte, fpath string) error {
 		if err != nil {
 			return err
 		}
-		fp, err := os.Create(fpath)
+		fp, err := root.OpenFile(fname, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0o666)
 		if nil != err {
 			return err
 		}
 		defer fp.Close()
 		err = jpeg.Encode(fp, img, nil)
 		if err != nil {
-			os.Remove(fpath)
+			root.Remove(fname)
 			return err
 		}
 	default:
@@ -186,6 +186,15 @@ func (m *imageSink) saveFile(b []byte, fpath string) error {
 }
 
 func (m *imageSink) saveFiles(images map[string]interface{}) error {
+	if len(images) == 0 {
+		return nil
+	}
+	// Anchor writes to the configured directory, including symlink resolution.
+	root, err := os.OpenRoot(m.c.Path)
+	if err != nil {
+		return err
+	}
+	defer root.Close()
 	for k, v := range images {
 		image, ok := v.([]byte)
 		if !ok {
@@ -193,8 +202,10 @@ func (m *imageSink) saveFiles(images map[string]interface{}) error {
 		}
 		suffix := m.getSuffix()
 		fname := fmt.Sprintf(`%s%s.%s`, k, suffix, m.c.ImageFormat)
-		fpath := filepath.Join(m.c.Path, fname)
-		err := m.saveFile(image, fpath)
+		if !filepath.IsLocal(fname) {
+			return fmt.Errorf("invalid image filename %q: must stay within the configured directory", fname)
+		}
+		err := m.saveFile(root, image, fname)
 		if err != nil {
 			return err
 		}
