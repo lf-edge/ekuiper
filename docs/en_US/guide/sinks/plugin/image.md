@@ -23,6 +23,8 @@ Restart the eKuiper server to activate the plugin.
 
 Other common sink properties are supported. Please refer to the [sink common properties](../overview.md#common-properties) for more information.
 
+Image filenames consist of the input field name, a timestamp and the image extension. Output files must remain inside the configured `path`: absolute filenames, parent traversal outside the directory and symlinks pointing outside it are rejected. Relative paths within the directory are supported when their parent directories already exist. Symlinks traversed beneath `path` must have relative targets that stay within the directory; absolute symlink targets are rejected even when they point inside it. The administrator-configured `path` retains its existing absolute or relative path semantics and may itself be a symlink. Use a dedicated directory for each image sink.
+
 ## Usage example
 
 The following example demonstrates how to receive pictures and save them to the folder `/tmp`. When the number of pictures exceeds 1000, the earlier pictures will be deleted. When the pictures are saved for more than 72 hours, the timeout pictures will be deleted.
