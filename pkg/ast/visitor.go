@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2026 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -86,6 +86,11 @@ func Walk(v Visitor, node Node) {
 		Walk(v, n.TriggerCondition)
 		Walk(v, n.BeginCondition)
 		Walk(v, n.EmitCondition)
+		if n.PartitionExpr != nil {
+			for _, expr := range n.PartitionExpr.Exprs {
+				Walk(v, expr)
+			}
+		}
 
 	case SortFields:
 		for _, sf := range n {

@@ -1,4 +1,4 @@
-// Copyright 2024-2025 EMQ Technologies Co., Ltd.
+// Copyright 2024-2026 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -366,5 +366,79 @@ func TestStreamJoinTableLookup(t *testing.T) {
 		require.NoError(t, err)
 		fmt.Println(explain)
 		require.Equal(t, tc.explain, explain, tc.sql)
+	}
+}
+
+func TestExplainWindowPartition(t *testing.T) {
+	kv, err := store.GetKV("stream")
+	require.NoError(t, err)
+	require.NoError(t, prepareStream())
+	testcases := []struct {
+		sql     string
+		explain string
+	}{
+		{
+			sql: `SELECT a FROM stream GROUP BY SessionWindow(ss, 2, 1) OVER (PARTITION BY b)`,
+			explain: `{"op":"ProjectPlan_0","info":"Fields:[ stream.a ]"}
+	{"op":"WindowPlan_1","info":"{ length:2, windowType:SESSION_WINDOW, limit: 0 }"}
+			{"op":"DataSourcePlan_2","info":"StreamName: stream, StreamFields:[ a, b ]"}`,
+		},
+		{
+			sql: `SELECT a FROM stream GROUP BY StateWindow(a > 1, a > 5) OVER (PARTITION BY b)`,
+			explain: `{"op":"ProjectPlan_0","info":"Fields:[ stream.a ]"}
+	{"op":"WindowPlan_1","info":"{ length:0, windowType:, limit: 0 }"}
+			{"op":"DataSourcePlan_2","info":"StreamName: stream, StreamFields:[ a, b ]"}`,
+		},
+	}
+	for _, tc := range testcases {
+		stmt, err := xsql.NewParser(strings.NewReader(tc.sql)).Parse()
+		require.NoError(t, err)
+		p, err := CreateLogicalPlan(stmt, &def.RuleOption{}, kv)
+		require.NoError(t, err)
+		explain, err := ExplainFromLogicalPlan(p, "")
+		require.NoError(t, err)
+		require.Equal(t, tc.explain, explain, tc.sql)
+	}
+}
+
+func TestWindowPartitionValidation(t *testing.T) {
+	kv, err := store.GetKV("stream")
+	require.NoError(t, err)
+	require.NoError(t, prepareStream())
+	unsupported := "partition by is only supported for state window and session window"
+	testcases := []struct {
+		sql string
+		err string
+	}{
+		{
+			sql: `SELECT a FROM stream GROUP BY TumblingWindow(ss, 2) OVER (PARTITION BY b)`,
+			err: unsupported,
+		},
+		{
+			sql: `SELECT a FROM stream GROUP BY HoppingWindow(ss, 2, 1) OVER (PARTITION BY b)`,
+			err: unsupported,
+		},
+		{
+			sql: `SELECT a FROM stream GROUP BY SlidingWindow(ss, 2) OVER (PARTITION BY b)`,
+			err: unsupported,
+		},
+		{
+			sql: `SELECT a FROM stream GROUP BY CountWindow(2) OVER (PARTITION BY b)`,
+			err: unsupported,
+		},
+		{
+			sql: `SELECT a FROM stream GROUP BY SessionWindow(ss, 2, 1) OVER (PARTITION BY c)`,
+			err: "unknown field c",
+		},
+		{
+			sql: `SELECT a FROM stream GROUP BY StateWindow(a > 1, a > 5) OVER (PARTITION BY c)`,
+			err: "unknown field c",
+		},
+	}
+	for _, tc := range testcases {
+		stmt, err := xsql.NewParser(strings.NewReader(tc.sql)).Parse()
+		require.NoError(t, err, tc.sql)
+		_, err = CreateLogicalPlan(stmt, &def.RuleOption{}, kv)
+		require.EqualError(t, err, tc.err, tc.sql)
 	}
 }
