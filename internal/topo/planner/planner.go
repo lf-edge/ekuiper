@@ -1,4 +1,4 @@
-// Copyright 2022-2025 EMQ Technologies Co., Ltd.
+// Copyright 2022-2026 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -479,8 +479,8 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *def.RuleOption, sources ma
 			PartitionExpr:    t.PartitionExpr,
 			StateFuncs:       t.stateFuncs,
 		}
-		// state window only support v2 window
-		if wc.Type == ast.STATE_WINDOW {
+		// state window and partitioned session window only support v2 window
+		if wc.Type == ast.STATE_WINDOW || (wc.Type == ast.SESSION_WINDOW && wc.PartitionExpr != nil) {
 			op, err = node.NewWindowV2Op(fmt.Sprintf("%d_window", newIndex), wc, options)
 			if err != nil {
 				return nil, 0, err
@@ -651,6 +651,9 @@ func createLogicalPlanFull(stmt *ast.SelectStatement, opt *def.RuleOption, store
 		if w != nil {
 			if len(children) == 0 {
 				return nil, nil, nil, errors.New("cannot run window for TABLE sources")
+			}
+			if w.PartitionExpr != nil && w.WindowType != ast.STATE_WINDOW && w.WindowType != ast.SESSION_WINDOW {
+				return nil, nil, nil, errors.New("partition by is only supported for state window and session window")
 			}
 			if len(rewriteRes.incAggFields) > 0 {
 				incWp := IncWindowPlan{

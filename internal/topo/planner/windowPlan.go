@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2026 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -137,6 +137,11 @@ func (p *WindowPlan) PruneColumns(fields []ast.Expr) error {
 	f := getFields(p.condition)
 	f = append(f, getFields(p.triggerCondition)...)
 	f = append(f, getFields(p.collectCondition)...)
+	if p.PartitionExpr != nil {
+		for _, expr := range p.PartitionExpr.Exprs {
+			f = append(f, getFields(expr)...)
+		}
+	}
 	return p.baseLogicalPlan.PruneColumns(append(fields, f...))
 }
 
