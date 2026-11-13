@@ -1,0 +1,227 @@
+{
+  "about": {
+    "trial": true,
+    "author": {
+      "name": "NopeCharon",
+      "email": "115794254+NopeCharon@users.noreply.github.com",
+      "company": "personal",
+      "website": "https://github.com/NopeCharon"
+    },
+    "helpUrl": {
+      "en_US": "https://ekuiper.org/docs/en/latest/guide/sinks/plugin/rabbitmq.html",
+      "zh_CN": "https://ekuiper.org/docs/zh/latest/guide/sinks/plugin/rabbitmq.html"
+    },
+    "description": {
+      "en_US": "The sink publishes the results to a RabbitMQ exchange.",
+      "zh_CN": "该动作将结果发布到 RabbitMQ 交换机。"
+    }
+  },
+  "libs": [
+    "github.com/rabbitmq/amqp091-go@v1.16.0"
+  ],
+  "properties": [
+    {
+      "name": "server",
+      "default": "amqp://127.0.0.1:5672/",
+      "optional": false,
+      "control": "text",
+      "type": "string",
+      "hint": {
+        "en_US": "The AMQP URI of the RabbitMQ server, such as amqp://127.0.0.1:5672/ or amqps://127.0.0.1:5671/vhost. Use amqps:// to connect with TLS.",
+        "zh_CN": "RabbitMQ 服务器的 AMQP URI，例如 amqp://127.0.0.1:5672/ 或 amqps://127.0.0.1:5671/vhost。使用 amqps:// 以通过 TLS 连接。"
+      },
+      "label": {
+        "en_US": "Server",
+        "zh_CN": "服务器地址"
+      }
+    },
+    {
+      "name": "username",
+      "default": "",
+      "optional": true,
+      "control": "text",
+      "type": "string",
+      "hint": {
+        "en_US": "The username to connect to the server. It overrides the user in the server URI.",
+        "zh_CN": "连接服务器的用户名，会覆盖服务器 URI 中的用户。"
+      },
+      "label": {
+        "en_US": "Username",
+        "zh_CN": "用户名"
+      }
+    },
+    {
+      "name": "password",
+      "default": "",
+      "optional": true,
+      "control": "text",
+      "type": "string",
+      "hint": {
+        "en_US": "The password to connect to the server.",
+        "zh_CN": "连接服务器的密码。"
+      },
+      "label": {
+        "en_US": "Password",
+        "zh_CN": "密码"
+      }
+    },
+    {
+      "name": "exchange",
+      "default": "",
+      "optional": true,
+      "control": "text",
+      "type": "string",
+      "hint": {
+        "en_US": "The exchange to publish to. If empty, the default exchange is used, which routes the message to the queue named by the routing key.",
+        "zh_CN": "要发布到的交换机。若为空，则使用默认交换机，消息将被路由到与路由键同名的队列。"
+      },
+      "label": {
+        "en_US": "Exchange",
+        "zh_CN": "交换机"
+      }
+    },
+    {
+      "name": "routingKey",
+      "default": "",
+      "optional": true,
+      "control": "text",
+      "type": "string",
+      "hint": {
+        "en_US": "The routing key of the message. It is required when publishing to the default exchange. It supports data templates.",
+        "zh_CN": "消息的路由键。发布到默认交换机时必填。支持数据模板。"
+      },
+      "label": {
+        "en_US": "Routing key",
+        "zh_CN": "路由键"
+      }
+    },
+    {
+      "name": "contentType",
+      "default": "",
+      "optional": true,
+      "control": "text",
+      "type": "string",
+      "hint": {
+        "en_US": "The content type of the message, such as application/json.",
+        "zh_CN": "消息的内容类型，例如 application/json。"
+      },
+      "label": {
+        "en_US": "Content type",
+        "zh_CN": "内容类型"
+      }
+    },
+    {
+      "name": "persistent",
+      "default": false,
+      "optional": true,
+      "control": "radio",
+      "type": "bool",
+      "hint": {
+        "en_US": "Whether to publish persistent messages, which survive a server restart if they are routed to durable queues.",
+        "zh_CN": "是否发布持久化消息。持久化消息被路由到持久化队列后，在服务器重启后仍然保留。"
+      },
+      "label": {
+        "en_US": "Persistent",
+        "zh_CN": "持久化"
+      }
+    },
+    {
+      "name": "publisherConfirm",
+      "default": false,
+      "optional": true,
+      "control": "radio",
+      "type": "bool",
+      "hint": {
+        "en_US": "Whether to wait for the server to confirm each message. A message that is not confirmed is sent again if the cache or resend is configured.",
+        "zh_CN": "是否等待服务器确认每条消息。若配置了缓存或重发，未被确认的消息会被重新发送。"
+      },
+      "label": {
+        "en_US": "Publisher confirm",
+        "zh_CN": "发布确认"
+      }
+    },
+    {
+      "name": "headers",
+      "default": {},
+      "optional": true,
+      "control": "list",
+      "type": "object",
+      "hint": {
+        "en_US": "The headers of the message. The values support data templates.",
+        "zh_CN": "消息的头部。值支持数据模板。"
+      },
+      "label": {
+        "en_US": "Headers",
+        "zh_CN": "消息头"
+      }
+    },
+    {
+      "name": "certificationPath",
+      "default": "",
+      "optional": true,
+      "control": "text",
+      "type": "string",
+      "hint": {
+        "en_US": "The certification path. It can be an absolute path, or a relative path. If it is an relative path, then the base path is where you excuting the kuiperd command. For example, if you run bin/kuiperd from /var/kuiper, then the base path is /var/kuiper; If you run ./kuiperd from /var/kuiper/bin, then the base path is /var/kuiper/bin.",
+        "zh_CN": "证书路径。可以为绝对路径，也可以为相对路径。如果指定的是相对路径，那么父目录为执行 kuiperd 命令的路径。比如，如果你在 /var/kuiper 中运行 bin/kuiperd ，那么父目录为 /var/kuiper; 如果运行从 /var/kuiper/bin 中运行./kuiperd，那么父目录为 /var/kuiper/bin"
+      },
+      "label": {
+        "en_US": "Certification path",
+        "zh_CN": "证书路径"
+      }
+    },
+    {
+      "name": "privateKeyPath",
+      "default": "",
+      "optional": true,
+      "control": "text",
+      "type": "string",
+      "hint": {
+        "en_US": "The private key path. It can be either absolute path, or relative path, which is similar to use of certificationPath.",
+        "zh_CN": "私钥路径。可以为绝对路径，也可以为相对路径，相对路径的用法与 certificationPath 类似"
+      },
+      "label": {
+        "en_US": "Private key path",
+        "zh_CN": "私钥路径"
+      }
+    },
+    {
+      "name": "rootCaPath",
+      "default": "",
+      "optional": true,
+      "control": "text",
+      "type": "string",
+      "hint": {
+        "en_US": "The location of root ca path. It can be an absolute path, or a relative path. ",
+        "zh_CN": "根证书路径，用以验证服务器证书。可以为绝对路径，也可以为相对路径。"
+      },
+      "label": {
+        "en_US": "Root Ca path",
+        "zh_CN": "根证书路径"
+      }
+    },
+    {
+      "name": "insecureSkipVerify",
+      "default": false,
+      "optional": true,
+      "control": "radio",
+      "type": "bool",
+      "hint": {
+        "en_US": "If InsecureSkipVerify is true, TLS accepts any certificate presented by the server and any host name in that certificate.  In this mode, TLS is susceptible to man-in-the-middle attacks. The default value is false. The configuration item can only be used with TLS connections.",
+        "zh_CN": "如果 InsecureSkipVerify 设置为 true, TLS 接受服务器提供的任何证书以及该证书中的任何主机名。 在这种模式下，TLS 容易受到中间人攻击。默认值为 false。配置项只能用于 TLS 连接。"
+      },
+      "label": {
+        "en_US": "Skip Certification verification",
+        "zh_CN": "跳过证书验证"
+      }
+    }
+  ],
+  "node": {
+    "category": "sink",
+    "icon": "iconPath",
+    "label": {
+      "en": "RabbitMQ",
+      "zh": "RabbitMQ"
+    }
+  }
+}

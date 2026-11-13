@@ -37,6 +37,7 @@ eKuiper 内置以下数据源连接器：
 - [Random 源](./sources/plugin/random.md)：用于生成随机数据的源，用于测试。
 - [Zero MQ 源](./sources/plugin/zmq.md)：从 Zero MQ 读取数据。
 - [Kafka 源](./sources/plugin/kafka.md): 从 Kafka 读取数据
+- [RabbitMQ 源](./sources/plugin/rabbitmq.md)：从 RabbitMQ 队列读取数据。
 
 ## 数据 Sink 连接器
 
@@ -67,6 +68,7 @@ eKuiper Sink 连接器负责将 eKuiper 处理后的数据发送到各种目标�
 - [Image Sink](./sinks/plugin/image.md)：输出到一个图像文件。仅用于处理二进制结果。
 - [Zero MQ Sink](./sinks/plugin/zmq.md)：输出到 ZeroMQ。
 - [Kafka Sink](./sinks/plugin/kafka.md)：输出到 Kafka。
+- [RabbitMQ Sink](./sinks/plugin/rabbitmq.md)：输出到 RabbitMQ 交换机。
 
 ### 数据模板
 

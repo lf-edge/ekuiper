@@ -258,6 +258,10 @@
                 {
                   "title": "Kafka 数据源",
                   "path": "guide/sources/plugin/kafka"
+                },
+                {
+                  "title": "RabbitMQ 数据源",
+                  "path": "guide/sources/plugin/rabbitmq"
                 }
               ]
             }
@@ -352,6 +356,10 @@
                 {
                   "title": "Kafka Sink",
                   "path": "guide/sinks/plugin/kafka"
+                },
+                {
+                  "title": "RabbitMQ Sink",
+                  "path": "guide/sinks/plugin/rabbitmq"
                 }
               ]
             }
@@ -1038,6 +1046,10 @@
                 {
                   "title": "Kafka Source",
                   "path": "guide/sources/plugin/kafka"
+                },
+                {
+                  "title": "RabbitMQ Source",
+                  "path": "guide/sources/plugin/rabbitmq"
                 }
               ]
             }
@@ -1132,6 +1144,10 @@
                 {
                   "title": "Kafka Sink",
                   "path": "guide/sinks/plugin/kafka"
+                },
+                {
+                  "title": "RabbitMQ Sink",
+                  "path": "guide/sinks/plugin/rabbitmq"
                 }
               ]
             }
