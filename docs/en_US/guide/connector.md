@@ -37,6 +37,7 @@ For scenarios where custom data sources or specific third-party integrations are
 - [Random source](./sources/plugin/random.md): A source to generate random data for testing.
 - [Zero MQ source](./sources/plugin/zmq.md): A source to read data from Zero MQ.
 - [Kafka source](./sources/plugin/kafka.md): A source to read data from Kafka
+- [RabbitMQ source](./sources/plugin/rabbitmq.md): A source to read data from a RabbitMQ queue.
 
 ## Sink Connectors
 
@@ -67,6 +68,7 @@ For specialized data dispatch requirements or integrations with particular platf
 - [Image sink](./sinks/plugin/image.md): A sink to an image file. Only used to handle binary results.
 - [Zero MQ sink](./sinks/plugin/zmq.md): A sink to Zero MQ.
 - [Kafka sink](./sinks/plugin/kafka.md): A sink to Kafka.
+- [RabbitMQ sink](./sinks/plugin/rabbitmq.md): A sink to a RabbitMQ exchange.
 
 ### Data Templates in Sink Connectors
 

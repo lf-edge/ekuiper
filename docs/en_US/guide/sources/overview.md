@@ -39,6 +39,7 @@ The list of predefined source plugins:
 - [Random source](./plugin/random.md): a source to generate random data for testing.
 - [Zero MQ source](./plugin/zmq.md): read data from zero mq.
 - [Kafka source](./plugin/kafka.md): read data from Kafka.
+- [RabbitMQ source](./plugin/rabbitmq.md): read data from a RabbitMQ queue.
 
 ## Use of Sources
 

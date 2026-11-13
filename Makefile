@@ -118,13 +118,15 @@ PLUGINS_IN_FULL := \
 	extensions/sinks/image \
 	extensions/sinks/sql   \
 	extensions/sinks/iotdb \
+	extensions/sinks/rabbitmq \
 	extensions/sinks/zmq \
 	extensions/sinks/tdengine3 \
 	extensions/sources/random \
 	extensions/sources/sql \
 	extensions/sources/video \
 	extensions/sources/zmq \
-	extensions/sources/kafka
+	extensions/sources/kafka \
+	extensions/sources/rabbitmq
 
 .PHONY: build_full
 build_full: SHELL:=/bin/bash -euo pipefail
