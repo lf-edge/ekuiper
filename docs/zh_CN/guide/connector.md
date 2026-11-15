@@ -67,6 +67,7 @@ eKuiper Sink 连接器负责将 eKuiper 处理后的数据发送到各种目标�
 - [Image Sink](./sinks/plugin/image.md)：输出到一个图像文件。仅用于处理二进制结果。
 - [Zero MQ Sink](./sinks/plugin/zmq.md)：输出到 ZeroMQ。
 - [Kafka Sink](./sinks/plugin/kafka.md)：输出到 Kafka。
+- [gRPC Sink](./sinks/plugin/grpc.md)：调用 gRPC 服务。
 
 ### 数据模板
 

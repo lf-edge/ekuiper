@@ -352,6 +352,10 @@
                 {
                   "title": "Kafka Sink",
                   "path": "guide/sinks/plugin/kafka"
+                },
+                {
+                  "title": "gRPC Sink",
+                  "path": "guide/sinks/plugin/grpc"
                 }
               ]
             }
@@ -1132,6 +1136,10 @@
                 {
                   "title": "Kafka Sink",
                   "path": "guide/sinks/plugin/kafka"
+                },
+                {
+                  "title": "gRPC Sink",
+                  "path": "guide/sinks/plugin/grpc"
                 }
               ]
             }

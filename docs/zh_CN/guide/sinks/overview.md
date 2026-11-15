@@ -32,6 +32,7 @@
 - [ZeroMQ sink](./plugin/zmq.md)：输出到 ZeroMQ。
 - [Kafka sink](./plugin/kafka.md)：输出到 Kafka。
 - [IoTDB sink](./plugin/iotdb.md)：写入 Apache IoTDB，同时支持树模型和表模型。
+- [gRPC sink](./plugin/grpc.md)：输出到 gRPC 服务。
 
 ## 更新
 

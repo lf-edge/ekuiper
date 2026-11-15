@@ -1,0 +1,158 @@
+{
+  "about": {
+    "trial": true,
+    "author": {
+      "name": "NopeCharon",
+      "email": "115794254+NopeCharon@users.noreply.github.com",
+      "company": "personal",
+      "website": "https://github.com/NopeCharon"
+    },
+    "helpUrl": {
+      "en_US": "https://ekuiper.org/docs/en/latest/guide/sinks/plugin/grpc.html",
+      "zh_CN": "https://ekuiper.org/docs/zh/latest/guide/sinks/plugin/grpc.html"
+    },
+    "description": {
+      "en_US": "The sink calls a unary method of a gRPC service with each result as the request.",
+      "zh_CN": "该动作将每条结果作为请求，调用 gRPC 服务的一元方法。"
+    }
+  },
+  "libs": [
+    "google.golang.org/grpc@v1.83.2"
+  ],
+  "properties": [
+    {
+      "name": "server",
+      "default": "127.0.0.1:50051",
+      "optional": false,
+      "connection_related": true,
+      "control": "text",
+      "type": "string",
+      "hint": {
+        "en_US": "The address of the gRPC server in the host:port format.",
+        "zh_CN": "gRPC 服务器的地址，格式为 host:port。"
+      },
+      "label": {
+        "en_US": "Server",
+        "zh_CN": "服务器地址"
+      }
+    },
+    {
+      "name": "method",
+      "default": "",
+      "optional": false,
+      "control": "text",
+      "type": "string",
+      "hint": {
+        "en_US": "The full name of the unary method to call, such as sensor.Collector/Report. It supports data templates.",
+        "zh_CN": "要调用的一元方法的全名，例如 sensor.Collector/Report。支持数据模板。"
+      },
+      "label": {
+        "en_US": "Method",
+        "zh_CN": "方法"
+      }
+    },
+    {
+      "name": "timeout",
+      "default": 5000,
+      "optional": true,
+      "connection_related": true,
+      "control": "text",
+      "type": "int",
+      "hint": {
+        "en_US": "The timeout (milliseconds) to connect to the server and for each call, defaults to 5000 ms.",
+        "zh_CN": "连接服务器以及每次调用的超时时间（毫秒），默认为 5000 毫秒。"
+      },
+      "label": {
+        "en_US": "Timeout(ms)",
+        "zh_CN": "超时(ms)"
+      }
+    },
+    {
+      "name": "metadata",
+      "default": {},
+      "optional": true,
+      "control": "list",
+      "type": "object",
+      "hint": {
+        "en_US": "The metadata of each call. The values support data templates.",
+        "zh_CN": "每次调用的元数据。值支持数据模板。"
+      },
+      "label": {
+        "en_US": "Metadata",
+        "zh_CN": "元数据"
+      }
+    },
+    {
+      "name": "insecureSkipVerify",
+      "default": false,
+      "optional": true,
+      "connection_related": true,
+      "control": "radio",
+      "type": "bool",
+      "hint": {
+        "en_US": "If InsecureSkipVerify is true, TLS accepts any certificate presented by the server and any host name in that certificate. In this mode, TLS is susceptible to man-in-the-middle attacks. The default value is false. Setting it to true enables TLS.",
+        "zh_CN": "如果 InsecureSkipVerify 设置为 true, TLS 接受服务器提供的任何证书以及该证书中的任何主机名。在这种模式下，TLS 容易受到中间人攻击。默认值为 false。设置为 true 将启用 TLS。"
+      },
+      "label": {
+        "en_US": "Skip Certification verification",
+        "zh_CN": "跳过证书验证"
+      }
+    },
+    {
+      "name": "certificationPath",
+      "default": "",
+      "optional": true,
+      "connection_related": true,
+      "control": "text",
+      "type": "string",
+      "hint": {
+        "en_US": "The location of certification path. It can be an absolute path, or a relative path. Setting it enables TLS.",
+        "zh_CN": "证书路径。可以为绝对路径，也可以为相对路径。设置该项将启用 TLS。"
+      },
+      "label": {
+        "en_US": "Certification path",
+        "zh_CN": "证书路径"
+      }
+    },
+    {
+      "name": "privateKeyPath",
+      "default": "",
+      "optional": true,
+      "connection_related": true,
+      "control": "text",
+      "type": "string",
+      "hint": {
+        "en_US": "The location of private key path. It can be an absolute path, or a relative path. Setting it enables TLS.",
+        "zh_CN": "私钥路径。可以为绝对路径，也可以为相对路径。设置该项将启用 TLS。"
+      },
+      "label": {
+        "en_US": "Private key path",
+        "zh_CN": "私钥路径"
+      }
+    },
+    {
+      "name": "rootCaPath",
+      "default": "",
+      "optional": true,
+      "connection_related": true,
+      "control": "text",
+      "type": "string",
+      "hint": {
+        "en_US": "The location of root ca path to verify the server. It can be an absolute path, or a relative path. Setting it enables TLS.",
+        "zh_CN": "根证书路径，用以验证服务器证书。可以为绝对路径，也可以为相对路径。设置该项将启用 TLS。"
+      },
+      "label": {
+        "en_US": "Root CA path",
+        "zh_CN": "根证书路径"
+      }
+    }
+  ],
+  "node": {
+    "category": "sink",
+    "icon": "iconPath",
+    "label": {
+      "en": "gRPC",
+      "zh": "gRPC"
+    }
+  }
+}

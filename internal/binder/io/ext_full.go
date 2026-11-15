@@ -19,6 +19,7 @@ package io
 import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
+	"github.com/lf-edge/ekuiper/v2/extensions/impl/grpc"
 	"github.com/lf-edge/ekuiper/v2/extensions/impl/image"
 	"github.com/lf-edge/ekuiper/v2/extensions/impl/influx"
 	"github.com/lf-edge/ekuiper/v2/extensions/impl/influx2"
@@ -40,4 +41,5 @@ func init() {
 	modules.RegisterSource("sql", sql2.GetSource)
 	modules.RegisterLookupSource("sql", sql2.GetLookupSource)
 	modules.RegisterSink("sql", sql2.GetSink)
+	modules.RegisterSink("grpc", func() api.Sink { return grpc.GetSink() })
 }
