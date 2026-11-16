@@ -87,7 +87,7 @@ func TestRunRandom(t *testing.T) {
 	r := &randomSource{}
 	err := r.Configure("new", p)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err)
 		return
 	}
 	mock.TestSourceOpen(r, exp, t)

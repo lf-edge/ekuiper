@@ -428,7 +428,7 @@ replace (
 	google.golang.org/genproto/googleapis/rpc => google.golang.org/genproto/googleapis/rpc v0.0.0-20240701130421-f6361c86f094
 )
 
-go 1.25.4
+go 1.26.11
 
 replace github.com/golang-jwt/jwt/v4 => github.com/golang-jwt/jwt/v4 v4.5.2
 

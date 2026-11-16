@@ -171,7 +171,7 @@ Check out the [latest document](https://ekuiper.org/docs/en/latest/) in official
 
 #### Preparation
 
-- Go version >= 1.25
+- Go version >= 1.26.11
 
 #### Compile
 

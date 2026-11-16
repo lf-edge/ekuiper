@@ -32,7 +32,7 @@ func TestFileSink(t *testing.T) {
 	exp := []string{"foo", "bar"}
 	err := mock.RunSinkCollect(s, exp)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err)
 		return
 	}
 	result := getResults()
