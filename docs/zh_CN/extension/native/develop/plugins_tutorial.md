@@ -233,7 +233,7 @@ x.x.x，例如`lfedge/ekuiper:0.4.0`。)；与运行版本相比，开发版提�
       ```
 
 eKuiper 也提供了精简的 alpine 版本，但是不包含 go 环境。用户可以使用 alpine 版本的镜像来编译插件，但这就需要用户自己安装相应的依赖。用户也可以使用
-golang 镜像作为基础环境(如果您使用的是 golang 1.25 版本的镜像，并且想要编译 eKuiper 插件，您可以使用提供的 base
+golang 镜像作为基础环境(如果您使用的是 golang 1.26.11 版本的镜像，并且想要编译 eKuiper 插件，您可以使用提供的 base
 image (<https://github.com/lf-edge/ekuiper/pkgs/container/ekuiper%2Fbase>)作为基础环境。使用这个 base image 所编译的插件，在部署到
 alpine版本 的 eKuiper 时，不会出现`Error loading shared library libresolve.so.2`的错误)。具体步骤如下:
 
