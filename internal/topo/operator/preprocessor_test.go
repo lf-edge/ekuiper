@@ -645,7 +645,7 @@ func TestPreprocessor_Apply(t *testing.T) {
 			fv, afv := xsql.NewFunctionValuersForOp(nil)
 			result := pp.Apply(ctx, tuple, fv, afv)
 			if !reflect.DeepEqual(tt.result, result) {
-				t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tuple, tt.result, result)
+				t.Errorf("%d. %#v\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tuple, tt.result, result)
 			}
 		}
 
@@ -794,7 +794,7 @@ func TestPreprocessorTime_Apply(t *testing.T) {
 				}
 			}
 			if !reflect.DeepEqual(tt.result, result) {
-				t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tuple, tt.result, result)
+				t.Errorf("%d. %#v\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tuple, tt.result, result)
 			}
 		}
 
@@ -1049,7 +1049,7 @@ func TestPreprocessorError(t *testing.T) {
 			fv, afv := xsql.NewFunctionValuersForOp(nil)
 			result := pp.Apply(ctx, tuple, fv, afv)
 			if !reflect.DeepEqual(tt.result, result) {
-				t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tuple, tt.result, result)
+				t.Errorf("%d. %#v\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tuple, tt.result, result)
 			}
 		}
 
@@ -1145,7 +1145,7 @@ func TestPreprocessorForBinary(t *testing.T) {
 			fv, afv := xsql.NewFunctionValuersForOp(nil)
 			result := pp.Apply(ctx, tuple, fv, afv)
 			if !reflect.DeepEqual(tt.result, result) {
-				t.Errorf("%d. %q\n\nresult mismatch", i, tuple)
+				t.Errorf("%d. %#v\n\nresult mismatch", i, tuple)
 			}
 		}
 
