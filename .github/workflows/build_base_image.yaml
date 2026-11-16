@@ -25,7 +25,7 @@ jobs:
           - debian
           - alpine
         golang:
-          - 1.25.4
+          - 1.26.11
 
     steps:
       - uses: actions/checkout@v4
