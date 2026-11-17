@@ -631,3 +631,64 @@ func TestValidateStmt(t *testing.T) {
 	err = validate(stmt)
 	require.Error(t, err)
 }
+
+// aliasRefCycle reports whether following AliasRef chains from e leads back to
+// an alias already on the current path.
+func aliasRefCycle(e ast.Expr, path map[*ast.AliasRef]bool) bool {
+	found := false
+	ast.WalkFunc(e, func(n ast.Node) bool {
+		if found {
+			return false
+		}
+		fr, ok := n.(*ast.FieldRef)
+		if !ok || fr.AliasRef == nil {
+			return true
+		}
+		if path[fr.AliasRef] {
+			found = true
+			return false
+		}
+		path[fr.AliasRef] = true
+		found = aliasRefCycle(fr.AliasRef.Expression, path)
+		delete(path, fr.AliasRef)
+		return false
+	})
+	return found
+}
+
+func TestSelfAliasNoCycle(t *testing.T) {
+	kvStore, err := store.GetKV("stream")
+	require.NoError(t, err)
+	streams := map[string]string{
+		"self_alias_schema":     `CREATE STREAM self_alias_schema (resource string, event string, value string) WITH (DATASOURCE="self_alias_schema", FORMAT="json");`,
+		"self_alias_schemaless": `CREATE STREAM self_alias_schemaless () WITH (DATASOURCE="self_alias_schemaless", FORMAT="json");`,
+	}
+	for name, sql := range streams {
+		encoded, err := json.Marshal(&xsql.StreamInfo{StreamType: ast.TypeStream, Statement: sql})
+		require.NoError(t, err)
+		require.NoError(t, kvStore.Set(name, string(encoded)))
+	}
+	selects := []string{
+		"event AS event, event",
+		"event, event AS event",
+		"event AS event, event AS a",
+		"event AS event, event AS eventId",
+		"event AS eventId, event AS event",
+		"event AS zzz, event AS event",
+		"event AS x, event AS y, event AS event",
+	}
+	for name := range streams {
+		for _, sel := range selects {
+			sql := fmt.Sprintf("SELECT %s FROM %s", sel, name)
+			t.Run(sql, func(t *testing.T) {
+				stmt, err := xsql.NewParser(strings.NewReader(sql)).Parse()
+				require.NoError(t, err)
+				_, err = CreateLogicalPlan(stmt, &def.RuleOption{SendError: true}, kvStore)
+				require.NoError(t, err)
+				for _, f := range stmt.Fields {
+					require.False(t, aliasRefCycle(f.Expr, map[*ast.AliasRef]bool{}), "alias cycle in field %s", f.Name)
+				}
+			})
+		}
+	}
+}
