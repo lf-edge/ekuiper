@@ -169,6 +169,11 @@ func decorateStmt(s *ast.SelectStatement, opt *def.RuleOption, isTemp bool) ([]*
 					ast.WalkFunc(&subF, func(node ast.Node) bool {
 						switch fr := node.(type) {
 						case *ast.FieldRef:
+							// Never rebind the expression the alias is defined with, e.g. the
+							// column ref in `a AS a`, otherwise the alias would refer to itself.
+							if fr == ar.Expression {
+								return true
+							}
 							_, isPrecedingAlias := precedingAliasRefs[fr]
 							if fr.Name == f.AName && (fr.StreamName == streamName || isPrecedingAlias) {
 								fr.StreamName = ast.AliasStream
