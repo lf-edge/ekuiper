@@ -69,7 +69,7 @@ $(PLUGINS_CUSTOM):
 | certficationRaw    | 是   | Kafka 客户端 ssl 验证，经过 base64 编码过的的 crt 原文,  如果同时定义了 `certificationPath` 将会先用该参数。 |
 | privateKeyRaw      | 是   | Kafka 客户端 ssl 验证，经过 base64 编码过的的 key 原文,  如果同时定义了 `privateKeyPath` 将会先用该参数。   |
 | rootCARaw          | 是   | Kafka 客户端 ssl 验证，经过 base64 编码过的的 ca 原文,  如果同时定义了 `rootCAPath` 将会先用该参数。        |
-| maxAttempts        | 是   | Kafka 客户端向 server 发送消息的重试次数，默认为1                                              |
+| maxAttempts        | 是   | Kafka 客户端写入消息的最大尝试次数（含首次尝试），默认为 3。                                             |
 | requiredACKs       | 是   | Kafka 客户端确认消息的机制，1 代表等待 leader 确认，-1 代表等待所有副本确认, 0 代表不等待确认, 默认为 1             |
 | key                | 是   | Kafka 客户端向 server 发送消息所携带的 Key 信息                                             |
 | headers            | 是   | Kafka 客户端向 server 发送消息所携带的 headers 信息                                         |
@@ -79,6 +79,12 @@ $(PLUGINS_CUSTOM):
 其他通用的 sink 属性也支持，请参阅[公共属性](../overview.md#公共属性)。
 
 你可以通过 api 的方式提前检查对应 sink 端点的连通性: [连通性检查](../../../api/restapi/connection.md#连通性检查)
+
+### 写入重试与 Sink 缓存
+
+Kafka 客户端按 `maxAttempts` 重试写入，尝试耗尽后会丢弃仍未写入成功的消息。通用 Sink 缓存和
+`resendInterval` 暂不支持补发 Kafka 写入失败的消息。生效配置中 `enableCache` 为 `true` 或
+`resendInterval` 大于零时，eKuiper 会在规则启动时记录一条警告。
 
 ### 连接重用
 

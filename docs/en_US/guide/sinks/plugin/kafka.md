@@ -69,7 +69,7 @@ Restart the eKuiper server to activate the plugin.
 | certficationRaw    | true     | Kafka client ssl verified Cert base64 encoded original text, use `certificationPath` first if both defined                                                                                        |
 | privateKeyRaw      | true     | Kafka client ssl verified Key base64 encoded original text, use `privateKeyPath` first if both defined                                                                                            |
 | rootCARaw          | true     | Kafka client ssl verified CA base64 encoded original text, use `rootCaPath` first if both defined                                                                                                 |
-| maxAttempts        | true     | The number of retries the Kafka client sends messages to the server, the default is 1                                                                                                             |
+| maxAttempts        | true     | Maximum number of Kafka write attempts, including the initial attempt. Defaults to 3.                                                                                                            |
 | requiredACKs       | true     | The mechanism for Kafka client to confirm messages, 1 means waiting for leader confirmation, -1 means waiting for confirmation from all replicas, 0 means not waiting for confirmation, default 1 |
 | key                | true     | Key information carried by the Kafka client in messages sent to the server                                                                                                                        |
 | headers            | true     | The header information carried by the Kafka client in the message sent to the server                                                                                                              |
@@ -77,6 +77,13 @@ Restart the eKuiper server to activate the plugin.
 | batchBytes         | true     | Set the maximum number of bytes for Kafka client to send batch messages to the server, default is 1048576         |
 
 You can check the connectivity of the corresponding sink endpoint in advance through the API: [Connectivity Check](../../../api/restapi/connection.md#connectivity-check)
+
+### Write retries and sink cache
+
+The Kafka client retries failed writes up to the `maxAttempts` limit. When those attempts are exhausted, failed
+messages are dropped. The common sink cache and `resendInterval` do not replay failed Kafka writes. If
+`enableCache` is true or `resendInterval` is greater than zero in the effective sink configuration, eKuiper
+logs a warning when the rule starts.
 
 ### Connection Reuse
 
