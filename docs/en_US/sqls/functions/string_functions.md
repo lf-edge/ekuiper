@@ -166,11 +166,11 @@ Removes all trailing whitespace (tabs and spaces) from the provided string.
 ## SUBSTRING
 
 ```text
-substring(col, start, length)
+substring(col, start[, end])
 ```
 
-Returns the substring of the specified string value starting at the specified index position (0-based, inclusive) for up
-to the specified length of characters.
+Returns the substring between the inclusive `start` and exclusive `end` byte offsets. Offsets start at zero.
+If `end` is omitted, the substring extends to the end of the string. For UTF-8 text, use offsets at character boundaries.
 
 ## STARTSWITH
 
@@ -186,8 +186,8 @@ Returns a boolean indicating whether the first string argument starts with the s
 split_value(col, str_splitter, index)
 ```
 
-Split the value of the 1st parameter with the 2nd parameter, and return the value of split array that indexed with the
-3rd parameter.
+Splits the first argument using the second argument as the separator and returns the segment at the zero-based
+`index`. Negative indexes count from the end, so `-1` returns the last segment.
 
 For example, `split_value("/test/device001/message","/",0) AS a`, the returned value of function is empty;
 

@@ -2269,8 +2269,8 @@
 		"name": "substring",
 		"example": "substring(col1, start, end)",
 		"hint": {
-			"en_US": "returns the substring of the provided String from the provided Int index (0-based, inclusive) to the end of the String.",
-			"zh_CN": "从提供的 Int 索引（从0开始，包括0）到字符串的结尾，返回提供的String的子字符串。"
+			"en_US": "Returns the substring between zero-based byte offsets. Start is inclusive and end is exclusive.",
+			"zh_CN": "按从 0 开始的字节索引截取子字符串，包含起始位置，不包含结束位置。"
 		},
 		"args": [
 			{
@@ -2303,7 +2303,7 @@
 			},
 			{
 				"name": "end",
-				"optional": false,
+				"optional": true,
 				"control": "text",
 				"type": "int",
 				"hint": {
