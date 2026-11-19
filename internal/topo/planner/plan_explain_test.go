@@ -106,21 +106,20 @@ func TestExplainPlan(t *testing.T) {
 		},
 	}
 	for _, tc := range testcases {
-		if tc.sql != `select count(a),sum(a),b from stream group by countwindow(2),b` {
-			continue
-		}
-		stmt, err := xsql.NewParser(strings.NewReader(tc.sql)).Parse()
-		require.NoError(t, err)
-		p, err := CreateLogicalPlan(stmt, &def.RuleOption{
-			PlanOptimizeStrategy: &def.PlanOptimizeStrategy{
-				EnableIncrementalWindow: true,
-			},
-			Qos: 0,
-		}, kv)
-		require.NoError(t, err)
-		explain, err := ExplainFromLogicalPlan(p, "")
-		require.NoError(t, err)
-		require.Equal(t, tc.explain, explain, tc.sql)
+		t.Run(strings.TrimSpace(tc.sql), func(t *testing.T) {
+			stmt, err := xsql.NewParser(strings.NewReader(tc.sql)).Parse()
+			require.NoError(t, err)
+			p, err := CreateLogicalPlan(stmt, &def.RuleOption{
+				PlanOptimizeStrategy: &def.PlanOptimizeStrategy{
+					EnableIncrementalWindow: true,
+				},
+				Qos: 0,
+			}, kv)
+			require.NoError(t, err)
+			explain, err := ExplainFromLogicalPlan(p, "")
+			require.NoError(t, err)
+			require.Equal(t, tc.explain, explain)
+		})
 	}
 }
 

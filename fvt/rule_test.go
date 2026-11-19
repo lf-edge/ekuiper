@@ -883,6 +883,89 @@ func (s *RuleTestSuite) TestBatchDataTemplateJSON() {
 	}
 }
 
+func (s *RuleTestSuite) TestSchemalessJSONIncrementalCountWindow() {
+	const (
+		streamName = "schemalessincwindow"
+		ruleID     = "schemalessIncWindowRule"
+		pushPath   = "/test/schemaless-inc-window"
+	)
+	t := s.T()
+	originalEnablePrivateNet := conf.Config.Basic.EnablePrivateNet
+	conf.Config.Basic.EnablePrivateNet = true
+	defer func() {
+		conf.Config.Basic.EnablePrivateNet = originalEnablePrivateNet
+	}()
+
+	received := make(chan []byte, 1)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		select {
+		case received <- body:
+		default:
+		}
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer server.Close()
+
+	streamSQL := fmt.Sprintf(`{"sql":"CREATE STREAM %s() WITH (TYPE=\"httppush\", DATASOURCE=\"%s\", FORMAT=\"json\")"}`, streamName, pushPath)
+	resp, err := client.CreateStream(streamSQL)
+	require.NoError(t, err)
+	require.Equal(t, http.StatusCreated, resp.StatusCode, mustReadResponseText(t, resp))
+	defer client.DeleteStream(streamName)
+
+	ruleJSON := fmt.Sprintf(`{
+		"id": %q,
+		"sql": "SELECT count(*) AS count, sum(v) AS sum FROM %s GROUP BY countwindow(2)",
+		"options": {"isEventTime": false, "planOptimizeStrategy": {"enableIncrementalWindow": true}},
+		"actions": [{"rest": {"url": %q, "method": "POST", "bodyType": "json", "sendSingle": true}}]
+	}`, ruleID, streamName, server.URL)
+	resp, err = client.CreateRule(ruleJSON)
+	require.NoError(t, err)
+	require.Equal(t, http.StatusCreated, resp.StatusCode, mustReadResponseText(t, resp))
+	defer client.DeleteRule(ruleID)
+
+	push, err := NewSdk(fmt.Sprintf("http://127.0.0.1:%d", conf.Config.Source.HttpServerPort))
+	require.NoError(t, err)
+	// The route can answer before the source subscribes. An empty JSON array
+	// lets us verify ingestion without adding records to the count window.
+	require.True(t, TryAssert(50, ConstantInterval, func() bool {
+		resp, err := push.Post(pushPath, "[]")
+		require.NoError(t, err)
+		body := mustReadResponseText(t, resp)
+		if resp.StatusCode == http.StatusNotFound {
+			return false
+		}
+		require.Equal(t, http.StatusOK, resp.StatusCode, body)
+		metrics, err := client.GetRuleStatus(ruleID)
+		require.NoError(t, err)
+		processed, _ := metrics["source_"+streamName+"_0_records_in_total"].(float64)
+		return processed > 0
+	}), "HTTP push source did not ingest the probe")
+
+	for _, payload := range []string{`{"v":10}`, `{"v":20}`} {
+		resp, err := push.Post(pushPath, payload)
+		require.NoError(t, err)
+		require.Equal(t, http.StatusOK, resp.StatusCode, mustReadResponseText(t, resp))
+	}
+	select {
+	case body := <-received:
+		require.JSONEq(t, `{"count":2,"sum":30}`, string(body))
+	case <-time.After(5 * time.Second):
+		t.Fatal("timed out waiting for the incremental count window output")
+	}
+
+	resp, err = client.Get("rules/" + ruleID + "/explain")
+	require.NoError(t, err)
+	explain := mustReadResponseText(t, resp)
+	require.Equal(t, http.StatusOK, resp.StatusCode, explain)
+	require.Contains(t, explain, "IncAggWindowPlan")
+	require.Contains(t, explain, `"info":"StreamName: `+streamName+`"`)
+}
+
 func (s *RuleTestSuite) TestRestSinkOAuthAndRowHeaderTemplates() {
 	const (
 		streamID = "restOAuthHeaderStream"
