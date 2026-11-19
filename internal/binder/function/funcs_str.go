@@ -336,11 +336,6 @@ func registerStrFunc() {
 			if ast.IsFloatArg(args[2]) || ast.IsTimeArg(args[2]) || ast.IsBooleanArg(args[2]) || ast.IsStringArg(args[2]) {
 				return ProduceErrInfo(2, "int")
 			}
-			if s, ok := args[2].(*ast.IntegerLiteral); ok {
-				if s.Val < 0 {
-					return fmt.Errorf("The index should not be a nagtive integer.")
-				}
-			}
 			return nil
 		},
 		check: returnNilIfHasAnyNil,

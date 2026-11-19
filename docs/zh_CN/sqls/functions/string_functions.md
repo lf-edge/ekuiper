@@ -162,10 +162,11 @@ rtrim(col)
 ## SUBSTRING
 
 ```text
-substring(col, start, end)
+substring(col, start[, end])
 ```
 
-返回 String，其中包含从 start 到 end 的子字符串。
+按从 0 开始的字节索引截取子字符串，包含 `start`，不包含 `end`。省略 `end` 时截取到字符串末尾。
+处理 UTF-8 文本时，请使用字符边界上的字节索引。
 
 ## STARTSWITH
 
@@ -181,7 +182,7 @@ startswith(col, str)
 split_value(col, splitter, index)
 ```
 
-将第一个字符串参数以第二个字符串参数作为分隔符切分，返回切分后的第 index（参数三）个值。
+以第二个参数为分隔符切分第一个字符串，返回从 0 开始的 `index` 所对应的片段。负索引从末尾倒数，`-1` 返回最后一个片段。
 
 ## TRIM
 
