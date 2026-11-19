@@ -51,9 +51,10 @@ In this way, there is no need to save the original data and the results can be c
 In the eKuiper implementation, when incremental computing is enabled, eKuiper aggregates and computes data in real time using the IncAggWindow operator, as shown in the following figure.
 
 ```sql
-{"op":"ProjectPlan_0","info":"Fields:[ Call:{ name:bypass, args:[$$default.inc_agg_col_1] } ]"}
-        {"op":"HavingPlan_1","info":"Condition:{ binaryExpr:{ Call:{ name:bypass, args:[$$default.inc_agg_col_2] } > 0 } }, "}
-                        {"op":"IncAggWindowPlan_2","info":"wType:TUMBLING_WINDOW, Dimension:[demo.c], funcs:[Call:{ name:inc_sum, args:[demo.b] }->inc_agg_col_1,Call:{ name:inc_avg, args:[demo.a] }->inc_agg_col_2]"} {"op":"DataSourcePlan_3","info":"StreamName: demo, StreamFields:[ a, b, c, inc_agg_col_1, inc_agg_col_2 ]"}
+{"op":"ProjectPlan_0","info":"Fields:[ Call:{ name:bypass, args:[inc_agg_col_1] } ]"}
+        {"op":"HavingPlan_1","info":"Condition:{ binaryExpr:{ Call:{ name:bypass, args:[inc_agg_col_2] } > 0 } }, "}
+                        {"op":"IncAggWindowPlan_2","info":"wType:TUMBLING_WINDOW, Dimension:[demo.c], funcs:[Call:{ name:inc_sum, args:[demo.b] }->inc_agg_col_1,Call:{ name:inc_avg, args:[demo.a] }->inc_agg_col_2]"}
+                                        {"op":"DataSourcePlan_3","info":"StreamName: demo, StreamFields:[ a, b, c ]"}
 ```
 
 ## Enabling Incremental Calculation
@@ -108,9 +109,9 @@ We can enable incremental calculation in `options`. Take the following rule as a
 Then look at the query plan:
 
 ```txt
-{"op":"ProjectPlan_0","info":"Fields:[ Call:{ name:bypass, args:[$$default.inc_agg_col_1] } ]"}
+{"op":"ProjectPlan_0","info":"Fields:[ Call:{ name:bypass, args:[inc_agg_col_1] } ]"}
     {"op":"IncAggWindowPlan_1","info":"wType:COUNT_WINDOW, funcs:[Call:{ name:inc_count, args:[*] }->inc_agg_col_1]"}
-            {"op":"DataSourcePlan_2","info":"StreamName: demo, StreamFields:[ inc_agg_col_1 ]"}
+            {"op":"DataSourcePlan_2","info":"StreamName: demo"}
 ```
 
 From the query plan above, you can see that when this rule runs, its plan changes from `WindowPlan` to `IncAggWindowPlan`. This means that data entering this window will be directly calculated instead of being cached in memory.

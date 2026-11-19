@@ -1089,10 +1089,7 @@ func extractNodeIncAgg(node ast.Node, index *int) ([]*ast.Field, bool) {
 						Expr: newAggFunc,
 					}
 					incAggFuncFields = append(incAggFuncFields, newField)
-					newFieldRef := &ast.FieldRef{
-						StreamName: ast.DefaultStream,
-						Name:       name,
-					}
+					newFieldRef := &ast.FieldRef{Name: name}
 					rewriteIntoBypass(newFieldRef, aggFunc)
 				}
 			}
