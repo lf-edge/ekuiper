@@ -2303,7 +2303,7 @@
 			},
 			{
 				"name": "end",
-				"optional": false,
+				"optional": true,
 				"control": "text",
 				"type": "int",
 				"hint": {
