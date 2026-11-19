@@ -482,9 +482,21 @@ func TestFuncValidator(t *testing.T) {
 			err:  "validate function split_value error: Expect string type for parameter 2",
 		},
 		{
-			s:    `SELECT split_value(topic1, "hello", -1) FROM tbl`,
-			stmt: nil,
-			err:  "validate function split_value error: The index should not be a nagtive integer.",
+			s: `SELECT split_value(topic1, "hello", -1) FROM tbl`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{{
+					Name: "split_value",
+					Expr: &ast.Call{
+						Name: "split_value",
+						Args: []ast.Expr{
+							&ast.FieldRef{Name: "topic1", StreamName: ast.DefaultStream},
+							&ast.StringLiteral{Val: "hello"},
+							&ast.IntegerLiteral{Val: -1},
+						},
+					},
+				}},
+				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
+			},
 		},
 		{
 			s:    `SELECT meta(tbl, "timestamp", 1) FROM tbl`,
