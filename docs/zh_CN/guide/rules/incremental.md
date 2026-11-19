@@ -53,10 +53,10 @@ select sum(b) from demo group by tumblingwindow(ss, 10),c  having avg(a) > 0;
 在 eKuiper 的实现中，当开启增量计算后，eKuiper 会在 IncAggWindow 算子中去实现实时的将数据的聚合和计算做出结果，如下图所示。
 
 ```sql
-{"op":"ProjectPlan_0","info":"Fields:[ Call:{ name:bypass, args:[$$default.inc_agg_col_1] } ]"}
-        {"op":"HavingPlan_1","info":"Condition:{ binaryExpr:{ Call:{ name:bypass, args:[$$default.inc_agg_col_2] } > 0 } }, "}
+{"op":"ProjectPlan_0","info":"Fields:[ Call:{ name:bypass, args:[inc_agg_col_1] } ]"}
+        {"op":"HavingPlan_1","info":"Condition:{ binaryExpr:{ Call:{ name:bypass, args:[inc_agg_col_2] } > 0 } }, "}
                         {"op":"IncAggWindowPlan_2","info":"wType:TUMBLING_WINDOW, Dimension:[demo.c], funcs:[Call:{ name:inc_sum, args:[demo.b] }->inc_agg_col_1,Call:{ name:inc_avg, args:[demo.a] }->inc_agg_col_2]"}
-                                        {"op":"DataSourcePlan_3","info":"StreamName: demo, StreamFields:[ a, b, c, inc_agg_col_1, inc_agg_col_2 ]"}
+                                        {"op":"DataSourcePlan_3","info":"StreamName: demo, StreamFields:[ a, b, c ]"}
 ```
 
 ## 启用增量计算
@@ -111,9 +111,9 @@ select sum(b) from demo group by tumblingwindow(ss, 10),c  having avg(a) > 0;
 然后查看查询计划:
 
 ```txt
-{"op":"ProjectPlan_0","info":"Fields:[ Call:{ name:bypass, args:[$$default.inc_agg_col_1] } ]"}
+{"op":"ProjectPlan_0","info":"Fields:[ Call:{ name:bypass, args:[inc_agg_col_1] } ]"}
     {"op":"IncAggWindowPlan_1","info":"wType:COUNT_WINDOW, funcs:[Call:{ name:inc_count, args:[*] }->inc_agg_col_1]"}
-            {"op":"DataSourcePlan_2","info":"StreamName: demo, StreamFields:[ inc_agg_col_1 ]"}
+            {"op":"DataSourcePlan_2","info":"StreamName: demo"}
 ```
 
 通过上述查询计划，可以发现在该规则运行时，它的计划从 `WindowPlan` 改变为了 `IncAggWindowPlan`, 这代表了数据进入该窗口后会直接进行计算，而非缓存在内存内。
