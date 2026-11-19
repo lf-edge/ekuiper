@@ -453,6 +453,37 @@ func TestFuncMath(t *testing.T) {
 	}
 }
 
+func TestAbsIntegerBoundaries(t *testing.T) {
+	abs, ok := builtins["abs"]
+	require.True(t, ok)
+
+	const large = int64(1<<53 + 1)
+	tests := []struct {
+		name string
+		arg  any
+		want any
+	}{
+		{name: "large positive integer", arg: large, want: large},
+		{name: "large negative integer", arg: -large, want: large},
+		{name: "convert int32", arg: int32(-3), want: 3},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, success := abs.exec(nil, []any{tt.arg})
+			require.True(t, success)
+			require.Equal(t, tt.want, got)
+		})
+	}
+
+	t.Run("minimum int64 overflows", func(t *testing.T) {
+		got, success := abs.exec(nil, []any{int64(math.MinInt64)})
+		require.False(t, success)
+		err, ok := got.(error)
+		require.True(t, ok)
+		require.EqualError(t, err, "abs: integer overflow")
+	})
+}
+
 func TestFuncMathNil(t *testing.T) {
 	oldBuiltins := builtins
 	defer func() {

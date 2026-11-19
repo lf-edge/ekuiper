@@ -16,6 +16,7 @@ package function
 
 import (
 	"fmt"
+	"math"
 	"reflect"
 	"testing"
 
@@ -688,6 +689,16 @@ func TestMedian(t *testing.T) {
 			name:     "even length int64 slice",
 			input:    []int64{1, 3, 5, 7, 9, 11},
 			expected: float64(6),
+		},
+		{
+			name:     "middle pair exceeds maximum int64",
+			input:    []int64{math.MaxInt64 - 1, math.MaxInt64 - 1},
+			expected: float64(math.MaxInt64 - 1),
+		},
+		{
+			name:     "middle pair falls below minimum int64",
+			input:    []int64{math.MinInt64, math.MinInt64},
+			expected: float64(math.MinInt64),
 		},
 		{
 			name:     "unsorted int64 slice",
