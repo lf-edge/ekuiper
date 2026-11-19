@@ -43,6 +43,9 @@ type SinkNode struct {
 	currentEof     int
 	resendInterval time.Duration
 	doCollect      func(ctx api.StreamContext, sink api.Sink, data any) error
+
+	warnKafkaResend bool
+
 	// channel for resend
 	resendOut chan<- any
 }
@@ -70,6 +73,7 @@ func newSinkNode(ctx api.StreamContext, name string, rOpt def.RuleOption, eoflim
 		eoflimit:        eoflimit,
 		sinkType:        sc.SinkType,
 		resendInterval:  retry,
+		warnKafkaResend: sc.SinkType == "kafka" && !isRetry && retry > 0,
 	}
 }
 
@@ -86,6 +90,10 @@ func (s *SinkNode) setKafkaSinkStatsManager(ctx api.StreamContext) {
 
 func (s *SinkNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 	s.prepareExec(ctx, errCh, "sink")
+	if s.warnKafkaResend {
+		ctx.GetLogger().Warnf("Kafka sink %q in rule %q cannot replay failed writes through the sink cache or resendInterval. "+
+			"Kafka write attempts are limited by maxAttempts.", s.name, ctx.GetRuleId())
+	}
 	go func() {
 		err := infra.SafeRun(func() error {
 			s.setKafkaSinkStatsManager(ctx)
