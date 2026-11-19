@@ -58,26 +58,26 @@ func TestExplainPlan(t *testing.T) {
 		},
 		{
 			sql: `select count(a) from stream group by countwindow(2)`,
-			explain: `{"op":"ProjectPlan_0","info":"Fields:[ Call:{ name:bypass, args:[$$default.inc_agg_col_1] } ]"}
+			explain: `{"op":"ProjectPlan_0","info":"Fields:[ Call:{ name:bypass, args:[inc_agg_col_1] } ]"}
 	{"op":"IncAggWindowPlan_1","info":"wType:COUNT_WINDOW, funcs:[Call:{ name:inc_count, args:[stream.a] }->inc_agg_col_1]"}
 			{"op":"DataSourcePlan_2","info":"StreamName: stream, StreamFields:[ a ]"}`,
 		},
 		{
 			sql: `select count(a),b from stream group by countwindow(2),b`,
-			explain: `{"op":"ProjectPlan_0","info":"Fields:[ Call:{ name:bypass, args:[$$default.inc_agg_col_1] }, stream.b ]"}
+			explain: `{"op":"ProjectPlan_0","info":"Fields:[ Call:{ name:bypass, args:[inc_agg_col_1] }, stream.b ]"}
 	{"op":"IncAggWindowPlan_1","info":"wType:COUNT_WINDOW, Dimension:[stream.b], funcs:[Call:{ name:inc_count, args:[stream.a] }->inc_agg_col_1]"}
 			{"op":"DataSourcePlan_2","info":"StreamName: stream, StreamFields:[ a, b ]"}`,
 		},
 		{
 			sql: `select count(a),sum(a),b from stream group by countwindow(2),b`,
-			explain: `{"op":"ProjectPlan_0","info":"Fields:[ Call:{ name:bypass, args:[$$default.inc_agg_col_1] }, Call:{ name:bypass, args:[$$default.inc_agg_col_2] }, stream.b ]"}
+			explain: `{"op":"ProjectPlan_0","info":"Fields:[ Call:{ name:bypass, args:[inc_agg_col_1] }, Call:{ name:bypass, args:[inc_agg_col_2] }, stream.b ]"}
 	{"op":"IncAggWindowPlan_1","info":"wType:COUNT_WINDOW, Dimension:[stream.b], funcs:[Call:{ name:inc_count, args:[stream.a] }->inc_agg_col_1,Call:{ name:inc_sum, args:[stream.a] }->inc_agg_col_2]"}
 			{"op":"DataSourcePlan_2","info":"StreamName: stream, StreamFields:[ a, b ]"}`,
 		},
 		{
 			sql: `SELECT *,count(*) from stream group by countWindow(4),b having count(*) > 1 `,
-			explain: `{"op":"ProjectPlan_0","info":"Fields:[ *, Call:{ name:bypass, args:[$$default.inc_agg_col_1] } ]"}
-	{"op":"HavingPlan_1","info":"Condition:{ binaryExpr:{ Call:{ name:bypass, args:[$$default.inc_agg_col_2] } > 1 } }, "}
+			explain: `{"op":"ProjectPlan_0","info":"Fields:[ *, Call:{ name:bypass, args:[inc_agg_col_1] } ]"}
+	{"op":"HavingPlan_1","info":"Condition:{ binaryExpr:{ Call:{ name:bypass, args:[inc_agg_col_2] } > 1 } }, "}
 			{"op":"IncAggWindowPlan_2","info":"wType:COUNT_WINDOW, Dimension:[stream.b], funcs:[Call:{ name:inc_count, args:[*] }->inc_agg_col_1,Call:{ name:inc_count, args:[*] }->inc_agg_col_2]"}
 					{"op":"DataSourcePlan_3","info":"StreamName: stream, StreamFields:[ a, b ]"}`,
 		},
@@ -100,27 +100,26 @@ func TestExplainPlan(t *testing.T) {
 		},
 		{
 			sql: `SELECT count(*) from stream group by countWindow(4) filter (where a > 1) `,
-			explain: `{"op":"ProjectPlan_0","info":"Fields:[ Call:{ name:bypass, args:[$$default.inc_agg_col_1] } ]"}
+			explain: `{"op":"ProjectPlan_0","info":"Fields:[ Call:{ name:bypass, args:[inc_agg_col_1] } ]"}
 	{"op":"IncAggWindowPlan_1","info":"wType:COUNT_WINDOW, filter:[binaryExpr:{ stream.a > 1 }], funcs:[Call:{ name:inc_count, args:[*] }->inc_agg_col_1]"}
 			{"op":"DataSourcePlan_2","info":"StreamName: stream, StreamFields:[ a, b ]"}`,
 		},
 	}
 	for _, tc := range testcases {
-		if tc.sql != `select count(a),sum(a),b from stream group by countwindow(2),b` {
-			continue
-		}
-		stmt, err := xsql.NewParser(strings.NewReader(tc.sql)).Parse()
-		require.NoError(t, err)
-		p, err := CreateLogicalPlan(stmt, &def.RuleOption{
-			PlanOptimizeStrategy: &def.PlanOptimizeStrategy{
-				EnableIncrementalWindow: true,
-			},
-			Qos: 0,
-		}, kv)
-		require.NoError(t, err)
-		explain, err := ExplainFromLogicalPlan(p, "")
-		require.NoError(t, err)
-		require.Equal(t, tc.explain, explain, tc.sql)
+		t.Run(strings.TrimSpace(tc.sql), func(t *testing.T) {
+			stmt, err := xsql.NewParser(strings.NewReader(tc.sql)).Parse()
+			require.NoError(t, err)
+			p, err := CreateLogicalPlan(stmt, &def.RuleOption{
+				PlanOptimizeStrategy: &def.PlanOptimizeStrategy{
+					EnableIncrementalWindow: true,
+				},
+				Qos: 0,
+			}, kv)
+			require.NoError(t, err)
+			explain, err := ExplainFromLogicalPlan(p, "")
+			require.NoError(t, err)
+			require.Equal(t, tc.explain, explain)
+		})
 	}
 }
 
