@@ -37,20 +37,31 @@ const (
 	DegToRad = math.Pi / 180
 )
 
+func absInt[T int | int64](v T) (interface{}, bool) {
+	if v >= 0 {
+		return v, true
+	}
+	v = -v
+	if v < 0 {
+		return fmt.Errorf("abs: integer overflow"), false
+	}
+	return v, true
+}
+
 func registerMathFunc() {
 	builtins["abs"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			switch v := args[0].(type) {
 			case int:
-				return int(math.Abs(float64(v))), true
+				return absInt(v)
 			case int64:
-				return int64(math.Abs(float64(v))), true
+				return absInt(v)
 			case float64:
 				return math.Abs(v), true
 			default:
 				if vi, err := cast.ToInt(v, cast.STRICT); err == nil {
-					return int(math.Abs(float64(vi))), true
+					return absInt(vi)
 				}
 				if vf, err := cast.ToFloat64(v, cast.STRICT); err == nil {
 					return math.Abs(vf), true
