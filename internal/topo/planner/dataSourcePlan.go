@@ -399,6 +399,9 @@ func (p *DataSourcePlan) getField(name string, strict bool) (*ast.JsonStreamFiel
 func (p *DataSourcePlan) getAllFields() {
 	if !p.isWildCard {
 		p.streamFields = p.fields
+	} else if p.isSchemaless {
+		// A nil decoder schema keeps all input fields, including fields unknown to the planner.
+		p.streamFields = nil
 	} else {
 		if len(p.fields) > 0 && p.streamFields == nil {
 			p.streamFields = make(map[string]*ast.JsonStreamField, len(p.fields))
