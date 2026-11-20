@@ -17,7 +17,9 @@ package client
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
+	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
@@ -34,17 +36,12 @@ type SQLConnection struct {
 	closed bool
 }
 
+const recoveryDialTimeout = 10 * time.Second
+
 func (s *SQLConnection) Provision(ctx api.StreamContext, conId string, props map[string]any) error {
-	url, ok := props["url"]
-	if !ok {
-		url, ok = props["dburl"]
-		if !ok {
-			return fmt.Errorf("dburl should be defined")
-		}
-	}
-	dburl, ok := url.(string)
-	if !ok || len(dburl) < 1 {
-		return fmt.Errorf("dburl should be defined as string")
+	dburl, err := connectionURL(props)
+	if err != nil {
+		return err
 	}
 	ctx.GetLogger().Infof("create db with url:%v", dburl)
 
@@ -61,6 +58,23 @@ func (s *SQLConnection) Dial(ctx api.StreamContext) error {
 	s.Lock()
 	defer s.Unlock()
 	return s.dial(ctx)
+}
+
+// DialForRecovery bounds one startup lookup attempt without ending the pool's
+// retries when only this attempt times out.
+func (s *SQLConnection) DialForRecovery(ctx api.StreamContext) error {
+	s.Lock()
+	defer s.Unlock()
+	attemptCtx, cancel := context.WithTimeout(ctx, recoveryDialTimeout)
+	defer cancel()
+	err := s.dial(attemptCtx)
+	if err != nil && ctx.Err() != nil {
+		return ctx.Err()
+	}
+	if errors.Is(err, context.DeadlineExceeded) {
+		return errorx.NewIOErr(fmt.Sprintf("create connection err: %v", err))
+	}
+	return err
 }
 
 func (s *SQLConnection) Reconnect(ctx api.StreamContext) error {

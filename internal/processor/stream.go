@@ -184,7 +184,7 @@ func (p *StreamProcessor) RecoverLookupTable() (err error) {
 				switch s := stmt.(type) {
 				case *ast.StreamStmt:
 					log.Infof("Starting lookup table %s", s.Name)
-					e = lookup.CreateInstance(string(s.Name), s.Options.TYPE, s.Options)
+					e = lookup.RestoreInstance(string(s.Name), s.Options.TYPE, s.Options)
 					if e != nil {
 						log.Errorf("%s", e.Error())
 					}

@@ -172,6 +172,12 @@ The SQL source supports to be a lookup table. We can use create table statement 
 CREATE TABLE alertTable() WITH (DATASOURCE="tableName", CONF_KEY="sqlite_config", TYPE="sql", KIND="lookup")
 ```
 
+### Database availability at startup
+
+When eKuiper restores an existing SQL lookup table configured with a database URL, it connects to the database in the background so the REST API can start. If the database is temporarily unavailable, rules that use the table can start, and queries that need the database wait until the connection is ready. Stopping a rule cancels its wait.
+
+While a query is waiting, incoming data can accumulate. What happens when buffers fill depends on the source connector, upstream buffering, and backpressure settings. This startup behavior applies to tables restored without a `connectionSelector`.
+
 ### Lookup cache
 
 Query external DB is supposed to be slower than in memory calculation. If the throughput is high, the lookup cache can be used to improve the performance.

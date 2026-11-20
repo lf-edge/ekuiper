@@ -65,6 +65,15 @@ func Detach(name string) error {
 
 // CreateInstance called when create a lookup table
 func CreateInstance(name string, sourceType string, options *ast.Options) error {
+	return createInstance(name, sourceType, options, false)
+}
+
+// RestoreInstance restores a persisted lookup table during server startup.
+func RestoreInstance(name string, sourceType string, options *ast.Options) error {
+	return createInstance(name, sourceType, options, true)
+}
+
+func createInstance(name string, sourceType string, options *ast.Options, restoring bool) error {
 	lock.Lock()
 	defer lock.Unlock()
 	contextLogger := conf.Log.WithField("table", name)
@@ -83,10 +92,12 @@ func CreateInstance(name string, sourceType string, options *ast.Options) error 
 		return err
 	}
 	ctx.GetLogger().Debugf("lookup source %s is configured", sourceType)
-	// TODO lookup table connection status support
-	err = ns.Connect(ctx, func(status string, message string) {
-		// do nothing
-	})
+	if source, ok := ns.(interface{ ConnectForRecovery(api.StreamContext) error }); restoring && ok {
+		err = source.ConnectForRecovery(ctx)
+	} else {
+		// TODO lookup table connection status support
+		err = ns.Connect(ctx, func(status string, message string) {})
+	}
 	if err != nil {
 		return err
 	}

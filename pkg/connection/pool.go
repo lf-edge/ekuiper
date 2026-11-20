@@ -134,6 +134,17 @@ func FetchConnection(ctx api.StreamContext, refId, typ string, props map[string]
 // FetchConnectionWithRef shares a connection by selector or connectionKey while
 // tracking the consumer independently by refId.
 func FetchConnectionWithRef(ctx api.StreamContext, connectionKey, refId, typ string, props map[string]interface{}, sc api.StatusChangeHandler) (*ConnWrapper, error) {
+	return fetchConnectionWithRef(ctx, connectionKey, refId, typ, props, sc, false)
+}
+
+// FetchConnectionForSQLLookupRecovery attaches a restored SQL lookup without
+// probing an anonymous connection. New anonymous entries cancel their initial
+// dial when the last reference is released.
+func FetchConnectionForSQLLookupRecovery(ctx api.StreamContext, connectionKey, refId string, props map[string]any) (*ConnWrapper, error) {
+	return fetchConnectionWithRef(ctx, connectionKey, refId, "sql", props, nil, true)
+}
+
+func fetchConnectionWithRef(ctx api.StreamContext, connectionKey, refId, typ string, props map[string]any, sc api.StatusChangeHandler, restoringSQLLookup bool) (*ConnWrapper, error) {
 	failpoint.Inject("FetchConnectionErr", func() {
 		failpoint.Return(nil, fmt.Errorf("FetchConnectionErr"))
 	})
@@ -146,7 +157,8 @@ func FetchConnectionWithRef(ctx api.StreamContext, connectionKey, refId, typ str
 	conId := extractSelID(props, connectionKey)
 	globalConnectionManager.Lock()
 	defer globalConnectionManager.Unlock()
-	if _, ok := globalConnectionManager.connectionPool[conId]; ok {
+	meta, ok := globalConnectionManager.connectionPool[conId]
+	if ok {
 		conf.Log.Infof("FetchConnection return existed conn %s", conId)
 		if conId != refId {
 			conf.Log.Infof("action=reuse_connection connId=%s type=%s connectionKey=%s rule=%s op=%s refId=%s", conId, typ, conId, ctx.GetRuleId(), ctx.GetOpId(), refId)
@@ -155,15 +167,19 @@ func FetchConnectionWithRef(ctx api.StreamContext, connectionKey, refId, typ str
 		if conId != connectionKey {
 			return nil, fmt.Errorf("connection %s not existed", conId)
 		}
-		meta := &Meta{
-			ID:    conId,
-			Typ:   typ,
-			Props: props,
-			Named: false,
+		meta = &Meta{
+			ID:                 conId,
+			Typ:                typ,
+			Props:              props,
+			cancelDialOnDetach: restoringSQLLookup,
 		}
 		meta.cw = newConnWrapper(ctx, meta)
 		globalConnectionManager.connectionPool[meta.ID] = meta
 		conf.Log.Infof("FetchConnection return new conn %s", conId)
+	}
+	if restoringSQLLookup && !meta.Named {
+		meta.addRef(refId, nil)
+		return meta.cw, nil
 	}
 	return attachConnection(conId, refId, sc)
 }
@@ -396,11 +412,7 @@ func detachConnectionByRef(ctx api.StreamContext, conId, refId string) error {
 		if conId != refId {
 			conf.Log.Infof("action=close_connection connId=%s type=%s connectionKey=%s rule=%s op=%s reason=zero_ref", conId, meta.Typ, conId, ctx.GetRuleId(), ctx.GetOpId())
 		}
-		close(meta.cw.detachCh)
-		conn, err := meta.cw.Wait(ctx)
-		if conn != nil && err == nil {
-			conn.Close(ctx)
-		}
+		meta.cw.detach(ctx)
 		delete(globalConnectionManager.connectionPool, conId)
 		return nil
 	}
@@ -415,6 +427,16 @@ func createConnection(connCtx api.StreamContext, meta *Meta) (modules.Connection
 		return nil, fmt.Errorf("unknown connection type")
 	}
 	conn = connRegister(connCtx)
+	var retryBackOff backoff.BackOff = NewExponentialBackOff()
+	dial := conn.Dial
+	if meta.cancelDialOnDetach {
+		recoveryConn, ok := conn.(interface{ DialForRecovery(api.StreamContext) error })
+		if !ok {
+			return nil, fmt.Errorf("connection type %q does not support lookup recovery", meta.Typ)
+		}
+		dial = recoveryConn.DialForRecovery
+		retryBackOff = backoff.WithContext(retryBackOff, connCtx)
+	}
 	sc, isStateful := conn.(modules.StatefulDialer)
 	err = conn.Provision(connCtx, meta.ID, meta.Props)
 	if err != nil {
@@ -431,7 +453,7 @@ func createConnection(connCtx api.StreamContext, meta *Meta) (modules.Connection
 		}
 		meta.NotifyStatus(api.ConnectionConnecting, "")
 		connCtx.GetLogger().Debugf("connection retry: %s", meta.ID)
-		err = conn.Dial(connCtx)
+		err = dial(connCtx)
 		failpoint.Inject("createConnectionErr", func() {
 			if mockErr {
 				err = errorx.NewIOErr("createConnectionErr")
@@ -450,7 +472,7 @@ func createConnection(connCtx api.StreamContext, meta *Meta) (modules.Connection
 			return err
 		}
 		return backoff.Permanent(err)
-	}, NewExponentialBackOff())
+	}, retryBackOff)
 	return conn, err
 }
 

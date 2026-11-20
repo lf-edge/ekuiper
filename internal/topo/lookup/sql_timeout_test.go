@@ -17,6 +17,7 @@ package lookup
 import (
 	"context"
 	"fmt"
+	"io"
 	"net"
 	"path/filepath"
 	"sync/atomic"
@@ -100,4 +101,90 @@ func TestSQLLookupTimeoutReleasesRegistry(t *testing.T) {
 	_, err = Attach("good_sql_lookup")
 	require.NoError(t, err)
 	require.NoError(t, Detach("good_sql_lookup"))
+}
+
+func TestRestoreSQLLookupRetriesAndReleases(t *testing.T) {
+	require.NoError(t, connection.InitConnectionManager4Test())
+	modules.RegisterLookupSource("sql", sqlconnector.GetLookupSource)
+	listener, err := net.ListenTCP("tcp", &net.TCPAddr{IP: net.IPv4(127, 0, 0, 1)})
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = listener.Close() })
+
+	const dburl = "mysql://root:@127.0.0.1:1/default"
+	url := "mysql://root:@" + listener.Addr().String() + "/test"
+	opts := &ast.Options{DATASOURCE: "t", EXTRA: fmt.Sprintf(`{"dburl":%q,"url":%q}`, dburl, url)}
+	for _, name := range []string{"restored_sql_one", "restored_sql_two"} {
+		require.NoError(t, RestoreInstance(name, "sql", opts))
+		t.Cleanup(func() { require.NoError(t, DropInstance(name)) })
+	}
+	ctx := kctx.Background()
+	meta, err := connection.GetConnectionDetail(ctx, dburl)
+	require.NoError(t, err)
+	require.Equal(t, 2, meta.GetRefCount())
+
+	accept := func(timeout time.Duration) *net.TCPConn {
+		t.Helper()
+		require.NoError(t, listener.SetDeadline(time.Now().Add(timeout)))
+		peer, err := listener.AcceptTCP()
+		require.NoError(t, err)
+		t.Cleanup(func() { _ = peer.Close() })
+		return peer
+	}
+	first := accept(3 * time.Second)
+
+	source, err := Attach("restored_sql_one")
+	require.NoError(t, err)
+	waitCtx, cancel := ctx.WithCancel()
+	defer cancel()
+	waited := make(chan error, 1)
+	go func() {
+		_, err := source.(api.LookupSource).Lookup(waitCtx, nil, []string{"a"}, []any{1})
+		waited <- err
+	}()
+	select {
+	case err := <-waited:
+		t.Fatalf("lookup returned before the connection was ready: %v", err)
+	case <-time.After(50 * time.Millisecond):
+	}
+	cancel()
+	select {
+	case err := <-waited:
+		require.ErrorIs(t, err, context.Canceled)
+	case <-time.After(3 * time.Second):
+		t.Fatal("lookup did not stop waiting on rule cancellation")
+	}
+	require.NoError(t, Detach("restored_sql_one"))
+	require.NoError(t, DropInstance("restored_sql_one"))
+	require.Equal(t, 1, meta.GetRefCount())
+
+	// Withhold the first handshake throughout. The remaining reference must
+	// keep the pool alive and the deadline must let it start another dial.
+	second := accept(15 * time.Second)
+	var b [1]byte
+	require.NoError(t, first.SetReadDeadline(time.Now().Add(2*time.Second)))
+	_, err = first.Read(b[:])
+	require.ErrorIs(t, err, io.EOF)
+
+	require.NoError(t, DropInstance("restored_sql_two"))
+	require.Zero(t, meta.GetRefCount())
+	_, err = connection.GetConnectionDetail(ctx, dburl)
+	require.Error(t, err)
+	require.NoError(t, second.SetReadDeadline(time.Now().Add(2*time.Second)))
+	_, err = second.Read(b[:])
+	require.ErrorIs(t, err, io.EOF)
+}
+
+func TestRestoreSQLLookupRejectsUnregisteredDriver(t *testing.T) {
+	require.NoError(t, connection.InitConnectionManager4Test())
+	modules.RegisterLookupSource("sql", sqlconnector.GetLookupSource)
+	const dburl = "duckdb:///unused"
+	err := RestoreInstance("unregistered_sql", "sql", &ast.Options{
+		DATASOURCE: "t",
+		EXTRA:      fmt.Sprintf(`{"dburl":%q}`, dburl),
+	})
+	require.ErrorContains(t, err, `sql driver "duckdb" is not registered`)
+	_, err = Attach("unregistered_sql")
+	require.Error(t, err)
+	_, err = connection.GetConnectionDetail(kctx.Background(), dburl)
+	require.Error(t, err)
 }

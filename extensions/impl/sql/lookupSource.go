@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/google/uuid"
@@ -30,6 +31,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/util"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
+	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
 
 const lookupConnectTimeout = 10 * time.Second
@@ -37,10 +39,11 @@ const lookupConnectTimeout = 10 * time.Second
 type SqlLookupSource struct {
 	conf          *SQLConf
 	conn          *client2.SQLConnection
+	pending       *connection.ConnWrapper
 	props         map[string]any
 	driver        string
 	table         string
-	needReconnect bool
+	needReconnect atomic.Bool
 	gen           sqlQueryGen
 	conId         string
 	refId         string
@@ -93,13 +96,35 @@ func (s *SqlLookupSource) Close(ctx api.StreamContext) error {
 	}
 	s.conId, s.refId = "", ""
 	s.conn = nil
+	s.pending = nil
 	return nil
 }
 
 func (s *SqlLookupSource) Connect(ctx api.StreamContext, sc api.StatusChangeHandler) error {
+	return s.connect(ctx, sc, false)
+}
+
+// ConnectForRecovery lets server startup proceed while an anonymous SQL
+// connection becomes ready. Lookup waits for it using the rule context.
+func (s *SqlLookupSource) ConnectForRecovery(ctx api.StreamContext) error {
+	if _, hasSelector := s.props["connectionSelector"].(string); !hasSelector {
+		if err := client2.ValidateConnectionDriver(s.props); err != nil {
+			return err
+		}
+	}
+	return s.connect(ctx, nil, true)
+}
+
+func (s *SqlLookupSource) connect(ctx api.StreamContext, sc api.StatusChangeHandler, restoring bool) error {
 	ctx.GetLogger().Infof("Connecting to sql server")
 	refId := uuid.New().String()
-	cw, err := connection.FetchConnectionWithRef(ctx, s.conf.DBUrl, refId, "sql", s.props, sc)
+	var cw *connection.ConnWrapper
+	var err error
+	if restoring {
+		cw, err = connection.FetchConnectionForSQLLookupRecovery(ctx, s.conf.DBUrl, refId, s.props)
+	} else {
+		cw, err = connection.FetchConnectionWithRef(ctx, s.conf.DBUrl, refId, "sql", s.props, sc)
+	}
 	if err != nil {
 		return err
 	}
@@ -108,6 +133,10 @@ func (s *SqlLookupSource) Connect(ctx api.StreamContext, sc api.StatusChangeHand
 	meta, err := connection.GetConnectionDetail(ctx, cw.ID)
 	if err != nil {
 		return errors.Join(err, s.Close(ctx))
+	}
+	if restoring && !meta.Named {
+		s.pending = cw
+		return nil
 	}
 	waitCtx := ctx
 	if meta.Named {
@@ -127,27 +156,48 @@ func (s *SqlLookupSource) Connect(ctx api.StreamContext, sc api.StatusChangeHand
 	} else if waitCtx.Err() != nil {
 		err = context.DeadlineExceeded
 	}
-	if err == nil && conn == nil {
-		err = errors.New("sql client not ready")
-	}
 	if err != nil {
 		return fmt.Errorf("sql client not ready: %w", errors.Join(err, s.Close(ctx)))
 	}
-	cli, ok := conn.(*client2.SQLConnection)
-	if !ok {
-		err = fmt.Errorf("connection %s is not a SQL connection", cw.ID)
+	cli, err := lookupSQLConnection(cw.ID, conn)
+	if err != nil {
 		return errors.Join(err, s.Close(ctx))
 	}
-	if cli.GetDB() == nil {
-		return errors.Join(errors.New("sql client not ready"), s.Close(ctx))
-	}
 	s.conn = cli
-	return err
+	return nil
+}
+
+func lookupSQLConnection(id string, conn modules.Connection) (*client2.SQLConnection, error) {
+	if conn == nil {
+		return nil, errors.New("sql client not ready")
+	}
+	cli, ok := conn.(*client2.SQLConnection)
+	if !ok {
+		return nil, fmt.Errorf("connection %s is not a SQL connection", id)
+	}
+	if cli.GetDB() == nil {
+		return nil, errors.New("sql client not ready")
+	}
+	return cli, nil
 }
 
 func (s *SqlLookupSource) Lookup(ctx api.StreamContext, fields []string, keys []string, values []any) ([]map[string]any, error) {
-	if s.needReconnect {
-		err := s.conn.Reconnect(ctx)
+	cli := s.conn
+	if s.pending != nil {
+		conn, err := s.pending.Wait(ctx)
+		if ctx.Err() != nil {
+			return nil, ctx.Err()
+		}
+		if err != nil {
+			return nil, fmt.Errorf("sql client not ready: %w", err)
+		}
+		cli, err = lookupSQLConnection(s.pending.ID, conn)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if s.needReconnect.Load() {
+		err := cli.Reconnect(ctx)
 		if err != nil {
 			conf.Log.Errorf("reconnect db error %v", err)
 			return nil, err
@@ -168,16 +218,16 @@ func (s *SqlLookupSource) Lookup(ctx api.StreamContext, fields []string, keys []
 		query = sqlQuery
 	}
 	ctx.GetLogger().Debugf("Query is %s", query)
-	rows, err := s.conn.GetDB().QueryContext(ctx, query)
+	rows, err := cli.GetDB().QueryContext(ctx, query)
 	failpoint.Inject("dbErr", func() {
 		err = errors.New("dbErr")
 	})
 	if err != nil {
-		s.needReconnect = true
+		s.needReconnect.Store(true)
 		ctx.GetLogger().Errorf("sql look table failed, err:%v, query: %v", err, query)
 		return nil, err
 	} else {
-		s.needReconnect = false
+		s.needReconnect.Store(false)
 	}
 	defer rows.Close()
 	cols, _ := rows.Columns()

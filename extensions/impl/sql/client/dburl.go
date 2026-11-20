@@ -17,6 +17,7 @@ package client
 import (
 	"database/sql"
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/xo/dburl"
@@ -44,6 +45,37 @@ func ParseDriver(url string) (string, error) {
 		return "", fmt.Errorf("parse driver err:%v", err)
 	}
 	return u.Driver, nil
+}
+
+func connectionURL(props map[string]any) (string, error) {
+	url, ok := props["url"]
+	if !ok {
+		url, ok = props["dburl"]
+		if !ok {
+			return "", fmt.Errorf("dburl should be defined")
+		}
+	}
+	dburl, ok := url.(string)
+	if !ok || len(dburl) < 1 {
+		return "", fmt.Errorf("dburl should be defined as string")
+	}
+	return dburl, nil
+}
+
+// ValidateConnectionDriver checks the driver selected by Provision without dialing.
+func ValidateConnectionDriver(props map[string]any) error {
+	url, err := connectionURL(props)
+	if err != nil {
+		return err
+	}
+	driver, _, err := ParseDBUrl(url)
+	if err != nil {
+		return err
+	}
+	if !slices.Contains(sql.Drivers(), driver) {
+		return fmt.Errorf("sql driver %q is not registered in this build", driver)
+	}
+	return nil
 }
 
 func openDB(url string) (*sql.DB, error) {
