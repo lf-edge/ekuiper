@@ -231,7 +231,7 @@ func TestLongScheduleTransit(t *testing.T) {
 	_ = st.Start()
 	assert.Equal(t, machine.ScheduledStop, st.GetState())
 	// Scheduled stop to stop, stop
-	st.StopManually()
+	st.Stop()
 	assert.Equal(t, machine.Stopped, st.GetState())
 	// Moving into the schedule leaves a manually stopped rule stopped.
 	timex.Add(30 * time.Minute)
@@ -276,7 +276,7 @@ func TestLongScheduleTransit(t *testing.T) {
 	// A manual stop follows a patrol start that is already queued.
 	st.transitState(machine.Stopping, "")
 	require.NoError(t, st.ScheduleStart())
-	st.StopManually()
+	st.Stop()
 	require.False(t, st.GetRule().Triggered)
 	require.Equal(t, machine.ActionSignalScheduledStart, st.sm.PopAction())
 	require.Equal(t, machine.ActionSignalStop, st.sm.PopAction())

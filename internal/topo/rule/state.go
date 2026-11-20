@@ -139,14 +139,8 @@ func (s *State) ScheduleStart() error {
 	return s.doStart()
 }
 
-// Stop run stop action or add the stop action to queue
-// regSchedule: whether need to handle scheduler. If call externally, set it to true
+// Stop requests a manual stop and disables any future scheduled runs.
 func (s *State) Stop() {
-	s.StopWithLastWill("canceled manually")
-}
-
-// StopManually stops the rule and disables any future scheduled runs.
-func (s *State) StopManually() {
 	s.ruleLock.Lock()
 	if s.Rule.IsScheduleRule() && s.Rule.Triggered {
 		// Recovery can read the original rule outside ruleLock.
@@ -155,7 +149,7 @@ func (s *State) StopManually() {
 		s.Rule = &stopped
 	}
 	s.ruleLock.Unlock()
-	s.Stop()
+	s.StopWithLastWill("canceled manually")
 }
 
 func (s *State) ScheduleStop() {
