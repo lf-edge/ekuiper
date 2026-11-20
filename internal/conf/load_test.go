@@ -268,13 +268,14 @@ func TestGetValueTypeBySchema(t *testing.T) {
 	}
 }
 
-func TestMqttNumericPasswordFromEnv(t *testing.T) {
+func TestMqttPasswordFromEnv(t *testing.T) {
 	for _, tt := range []struct {
 		profile  string
 		password string
 	}{
 		{"default", "123456"},
 		{"custom", " 123456 "},
+		{"equals", "abc=123=="},
 	} {
 		t.Run(tt.profile, func(t *testing.T) {
 			prefix := "MQTT_SOURCE__" + strings.ToUpper(tt.profile)
