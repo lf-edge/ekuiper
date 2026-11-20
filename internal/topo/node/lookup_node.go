@@ -166,7 +166,9 @@ func (n *LookupNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 							return true, nil
 						})
 						if err != nil {
-							n.onError(ctx, err)
+							if ctx.Err() == nil {
+								n.onError(ctx, err)
+							}
 						} else if sets.Len() > 0 {
 							n.Broadcast(sets)
 							n.statManager.IncTotalRecordsOut()
@@ -178,7 +180,9 @@ func (n *LookupNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 						sets := &xsql.JoinTuples{Content: make([]*xsql.JoinTuple, 0)}
 						err := n.lookup(ctx, d, fv, ns, sets, c)
 						if err != nil {
-							n.onError(ctx, err)
+							if ctx.Err() == nil {
+								n.onError(ctx, err)
+							}
 						} else if sets.Len() > 0 {
 							n.Broadcast(sets)
 							n.onSend(ctx, sets)
@@ -200,7 +204,9 @@ func (n *LookupNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 							return true, nil
 						})
 						if err != nil {
-							n.onError(ctx, err)
+							if ctx.Err() == nil {
+								n.onError(ctx, err)
+							}
 						} else if sets.Len() > 0 {
 							n.Broadcast(sets)
 							n.statManager.IncTotalRecordsOut()
