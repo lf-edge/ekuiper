@@ -15,6 +15,7 @@
 package connection
 
 import (
+	stdcontext "context"
 	"sync"
 	"sync/atomic"
 
@@ -34,13 +35,43 @@ type ConnWrapper struct {
 	l           syncx.RWMutex
 	readCh      chan struct{}
 	detachCh    chan struct{}
+	cancelDial  stdcontext.CancelFunc
 }
 
-func (cw *ConnWrapper) setConn(conn modules.Connection, err error) {
+// setConn leaves late results from cancellable dials with the dial worker.
+func (cw *ConnWrapper) setConn(conn modules.Connection, err error) bool {
 	cw.l.Lock()
 	defer cw.l.Unlock()
+	if cw.cancelDial != nil {
+		select {
+		case <-cw.detachCh:
+			return false
+		default:
+		}
+	}
 	cw.initialized = true
 	cw.conn, cw.err = conn, err
+	return true
+}
+
+func (cw *ConnWrapper) detach(ctx api.StreamContext) {
+	if cw.cancelDial == nil {
+		close(cw.detachCh)
+		conn, err := cw.Wait(ctx)
+		if conn != nil && err == nil {
+			_ = conn.Close(ctx)
+		}
+		return
+	}
+	cw.l.Lock()
+	close(cw.detachCh)
+	conn, err := cw.conn, cw.err
+	cw.conn = nil
+	cw.l.Unlock()
+	cw.cancelDial()
+	if conn != nil && err == nil {
+		_ = conn.Close(ctx)
+	}
 }
 
 // Wait will wait for connection connected or the caller interrupts (like rule exit)
@@ -63,14 +94,21 @@ func (cw *ConnWrapper) IsInitialized() bool {
 }
 
 func newConnWrapper(ctx api.StreamContext, meta *Meta) *ConnWrapper {
+	var cancel stdcontext.CancelFunc
+	if meta.cancelDialOnDetach {
+		ctx, cancel = ctx.WithCancel()
+	}
 	cw := &ConnWrapper{
-		ID:       meta.ID,
-		readCh:   make(chan struct{}),
-		detachCh: make(chan struct{}),
+		ID:         meta.ID,
+		readCh:     make(chan struct{}),
+		detachCh:   make(chan struct{}),
+		cancelDial: cancel,
 	}
 	go func() {
 		conn, err := createConnection(ctx, meta)
-		cw.setConn(conn, err)
+		if !cw.setConn(conn, err) && conn != nil {
+			_ = conn.Close(ctx)
+		}
 		close(cw.readCh)
 	}()
 	return cw
@@ -83,9 +121,10 @@ type Meta struct {
 	// named means connection is created manually
 	Named bool `json:"named"`
 
-	refCount atomic.Int32 `json:"-"`
-	ref      sync.Map     `json:"-"`
-	cw       *ConnWrapper `json:"-"`
+	cancelDialOnDetach bool
+	refCount           atomic.Int32 `json:"-"`
+	ref                sync.Map     `json:"-"`
+	cw                 *ConnWrapper `json:"-"`
 	// The first connection status
 	// If connection is stateful, the status will update all the way
 	// For stateless connection, the status needs to ping
@@ -112,6 +151,10 @@ func (meta *Meta) AddRef(refId string, sc api.StatusChangeHandler) {
 	if sc != nil {
 		sc(s, e)
 	}
+	meta.addRef(refId, sc)
+}
+
+func (meta *Meta) addRef(refId string, sc api.StatusChangeHandler) {
 	meta.ref.Store(refId, sc)
 	c := meta.refCount.Add(1)
 	conf.Log.Infof("conn %s add reference %s to %d refs", meta.ID, refId, c)
