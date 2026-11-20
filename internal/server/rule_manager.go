@@ -275,7 +275,7 @@ func (rr *RuleRegistry) RestartRule(name string) error {
 		if err != nil {
 			conf.Log.Warnf("restart rule update db status error: %s", err.Error())
 		}
-		rs.Stop()
+		rs.StopWithLastWill("canceled manually")
 		r, err := ruleProcessor.GetRuleById(name)
 		if err != nil {
 			return err
@@ -475,11 +475,10 @@ func (rr *RuleRegistry) stopAtExit(name string, msg string) error {
 	if !ok {
 		return errorx.NewWithCode(errorx.NOT_FOUND, fmt.Sprintf("Rule %s is not found in registry, please check if it is deleted", name))
 	} else {
-		if len(msg) > 0 {
-			rs.StopWithLastWill(msg)
-		} else {
-			rs.Stop()
+		if msg == "" {
+			msg = "canceled manually"
 		}
+		rs.StopWithLastWill(msg)
 		return nil
 	}
 }

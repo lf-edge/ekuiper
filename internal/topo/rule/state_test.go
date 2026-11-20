@@ -215,6 +215,7 @@ func TestLongScheduleTransit(t *testing.T) {
 	now := time.Date(2024, time.August, 8, 15, 38, 0, 0, time.UTC)
 	timex.Set(now.UnixMilli())
 	sr := def.GetDefaultRule("testScheduleNotIn", "select * from demo")
+	sr.Triggered = true
 	sr.Options.CronDatetimeRange = []schedule.DatetimeRange{
 		{
 			Begin: "2024-08-08 16:04:01",
@@ -233,8 +234,17 @@ func TestLongScheduleTransit(t *testing.T) {
 	// Scheduled stop to stop, stop
 	st.Stop()
 	assert.Equal(t, machine.Stopped, st.GetState())
-	// Time move to schedule, should start
+	// Moving into the schedule leaves a manually stopped rule stopped.
 	timex.Add(30 * time.Minute)
+	require.NoError(t, st.ScheduleStart())
+	require.Equal(t, machine.Stopped, st.GetState())
+	// Recovery checks the live enabled flag after a manual stop.
+	require.NoError(t, st.Start())
+	require.Equal(t, machine.Stopped, st.GetState())
+	// An explicit start enables scheduling again.
+	require.NoError(t, st.Bootstrap())
+	require.True(t, st.GetRule().Triggered)
+	require.Equal(t, machine.ScheduledStop, st.GetState())
 	_ = st.ScheduleStart()
 	// Notice: mock the action queue. The action must be the same as the next otherwise it will loop infinitely
 	wg1 := sync.WaitGroup{}
@@ -262,6 +272,15 @@ func TestLongScheduleTransit(t *testing.T) {
 	assert.Equal(t, machine.ScheduledStop, st.GetState())
 	st.ScheduleStop()
 	assert.Equal(t, machine.ScheduledStop, st.GetState())
+	require.True(t, st.GetRule().Triggered)
+
+	// A manual stop follows a patrol start that is already queued.
+	st.transitState(machine.Stopping, "")
+	require.NoError(t, st.ScheduleStart())
+	st.Stop()
+	require.False(t, st.GetRule().Triggered)
+	require.Equal(t, machine.ActionSignalScheduledStart, st.sm.PopAction())
+	require.Equal(t, machine.ActionSignalStop, st.sm.PopAction())
 }
 
 func sendAction(st *State, a machine.ActionSignal) {
@@ -351,14 +370,16 @@ func TestCleanRuleStaleTopo(t *testing.T) {
 
 func TestStartRechecksStateAfterLock(t *testing.T) {
 	tests := []struct {
-		name  string
-		start func(*State) error
+		name          string
+		start         func(*State) error
+		reservesState bool
 	}{
 		{
 			name: "start",
 			start: func(st *State) error {
 				return st.Start()
 			},
+			reservesState: true,
 		},
 		{
 			name: "scheduled start",
@@ -369,9 +390,11 @@ func TestStartRechecksStateAfterLock(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			st := NewState(def.GetDefaultRule("testLockRecheck", "select * from demo"), func(string, bool) {})
+			r := def.GetDefaultRule("testLockRecheck", "select * from demo")
+			r.Triggered = true
+			st := NewState(r, func(string, bool) {})
 
-			// Hold ruleLock so the start operation stops after changing the state to Starting.
+			// Hold ruleLock to model Bootstrap winning the lock.
 			st.ruleLock.Lock()
 			locked := true
 			defer func() {
@@ -384,9 +407,11 @@ func TestStartRechecksStateAfterLock(t *testing.T) {
 			go func() {
 				done <- tt.start(st)
 			}()
-			require.Eventually(t, func() bool {
-				return st.GetState() == machine.Starting
-			}, time.Second, time.Millisecond)
+			if tt.reservesState {
+				require.Eventually(t, func() bool {
+					return st.GetState() == machine.Starting
+				}, time.Second, time.Millisecond)
+			}
 
 			// Model Bootstrap winning ruleLock and completing the API start first.
 			st.transitState(machine.Running, "")
