@@ -17,6 +17,7 @@ package client
 import (
 	"database/sql"
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/xo/dburl"
@@ -44,6 +45,18 @@ func ParseDriver(url string) (string, error) {
 		return "", fmt.Errorf("parse driver err:%v", err)
 	}
 	return u.Driver, nil
+}
+
+// ValidateDriver checks the driver name used by sql.Open without dialing.
+func ValidateDriver(url string) error {
+	driver, _, err := ParseDBUrl(url)
+	if err != nil {
+		return err
+	}
+	if !slices.Contains(sql.Drivers(), driver) {
+		return fmt.Errorf("sql driver %q is not registered in this build", driver)
+	}
+	return nil
 }
 
 func openDB(url string) (*sql.DB, error) {

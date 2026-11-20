@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -107,6 +108,16 @@ func (s *SqlLookupSource) Connect(ctx api.StreamContext, sc api.StatusChangeHand
 // ConnectForRecovery lets server startup proceed while an anonymous SQL
 // connection becomes ready. Lookup waits for it using the rule context.
 func (s *SqlLookupSource) ConnectForRecovery(ctx api.StreamContext) error {
+	if _, hasSelector := s.props["connectionSelector"].(string); !hasSelector {
+		if err := client2.ValidateDriver(s.conf.DBUrl); err != nil {
+			return err
+		}
+		// Keep the validated URL, dialect and pool key aligned with Dial,
+		// whose legacy config reader prefers url when both keys are present.
+		s.props = maps.Clone(s.props)
+		delete(s.props, "url")
+		s.props["dburl"] = s.conf.DBUrl
+	}
 	return s.connect(ctx, nil, true)
 }
 

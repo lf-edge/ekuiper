@@ -17,6 +17,7 @@ package connection
 import (
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/pingcap/failpoint"
@@ -26,6 +27,68 @@ import (
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
+
+type lateRecoveryConnection struct {
+	mockConnection
+	started  chan struct{}
+	canceled chan struct{}
+	finish   chan struct{}
+	closed   chan struct{}
+}
+
+func (c *lateRecoveryConnection) DialForRecovery(ctx api.StreamContext) error {
+	close(c.started)
+	<-ctx.Done()
+	close(c.canceled)
+	<-c.finish
+	return nil
+}
+
+func (c *lateRecoveryConnection) Close(api.StreamContext) error {
+	close(c.closed)
+	return nil
+}
+
+func TestLookupRecoveryClosesLateDial(t *testing.T) {
+	conn := &lateRecoveryConnection{
+		started:  make(chan struct{}),
+		canceled: make(chan struct{}),
+		finish:   make(chan struct{}),
+		closed:   make(chan struct{}),
+	}
+	const provider = "late_recovery_test"
+	modules.RegisterConnection(provider, func(api.StreamContext) modules.Connection { return conn })
+	ctx, cancel := context.Background().WithCancel()
+	defer cancel()
+	defer close(conn.finish)
+	cw := newConnWrapper(ctx, &Meta{ID: provider, Typ: provider, cancelDialOnDetach: true})
+	select {
+	case <-conn.started:
+	case <-time.After(3 * time.Second):
+		t.Fatal("recovery dial did not start")
+	}
+	cw.detach(ctx)
+	select {
+	case <-conn.canceled:
+	case <-time.After(3 * time.Second):
+		t.Fatal("detaching did not cancel the recovery dial")
+	}
+	// Let the provider succeed after detach. The worker still owns the result.
+	conn.finish <- struct{}{}
+	select {
+	case <-cw.readCh:
+	case <-time.After(3 * time.Second):
+		t.Fatal("late dial did not complete")
+	}
+	select {
+	case <-conn.closed:
+	default:
+		t.Fatal("late connection was never closed")
+	}
+	got, err := cw.Wait(ctx)
+	require.NoError(t, err)
+	require.Nil(t, got)
+}
 
 func TestConnection(t *testing.T) {
 	require.NoError(t, InitConnectionManager4Test())
