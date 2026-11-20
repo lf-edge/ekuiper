@@ -41,6 +41,7 @@ func TestBatchMergerOpRun(t *testing.T) {
 		input  []any
 		err    string
 		expect int
+		props  map[string]string
 	}{
 		{
 			name: "single tuple",
@@ -59,12 +60,14 @@ func TestBatchMergerOpRun(t *testing.T) {
 			input: []any{
 				&xsql.Tuple{
 					Emitter: "test",
+					Props:   map[string]string{"topic": "first"},
 					Message: map[string]any{
 						"b": 12,
 					},
 				},
 				&xsql.Tuple{
 					Emitter: "test",
+					Props:   map[string]string{"topic": "second"},
 					Message: map[string]any{
 						"a": "a",
 						"b": 20,
@@ -73,6 +76,7 @@ func TestBatchMergerOpRun(t *testing.T) {
 				},
 			},
 			expect: 2,
+			props:  map[string]string{"topic": "second"},
 		},
 		{
 			name: "slice tuple",
@@ -130,11 +134,12 @@ func TestBatchMergerOpRun(t *testing.T) {
 					assert.Fail(t, "expected error", tc.err)
 				}
 			} else {
-				wt, ok := result.(*xsql.WindowTuples)
-				assert.True(t, ok, "expected WindowTuples, got %T", result)
+				batch, ok := result.(*xsql.TransformedTupleList)
+				require.True(t, ok, "expected TransformedTupleList, got %T", result)
+				assert.Equal(t, tc.props, batch.AllProps())
 				if tc.expect > 0 {
-					assert.NotNil(t, wt)
-					assert.Equal(t, tc.expect, len(wt.Content))
+					assert.NotNil(t, batch)
+					assert.Equal(t, tc.expect, batch.Len())
 				} else {
 					assert.Nil(t, result)
 				}
