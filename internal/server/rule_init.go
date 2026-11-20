@@ -252,9 +252,10 @@ func handleAllScheduleRuleState(now time.Time, rs []ruleWrapper) {
 			}
 		}
 		// Scheduled rules retry through the scheduler while their window is open.
-		if !scheduled && r.rule.Triggered && r.state == machine.StoppedByErr {
-			if err := registry.retryRule(r.rule.Id); err != nil {
-				conf.Log.Warnf("retry rule %v failed: %v", r.rule.Id, err)
+		if !scheduled && r.rule.Options.RestartStrategy != nil && r.rule.Options.RestartStrategy.Attempts > 0 {
+			if r.state == machine.StoppedByErr {
+				reply := registry.RecoverRule(r.rule)
+				conf.Log.Infof("restart exit rule %v with reply: %s", r.rule.Id, reply)
 			}
 		}
 	}

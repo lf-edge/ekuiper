@@ -97,8 +97,16 @@ func (s *State) ValidateAndRun(newRule *def.Rule) error {
 	return s.doValidateAndRun(newRule, nil)
 }
 
-// Bootstrap validates and enables the rule. A nil rule uses the current definition.
-func (s *State) Bootstrap(r *def.Rule, persist func() error) error {
+func (s *State) Bootstrap() error {
+	s.ruleLock.Lock()
+	defer s.ruleLock.Unlock()
+	s.setTriggered(true)
+	return s.doValidateAndRun(s.Rule, nil)
+}
+
+// BootstrapScheduled validates and enables a scheduled rule.
+// A nil rule uses the current definition.
+func (s *State) BootstrapScheduled(r *def.Rule, persist func() error) error {
 	s.ruleLock.Lock()
 	defer s.ruleLock.Unlock()
 	if r == nil {
@@ -135,26 +143,13 @@ func (s *State) Start() error {
 
 // startOrWaitForSchedule requires ruleLock to be held by the caller.
 func (s *State) startOrWaitForSchedule() error {
-	if !s.Rule.Triggered {
-		s.transitState(machine.Stopped, "canceled manually")
-		return nil
-	}
 	// delegate to rule patrol checker
 	if s.Rule.IsScheduleRule() {
-		s.transitState(machine.ScheduledStop, "")
-		return nil
-	}
-	return s.doStart()
-}
-
-// Retry starts an enabled non-scheduled rule that is still stopped by an error.
-func (s *State) Retry() error {
-	s.ruleLock.Lock()
-	defer s.ruleLock.Unlock()
-	if s.sm.CurrentState() != machine.StoppedByErr || !s.Rule.Triggered || s.Rule.IsScheduleRule() || s.Rule.Options == nil {
-		return nil
-	}
-	if strategy := s.Rule.Options.RestartStrategy; strategy == nil || strategy.Attempts <= 0 {
+		if s.Rule.Triggered {
+			s.transitState(machine.ScheduledStop, "")
+		} else {
+			s.transitState(machine.Stopped, "canceled manually")
+		}
 		return nil
 	}
 	return s.doStart()
@@ -172,11 +167,10 @@ func (s *State) ScheduleStart() error {
 }
 
 func (s *State) Stop() {
-	_ = s.Disable(nil)
+	s.StopWithLastWill("canceled manually")
 }
 
-// Disable persists the new intent before stopping a persistent rule.
-// A nil persist callback only changes the in-memory rule.
+// Disable removes a scheduled rule from patrol and stops it.
 func (s *State) Disable(persist func() error) error {
 	s.ruleLock.Lock()
 	defer s.ruleLock.Unlock()
@@ -186,7 +180,9 @@ func (s *State) Disable(persist func() error) error {
 		}
 	}
 	s.setTriggered(false)
-	s.stopWithLastWill(machine.ActionSignalManualStop, "canceled manually")
+	if !s.sm.TriggerAction(machine.ActionSignalManualStop) {
+		s.doStop(machine.Stopped, "canceled manually")
+	}
 	return nil
 }
 
@@ -204,17 +200,12 @@ func (s *State) ScheduleStop() {
 }
 
 func (s *State) StopWithLastWill(msg string) {
-	s.ruleLock.Lock()
-	defer s.ruleLock.Unlock()
-	s.stopWithLastWill(machine.ActionSignalStop, msg)
-}
-
-// stopWithLastWill requires ruleLock to be held by the caller.
-func (s *State) stopWithLastWill(action machine.ActionSignal, msg string) {
-	done := s.sm.TriggerAction(action)
+	done := s.sm.TriggerAction(machine.ActionSignalStop)
 	if done {
 		return
 	}
+	s.ruleLock.Lock()
+	defer s.ruleLock.Unlock()
 	s.doStop(machine.Stopped, msg)
 }
 

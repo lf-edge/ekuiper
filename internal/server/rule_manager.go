@@ -250,14 +250,23 @@ func (rr *RuleRegistry) StartRule(name string) error {
 
 func (rr *RuleRegistry) StopRule(name string) error {
 	rr.RLock()
-	defer rr.RUnlock()
 	rs, ok := rr.internal[name]
 	if !ok {
+		rr.RUnlock()
 		return errorx.NewWithCode(errorx.NOT_FOUND, fmt.Sprintf("Rule %s is not found in registry, please check if it is created", name))
 	}
-	return rs.Disable(func() error {
-		return ruleProcessor.ExecReplaceRuleState(name, false)
-	})
+	if rs.GetRule().IsScheduleRule() {
+		defer rr.RUnlock()
+		return rs.Disable(func() error {
+			return ruleProcessor.ExecReplaceRuleState(name, false)
+		})
+	}
+	rr.RUnlock()
+	if err := rr.updateTrigger(name, false); err != nil {
+		conf.Log.Warnf("stop rule update db status error: %s", err.Error())
+	}
+	rs.Stop()
+	return nil
 }
 
 func (rr *RuleRegistry) RestartRule(name string) error {
@@ -265,25 +274,42 @@ func (rr *RuleRegistry) RestartRule(name string) error {
 }
 
 func (rr *RuleRegistry) startRule(name string, reload bool) error {
-	// Keep the state registered through the operation and use its lock to
-	// serialize enable and disable requests for the same rule.
 	rr.RLock()
-	defer rr.RUnlock()
 	rs, ok := rr.internal[name]
 	if !ok {
+		rr.RUnlock()
 		return errorx.NewWithCode(errorx.NOT_FOUND, fmt.Sprintf("Rule %s is not found in registry, please check if it is created", name))
 	}
-	var r *def.Rule
-	if reload {
-		var err error
-		r, err = ruleProcessor.GetRuleById(name)
-		if err != nil {
-			return err
+	if rs.GetRule().IsScheduleRule() {
+		// Pin the scheduled rule while its enablement is validated and saved.
+		defer rr.RUnlock()
+		var r *def.Rule
+		if reload {
+			var err error
+			r, err = ruleProcessor.GetRuleById(name)
+			if err != nil {
+				return err
+			}
 		}
+		return rs.BootstrapScheduled(r, func() error {
+			return ruleProcessor.ExecReplaceRuleState(name, true)
+		})
 	}
-	return rs.Bootstrap(r, func() error {
-		return ruleProcessor.ExecReplaceRuleState(name, true)
-	})
+	rr.RUnlock()
+
+	if err := rr.updateTrigger(name, true); err != nil {
+		conf.Log.Warnf("start rule update db status error: %s", err.Error())
+	}
+	if !reload {
+		return rs.Bootstrap()
+	}
+	rs.Stop()
+	r, err := ruleProcessor.GetRuleById(name)
+	if err != nil {
+		return err
+	}
+	rs.SetRule(r)
+	return rs.Start()
 }
 
 func (rr *RuleRegistry) GetAllRuleStatus() (string, error) {
@@ -463,15 +489,6 @@ func (rr *RuleRegistry) ValidateRule(name, ruleJson string) ([]string, bool, err
 
 /// Rule Scheduler internal API
 
-func (rr *RuleRegistry) retryRule(name string) error {
-	rr.RLock()
-	defer rr.RUnlock()
-	if rs, ok := rr.internal[name]; ok {
-		return rs.Retry()
-	}
-	return nil
-}
-
 func (rr *RuleRegistry) scheduledStart(name string) error {
 	rs, ok := registry.load(name)
 	if !ok {
@@ -496,10 +513,11 @@ func (rr *RuleRegistry) stopAtExit(name string, msg string) error {
 	if !ok {
 		return errorx.NewWithCode(errorx.NOT_FOUND, fmt.Sprintf("Rule %s is not found in registry, please check if it is deleted", name))
 	} else {
-		if msg == "" {
-			msg = "canceled manually"
+		if len(msg) > 0 {
+			rs.StopWithLastWill(msg)
+		} else {
+			rs.Stop()
 		}
-		rs.StopWithLastWill(msg)
 		return nil
 	}
 }

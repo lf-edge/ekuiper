@@ -41,7 +41,6 @@ func TestAPIs(t *testing.T) {
 	assert.NoError(t, err)
 	defer sp.ExecStmt(`DROP STREAM demo`)
 	r := def.GetDefaultRule("testAPI", "select * from demo")
-	r.Triggered = true
 	// Init state
 	st := NewState(r, func(string, bool) {})
 	assert.Equal(t, r, st.Rule)
@@ -104,9 +103,9 @@ func TestAPIs(t *testing.T) {
 	assert.Equal(t, em, rsm)
 	assert.Equal(t, machine.Stopped, st.sm.CurrentState())
 	// Update rule
-	updated := def.GetDefaultRule("testAPI", "select abc from demo where a > 3")
-	updated.Triggered = true
-	e = st.ValidateAndRun(updated)
+	e = st.ValidateAndRun(def.GetDefaultRule("testAPI", "select abc from demo where a > 3"))
+	assert.NoError(t, e)
+	e = st.Start()
 	assert.NoError(t, e)
 	time.Sleep(100 * time.Millisecond)
 	assert.Equal(t, machine.Running, st.sm.CurrentState())
@@ -177,7 +176,6 @@ func TestStateTransit(t *testing.T) {
 	}
 	for _, v := range tests {
 		t.Run(v.name, func(t *testing.T) {
-			v.r.Triggered = true
 			st := NewState(v.r, func(string, bool) {})
 			defer st.Delete()
 			var wg sync.WaitGroup
@@ -233,7 +231,7 @@ func TestLongScheduleTransit(t *testing.T) {
 	_ = st.Start()
 	assert.Equal(t, machine.ScheduledStop, st.GetState())
 	// Scheduled stop to stop, stop
-	st.Stop()
+	require.NoError(t, st.Disable(nil))
 	assert.Equal(t, machine.Stopped, st.GetState())
 	// Moving into the schedule leaves a manually stopped rule stopped.
 	timex.Add(30 * time.Minute)
@@ -241,9 +239,9 @@ func TestLongScheduleTransit(t *testing.T) {
 	require.Equal(t, machine.Stopped, st.GetState())
 	// A newer explicit start supersedes a manual stop still in the queue.
 	require.False(t, st.sm.TriggerAction(machine.ActionSignalStart))
-	st.Stop()
+	require.NoError(t, st.Disable(nil))
 	require.Equal(t, machine.Starting, st.GetState())
-	require.NoError(t, st.Bootstrap(nil, nil))
+	require.NoError(t, st.BootstrapScheduled(nil, nil))
 	require.True(t, st.GetRule().Triggered)
 	require.Equal(t, machine.ScheduledStop, st.GetState())
 	_ = st.ScheduleStart()
@@ -285,7 +283,7 @@ func TestQueuedStopPreservesScheduleIntent(t *testing.T) {
 		// Reserve Starting before the stop, as Start does before taking ruleLock.
 		require.False(t, st.sm.TriggerAction(machine.ActionSignalStart))
 		if manual {
-			st.Stop()
+			require.NoError(t, st.Disable(nil))
 		} else {
 			st.StopWithLastWill("duration terminated")
 		}
@@ -313,7 +311,7 @@ func sendAction(st *State, a machine.ActionSignal) {
 	case machine.ActionSignalStart:
 		_ = st.Start()
 	case machine.ActionSignalStop:
-		st.StopWithLastWill("canceled manually")
+		st.Stop()
 	case machine.ActionSignalScheduledStart:
 		_ = st.ScheduleStart()
 	case machine.ActionSignalScheduledStop:
@@ -334,9 +332,7 @@ func TestCleanRuleStaleTopo(t *testing.T) {
 	_, err := sp.ExecStmt(`CREATE STREAM demo () WITH (FORMAT="JSON", TYPE="memory", DATASOURCE="test")`)
 	require.NoError(t, err)
 	defer sp.ExecStmt(`DROP STREAM demo`)
-	r := def.GetDefaultRule("testStaleTopo", "select * from demo")
-	r.Triggered = true
-	st := NewState(r, func(string, bool) {})
+	st := NewState(def.GetDefaultRule("testStaleTopo", "select * from demo"), func(string, bool) {})
 	defer st.Delete()
 
 	require.NoError(t, st.Start())
@@ -348,7 +344,7 @@ func TestCleanRuleStaleTopo(t *testing.T) {
 	// Stop and restart to replace the run.
 	st.Stop()
 	assert.Equal(t, machine.Stopped, st.GetState())
-	require.NoError(t, st.Bootstrap(nil, nil))
+	require.NoError(t, st.Start())
 	require.Eventually(t, func() bool { return st.GetState() == machine.Running }, time.Second, time.Millisecond)
 	cur, err := st.GetPlainTopology()
 	require.NoError(t, err)
@@ -368,7 +364,7 @@ func TestCleanRuleStaleTopo(t *testing.T) {
 	// never disturb the active run either.
 	for i := 0; i < 5; i++ {
 		st.Stop()
-		require.NoError(t, st.Bootstrap(nil, nil))
+		require.NoError(t, st.Start())
 	}
 	require.Eventually(t, func() bool { return st.GetState() == machine.Running }, time.Second, time.Millisecond)
 	cur, err = st.GetPlainTopology()

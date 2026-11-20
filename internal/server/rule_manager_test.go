@@ -20,7 +20,6 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -112,77 +111,6 @@ func TestFailedScheduledRuleStartKeepsTrigger(t *testing.T) {
 	persisted, err = ruleProcessor.GetRuleById(id)
 	require.NoError(t, err)
 	require.False(t, persisted.Triggered)
-}
-
-func TestRecoveryStartHonorsManualStop(t *testing.T) {
-	const id = "recovery_manual_stop"
-	_, err := streamProcessor.ExecStreamSql(`CREATE STREAM recovery_stop_input () WITH (TYPE="memory", DATASOURCE="recovery_stop_input")`)
-	require.NoError(t, err)
-	t.Cleanup(func() {
-		_, _ = streamProcessor.DropStream("recovery_stop_input", ast.TypeStream)
-	})
-	require.NoError(t, ruleProcessor.ExecCreate(id, `{"id":"recovery_manual_stop","triggered":true,"sql":"SELECT * FROM recovery_stop_input","actions":[{"nop":{}}]}`))
-	r, err := ruleProcessor.GetRuleById(id)
-	require.NoError(t, err)
-	state := rule.NewState(r, func(string, bool) {})
-	registry.register(id, state)
-	t.Cleanup(func() {
-		require.NoError(t, registry.DeleteRule(id))
-	})
-
-	// Stop after recovery registers the state, before it starts the rule.
-	require.NoError(t, registry.StopRule(id))
-	require.NoError(t, state.Start())
-	require.Equal(t, machine.Stopped, state.GetState())
-	require.False(t, state.GetRule().Triggered)
-	stored, err := ruleProcessor.GetRuleById(id)
-	require.NoError(t, err)
-	require.False(t, stored.Triggered)
-}
-
-func TestRulePatrolRetriesCurrentState(t *testing.T) {
-	const id = "patrol_recovery"
-	for _, tc := range []struct {
-		name string
-		stop bool
-		want machine.RunState
-	}{
-		{name: "enabled", want: machine.Running},
-		{name: "disabled after snapshot", stop: true, want: machine.StoppedByErr},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			t.Cleanup(func() {
-				_, _ = streamProcessor.DropStream("patrol_recovery_input", ast.TypeStream)
-			})
-			require.NoError(t, ruleProcessor.ExecCreate(id, `{"id":"patrol_recovery","triggered":true,"sql":"SELECT * FROM patrol_recovery_input","options":{"restartStrategy":{"attempts":1}},"actions":[{"nop":{}}]}`))
-			r, err := ruleProcessor.GetRuleById(id)
-			require.NoError(t, err)
-			registry.RecoverRule(r)
-			t.Cleanup(func() {
-				require.NoError(t, registry.DeleteRule(id))
-			})
-			state, ok := registry.load(id)
-			require.True(t, ok)
-			require.Equal(t, machine.StoppedByErr, state.GetState())
-			snapshot := ruleWrapper{rule: state.GetRule(), state: state.GetState()}
-
-			_, err = streamProcessor.ExecStreamSql(`CREATE STREAM patrol_recovery_input () WITH (TYPE="memory", DATASOURCE="patrol_recovery_input")`)
-			require.NoError(t, err)
-			if tc.stop {
-				require.NoError(t, registry.StopRule(id))
-			}
-
-			handleAllScheduleRuleState(time.Now(), []ruleWrapper{snapshot})
-			current, ok := registry.load(id)
-			require.True(t, ok)
-			require.Equal(t, tc.want, current.GetState())
-			require.Same(t, state, current)
-			require.Equal(t, !tc.stop, current.GetRule().Triggered)
-			stored, err := ruleProcessor.GetRuleById(id)
-			require.NoError(t, err)
-			require.Equal(t, !tc.stop, stored.Triggered)
-		})
-	}
 }
 
 // TestDeleteRuleValidateID ensures that DeleteRule rejects invalid rule ids (path
