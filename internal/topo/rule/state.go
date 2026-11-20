@@ -150,22 +150,14 @@ func (s *State) Stop() {
 // StopManually stops the rule and disables any future scheduled runs.
 func (s *State) StopManually() {
 	s.ruleLock.Lock()
-	if !s.Rule.IsScheduleRule() {
-		s.ruleLock.Unlock()
-		s.Stop()
-		return
-	}
-	defer s.ruleLock.Unlock()
-	if s.Rule.Triggered {
+	if s.Rule.IsScheduleRule() && s.Rule.Triggered {
 		// Recovery can read the original rule outside ruleLock.
 		stopped := *s.Rule
 		stopped.Triggered = false
 		s.Rule = &stopped
 	}
-	// Complete the stop under ruleLock, including a start reserved before it.
-	if state := s.sm.CurrentState(); state != machine.Stopped && state != machine.StoppedByErr {
-		s.doStop(machine.Stopped, "canceled manually")
-	}
+	s.ruleLock.Unlock()
+	s.Stop()
 }
 
 func (s *State) ScheduleStop() {

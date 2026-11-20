@@ -272,6 +272,14 @@ func TestLongScheduleTransit(t *testing.T) {
 	st.ScheduleStop()
 	assert.Equal(t, machine.ScheduledStop, st.GetState())
 	require.True(t, st.GetRule().Triggered)
+
+	// A manual stop follows a patrol start that is already queued.
+	st.transitState(machine.Stopping, "")
+	require.NoError(t, st.ScheduleStart())
+	st.StopManually()
+	require.False(t, st.GetRule().Triggered)
+	require.Equal(t, machine.ActionSignalScheduledStart, st.sm.PopAction())
+	require.Equal(t, machine.ActionSignalStop, st.sm.PopAction())
 }
 
 func sendAction(st *State, a machine.ActionSignal) {
