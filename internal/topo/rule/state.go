@@ -100,7 +100,7 @@ func (s *State) ValidateAndRun(newRule *def.Rule) error {
 func (s *State) Bootstrap() error {
 	s.ruleLock.Lock()
 	defer s.ruleLock.Unlock()
-	s.setTriggered(true)
+	s.Rule.Triggered = true
 	return s.doValidateAndRun(s.Rule, nil)
 }
 
@@ -114,16 +114,7 @@ func (s *State) BootstrapScheduled(r *def.Rule, persist func() error) error {
 	}
 	enabled := *r
 	enabled.Triggered = true
-	return s.doValidateAndRun(&enabled, func() error {
-		if !enabled.Temp && persist != nil {
-			if err := persist(); err != nil {
-				return err
-			}
-		}
-		// The accepted start supersedes earlier manual stops in the queue.
-		s.sm.DiscardAction(machine.ActionSignalManualStop)
-		return nil
-	})
+	return s.doValidateAndRun(&enabled, persist)
 }
 
 // Start resumes a loaded rule or queues the start action.
@@ -174,27 +165,30 @@ func (s *State) Stop() {
 func (s *State) Disable(persist func() error) error {
 	s.ruleLock.Lock()
 	defer s.ruleLock.Unlock()
-	if !s.Rule.Temp && persist != nil {
+	if persist != nil {
 		if err := persist(); err != nil {
 			return err
 		}
 	}
-	s.setTriggered(false)
-	if !s.sm.TriggerAction(machine.ActionSignalManualStop) {
+	if s.Rule.Triggered {
+		// Patrol may still hold the old rule snapshot.
+		stopped := *s.Rule
+		stopped.Triggered = false
+		s.Rule = &stopped
+	}
+	// Complete the stop under ruleLock, including a start reserved before it.
+	if state := s.sm.CurrentState(); state != machine.Stopped && state != machine.StoppedByErr {
 		s.doStop(machine.Stopped, "canceled manually")
 	}
 	return nil
 }
 
 func (s *State) ScheduleStop() {
-	s.logger.Debug("scheduled stop RunState")
-	done := s.sm.TriggerAction(machine.ActionSignalScheduledStop)
-	if done {
-		return
-	}
 	s.ruleLock.Lock()
 	defer s.ruleLock.Unlock()
-	// do stop, stopping action and starting action are mutual exclusive. No concurrent problem here
+	if !s.Rule.Triggered || s.sm.TriggerAction(machine.ActionSignalScheduledStop) {
+		return
+	}
 	s.logger.Infof("schedule to stop rule %s", s.Rule.Id)
 	s.doStop(machine.ScheduledStop, "schedule terminated")
 }
@@ -207,16 +201,6 @@ func (s *State) StopWithLastWill(msg string) {
 	s.ruleLock.Lock()
 	defer s.ruleLock.Unlock()
 	s.doStop(machine.Stopped, msg)
-}
-
-// setTriggered requires ruleLock to be held by the caller.
-func (s *State) setTriggered(triggered bool) {
-	if s.Rule.Triggered != triggered {
-		// Readers may still hold the rule returned by GetRule.
-		r := *s.Rule
-		r.Triggered = triggered
-		s.Rule = &r
-	}
 }
 
 func (s *State) Delete() {

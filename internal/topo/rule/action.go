@@ -14,7 +14,7 @@ import (
 
 const EOFMessage = "done"
 
-func (s *State) doValidateAndRun(newRule *def.Rule, beforeApply func() error) (err error) {
+func (s *State) doValidateAndRun(newRule *def.Rule, persist func() error) (err error) {
 	if newRule == nil {
 		return errors.New("new rule is nil")
 	}
@@ -31,8 +31,8 @@ func (s *State) doValidateAndRun(newRule *def.Rule, beforeApply func() error) (e
 	if err != nil {
 		return err
 	}
-	if beforeApply != nil {
-		if err = beforeApply(); err != nil {
+	if persist != nil {
+		if err = persist(); err != nil {
 			tp.Cancel()
 			return err
 		}

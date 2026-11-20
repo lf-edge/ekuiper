@@ -21,9 +21,6 @@ func (s *State) nextAction() {
 	switch action {
 	case machine.ActionSignalStart:
 		err = s.startOrWaitForSchedule()
-	case machine.ActionSignalManualStop:
-		s.setTriggered(false)
-		s.doStop(machine.Stopped, "canceled manually")
 	case machine.ActionSignalStop:
 		s.doStop(machine.Stopped, "canceled manually")
 	case machine.ActionSignalScheduledStart:

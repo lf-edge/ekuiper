@@ -237,10 +237,12 @@ func TestLongScheduleTransit(t *testing.T) {
 	timex.Add(30 * time.Minute)
 	require.NoError(t, st.ScheduleStart())
 	require.Equal(t, machine.Stopped, st.GetState())
-	// A newer explicit start supersedes a manual stop still in the queue.
+	// A stop wins even if recovery reserved Starting before taking ruleLock.
 	require.False(t, st.sm.TriggerAction(machine.ActionSignalStart))
 	require.NoError(t, st.Disable(nil))
-	require.Equal(t, machine.Starting, st.GetState())
+	require.NoError(t, st.Start())
+	require.Equal(t, machine.Stopped, st.GetState())
+	// An explicit start enables scheduling again.
 	require.NoError(t, st.BootstrapScheduled(nil, nil))
 	require.True(t, st.GetRule().Triggered)
 	require.Equal(t, machine.ScheduledStop, st.GetState())
@@ -271,39 +273,7 @@ func TestLongScheduleTransit(t *testing.T) {
 	assert.Equal(t, machine.ScheduledStop, st.GetState())
 	st.ScheduleStop()
 	assert.Equal(t, machine.ScheduledStop, st.GetState())
-}
-
-func TestQueuedStopPreservesScheduleIntent(t *testing.T) {
-	for _, manual := range []bool{true, false} {
-		r := def.GetDefaultRule("queuedStop", "select * from demo")
-		r.Triggered = true
-		r.Options.Cron, r.Options.Duration = "* * * * *", "30s"
-		st := NewState(r, func(string, bool) {})
-
-		// Reserve Starting before the stop, as Start does before taking ruleLock.
-		require.False(t, st.sm.TriggerAction(machine.ActionSignalStart))
-		if manual {
-			require.NoError(t, st.Disable(nil))
-		} else {
-			st.StopWithLastWill("duration terminated")
-		}
-		require.Equal(t, machine.Starting, st.GetState())
-
-		st.ruleLock.Lock()
-		err := st.startOrWaitForSchedule()
-		st.ruleLock.Unlock()
-		require.NoError(t, err)
-		require.Equal(t, machine.Stopped, st.GetState())
-		require.Equal(t, !manual, st.GetRule().Triggered)
-		if manual {
-			require.NoError(t, st.ScheduleStart())
-			require.Equal(t, machine.Stopped, st.GetState())
-			// A pending recovery can also reach Start after the rule was disabled.
-			require.NoError(t, st.Start())
-			require.False(t, st.GetRule().Triggered)
-			require.Equal(t, machine.Stopped, st.GetState())
-		}
-	}
+	require.True(t, st.GetRule().Triggered)
 }
 
 func sendAction(st *State, a machine.ActionSignal) {
