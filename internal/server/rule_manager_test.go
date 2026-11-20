@@ -27,7 +27,6 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/rule"
-	"github.com/lf-edge/ekuiper/v2/internal/topo/rule/machine"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 )
 
@@ -59,58 +58,6 @@ func TestErrors(t *testing.T) {
 	registry.register("test", rule.NewState(def.GetDefaultRule("testErrors", "select * from demo"), func(string, bool) {}))
 	err = registry.StartRule("test")
 	assert.EqualError(t, err, "fail to get stream demo, please check if stream is created")
-}
-
-func TestFailedScheduledRuleStartKeepsTrigger(t *testing.T) {
-	const id = "failed_scheduled_start"
-	const stream = "failed_scheduled_input"
-	const ddl = `CREATE STREAM failed_scheduled_input () WITH (TYPE="memory", DATASOURCE="failed_scheduled_input", FORMAT="json")`
-	_, err := streamProcessor.ExecStreamSql(ddl)
-	require.NoError(t, err)
-	t.Cleanup(func() {
-		_, _ = streamProcessor.DropStream(stream, ast.TypeStream)
-	})
-	_, err = registry.CreateRule(id, `{"id":"failed_scheduled_start","triggered":false,"sql":"SELECT * FROM failed_scheduled_input","options":{"cron":"* * * * *","duration":"30s"},"actions":[{"nop":{}}]}`)
-	require.NoError(t, err)
-	t.Cleanup(func() {
-		require.NoError(t, registry.DeleteRule(id))
-	})
-	_, err = streamProcessor.DropStream(stream, ast.TypeStream)
-	require.NoError(t, err)
-
-	for _, start := range []func(string) error{registry.StartRule, registry.RestartRule} {
-		require.ErrorContains(t, start(id), "fail to get stream "+stream)
-		persisted, err := ruleProcessor.GetRuleById(id)
-		require.NoError(t, err)
-		require.False(t, persisted.Triggered)
-		state, ok := registry.load(id)
-		require.True(t, ok)
-		require.False(t, state.GetRule().Triggered)
-		require.Equal(t, machine.Stopped, state.GetState())
-	}
-
-	_, err = streamProcessor.ExecStreamSql(ddl)
-	require.NoError(t, err)
-	persisted, err := ruleProcessor.GetRuleById(id)
-	require.NoError(t, err)
-	registry.RecoverRule(persisted)
-	require.NoError(t, registry.scheduledStart(id))
-	state, ok := registry.load(id)
-	require.True(t, ok)
-	require.Equal(t, machine.Stopped, state.GetState())
-
-	require.NoError(t, registry.StartRule(id))
-	require.Equal(t, machine.ScheduledStop, state.GetState())
-	require.True(t, state.GetRule().Triggered)
-	persisted, err = ruleProcessor.GetRuleById(id)
-	require.NoError(t, err)
-	require.True(t, persisted.Triggered)
-	require.NoError(t, registry.StopRule(id))
-	require.Equal(t, machine.Stopped, state.GetState())
-	require.False(t, state.GetRule().Triggered)
-	persisted, err = ruleProcessor.GetRuleById(id)
-	require.NoError(t, err)
-	require.False(t, persisted.Triggered)
 }
 
 // TestDeleteRuleValidateID ensures that DeleteRule rejects invalid rule ids (path

@@ -94,27 +94,16 @@ func (s *State) SetRule(r *def.Rule) {
 func (s *State) ValidateAndRun(newRule *def.Rule) error {
 	s.ruleLock.Lock()
 	defer s.ruleLock.Unlock()
-	return s.doValidateAndRun(newRule, nil)
+	return s.doValidateAndRun(newRule)
 }
 
 func (s *State) Bootstrap() error {
 	s.ruleLock.Lock()
 	defer s.ruleLock.Unlock()
-	s.Rule.Triggered = true
-	return s.doValidateAndRun(s.Rule, nil)
-}
-
-// BootstrapScheduled validates and enables a scheduled rule.
-// A nil rule uses the current definition.
-func (s *State) BootstrapScheduled(r *def.Rule, persist func() error) error {
-	s.ruleLock.Lock()
-	defer s.ruleLock.Unlock()
-	if r == nil {
-		r = s.Rule
-	}
-	enabled := *r
+	enabled := *s.Rule
 	enabled.Triggered = true
-	return s.doValidateAndRun(&enabled, persist)
+	s.Rule = &enabled
+	return s.doValidateAndRun(s.Rule)
 }
 
 // Start resumes a loaded rule or queues the start action.
@@ -161,15 +150,15 @@ func (s *State) Stop() {
 	s.StopWithLastWill("canceled manually")
 }
 
-// Disable removes a scheduled rule from patrol and stops it.
-func (s *State) Disable(persist func() error) error {
+// StopManually stops the rule and disables any future scheduled runs.
+func (s *State) StopManually() {
 	s.ruleLock.Lock()
-	defer s.ruleLock.Unlock()
-	if persist != nil {
-		if err := persist(); err != nil {
-			return err
-		}
+	if !s.Rule.IsScheduleRule() {
+		s.ruleLock.Unlock()
+		s.Stop()
+		return
 	}
+	defer s.ruleLock.Unlock()
 	if s.Rule.Triggered {
 		// Patrol may still hold the old rule snapshot.
 		stopped := *s.Rule
@@ -180,7 +169,6 @@ func (s *State) Disable(persist func() error) error {
 	if state := s.sm.CurrentState(); state != machine.Stopped && state != machine.StoppedByErr {
 		s.doStop(machine.Stopped, "canceled manually")
 	}
-	return nil
 }
 
 func (s *State) ScheduleStop() {

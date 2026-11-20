@@ -231,7 +231,7 @@ func TestLongScheduleTransit(t *testing.T) {
 	_ = st.Start()
 	assert.Equal(t, machine.ScheduledStop, st.GetState())
 	// Scheduled stop to stop, stop
-	require.NoError(t, st.Disable(nil))
+	st.StopManually()
 	assert.Equal(t, machine.Stopped, st.GetState())
 	// Moving into the schedule leaves a manually stopped rule stopped.
 	timex.Add(30 * time.Minute)
@@ -239,11 +239,11 @@ func TestLongScheduleTransit(t *testing.T) {
 	require.Equal(t, machine.Stopped, st.GetState())
 	// A stop wins even if recovery reserved Starting before taking ruleLock.
 	require.False(t, st.sm.TriggerAction(machine.ActionSignalStart))
-	require.NoError(t, st.Disable(nil))
+	st.StopManually()
 	require.NoError(t, st.Start())
 	require.Equal(t, machine.Stopped, st.GetState())
 	// An explicit start enables scheduling again.
-	require.NoError(t, st.BootstrapScheduled(nil, nil))
+	require.NoError(t, st.Bootstrap())
 	require.True(t, st.GetRule().Triggered)
 	require.Equal(t, machine.ScheduledStop, st.GetState())
 	_ = st.ScheduleStart()
