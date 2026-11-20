@@ -72,6 +72,33 @@ A session window begins when the first event occurs. If another event occurs wit
 
 If events keep occurring within the specified timeout, the session window will keep extending until maximum duration is reached. The maximum duration checking intervals are set to be the same size as the specified max duration. For example, if the max duration is 10, then the checks on if the window exceed maximum duration will happen at t = 0, 10, 20, 30, etc.
 
+### Session Window Partitioning
+
+By default, all events share the same session. In the above example, the `GROUP BY ID` clause only groups the events after the session window is closed, so the events of any `ID` keep the session open for all the others. To track a session for each key independently, such as for each device or user, use the `partition by` clause:
+
+```sql
+SELECT deviceId, count(*) FROM demo GROUP BY SESSIONWINDOW(ss, 10, 2) OVER (PARTITION BY deviceId)
+```
+
+Each partition starts its session with its first event, and is closed on its own timeout or split at the maximum duration checks. For the following input, where the time is the arrival time in seconds:
+
+```txt
+t=0   {"deviceId":"a"}
+t=1   {"deviceId":"b"}
+t=1.5 {"deviceId":"a"}
+```
+
+The output is as follows:
+
+```txt
+t=3   [{"deviceId":"b","count":1}]
+t=3.5 [{"deviceId":"a","count":2}]
+```
+
+Without the `partition by` clause, the event of device `b` would extend the session of device `a`, and all the events would be output in the same window at t=3.5.
+
+The `partition by` clause is supported by the session window and the state window. Other window types will report an error.
+
 ## Conditional state window
 
 The conditional state window does not focus on time, but only on the impact of each piece of data on the window state. It has two main parameters, the start window trigger condition and the send window trigger condition.

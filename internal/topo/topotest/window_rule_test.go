@@ -1,4 +1,4 @@
-// Copyright 2021-2025 EMQ Technologies Co., Ltd.
+// Copyright 2021-2026 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -313,6 +313,36 @@ func TestWindow(t *testing.T) {
 				"op_2_window_0_records_in_total":   int64(11),
 				"op_2_window_0_records_out_total":  int64(3),
 			},
+		},
+		{
+			// Each partition has its own session. The hum field is only used by the
+			// partition expression, so it must not be pruned from the source.
+			Name: `TestWindowSessionPartitionRule`,
+			Sql:  `SELECT count(temp) as c, window_start() as ws, window_end() as we FROM sessionDemo WHERE temp < 30 GROUP BY SessionWindow(ss, 1, 1) OVER (PARTITION BY hum > 70)`,
+			R: [][]map[string]interface{}{
+				{{
+					"c":  2,
+					"ws": int64(1541152486013),
+					"we": int64(1541152487823), // timeout of hum <= 70
+				}}, {{
+					"c":  2,
+					"ws": int64(1541152487932),
+					"we": int64(1541152489000), // max duration check of hum > 70
+				}}, {{
+					"c":  2,
+					"ws": int64(1541152489252),
+					"we": int64(1541152491000), // max duration check of hum <= 70
+				}}, {{
+					"c":  2,
+					"ws": int64(1541152490872),
+					"we": int64(1541152492000), // max duration check of hum > 70
+				}}, {{
+					"c":  1,
+					"ws": int64(1541152492000),
+					"we": int64(1541152493492), // timeout of hum > 70
+				}},
+			},
+			M: map[string]interface{}{},
 		},
 		{
 			Name: `TestWindowRule6`,
@@ -799,7 +829,8 @@ func TestWindow(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		if strings.Contains(strings.ToLower(tt.Sql), "slidingwindow") {
+		sql := strings.ToLower(tt.Sql)
+		if strings.Contains(sql, "slidingwindow") || strings.Contains(sql, "sessionwindow") {
 			tts := []RuleTest{tt}
 			DoRuleTest(t, tts, v2Opt, 15)
 		}
@@ -1441,6 +1472,34 @@ func TestEventWindow(t *testing.T) {
 			},
 		},
 		{
+			Name: `TestEventWindowSessionPartitionRule`,
+			Sql:  `SELECT count(temp) as c, window_start() as ws, window_end() as we FROM sessionDemoE GROUP BY SessionWindow(ss, 2, 1) OVER (PARTITION BY hum > 70)`,
+			R: [][]map[string]interface{}{
+				{{
+					"c":  1,
+					"ws": int64(1541152486013),
+					"we": int64(1541152487013), // timeout of hum <= 70
+				}}, {{
+					"c":  2,
+					"ws": int64(1541152487932),
+					"we": int64(1541152489442), // timeout of hum > 70
+				}}, {{
+					"c":  2,
+					"ws": int64(1541152489252),
+					"we": int64(1541152491062), // timeout of hum <= 70
+				}}, {{
+					"c":  4,
+					"ws": int64(1541152490872),
+					"we": int64(1541152494000), // max duration check of hum > 70
+				}}, {{
+					"c":  1,
+					"ws": int64(1541152494000),
+					"we": int64(1541152495112), // timeout of hum > 70
+				}},
+			},
+			M: map[string]interface{}{},
+		},
+		{
 			Name: `TestEventWindowRule9`,
 			Sql:  `SELECT window_end(), color, window_start() FROM demoE GROUP BY HOPPINGWINDOW(ss, 2, 1)`,
 			R: [][]map[string]interface{}{
@@ -1629,6 +1688,24 @@ func TestEventWindow(t *testing.T) {
 	}
 	for _, opt := range options {
 		DoRuleTest(t, tests, opt, 10)
+	}
+
+	v2Opt := &def.RuleOption{
+		BufferLength: 100,
+		SendError:    true,
+		IsEventTime:  true,
+		LateTol:      cast.DurationConf(time.Second),
+		PlanOptimizeStrategy: &def.PlanOptimizeStrategy{
+			WindowOption: &def.WindowOption{
+				WindowVersion: "v2",
+			},
+		},
+	}
+	for _, tt := range tests {
+		if strings.Contains(strings.ToLower(tt.Sql), "sessionwindow") {
+			tts := []RuleTest{tt}
+			DoRuleTest(t, tts, v2Opt, 10)
+		}
 	}
 }
 

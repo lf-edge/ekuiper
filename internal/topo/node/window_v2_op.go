@@ -41,6 +41,7 @@ func init() {
 	gob.Register(map[string]*StateWindowStatus{})
 	gob.Register(&SlidingWindowV2State{})
 	gob.Register(&EventSlidingWindowV2State{})
+	gob.Register(&SessionWindowV2State{})
 }
 
 type WindowV2Operator struct {
@@ -64,6 +65,12 @@ func NewWindowV2Op(name string, w WindowConfig, options *def.RuleOption) (*Windo
 		}
 	case ast.STATE_WINDOW:
 		o.wExec = NewStateWindowOp(o)
+	case ast.SESSION_WINDOW:
+		sessionOp, err := NewSessionWindowOp(o, options.IsEventTime)
+		if err != nil {
+			return nil, err
+		}
+		o.wExec = sessionOp
 	default:
 		return nil, fmt.Errorf("unsupported window type:%v", w.Type.String())
 	}
