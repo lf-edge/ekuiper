@@ -13,25 +13,31 @@ func (s *State) transitState(newState machine.RunState, lastWill string) {
 }
 
 func (s *State) nextAction() {
-	action := s.sm.PopAction()
-	for !s.Rule.Triggered && (action == machine.ActionSignalScheduledStart ||
-		action == machine.ActionSignalScheduledStop ||
-		(action == machine.ActionSignalStart && s.Rule.IsScheduleRule())) {
-		action = s.sm.PopAction()
-	}
-	var err error
-	switch action {
-	case machine.ActionSignalStart:
-		err = s.doStart()
-	case machine.ActionSignalStop:
-		s.doStop(machine.Stopped, "canceled manually")
-	case machine.ActionSignalScheduledStart:
-		s.logger.Infof("schedule to run rule %s", s.Rule.Id)
-		err = s.doStart()
-	case machine.ActionSignalScheduledStop:
-		s.doStop(machine.ScheduledStop, "canceled manually")
-	}
-	if err != nil {
-		s.logger.Error(err)
+	for {
+		var err error
+		switch s.sm.PopAction() {
+		case machine.ActionSignalStart:
+			if !s.Rule.Triggered && s.Rule.IsScheduleRule() {
+				continue
+			}
+			err = s.doStart()
+		case machine.ActionSignalStop:
+			s.doStop(machine.Stopped, "canceled manually")
+		case machine.ActionSignalScheduledStart:
+			if !s.Rule.Triggered {
+				continue
+			}
+			s.logger.Infof("schedule to run rule %s", s.Rule.Id)
+			err = s.doStart()
+		case machine.ActionSignalScheduledStop:
+			if !s.Rule.Triggered {
+				continue
+			}
+			s.doStop(machine.ScheduledStop, "canceled manually")
+		}
+		if err != nil {
+			s.logger.Error(err)
+		}
+		return
 	}
 }

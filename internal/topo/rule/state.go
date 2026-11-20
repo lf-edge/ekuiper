@@ -157,7 +157,7 @@ func (s *State) StopManually() {
 	}
 	defer s.ruleLock.Unlock()
 	if s.Rule.Triggered {
-		// Patrol may still hold the old rule snapshot.
+		// Recovery can read the original rule outside ruleLock.
 		stopped := *s.Rule
 		stopped.Triggered = false
 		s.Rule = &stopped
