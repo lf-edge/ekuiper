@@ -250,8 +250,8 @@ func handleAllScheduleRuleState(now time.Time, rs []ruleWrapper) {
 				conf.Log.Errorf("handle schedule rule %v state failed, err:%v", r.rule.Id, err)
 			}
 		}
-		// handle auto restart rules
-		if r.rule.Options.RestartStrategy != nil && r.rule.Options.RestartStrategy.Attempts > 0 {
+		// Scheduled rules retry through their schedule, using their live state.
+		if !r.rule.IsScheduleRule() && r.rule.Options.RestartStrategy != nil && r.rule.Options.RestartStrategy.Attempts > 0 {
 			if r.state == machine.StoppedByErr {
 				reply := registry.RecoverRule(r.rule)
 				conf.Log.Infof("restart exit rule %v with reply: %s", r.rule.Id, reply)

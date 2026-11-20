@@ -103,9 +103,7 @@ func (s *State) Bootstrap() error {
 	return s.doValidateAndRun(s.Rule)
 }
 
-// Start run start or add the start action to queue
-// By check state, it assures only one Start function is running at any time. (thread safe)
-// regSchedule: whether need to handle scheduler. If call externally, set it to true
+// Start requests a rule start. Scheduled rules wait for the patrol.
 func (s *State) Start() error {
 	done := s.sm.TriggerAction(machine.ActionSignalStart)
 	if done {
@@ -119,21 +117,20 @@ func (s *State) Start() error {
 	}
 	// delegate to rule patrol checker
 	if s.Rule.IsScheduleRule() {
-		s.transitState(machine.ScheduledStop, "")
+		if s.Rule.Triggered {
+			s.transitState(machine.ScheduledStop, "")
+		} else {
+			s.transitState(machine.Stopped, "canceled manually")
+		}
 		return nil
 	}
 	return s.doStart()
 }
 
 func (s *State) ScheduleStart() error {
-	done := s.sm.TriggerAction(machine.ActionSignalScheduledStart)
-	if done {
-		return nil
-	}
 	s.ruleLock.Lock()
 	defer s.ruleLock.Unlock()
-	// Bootstrap may have completed the start while this call was waiting for ruleLock.
-	if s.sm.CurrentState() != machine.Starting {
+	if !s.Rule.Triggered || s.sm.TriggerAction(machine.ActionSignalScheduledStart) {
 		return nil
 	}
 	// doStart trigger the Rule run. If no trigger error, the Rule will run async and control the state by itself
@@ -141,20 +138,26 @@ func (s *State) ScheduleStart() error {
 	return s.doStart()
 }
 
-// Stop run stop action or add the stop action to queue
-// regSchedule: whether need to handle scheduler. If call externally, set it to true
+// Stop requests a manual stop and disables any future scheduled runs.
 func (s *State) Stop() {
+	s.ruleLock.Lock()
+	if s.Rule.IsScheduleRule() && s.Rule.Triggered {
+		// Recovery can read the original rule outside ruleLock.
+		stopped := *s.Rule
+		stopped.Triggered = false
+		s.Rule = &stopped
+	}
+	s.ruleLock.Unlock()
 	s.StopWithLastWill("canceled manually")
 }
 
 func (s *State) ScheduleStop() {
 	s.logger.Debug("scheduled stop RunState")
-	done := s.sm.TriggerAction(machine.ActionSignalScheduledStop)
-	if done {
-		return
-	}
 	s.ruleLock.Lock()
 	defer s.ruleLock.Unlock()
+	if !s.Rule.Triggered || s.sm.TriggerAction(machine.ActionSignalScheduledStop) {
+		return
+	}
 	// do stop, stopping action and starting action are mutual exclusive. No concurrent problem here
 	s.logger.Infof("schedule to stop rule %s", s.Rule.Id)
 	s.doStop(machine.ScheduledStop, "schedule terminated")
