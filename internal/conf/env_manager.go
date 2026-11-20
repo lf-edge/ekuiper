@@ -54,10 +54,8 @@ func (e *EnvManager) loadEnv() {
 	got := os.Environ()
 	e.env = make(map[string]string)
 	for _, v := range got {
-		key, value, ok := strings.Cut(v, "=")
-		if !ok {
-			continue
-		}
+		// os.Environ returns entries in key=value form.
+		key, value, _ := strings.Cut(v, "=")
 		e.env[key] = value
 	}
 }
