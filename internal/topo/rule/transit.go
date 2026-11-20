@@ -21,10 +21,6 @@ func (s *State) nextAction() {
 	case machine.ActionSignalStop:
 		s.doStop(machine.Stopped, "canceled manually")
 	case machine.ActionSignalScheduledStart:
-		if !s.Rule.Triggered {
-			s.nextAction()
-			return
-		}
 		s.logger.Infof("schedule to run rule %s", s.Rule.Id)
 		err = s.doStart()
 	case machine.ActionSignalScheduledStop:
