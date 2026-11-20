@@ -67,6 +67,7 @@ For specialized data dispatch requirements or integrations with particular platf
 - [Image sink](./sinks/plugin/image.md): A sink to an image file. Only used to handle binary results.
 - [Zero MQ sink](./sinks/plugin/zmq.md): A sink to Zero MQ.
 - [Kafka sink](./sinks/plugin/kafka.md): A sink to Kafka.
+- [gRPC sink](./sinks/plugin/grpc.md): A sink to call a gRPC service.
 
 ### Data Templates in Sink Connectors
 

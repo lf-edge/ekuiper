@@ -31,6 +31,7 @@ The list of predefined sink plugins:
 - [Zero MQ sink](./plugin/zmq.md): sink to Zero MQ.
 - [Kafka sink](./plugin/kafka.md): sink to Kafka.
 - [IoTDB sink](./plugin/iotdb.md): sink to Apache IoTDB, supporting both tree and table models.
+- [gRPC sink](./plugin/grpc.md): sink to a gRPC service.
 
 ## Updatable Sink
 
