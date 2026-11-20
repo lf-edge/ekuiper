@@ -94,19 +94,31 @@ func (s *State) SetRule(r *def.Rule) {
 func (s *State) ValidateAndRun(newRule *def.Rule) error {
 	s.ruleLock.Lock()
 	defer s.ruleLock.Unlock()
-	return s.doValidateAndRun(newRule)
+	return s.doValidateAndRun(newRule, nil)
 }
 
-func (s *State) Bootstrap() error {
+// Bootstrap validates and enables the rule. A nil rule uses the current definition.
+func (s *State) Bootstrap(r *def.Rule, persist func() error) error {
 	s.ruleLock.Lock()
 	defer s.ruleLock.Unlock()
-	s.Rule.Triggered = true
-	return s.doValidateAndRun(s.Rule)
+	if r == nil {
+		r = s.Rule
+	}
+	enabled := *r
+	enabled.Triggered = true
+	return s.doValidateAndRun(&enabled, func() error {
+		if !enabled.Temp && persist != nil {
+			if err := persist(); err != nil {
+				return err
+			}
+		}
+		// The accepted start supersedes earlier manual stops in the queue.
+		s.sm.DiscardAction(machine.ActionSignalManualStop)
+		return nil
+	})
 }
 
-// Start run start or add the start action to queue
-// By check state, it assures only one Start function is running at any time. (thread safe)
-// regSchedule: whether need to handle scheduler. If call externally, set it to true
+// Start resumes a loaded rule or queues the start action.
 func (s *State) Start() error {
 	done := s.sm.TriggerAction(machine.ActionSignalStart)
 	if done {
@@ -118,23 +130,27 @@ func (s *State) Start() error {
 	if s.sm.CurrentState() != machine.Starting {
 		return nil
 	}
+	return s.startOrWaitForSchedule()
+}
+
+// startOrWaitForSchedule requires ruleLock to be held by the caller.
+func (s *State) startOrWaitForSchedule() error {
 	// delegate to rule patrol checker
 	if s.Rule.IsScheduleRule() {
-		s.transitState(machine.ScheduledStop, "")
+		if s.Rule.Triggered {
+			s.transitState(machine.ScheduledStop, "")
+		} else {
+			s.transitState(machine.Stopped, "canceled manually")
+		}
 		return nil
 	}
 	return s.doStart()
 }
 
 func (s *State) ScheduleStart() error {
-	done := s.sm.TriggerAction(machine.ActionSignalScheduledStart)
-	if done {
-		return nil
-	}
 	s.ruleLock.Lock()
 	defer s.ruleLock.Unlock()
-	// Bootstrap may have completed the start while this call was waiting for ruleLock.
-	if s.sm.CurrentState() != machine.Starting {
+	if !s.Rule.Triggered || s.sm.TriggerAction(machine.ActionSignalScheduledStart) {
 		return nil
 	}
 	// doStart trigger the Rule run. If no trigger error, the Rule will run async and control the state by itself
@@ -142,10 +158,23 @@ func (s *State) ScheduleStart() error {
 	return s.doStart()
 }
 
-// Stop run stop action or add the stop action to queue
-// regSchedule: whether need to handle scheduler. If call externally, set it to true
 func (s *State) Stop() {
-	s.StopWithLastWill("canceled manually")
+	_ = s.Disable(nil)
+}
+
+// Disable persists the new intent before stopping a persistent rule.
+// A nil persist callback only changes the in-memory rule.
+func (s *State) Disable(persist func() error) error {
+	s.ruleLock.Lock()
+	defer s.ruleLock.Unlock()
+	if !s.Rule.Temp && persist != nil {
+		if err := persist(); err != nil {
+			return err
+		}
+	}
+	s.setTriggered(false)
+	s.stopWithLastWill(machine.ActionSignalManualStop, "canceled manually")
+	return nil
 }
 
 func (s *State) ScheduleStop() {
@@ -162,13 +191,28 @@ func (s *State) ScheduleStop() {
 }
 
 func (s *State) StopWithLastWill(msg string) {
-	done := s.sm.TriggerAction(machine.ActionSignalStop)
+	s.ruleLock.Lock()
+	defer s.ruleLock.Unlock()
+	s.stopWithLastWill(machine.ActionSignalStop, msg)
+}
+
+// stopWithLastWill requires ruleLock to be held by the caller.
+func (s *State) stopWithLastWill(action machine.ActionSignal, msg string) {
+	done := s.sm.TriggerAction(action)
 	if done {
 		return
 	}
-	s.ruleLock.Lock()
-	defer s.ruleLock.Unlock()
 	s.doStop(machine.Stopped, msg)
+}
+
+// setTriggered requires ruleLock to be held by the caller.
+func (s *State) setTriggered(triggered bool) {
+	if s.Rule.Triggered != triggered {
+		// Readers may still hold the rule returned by GetRule.
+		r := *s.Rule
+		r.Triggered = triggered
+		s.Rule = &r
+	}
 }
 
 func (s *State) Delete() {

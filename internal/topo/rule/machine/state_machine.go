@@ -2,6 +2,7 @@ package machine
 
 import (
 	"fmt"
+	"slices"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
@@ -17,6 +18,7 @@ const (
 	ActionSignalStop
 	ActionSignalScheduledStart
 	ActionSignalScheduledStop
+	ActionSignalManualStop
 )
 
 type RunState int
@@ -86,7 +88,7 @@ func (s *StateMachine) TriggerAction(action ActionSignal) bool {
 			s.currentState = Starting
 			return false
 		}
-	case ActionSignalStop:
+	case ActionSignalStop, ActionSignalManualStop:
 		switch ss {
 		case Stopped, StoppedByErr:
 			s.logger.Infof("ignore stop action, because current RunState is %s", StateName[ss])
@@ -158,6 +160,14 @@ func (s *StateMachine) PopAction() ActionSignal {
 		s.actionQ = s.actionQ[1:]
 	}
 	return action
+}
+
+func (s *StateMachine) DiscardAction(action ActionSignal) {
+	s.Lock()
+	defer s.Unlock()
+	s.actionQ = slices.DeleteFunc(s.actionQ, func(queued ActionSignal) bool {
+		return queued == action
+	})
 }
 
 func (s *StateMachine) LastWill() string {

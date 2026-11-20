@@ -14,7 +14,7 @@ import (
 
 const EOFMessage = "done"
 
-func (s *State) doValidateAndRun(newRule *def.Rule) (err error) {
+func (s *State) doValidateAndRun(newRule *def.Rule, beforeApply func() error) (err error) {
 	if newRule == nil {
 		return errors.New("new rule is nil")
 	}
@@ -30,6 +30,12 @@ func (s *State) doValidateAndRun(newRule *def.Rule) (err error) {
 	tp, err := s.validate()
 	if err != nil {
 		return err
+	}
+	if beforeApply != nil {
+		if err = beforeApply(); err != nil {
+			tp.Cancel()
+			return err
+		}
 	}
 	// stop the old run
 	if s.topology != nil {

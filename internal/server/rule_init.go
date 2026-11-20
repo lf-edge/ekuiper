@@ -245,13 +245,14 @@ func handleAllRuleStatusMetrics(rs []ruleWrapper) {
 
 func handleAllScheduleRuleState(now time.Time, rs []ruleWrapper) {
 	for _, r := range rs {
-		if r.rule.IsScheduleRule() || r.rule.IsDurationRule() {
+		scheduled := r.rule.IsScheduleRule()
+		if (scheduled && r.rule.Triggered) || (!scheduled && r.rule.IsDurationRule()) {
 			if err := handleScheduleRuleState(now, r); err != nil {
 				conf.Log.Errorf("handle schedule rule %v state failed, err:%v", r.rule.Id, err)
 			}
 		}
-		// handle auto restart rules
-		if r.rule.Options.RestartStrategy != nil && r.rule.Options.RestartStrategy.Attempts > 0 {
+		// Scheduled rules retry through the scheduler while their window is open.
+		if !scheduled && r.rule.Options.RestartStrategy != nil && r.rule.Options.RestartStrategy.Attempts > 0 {
 			if r.state == machine.StoppedByErr {
 				reply := registry.RecoverRule(r.rule)
 				conf.Log.Infof("restart exit rule %v with reply: %s", r.rule.Id, reply)

@@ -245,47 +245,45 @@ func (rr *RuleRegistry) DeleteRule(name string) error {
 }
 
 func (rr *RuleRegistry) StartRule(name string) error {
-	rs, ok := registry.load(name)
-	if !ok {
-		return errorx.NewWithCode(errorx.NOT_FOUND, fmt.Sprintf("Rule %s is not found in registry, please check if it is created", name))
-	} else {
-		err := rr.updateTrigger(name, true)
-		if err != nil {
-			conf.Log.Warnf("start rule update db status error: %s", err.Error())
-		}
-		return rs.Bootstrap()
-	}
+	return rr.startRule(name, false)
 }
 
 func (rr *RuleRegistry) StopRule(name string) error {
-	if rs, ok := registry.load(name); ok {
-		err := rr.updateTrigger(name, false)
-		if err != nil {
-			conf.Log.Warnf("stop rule update db status error: %s", err.Error())
-		}
-		rs.Stop()
-	} else {
+	rr.RLock()
+	defer rr.RUnlock()
+	rs, ok := rr.internal[name]
+	if !ok {
 		return errorx.NewWithCode(errorx.NOT_FOUND, fmt.Sprintf("Rule %s is not found in registry, please check if it is created", name))
 	}
-	return nil
+	return rs.Disable(func() error {
+		return ruleProcessor.ExecReplaceRuleState(name, false)
+	})
 }
 
 func (rr *RuleRegistry) RestartRule(name string) error {
-	if rs, ok := registry.load(name); ok {
-		err := rr.updateTrigger(name, true)
-		if err != nil {
-			conf.Log.Warnf("restart rule update db status error: %s", err.Error())
-		}
-		rs.Stop()
-		r, err := ruleProcessor.GetRuleById(name)
+	return rr.startRule(name, true)
+}
+
+func (rr *RuleRegistry) startRule(name string, reload bool) error {
+	// Keep the state registered through the operation and use its lock to
+	// serialize enable and disable requests for the same rule.
+	rr.RLock()
+	defer rr.RUnlock()
+	rs, ok := rr.internal[name]
+	if !ok {
+		return errorx.NewWithCode(errorx.NOT_FOUND, fmt.Sprintf("Rule %s is not found in registry, please check if it is created", name))
+	}
+	var r *def.Rule
+	if reload {
+		var err error
+		r, err = ruleProcessor.GetRuleById(name)
 		if err != nil {
 			return err
 		}
-		rs.SetRule(r)
-		return rs.Start()
-	} else {
-		return errorx.NewWithCode(errorx.NOT_FOUND, fmt.Sprintf("Rule %s is not found in registry, please check if it is created", name))
 	}
+	return rs.Bootstrap(r, func() error {
+		return ruleProcessor.ExecReplaceRuleState(name, true)
+	})
 }
 
 func (rr *RuleRegistry) GetAllRuleStatus() (string, error) {
@@ -489,11 +487,10 @@ func (rr *RuleRegistry) stopAtExit(name string, msg string) error {
 	if !ok {
 		return errorx.NewWithCode(errorx.NOT_FOUND, fmt.Sprintf("Rule %s is not found in registry, please check if it is deleted", name))
 	} else {
-		if len(msg) > 0 {
-			rs.StopWithLastWill(msg)
-		} else {
-			rs.Stop()
+		if msg == "" {
+			msg = "canceled manually"
 		}
+		rs.StopWithLastWill(msg)
 		return nil
 	}
 }
