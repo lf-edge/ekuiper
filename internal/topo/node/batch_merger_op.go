@@ -26,9 +26,6 @@ import (
 
 type BatchMergerOp struct {
 	*defaultSinkNode
-	// save lastRow to get the props
-	lastRow any
-	wt      *xsql.WindowTuples
 }
 
 func NewBatchMergerOp(name string, rOpt *def.RuleOption) (*BatchMergerOp, error) {
@@ -45,7 +42,8 @@ func (o *BatchMergerOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 			o.Close()
 		}()
 		err := infra.SafeRun(func() error {
-			count := 0
+			batch := &xsql.TransformedTupleList{}
+			var lastInput any
 			for {
 				select {
 				case <-ctx.Done():
@@ -58,24 +56,20 @@ func (o *BatchMergerOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 					}
 					switch dt := data.(type) {
 					case xsql.BatchEOFTuple:
-						if count > 0 {
-							o.Broadcast(o.wt)
-							o.onSend(ctx, o.wt)
-							count = 0
-							o.lastRow = nil
-							o.wt = nil
+						if lastInput != nil {
+							if row, ok := lastInput.(api.HasDynamicProps); ok {
+								batch.Props = row.AllProps()
+							}
+							o.Broadcast(batch)
+							o.onSend(ctx, batch)
+							lastInput = nil
+							batch = &xsql.TransformedTupleList{}
 						}
-					case *xsql.SliceTuple:
-						o.onProcessStart(ctx, data)
-						o.appendWindowTuples(dt)
-						o.onProcessEnd(ctx)
-						count++
+						continue
 					case xsql.Row:
 						o.onProcessStart(ctx, data)
-						o.appendWindowTuples(dt)
+						batch.Content = append(batch.Content, dt)
 						o.onProcessEnd(ctx)
-						o.lastRow = dt
-						count++
 					case api.MessageTupleList:
 						o.onProcessStart(ctx, data)
 						// TODO: find a way to avoid using ToMaps
@@ -83,14 +77,14 @@ func (o *BatchMergerOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 							row := &xsql.Tuple{
 								Message: m,
 							}
-							o.appendWindowTuples(row)
+							batch.Content = append(batch.Content, row)
 						}
 						o.onProcessEnd(ctx)
-						o.lastRow = dt
-						count++
 					default:
 						o.onError(ctx, fmt.Errorf("unknown data type: %T", data))
+						continue
 					}
+					lastInput = data
 				}
 			}
 		})
@@ -117,14 +111,4 @@ func (o *BatchMergerOp) ingest(ctx api.StreamContext, item any) (any, bool) {
 		return nil, true
 	}
 	return item, false
-}
-
-func (o *BatchMergerOp) appendWindowTuples(row xsql.Row) {
-	if o.wt == nil {
-		o.wt = &xsql.WindowTuples{
-			Content: make([]xsql.Row, 0),
-		}
-	}
-	o.wt.Content = append(o.wt.Content, row)
-	o.lastRow = row
 }
