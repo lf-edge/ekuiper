@@ -50,7 +50,8 @@ type sinkConf struct {
 	Format             string            `json:"format"` // only use for validation; transformation is done in sink_node
 	Compression        string            `json:"compression"`
 	Encryption         string            `json:"encryption"`
-	Fields             []string          `json:"fields"` // only use for extracting header for csv; transformation is done in sink_node
+	Fields             []string          `json:"fields"`  // only use for extracting header for csv; transformation is done in sink_node
+	Columns            map[string]string `json:"columns"` // only use for parquet sinks
 }
 
 type fileSink struct {

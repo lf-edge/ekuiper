@@ -13,6 +13,7 @@ Users can directly use the built-in sinks in the standard eKuiper instance. The 
 - [Redis sink](./builtin/redis.md): sink to Redis.
 - [RedisSub sink](./builtin/redisPub.md): sink to redis channel.
 - [File sink](./builtin/file.md): sink to a file.
+- [Parquet sink](./builtin/parquet.md): sink to Parquet files. This sink only exists when enabling the parquet or full build tag.
 - [Memory sink](./builtin/memory.md): sink to eKuiper memory topic to form rule pipelines.
 - [Log sink](./builtin/log.md): sink to log, usually for debugging only.
 - [Nop sink](./builtin/nop.md): sink to nowhere. It is used for performance testing now.

@@ -304,6 +304,10 @@
                   "path": "guide/sinks/builtin/file"
                 },
                 {
+                  "title": "Parquet Sink",
+                  "path": "guide/sinks/builtin/parquet"
+                },
+                {
                   "title": "Memory Sink",
                   "path": "guide/sinks/builtin/memory"
                 },
@@ -1082,6 +1086,10 @@
                 {
                   "title": "File Sink",
                   "path": "guide/sinks/builtin/file"
+                },
+                {
+                  "title": "Parquet Sink",
+                  "path": "guide/sinks/builtin/parquet"
                 },
                 {
                   "title": "Memory Sink",
