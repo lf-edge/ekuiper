@@ -110,8 +110,9 @@ func TestRestoreSQLLookupRetriesAndReleases(t *testing.T) {
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = listener.Close() })
 
-	dburl := "mysql://root:@" + listener.Addr().String() + "/test"
-	opts := &ast.Options{DATASOURCE: "t", EXTRA: fmt.Sprintf(`{"dburl":%q,"url":"duckdb:///unused"}`, dburl)}
+	const dburl = "mysql://root:@127.0.0.1:1/default"
+	url := "mysql://root:@" + listener.Addr().String() + "/test"
+	opts := &ast.Options{DATASOURCE: "t", EXTRA: fmt.Sprintf(`{"dburl":%q,"url":%q}`, dburl, url)}
 	for _, name := range []string{"restored_sql_one", "restored_sql_two"} {
 		require.NoError(t, RestoreInstance(name, "sql", opts))
 		t.Cleanup(func() { require.NoError(t, DropInstance(name)) })

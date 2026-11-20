@@ -39,16 +39,9 @@ type SQLConnection struct {
 const recoveryDialTimeout = 10 * time.Second
 
 func (s *SQLConnection) Provision(ctx api.StreamContext, conId string, props map[string]any) error {
-	url, ok := props["url"]
-	if !ok {
-		url, ok = props["dburl"]
-		if !ok {
-			return fmt.Errorf("dburl should be defined")
-		}
-	}
-	dburl, ok := url.(string)
-	if !ok || len(dburl) < 1 {
-		return fmt.Errorf("dburl should be defined as string")
+	dburl, err := connectionURL(props)
+	if err != nil {
+		return err
 	}
 	ctx.GetLogger().Infof("create db with url:%v", dburl)
 

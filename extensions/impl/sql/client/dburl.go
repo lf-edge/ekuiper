@@ -47,8 +47,27 @@ func ParseDriver(url string) (string, error) {
 	return u.Driver, nil
 }
 
-// ValidateDriver checks the driver name used by sql.Open without dialing.
-func ValidateDriver(url string) error {
+func connectionURL(props map[string]any) (string, error) {
+	url, ok := props["url"]
+	if !ok {
+		url, ok = props["dburl"]
+		if !ok {
+			return "", fmt.Errorf("dburl should be defined")
+		}
+	}
+	dburl, ok := url.(string)
+	if !ok || len(dburl) < 1 {
+		return "", fmt.Errorf("dburl should be defined as string")
+	}
+	return dburl, nil
+}
+
+// ValidateConnectionDriver checks the driver selected by Provision without dialing.
+func ValidateConnectionDriver(props map[string]any) error {
+	url, err := connectionURL(props)
+	if err != nil {
+		return err
+	}
 	driver, _, err := ParseDBUrl(url)
 	if err != nil {
 		return err
