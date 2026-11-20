@@ -15,6 +15,7 @@
 package function
 
 import (
+	"encoding/gob"
 	"fmt"
 	"math"
 
@@ -23,6 +24,10 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
+
+func init() {
+	gob.Register(&accStatus{})
+}
 
 func registerGlobalAggFunc() {
 	builtins["acc_avg"] = builtinFunc{

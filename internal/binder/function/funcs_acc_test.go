@@ -1,6 +1,8 @@
 package function
 
 import (
+	"bytes"
+	"encoding/gob"
 	"fmt"
 	"math"
 	"testing"
@@ -52,11 +54,22 @@ func TestAccDistinctCollect(t *testing.T) {
 	}
 	require.Equal(t, complexValues, result)
 
-	// Rebuild the scalar index when loading state created before the index existed.
-	require.NoError(t, fctx.PutState("rehydrate_distinct", &accStatus{Value: []interface{}{int64(1)}}))
+	// The engine registers collection values during xsql initialization.
+	gob.Register([]any{})
+	// Checkpoints store function state behind an interface.
+	saved, err := fctx.GetState("distinct_collect")
+	require.NoError(t, err)
+	var buffer bytes.Buffer
+	require.NoError(t, gob.NewEncoder(&buffer).Encode(&saved))
+	var restored any
+	require.NoError(t, gob.NewDecoder(&buffer).Decode(&restored))
+	require.NoError(t, fctx.PutState("rehydrate_distinct", restored))
 	result, ok = f.exec(fctx, []interface{}{int64(1), true, "rehydrate_distinct"})
 	require.True(t, ok)
-	require.Equal(t, []interface{}{int64(1)}, result)
+	require.Equal(t, expected[4], result)
+	result, ok = f.exec(fctx, []interface{}{int64(4), true, "rehydrate_distinct"})
+	require.True(t, ok)
+	require.Equal(t, []interface{}{int64(1), int64(2), int64(3), int64(4)}, result)
 
 	require.Error(t, f.val(nil, nil))
 	require.NoError(t, f.val(nil, []ast.Expr{nil}))
