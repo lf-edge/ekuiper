@@ -104,9 +104,7 @@ func (s *State) Bootstrap() error {
 	return s.doValidateAndRun(s.Rule)
 }
 
-// Start run start or add the start action to queue
-// By check state, it assures only one Start function is running at any time. (thread safe)
-// regSchedule: whether need to handle scheduler. If call externally, set it to true
+// Start requests a rule start. Scheduled rules wait for the patrol.
 func (s *State) Start() error {
 	done := s.sm.TriggerAction(machine.ActionSignalStart)
 	if done {
