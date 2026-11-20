@@ -1,0 +1,195 @@
+{
+  "about": {
+    "trial": true,
+    "author": {
+      "name": "NopeCharon",
+      "email": "115794254+NopeCharon@users.noreply.github.com",
+      "company": "personal",
+      "website": "https://github.com/NopeCharon"
+    },
+    "helpUrl": {
+      "en_US": "https://ekuiper.org/docs/en/latest/guide/sources/plugin/rabbitmq.html",
+      "zh_CN": "https://ekuiper.org/docs/zh/latest/guide/sources/plugin/rabbitmq.html"
+    },
+    "description": {
+      "en_US": "The source consumes the messages of a RabbitMQ queue.",
+      "zh_CN": "该源从 RabbitMQ 队列中消费消息。"
+    }
+  },
+  "dataSource": {
+    "default": "queue1",
+    "hint": {
+      "en_US": "The name of the queue to consume, e.g. queue1",
+      "zh_CN": "要消费的队列名称，例如 queue1"
+    },
+    "label": {
+      "en_US": "Data Source (Queue)",
+      "zh_CN": "数据源（队列）"
+    }
+  },
+  "libs": [
+    "github.com/rabbitmq/amqp091-go@v1.16.0"
+  ],
+  "properties": {
+    "default": [
+      {
+        "name": "server",
+        "default": "amqp://127.0.0.1:5672/",
+        "optional": false,
+        "control": "text",
+        "type": "string",
+        "hint": {
+          "en_US": "The AMQP URI of the RabbitMQ server, such as amqp://127.0.0.1:5672/ or amqps://127.0.0.1:5671/vhost. Use amqps:// to connect with TLS.",
+          "zh_CN": "RabbitMQ 服务器的 AMQP URI，例如 amqp://127.0.0.1:5672/ 或 amqps://127.0.0.1:5671/vhost。使用 amqps:// 以通过 TLS 连接。"
+        },
+        "label": {
+          "en_US": "Server",
+          "zh_CN": "服务器地址"
+        }
+      },
+      {
+        "name": "username",
+        "default": "",
+        "optional": true,
+        "control": "text",
+        "type": "string",
+        "hint": {
+          "en_US": "The username to connect to the server. It overrides the user in the server URI.",
+          "zh_CN": "连接服务器的用户名，会覆盖服务器 URI 中的用户。"
+        },
+        "label": {
+          "en_US": "Username",
+          "zh_CN": "用户名"
+        }
+      },
+      {
+        "name": "password",
+        "default": "",
+        "optional": true,
+        "control": "text",
+        "type": "string",
+        "hint": {
+          "en_US": "The password to connect to the server.",
+          "zh_CN": "连接服务器的密码。"
+        },
+        "label": {
+          "en_US": "Password",
+          "zh_CN": "密码"
+        }
+      },
+      {
+        "name": "prefetchCount",
+        "default": 0,
+        "optional": true,
+        "control": "text",
+        "type": "int",
+        "hint": {
+          "en_US": "The maximum number of unacknowledged messages the server delivers to eKuiper. 0 means no limit.",
+          "zh_CN": "服务器向 eKuiper 推送的未确认消息的最大数量。0 表示不限制。"
+        },
+        "label": {
+          "en_US": "Prefetch count",
+          "zh_CN": "预取数量"
+        }
+      },
+      {
+        "name": "autoAck",
+        "default": false,
+        "optional": true,
+        "control": "radio",
+        "type": "bool",
+        "hint": {
+          "en_US": "Whether the server considers the messages acknowledged once delivered. If false, eKuiper acknowledges each message after receiving it.",
+          "zh_CN": "服务器是否在投递后即认为消息已确认。若为 false，eKuiper 在接收每条消息后确认该消息。"
+        },
+        "label": {
+          "en_US": "Auto ack",
+          "zh_CN": "自动确认"
+        }
+      },
+      {
+        "name": "consumerTag",
+        "default": "",
+        "optional": true,
+        "control": "text",
+        "type": "string",
+        "hint": {
+          "en_US": "The consumer tag. If empty, the server generates one.",
+          "zh_CN": "消费者标签。若为空，由服务器生成。"
+        },
+        "label": {
+          "en_US": "Consumer tag",
+          "zh_CN": "消费者标签"
+        }
+      },
+      {
+        "name": "certificationPath",
+        "default": "",
+        "optional": true,
+        "control": "text",
+        "type": "string",
+        "hint": {
+          "en_US": "The certification path. It can be an absolute path, or a relative path. If it is an relative path, then the base path is where you excuting the kuiperd command. For example, if you run bin/kuiperd from /var/kuiper, then the base path is /var/kuiper; If you run ./kuiperd from /var/kuiper/bin, then the base path is /var/kuiper/bin.",
+          "zh_CN": "证书路径。可以为绝对路径，也可以为相对路径。如果指定的是相对路径，那么父目录为执行 kuiperd 命令的路径。比如，如果你在 /var/kuiper 中运行 bin/kuiperd ，那么父目录为 /var/kuiper; 如果运行从 /var/kuiper/bin 中运行./kuiperd，那么父目录为 /var/kuiper/bin"
+        },
+        "label": {
+          "en_US": "Certification path",
+          "zh_CN": "证书路径"
+        }
+      },
+      {
+        "name": "privateKeyPath",
+        "default": "",
+        "optional": true,
+        "control": "text",
+        "type": "string",
+        "hint": {
+          "en_US": "The private key path. It can be either absolute path, or relative path, which is similar to use of certificationPath.",
+          "zh_CN": "私钥路径。可以为绝对路径，也可以为相对路径，相对路径的用法与 certificationPath 类似"
+        },
+        "label": {
+          "en_US": "Private key path",
+          "zh_CN": "私钥路径"
+        }
+      },
+      {
+        "name": "rootCaPath",
+        "default": "",
+        "optional": true,
+        "control": "text",
+        "type": "string",
+        "hint": {
+          "en_US": "The location of root ca path. It can be an absolute path, or a relative path. ",
+          "zh_CN": "根证书路径，用以验证服务器证书。可以为绝对路径，也可以为相对路径。"
+        },
+        "label": {
+          "en_US": "Root Ca path",
+          "zh_CN": "根证书路径"
+        }
+      },
+      {
+        "name": "insecureSkipVerify",
+        "default": false,
+        "optional": true,
+        "control": "radio",
+        "type": "bool",
+        "hint": {
+          "en_US": "If InsecureSkipVerify is true, TLS accepts any certificate presented by the server and any host name in that certificate.  In this mode, TLS is susceptible to man-in-the-middle attacks. The default value is false. The configuration item can only be used with TLS connections.",
+          "zh_CN": "如果 InsecureSkipVerify 设置为 true, TLS 接受服务器提供的任何证书以及该证书中的任何主机名。 在这种模式下，TLS 容易受到中间人攻击。默认值为 false。配置项只能用于 TLS 连接。"
+        },
+        "label": {
+          "en_US": "Skip Certification verification",
+          "zh_CN": "跳过证书验证"
+        }
+      }
+    ]
+  },
+  "node": {
+    "category": "source",
+    "icon": "iconPath",
+    "label": {
+      "en": "RabbitMQ",
+      "zh": "RabbitMQ"
+    }
+  }
+}
