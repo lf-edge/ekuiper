@@ -237,8 +237,9 @@ func TestLongScheduleTransit(t *testing.T) {
 	timex.Add(30 * time.Minute)
 	require.NoError(t, st.ScheduleStart())
 	require.Equal(t, machine.Stopped, st.GetState())
-	// A stop wins even if recovery reserved Starting before taking ruleLock.
-	require.False(t, st.sm.TriggerAction(machine.ActionSignalStart))
+	// A delayed recovery start must be discarded when the rule is disabled.
+	st.transitState(machine.Stopping, "")
+	require.True(t, st.sm.TriggerAction(machine.ActionSignalStart))
 	st.StopManually()
 	require.NoError(t, st.Start())
 	require.Equal(t, machine.Stopped, st.GetState())

@@ -14,13 +14,15 @@ func (s *State) transitState(newState machine.RunState, lastWill string) {
 
 func (s *State) nextAction() {
 	action := s.sm.PopAction()
-	for !s.Rule.Triggered && (action == machine.ActionSignalScheduledStart || action == machine.ActionSignalScheduledStop) {
+	for !s.Rule.Triggered && (action == machine.ActionSignalScheduledStart ||
+		action == machine.ActionSignalScheduledStop ||
+		(action == machine.ActionSignalStart && s.Rule.IsScheduleRule())) {
 		action = s.sm.PopAction()
 	}
 	var err error
 	switch action {
 	case machine.ActionSignalStart:
-		err = s.startOrWaitForSchedule()
+		err = s.doStart()
 	case machine.ActionSignalStop:
 		s.doStop(machine.Stopped, "canceled manually")
 	case machine.ActionSignalScheduledStart:
