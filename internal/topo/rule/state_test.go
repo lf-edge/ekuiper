@@ -41,6 +41,7 @@ func TestAPIs(t *testing.T) {
 	assert.NoError(t, err)
 	defer sp.ExecStmt(`DROP STREAM demo`)
 	r := def.GetDefaultRule("testAPI", "select * from demo")
+	r.Triggered = true
 	// Init state
 	st := NewState(r, func(string, bool) {})
 	assert.Equal(t, r, st.Rule)
@@ -103,9 +104,9 @@ func TestAPIs(t *testing.T) {
 	assert.Equal(t, em, rsm)
 	assert.Equal(t, machine.Stopped, st.sm.CurrentState())
 	// Update rule
-	e = st.ValidateAndRun(def.GetDefaultRule("testAPI", "select abc from demo where a > 3"))
-	assert.NoError(t, e)
-	e = st.Start()
+	updated := def.GetDefaultRule("testAPI", "select abc from demo where a > 3")
+	updated.Triggered = true
+	e = st.ValidateAndRun(updated)
 	assert.NoError(t, e)
 	time.Sleep(100 * time.Millisecond)
 	assert.Equal(t, machine.Running, st.sm.CurrentState())
@@ -176,6 +177,7 @@ func TestStateTransit(t *testing.T) {
 	}
 	for _, v := range tests {
 		t.Run(v.name, func(t *testing.T) {
+			v.r.Triggered = true
 			st := NewState(v.r, func(string, bool) {})
 			defer st.Delete()
 			var wg sync.WaitGroup
@@ -311,7 +313,7 @@ func sendAction(st *State, a machine.ActionSignal) {
 	case machine.ActionSignalStart:
 		_ = st.Start()
 	case machine.ActionSignalStop:
-		st.Stop()
+		st.StopWithLastWill("canceled manually")
 	case machine.ActionSignalScheduledStart:
 		_ = st.ScheduleStart()
 	case machine.ActionSignalScheduledStop:
@@ -332,7 +334,9 @@ func TestCleanRuleStaleTopo(t *testing.T) {
 	_, err := sp.ExecStmt(`CREATE STREAM demo () WITH (FORMAT="JSON", TYPE="memory", DATASOURCE="test")`)
 	require.NoError(t, err)
 	defer sp.ExecStmt(`DROP STREAM demo`)
-	st := NewState(def.GetDefaultRule("testStaleTopo", "select * from demo"), func(string, bool) {})
+	r := def.GetDefaultRule("testStaleTopo", "select * from demo")
+	r.Triggered = true
+	st := NewState(r, func(string, bool) {})
 	defer st.Delete()
 
 	require.NoError(t, st.Start())
@@ -344,7 +348,7 @@ func TestCleanRuleStaleTopo(t *testing.T) {
 	// Stop and restart to replace the run.
 	st.Stop()
 	assert.Equal(t, machine.Stopped, st.GetState())
-	require.NoError(t, st.Start())
+	require.NoError(t, st.Bootstrap(nil, nil))
 	require.Eventually(t, func() bool { return st.GetState() == machine.Running }, time.Second, time.Millisecond)
 	cur, err := st.GetPlainTopology()
 	require.NoError(t, err)
@@ -364,7 +368,7 @@ func TestCleanRuleStaleTopo(t *testing.T) {
 	// never disturb the active run either.
 	for i := 0; i < 5; i++ {
 		st.Stop()
-		require.NoError(t, st.Start())
+		require.NoError(t, st.Bootstrap(nil, nil))
 	}
 	require.Eventually(t, func() bool { return st.GetState() == machine.Running }, time.Second, time.Millisecond)
 	cur, err = st.GetPlainTopology()

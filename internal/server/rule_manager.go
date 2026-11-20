@@ -463,6 +463,15 @@ func (rr *RuleRegistry) ValidateRule(name, ruleJson string) ([]string, bool, err
 
 /// Rule Scheduler internal API
 
+func (rr *RuleRegistry) retryRule(name string) error {
+	rr.RLock()
+	defer rr.RUnlock()
+	if rs, ok := rr.internal[name]; ok {
+		return rs.Retry()
+	}
+	return nil
+}
+
 func (rr *RuleRegistry) scheduledStart(name string) error {
 	rs, ok := registry.load(name)
 	if !ok {

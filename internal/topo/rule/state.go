@@ -135,13 +135,26 @@ func (s *State) Start() error {
 
 // startOrWaitForSchedule requires ruleLock to be held by the caller.
 func (s *State) startOrWaitForSchedule() error {
+	if !s.Rule.Triggered {
+		s.transitState(machine.Stopped, "canceled manually")
+		return nil
+	}
 	// delegate to rule patrol checker
 	if s.Rule.IsScheduleRule() {
-		if s.Rule.Triggered {
-			s.transitState(machine.ScheduledStop, "")
-		} else {
-			s.transitState(machine.Stopped, "canceled manually")
-		}
+		s.transitState(machine.ScheduledStop, "")
+		return nil
+	}
+	return s.doStart()
+}
+
+// Retry starts an enabled non-scheduled rule that is still stopped by an error.
+func (s *State) Retry() error {
+	s.ruleLock.Lock()
+	defer s.ruleLock.Unlock()
+	if s.sm.CurrentState() != machine.StoppedByErr || !s.Rule.Triggered || s.Rule.IsScheduleRule() || s.Rule.Options == nil {
+		return nil
+	}
+	if strategy := s.Rule.Options.RestartStrategy; strategy == nil || strategy.Attempts <= 0 {
 		return nil
 	}
 	return s.doStart()
