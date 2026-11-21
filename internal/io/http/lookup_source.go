@@ -118,7 +118,7 @@ func doPull(ctx api.StreamContext, c *ClientConf, lastMD5 string) ([]map[string]
 		return nil, "", err
 	}
 	defer resp.Body.Close()
-	results, newMD5, err := c.parseResponse(ctx, resp, lastMD5, true, false)
+	results, newMD5, err := c.parseResponse(ctx, resp, lastMD5, true, false, nil)
 	if err != nil {
 		return nil, "", err
 	}
