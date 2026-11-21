@@ -32,12 +32,11 @@ func NewZlibCompressor() (*zlibCompressor, error) {
 
 type zlibCompressor struct {
 	writer *zlib.Writer
-	buffer bytes.Buffer
 }
 
 func (z *zlibCompressor) Compress(data []byte) ([]byte, error) {
-	z.buffer.Reset()
-	z.writer.Reset(&z.buffer)
+	var out bytes.Buffer
+	z.writer.Reset(&out)
 	_, err := z.writer.Write(data)
 	if err != nil {
 		return nil, err
@@ -46,7 +45,7 @@ func (z *zlibCompressor) Compress(data []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return z.buffer.Bytes(), nil
+	return out.Bytes(), nil
 }
 
 func NewZlibDecompressor() (*zlibDecompressor, error) {
