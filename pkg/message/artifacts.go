@@ -73,8 +73,9 @@ type SchemaProvider interface {
 	GetSchemaJson() string
 }
 
-// Compressor compresses and decompresses bytes
+// Compressor compresses bytes.
 type Compressor interface {
+	// Subsequent calls to Compress must preserve the contents of previously returned slices.
 	Compress([]byte) ([]byte, error)
 }
 
