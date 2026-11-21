@@ -32,12 +32,11 @@ func NewGzipCompressor() (*gzipCompressor, error) {
 
 type gzipCompressor struct {
 	writer *gzip.Writer
-	buffer bytes.Buffer
 }
 
 func (g *gzipCompressor) Compress(data []byte) ([]byte, error) {
-	g.buffer.Reset()
-	g.writer.Reset(&g.buffer)
+	var out bytes.Buffer
+	g.writer.Reset(&out)
 	_, err := g.writer.Write(data)
 	if err != nil {
 		return nil, err
@@ -46,7 +45,7 @@ func (g *gzipCompressor) Compress(data []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return g.buffer.Bytes(), nil
+	return out.Bytes(), nil
 }
 
 func NewGzipDecompressor() (*gzipDecompressor, error) {
