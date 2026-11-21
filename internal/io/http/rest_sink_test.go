@@ -15,6 +15,7 @@
 package http
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -24,6 +25,7 @@ import (
 	"time"
 
 	"github.com/pingcap/failpoint"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -272,25 +274,39 @@ func TestRestSinkProvision(t *testing.T) {
 }
 
 func TestRestSinkCollect(t *testing.T) {
-	server := createServer()
-	defer func() {
-		server.Close()
-	}()
-	ctx := mockContext.NewMockContext("1", "2")
-	s := &RestSink{}
-	require.NoError(t, s.Provision(ctx, map[string]any{
-		"url":       fmt.Sprintf("%s/get", server.URL),
-		"method":    "get",
-		"debugResp": true,
-	}))
-	data := &xsql.RawTuple{
-		Rawdata: []byte(`{"a":1}`),
+	for _, tc := range []struct {
+		name, responseType, body string
+		debug                    bool
+	}{
+		{"json", "code", `{"marker": "received"}`, true},
+		{"plain text", "code", "accepted", true},
+		{"body status", "body", `{"code":200, "marker":"received"}`, true},
+		{"disabled", "code", "accepted", false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				_, _ = io.WriteString(w, tc.body)
+			}))
+			defer server.Close()
+			var logs bytes.Buffer
+			logger := logrus.New()
+			logger.SetOutput(&logs)
+			logger.SetFormatter(&logrus.TextFormatter{DisableQuote: true})
+			ctx := context.WithValue(context.Background(), context.LoggerKey, logrus.NewEntry(logger))
+			s := &RestSink{}
+			require.NoError(t, s.Provision(ctx, map[string]any{
+				"url": server.URL, "method": "get", "responseType": tc.responseType, "debugResp": tc.debug,
+			}))
+			require.NoError(t, s.Connect(ctx, func(string, string) {}))
+			require.NoError(t, s.Collect(ctx, &xsql.RawTuple{Rawdata: []byte(`{"a":1}`)}))
+			require.NoError(t, s.Close(ctx))
+			if tc.debug {
+				require.Contains(t, logs.String(), "Response raw content: "+tc.body)
+			} else {
+				require.NotContains(t, logs.String(), "Response raw content:")
+			}
+		})
 	}
-	require.NoError(t, s.Connect(ctx, func(status string, message string) {
-		// do nothing
-	}))
-	require.NoError(t, s.Collect(ctx, data))
-	require.NoError(t, s.Close(ctx))
 }
 
 func TestRestSinkRecoverErr(t *testing.T) {

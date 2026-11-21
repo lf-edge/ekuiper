@@ -282,7 +282,7 @@ func (cc *ClientConf) auth(ctx api.StreamContext) error {
 		return err
 	}
 	defer resp.Body.Close()
-	tokens, _, err := cc.parseResponse(ctx, resp, "", true, true)
+	tokens, _, err := cc.parseResponse(ctx, resp, "", true, true, nil)
 	if err != nil {
 		return err
 	}
@@ -312,7 +312,7 @@ func (cc *ClientConf) refresh(ctx api.StreamContext) error {
 			return fmt.Errorf("fail to get refresh token: %v", err)
 		}
 		defer resp.Body.Close()
-		nt, _, err := cc.parseResponse(ctx, resp, "", true, true)
+		nt, _, err := cc.parseResponse(ctx, resp, "", true, true, nil)
 		if err != nil {
 			return fmt.Errorf("Cannot parse refresh token response to json: %v", err)
 		}
@@ -399,7 +399,7 @@ func (cc *ClientConf) responseBodyDecompress(ctx api.StreamContext, resp *http.R
 }
 
 // parse the response status. For rest sink, it will not return the body by default if not need to debug
-func (cc *ClientConf) parseResponse(ctx api.StreamContext, resp *http.Response, lastMD5 string, returnBody bool, skipDecompression bool) ([]map[string]interface{}, string, error) {
+func (cc *ClientConf) parseResponse(ctx api.StreamContext, resp *http.Response, lastMD5 string, returnBody bool, skipDecompression bool, rawBody *[]byte) ([]map[string]interface{}, string, error) {
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
 		return nil, "", fmt.Errorf("%s: %d", CODE_ERR, resp.StatusCode)
 	} else if !returnBody { // For rest sink who only need to know if the request is successful
@@ -409,6 +409,9 @@ func (cc *ClientConf) parseResponse(ctx api.StreamContext, resp *http.Response, 
 	c, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, "", fmt.Errorf("%s: %v", BODY_ERR, err)
+	}
+	if rawBody != nil {
+		*rawBody = c
 	}
 	newMD5 := ""
 	if returnBody && cc.config.Incremental {
