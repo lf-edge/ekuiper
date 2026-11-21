@@ -44,12 +44,11 @@ func NewZstdCompressor(props map[string]any) (*zstdCompressor, error) {
 
 type zstdCompressor struct {
 	writer *zstd.Encoder
-	buffer bytes.Buffer
 }
 
 func (g *zstdCompressor) Compress(data []byte) ([]byte, error) {
-	g.buffer.Reset()
-	g.writer.Reset(&g.buffer)
+	var out bytes.Buffer
+	g.writer.Reset(&out)
 	_, err := g.writer.Write(data)
 	if err != nil {
 		return nil, err
@@ -58,7 +57,7 @@ func (g *zstdCompressor) Compress(data []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return g.buffer.Bytes(), nil
+	return out.Bytes(), nil
 }
 
 func NewzstdDecompressor() (*zstdDecompressor, error) {

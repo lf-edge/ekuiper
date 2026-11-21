@@ -222,3 +222,39 @@ func TestCompressAndDecompress(t *testing.T) {
 		})
 	}
 }
+
+func TestCompressPreservesPreviousResults(t *testing.T) {
+	inputs := [][]byte{
+		bytes.Repeat([]byte("first message"), 1024),
+		[]byte("second"),
+		bytes.Repeat([]byte("third message"), 1024),
+		[]byte("fourth"),
+	}
+	for _, name := range []string{GZIP, ZLIB, FLATE, ZSTD} {
+		t.Run(name, func(t *testing.T) {
+			c, err := GetCompressor(name, nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+			results := make([][]byte, len(inputs))
+			for i, input := range inputs {
+				results[i], err = c.Compress(input)
+				if err != nil {
+					t.Fatalf("compress message %d: %v", i, err)
+				}
+			}
+			d, err := GetDecompressor(name)
+			if err != nil {
+				t.Fatal(err)
+			}
+			for i, result := range results {
+				got, err := d.Decompress(result)
+				if err != nil {
+					t.Errorf("decompress message %d: %v", i, err)
+				} else if !bytes.Equal(got, inputs[i]) {
+					t.Errorf("message %d changed after compressor reuse", i)
+				}
+			}
+		})
+	}
+}
