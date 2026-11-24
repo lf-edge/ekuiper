@@ -129,6 +129,8 @@ func TestInvalidTsTableName(t *testing.T) {
 	builder := NewTsBuilder(db.(Database))
 	_, err = builder.CreateTs("1_abc")
 	require.EqualError(t, err, "invalid table name: 1_abc")
+	_, err = builder.CreateTs("test-store")
+	require.EqualError(t, err, "invalid table name: test-store")
 }
 
 func cleanTSqlKv(db definition.Database, abs string) {
