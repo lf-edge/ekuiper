@@ -19,11 +19,15 @@ import (
 	"database/sql"
 	"encoding/gob"
 	"fmt"
+	"regexp"
 	"strings"
 
 	kvEncoding "github.com/lf-edge/ekuiper/v2/internal/pkg/store/encoding"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 )
+
+// KV queries quote table names, including cache names derived from rule and sink IDs.
+var kvTableNamePattern = regexp.MustCompile(`^[a-zA-Z_][a-zA-Z0-9/_-]*$`)
 
 type sqlKvStore struct {
 	database Database
@@ -37,7 +41,7 @@ type sqlKvStore struct {
 }
 
 func createSqlKvStore(database Database, table string) (*sqlKvStore, error) {
-	if !isValidTableName(table) {
+	if !kvTableNamePattern.MatchString(table) {
 		return nil, fmt.Errorf("invalid table name: %s", table)
 	}
 	store := &sqlKvStore{
