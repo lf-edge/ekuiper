@@ -33,7 +33,7 @@ import (
 
 const (
 	SDbName = "sqliteKV.db"
-	STable  = "test"
+	STable  = "sink/rule-a_archive-rest_cache0"
 )
 
 func TestSqlGetSetDelete(t *testing.T) {
@@ -67,6 +67,7 @@ func TestSqlGetSetDelete(t *testing.T) {
 	ok, err = ks.Get("pk2", &val)
 	require.False(t, ok)
 	require.NoError(t, err)
+	require.NoError(t, ks.Drop())
 }
 
 func TestSqlKvSetnx(t *testing.T) {
