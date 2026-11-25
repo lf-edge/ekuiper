@@ -22,9 +22,11 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/io/http"
 	"github.com/lf-edge/ekuiper/v2/internal/io/http/httpserver"
 	"github.com/lf-edge/ekuiper/v2/internal/io/memory"
+	"github.com/lf-edge/ekuiper/v2/internal/io/milvus"
 	"github.com/lf-edge/ekuiper/v2/internal/io/mqtt"
 	"github.com/lf-edge/ekuiper/v2/internal/io/neuron"
 	"github.com/lf-edge/ekuiper/v2/internal/io/nexmark"
+	"github.com/lf-edge/ekuiper/v2/internal/io/pgvector"
 	"github.com/lf-edge/ekuiper/v2/internal/io/simulator"
 	"github.com/lf-edge/ekuiper/v2/internal/io/sink"
 	"github.com/lf-edge/ekuiper/v2/internal/io/sse"
@@ -58,6 +60,8 @@ func init() {
 
 	modules.RegisterLookupSource("memory", memory.GetLookupSource)
 	modules.RegisterLookupSource("httppull", http.GetLookUpSource)
+	modules.RegisterLookupSource("milvus", milvus.GetLookupSource)
+	modules.RegisterLookupSource("pgvector", pgvector.GetLookupSource)
 	modules.RegisterLookupSource("simulator", func() api.Source { return &simulator.SimulatorLookupSource{} })
 
 	modules.RegisterConnection("mqtt", mqtt.CreateConnection)
