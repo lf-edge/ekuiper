@@ -5,7 +5,7 @@ The eKuiper uses a map based data structure internally during computation, so so
 ## Format
 
 There are two types of formats for codecs: schema and schema-less formats. The formats currently supported by eKuiper
-are `json`, `jsonl`, `binary`, `delimiter`, `protobuf` and `custom`. Among them, `protobuf` is the schema format.
+are `json`, `jsonl`, `binary`, `delimiter`, `protobuf`, `parquet` and `custom`. Among them, `protobuf` is the schema format.
 The schema format requires registering the schema first, and then setting the referenced schema along with the format.
 For example, when using mqtt sink, the format and schema can be configured as follows
 
@@ -30,6 +30,7 @@ All currently supported formats, their supported codec methods and modes are sho
 | jsonl     | Built-in                            | Unsupported            | Unsupported            |
 | binary    | Built-in                            | Unsupported            | Unsupported            |
 | delimiter | Built-in, need to specify delimiter | Unsupported            | Unsupported            |
+| parquet   | Built-in encoding (`parquet`/`full` build tag) | Unsupported | Inferred from the first record |
 | protobuf  | Built-in                            | Supported              | Supported and required |
 | custom    | Not Built-in                        | Supported and required | Supported and optional |
 
@@ -45,6 +46,27 @@ When decoding, each JSON object in the payload becomes one record, so a single m
 ```
 
 When encoding, each record is written as a JSON object on its own line. A list of records or a batch becomes several lines separated by `\n`, without a trailing newline. Every record must be an object, so other values such as numbers or `null` are rejected. When data template results are batched, a trailing `\n` or `\r\n` in each result is dropped, so the results are still separated by exactly one newline.
+
+### Parquet
+
+The `parquet` format encodes structured sink output as a complete Apache Parquet payload. It is available with the
+`parquet` or `full` build tag. It supports encoding only; for reading Parquet files, use the file source with
+`fileType: parquet`.
+
+A single record or a list of records is encoded as one Parquet file. When sink batching is enabled, records are
+accumulated through the format writer and each completed batch produces one Parquet file. A sink that accepts binary
+payloads can use `"format": "parquet"`; each payload must be stored or consumed as a separate file.
+
+The schema is inferred from the first non-empty record in each payload. Supported values are strings, `int64`,
+`float64` (stored as DOUBLE), booleans, nested objects and `[]any` lists. List element types are inferred from the first
+element; an empty list uses a string element type. An initial null value cannot provide a type. Records in a payload
+must use consistent fields and types. Field names containing commas, equals signs, backslashes, double quotes or
+control characters are not supported. Empty records are skipped, and empty input produces no payload.
+
+This implementation buffers the complete encoded payload in memory. Configure bounded batches according to the memory
+available on the device. It does not yet integrate the format writer lifecycle with file sink rolling. Do not append
+several generated payloads to one file: concatenated Parquet files do not form one valid Parquet file. Explicit schemas,
+direct streaming to file writers and file rolling integration are follow-up work.
 
 ### Format Extension
 

@@ -84,6 +84,7 @@ require (
 	github.com/utahta/go-cronowriter v1.2.0
 	github.com/valyala/fastjson v1.6.4
 	github.com/vertica/vertica-sql-go v1.3.3
+	github.com/xitongsys/parquet-go v1.6.2
 	github.com/xo/dburl v0.23.2
 	github.com/yisaer/file-rotatelogs v0.0.0-20240926070915-3a4d03835c68
 	github.com/ziutek/mymysql v1.5.4

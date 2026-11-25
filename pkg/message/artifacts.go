@@ -21,6 +21,7 @@ import (
 )
 
 const (
+	FormatParquet    = "parquet"
 	FormatBinary     = "binary"
 	FormatJson       = "json"
 	FormatJsonLines  = "jsonl"
