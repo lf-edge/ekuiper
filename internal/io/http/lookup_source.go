@@ -54,8 +54,8 @@ func (hls *HttpLookupSource) Lookup(ctx api.StreamContext, fields []string, keys
 	if err != nil {
 		return nil, err
 	}
-	resps = pruneData(resps, fields)
-	return lookupJoin(resps, keys, values), nil
+	matches := lookupJoin(resps, keys, values)
+	return pruneData(matches, fields), nil
 }
 
 func pruneData(data []map[string]any, fields []string) []map[string]any {

@@ -31,7 +31,9 @@ import (
 )
 
 func TestLookup(t *testing.T) {
-	server := createServer()
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		fmt.Fprint(w, `[{"id":"one","label":"first"},{"id":"two","label":"second"}]`)
+	}))
 	defer func() {
 		server.Close()
 	}()
@@ -45,13 +47,13 @@ func TestLookup(t *testing.T) {
 	require.NoError(t, hls.Connect(ctx, func(status string, message string) {
 		// do nothing
 	}))
-	got, err := hls.Lookup(ctx, []string{"code"}, []string{"code"}, []any{float64(200)})
+	got, err := hls.Lookup(ctx, []string{"id"}, []string{"id"}, []any{"one"})
 	require.NoError(t, err)
-	require.Equal(t, []map[string]any{
-		{
-			"code": float64(200),
-		},
-	}, got)
+	require.Equal(t, []map[string]any{{"id": "one"}}, got)
+
+	got, err = hls.Lookup(ctx, []string{"label"}, []string{"id"}, []any{"two"})
+	require.NoError(t, err)
+	require.Equal(t, []map[string]any{{"label": "second"}}, got)
 	require.NoError(t, hls.Close(ctx))
 }
 
