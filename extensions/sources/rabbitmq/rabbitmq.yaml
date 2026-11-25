@@ -1,0 +1,4 @@
+default:
+  server: "amqp://127.0.0.1:5672/"
+  prefetchCount: 0
+  autoAck: false

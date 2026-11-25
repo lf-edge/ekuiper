@@ -38,6 +38,7 @@
 - [Random source](./plugin/random.md): 一个生成随机数据的源，用于测试。
 - [Zero MQ source](./plugin/zmq.md)：从 Zero MQ 读取数据。
 - [Kafka source](./plugin/kafka.md)： 从 Kafka 中读取数据
+- [RabbitMQ source](./plugin/rabbitmq.md)：从 RabbitMQ 队列中读取数据。
 
 ## 源的使用
 
