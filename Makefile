@@ -120,6 +120,7 @@ PLUGINS_IN_FULL := \
 	extensions/sinks/iotdb \
 	extensions/sinks/zmq \
 	extensions/sinks/tdengine3 \
+	extensions/sinks/grpc \
 	extensions/sources/random \
 	extensions/sources/sql \
 	extensions/sources/video \
